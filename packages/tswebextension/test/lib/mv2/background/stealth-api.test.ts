@@ -1,12 +1,11 @@
-import { MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
+import { MatchingResult } from '@adguard/tsurlfilter';
 
-import { AppContext } from '@lib/mv2/background/context';
-import { type ConfigurationMV2Context } from '@lib/mv2/background/configuration';
-import { defaultFilteringLog } from '@lib/common';
-import { StealthApi } from '@lib/mv2/background/stealth-api';
-import { StealthService } from '@lib/mv2/background/services/stealth-service';
-
+import { createNetworkRule } from '../../../helpers/rule-creator';
 import { MockAppContext } from './mocks/mock-context';
+import { type ConfigurationMV2Context, defaultFilteringLog } from '../../../../src/lib';
+import { AppContext } from '../../../../src/lib/mv2/background/context';
+import { StealthService } from '../../../../src/lib/mv2/background/services/stealth-service';
+import { StealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 
 jest.mock('@lib/mv2/background/context', () => ({
     __esModule: true,
@@ -60,13 +59,13 @@ describe('StealthApi', () => {
 
         it('only returns the script that is not allowlisted by $stealth rule', () => {
             let result = new MatchingResult(
-                [new NetworkRule('@@||*.*^$stealth=referrer', 0)],
+                [createNetworkRule('@@||*.*^$stealth=referrer', 0)],
                 null,
             );
             expect(stealthApi.getStealthScript(null, result)).toBe(ACTUAL_DNT_SCRIPT);
 
             result = new MatchingResult(
-                [new NetworkRule('@@||*.*^$stealth=donottrack', 0)],
+                [createNetworkRule('@@||*.*^$stealth=donottrack', 0)],
                 null,
             );
             expect(stealthApi.getStealthScript(null, result)).toBe(ACTUAL_REFERRER_SCRIPT);
@@ -84,7 +83,7 @@ describe('StealthApi', () => {
 
         it('returns empty string if a global stealth rule is present', () => {
             const result = new MatchingResult(
-                [new NetworkRule('@@||*.*^$stealth', 0)],
+                [createNetworkRule('@@||*.*^$stealth', 0)],
                 null,
             );
             expect(stealthApi.getStealthScript(null, result)).toBe('');
@@ -93,7 +92,7 @@ describe('StealthApi', () => {
         it('returns empty string if a document rule is present', () => {
             const result = new MatchingResult(
                 [],
-                new NetworkRule('@@||*.*^$urlblock', 0),
+                createNetworkRule('@@||*.*^$urlblock', 0),
             );
             expect(stealthApi.getStealthScript(null, result)).toBe('');
         });

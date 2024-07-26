@@ -13,8 +13,6 @@ import {
 import { sprintf } from 'sprintf-js';
 
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { locRange } from '../../utils/location';
-import { defaultLocation } from '../common';
 import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
 
 /**
@@ -91,7 +89,8 @@ const tokenizeWithBalancedPairs = (
                             getFormattedTokenName(stack[stack.length - 1]),
                             getFormattedTokenName(type),
                         ),
-                        locRange(defaultLocation, start, raw.length),
+                        start,
+                        raw.length,
                     );
                 }
             }
@@ -110,7 +109,8 @@ const tokenizeWithBalancedPairs = (
                 getFormattedTokenName(stack[stack.length - 1]),
                 END_OF_INPUT,
             ),
-            locRange(defaultLocation, raw.length - 1, raw.length),
+            raw.length - 1,
+            raw.length,
         );
     }
 };

@@ -1,5 +1,6 @@
 import { CommentRuleParser } from '../../../src/parser/comment';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('CommentRuleParser', () => {
     test('isCommentRule', () => {
@@ -60,65 +61,25 @@ describe('CommentRuleParser', () => {
         // Agents
         expect(CommentRuleParser.parse('[Adblock Plus 2.0]')).toMatchObject({
             type: 'AgentCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 18,
-                    line: 1,
-                    column: 19,
-                },
-            },
+            start: 0,
+            end: 18,
             syntax: 'Common',
             category: 'Comment',
             children: [
                 {
                     type: 'Agent',
-                    loc: {
-                        start: {
-                            offset: 1,
-                            line: 1,
-                            column: 2,
-                        },
-                        end: {
-                            offset: 17,
-                            line: 1,
-                            column: 18,
-                        },
-                    },
+                    start: 1,
+                    end: 17,
                     adblock: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 1,
-                                line: 1,
-                                column: 2,
-                            },
-                            end: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                        },
+                        start: 1,
+                        end: 13,
                         value: 'Adblock Plus',
                     },
                     version: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                            end: {
-                                offset: 17,
-                                line: 1,
-                                column: 18,
-                            },
-                        },
+                        start: 14,
+                        end: 17,
                         value: '2.0',
                     },
                 },
@@ -127,52 +88,21 @@ describe('CommentRuleParser', () => {
 
         expect(CommentRuleParser.parse('[AdGuard]')).toMatchObject({
             type: 'AgentCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 9,
-                    line: 1,
-                    column: 10,
-                },
-            },
+            start: 0,
+            end: 9,
             syntax: 'Common',
             category: 'Comment',
             children: [
                 {
                     type: 'Agent',
-                    loc: {
-                        start: {
-                            offset: 1,
-                            line: 1,
-                            column: 2,
-                        },
-                        end: {
-                            offset: 8,
-                            line: 1,
-                            column: 9,
-                        },
-                    },
+                    start: 1,
+                    end: 8,
                     adblock: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 1,
-                                line: 1,
-                                column: 2,
-                            },
-                            end: {
-                                offset: 8,
-                                line: 1,
-                                column: 9,
-                            },
-                        },
+                        start: 1,
+                        end: 8,
                         value: 'AdGuard',
                     },
-                    version: null,
                 },
             ],
         });
@@ -180,49 +110,19 @@ describe('CommentRuleParser', () => {
         // Hints
         expect(CommentRuleParser.parse('!+ NOT_OPTIMIZED')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 16,
-                    line: 1,
-                    column: 17,
-                },
-            },
+            start: 0,
+            end: 16,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 16,
-                            line: 1,
-                            column: 17,
-                        },
-                    },
+                    start: 3,
+                    end: 16,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                        },
+                        start: 3,
+                        end: 16,
                         value: 'NOT_OPTIMIZED',
                     },
                 },
@@ -231,49 +131,19 @@ describe('CommentRuleParser', () => {
 
         expect(CommentRuleParser.parse('!+NOT_OPTIMIZED')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 15,
-                    line: 1,
-                    column: 16,
-                },
-            },
+            start: 0,
+            end: 15,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 2,
-                            line: 1,
-                            column: 3,
-                        },
-                        end: {
-                            offset: 15,
-                            line: 1,
-                            column: 16,
-                        },
-                    },
+                    start: 2,
+                    end: 15,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 2,
-                                line: 1,
-                                column: 3,
-                            },
-                            end: {
-                                offset: 15,
-                                line: 1,
-                                column: 16,
-                            },
-                        },
+                        start: 2,
+                        end: 15,
                         value: 'NOT_OPTIMIZED',
                     },
                 },
@@ -284,127 +154,47 @@ describe('CommentRuleParser', () => {
             CommentRuleParser.parse('!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(android, ios)'),
         ).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 66,
-                    line: 1,
-                    column: 67,
-                },
-            },
+            start: 0,
+            end: 66,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 16,
-                            line: 1,
-                            column: 17,
-                        },
-                    },
+                    start: 3,
+                    end: 16,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                        },
+                        start: 3,
+                        end: 16,
                         value: 'NOT_OPTIMIZED',
                     },
                 },
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 17,
-                            line: 1,
-                            column: 18,
-                        },
-                        end: {
-                            offset: 39,
-                            line: 1,
-                            column: 40,
-                        },
-                    },
+                    start: 17,
+                    end: 39,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 17,
-                                line: 1,
-                                column: 18,
-                            },
-                            end: {
-                                offset: 25,
-                                line: 1,
-                                column: 26,
-                            },
-                        },
+                        start: 17,
+                        end: 25,
                         value: 'PLATFORM',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 26,
-                                line: 1,
-                                column: 27,
-                            },
-                            end: {
-                                offset: 38,
-                                line: 1,
-                                column: 39,
-                            },
-                        },
+                        start: 26,
+                        end: 38,
                         children: [
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 26,
-                                        line: 1,
-                                        column: 27,
-                                    },
-                                    end: {
-                                        offset: 33,
-                                        line: 1,
-                                        column: 34,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 26,
+                                end: 33,
                                 value: 'windows',
                             },
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 35,
-                                        line: 1,
-                                        column: 36,
-                                    },
-                                    end: {
-                                        offset: 38,
-                                        line: 1,
-                                        column: 39,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 35,
+                                end: 38,
                                 value: 'mac',
                             },
                         ],
@@ -412,79 +202,29 @@ describe('CommentRuleParser', () => {
                 },
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 40,
-                            line: 1,
-                            column: 41,
-                        },
-                        end: {
-                            offset: 66,
-                            line: 1,
-                            column: 67,
-                        },
-                    },
+                    start: 40,
+                    end: 66,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 40,
-                                line: 1,
-                                column: 41,
-                            },
-                            end: {
-                                offset: 52,
-                                line: 1,
-                                column: 53,
-                            },
-                        },
+                        start: 40,
+                        end: 52,
                         value: 'NOT_PLATFORM',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 53,
-                                line: 1,
-                                column: 54,
-                            },
-                            end: {
-                                offset: 65,
-                                line: 1,
-                                column: 66,
-                            },
-                        },
+                        start: 53,
+                        end: 65,
                         children: [
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 53,
-                                        line: 1,
-                                        column: 54,
-                                    },
-                                    end: {
-                                        offset: 60,
-                                        line: 1,
-                                        column: 61,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 53,
+                                end: 60,
                                 value: 'android',
                             },
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 62,
-                                        line: 1,
-                                        column: 63,
-                                    },
-                                    end: {
-                                        offset: 65,
-                                        line: 1,
-                                        column: 66,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 62,
+                                end: 65,
                                 value: 'ios',
                             },
                         ],
@@ -496,64 +236,24 @@ describe('CommentRuleParser', () => {
         // Pre processors
         expect(CommentRuleParser.parse('!#if (adguard)')).toMatchObject({
             type: 'PreProcessorCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 14,
-                    line: 1,
-                    column: 15,
-                },
-            },
+            start: 0,
+            end: 14,
             category: 'Comment',
             syntax: 'Common',
             name: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 4,
-                        line: 1,
-                        column: 5,
-                    },
-                },
+                start: 2,
+                end: 4,
                 value: 'if',
             },
             params: {
                 type: 'Parenthesis',
-                loc: {
-                    start: {
-                        offset: 6,
-                        line: 1,
-                        column: 7,
-                    },
-                    end: {
-                        offset: 13,
-                        line: 1,
-                        column: 14,
-                    },
-                },
+                start: 6,
+                end: 13,
                 expression: {
                     type: 'Variable',
-                    loc: {
-                        start: {
-                            offset: 6,
-                            line: 1,
-                            column: 7,
-                        },
-                        end: {
-                            offset: 13,
-                            line: 1,
-                            column: 14,
-                        },
-                    },
+                    start: 6,
+                    end: 13,
                     name: 'adguard',
                 },
             },
@@ -561,110 +261,40 @@ describe('CommentRuleParser', () => {
 
         expect(CommentRuleParser.parse('!#if (adguard && !adguard_ext_safari)')).toMatchObject({
             type: 'PreProcessorCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 37,
-                    line: 1,
-                    column: 38,
-                },
-            },
+            start: 0,
+            end: 37,
             category: 'Comment',
             syntax: 'Common',
             name: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 4,
-                        line: 1,
-                        column: 5,
-                    },
-                },
+                start: 2,
+                end: 4,
                 value: 'if',
             },
             params: {
                 type: 'Parenthesis',
-                loc: {
-                    start: {
-                        offset: 6,
-                        line: 1,
-                        column: 7,
-                    },
-                    end: {
-                        offset: 36,
-                        line: 1,
-                        column: 37,
-                    },
-                },
+                start: 6,
+                end: 36,
                 expression: {
                     type: 'Operator',
-                    loc: {
-                        start: {
-                            offset: 6,
-                            line: 1,
-                            column: 7,
-                        },
-                        end: {
-                            offset: 36,
-                            line: 1,
-                            column: 37,
-                        },
-                    },
+                    start: 6,
+                    end: 36,
                     operator: '&&',
                     left: {
                         type: 'Variable',
-                        loc: {
-                            start: {
-                                offset: 6,
-                                line: 1,
-                                column: 7,
-                            },
-                            end: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                        },
+                        start: 6,
+                        end: 13,
                         name: 'adguard',
                     },
                     right: {
                         type: 'Operator',
-                        loc: {
-                            start: {
-                                offset: 17,
-                                line: 1,
-                                column: 18,
-                            },
-                            end: {
-                                offset: 36,
-                                line: 1,
-                                column: 37,
-                            },
-                        },
+                        start: 17,
+                        end: 36,
                         operator: '!',
                         left: {
                             type: 'Variable',
-                            loc: {
-                                start: {
-                                    offset: 18,
-                                    line: 1,
-                                    column: 19,
-                                },
-                                end: {
-                                    offset: 36,
-                                    line: 1,
-                                    column: 37,
-                                },
-                            },
+                            start: 18,
+                            end: 36,
                             name: 'adguard_ext_safari',
                         },
                     },
@@ -674,50 +304,20 @@ describe('CommentRuleParser', () => {
 
         expect(CommentRuleParser.parse('!#include https://example.org/path/includedfile.txt')).toMatchObject({
             type: 'PreProcessorCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 51,
-                    line: 1,
-                    column: 52,
-                },
-            },
+            start: 0,
+            end: 51,
             category: 'Comment',
             syntax: 'Common',
             name: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                },
+                start: 2,
+                end: 9,
                 value: 'include',
             },
             params: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 10,
-                        line: 1,
-                        column: 11,
-                    },
-                    end: {
-                        offset: 51,
-                        line: 1,
-                        column: 52,
-                    },
-                },
+                start: 10,
+                end: 51,
                 value: 'https://example.org/path/includedfile.txt',
             },
         });
@@ -725,66 +325,26 @@ describe('CommentRuleParser', () => {
         // Metadata
         expect(CommentRuleParser.parse('! Title: Filter')).toMatchObject({
             type: 'MetadataCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 15,
-                    line: 1,
-                    column: 16,
-                },
-            },
+            start: 0,
+            end: 15,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             header: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 7,
-                        line: 1,
-                        column: 8,
-                    },
-                },
+                start: 2,
+                end: 7,
                 value: 'Title',
             },
             value: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 9,
+                end: 15,
                 value: 'Filter',
             },
         });
@@ -793,66 +353,26 @@ describe('CommentRuleParser', () => {
             CommentRuleParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
         ).toMatchObject({
             type: 'MetadataCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 57,
-                    line: 1,
-                    column: 58,
-                },
-            },
+            start: 0,
+            end: 57,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             header: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 10,
-                        line: 1,
-                        column: 11,
-                    },
-                },
+                start: 2,
+                end: 10,
                 value: 'Homepage',
             },
             value: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 12,
-                        line: 1,
-                        column: 13,
-                    },
-                    end: {
-                        offset: 57,
-                        line: 1,
-                        column: 58,
-                    },
-                },
+                start: 12,
+                end: 57,
                 value: 'https://github.com/AdguardTeam/some-repo/wiki',
             },
         });
@@ -861,66 +381,26 @@ describe('CommentRuleParser', () => {
             CommentRuleParser.parse('# Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
         ).toMatchObject({
             type: 'MetadataCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 57,
-                    line: 1,
-                    column: 58,
-                },
-            },
+            start: 0,
+            end: 57,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '#',
             },
             header: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 10,
-                        line: 1,
-                        column: 11,
-                    },
-                },
+                start: 2,
+                end: 10,
                 value: 'Homepage',
             },
             value: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 12,
-                        line: 1,
-                        column: 13,
-                    },
-                    end: {
-                        offset: 57,
-                        line: 1,
-                        column: 58,
-                    },
-                },
+                start: 12,
+                end: 57,
                 value: 'https://github.com/AdguardTeam/some-repo/wiki',
             },
         });
@@ -928,97 +408,37 @@ describe('CommentRuleParser', () => {
         // Config comments
         expect(CommentRuleParser.parse('! aglint-disable rule1, rule2')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 29,
-                    line: 1,
-                    column: 30,
-                },
-            },
+            start: 0,
+            end: 29,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                },
+                start: 2,
+                end: 16,
                 value: 'aglint-disable',
             },
             params: {
                 type: 'ParameterList',
-                loc: {
-                    start: {
-                        offset: 17,
-                        line: 1,
-                        column: 18,
-                    },
-                    end: {
-                        offset: 29,
-                        line: 1,
-                        column: 30,
-                    },
-                },
+                start: 17,
+                end: 29,
                 children: [
                     {
-                        type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 17,
-                                line: 1,
-                                column: 18,
-                            },
-                            end: {
-                                offset: 22,
-                                line: 1,
-                                column: 23,
-                            },
-                        },
+                        type: 'Value',
+                        start: 17,
+                        end: 22,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 24,
-                                line: 1,
-                                column: 25,
-                            },
-                            end: {
-                                offset: 29,
-                                line: 1,
-                                column: 30,
-                            },
-                        },
+                        type: 'Value',
+                        start: 24,
+                        end: 29,
                         value: 'rule2',
                     },
                 ],
@@ -1027,97 +447,37 @@ describe('CommentRuleParser', () => {
 
         expect(CommentRuleParser.parse('! aglint-enable rule1, rule2')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 28,
-                    line: 1,
-                    column: 29,
-                },
-            },
+            start: 0,
+            end: 28,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 2,
+                end: 15,
                 value: 'aglint-enable',
             },
             params: {
                 type: 'ParameterList',
-                loc: {
-                    start: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                    end: {
-                        offset: 28,
-                        line: 1,
-                        column: 29,
-                    },
-                },
+                start: 16,
+                end: 28,
                 children: [
                     {
-                        type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                            end: {
-                                offset: 21,
-                                line: 1,
-                                column: 22,
-                            },
-                        },
+                        type: 'Value',
+                        start: 16,
+                        end: 21,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 23,
-                                line: 1,
-                                column: 24,
-                            },
-                            end: {
-                                offset: 28,
-                                line: 1,
-                                column: 29,
-                            },
-                        },
+                        type: 'Value',
+                        start: 23,
+                        end: 28,
                         value: 'rule2',
                     },
                 ],
@@ -1126,97 +486,37 @@ describe('CommentRuleParser', () => {
 
         expect(CommentRuleParser.parse('# aglint-disable rule1, rule2')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 29,
-                    line: 1,
-                    column: 30,
-                },
-            },
+            start: 0,
+            end: 29,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '#',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                },
+                start: 2,
+                end: 16,
                 value: 'aglint-disable',
             },
             params: {
                 type: 'ParameterList',
-                loc: {
-                    start: {
-                        offset: 17,
-                        line: 1,
-                        column: 18,
-                    },
-                    end: {
-                        offset: 29,
-                        line: 1,
-                        column: 30,
-                    },
-                },
+                start: 17,
+                end: 29,
                 children: [
                     {
-                        type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 17,
-                                line: 1,
-                                column: 18,
-                            },
-                            end: {
-                                offset: 22,
-                                line: 1,
-                                column: 23,
-                            },
-                        },
+                        type: 'Value',
+                        start: 17,
+                        end: 22,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 24,
-                                line: 1,
-                                column: 25,
-                            },
-                            end: {
-                                offset: 29,
-                                line: 1,
-                                column: 30,
-                            },
-                        },
+                        type: 'Value',
+                        start: 24,
+                        end: 29,
                         value: 'rule2',
                     },
                 ],
@@ -1225,97 +525,37 @@ describe('CommentRuleParser', () => {
 
         expect(CommentRuleParser.parse('# aglint-enable rule1, rule2')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 28,
-                    line: 1,
-                    column: 29,
-                },
-            },
+            start: 0,
+            end: 28,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '#',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                },
+                start: 2,
+                end: 15,
                 value: 'aglint-enable',
             },
             params: {
                 type: 'ParameterList',
-                loc: {
-                    start: {
-                        offset: 16,
-                        line: 1,
-                        column: 17,
-                    },
-                    end: {
-                        offset: 28,
-                        line: 1,
-                        column: 29,
-                    },
-                },
+                start: 16,
+                end: 28,
                 children: [
                     {
-                        type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                            end: {
-                                offset: 21,
-                                line: 1,
-                                column: 22,
-                            },
-                        },
+                        type: 'Value',
+                        start: 16,
+                        end: 21,
                         value: 'rule1',
                     },
                     {
-                        type: 'Parameter',
-                        loc: {
-                            start: {
-                                offset: 23,
-                                line: 1,
-                                column: 24,
-                            },
-                            end: {
-                                offset: 28,
-                                line: 1,
-                                column: 29,
-                            },
-                        },
+                        type: 'Value',
+                        start: 23,
+                        end: 28,
                         value: 'rule2',
                     },
                 ],
@@ -1324,66 +564,26 @@ describe('CommentRuleParser', () => {
 
         expect(CommentRuleParser.parse('! aglint rule1: "off", rule2: ["a", "b"] -- this is a comment')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 61,
-                    line: 1,
-                    column: 62,
-                },
-            },
+            start: 0,
+            end: 61,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 8,
-                        line: 1,
-                        column: 9,
-                    },
-                },
+                start: 2,
+                end: 8,
                 value: 'aglint',
             },
             params: {
-                type: 'Value',
-                loc: {
-                    start: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                    end: {
-                        offset: 40,
-                        line: 1,
-                        column: 41,
-                    },
-                },
+                type: 'ConfigNode',
+                start: 9,
+                end: 40,
                 value: {
                     rule1: 'off',
                     rule2: [
@@ -1394,84 +594,34 @@ describe('CommentRuleParser', () => {
             },
             comment: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 41,
-                        line: 1,
-                        column: 42,
-                    },
-                    end: {
-                        offset: 61,
-                        line: 1,
-                        column: 62,
-                    },
-                },
+                start: 41,
+                end: 61,
                 value: '-- this is a comment',
             },
         });
 
         expect(CommentRuleParser.parse('# aglint rule1: "off", rule2: ["a", "b"] -- this is a comment')).toMatchObject({
             type: 'ConfigCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 61,
-                    line: 1,
-                    column: 62,
-                },
-            },
+            start: 0,
+            end: 61,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '#',
             },
             command: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 8,
-                        line: 1,
-                        column: 9,
-                    },
-                },
+                start: 2,
+                end: 8,
                 value: 'aglint',
             },
             params: {
-                type: 'Value',
-                loc: {
-                    start: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                    end: {
-                        offset: 40,
-                        line: 1,
-                        column: 41,
-                    },
-                },
+                type: 'ConfigNode',
+                start: 9,
+                end: 40,
                 value: {
                     rule1: 'off',
                     rule2: [
@@ -1482,18 +632,8 @@ describe('CommentRuleParser', () => {
             },
             comment: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 41,
-                        line: 1,
-                        column: 42,
-                    },
-                    end: {
-                        offset: 61,
-                        line: 1,
-                        column: 62,
-                    },
-                },
+                start: 41,
+                end: 61,
                 value: '-- this is a comment',
             },
         });
@@ -1502,49 +642,19 @@ describe('CommentRuleParser', () => {
         expect(CommentRuleParser.parse('! This is just a comment')).toMatchObject({
             category: 'Comment',
             type: 'CommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 24,
-                    line: 1,
-                    column: 25,
-                },
-            },
+            start: 0,
+            end: 24,
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             text: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                    end: {
-                        offset: 24,
-                        line: 1,
-                        column: 25,
-                    },
-                },
+                start: 1,
+                end: 24,
                 value: ' This is just a comment',
             },
         });
@@ -1552,49 +662,19 @@ describe('CommentRuleParser', () => {
         expect(CommentRuleParser.parse('# This is just a comment')).toMatchObject({
             category: 'Comment',
             type: 'CommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 24,
-                    line: 1,
-                    column: 25,
-                },
-            },
+            start: 0,
+            end: 24,
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '#',
             },
             text: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                    end: {
-                        offset: 24,
-                        line: 1,
-                        column: 25,
-                    },
-                },
+                start: 1,
+                end: 24,
                 value: ' This is just a comment',
             },
         });
@@ -1602,49 +682,19 @@ describe('CommentRuleParser', () => {
         expect(CommentRuleParser.parse('!#########################')).toMatchObject({
             category: 'Comment',
             type: 'CommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 26,
-                    line: 1,
-                    column: 27,
-                },
-            },
+            start: 0,
+            end: 26,
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             text: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                    end: {
-                        offset: 26,
-                        line: 1,
-                        column: 27,
-                    },
-                },
+                start: 1,
+                end: 26,
                 value: '#########################',
             },
         });
@@ -1652,49 +702,19 @@ describe('CommentRuleParser', () => {
         expect(CommentRuleParser.parse('##########################')).toMatchObject({
             category: 'Comment',
             type: 'CommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 26,
-                    line: 1,
-                    column: 27,
-                },
-            },
+            start: 0,
+            end: 26,
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '#',
             },
             text: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                    end: {
-                        offset: 26,
-                        line: 1,
-                        column: 27,
-                    },
-                },
+                start: 1,
+                end: 26,
                 value: '#########################',
             },
         });
@@ -1723,7 +743,9 @@ describe('CommentRuleParser', () => {
                 },
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
-            expect(CommentRuleParser.parse(actual, { isLocIncluded: false })).toEqual(expected);
+            expect(
+                CommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -1766,5 +788,22 @@ describe('CommentRuleParser', () => {
         );
 
         expect(parseAndGenerate('! This is just a comment')).toEqual('! This is just a comment');
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '[Adblock Plus 2.0]',
+            '[Adblock Plus 2.0; AdGuard]',
+            '!+ NOT_OPTIMIZED',
+            '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac)',
+            '!#if (adguard && !adguard_ext_safari)',
+            '! Homepage: example.org',
+            '! aglint-enable rule1, rule2 -- comment',
+            '# aglint-enable rule1, rule2 -- comment',
+            '! This is just a comment',
+            '# This is just a comment',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(CommentRuleParser);
+        });
     });
 });

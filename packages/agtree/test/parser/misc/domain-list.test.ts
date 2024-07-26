@@ -6,6 +6,7 @@ import {
     ListItemNodeType,
 } from '../../../src/parser/common';
 import { COMMA, EMPTY } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('DomainListParser', () => {
     // invalid inputs are tested in `list-helpers.test.ts`
@@ -15,18 +16,8 @@ describe('DomainListParser', () => {
         expect(DomainListParser.parse(EMPTY)).toEqual<DomainList>(
             {
                 type: ListNodeType.DomainList,
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                },
+                start: 0,
+                end: 0,
                 separator: ',',
                 children: [],
             },
@@ -36,34 +27,14 @@ describe('DomainListParser', () => {
         expect(DomainListParser.parse('example.com')).toEqual<DomainList>(
             {
                 type: ListNodeType.DomainList,
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 11,
-                        line: 1,
-                        column: 12,
-                    },
-                },
+                start: 0,
+                end: 11,
                 separator: ',',
                 children: [
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 0,
-                                line: 1,
-                                column: 1,
-                            },
-                            end: {
-                                offset: 11,
-                                line: 1,
-                                column: 12,
-                            },
-                        },
+                        start: 0,
+                        end: 11,
                         value: 'example.com',
                         exception: false,
                     },
@@ -75,51 +46,21 @@ describe('DomainListParser', () => {
         expect(DomainListParser.parse('example.com,example.net')).toEqual<DomainList>(
             {
                 type: ListNodeType.DomainList,
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 23,
-                        line: 1,
-                        column: 24,
-                    },
-                },
+                start: 0,
+                end: 23,
                 separator: ',',
                 children: [
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 0,
-                                line: 1,
-                                column: 1,
-                            },
-                            end: {
-                                offset: 11,
-                                line: 1,
-                                column: 12,
-                            },
-                        },
+                        start: 0,
+                        end: 11,
                         value: 'example.com',
                         exception: false,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                            end: {
-                                offset: 23,
-                                line: 1,
-                                column: 24,
-                            },
-                        },
+                        start: 12,
+                        end: 23,
                         value: 'example.net',
                         exception: false,
                     },
@@ -130,68 +71,28 @@ describe('DomainListParser', () => {
         expect(DomainListParser.parse('example.com,example.net,example.org')).toEqual<DomainList>(
             {
                 type: ListNodeType.DomainList,
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 35,
-                        line: 1,
-                        column: 36,
-                    },
-                },
+                start: 0,
+                end: 35,
                 separator: ',',
                 children: [
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 0,
-                                line: 1,
-                                column: 1,
-                            },
-                            end: {
-                                offset: 11,
-                                line: 1,
-                                column: 12,
-                            },
-                        },
+                        start: 0,
+                        end: 11,
                         value: 'example.com',
                         exception: false,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                            end: {
-                                offset: 23,
-                                line: 1,
-                                column: 24,
-                            },
-                        },
+                        start: 12,
+                        end: 23,
                         value: 'example.net',
                         exception: false,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 24,
-                                line: 1,
-                                column: 25,
-                            },
-                            end: {
-                                offset: 35,
-                                line: 1,
-                                column: 36,
-                            },
-                        },
+                        start: 24,
+                        end: 35,
                         value: 'example.org',
                         exception: false,
                     },
@@ -203,34 +104,14 @@ describe('DomainListParser', () => {
         expect(DomainListParser.parse('~example.com')).toEqual<DomainList>(
             {
                 type: ListNodeType.DomainList,
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 12,
-                        line: 1,
-                        column: 13,
-                    },
-                },
+                start: 0,
+                end: 12,
                 separator: ',',
                 children: [
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 1,
-                                line: 1,
-                                column: 2,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 1,
+                        end: 12,
                         value: 'example.com',
                         exception: true,
                     },
@@ -242,51 +123,21 @@ describe('DomainListParser', () => {
         expect(DomainListParser.parse('~example.com,~example.net')).toEqual<DomainList>(
             {
                 type: ListNodeType.DomainList,
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 25,
-                        line: 1,
-                        column: 26,
-                    },
-                },
+                start: 0,
+                end: 25,
                 separator: ',',
                 children: [
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 1,
-                                line: 1,
-                                column: 2,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 1,
+                        end: 12,
                         value: 'example.com',
                         exception: true,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                            end: {
-                                offset: 25,
-                                line: 1,
-                                column: 26,
-                            },
-                        },
+                        start: 14,
+                        end: 25,
                         value: 'example.net',
                         exception: true,
                     },
@@ -297,68 +148,28 @@ describe('DomainListParser', () => {
         expect(DomainListParser.parse('~example.com,~example.net,~example.org')).toEqual<DomainList>(
             {
                 type: ListNodeType.DomainList,
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 38,
-                        line: 1,
-                        column: 39,
-                    },
-                },
+                start: 0,
+                end: 38,
                 separator: ',',
                 children: [
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 1,
-                                line: 1,
-                                column: 2,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 1,
+                        end: 12,
                         value: 'example.com',
                         exception: true,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                            end: {
-                                offset: 25,
-                                line: 1,
-                                column: 26,
-                            },
-                        },
+                        start: 14,
+                        end: 25,
                         value: 'example.net',
                         exception: true,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 27,
-                                line: 1,
-                                column: 28,
-                            },
-                            end: {
-                                offset: 38,
-                                line: 1,
-                                column: 39,
-                            },
-                        },
+                        start: 27,
+                        end: 38,
                         value: 'example.org',
                         exception: true,
                     },
@@ -370,85 +181,35 @@ describe('DomainListParser', () => {
         expect(DomainListParser.parse('~example.com,~example.net,example.eu,~example.org')).toEqual<DomainList>(
             {
                 type: ListNodeType.DomainList,
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 49,
-                        line: 1,
-                        column: 50,
-                    },
-                },
+                start: 0,
+                end: 49,
                 separator: ',',
                 children: [
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 1,
-                                line: 1,
-                                column: 2,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 1,
+                        end: 12,
                         value: 'example.com',
                         exception: true,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                            end: {
-                                offset: 25,
-                                line: 1,
-                                column: 26,
-                            },
-                        },
+                        start: 14,
+                        end: 25,
                         value: 'example.net',
                         exception: true,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 26,
-                                line: 1,
-                                column: 27,
-                            },
-                            end: {
-                                offset: 36,
-                                line: 1,
-                                column: 37,
-                            },
-                        },
+                        start: 26,
+                        end: 36,
                         value: 'example.eu',
                         exception: false,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 38,
-                                line: 1,
-                                column: 39,
-                            },
-                            end: {
-                                offset: 49,
-                                line: 1,
-                                column: 50,
-                            },
-                        },
+                        start: 38,
+                        end: 49,
                         value: 'example.org',
                         exception: true,
                     },
@@ -462,85 +223,35 @@ describe('DomainListParser', () => {
         ).toEqual<DomainList>(
             {
                 type: ListNodeType.DomainList,
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 66,
-                        line: 1,
-                        column: 67,
-                    },
-                },
+                start: 0,
+                end: 66,
                 separator: ',',
                 children: [
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 1,
-                                line: 1,
-                                column: 2,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 1,
+                        end: 12,
                         value: 'example.com',
                         exception: true,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 15,
-                                line: 1,
-                                column: 16,
-                            },
-                            end: {
-                                offset: 26,
-                                line: 1,
-                                column: 27,
-                            },
-                        },
+                        start: 15,
+                        end: 26,
                         value: 'example.net',
                         exception: false,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 34,
-                                line: 1,
-                                column: 35,
-                            },
-                            end: {
-                                offset: 44,
-                                line: 1,
-                                column: 45,
-                            },
-                        },
+                        start: 34,
+                        end: 44,
                         value: 'example.eu',
                         exception: false,
                     },
                     {
                         type: ListItemNodeType.Domain,
-                        loc: {
-                            start: {
-                                offset: 55,
-                                line: 1,
-                                column: 56,
-                            },
-                            end: {
-                                offset: 66,
-                                line: 1,
-                                column: 67,
-                            },
-                        },
+                        start: 55,
+                        end: 66,
                         value: 'example.org',
                         exception: true,
                     },
@@ -549,90 +260,43 @@ describe('DomainListParser', () => {
         );
 
         expect(
-            DomainListParser.parse('~example.com|  example.net    |   example.eu |        ~example.org', {
-                separator: '|',
-            }),
+            DomainListParser.parse(
+                '~example.com|  example.net    |   example.eu |        ~example.org',
+                defaultParserOptions,
+                0,
+                '|',
+            ),
         ).toEqual<DomainList>({
             type: ListNodeType.DomainList,
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 66,
-                    line: 1,
-                    column: 67,
-                },
-            },
+            start: 0,
+            end: 66,
             separator: '|',
             children: [
                 {
                     type: ListItemNodeType.Domain,
-                    loc: {
-                        start: {
-                            offset: 1,
-                            line: 1,
-                            column: 2,
-                        },
-                        end: {
-                            offset: 12,
-                            line: 1,
-                            column: 13,
-                        },
-                    },
+                    start: 1,
+                    end: 12,
                     value: 'example.com',
                     exception: true,
                 },
                 {
                     type: ListItemNodeType.Domain,
-                    loc: {
-                        start: {
-                            offset: 15,
-                            line: 1,
-                            column: 16,
-                        },
-                        end: {
-                            offset: 26,
-                            line: 1,
-                            column: 27,
-                        },
-                    },
+                    start: 15,
+                    end: 26,
                     value: 'example.net',
                     exception: false,
                 },
                 {
                     type: ListItemNodeType.Domain,
-                    loc: {
-                        start: {
-                            offset: 34,
-                            line: 1,
-                            column: 35,
-                        },
-                        end: {
-                            offset: 44,
-                            line: 1,
-                            column: 45,
-                        },
-                    },
+                    start: 34,
+                    end: 44,
                     value: 'example.eu',
                     exception: false,
                 },
                 {
                     type: ListItemNodeType.Domain,
-                    loc: {
-                        start: {
-                            offset: 55,
-                            line: 1,
-                            column: 56,
-                        },
-                        end: {
-                            offset: 66,
-                            line: 1,
-                            column: 67,
-                        },
-                    },
+                    start: 55,
+                    end: 66,
                     value: 'example.org',
                     exception: true,
                 },
@@ -663,7 +327,7 @@ describe('DomainListParser', () => {
 
     test('generate', () => {
         const parseAndGenerate = (raw: string, separator: DomainListSeparator = COMMA) => {
-            const ast = DomainListParser.parse(raw, { separator });
+            const ast = DomainListParser.parse(raw, defaultParserOptions, 0, separator);
 
             if (ast) {
                 return DomainListParser.generate(ast);
@@ -693,5 +357,18 @@ describe('DomainListParser', () => {
         expect(parseAndGenerate('~example.com | example.org | example.net', '|')).toEqual(
             '~example.com|example.org|example.net',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            'example.com',
+            '~example.com',
+
+            'example.com,example.org',
+            'example.com,~example.org',
+            '~example.com,~example.org',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(DomainListParser);
+        });
     });
 });

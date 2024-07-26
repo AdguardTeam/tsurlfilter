@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { type NetworkRule, type CookieModifier } from '@adguard/tsurlfilter';
+import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
 import {
     ContentType,
@@ -510,11 +510,18 @@ export class CookieFiltering {
                 cookieName: cookie.name,
                 cookieValue: cookie.value,
                 frameDomain: getDomain(requestUrl) || requestUrl,
-                rule,
+                filterId: rule.getFilterListId(),
+                ruleIndex: rule.getIndex(),
                 isModifyingCookieRule,
                 requestThirdParty,
                 timestamp: Date.now(),
                 requestType: ContentType.Cookie,
+                isAllowlist: rule.isAllowlist(),
+                isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                advancedModifier: rule.getAdvancedModifierValue(),
             },
         });
     }

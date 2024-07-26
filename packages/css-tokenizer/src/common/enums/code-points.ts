@@ -305,4 +305,24 @@ export const enum CodePoint {
      * U+0080 <control> Start of a control character range
      */
     ControlCharacterStart = 0x80,
+
+    /**
+     * U+D800 <surrogate> Start of a surrogate pair
+     */
+    LeadingSurrogateStart = 0xD800,
+
+    /**
+     * U+DBFF <surrogate> End of a surrogate pair
+     */
+    LeadingSurrogateEnd = 0xDBFF,
+
+    /**
+     * U+DC00 <surrogate> Start of a surrogate pair
+     */
+    TrailingSurrogateStart = 0xDC00,
+
+    /**
+     * U+DFFF <surrogate> End of a surrogate pair
+     */
+    TrailingSurrogateEnd = 0xDFFF,
 }

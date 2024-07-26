@@ -75,7 +75,7 @@ Build:
             pnpm --filter @adguard/dnr-rulesets clear
 
             pnpm clean
-  
+
             echo "Size after cleanup:" && du -h | tail -n 1
   artifacts:
     - name: dnr-rulesets.tgz

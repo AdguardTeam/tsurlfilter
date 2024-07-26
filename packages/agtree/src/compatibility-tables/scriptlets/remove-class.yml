@@ -1,0 +1,33 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_os_any|adg_ext_any:
+  name: remove-class
+  version_added: 1.1.1
+  aliases:
+    - remove-class.js
+    - ubo-remove-class.js
+    - rc.js
+    - ubo-rc.js
+    - ubo-remove-class
+    - ubo-rc
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#remove-class
+  parameters:
+    - name: classes
+      required: true
+    - name: selector
+      required: false
+    - name: applying
+      required: false
+
+ubo_any:
+  name: remove-class.js
+  aliases:
+    - rc.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
+  parameters:
+    - name: classes
+      required: true
+    - name: selector
+      required: false
+    - name: applying
+      required: false

@@ -2,11 +2,19 @@
  * @file Compatibility tables variables and types reexport.
  */
 
-export { getModifiersData } from './modifiers-data';
-
+export { modifiersCompatibilityTable } from './modifiers';
+export { redirectsCompatibilityTable } from './redirects';
+export { scriptletsCompatibilityTable } from './scriptlets';
+export * from './types';
+export * from './platforms';
+export type {
+    ProductRecords,
+    RowByProduct,
+    RowsByProduct,
+} from './base';
+export { parseRawPlatforms } from './schemas';
 export {
-    type ModifierData,
-    type ModifierDataMap,
-    type SpecificPlatformModifierData,
-    SpecificKey,
-} from './types';
+    isGenericPlatform,
+    getPlatformId,
+    getSpecificPlatformName,
+} from './utils/platform-helpers';

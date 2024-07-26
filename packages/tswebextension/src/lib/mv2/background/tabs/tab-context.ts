@@ -5,7 +5,12 @@ import type { Tabs } from 'webextension-polyfill';
 
 import { Frame, MAIN_FRAME_ID } from './frame';
 import type { DocumentApi } from '../document-api';
-import { type FilteringLog, defaultFilteringLog, isHttpOrWsRequest } from '../../../common';
+import {
+    type FilteringLog,
+    defaultFilteringLog,
+    isHttpOrWsRequest,
+    isHttpRequest,
+} from '../../../common';
 /**
  * We need tab id in the tab information, otherwise we do not process it.
  * For example developer tools tabs.
@@ -170,6 +175,11 @@ export class TabContext {
             requestUrl,
             requestType,
         } = requestContext;
+
+        // Ignore non-http requests.
+        if (!isHttpRequest(requestUrl)) {
+            return;
+        }
 
         if (requestType === RequestType.Document) {
             this.handleMainFrameRequest(requestUrl, requestId);

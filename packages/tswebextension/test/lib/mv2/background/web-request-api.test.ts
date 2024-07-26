@@ -1,6 +1,5 @@
-import { WebRequestApi } from '@lib/mv2/background/web-request-api';
+import { WebRequestApi } from '../../../../src/lib/mv2/background/web-request-api';
 
-// TODO
 describe('web request api', () => {
     it('start', () => {
         WebRequestApi.start();

@@ -1,5 +1,5 @@
-import type { ConfigurationMV2Context } from '@lib/mv2/background/configuration';
-import type { AppContext } from '@lib/mv2/background/context';
+import { type AppContext } from '../../../../../src/lib/mv2/background/context';
+import { type ConfigurationMV2Context } from '../../../../../src/lib';
 
 /**
  * Mock for {@link AppContext}.
@@ -10,4 +10,6 @@ export class MockAppContext implements AppContext {
     isStorageInitialized: boolean = false;
 
     configuration: ConfigurationMV2Context | undefined = undefined;
+
+    startTimeMs: number | undefined = undefined;
 }

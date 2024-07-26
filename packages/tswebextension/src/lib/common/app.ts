@@ -1,3 +1,4 @@
+import { type AnyRule } from '@adguard/agtree';
 import { type FilteringLogEvent } from './filtering-log';
 import { type EventChannelInterface } from './utils';
 
@@ -71,4 +72,14 @@ export interface AppInterface<
      * @returns Messages handler.
      */
     getMessageHandler: () => TMessageHandler;
+
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null;
 }

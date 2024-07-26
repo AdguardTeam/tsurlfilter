@@ -1,13 +1,19 @@
 import {
     MatchingResult,
-    NetworkRule,
     RequestType,
     HTTPMethod,
 } from '@adguard/tsurlfilter';
-import { RemoveHeadersService } from '@lib/mv2/background/services/remove-headers-service';
-import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
-import { FilteringEventType, ContentType } from '@lib/common';
+
+import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { getNetworkRuleFields } from '../helpers/rule-fields';
+import { RemoveHeadersService } from '../../../../../src/lib/mv2/background/services/remove-headers-service';
+import {
+    ContentType,
+    FilteringEventType,
+    type RequestContext,
+    RequestContextState,
+} from '../../../../../src/lib';
 
 describe('Headers service', () => {
     const mockFilteringLog = new MockFilteringLog();
@@ -70,7 +76,7 @@ describe('Headers service', () => {
             expect.objectContaining({ type: FilteringEventType.RemoveHeader }),
         );
         context.matchingResult = new MatchingResult([
-            new NetworkRule('||example.org^$removeheader=an-other', 0),
+            createNetworkRule('||example.org^$removeheader=an-other', 0),
         ], null);
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeFalsy();
@@ -79,7 +85,7 @@ describe('Headers service', () => {
         );
 
         context.matchingResult = new MatchingResult([
-            new NetworkRule('||example.org^$removeheader=resp_header_name', 0),
+            createNetworkRule('||example.org^$removeheader=resp_header_name', 0),
         ], null);
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeFalsy();
@@ -88,7 +94,7 @@ describe('Headers service', () => {
         );
 
         context.matchingResult = new MatchingResult([
-            new NetworkRule('||example.org^$removeheader=request:req_header_name', 0),
+            createNetworkRule('||example.org^$removeheader=request:req_header_name', 0),
         ], null);
         headersModified = runOnBeforeSendHeaders();
         expect(headersModified).toBeTruthy();
@@ -111,7 +117,7 @@ describe('Headers service', () => {
         );
 
         context.matchingResult = new MatchingResult([
-            new NetworkRule('||example.org^$removeheader=an-other', 0),
+            createNetworkRule('||example.org^$removeheader=an-other', 0),
         ], null);
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeFalsy();
@@ -120,7 +126,7 @@ describe('Headers service', () => {
         );
 
         context.matchingResult = new MatchingResult([
-            new NetworkRule('||example.org^$removeheader=request:req_header_name', 0),
+            createNetworkRule('||example.org^$removeheader=request:req_header_name', 0),
         ], null);
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeFalsy();
@@ -129,7 +135,7 @@ describe('Headers service', () => {
         );
 
         context.matchingResult = new MatchingResult([
-            new NetworkRule('||example.org^$removeheader=resp_header_name', 0),
+            createNetworkRule('||example.org^$removeheader=resp_header_name', 0),
         ], null);
         headersModified = runOnHeadersReceived();
         expect(headersModified).toBeTruthy();
@@ -142,8 +148,8 @@ describe('Headers service', () => {
         // Request headers cases
         it('Req: allowlists rules to prevent headers modifications', () => {
             context.matchingResult = new MatchingResult([
-                new NetworkRule('||example.com$removeheader=request:req_header_name', 0),
-                new NetworkRule('@@||example.com$removeheader=request:req_header_name', 0),
+                createNetworkRule('||example.com$removeheader=request:req_header_name', 0),
+                createNetworkRule('@@||example.com$removeheader=request:req_header_name', 0),
             ], null);
 
             const headersModified = runOnBeforeSendHeaders();
@@ -157,8 +163,8 @@ describe('Headers service', () => {
         it('Req: does not log allowlist rule if its modifier value header is not contained in context headers', () => {
             // Rule is considered applicable, if given headers list contains rule's modifiers header
             context.matchingResult = new MatchingResult([
-                new NetworkRule('||example.com$removeheader=request:non_applicable', 0),
-                new NetworkRule('@@||example.com$removeheader=request:non_applicable', 0),
+                createNetworkRule('||example.com$removeheader=request:non_applicable', 0),
+                createNetworkRule('@@||example.com$removeheader=request:non_applicable', 0),
             ], null);
 
             const headersModified = runOnBeforeSendHeaders();
@@ -170,8 +176,8 @@ describe('Headers service', () => {
         // Response headers cases
         it('Resp: allowlists rules to prevent headers modifications', () => {
             context.matchingResult = new MatchingResult([
-                new NetworkRule('||example.com$removeheader=resp_header_name', 0),
-                new NetworkRule('@@||example.com$removeheader=resp_header_name', 0),
+                createNetworkRule('||example.com$removeheader=resp_header_name', 0),
+                createNetworkRule('@@||example.com$removeheader=resp_header_name', 0),
             ], null);
 
             const headersModified = runOnHeadersReceived();
@@ -185,8 +191,8 @@ describe('Headers service', () => {
         it('Resp: does not log allowlist rule if its modifier value header is not contained in context headers', () => {
             // Rule is considered applicable, if given headers list contains rule's modifiers header
             context.matchingResult = new MatchingResult([
-                new NetworkRule('||example.com$removeheader=non_applicable', 0),
-                new NetworkRule('@@||example.com$removeheader=non_applicable', 0),
+                createNetworkRule('||example.com$removeheader=non_applicable', 0),
+                createNetworkRule('@@||example.com$removeheader=non_applicable', 0),
             ], null);
 
             const headersModified = runOnHeadersReceived();
@@ -196,12 +202,12 @@ describe('Headers service', () => {
         });
 
         it('does not log non-applicable allowlist rule if some other rules were applied before', () => {
-            const modifyingRule = new NetworkRule('||example.com$removeheader=resp_header_name', 0);
+            const modifyingRule = createNetworkRule('||example.com$removeheader=resp_header_name', 0);
             // Rule is considered applicable, if given headers list contains rule's modifiers header
             context.matchingResult = new MatchingResult([
                 modifyingRule,
-                new NetworkRule('||example.com$removeheader=non_applicable', 0),
-                new NetworkRule('@@||example.com$removeheader=non_applicable', 0),
+                createNetworkRule('||example.com$removeheader=non_applicable', 0),
+                createNetworkRule('@@||example.com$removeheader=non_applicable', 0),
             ], null);
 
             const headersModified = runOnHeadersReceived();
@@ -211,9 +217,7 @@ describe('Headers service', () => {
             expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
                 expect.objectContaining({
                     type: FilteringEventType.RemoveHeader,
-                    data: expect.objectContaining({
-                        rule: modifyingRule,
-                    }),
+                    data: expect.objectContaining(getNetworkRuleFields(modifyingRule)),
                 }),
             );
         });
@@ -221,7 +225,7 @@ describe('Headers service', () => {
 
     it('does not apply non-matching header modifier rules', () => {
         context.matchingResult = new MatchingResult([
-            new NetworkRule('||example.org^$header=test_name:NOT_test_value,removeheader=test_name', 0),
+            createNetworkRule('||example.org^$header=test_name:NOT_test_value,removeheader=test_name', 0),
         ], null);
         const headersModified = removeHeadersService.onHeadersReceived(context);
         expect(headersModified).toBeFalsy();

@@ -11,3 +11,4 @@
     - [ ] Adjustable parsing details
 - [ ] Memory benchmark, especially for the location properties (compare old and new parser)
 - [x] Performance benchmark, especially for zod validation
+- [ ] Integrate host rule parser into the main parser

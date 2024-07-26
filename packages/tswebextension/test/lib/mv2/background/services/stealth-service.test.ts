@@ -1,19 +1,19 @@
 import { type WebRequest } from 'webextension-polyfill';
 import { nanoid } from 'nanoid';
 import {
-    NetworkRule,
+    type NetworkRule,
     HTTPMethod,
     MatchingResult,
     RequestType,
     StealthOptionName,
 } from '@adguard/tsurlfilter';
 
-import { ContentType } from '@lib/common';
-import { type RequestContext, RequestContextState } from '@lib/mv2';
-import { StealthActions, StealthService } from '@lib/mv2/background/services/stealth-service';
-
-import type { AppContext } from '@lib/mv2/background/context';
+import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { type AppContext } from '../../../../../src/lib/mv2/background/context';
+import { StealthService } from '../../../../../src/lib/mv2/background/services/stealth-service';
+import { StealthActions } from '../../../../../src/lib/common/stealth-actions';
+import { ContentType, type RequestContext, RequestContextState } from '../../../../../src/lib';
 
 type TestAppContext = AppContext & { configuration: NonNullable<AppContext['configuration']> };
 describe('Stealth service', () => {
@@ -211,7 +211,7 @@ describe('Stealth service', () => {
                 expect(stealthActions & StealthActions.BlockChromeClientData).toBeTruthy();
 
                 context = getContextWithHeaders([referrerHeader], [
-                    new NetworkRule('@@||example.org$stealth', 0),
+                    createNetworkRule('@@||example.org$stealth', 0),
                 ]);
                 expect(service.processRequestHeaders(context)).toBe(StealthActions.None);
             });
@@ -239,7 +239,7 @@ describe('Stealth service', () => {
 
                 const context = getContextWithHeaders(
                     [referrerHeader, xClientDataHeader, searchQueryHeader],
-                    [new NetworkRule(rule, 0)],
+                    [createNetworkRule(rule, 0)],
                 );
                 const stealthActions = service.processRequestHeaders(context);
                 expect(stealthActions & StealthActions.BlockChromeClientData).toBeTruthy();

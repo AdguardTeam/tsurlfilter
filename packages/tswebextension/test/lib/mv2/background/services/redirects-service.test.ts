@@ -1,8 +1,13 @@
-import { RedirectsService } from '@lib/mv2/background/services/redirects/redirects-service';
-import { ResourcesService } from '@lib/mv2/background/services/resources-service';
+import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
+import { RedirectsService } from '../../../../../src/lib/mv2/background/services/redirects/redirects-service';
 
 jest.mock('@lib/mv2/background/services/resources-service', () => ({
     ...jest.requireActual('../mocks/resources-service-mock'),
+}));
+
+const browserDetectorMock = jest.requireMock('@lib/mv2/background/utils/browser-detector');
+jest.mock('@lib/mv2/background/utils/browser-detector', () => ({
+    isFirefox: false,
 }));
 
 describe('RedirectsService', () => {
@@ -77,5 +82,18 @@ describe('RedirectsService', () => {
         redirectSource = redirectsService.redirects!.getRedirect(redirectTitle);
         expectedDataUrl = `data:${redirectSource?.contentType},${redirectSource!.content}`;
         expect(dataUrl).toBe(expectedDataUrl);
+    });
+
+    it('Firefox still using the legacy URL', async () => {
+        const url = 'https://example.com';
+        const redirectTitle = '1x1-transparent.gif';
+
+        browserDetectorMock.isFirefox = true;
+
+        redirectsService = new RedirectsService(resourcesService);
+        await redirectsService.start();
+
+        redirectsService.createRedirectUrl(redirectTitle, url);
+        expect(resourcesService.createResourceUrl).toHaveBeenCalledWith(`redirects/${redirectTitle}`);
     });
 });

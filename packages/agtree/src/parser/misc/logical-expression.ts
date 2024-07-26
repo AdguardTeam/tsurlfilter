@@ -1,23 +1,59 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable max-classes-per-file */
 import { StringUtils } from '../../utils/string';
 import {
-    type Location,
+    BinaryTypeMap,
     type AnyExpressionNode,
     type AnyOperator,
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
+    type ExpressionOperatorNode,
 } from '../common';
 import {
     AMPERSAND,
     CLOSE_PARENTHESIS,
     EXCLAMATION_MARK,
+    NULL,
     OPEN_PARENTHESIS,
     PIPE,
     UNDERSCORE,
 } from '../../utils/constants';
-import { locRange, shiftLoc } from '../../utils/location';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { getParserOptions, type ParserOptions } from '../options';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { isUndefined } from '../../utils/type-guards';
+
+/**
+ * Property map for binary serialization.
+ */
+const enum VariableNodeBinaryPropMap {
+    Name = 1,
+    FrequentName,
+    Start,
+    End,
+}
+
+/**
+ * Property map for binary serialization.
+ */
+const enum OperatorNodeBinaryPropMap {
+    Operator = 1,
+    Left,
+    Right,
+    Start,
+    End,
+}
+
+/**
+ * Property map for binary serialization.
+ */
+const enum ParenthesisNodeBinaryPropMap {
+    Expression = 1,
+    Start,
+    End,
+}
 
 /**
  * Possible operators in the logical expression.
@@ -55,6 +91,83 @@ const OPERATOR_PRECEDENCE = {
     [OperatorValue.Or]: 1,
 };
 
+const OPERATOR_BINARY_MAP = new Map<AnyOperator, number>([
+    [OperatorValue.Not, 0],
+    [OperatorValue.And, 1],
+    [OperatorValue.Or, 2],
+]);
+
+const OPERATOR_BINARY_MAP_REVERSE = new Map<number, AnyOperator>(
+    Array.from(OPERATOR_BINARY_MAP).map(([key, value]) => [value, key]),
+);
+
+/**
+ * Gets the string representation of the operator from the binary representation.
+ *
+ * @param binary Binary representation of the operator
+ * @returns String representation of the operator
+ * @throws If the operator is unknown
+ */
+const getOperatorOrFail = (binary: number): AnyOperator => {
+    const operator = OPERATOR_BINARY_MAP_REVERSE.get(binary);
+    if (isUndefined(operator)) {
+        throw new Error(`Unknown operator: ${binary}`);
+    }
+    return operator;
+};
+
+/**
+ * Serialization map for known variables.
+ */
+const KNOWN_VARIABLES_MAP = new Map<string, number>([
+    ['ext_abp', 0],
+    ['ext_ublock', 1],
+    ['ext_ubol', 2],
+    ['ext_devbuild', 3],
+    ['env_chromium', 4],
+    ['env_edge', 5],
+    ['env_firefox', 6],
+    ['env_mobile', 7],
+    ['env_safari', 8],
+    ['env_mv3', 9],
+    ['false', 10],
+    ['cap_html_filtering', 11],
+    ['cap_user_stylesheet', 12],
+    ['adguard', 13],
+    ['adguard_app_windows', 14],
+    ['adguard_app_mac', 15],
+    ['adguard_app_android', 16],
+    ['adguard_app_ios', 17],
+    ['adguard_ext_safari', 18],
+    ['adguard_ext_chromium', 19],
+    ['adguard_ext_firefox', 20],
+    ['adguard_ext_edge', 21],
+    ['adguard_ext_opera', 22],
+    ['adguard_ext_android_cb', 23],
+]);
+
+/**
+ * Deserialization map for known variables.
+ */
+const KNOWN_VARIABLES_MAP_REVERSE = new Map<number, string>(
+    Array.from(KNOWN_VARIABLES_MAP).map(([key, value]) => [value, key]),
+);
+
+/**
+ * Gets the frequent name of the variable from the binary representation.
+ *
+ * @param binary Binary representation of the variable
+ * @returns Frequent name of the variable
+ * @throws If the variable is unknown
+ */
+const getFrequentNameOrFail = (binary: number): string => {
+    const name = KNOWN_VARIABLES_MAP_REVERSE.get(binary);
+    if (isUndefined(name)) {
+        throw new Error(`Unknown frequent name: ${binary}`);
+    }
+    return name;
+};
+
 /**
  * Represents a token in the expression.
  */
@@ -87,17 +200,16 @@ interface Token {
  * this parser will parse the expression `(adguard_ext_android_cb || adguard_ext_safari)`.
  */
 // TODO: Refactor this class
-export class LogicalExpressionParser {
+export class LogicalExpressionParser extends ParserBase {
     /**
      * Split the expression into tokens.
      *
      * @param raw Source code of the expression
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Token list
      * @throws {AdblockSyntaxError} If the expression is invalid
      */
-    private static tokenize(raw: string, options: Partial<ParserOptions> = {}): Token[] {
-        const { baseLoc } = getParserOptions(options);
+    private static tokenize(raw: string, baseOffset = 0): Token[] {
         const tokens: Token[] = [];
         let offset = 0;
 
@@ -149,7 +261,8 @@ export class LogicalExpressionParser {
                 } else {
                     throw new AdblockSyntaxError(
                         `Unexpected character "${char}"`,
-                        locRange(baseLoc, offset, offset + 1),
+                        baseOffset + offset,
+                        baseOffset + offset + 1,
                     );
                 }
             } else if (char === EXCLAMATION_MARK) {
@@ -163,7 +276,8 @@ export class LogicalExpressionParser {
             } else {
                 throw new AdblockSyntaxError(
                     `Unexpected character "${char}"`,
-                    locRange(baseLoc, offset, offset + 1),
+                    baseOffset + offset,
+                    baseOffset + offset + 1,
                 );
             }
         }
@@ -174,16 +288,16 @@ export class LogicalExpressionParser {
     /**
      * Parses a logical expression.
      *
-     * @param raw Source code of the expression
-     * @param options Parser options. See {@link ParserOptions}.
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns Parsed expression
      * @throws {AdblockSyntaxError} If the expression is invalid
      */
     // TODO: Create a separate TokenStream class
-    public static parse(raw: string, options: Partial<ParserOptions> = {}): AnyExpressionNode {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyExpressionNode {
         // Tokenize the source (produces an array of tokens)
-        const tokens = LogicalExpressionParser.tokenize(raw, options);
-        const { baseLoc, isLocIncluded } = getParserOptions(options);
+        const tokens = LogicalExpressionParser.tokenize(raw, baseOffset);
 
         // Current token index
         let tokenIndex = 0;
@@ -200,7 +314,8 @@ export class LogicalExpressionParser {
             if (!token) {
                 throw new AdblockSyntaxError(
                     `Expected token of type "${type}", but reached end of input`,
-                    locRange(baseLoc, 0, raw.length),
+                    baseOffset,
+                    baseOffset + raw.length,
                 );
             }
 
@@ -210,7 +325,8 @@ export class LogicalExpressionParser {
             if (token.type !== type) {
                 throw new AdblockSyntaxError(
                     `Expected token of type "${type}", but got "${token.type}"`,
-                    locRange(baseLoc, token.start, token.end),
+                    baseOffset + token.start,
+                    baseOffset + token.end,
                 );
             }
 
@@ -232,8 +348,9 @@ export class LogicalExpressionParser {
                 name: raw.slice(token.start, token.end),
             };
 
-            if (isLocIncluded) {
-                result.loc = locRange(baseLoc, token.start, token.end);
+            if (options.isLocIncluded) {
+                result.start = baseOffset + token.start;
+                result.end = baseOffset + token.end;
             }
 
             return result;
@@ -277,28 +394,9 @@ export class LogicalExpressionParser {
                     right,
                 };
 
-                if (isLocIncluded) {
-                    let start: Location;
-                    let end: Location;
-
-                    if (node.loc) {
-                        // no need to shift the node location, because it's already shifted
-                        start = node.loc.start;
-                    } else {
-                        start = shiftLoc(baseLoc, operatorToken.start);
-                    }
-
-                    if (right.loc) {
-                        // no need to shift the node location, because it's already shifted
-                        end = right.loc.end;
-                    } else {
-                        end = shiftLoc(baseLoc, operatorToken.end);
-                    }
-
-                    newNode.loc = {
-                        start,
-                        end,
-                    };
+                if (options.isLocIncluded) {
+                    newNode.start = node.start ?? baseOffset + operatorToken.start;
+                    newNode.end = right.end ?? baseOffset + operatorToken.end;
                 }
 
                 node = newNode;
@@ -323,8 +421,9 @@ export class LogicalExpressionParser {
                 expression,
             };
 
-            if (isLocIncluded) {
-                result.loc = expression.loc;
+            if (options.isLocIncluded) {
+                result.start = expression.start;
+                result.end = expression.end;
             }
 
             return result;
@@ -355,15 +454,14 @@ export class LogicalExpressionParser {
                     left: expression,
                 };
 
-                if (isLocIncluded) {
-                    if (expression.loc) {
-                        node.loc = {
-                            start: shiftLoc(baseLoc, token.start),
-                            // no need to shift the node location, because it's already shifted
-                            end: expression.loc.end,
-                        };
+                if (options.isLocIncluded) {
+                    if (expression.end) {
+                        node.start = baseOffset + token.start;
+                        // no need to shift the node location, because it's already shifted
+                        node.end = expression.end;
                     } else {
-                        node.loc = locRange(baseLoc, token.start, token.end);
+                        node.start = baseOffset + token.start;
+                        node.end = baseOffset + token.end;
                     }
                 }
             } else if (token.type === TokenType.Parenthesis && value === OPEN_PARENTHESIS) {
@@ -371,7 +469,8 @@ export class LogicalExpressionParser {
             } else {
                 throw new AdblockSyntaxError(
                     `Unexpected token "${value}"`,
-                    locRange(baseLoc, token.start, token.end),
+                    baseOffset + token.start,
+                    baseOffset + token.end,
                 );
             }
 
@@ -383,7 +482,8 @@ export class LogicalExpressionParser {
         if (tokenIndex !== tokens.length) {
             throw new AdblockSyntaxError(
                 `Unexpected token "${tokens[tokenIndex].type}"`,
-                locRange(baseLoc, tokens[tokenIndex].start, tokens[tokenIndex].end),
+                baseOffset + tokens[tokenIndex].start,
+                baseOffset + tokens[tokenIndex].end,
             );
         }
 
@@ -423,5 +523,278 @@ export class LogicalExpressionParser {
 
         // Theoretically, this shouldn't happen if the library is used correctly
         throw new Error('Unexpected node type');
+    }
+
+    /**
+     * Serializes a variable node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: create a common serialize / deserialize interface for such nodes (Variable, Value, Parameter, etc.)
+    private static serializeVariableNode(node: ExpressionVariableNode, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.ExpressionVariableNode);
+
+        const frequentName = KNOWN_VARIABLES_MAP.get(node.name);
+        if (!isUndefined(frequentName)) {
+            buffer.writeUint8(VariableNodeBinaryPropMap.FrequentName);
+            buffer.writeUint8(frequentName);
+        } else {
+            buffer.writeUint8(VariableNodeBinaryPropMap.Name);
+            buffer.writeString(node.name);
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(VariableNodeBinaryPropMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(VariableNodeBinaryPropMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Serializes a parenthesis node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    private static serializeParenthesisNode(node: ExpressionParenthesisNode, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.ExpressionParenthesisNode);
+
+        buffer.writeUint8(ParenthesisNodeBinaryPropMap.Expression);
+        LogicalExpressionParser.serialize(node.expression, buffer);
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(ParenthesisNodeBinaryPropMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(ParenthesisNodeBinaryPropMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Serializes an operator node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    private static serializeOperatorNode(node: ExpressionOperatorNode, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.ExpressionOperatorNode);
+
+        buffer.writeUint8(OperatorNodeBinaryPropMap.Operator);
+        const operatorBinary = OPERATOR_BINARY_MAP.get(node.operator);
+        if (isUndefined(operatorBinary)) {
+            throw new Error(`Unknown operator: ${node.operator}`);
+        }
+        buffer.writeUint8(operatorBinary);
+
+        buffer.writeUint8(OperatorNodeBinaryPropMap.Left);
+        LogicalExpressionParser.serialize(node.left, buffer);
+
+        if (node.right) {
+            buffer.writeUint8(OperatorNodeBinaryPropMap.Right);
+            LogicalExpressionParser.serialize(node.right, buffer);
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(OperatorNodeBinaryPropMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(OperatorNodeBinaryPropMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Serializes a logical expression node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    public static serialize(node: AnyExpressionNode, buffer: OutputByteBuffer): void {
+        switch (node.type) {
+            case NodeType.Variable:
+                LogicalExpressionParser.serializeVariableNode(node, buffer);
+                break;
+            case NodeType.Operator:
+                LogicalExpressionParser.serializeOperatorNode(node, buffer);
+                break;
+            case NodeType.Parenthesis:
+                LogicalExpressionParser.serializeParenthesisNode(node, buffer);
+                break;
+
+            default:
+                throw new Error(`Unexpected node type: ${node.type}`);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes a variable node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    private static deserializeVariableNode(buffer: InputByteBuffer, node: Partial<ExpressionVariableNode>): void {
+        buffer.assertUint8(BinaryTypeMap.ExpressionVariableNode);
+
+        node.type = NodeType.Variable;
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case VariableNodeBinaryPropMap.Name:
+                    node.name = buffer.readString();
+                    break;
+
+                case VariableNodeBinaryPropMap.FrequentName:
+                    node.name = getFrequentNameOrFail(buffer.readUint8());
+                    break;
+
+                case VariableNodeBinaryPropMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case VariableNodeBinaryPropMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+
+            prop = buffer.readUint8();
+        }
+    }
+
+    /**
+     * Deserializes a parenthesis node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    private static deserializeParenthesisNode(buffer: InputByteBuffer, node: Partial<ExpressionParenthesisNode>): void {
+        buffer.assertUint8(BinaryTypeMap.ExpressionParenthesisNode);
+
+        node.type = NodeType.Parenthesis;
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case ParenthesisNodeBinaryPropMap.Expression:
+                    LogicalExpressionParser.deserialize(buffer, node.expression = {} as AnyExpressionNode);
+                    break;
+
+                case ParenthesisNodeBinaryPropMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case ParenthesisNodeBinaryPropMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+
+            prop = buffer.readUint8();
+        }
+    }
+
+    /**
+     * Deserializes an operator node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    private static deserializeOperatorNode(buffer: InputByteBuffer, node: Partial<ExpressionOperatorNode>): void {
+        buffer.assertUint8(BinaryTypeMap.ExpressionOperatorNode);
+
+        node.type = NodeType.Operator;
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case OperatorNodeBinaryPropMap.Operator:
+                    node.operator = getOperatorOrFail(buffer.readUint8());
+                    break;
+
+                case OperatorNodeBinaryPropMap.Left:
+                    LogicalExpressionParser.deserialize(buffer, node.left = {} as AnyExpressionNode);
+                    break;
+
+                case OperatorNodeBinaryPropMap.Right:
+                    LogicalExpressionParser.deserialize(buffer, node.right = {} as AnyExpressionNode);
+                    break;
+
+                case OperatorNodeBinaryPropMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case OperatorNodeBinaryPropMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+
+            prop = buffer.readUint8();
+        }
+    }
+
+    /**
+     * Deserializes a logical expression node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<AnyExpressionNode>): void {
+        // note: we just do a simple lookahead here, because advancing the buffer is done in the
+        // 'sub-deserialize' methods
+        let type = buffer.peekUint8();
+        while (type !== NULL) {
+            switch (type) {
+                case BinaryTypeMap.ExpressionVariableNode:
+                    LogicalExpressionParser.deserializeVariableNode(buffer, node as Partial<ExpressionVariableNode>);
+                    break;
+
+                case BinaryTypeMap.ExpressionOperatorNode:
+                    LogicalExpressionParser.deserializeOperatorNode(buffer, node as Partial<ExpressionOperatorNode>);
+                    break;
+
+                case BinaryTypeMap.ExpressionParenthesisNode:
+                    // eslint-disable-next-line max-len
+                    LogicalExpressionParser.deserializeParenthesisNode(buffer, node as Partial<ExpressionParenthesisNode>);
+                    break;
+
+                default:
+                    throw new Error(`Unexpected node type: ${type}`);
+            }
+
+            type = buffer.peekUint8();
+        }
+
+        // consume NULL
+        buffer.readUint8();
     }
 }

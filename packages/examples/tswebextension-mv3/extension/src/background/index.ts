@@ -59,6 +59,7 @@ const messageHandler = async (message: IMessage) => {
             const res: ConfigResponse = {
                 status: isStarted || false,
                 filters: config.staticFiltersIds,
+                // FIXME (David): Handle this userrules as UInt8Array
                 rules: config.userrules,
             };
 
@@ -100,6 +101,7 @@ const messageHandler = async (message: IMessage) => {
             return isStarted;
         }
         case Message.ApplyUserRules: {
+            // FIXME (David): Handle this userrules as UInt8Array
             config.userrules = (data as string).split('\n');
 
             await tsWebExtension.configure(config);

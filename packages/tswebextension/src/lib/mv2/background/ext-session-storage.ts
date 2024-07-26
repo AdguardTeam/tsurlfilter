@@ -6,11 +6,13 @@ import { MemoryStorage } from './memory-storage';
 export const enum SessionStorageKey {
     IsAppStarted = 'isAppStarted',
     Configuration = 'configuration',
+    StartTimeMs = 'startTimeMs',
 }
 
 export type SessionStorageSchema = {
     [SessionStorageKey.IsAppStarted]: boolean,
     [SessionStorageKey.Configuration]: ConfigurationMV2Context | undefined,
+    [SessionStorageKey.StartTimeMs]: number | undefined,
 };
 
 /**
@@ -22,6 +24,7 @@ export class ExtSessionStorage extends ExtensionStorage<SessionStorageSchema> {
     static readonly #DEFAULT_DATA: SessionStorageSchema = {
         isAppStarted: false,
         configuration: undefined,
+        startTimeMs: undefined,
     };
 
     /**

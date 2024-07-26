@@ -1,8 +1,9 @@
-import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
-import { CspService } from '@lib/mv2/background/services/csp-service';
-import { type RequestContext } from '@lib/mv2/background/request';
-import { FilteringEventType, ContentType } from '@lib/common';
+import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
+
+import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { CspService } from '../../../../../src/lib/mv2/background/services/csp-service';
+import { ContentType, FilteringEventType, type RequestContext } from '../../../../../src/lib';
 
 describe('Content Security Policy service', () => {
     const mockFilteringLog = new MockFilteringLog();
@@ -40,7 +41,7 @@ describe('Content Security Policy service', () => {
 
     it('correctly applies matching header modifier rules', () => {
         context.matchingResult = new MatchingResult([
-            new NetworkRule(String.raw`||example.org^$header=test_name:test_value,csp=frame-src 'none'`, 0),
+            createNetworkRule(String.raw`||example.org^$header=test_name:test_value,csp=frame-src 'none'`, 0),
         ], null);
         const headersModified = runOnHeadersReceived();
         expect(headersModified).toBeTruthy();
@@ -51,7 +52,7 @@ describe('Content Security Policy service', () => {
 
     it('does not apply non-matching header modifier rules', () => {
         context.matchingResult = new MatchingResult([
-            new NetworkRule(String.raw`||example.org^$header=NOT_test_name:test_value,csp=frame-src 'none'`, 0),
+            createNetworkRule(String.raw`||example.org^$header=NOT_test_name:test_value,csp=frame-src 'none'`, 0),
         ], null);
         const headersModified = runOnHeadersReceived();
         expect(headersModified).toBeFalsy();
@@ -62,8 +63,8 @@ describe('Content Security Policy service', () => {
 
     it('allowlists rules', () => {
         context.matchingResult = new MatchingResult([
-            new NetworkRule('||example.com$csp=style-src *', 0),
-            new NetworkRule('@@||example.com$csp=style-src *', 0),
+            createNetworkRule('||example.com$csp=style-src *', 0),
+            createNetworkRule('@@||example.com$csp=style-src *', 0),
         ], null);
         const hasModified = cspService.onHeadersReceived(context);
 

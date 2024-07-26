@@ -2,8 +2,10 @@ import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative
 import browser from 'webextension-polyfill';
 
 import { LogLevel } from '@adguard/logger';
-import { type AppInterface, defaultFilteringLog } from '../../common';
-import { getErrorMessage } from '../../common';
+import { type AnyRule } from '@adguard/agtree';
+import { defaultFilteringLog } from '../../common/filtering-log';
+import { type AppInterface } from '../../common/app';
+import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
@@ -271,6 +273,7 @@ export class TsWebExtension implements AppInterface<
 
             // Convert custom filters and user rules into one rule set and apply it
             res.dynamicRules = await UserRulesApi.updateDynamicFiltering(
+                // FIXME: (David, v3.0): Handle this later
                 configuration.userrules,
                 combinedAllowlistRules,
                 customFilters,
@@ -613,27 +616,6 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * TODO implement this method later if needed
-     * Sets prebuild local script rules.
-     *
-     * @param localScriptRules JSON object with pre-build JS rules.
-     * @param localScriptRules.comment Comment for the rules.
-     * @param localScriptRules.rules List of rules.
-     * @see {@link LocalScriptRulesService}
-     *
-     */
-    // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
-    public setLocalScriptRules(localScriptRules: {
-        comment: string, // TODO extract type to common
-        rules: {
-            domains: string,
-            script: string,
-        }[],
-    }): void {
-        logger.debug('[tswebextension.setLocalScriptRules]: mv3 does not support setLocalScriptRules yet');
-    }
-
-    /**
      * Updates the log level.
      *
      * @param logLevel Log level.
@@ -644,5 +626,20 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             logger.currentLevel = LogLevel.Info;
         }
+    }
+
+    // TODO: Implement this method.
+    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
+    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        throw new Error('Method not implemented.');
     }
 }

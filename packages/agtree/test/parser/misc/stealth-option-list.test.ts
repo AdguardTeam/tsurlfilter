@@ -11,18 +11,8 @@ describe('StealthOptionListParser', () => {
                 actual: EMPTY,
                 expected: {
                     type: ListNodeType.StealthOptionList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                    },
+                    start: 0,
+                    end: 0,
                     separator: '|',
                     children: [],
                 },
@@ -32,34 +22,14 @@ describe('StealthOptionListParser', () => {
                 actual: 'dpi',
                 expected: {
                     type: ListNodeType.StealthOptionList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                    },
+                    start: 0,
+                    end: 3,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.StealthOption,
-                            loc: {
-                                start: {
-                                    offset: 0,
-                                    line: 1,
-                                    column: 1,
-                                },
-                                end: {
-                                    offset: 3,
-                                    line: 1,
-                                    column: 4,
-                                },
-                            },
+                            start: 0,
+                            end: 3,
                             value: 'dpi',
                             exception: false,
                         },
@@ -71,68 +41,28 @@ describe('StealthOptionListParser', () => {
                 actual: 'dpi|push|ip',
                 expected: {
                     type: ListNodeType.StealthOptionList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 11,
-                            line: 1,
-                            column: 12,
-                        },
-                    },
+                    start: 0,
+                    end: 11,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.StealthOption,
-                            loc: {
-                                start: {
-                                    offset: 0,
-                                    line: 1,
-                                    column: 1,
-                                },
-                                end: {
-                                    offset: 3,
-                                    line: 1,
-                                    column: 4,
-                                },
-                            },
+                            start: 0,
+                            end: 3,
                             value: 'dpi',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.StealthOption,
-                            loc: {
-                                start: {
-                                    offset: 4,
-                                    line: 1,
-                                    column: 5,
-                                },
-                                end: {
-                                    offset: 8,
-                                    line: 1,
-                                    column: 9,
-                                },
-                            },
+                            start: 4,
+                            end: 8,
                             value: 'push',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.StealthOption,
-                            loc: {
-                                start: {
-                                    offset: 9,
-                                    line: 1,
-                                    column: 10,
-                                },
-                                end: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                            },
+                            start: 9,
+                            end: 11,
                             value: 'ip',
                             exception: false,
                         },
@@ -144,68 +74,28 @@ describe('StealthOptionListParser', () => {
                 actual: '~dpi|push|~ip',
                 expected: {
                     type: ListNodeType.StealthOptionList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 13,
-                            line: 1,
-                            column: 14,
-                        },
-                    },
+                    start: 0,
+                    end: 13,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.StealthOption,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 4,
-                                    line: 1,
-                                    column: 5,
-                                },
-                            },
+                            start: 1,
+                            end: 4,
                             value: 'dpi',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.StealthOption,
-                            loc: {
-                                start: {
-                                    offset: 5,
-                                    line: 1,
-                                    column: 6,
-                                },
-                                end: {
-                                    offset: 9,
-                                    line: 1,
-                                    column: 10,
-                                },
-                            },
+                            start: 5,
+                            end: 9,
                             value: 'push',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.StealthOption,
-                            loc: {
-                                start: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                                end: {
-                                    offset: 13,
-                                    line: 1,
-                                    column: 14,
-                                },
-                            },
+                            start: 11,
+                            end: 13,
                             value: 'ip',
                             exception: true,
                         },
@@ -217,68 +107,28 @@ describe('StealthOptionListParser', () => {
                 actual: '~dpi|  push    |   ip',
                 expected: {
                     type: ListNodeType.StealthOptionList,
-                    loc: {
-                        start: {
-                            offset: 0,
-                            line: 1,
-                            column: 1,
-                        },
-                        end: {
-                            offset: 21,
-                            line: 1,
-                            column: 22,
-                        },
-                    },
+                    start: 0,
+                    end: 21,
                     separator: '|',
                     children: [
                         {
                             type: ListItemNodeType.StealthOption,
-                            loc: {
-                                start: {
-                                    offset: 1,
-                                    line: 1,
-                                    column: 2,
-                                },
-                                end: {
-                                    offset: 4,
-                                    line: 1,
-                                    column: 5,
-                                },
-                            },
+                            start: 1,
+                            end: 4,
                             value: 'dpi',
                             exception: true,
                         },
                         {
                             type: ListItemNodeType.StealthOption,
-                            loc: {
-                                start: {
-                                    offset: 7,
-                                    line: 1,
-                                    column: 8,
-                                },
-                                end: {
-                                    offset: 11,
-                                    line: 1,
-                                    column: 12,
-                                },
-                            },
+                            start: 7,
+                            end: 11,
                             value: 'push',
                             exception: false,
                         },
                         {
                             type: ListItemNodeType.StealthOption,
-                            loc: {
-                                start: {
-                                    offset: 19,
-                                    line: 1,
-                                    column: 20,
-                                },
-                                end: {
-                                    offset: 21,
-                                    line: 1,
-                                    column: 22,
-                                },
-                            },
+                            start: 19,
+                            end: 21,
                             value: 'ip',
                             exception: false,
                         },

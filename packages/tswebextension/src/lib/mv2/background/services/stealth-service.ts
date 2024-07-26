@@ -1,5 +1,5 @@
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import { StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
+import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
 import { type WebRequest } from 'webextension-polyfill';
 
 import { findHeaderByName, getHost, isThirdPartyRequest } from '../../../common/utils';
@@ -10,23 +10,10 @@ import {
 } from '../../../common/filtering-log';
 import type { StealthConfig } from '../../../common/configuration';
 import { StealthHelper } from '../../../common/stealth-helper';
+import { StealthActions } from '../../../common/stealth-actions';
 
 import type { RequestContext } from '../request';
 import type { AppContext } from '../context';
-
-/**
- * Stealth action bitwise masks used on the background page and on the filtering log page.
- */
-export enum StealthActions {
-    None = 0,
-    HideReferrer = 1 << 0,
-    HideSearchQueries = 1 << 1,
-    BlockChromeClientData = 1 << 2,
-    SendDoNotTrack = 1 << 3,
-    // TODO check where this enums are used, and add comments
-    FirstPartyCookies = 1 << 4,
-    ThirdPartyCookies = 1 << 5,
-}
 
 /**
  * Stealth service module.
@@ -105,6 +92,7 @@ export class StealthService {
      *
      * @returns Strings of cookie rules.
      */
+    // TODO (David): Change to AST-based rule creation.
     public getCookieRulesTexts(): string[] {
         const result: string[] = [];
 
@@ -211,7 +199,16 @@ export class StealthService {
                 data: {
                     tabId,
                     eventId,
-                    rules: Array.from(appliedAllowlistRules),
+                    rules: Array.from(appliedAllowlistRules).map((rule) => ({
+                        filterId: rule.getFilterListId(),
+                        ruleIndex: rule.getIndex(),
+                        isAllowlist: rule.isAllowlist(),
+                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                        advancedModifier: rule.getAdvancedModifierValue(),
+                    })),
                     requestUrl,
                     frameUrl: referrerUrl,
                     requestType: contentType,

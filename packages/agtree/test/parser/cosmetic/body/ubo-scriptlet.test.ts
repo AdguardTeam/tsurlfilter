@@ -1,8 +1,7 @@
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { defaultLocation, type ScriptletInjectionRuleBody } from '../../../../src/parser/common';
+import { type ScriptletInjectionRuleBody } from '../../../../src/parser/common';
 import { UboScriptletInjectionBodyParser } from '../../../../src/parser/cosmetic/body/ubo-scriptlet';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
-import { shiftLoc } from '../../../../src/utils/location';
 
 describe('UboScriptletInjectionBodyParser', () => {
     describe('UboScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -13,15 +12,15 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`'a\'b'`),
+                                ...context.getRangeFor(String.raw`'a\'b'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`'a\'b'`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'a\'b'`),
                                         value: String.raw`'a\'b'`,
                                     },
                                 ],
@@ -35,15 +34,15 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`"a\"b"`),
+                                ...context.getRangeFor(String.raw`"a\"b"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`"a\"b"`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`"a\"b"`),
                                         value: String.raw`"a\"b"`,
                                     },
                                 ],
@@ -59,15 +58,15 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`'a"b'`),
+                                ...context.getRangeFor(String.raw`'a"b'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`'a"b'`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'a"b'`),
                                         value: String.raw`'a"b'`,
                                     },
                                 ],
@@ -81,15 +80,15 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`"a'b"`),
+                                ...context.getRangeFor(String.raw`"a'b"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`"a'b"`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`"a'b"`),
                                         value: String.raw`"a'b"`,
                                     },
                                 ],
@@ -105,15 +104,15 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`'scriptlet0'`),
+                                ...context.getRangeFor(String.raw`'scriptlet0'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`'scriptlet0'`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'scriptlet0'`),
                                         value: String.raw`'scriptlet0'`,
                                     },
                                 ],
@@ -128,15 +127,15 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw` 'scriptlet0' `),
+                                ...context.getRangeFor(String.raw` 'scriptlet0' `),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`'scriptlet0'`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'scriptlet0'`),
                                         value: String.raw`'scriptlet0'`,
                                     },
                                 ],
@@ -150,15 +149,15 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`"scriptlet0"`),
+                                ...context.getRangeFor(String.raw`"scriptlet0"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`"scriptlet0"`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`"scriptlet0"`),
                                         value: String.raw`"scriptlet0"`,
                                     },
                                 ],
@@ -172,20 +171,20 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw` scriptlet0 , arg0 `),
+                                ...context.getRangeFor(String.raw` scriptlet0 , arg0 `),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`scriptlet0`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: 'scriptlet0',
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`arg0`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`arg0`),
                                         value: 'arg0',
                                     },
                                 ],
@@ -199,25 +198,25 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`scriptlet0, arg0, arg1`),
+                                ...context.getRangeFor(String.raw`scriptlet0, arg0, arg1`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`scriptlet0`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: 'scriptlet0',
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`arg0`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`arg0`),
                                         value: 'arg0',
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`arg1`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`arg1`),
                                         value: 'arg1',
                                     },
                                 ],
@@ -231,25 +230,25 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`scriptlet0, arg00\,arg01, arg1`),
+                                ...context.getRangeFor(String.raw`scriptlet0, arg00\,arg01, arg1`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`scriptlet0`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: 'scriptlet0',
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`arg00\,arg01`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`arg00\,arg01`),
                                         value: String.raw`arg00\,arg01`,
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`arg1`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`arg1`),
                                         value: 'arg1',
                                     },
                                 ],
@@ -263,35 +262,35 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`scriptlet0, 'arg0', "arg1", /arg2/, arg3`),
+                                ...context.getRangeFor(String.raw`scriptlet0, 'arg0', "arg1", /arg2/, arg3`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`scriptlet0`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: 'scriptlet0',
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`'arg0'`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'arg0'`),
                                         value: "'arg0'",
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`"arg1"`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`"arg1"`),
                                         value: '"arg1"',
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`/arg2/`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`/arg2/`),
                                         value: '/arg2/',
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`arg3`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`arg3`),
                                         value: 'arg3',
                                     },
                                 ],
@@ -305,30 +304,30 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`scriptlet0, 'ar\'g0', "ar\"g1", /ar\/g2/`),
+                                ...context.getRangeFor(String.raw`scriptlet0, 'ar\'g0', "ar\"g1", /ar\/g2/`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`scriptlet0`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`scriptlet0`),
                                         value: 'scriptlet0',
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`'ar\'g0'`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'ar\'g0'`),
                                         value: String.raw`'ar\'g0'`,
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`"ar\"g1"`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`"ar\"g1"`),
                                         value: String.raw`"ar\"g1"`,
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`/ar\/g2/`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`/ar\/g2/`),
                                         value: String.raw`/ar\/g2/`,
                                     },
                                 ],
@@ -342,25 +341,25 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`'scriptlet0', 'arg0', 'arg1'`),
+                                ...context.getRangeFor(String.raw`'scriptlet0', 'arg0', 'arg1'`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`'scriptlet0'`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'scriptlet0'`),
                                         value: "'scriptlet0'",
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`'arg0'`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'arg0'`),
                                         value: "'arg0'",
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`'arg1'`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'arg1'`),
                                         value: "'arg1'",
                                     },
                                 ],
@@ -374,25 +373,25 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
                     return {
                         type: 'ScriptletInjectionRuleBody',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                         children: [
                             {
                                 type: 'ParameterList',
-                                loc: context.getLocRangeFor(String.raw`"scriptlet0", "arg0", "arg1"`),
+                                ...context.getRangeFor(String.raw`"scriptlet0", "arg0", "arg1"`),
                                 children: [
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`"scriptlet0"`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`"scriptlet0"`),
                                         value: '"scriptlet0"',
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`"arg0"`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`"arg0"`),
                                         value: '"arg0"',
                                     },
                                     {
-                                        type: 'Parameter',
-                                        loc: context.getLocRangeFor(String.raw`"arg1"`),
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`"arg1"`),
                                         value: '"arg1"',
                                     },
                                 ],
@@ -415,7 +414,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         UboScriptletInjectionBodyParser.ERROR_MESSAGES.NO_SCRIPTLET_MASK,
-                        context.getFullLocRange(),
+                        ...context.toTuple(context.getFullRange()),
                     );
                 },
             },
@@ -426,10 +425,8 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         UboScriptletInjectionBodyParser.ERROR_MESSAGES.NO_OPENING_PARENTHESIS,
-                        {
-                            start: shiftLoc(defaultLocation, context.actual.length),
-                            end: shiftLoc(defaultLocation, context.actual.length),
-                        },
+                        context.actual.length,
+                        context.actual.length,
                     );
                 },
             },
@@ -439,7 +436,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         UboScriptletInjectionBodyParser.ERROR_MESSAGES.NO_OPENING_PARENTHESIS,
-                        context.getLocRangeFor(String.raw`arg0`),
+                        ...context.toTuple(context.getRangeFor(String.raw`arg0`)),
                     );
                 },
             },
@@ -450,7 +447,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         UboScriptletInjectionBodyParser.ERROR_MESSAGES.WHITESPACE_AFTER_MASK,
-                        context.getLocRangeFor(String.raw` ('scriptlet')`),
+                        ...context.toTuple(context.getRangeFor(String.raw` ('scriptlet')`)),
                     );
                 },
             },
@@ -461,7 +458,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         UboScriptletInjectionBodyParser.ERROR_MESSAGES.NO_CLOSING_PARENTHESIS,
-                        context.getLocRangeFor(String.raw`('scriptlet'`),
+                        ...context.toTuple(context.getRangeFor(String.raw`('scriptlet'`)),
                     );
                 },
             },
@@ -471,7 +468,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         UboScriptletInjectionBodyParser.ERROR_MESSAGES.NO_CLOSING_PARENTHESIS,
-                        context.getLocRangeFor(String.raw`('scriptlet'\)`),
+                        ...context.toTuple(context.getRangeFor(String.raw`('scriptlet'\)`)),
                     );
                 },
             },
@@ -482,7 +479,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         UboScriptletInjectionBodyParser.ERROR_MESSAGES.NO_SCRIPTLET_NAME,
-                        context.getLocRangeFor(String.raw`(, 'arg0')`),
+                        ...context.toTuple(context.getRangeFor(String.raw`(, 'arg0')`)),
                     );
                 },
             },
@@ -492,7 +489,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         UboScriptletInjectionBodyParser.ERROR_MESSAGES.NO_SCRIPTLET_NAME,
-                        context.getLocRangeFor(String.raw`( , 'arg0')`),
+                        ...context.toTuple(context.getRangeFor(String.raw`( , 'arg0')`)),
                     );
                 },
             },
@@ -508,7 +505,8 @@ describe('UboScriptletInjectionBodyParser', () => {
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
             expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('loc', expected.loc);
+            expect(error).toHaveProperty('start', expected.start);
+            expect(error).toHaveProperty('end', expected.end);
         });
     });
 
@@ -581,6 +579,17 @@ describe('UboScriptletInjectionBodyParser', () => {
             }
 
             expect(UboScriptletInjectionBodyParser.generate(ruleNode)).toBe(expected);
+        });
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '+js()',
+            "+js('scriptlet0')",
+            "+js('scriptlet0', 'arg0', 'arg1')",
+            '+js(scriptlet0, arg0, arg1)',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(UboScriptletInjectionBodyParser);
         });
     });
 });

@@ -1,6 +1,7 @@
 import { z as zod } from 'zod';
 import { LogLevel } from '@adguard/logger';
 
+import { filterListSourceMapValidator } from '@adguard/tsurlfilter';
 import { version } from '../../../package.json';
 
 export const TSWEBEXTENSION_VERSION = version;
@@ -73,6 +74,24 @@ export const stealthConfigValidator = zod.object({
  * This type is inferred from the {@link stealthConfigValidator} schema.
  */
 export type StealthConfig = zod.infer<typeof stealthConfigValidator>;
+
+/**
+ * Filter list configuration validator for MV2.
+ */
+export const basicFilterValidator = zod.object({
+    /**
+     * Filter list text content.
+     */
+    // TODO: change to byte buffer
+    content: zod.array(zod.instanceof(Uint8Array)),
+
+    /**
+     * Source map.
+     */
+    sourceMap: filterListSourceMapValidator.optional(),
+});
+
+export type BasicFilterValidator = zod.infer<typeof basicFilterValidator>;
 
 /**
  * Settings configuration schema.
@@ -149,7 +168,7 @@ export const configurationValidator = zod.object({
     /**
      * List of rules added by user.
      */
-    userrules: zod.string().array(),
+    userrules: basicFilterValidator,
 
     /**
      * Flag responsible for logging.

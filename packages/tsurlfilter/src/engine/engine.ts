@@ -119,7 +119,7 @@ export class Engine {
          * AG-12694
          */
         if (frameRule) {
-            cacheKey += `#${frameRule.getText()}`;
+            cacheKey += `#${frameRule.getIndex()}`;
         }
 
         const res = this.resultCache.get(cacheKey);

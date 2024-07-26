@@ -23,14 +23,14 @@ describe('UboSelectorParser', () => {
                     selector: {
                         type: 'Value',
                         value: EMPTY,
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     },
                     modifiers: {
                         type: 'ModifierList',
                         children: [],
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     },
-                    loc: context.getFullLocRange(),
+                    ...context.getFullRange(),
                 }),
             },
             {
@@ -41,14 +41,14 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: SPACE,
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
                             children: [],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     }),
             },
             // tricky case - in this case, parser will run, because it finds an indicator
@@ -60,14 +60,14 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: '[a=":style(padding:0)"]',
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
                             children: [],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     }),
             },
 
@@ -79,14 +79,14 @@ describe('UboSelectorParser', () => {
                     selector: {
                         type: 'Value',
                         value: 'div',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     },
                     modifiers: {
                         type: 'ModifierList',
                         children: [],
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     },
-                    loc: context.getFullLocRange(),
+                    ...context.getFullRange(),
                 }),
             },
 
@@ -97,14 +97,14 @@ describe('UboSelectorParser', () => {
                     selector: {
                         type: 'Value',
                         value: '*:has(> [ad])',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     },
                     modifiers: {
                         type: 'ModifierList',
                         children: [],
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     },
-                    loc: context.getFullLocRange(),
+                    ...context.getFullRange(),
                 }),
             },
 
@@ -117,7 +117,7 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: 'div',
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
@@ -127,20 +127,20 @@ describe('UboSelectorParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'style',
-                                        loc: context.getLocRangeFor('style'),
+                                        ...context.getRangeFor('style'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: '',
-                                        loc: context.getLocRangeBetween('(', ')'),
+                                        ...context.getRangeBetween('(', ')'),
                                     },
                                     exception: false,
-                                    loc: context.getLocRangeFor(':style()'),
+                                    ...context.getRangeFor(':style()'),
                                 },
                             ],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -154,7 +154,7 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: 'div',
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
@@ -164,20 +164,20 @@ describe('UboSelectorParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'style',
-                                        loc: context.getLocRangeFor('style'),
+                                        ...context.getRangeFor('style'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: ' ',
-                                        loc: context.getLocRangeFor(' '),
+                                        ...context.getRangeFor(' '),
                                     },
                                     exception: false,
-                                    loc: context.getLocRangeFor(':style( )'),
+                                    ...context.getRangeFor(':style( )'),
                                 },
                             ],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -191,7 +191,7 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: 'div',
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
@@ -201,20 +201,20 @@ describe('UboSelectorParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'style',
-                                        loc: context.getLocRangeFor('style'),
+                                        ...context.getRangeFor('style'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: '',
-                                        loc: context.getLocRangeBetween('(', ')'),
+                                        ...context.getRangeBetween('(', ')'),
                                     },
                                     exception: false,
-                                    loc: context.getLocRangeFor(':style()'),
+                                    ...context.getRangeFor(':style()'),
                                 },
                             ],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -227,7 +227,7 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: 'div',
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
@@ -237,20 +237,20 @@ describe('UboSelectorParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'style',
-                                        loc: context.getLocRangeFor('style'),
+                                        ...context.getRangeFor('style'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: 'padding:0',
-                                        loc: context.getLocRangeFor('padding:0'),
+                                        ...context.getRangeFor('padding:0'),
                                     },
                                     exception: false,
-                                    loc: context.getLocRangeFor(':style(padding:0)'),
+                                    ...context.getRangeFor(':style(padding:0)'),
                                 },
                             ],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -264,7 +264,7 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: 'div',
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
@@ -274,20 +274,20 @@ describe('UboSelectorParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'remove',
-                                        loc: context.getLocRangeFor('remove'),
+                                        ...context.getRangeFor('remove'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: '',
-                                        loc: context.getLocRangeBetween('(', ')'),
+                                        ...context.getRangeBetween('(', ')'),
                                     },
                                     exception: false,
-                                    loc: context.getLocRangeFor(':remove()'),
+                                    ...context.getRangeFor(':remove()'),
                                 },
                             ],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -301,7 +301,7 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: 'div',
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
@@ -311,20 +311,20 @@ describe('UboSelectorParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'remove',
-                                        loc: context.getLocRangeFor('remove'),
+                                        ...context.getRangeFor('remove'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: ' ',
-                                        loc: context.getLocRangeFor(' '),
+                                        ...context.getRangeFor(' '),
                                     },
                                     exception: false,
-                                    loc: context.getLocRangeFor(':remove( )'),
+                                    ...context.getRangeFor(':remove( )'),
                                 },
                             ],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -338,7 +338,7 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: 'div',
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
@@ -348,20 +348,20 @@ describe('UboSelectorParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'remove',
-                                        loc: context.getLocRangeFor('remove'),
+                                        ...context.getRangeFor('remove'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: '',
-                                        loc: context.getLocRangeBetween('(', ')'),
+                                        ...context.getRangeBetween('(', ')'),
                                     },
                                     exception: false,
-                                    loc: context.getLocRangeFor(':remove()'),
+                                    ...context.getRangeFor(':remove()'),
                                 },
                             ],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -375,7 +375,7 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: '',
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
@@ -385,21 +385,21 @@ describe('UboSelectorParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'matches-path',
-                                        loc: context.getLocRangeFor('matches-path'),
+                                        ...context.getRangeFor('matches-path'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: '/path',
                                         // eslint-disable-next-line max-len
-                                        loc: context.getLocRangeFor('/path'),
+                                        ...context.getRangeFor('/path'),
                                     },
                                     exception: true,
-                                    loc: context.getLocRangeFor(':not(:matches-path(/path))'),
+                                    ...context.getRangeFor(':not(:matches-path(/path))'),
                                 },
                             ],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -413,7 +413,7 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: EMPTY,
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
@@ -423,20 +423,20 @@ describe('UboSelectorParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'matches-path',
-                                        loc: context.getLocRangeFor('matches-path'),
+                                        ...context.getRangeFor('matches-path'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: '/path',
-                                        loc: context.getLocRangeFor('/path'),
+                                        ...context.getRangeFor('/path'),
                                     },
                                     exception: false,
-                                    loc: context.getLocRangeFor(':not(:not(:matches-path(/path)))'),
+                                    ...context.getRangeFor(':not(:not(:matches-path(/path)))'),
                                 },
                             ],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -450,7 +450,7 @@ describe('UboSelectorParser', () => {
                         selector: {
                             type: 'Value',
                             value: EMPTY,
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
                         modifiers: {
                             type: 'ModifierList',
@@ -460,20 +460,20 @@ describe('UboSelectorParser', () => {
                                     name: {
                                         type: 'Value',
                                         value: 'matches-path',
-                                        loc: context.getLocRangeFor('matches-path'),
+                                        ...context.getRangeFor('matches-path'),
                                     },
                                     value: {
                                         type: 'Value',
                                         value: '/path',
-                                        loc: context.getLocRangeFor('/path'),
+                                        ...context.getRangeFor('/path'),
                                     },
                                     exception: true,
-                                    loc: context.getLocRangeFor(':not(:not(:not(:matches-path(/path))))'),
+                                    ...context.getRangeFor(':not(:not(:not(:matches-path(/path))))'),
                                 },
                             ],
-                            loc: context.getFullLocRange(),
+                            ...context.getFullRange(),
                         },
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     };
                 },
             },
@@ -487,7 +487,7 @@ describe('UboSelectorParser', () => {
                     selector: {
                         type: 'Value',
                         value: 'div:has(> [ad])',
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     },
                     modifiers: {
                         type: 'ModifierList',
@@ -497,50 +497,50 @@ describe('UboSelectorParser', () => {
                                 name: {
                                     type: 'Value',
                                     value: 'matches-media',
-                                    loc: context.getLocRangeFor('matches-media'),
+                                    ...context.getRangeFor('matches-media'),
                                 },
                                 value: {
                                     type: 'Value',
                                     value: '(min-width: 1000px)',
-                                    loc: context.getLocRangeFor('(min-width: 1000px)'),
+                                    ...context.getRangeFor('(min-width: 1000px)'),
                                 },
                                 exception: false,
-                                loc: context.getLocRangeFor(':matches-media((min-width: 1000px))'),
+                                ...context.getRangeFor(':matches-media((min-width: 1000px))'),
                             },
                             {
                                 type: 'Modifier',
                                 name: {
                                     type: 'Value',
                                     value: 'matches-path',
-                                    loc: context.getLocRangeFor('matches-path'),
+                                    ...context.getRangeFor('matches-path'),
                                 },
                                 value: {
                                     type: 'Value',
                                     value: '/path',
-                                    loc: context.getLocRangeFor('/path'),
+                                    ...context.getRangeFor('/path'),
                                 },
                                 exception: true,
-                                loc: context.getLocRangeFor(':not(:matches-path(/path))'),
+                                ...context.getRangeFor(':not(:matches-path(/path))'),
                             },
                             {
                                 type: 'Modifier',
                                 name: {
                                     type: 'Value',
                                     value: 'style',
-                                    loc: context.getLocRangeFor('style'),
+                                    ...context.getRangeFor('style'),
                                 },
                                 value: {
                                     type: 'Value',
                                     value: 'padding:0; color: red!important',
-                                    loc: context.getLocRangeFor('padding:0; color: red!important'),
+                                    ...context.getRangeFor('padding:0; color: red!important'),
                                 },
                                 exception: false,
-                                loc: context.getLocRangeFor(':style(padding:0; color: red!important)'),
+                                ...context.getRangeFor(':style(padding:0; color: red!important)'),
                             },
                         ],
-                        loc: context.getFullLocRange(),
+                        ...context.getFullRange(),
                     },
-                    loc: context.getFullLocRange(),
+                    ...context.getFullRange(),
                 }),
             },
         ])("should parse input: '$actual'", ({ actual, expected }) => {
@@ -578,7 +578,7 @@ describe('UboSelectorParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
-                        context.getLocRangeFor(':remove()'),
+                        ...context.toTuple(context.getRangeFor(':remove()')),
                     );
                 },
             },
@@ -588,7 +588,7 @@ describe('UboSelectorParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
-                        context.getLocRangeFor(':style(border: none!important)'),
+                        ...context.toTuple(context.getRangeFor(':style(border: none!important)')),
                     );
                 },
             },
@@ -598,7 +598,7 @@ describe('UboSelectorParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
-                        context.getLocRangeFor('div', -1), // first 'div' from the end
+                        ...context.toTuple(context.getRangeFor('div', -1)), // first 'div' from the end
                     );
                 },
             },
@@ -608,7 +608,7 @@ describe('UboSelectorParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         ERROR_MESSAGES.UBO_STYLE_CANNOT_BE_FOLLOWED,
-                        context.getLocRangeFor('div', -1), // first 'div' from the end
+                        ...context.toTuple(context.getRangeFor('div', -1)), // first 'div' from the end
                     );
                 },
             },
@@ -623,7 +623,7 @@ describe('UboSelectorParser', () => {
                             ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
                             formatPseudoName(UboPseudoName.MatchesMedia),
                         ),
-                        context.getLocRangeFor(':matches-media((min-width: 1000px)))'),
+                        ...context.toTuple(context.getRangeFor(':matches-media((min-width: 1000px)))')),
                     );
                 },
             },
@@ -636,7 +636,7 @@ describe('UboSelectorParser', () => {
                             ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
                             formatPseudoName(UboPseudoName.MatchesMedia),
                         ),
-                        context.getLocRangeFor(':matches-media((min-width: 1000px)))'),
+                        ...context.toTuple(context.getRangeFor(':matches-media((min-width: 1000px)))')),
                     );
                 },
             },
@@ -649,7 +649,7 @@ describe('UboSelectorParser', () => {
                             ERROR_MESSAGES.UBO_MODIFIER_CANNOT_BE_NESTED,
                             formatPseudoName(UboPseudoName.Style),
                         ),
-                        context.getLocRangeFor(':style(padding: 0))'),
+                        ...context.toTuple(context.getRangeFor(':style(padding: 0))')),
                     );
                 },
             },
@@ -665,7 +665,7 @@ describe('UboSelectorParser', () => {
                             formatPseudoName(UboPseudoName.MatchesPath),
                             getFormattedTokenName(TokenType.Ident),
                         ),
-                        context.getLocRangeFor('div:matches-path(/path))'),
+                        ...context.toTuple(context.getRangeFor('div:matches-path(/path))')),
                     );
                 },
             },
@@ -679,7 +679,7 @@ describe('UboSelectorParser', () => {
                             formatPseudoName(UboPseudoName.MatchesPath),
                             getFormattedTokenName(TokenType.Ident),
                         ),
-                        context.getLocRangeFor('div)'),
+                        ...context.toTuple(context.getRangeFor('div)')),
                     );
                 },
             },
@@ -693,7 +693,7 @@ describe('UboSelectorParser', () => {
                             formatPseudoName(UboPseudoName.MatchesPath),
                             getFormattedTokenName(TokenType.Ident),
                         ),
-                        context.getLocRangeFor(':matches-path(/path2))'),
+                        ...context.toTuple(context.getRangeFor(':matches-path(/path2))')),
                     );
                 },
             },
@@ -707,7 +707,7 @@ describe('UboSelectorParser', () => {
                             formatPseudoName(UboPseudoName.MatchesPath),
                             getFormattedTokenName(TokenType.Ident),
                         ),
-                        context.getLocRangeFor('div:not(:matches-path(/path)))'),
+                        ...context.toTuple(context.getRangeFor('div:not(:matches-path(/path)))')),
                     );
                 },
             },
@@ -721,7 +721,7 @@ describe('UboSelectorParser', () => {
                             formatPseudoName(UboPseudoName.MatchesPath),
                             getFormattedTokenName(TokenType.Ident),
                         ),
-                        context.getLocRangeFor('div:matches-path(/path)))'),
+                        ...context.toTuple(context.getRangeFor('div:matches-path(/path)))')),
                     );
                 },
             },
@@ -736,12 +736,12 @@ describe('UboSelectorParser', () => {
                             ERROR_MESSAGES.DUPLICATED_UBO_MODIFIER,
                             formatPseudoName(UboPseudoName.MatchesPath),
                         ),
-                        context.getLocRangeFor(':matches-path(/path)', -1),
+                        ...context.toTuple(context.getRangeFor(':matches-path(/path)', -1)),
                     );
                 },
             },
 
-            // // :matches-path() cannot be nested within something else than :not()
+            // :matches-path() cannot be nested within something else than :not()
             {
                 actual: 'div:any(:matches-path(/path))',
                 //           ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -753,7 +753,7 @@ describe('UboSelectorParser', () => {
                             formatPseudoName('any'),
                             formatPseudoName(CSS_NOT_PSEUDO),
                         ),
-                        context.getLocRangeFor(':any(:matches-path(/path))'),
+                        ...context.toTuple(context.getRangeFor(':any(:matches-path(/path))')),
                     );
                 },
             },
@@ -768,7 +768,7 @@ describe('UboSelectorParser', () => {
                             'nothing',
                             formatPseudoName(UboPseudoName.MatchesPath, CSS_NOT_PSEUDO),
                         ),
-                        context.getFullLocRange(),
+                        ...context.toTuple(context.getFullRange()),
                     );
                 },
             },
@@ -783,7 +783,7 @@ describe('UboSelectorParser', () => {
                             'nothing',
                             formatPseudoName(UboPseudoName.MatchesPath, CSS_NOT_PSEUDO),
                         ),
-                        context.getFullLocRange(),
+                        ...context.toTuple(context.getFullRange()),
                     );
                 },
             },
@@ -799,7 +799,8 @@ describe('UboSelectorParser', () => {
             const error = fn.mock.results[0].value;
             expect(error).toBeInstanceOf(AdblockSyntaxError);
             expect(error).toHaveProperty('message', expected.message);
-            expect(error).toHaveProperty('loc', expected.loc);
+            expect(error).toHaveProperty('start', expected.start);
+            expect(error).toHaveProperty('end', expected.end);
         });
     });
 

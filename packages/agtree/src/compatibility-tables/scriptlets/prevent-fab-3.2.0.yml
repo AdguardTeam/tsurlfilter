@@ -1,0 +1,12 @@
+# TODO: add scriptlet and param descriptions, documentation references, and versions
+# Note: content blocking products do not support scriptlets
+adg_os_any|adg_ext_any:
+  name: prevent-fab-3.2.0
+  version_added: 1.0.4
+  aliases:
+    - nofab.js
+    - ubo-nofab.js
+    - fuckadblock.js-3.2.0
+    - ubo-fuckadblock.js-3.2.0
+    - ubo-nofab
+  docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-fab-3.2.0

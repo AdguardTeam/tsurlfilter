@@ -1,3 +1,10 @@
+import {
+    CR,
+    FF,
+    LF,
+    SPACE,
+} from '../common/constants';
+
 /**
  * Splits the string by the delimiter, ignoring escaped delimiters
  * and without tokenizing.
@@ -247,4 +254,65 @@ export function stringArraysHaveIntersection(left: string[] | null, right: strin
     }
 
     return false;
+}
+
+/**
+ * Checks if string contains spaces
+ *
+ * @param str String to check
+ * @returns `true` if string contains spaces, `false` otherwise
+ */
+export function hasSpaces(str: string): boolean {
+    return str.includes(SPACE);
+}
+
+/**
+ * Check if the given value is a string
+ *
+ * @param value Value to check
+ * @returns `true` if value is a string, `false` otherwise
+ */
+export function isString(value: unknown): value is string {
+    return typeof value === 'string';
+}
+
+/**
+ * Unescapes the specified character in the string
+ *
+ * @param str String to escape
+ * @param char Character to escape
+ * @returns The string with the specified character unescaped
+ */
+export function unescapeChar(str: string, char: string): string {
+    return str.replace(`\\${char}`, char);
+}
+
+/**
+ * Finds the next line break index in the string starting from the specified index.
+ * Supports LF, CR, FF and CRLF line breaks.
+ *
+ * @param str String to search in.
+ * @param startIndex  Start index. Default is 0.
+ * @returns A tuple with the line break index and the line break length.
+ * If the line break is not found, returns the string length and 0.
+ */
+export function findNextLineBreakIndex(str: string, startIndex = 0): [number, number] {
+    const { length } = str;
+    let offset = startIndex;
+
+    while (offset < length) {
+        const char = str[offset];
+
+        if (char === LF || char === FF) {
+            return [offset, 1];
+        }
+
+        if (char === CR) {
+            return str[offset + 1] === LF ? [offset, 2] : [offset, 1];
+        }
+
+        offset += 1;
+    }
+
+    return [length, 0];
 }

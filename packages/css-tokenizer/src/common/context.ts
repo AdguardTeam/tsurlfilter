@@ -274,6 +274,16 @@ export class TokenizerContext {
     }
 
     /**
+     * Consumes a single whitespace code point, if the current code point is a whitespace
+     */
+    public consumeSingleWhitespace(): void {
+        if (isWhitespace(this.code)) {
+            // special case: consume CRLF as a single whitespace
+            this.cursor += this.code === CodePoint.CarriageReturn && this.nextCode === CodePoint.LineFeed ? 2 : 1;
+        }
+    }
+
+    /**
      * Consumes everything until the end of the comment (or the end of the source)
      */
     public consumeUntilCommentEnd(): void {
