@@ -27,6 +27,6 @@ export * from './tabs';
 export * from './request';
 export * from '../../common';
 export * from './configuration';
-export { StealthActions } from './services/stealth-service';
+export { StealthActions } from '../../common/stealth-actions';
 export type { MessageHandlerMV2 } from './messages-api';
 export { MESSAGE_HANDLER_NAME } from '../../common/message-constants';
