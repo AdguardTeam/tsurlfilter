@@ -270,16 +270,18 @@ export class CosmeticApi extends CosmeticApiCommon {
      */
     public static async applyCssByTabAndFrame(tabId: number, frameId: number): Promise<void> {
         const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
-        if (requestContext?.cssText) {
-            try {
-                await ScriptingApi.insertCss({
-                    cssText: requestContext.cssText,
-                    tabId,
-                    frameId,
-                });
-            } catch (e) {
-                logger.debug('[applyCssByTabAndFrame] error occurred during injection', getErrorMessage(e));
-            }
+        if (!requestContext?.cssText) {
+            return;
+        }
+
+        try {
+            await ScriptingApi.insertCss({
+                cssText: requestContext.cssText,
+                tabId,
+                frameId,
+            });
+        } catch (e) {
+            logger.debug('[applyCssByTabAndFrame] error occurred during injection', getErrorMessage(e));
         }
     }
 
