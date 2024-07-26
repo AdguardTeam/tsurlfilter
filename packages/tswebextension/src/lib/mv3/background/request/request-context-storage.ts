@@ -82,9 +82,9 @@ export class RequestContextStorage {
 
     /**
      * Map of tab and frame id to request id.
-     * We use second map for faster search of context data when we have tab id and frame id only.
+     * We use the second map for faster search of context data when we have tab id and frame id only.
      */
-    tabAndFrameMap:TabAndFrameMap = new Map();
+    tabAndFrameMap: TabAndFrameMap = new Map();
 
     /**
      * Generates key based on tab id and frame id.
