@@ -95,10 +95,12 @@ const simplifyCompaniesDbTrackers = (rawData: CompaniesDbTrackers): CompaniesDbM
 };
 
 /**
- * Download companies database from AdguardTeam/companiesdb repository.
+ * Downloads companies database from AdguardTeam/companiesdb repository
+ * and minifies it to a format needed for the extension.
+ *
  * @see https://github.com/AdguardTeam/companiesdb
  *
- * @param dest - Path to save the JSON database.
+ * @param dest Path to save the JSON database.
  *
  * @returns Promise that resolves when the database is downloaded.
  * @throws Error if the download fails.
