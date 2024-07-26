@@ -70,8 +70,8 @@
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
  *                                       │                             │
- *                                       │         onCompleted         │
- *                                       │                             │
+ * Removes the request information       │         onCompleted         │
+ * from {@link requestContextStorage}.   │                             │
  *                                       └─────────────────────────────┘.
  *
  *                                       ┌─────────────────────────────┐
@@ -187,6 +187,7 @@ export class WebRequestApi {
         RequestEvents.onBeforeSendHeaders.removeListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.removeListener(WebRequestApi.onHeadersReceived);
         RequestEvents.onErrorOccurred.removeListener(WebRequestApi.onErrorOccurred);
+        RequestEvents.onCompleted.removeListener(WebRequestApi.onCompleted);
 
         // browser.webNavigation Events
         browser.webNavigation.onBeforeNavigate.removeListener(WebRequestApi.onBeforeNavigate);
