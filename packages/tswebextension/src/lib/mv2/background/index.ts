@@ -1,4 +1,5 @@
 // re-exports to prevent collision, when both tsurlfilter and tswebextension are imported
+
 export {
     NetworkRule,
     CosmeticRule,
@@ -27,3 +28,4 @@ export * from './request';
 export * from './configuration';
 export { StealthActions } from './services/stealth-service';
 export type { MessageHandlerMV2 } from './messages-api';
+export { MESSAGE_HANDLER_NAME } from '../../common/message-constants';
