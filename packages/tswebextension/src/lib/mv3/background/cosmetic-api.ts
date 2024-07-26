@@ -120,9 +120,9 @@ export class CosmeticApi extends CosmeticApiCommon {
     /**
      * Builds scripts from cosmetic rules.
      *
-     * @returns Script text or empty string if no script rules are passed.
      * @param cosmeticResult Cosmetic result.
-     * @param frameUrl Frame url. Used for debug purposes.
+     * @param frameUrl Frame url. Used for debug.
+     * @returns Script text or empty string if no script rules are passed.
      */
     public static getScriptText(cosmeticResult: CosmeticResult, frameUrl: string): string {
         const rules = cosmeticResult.getScriptRules();
