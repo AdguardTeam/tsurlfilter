@@ -1,7 +1,23 @@
-/* eslint-disable @typescript-eslint/no-shadow */
 import { appContext } from './app-context';
-import { type ExecuteScriptParams } from './cosmetic-api';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
+
+/**
+ * Parameters for applying CSS rules.
+ */
+type InsertCSSParams = {
+    tabId: number,
+    frameId: number,
+    cssText: string,
+};
+
+/**
+ * Parameters for executing script.
+ */
+type ExecuteScriptParams = {
+    tabId: number,
+    frameId: number,
+    scriptText: string,
+};
 
 /**
  * This class is wrapping around chrome.scripting API.
@@ -9,41 +25,48 @@ import { BACKGROUND_TAB_ID } from '../../common/constants';
 export class ScriptingApi {
     /**
      * Injects CSS into a tab.
-     * @param css CSS to inject.
-     * @param tabId Tab id.
-     * @param frameId Frame id.
+     *
+     * @param params Parameters for applying CSS rules.
+     * @param params.tabId Tab id.
+     * @param params.frameId Frame id.
+     * @param params.cssText CSS text.
+     * @returns Promise that resolves when the CSS is injected.
      */
-    public static async insertCss(css: string, tabId: number, frameId: number): Promise<void> {
+    public static async insertCss({ tabId, frameId, cssText }: InsertCSSParams): Promise<void> {
         if (tabId === BACKGROUND_TAB_ID) {
             return;
         }
 
         await chrome.scripting.insertCSS({
-            css,
+            css: cssText,
             origin: 'USER',
             target: { tabId, frameIds: [frameId] },
         });
     }
 
     /**
-     * Executes script in a scope of the page.
-     * @param params Parameters.
+     * Executes a script in the scope of the page.
+     *
+     * @param params Parameters for executing a script.
+     * @param params.tabId Tab id.
+     * @param params.frameId Frame id.
+     * @param params.scriptText Script text.
+     * @returns Promise that resolves when the script is executed.
      */
-    public static async executeScript(params: ExecuteScriptParams): Promise<void> {
-        const { tabId, frameId, scriptText } = params;
-
-        // There is no sense to inject script into background page
+    public static async executeScript({ tabId, frameId, scriptText }: ExecuteScriptParams): Promise<void> {
+        // There is no sense to inject a script into the background page
         if (tabId === BACKGROUND_TAB_ID) {
             return;
         }
 
         /**
-         * Executes scripts in a scope of the page.
-         * In order to prevent multiple script execution, the function checks if the script was already executed.
+         * Executes scripts in the scope of the page.
+         * To prevent multiple script execution, the function checks if the script was already executed.
          *
          * @param scriptText Script text.
          * @param executedFlag Flag to check if the script was already executed.
          */
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         function injectFunc(scriptText: string, executedFlag: string): void {
             // We don't care about types here
             // @ts-ignore

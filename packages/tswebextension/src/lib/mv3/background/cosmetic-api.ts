@@ -1,5 +1,4 @@
 import {
-    CosmeticOption,
     type CosmeticResult,
     type CosmeticRule,
 } from '@adguard/tsurlfilter';
@@ -11,28 +10,8 @@ import { createFrameMatchQuery } from '../../common/utils/create-frame-match-que
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
-
 import { ScriptingApi } from './scripting-api';
 import { requestContextStorage } from './request/request-context-storage';
-import { isHttpRequest } from '../../common/utils/url';
-
-/**
- * Parameters for applying css rules.
- */
-export type ApplyCssRulesParams = {
-    tabId: number,
-    frameId: number,
-    cssText: string,
-};
-
-/**
- * Parameters for executing script.
- */
-export type ExecuteScriptParams = {
-    tabId: number,
-    frameId: number,
-    scriptText: string,
-};
 
 export type ContentScriptCosmeticData = {
     /**
@@ -49,6 +28,13 @@ export type ContentScriptCosmeticData = {
      * Extended css rules to apply.
      */
     extCssRules: string[] | null,
+};
+
+type ApplyCosmeticResultParams = {
+    tabId: number,
+    frameId: number,
+    cosmeticResult: CosmeticResult,
+    frameUrl: string,
 };
 
 /**
@@ -70,23 +56,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static verbose: boolean = false;
 
     /**
-     * Applies css from cosmetic result.
-     *
-     * Patches rule selector adding adguard mark rule info in the content attribute.
-     * Example:
-     * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}.
-     *
-     * @param cssText Css text.
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     * @returns Promise.
-     */
-    public static async injectCss(cssText: string, tabId: number, frameId = 0): Promise<void> {
-        return ScriptingApi.insertCss(cssText, tabId, frameId);
-    }
-
-    /**
-     * Retrieves css styles from the cosmetic result.
+     * Retrieves CSS styles from the cosmetic result.
      *
      * @param cosmeticResult Cosmetic result.
      * @returns Css styles as string, or `undefined` if no styles found.
@@ -251,21 +221,6 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Applies css rules to specific frame.
-     *
-     * @param params Data for css rules injecting.
-     */
-    public static async applyCssRules(params: ApplyCssRulesParams): Promise<void> {
-        const {
-            tabId,
-            frameId,
-            cssText,
-        } = params;
-
-        await CosmeticApi.injectCss(cssText, tabId, frameId);
-    }
-
-    /**
      * Injects js to specified frame based on provided data and injection FSM state.
      *
      * @param requestId Request id.
@@ -316,10 +271,10 @@ export class CosmeticApi extends CosmeticApiCommon {
         const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
         if (requestContext?.cssText) {
             try {
-                await CosmeticApi.applyCssRules({
+                await ScriptingApi.insertCss({
+                    cssText: requestContext.cssText,
                     tabId,
                     frameId,
-                    cssText: requestContext.cssText,
                 });
             } catch (e) {
                 logger.debug('[applyCssByTabAndFrame] error occurred during injection', getErrorMessage(e));
@@ -328,42 +283,40 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Get scripts and executing them.
+     * Injects a cosmetic result to the frame by tab id and frame id.
      *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     * @param url Page URL.
+     * @param params Parameters for applying a cosmetic result.
+     * @param params.tabId Tab id.
+     * @param params.frameId Frame id.
+     * @param params.cosmeticResult Cosmetic result.
+     * @param params.frameUrl Frame url.
+     * @returns Promise that resolves when the cosmetic result is applied.
      */
-    public static async getAndExecuteScripts(
-        tabId: number,
-        frameId: number,
-        url: string,
+    public static async applyCosmeticResult(
+        {
+            tabId,
+            frameId,
+            cosmeticResult,
+            frameUrl,
+        }: ApplyCosmeticResultParams,
     ): Promise<void> {
-        /**
-         * The url from the details have http even on the new tab page.
-         */
-        const NEW_TAB_PAGE = 'new-tab-page';
+        const scriptText = CosmeticApi.getScriptText(cosmeticResult, frameUrl);
+        const cssText = CosmeticApi.getCssText(cosmeticResult);
 
-        /**
-         * In the case when the frame does not have a source, we use the url of the main frame.
-         */
-        if (!isHttpRequest(url)) {
-            url = tabsApi.getMainFrameUrl(tabId) || '';
+        if (cssText) {
+            ScriptingApi.insertCss({
+                tabId,
+                frameId,
+                cssText,
+            });
         }
 
-        if (isHttpRequest(url) && !url.includes(NEW_TAB_PAGE)) {
-            // TODO: Extract cosmetic option from matching result (AG-24586)
-            const scriptText = engineApi.getScriptsStringForUrl(url, CosmeticOption.CosmeticOptionAll);
-            let executeScriptPromise = Promise.resolve();
-            if (scriptText) {
-                executeScriptPromise = ScriptingApi.executeScript({
-                    scriptText,
-                    tabId,
-                    frameId,
-                });
-            }
-
-            await Promise.all([executeScriptPromise]);
+        if (scriptText) {
+            ScriptingApi.executeScript({
+                tabId,
+                frameId,
+                scriptText,
+            });
         }
     }
 

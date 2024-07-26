@@ -81,16 +81,15 @@ export class TabsCosmeticInjector {
 
             const cosmeticOption = frame.matchingResult.getCosmeticOption();
 
-            frame.cosmeticResult = engineApi.getCosmeticResult(frameUrl, cosmeticOption);
+            const cosmeticResult = engineApi.getCosmeticResult(frameUrl, cosmeticOption);
+            frame.cosmeticResult = cosmeticResult;
 
-            CosmeticApi.getAndExecuteScripts(tabId, frameId, frameUrl);
-
-            // const { cosmeticResult } = frame;
-
-            // TODO: Inject CSS and JS rules
-            // CosmeticApi.applyCssByTabAndFrame(frameId, tabId);
-
-            // CosmeticApi.applyJsByRequest(frameId, tabId);
+            CosmeticApi.applyCosmeticResult({
+                tabId,
+                frameId,
+                cosmeticResult,
+                frameUrl,
+            });
 
             // CosmeticApi.logScriptRules({
             //     url: frameUrl,

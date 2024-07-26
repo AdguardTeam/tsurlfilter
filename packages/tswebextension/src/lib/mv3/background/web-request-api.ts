@@ -425,13 +425,13 @@ export class WebRequestApi {
     private static onCommitted(details: browser.WebNavigation.OnCommittedDetailsType): void {
         const { tabId, frameId } = details;
 
-        // Note: this is async function, but we will not await it because
+        // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
         Promise.all([
             CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
         ]).then(() => {
-            requestContextStorage.deleteByTabAndFrame(tabId, frameId)
-        }).catch(e => logger.error(e));
+            requestContextStorage.deleteByTabAndFrame(tabId, frameId);
+        }).catch((e) => logger.error(e));
     }
 }
