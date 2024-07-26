@@ -207,7 +207,3 @@ export class RequestContextStorage {
 }
 
 export const requestContextStorage = new RequestContextStorage();
-
-// @ts-ignore
-// eslint-disable-next-line no-restricted-globals
-self.requestContextStorage = requestContextStorage;
