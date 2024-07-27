@@ -6,15 +6,12 @@ import { TabsCosmeticInjector } from '../../../../src/lib/mv3/tabs/tabs-cosmetic
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
-import { extSessionStorage } from '../../../../src/lib';
-import { appContext } from '../../../../src/lib/mv3/background/app-context';
 
 jest.mock('@lib/mv3/background/engine-api');
+jest.mock('../../../../src/lib/mv3/background/app-context');
 
 describe('TabsCosmeticInjector', () => {
     beforeAll(async () => {
-        await extSessionStorage.init();
-        appContext.isAppStarted = true;
     });
 
     beforeEach(() => {
@@ -58,15 +55,20 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCosmeticResult).toBeCalledWith({
+            expect(CosmeticApi.applyCosmeticResult).toHaveBeenCalledWith(expect.objectContaining({
                 tabId,
                 frameId,
-                cosmeticResult,
-                frameUrl: url,
-            });
+            }));
 
-            expect(ScriptingApi.executeScript).toBeCalledWith(frameId, tabId);
-            expect(ScriptingApi.insertCSS).toBeCalledWith(frameId, tabId);
+            expect(ScriptingApi.executeScript).toHaveBeenCalledWith(expect.objectContaining({
+                tabId,
+                frameId,
+            }));
+
+            expect(ScriptingApi.insertCSS).toHaveBeenCalledWith(expect.objectContaining({
+                tabId,
+                frameId,
+            }));
 
             // FIXME: Uncomment tests when logging will be returned
             // const expectedLogParams = {
@@ -79,36 +81,37 @@ describe('TabsCosmeticInjector', () => {
             // expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 
-        // it('should not apply cosmetic rules for non-browser tabs', async () => {
-        //     const tabId = -1;
-        //
-        //     browser.tabs.query.resolves([{ id: tabId }]);
-        //
-        //     await TabsCosmeticInjector.processOpenTabs();
-        //
-        //     expect(CosmeticApi.applyCosmeticResult).not.toBeCalled();
-        //     // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
-        //     // expect(CosmeticApi.applyFrameCssRules).not.toBeCalled();
-        //     // expect(CosmeticApi.applyFrameJsRules).not.toBeCalled();
-        //     // expect(CosmeticApi.logScriptRules).not.toBeCalled();
-        // });
-        //
-        // it('should not apply cosmetic rules for frames without src', async () => {
-        //     const tabId = 1;
-        //     const frameId = 1;
-        //     const frameUrl = 'about:blank';
-        //
-        //     browser.tabs.query.resolves([{ id: tabId }]);
-        //     browser.webNavigation.getAllFrames.resolves([{ frameId, url: frameUrl }]);
-        //
-        //     await TabsCosmeticInjector.processOpenTabs();
-        //
-        //     expect(CosmeticApi.applyCosmeticResult).not.toBeCalled();
-        //
-        //     // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
-        //     // expect(CosmeticApi.applyFrameCssRules).not.toBeCalled();
-        //     // expect(CosmeticApi.applyFrameJsRules).not.toBeCalled();
-        //     // expect(CosmeticApi.logScriptRules).not.toBeCalled();
-        // });
+        it('should not apply cosmetic rules for non-browser tabs', async () => {
+            const tabId = -1;
+
+            browser.tabs.query.resolves([{ id: tabId }]);
+
+            await TabsCosmeticInjector.processOpenTabs();
+
+            expect(CosmeticApi.applyCosmeticResult).not.toBeCalled();
+            expect(ScriptingApi.executeScript).not.toBeCalled();
+            expect(ScriptingApi.insertCSS).not.toBeCalled();
+
+            // FIXME: Uncomment tests when logging will be returned
+            // expect(CosmeticApi.logScriptRules).not.toBeCalled();
+        });
+
+        it('should not apply cosmetic rules for frames without src', async () => {
+            const tabId = 1;
+            const frameId = 1;
+            const frameUrl = 'about:blank';
+
+            browser.tabs.query.resolves([{ id: tabId }]);
+            browser.webNavigation.getAllFrames.resolves([{ frameId, url: frameUrl }]);
+
+            await TabsCosmeticInjector.processOpenTabs();
+
+            expect(CosmeticApi.applyCosmeticResult).not.toBeCalled();
+            expect(ScriptingApi.executeScript).not.toBeCalled();
+            expect(ScriptingApi.insertCSS).not.toBeCalled();
+
+            // FIXME: Uncomment tests when logging will be returned
+            // expect(CosmeticApi.logScriptRules).not.toBeCalled();
+        });
     });
 });

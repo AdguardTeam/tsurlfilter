@@ -308,9 +308,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         }: ApplyCosmeticResultParams,
     ): Promise<void> {
         const scriptText = CosmeticApi.getScriptText(cosmeticResult, frameUrl);
-        console.log({ scriptText });
         const cssText = CosmeticApi.getCssText(cosmeticResult);
-        console.log({ cssText });
 
         if (cssText) {
             ScriptingApi.insertCSS({
