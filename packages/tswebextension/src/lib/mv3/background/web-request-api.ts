@@ -147,6 +147,7 @@ import { getErrorMessage } from '../../common/error';
 import { BACKGROUND_TAB_ID, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
+import { RequestBlockingApi } from './request/request-blocking-api';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -281,6 +282,37 @@ export class WebRequestApi {
                 scriptText,
                 cssText,
             });
+        }
+
+        const basicResult = result.getBasicResult();
+
+        // For a $replace rule, response will be undefined since we need to get
+        // the response in order to actually apply $replace rules to it.
+        const response = RequestBlockingApi.getBlockingResponse({
+            rule: basicResult,
+            popupRule: result.getPopupRule(),
+            requestUrl,
+            referrerUrl,
+            requestType,
+            tabId,
+        });
+
+        // redirects should be considered as blocked for the tab blocked request count
+        // which is displayed on the extension badge
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
+        if (response?.cancel || response?.redirectUrl !== undefined) {
+            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+
+            // TODO: Check, if we need collapse elements, we should uncomment this code.
+            // const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
+            // hideRequestInitiatorElement(
+            //     tabId,
+            //     requestFrameId,
+            //     requestUrl,
+            //     mainFrameUrl || referrerUrl,
+            //     requestType,
+            //     thirdParty,
+            // );
         }
     }
 
