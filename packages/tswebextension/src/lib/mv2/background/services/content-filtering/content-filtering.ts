@@ -8,8 +8,8 @@ import {
 
 import { ContentStringFilter } from './content-string-filter';
 import { ContentStream } from './content-stream';
-import { defaultFilteringLog } from '../../../../common';
 import type { RequestContext } from '../../request';
+import { defaultFilteringLog } from '../../../../common/filtering-log';
 
 /**
  * Content filtering module.

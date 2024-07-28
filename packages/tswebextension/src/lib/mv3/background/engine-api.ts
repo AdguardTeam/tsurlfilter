@@ -7,8 +7,6 @@ import {
     Request,
     CosmeticResult,
     type CosmeticOption,
-    type ScriptletData,
-    type CosmeticRule,
     type NetworkRule,
     type MatchingResult,
     type HTTPMethod,
@@ -20,14 +18,13 @@ import browser from 'webextension-polyfill';
 
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 
-import { getHost, isHttpOrWsRequest } from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
-import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { logger } from '../../common/utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
 import { allowlistApi } from './allowlist-api';
 import { DocumentApi } from './document-api';
+import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
@@ -46,11 +43,6 @@ interface MatchQuery {
     frameRule?: NetworkRule | null;
     method?: HTTPMethod;
 }
-
-export type CosmeticRules = {
-    css: string[],
-    extendedCss: string[],
-};
 
 /**
  * EngineApi - TSUrlFilter engine wrapper which controls how to work with
@@ -198,59 +190,6 @@ export class EngineApi {
     }
 
     /**
-     * Builds CSS for the specified web page.
-     *
-     * @see http://adguard.com/en/filterrules.html#hideRules
-     *
-     * @param url Page URL.
-     * @param options Bitmask.
-     * @param ignoreTraditionalCss Flag.
-     * @param ignoreExtCss Flag.
-     *
-     * @returns CSS and ExtCss data for the webpage.
-     */
-    public buildCosmeticCss(
-        url: string,
-        options: CosmeticOption,
-        ignoreTraditionalCss: boolean,
-        ignoreExtCss: boolean,
-    ): CosmeticRules {
-        const cosmeticResult = this.getCosmeticResult(url, options);
-
-        const elemhideCss = [
-            ...cosmeticResult.elementHiding.generic,
-            ...cosmeticResult.elementHiding.specific,
-        ];
-        const injectCss = [
-            ...cosmeticResult.CSS.generic,
-            ...cosmeticResult.CSS.specific,
-        ];
-
-        const elemhideExtCss = [
-            ...cosmeticResult.elementHiding.genericExtCss,
-            ...cosmeticResult.elementHiding.specificExtCss,
-        ];
-        const injectExtCss = [
-            ...cosmeticResult.CSS.genericExtCss,
-            ...cosmeticResult.CSS.specificExtCss,
-        ];
-
-        const styles = !ignoreTraditionalCss
-            ? CosmeticApiCommon.buildStyleSheets(elemhideCss, injectCss, true)
-            : [];
-        const extStyles = !ignoreExtCss
-            ? CosmeticApiCommon.buildStyleSheets(elemhideExtCss, injectExtCss, false)
-            : [];
-
-        logger.debug('[tswebextension.buildCosmeticCss]: builded');
-
-        return {
-            css: styles,
-            extendedCss: extStyles,
-        };
-    }
-
-    /**
      * Gets current loaded rules in the filtering engine
      * (except declarative rules).
      *
@@ -261,46 +200,25 @@ export class EngineApi {
     }
 
     /**
-     * Builds domain-specific JS injection for the specified page.
+     * Searched for cosmetic rules by match query.
      *
-     * @see http://adguard.com/en/filterrules.html#javascriptInjection
-     *
-     * @param url Page URL.
-     * @param option Bitmask.
-     *
-     * @returns Javascript for the specified URL.
+     * @param matchQuery Query against which the request would be matched.
+     * @returns Cosmetic result.
      */
-    public getScriptsForUrl = (url: string, option: CosmeticOption): CosmeticRule[] => {
-        const cosmeticResult = this.getCosmeticResult(url, option);
+    public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
+        if (!this.engine || !isHttpRequest(matchQuery.frameUrl)) {
+            return new CosmeticResult();
+        }
 
-        return cosmeticResult.getScriptRules();
-    };
+        const matchingResult = this.matchRequest(matchQuery);
 
-    /**
-     * Returns scriptlets data by url.
-     *
-     * @param url Page URL.
-     * @param option Bitmask.
-     *
-     * @returns List of {@link ScriptletData}.
-     */
-    public getScriptletsDataForUrl(url: string, option: CosmeticOption): ScriptletData[] {
-        const scriptRules = this.getScriptsForUrl(url, option);
-        const scriptletDataList: ScriptletData[] = [];
-        scriptRules.forEach((scriptRule) => {
-            if (!scriptRule.isScriptlet) {
-                return;
-            }
+        if (!matchingResult) {
+            return new CosmeticResult();
+        }
 
-            const scriptletData = scriptRule.getScriptletData();
-            if (!scriptletData) {
-                return;
-            }
+        const cosmeticOption = matchingResult.getCosmeticOption();
 
-            scriptletDataList.push(scriptletData);
-        });
-
-        return scriptletDataList;
+        return this.getCosmeticResult(matchQuery.requestUrl, cosmeticOption);
     }
 
     /**
@@ -329,46 +247,6 @@ export class EngineApi {
         );
 
         return this.engine.matchRequest(request, frameRule);
-    }
-
-    /**
-     * Builds the final output string for the specified page.
-     * Depending on the browser we either allow or forbid the new remote rules
-     * grep "localScriptRulesService" for details about script source.
-     *
-     * @param url Page URL.
-     * @param option Bitmask.
-     *
-     * @returns Wrapped script in IIFE form to be applied or null if no scripts found.
-     */
-    public getScriptsStringForUrl(url: string, option: CosmeticOption): string | null {
-        const scriptRules = this.getScriptsForUrl(url, option);
-
-        // TODO: Add check for firefox AMO
-
-        // scriptlet rules would are handled separately
-        const scripts = scriptRules
-            .filter((rule) => !rule.isScriptlet)
-            .map((scriptRule) => scriptRule.getScript());
-
-        if (scripts.length === 0) {
-            return null;
-        }
-
-        // remove repeating scripts
-        const scriptsCode = [...new Set(scripts)].join('\r\n');
-
-        // TODO: Check call to filtering log
-
-        return `
-                (function () {
-                    try {
-                        ${scriptsCode}
-                    } catch (ex) {
-                        console.error('Error executing AG js: ' + ex);
-                    }
-                })();
-            `;
     }
 }
 

@@ -9,11 +9,11 @@ import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 import { getNetworkRuleFields } from '../helpers/rule-fields';
 import { RemoveHeadersService } from '../../../../../src/lib/mv2/background/services/remove-headers-service';
 import {
-    ContentType,
-    FilteringEventType,
     type RequestContext,
     RequestContextState,
 } from '../../../../../src/lib';
+import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
+import { ContentType } from '../../../../../src/lib/common/request-type';
 
 describe('Headers service', () => {
     const mockFilteringLog = new MockFilteringLog();

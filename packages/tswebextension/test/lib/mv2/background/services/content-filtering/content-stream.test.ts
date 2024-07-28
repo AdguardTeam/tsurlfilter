@@ -1,5 +1,6 @@
 import { TextEncoder, TextDecoder } from 'text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
+
 import { MockStreamFilter } from './mock-stream-filter';
 import { MockFilteringLog } from '../../../../common/mocks';
 import {

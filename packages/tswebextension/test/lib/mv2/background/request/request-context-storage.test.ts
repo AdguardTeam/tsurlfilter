@@ -1,11 +1,12 @@
 import { HTTPMethod } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+
 import {
-    ContentType,
     type RequestContext,
     RequestContextState,
     requestContextStorage,
 } from '../../../../../src/lib';
+import { ContentType } from '../../../../../src/lib/common/request-type';
 
 describe('Request Context Storage', () => {
     const requestId = '12345';

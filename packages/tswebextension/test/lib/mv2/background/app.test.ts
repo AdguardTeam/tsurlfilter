@@ -6,11 +6,11 @@ import {
     type ConfigurationMV2,
     createTsWebExtension,
     engineApi,
-    type Message,
     messagesApi,
     TsWebExtension,
 } from '../../../../src/lib';
 import { Assistant } from '../../../../src/lib/mv2/background/assistant';
+import { type Message } from '../../../../src/lib/common/message';
 
 jest.mock('@lib/mv2/background/ext-session-storage');
 jest.mock('@lib/mv2/background/context', () => ({
