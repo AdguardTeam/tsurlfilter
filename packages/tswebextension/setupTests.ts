@@ -1,6 +1,14 @@
 import browser from 'sinon-chrome';
 import { TextEncoder, TextDecoder } from 'util';
 
+global.chrome = {
+    // @ts-ignore
+    scripting: {
+        insertCSS: jest.fn(),
+        executeScript: jest.fn(),
+    },
+};
+
 // TODO: Set manifest 3 for mv3 tests.
 browser.runtime.getManifest.returns({ version: '2', manifest_version: 2 });
 

@@ -7,7 +7,7 @@ import { initAssistant } from './assistant';
 
 export { StealthHelper } from '../../common/stealth-helper';
 export { CookieController } from '../../common/content-script/cookie-controller';
-export { CssHitsCounter } from './css-hits-counter';
+export { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 
 const cosmeticController = new CosmeticController();
 cosmeticController.init();

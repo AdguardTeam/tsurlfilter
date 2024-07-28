@@ -1,5 +1,3 @@
-import { appContext } from './context';
-
 /**
  * Taken from:
  * {@link https://github.com/seanl-adg/InlineResourceLiteral/blob/master/index.js#L136}
@@ -37,16 +35,22 @@ const escapeJs = (match: string): string => {
  *
  * @see {@link LocalScriptRulesService} for details about script source.
  * @param scriptText Script text.
+ * @param startTimeMs App start time in milliseconds.
  * @returns Script to inject.
+ * @throws Error if start time is not defined.
  */
-export const buildScriptText = (scriptText: string): string => {
+export const buildScriptText = (scriptText: string, startTimeMs: number | undefined): string => {
+    if (!startTimeMs) {
+        throw new Error('Start time is not defined');
+    }
+
     /**
      * We use changing variable name because global properties can be modified across isolated worlds of extension
      * content page and tab page.
      *
      * Issue: @see {@link https://bugs.chromium.org/p/project-zero/issues/detail?id=1225&desc=6}.
      */
-    const variableName = `scriptExecuted${appContext.startTimeMs}`;
+    const variableName = `scriptExecuted${startTimeMs}`;
 
     /**
      * Executes scripts in a scope of the page, but the `window` fields are in

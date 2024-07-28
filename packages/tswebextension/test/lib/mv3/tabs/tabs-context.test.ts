@@ -1,8 +1,10 @@
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+
 import { TabContext, type TabInfo } from '../../../../src/lib/mv3/tabs/tab-context';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
-import { Frame, MAIN_FRAME_ID } from '../../../../src/lib/mv3/tabs/frame';
+import { Frame } from '../../../../src/lib/mv3/tabs/frame';
+import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
 
 jest.mock('@lib/mv3/background/engine-api');
 

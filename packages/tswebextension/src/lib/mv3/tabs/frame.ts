@@ -1,11 +1,6 @@
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 
 /**
- * Document level frame id.
- */
-export const MAIN_FRAME_ID = 0;
-
-/**
  * Frame context data.
  * We store {@link MatchingResult} and {@link CosmeticResult} in the frame context
  * to apply rules that cannot be handled during request processing.

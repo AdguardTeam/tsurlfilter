@@ -1,8 +1,9 @@
 import { type WebRequest } from 'webextension-polyfill';
 
-import { isExtensionUrl, BACKGROUND_TAB_ID } from '../../common';
 import { type RequestContext } from './request';
 import { removeHeader } from './utils';
+import { BACKGROUND_TAB_ID } from '../../common/constants';
+import { isExtensionUrl } from '../../common/utils/url';
 
 /**
  * This API is used to remove traceable data from requests initiated by the background extension.

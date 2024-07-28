@@ -8,22 +8,21 @@ import { RequestBlockingApi } from './request';
 import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
+import { Assistant } from './assistant';
+import type { TabsApi } from './tabs';
 import {
     getAssistantCreateRulePayloadValidator,
     getCookieRulesPayloadValidator,
     getExtendedCssPayloadValidator,
     getSaveCookieLogEventPayloadValidator,
-    MessageType,
+    type Message,
     messageValidator,
     processShouldCollapsePayloadValidator,
-    FilteringEventType,
-    getDomain,
-    ContentType,
-    type FilteringLog,
-    type Message,
-} from '../../common';
-import { Assistant } from './assistant';
-import type { TabsApi } from './tabs';
+} from '../../common/message';
+import { FilteringEventType, type FilteringLog } from '../../common/filtering-log';
+import { MessageType } from '../../common/message-constants';
+import { ContentType } from '../../common/request-type';
+import { getDomain } from '../../common/utils/url';
 
 export type MessageHandlerMV2 = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
 

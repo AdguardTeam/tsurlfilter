@@ -7,7 +7,6 @@ import {
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
-import { ElementCollapser } from './element-collapser';
 
 // TODO: Move to shared 'messages' module, when it will be implemented
 import type { ContentScriptCosmeticData } from '../background/cosmetic-api';
@@ -48,8 +47,6 @@ export class CosmeticController {
      * Init cosmetic processing.
      */
     public init(): void {
-        const elementCollapser = new ElementCollapser();
-        elementCollapser.start();
         this.process();
     }
 
@@ -65,7 +62,7 @@ export class CosmeticController {
         });
 
         if (res) {
-            this.applyCosmetic(res);
+            this.applyExtendedCss(res);
         }
     }
 
@@ -79,7 +76,7 @@ export class CosmeticController {
      *
      * @param cosmeticData Response cosmetic data from background.
      */
-    private applyCosmetic(cosmeticData: ContentScriptCosmeticData): void {
+    private applyExtendedCss(cosmeticData: ContentScriptCosmeticData): void {
         const {
             isAppStarted,
             extCssRules,
@@ -139,10 +136,13 @@ export class CosmeticController {
      */
     private static createCssHitsCounter(): CssHitsCounter {
         return new CssHitsCounter((stats) => {
-            sendAppMessage({
-                type: MessageType.SaveCssHitsStats,
-                payload: stats,
-            });
+            // TODO add this message handling, when logging will be added
+            // eslint-disable-next-line no-console
+            console.log(stats);
+            // sendAppMessage({
+            //     type: MessageType.SaveCssHitsStats,
+            //     payload: stats,
+            // });
         });
     }
 }

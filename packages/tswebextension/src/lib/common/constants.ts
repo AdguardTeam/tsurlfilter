@@ -3,3 +3,8 @@ export const ALLOWLIST_FILTER_ID = 100;
 export const BACKGROUND_TAB_ID = -1;
 export const FRAME_DELETION_TIMEOUT = 3000;
 export const LF = '\n';
+
+/**
+ * Document level frame id.
+ */
+export const MAIN_FRAME_ID = 0;

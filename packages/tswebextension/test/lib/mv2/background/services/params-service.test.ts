@@ -8,11 +8,11 @@ import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 import { ParamsService } from '../../../../../src/lib/mv2/background/services/params-service';
 import {
-    ContentType,
-    FilteringEventType,
     RequestContextState,
     requestContextStorage,
 } from '../../../../../src/lib';
+import { ContentType } from '../../../../../src/lib/common/request-type';
+import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
 
 describe('Params service', () => {
     const mockFilteringLog = new MockFilteringLog();

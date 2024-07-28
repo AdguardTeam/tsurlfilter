@@ -3,8 +3,8 @@ import {
     type ConfigurationMV2,
     configurationMV2Validator,
     FilterListPreprocessor,
-    LF,
 } from '../../../../src/lib';
+import { LF } from '../../../../src/lib/common/constants';
 
 describe('configuration validator', () => {
     const validConfiguration: ConfigurationMV2 = {

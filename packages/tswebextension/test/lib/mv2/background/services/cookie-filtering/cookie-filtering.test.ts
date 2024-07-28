@@ -15,14 +15,14 @@ import { getNetworkRuleFields } from '../../helpers/rule-fields';
 import { BrowserCookieApi } from '../../../../../../src/lib/common/cookie-filtering/browser-cookie-api';
 import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
 import {
-    ContentType,
     engineApi,
-    FilteringEventType,
     type RequestContext,
     RequestContextState,
     requestContextStorage,
     tabsApi,
 } from '../../../../../../src/lib';
+import { ContentType } from '../../../../../../src/lib/common/request-type';
+import { FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 
 jest.mock('@lib/common/utils/logger');
 jest.mock('@lib/common/cookie-filtering/browser-cookie-api');

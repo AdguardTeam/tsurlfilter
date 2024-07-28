@@ -3,7 +3,7 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 import type { Tabs } from 'webextension-polyfill';
 
-import { Frame, MAIN_FRAME_ID } from './frame';
+import { Frame } from './frame';
 import {
     type FilteringLog,
     defaultFilteringLog,
@@ -11,6 +11,7 @@ import {
 } from '../../common/filtering-log';
 import { isHttpOrWsRequest } from '../../common/utils/url';
 import { DocumentApi } from '../background/document-api';
+import { MAIN_FRAME_ID } from '../../common/constants';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.

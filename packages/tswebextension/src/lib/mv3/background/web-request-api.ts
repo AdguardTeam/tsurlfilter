@@ -3,18 +3,15 @@
  * API for applying rules from background service
  * by handling web Request API and web navigation events.
  *
- * TODO: Update description of flow.
- *
  * This scheme describes flow for MV3.
  *
  * Event data is aggregated into two contexts: {@link RequestContext},
  * which contains data about the specified request
  * and {@link TabContext} which contains data about the specified tab.
  *
- *
  * Applying {@link NetworkRule} from the background page:
  *
- * The {@link MatchingResult} of specified request is calculated and stored in context storages,
+ * The cssText and scriptText for specified request are calculated and stored in context storages,
  * at the time {@link RequestEvents.onBeforeRequest} is processed.
  *
  * At {@link RequestEvents.onBeforeSendHeaders}, the request headers will be parsed to apply $cookie rules
@@ -22,7 +19,7 @@
  * At {@link RequestEvents.onHeadersReceived}, the response headers are handled in the same way.
  *
  * The specified {@link RequestContext} will be removed from {@link requestContextStorage}
- * on {@link RequestEvents.onCompleted} or {@link RequestEvents.onErrorOccurred} events.
+ * on {@link WebNavigation.onCommitted} after injection or {@link RequestEvents.onErrorOccurred} events.
  *
  *
  * Web Request API Event Handling:
@@ -65,20 +62,20 @@
  *                                     │ │                             │
  *                                     │ └─────────────────────────────┘
  *                                     │
- *                                     │ ┌─────────────────────────────┐
- *                                     │ │                             │
+ *   On response started               │ ┌─────────────────────────────┐
+ *   We try to inject js               │ │                             │
  *                                     └─►      onResponseStarted      │
  *                                       │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- * Remove the request information        │                             │
- * from {@link requestContextStorage}.   │         onCompleted         │
  *                                       │                             │
+ * Removes the request information       │         onCompleted         │
+ * from {@link requestContextStorage}.   │                             │
  *                                       └─────────────────────────────┘.
  *
  *                                       ┌─────────────────────────────┐
- * Remove the request information        │                             │
+ * Removes the request information       │                             │
  * from {@link requestContextStorage}.   │       onErrorOccurred       │
  *                                       │                             │
  *                                       └─────────────────────────────┘.
@@ -98,11 +95,11 @@
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- * Try injecting JS rules                │                             │
+ * Try injecting js and css              │                             │
  * into the frame with source            │         onCommitted         │
  * based on {@link CosmeticRule}.        │                             │
- *                                       └──────────────┬──────────────┘
- *                                                      │
+ * and remove data from the              └──────────────┬──────────────┘
+ * {@link RequestContextStorage}                        │
  *                                       ┌──────────────▼──────────────┐
  *                                       │                             │
  *                                       │      onDOMContentLoaded     ├─┐
@@ -138,22 +135,19 @@ import browser, { type WebRequest, type WebNavigation } from 'webextension-polyf
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
-import {
-    BACKGROUND_TAB_ID,
-    FilteringEventType,
-    defaultFilteringLog,
-    getErrorMessage,
-} from '../../common';
 import { RequestEvents } from './request/events/request-events';
 import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
-import { MAIN_FRAME_ID } from '../tabs/frame';
 import { requestContextStorage } from './request/request-context-storage';
-import { RequestBlockingApi } from './request/request-blocking-api';
 import { DocumentApi } from './document-api';
-import { CosmeticJsApi } from './cosmetic-js-api';
+import { CosmeticApi } from './cosmetic-api';
+import { getErrorMessage } from '../../common/error';
+import { BACKGROUND_TAB_ID, MAIN_FRAME_ID } from '../../common/constants';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { logger } from '../../common/utils/logger';
+import { RequestBlockingApi } from './request/request-blocking-api';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -161,7 +155,7 @@ const FRAME_DELETION_TIMEOUT = 3000;
  * API for applying rules from background service by handling
  * Web Request API and web navigation events.
  *
- * TODO: Calculate  matchingResult and cosmeticResult save them to the cache
+ * Calculates matchingResult and cosmeticResult and saves them to the cache
  * related to pair tabId+documentId to save execution time of future requests
  * cosmetic rules from content-script.
  */
@@ -170,11 +164,13 @@ export class WebRequestApi {
      * Adds listeners to web request events.
      */
     public static start(): void {
+        // browser.webRequest Events
         RequestEvents.onBeforeRequest.addListener(WebRequestApi.onBeforeRequest);
+        RequestEvents.onResponseStarted.addListener(WebRequestApi.onResponseStarted);
         RequestEvents.onBeforeSendHeaders.addListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.addListener(WebRequestApi.onHeadersReceived);
-        RequestEvents.onCompleted.addListener(WebRequestApi.onCompleted);
         RequestEvents.onErrorOccurred.addListener(WebRequestApi.onErrorOccurred);
+        RequestEvents.onCompleted.addListener(WebRequestApi.onCompleted);
 
         // browser.webNavigation Events
         browser.webNavigation.onBeforeNavigate.addListener(WebRequestApi.onBeforeNavigate);
@@ -187,6 +183,7 @@ export class WebRequestApi {
      * Removes web request event handlers.
      */
     public static stop(): void {
+        // browser.webRequest Events
         RequestEvents.onBeforeRequest.removeListener(WebRequestApi.onBeforeRequest);
         RequestEvents.onBeforeSendHeaders.removeListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.removeListener(WebRequestApi.onHeadersReceived);
@@ -277,7 +274,14 @@ export class WebRequestApi {
 
             // Save cosmeticResult for future return it from cache without recalculating.
             tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
-            requestContextStorage.update(requestId, { cosmeticResult });
+
+            const scriptText = CosmeticApi.getScriptText(cosmeticResult, requestUrl || referrerUrl);
+            const cssText = CosmeticApi.getCssText(cosmeticResult);
+
+            requestContextStorage.update(requestId, {
+                scriptText,
+                cssText,
+            });
         }
 
         const basicResult = result.getBasicResult();
@@ -310,6 +314,27 @@ export class WebRequestApi {
             //     thirdParty,
             // );
         }
+    }
+
+    /**
+     * On response started event handler.
+     *
+     * @param event On response started event.
+     * @param event.context Event context.
+     */
+    private static onResponseStarted({ context }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
+        if (!context) {
+            return;
+        }
+
+        const { requestId, requestType } = context;
+
+        if (requestType !== RequestType.Document
+            && requestType !== RequestType.SubDocument) {
+            return;
+        }
+
+        CosmeticApi.applyJsByRequest(requestId);
     }
 
     /**
@@ -399,22 +424,15 @@ export class WebRequestApi {
     }
 
     /**
-     * This is handler for the last event from the request lifecycle.
+     * Event handler for onErrorOccurred event. It fires when an error occurs.
      *
-     * @param event On completed event.
-     * @param event.context Request context.
-     * @private
+     * @param event On error occurred event.
+     * @param event.details On error occurred event details.
      */
     private static onCompleted({
-        context,
+        details,
     }: RequestData<WebRequest.OnCompletedDetailsType>): void {
-        if (!context) {
-            return;
-        }
-
-        const { requestId } = context;
-
-        requestContextStorage.delete(requestId);
+        requestContextStorage.delete(details.requestId);
     }
 
     /**
@@ -425,6 +443,11 @@ export class WebRequestApi {
         details: WebNavigation.OnCompletedDetailsType | WebNavigation.OnErrorOccurredDetailsType,
     ): void {
         const { tabId, frameId } = details;
+
+        setTimeout(() => {
+            requestContextStorage.deleteByTabAndFrame(tabId, frameId);
+        }, FRAME_DELETION_TIMEOUT);
+
         const tabContext = tabsApi.getTabContext(tabId);
 
         if (!tabContext) {
@@ -448,15 +471,18 @@ export class WebRequestApi {
     /**
      * On WebNavigation.onCommitted event we will try to inject scripts into tab.
      *
-     * @param item Web navigation details.
-     * @param item.tabId The ID of the tab in which the navigation occurred.
-     * @param item.url The url of the tab in which the navigation occurred.
+     * @param details Navigation event details.
      */
-    private static onCommitted(
-        { tabId, url }: browser.WebNavigation.OnCommittedDetailsType,
-    ): void {
-        // Note: this is async function but we will not await it because
+    private static onCommitted(details: browser.WebNavigation.OnCommittedDetailsType): void {
+        const { tabId, frameId } = details;
+
+        // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
-        CosmeticJsApi.getAndExecuteScripts(tabId, url);
+        Promise.all([
+            CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
+            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+        ]).then(() => {
+            requestContextStorage.deleteByTabAndFrame(tabId, frameId);
+        }).catch((e) => logger.error(e));
     }
 }

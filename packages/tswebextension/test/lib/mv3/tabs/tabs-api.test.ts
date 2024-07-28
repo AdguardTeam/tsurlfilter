@@ -4,10 +4,12 @@ import type {
     MatchingResult,
     NetworkRule,
 } from '@adguard/tsurlfilter';
+
 import { type TabFrameRequestContext, TabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
 import { TabContext, type TabInfo } from '../../../../src/lib/mv3/tabs/tab-context';
-import { Frame, MAIN_FRAME_ID } from '../../../../src/lib/mv3/tabs/frame';
+import { Frame } from '../../../../src/lib/mv3/tabs/frame';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
+import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
 
 jest.mock('@lib/mv3/tabs/tab-context');
 jest.mock('@lib/mv3/tabs/frame');

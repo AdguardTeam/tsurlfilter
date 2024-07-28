@@ -4,8 +4,9 @@ import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurl
 import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 import { EventChannel } from '../../common/utils/channels';
 import { type FrameRequestContext, TabContext } from './tab-context';
-import { type Frame, MAIN_FRAME_ID } from './frame';
+import { type Frame } from './frame';
 import { DocumentApi } from '../background/document-api';
+import { MAIN_FRAME_ID } from '../../common/constants';
 
 /**
  * Request context data related to the tab's frame.

@@ -12,8 +12,9 @@ import {
     parseCharsetFromHeader,
 } from './charsets';
 import { type RequestContext } from '../../request';
-import { FilteringEventType, type FilteringLogInterface, logger } from '../../../../common';
 import { type ContentStringFilterInterface } from './content-string-filter';
+import { FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
+import { logger } from '../../../../common/utils/logger';
 
 /**
  * Content Stream Filter class.

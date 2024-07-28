@@ -1,13 +1,14 @@
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
+
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import {
-    ContentType,
     documentBlockingService,
     engineApi,
     type GetBlockingResponseParams,
     RequestBlockingApi,
     tabsApi,
 } from '../../../../../src/lib';
+import { ContentType } from '../../../../../src/lib/common/request-type';
 
 jest.mock('@lib/mv2/background/api');
 

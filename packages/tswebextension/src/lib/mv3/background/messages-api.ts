@@ -2,14 +2,9 @@ import { type MatchingResult, NetworkRuleOption, RequestType } from '@adguard/ts
 import browser from 'webextension-polyfill';
 
 import { type CookieRule } from '../../common/content-script/cookie-controller';
-import {
-    getAssistantCreateRulePayloadValidator,
-    getCssPayloadValidator,
-} from '../../common';
-import { isEmptySrcFrame, isHttpOrWsRequest } from '../../common/utils';
 import { logger } from '../../common/utils/logger';
 
-import { type CosmeticRules, engineApi } from './engine-api';
+import { engineApi } from './engine-api';
 import { type TsWebExtension } from './app';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import {
@@ -21,6 +16,10 @@ import {
 } from './messages';
 import { Assistant } from './assistant';
 import { DocumentApi } from './document-api';
+import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
+import { getAssistantCreateRulePayloadValidator, getCosmeticDataPayloadValidator } from '../../common/message';
+import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
+import { isHttpOrWsRequest } from '../../common/utils/url';
 
 export type MessagesHandlerMV3 = (
     message: MessageMV3,
@@ -73,8 +72,8 @@ export class MessagesApi {
 
         const { type } = message;
         switch (type) {
-            case CommonMessageType.GetCss: {
-                return this.getCss(sender, message.payload);
+            case CommonMessageType.GetCosmeticData: {
+                return this.handleGetCosmeticData(sender, message.payload);
             }
             case ExtendedMV3MessageType.GetCollectedLog: {
                 return declarativeFilteringLog.getCollected();
@@ -107,37 +106,33 @@ export class MessagesApi {
      *
      * @returns Cosmetic css or undefined if there are no css rules for this request.
      */
-    private getCss(
+    private handleGetCosmeticData(
         sender: browser.Runtime.MessageSender,
         payload?: unknown,
-    ): CosmeticRules | undefined {
-        logger.debug('[tswebextension.getCss]: received call: ', payload);
+    ): ContentScriptCosmeticData | undefined {
+        logger.debug('[tswebextension.handleGetCosmeticData]: received call: ', payload);
+        if (!payload || !sender?.tab?.id) {
+            return undefined;
+        }
 
         if (!this.tsWebExtension.isStarted) {
             return undefined;
         }
 
-        const res = getCssPayloadValidator.safeParse(payload);
+        const res = getCosmeticDataPayloadValidator.safeParse(payload);
         if (!res.success) {
+            logger.error('[tswebextension.handleGetCosmeticData]: cannot parse payload: ', payload, res.error);
             return undefined;
         }
 
-        const { url, referrer } = res.data;
+        const tabId = sender.tab?.id;
+        let { frameId } = sender;
 
-        const result = MessagesApi.calculateMatchingResult(url, referrer, sender);
-
-        const cosmeticOption = result?.getCosmeticOption();
-
-        if (cosmeticOption === undefined) {
-            return undefined;
+        if (!frameId) {
+            frameId = 0;
         }
 
-        return engineApi.buildCosmeticCss(
-            url,
-            cosmeticOption,
-            false,
-            false,
-        );
+        return CosmeticApi.getContentScriptData(res.data.documentUrl, tabId, frameId);
     }
 
     /**

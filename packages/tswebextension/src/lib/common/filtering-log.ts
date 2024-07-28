@@ -1,4 +1,4 @@
-import { type RuleInfo } from '../mv2/content-script/rule-info';
+import { type RuleInfo } from './content-script/rule-info';
 import type { ContentType } from './request-type';
 import { EventChannel, type EventChannelInterface } from './utils';
 

@@ -1,4 +1,4 @@
-import { getHost, isThirdPartyRequest } from '../../../../../src/lib';
+import { getHost, isThirdPartyRequest } from '../../../../../src/lib/common/utils/url';
 
 describe('Url utils', () => {
     it('parses url host', () => {
