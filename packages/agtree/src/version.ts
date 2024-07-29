@@ -8,6 +8,6 @@ import { version as importedVersion } from '../package.json';
 // Don't export version from package.json directly, because if you run
 // `tsc` in the root directory, it will generate `dist/types/src/version.d.ts`
 // with wrong relative path to `package.json`. So we need this little "hack"
-const version = importedVersion;
+const AGTREE_VERSION = importedVersion;
 
-export { version };
+export { AGTREE_VERSION };
