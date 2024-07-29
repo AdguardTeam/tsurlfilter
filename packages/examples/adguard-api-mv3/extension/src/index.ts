@@ -25,7 +25,6 @@ import {
             3,
             4,
             9,
-            14,
         ],
         filteringEnabled: true,
         allowlist: ['www.example.com'],
