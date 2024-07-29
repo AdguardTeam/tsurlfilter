@@ -14,3 +14,9 @@ environment-permissions:
         permissions:
           - view
           - deploy
+  - npmjs • alpha:
+      - groups:
+          - extensions-developers
+        permissions:
+          - view
+          - deploy
