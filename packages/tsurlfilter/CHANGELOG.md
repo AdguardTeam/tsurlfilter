@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support of pipe separator in `$permissions` modifier values [#116].
 - Support for disabling specific `$stealth` options:
   `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100].
-- Support for regexp values in $domain modifier of network and cosmetic rules [#41].
+- Support for regexp values in `$domain` modifier of network and cosmetic rules [#41].
 - New `$permissions` modifier to set Permissions-Policy response header [#66].
 - New `$header` modifier to match requests by response headers [#63].
 - Support conversion to DNR for `$permissions` modifier.
@@ -33,10 +33,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New rule indexing algorithm. The storage index is now an integer representing
   the rule position in the concatenated filter list text.
   The list id is determined by the pre-stored filter list offset during the scan.
+- Allowlist rule creation utilities: `createAllowlistRuleNode` and `createAllowlistRuleList`.
+- `PreprocessFilterList` utility class to preprocess filter lists before scanning.
+- Source map and source map utilities.
+- Utility for extension resource names.
 
 ### Changed
 
 - How rule validation on being `too wide` works. New rule is "total rule length must be 4 or more characters" [#110].
+- Integrated AGTree library into the project [#85].
+- `IFilter`'s content now based on `PreprocessFilterList` interface.
+- Rule classes now expect AGTree AST nodes in the constructor instead of rule text.
+- Reworked CSS validation. Now it's done with the `@adguard/css-tokenizer` package.
+- Reworked scanning mechanism, from now on the scanner expects an AGTree byte buffer
+  and reads the AGTree rule nodes from it.
+- Changed `IRuleList`s `retrieveRuleText` method to `retrieveRuleNode`.
+- `BufferRuleList` now expects an AGTree byte buffer in the constructor.
+- `ILineReader` changed to `IReader`.
 
 ### Fixed
 
@@ -46,10 +59,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Extension leaking it's instance id when redirecting requests [AdguardBrowserExtension#2278].
 - Cosmetic option allowlist rules interfering with basic blocking rules [AdguardBrowserExtension#2690].
 
+### Removed
+
+- `BufferLineReader`, `FileLineReader`, `StringRuleList`, `RuleValidator`, `ScriptletParser`
+  and `RuleConverter` classes.
+- Cosmetic rule parser.
+
 [3.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0-alpha.0
 [#116]: https://github.com/AdguardTeam/tsurlfilter/issues/116
 [#110]: https://github.com/AdguardTeam/tsurlfilter/issues/110
 [#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
+[#85]: https://github.com/AdguardTeam/tsurlfilter/issues/85
 [#69]: https://github.com/AdguardTeam/tsurlfilter/issues/69
 [#66]: https://github.com/AdguardTeam/tsurlfilter/issues/66
 [#64]: https://github.com/AdguardTeam/tsurlfilter/issues/64
