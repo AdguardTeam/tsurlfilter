@@ -1,14 +1,23 @@
 import browser from 'sinon-chrome';
-import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
-import { CosmeticJsApi } from '../../../../src/lib/mv3/background/cosmetic-js-api';
+import { CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
+
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { TabsCosmeticInjector } from '../../../../src/lib/mv3/tabs/tabs-cosmetic-injector';
+import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
+import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
+import { createCosmeticRule } from '../../../helpers/rule-creator';
 
 jest.mock('@lib/mv3/background/engine-api');
+jest.mock('../../../../src/lib/mv3/background/app-context');
 
 describe('TabsCosmeticInjector', () => {
+    beforeAll(async () => {
+    });
+
     beforeEach(() => {
-        jest.spyOn(CosmeticJsApi, 'getAndExecuteScripts');
+        jest.spyOn(CosmeticApi, 'applyCosmeticResult');
+        jest.spyOn(ScriptingApi, 'executeScript');
+        jest.spyOn(ScriptingApi, 'insertCSS');
     });
 
     afterEach(() => {
@@ -32,13 +41,36 @@ describe('TabsCosmeticInjector', () => {
             const matchingResult = {} as MatchingResult;
             matchingResult.getCosmeticOption = jest.fn();
 
-            const cosmeticResult = {} as CosmeticResult;
+            const cosmeticResult = new CosmeticResult();
+            cosmeticResult.JS.append((
+                createCosmeticRule("#%#console.log('test');", 1)
+            ));
+            cosmeticResult.CSS.append((
+                createCosmeticRule('##h1', 1)
+            ));
 
             jest.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
             jest.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
-            jest.spyOn(engineApi, 'getScriptletsDataForUrl').mockReturnValue([]);
             jest.spyOn(Date, 'now').mockReturnValue(timestamp);
 
+            await TabsCosmeticInjector.processOpenTabs();
+
+            expect(CosmeticApi.applyCosmeticResult).toHaveBeenCalledWith(expect.objectContaining({
+                tabId,
+                frameId,
+            }));
+
+            expect(ScriptingApi.executeScript).toHaveBeenCalledWith(expect.objectContaining({
+                tabId,
+                frameId,
+            }));
+
+            expect(ScriptingApi.insertCSS).toHaveBeenCalledWith(expect.objectContaining({
+                tabId,
+                frameId,
+            }));
+
+            // FIXME: Uncomment tests when logging will be returned
             // const expectedLogParams = {
             //     url,
             //     tabId,
@@ -46,13 +78,6 @@ describe('TabsCosmeticInjector', () => {
             //     timestamp,
             //     contentType: ContentType.Document,
             // };
-
-            await TabsCosmeticInjector.processOpenTabs();
-
-            expect(CosmeticJsApi.getAndExecuteScripts).toBeCalledWith(tabId, url);
-            // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
-            // expect(CosmeticApi.applyFrameCssRules).toBeCalledWith(frameId, tabId);
-            // expect(CosmeticApi.applyFrameJsRules).toBeCalledWith(frameId, tabId);
             // expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 
@@ -63,10 +88,11 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticJsApi.getAndExecuteScripts).not.toBeCalled();
-            // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
-            // expect(CosmeticApi.applyFrameCssRules).not.toBeCalled();
-            // expect(CosmeticApi.applyFrameJsRules).not.toBeCalled();
+            expect(CosmeticApi.applyCosmeticResult).not.toBeCalled();
+            expect(ScriptingApi.executeScript).not.toBeCalled();
+            expect(ScriptingApi.insertCSS).not.toBeCalled();
+
+            // FIXME: Uncomment tests when logging will be returned
             // expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
 
@@ -80,11 +106,11 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticJsApi.getAndExecuteScripts).not.toBeCalled();
+            expect(CosmeticApi.applyCosmeticResult).not.toBeCalled();
+            expect(ScriptingApi.executeScript).not.toBeCalled();
+            expect(ScriptingApi.insertCSS).not.toBeCalled();
 
-            // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
-            // expect(CosmeticApi.applyFrameCssRules).not.toBeCalled();
-            // expect(CosmeticApi.applyFrameJsRules).not.toBeCalled();
+            // FIXME: Uncomment tests when logging will be returned
             // expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
     });

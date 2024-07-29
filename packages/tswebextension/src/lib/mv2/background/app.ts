@@ -21,12 +21,9 @@ import type { RedirectsService } from './services/redirects/redirects-service';
 import type { DocumentBlockingService } from './services/document-blocking-service';
 import type { MessagesApi, MessageHandlerMV2 } from './messages-api';
 import type { ExtSessionStorage } from './ext-session-storage';
-import type {
-    AppInterface,
-    EventChannel,
-    FilteringLog,
-    FilteringLogEvent,
-} from '../../common';
+import { type AppInterface } from '../../common/app';
+import { type EventChannel } from '../../common/utils/channels';
+import type { FilteringLog, FilteringLogEvent } from '../../common/filtering-log';
 
 /**
  * App implementation for MV2.

@@ -4,15 +4,11 @@ import { NetworkRuleOption, CSP_HEADER_NAME } from '@adguard/tsurlfilter';
 
 import { ContentType } from '../../../common/request-type';
 import {
-    defaultFilteringLog,
-    FilteringEventType,
-    type FilteringLogInterface,
-} from '../../../common';
-import {
     type RequestContext,
     requestContextStorage,
 } from '../request/request-context-storage';
 import { RequestBlockingApi } from '../request/request-blocking-api';
+import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 
 /**
  * Content Security Policy Headers filtering service module.

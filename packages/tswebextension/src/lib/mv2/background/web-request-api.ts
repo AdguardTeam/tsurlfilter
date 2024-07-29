@@ -172,12 +172,12 @@ import browser, { type WebRequest, type WebNavigation } from 'webextension-polyf
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { tabsApi, engineApi, documentApi } from './api';
-import { Frame, MAIN_FRAME_ID } from './tabs/frame';
+import { Frame } from './tabs/frame';
 import { findHeaderByName } from '../../common/utils/find-header-by-name';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 import { logger } from '../../common/utils/logger';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { FRAME_DELETION_TIMEOUT } from '../../common/constants';
+import { FRAME_DELETION_TIMEOUT, MAIN_FRAME_ID } from '../../common/constants';
 
 import { removeHeadersService } from './services/remove-headers-service';
 import { Assistant } from './assistant';

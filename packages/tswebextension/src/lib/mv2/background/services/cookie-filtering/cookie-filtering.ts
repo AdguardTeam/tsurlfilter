@@ -1,13 +1,6 @@
 import { nanoid } from 'nanoid';
 import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
-import {
-    ContentType,
-    defaultFilteringLog,
-    FilteringEventType,
-    type FilteringLogInterface,
-    logger,
-} from '../../../../common';
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
 import { findHeaderByName } from '../../../../common/utils/find-header-by-name';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
@@ -15,7 +8,10 @@ import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-co
 import CookieUtils from './utils';
 import { type RequestContext, requestContextStorage } from '../../request';
 import { engineApi, tabsApi } from '../../api';
-import { createFrameMatchQuery } from '../../utils/create-frame-match-query';
+import { createFrameMatchQuery } from '../../../../common/utils/create-frame-match-query';
+import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
+import { logger } from '../../../../common/utils/logger';
+import { ContentType } from '../../../../common/request-type';
 
 /**
  * Cookie filtering.

@@ -114,7 +114,10 @@ export class CookieFiltering {
      */
     private async applyRules(context: RequestContext): Promise<void> {
         const {
-            matchingResult, cookies, requestUrl, tabId,
+            matchingResult,
+            cookies,
+            requestUrl,
+            tabId,
         } = context;
 
         if (!matchingResult || !cookies) {

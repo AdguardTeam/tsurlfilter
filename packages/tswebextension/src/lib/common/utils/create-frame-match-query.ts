@@ -1,9 +1,10 @@
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import { MAIN_FRAME_ID } from '../tabs/frame';
-import { isLocalFrame } from './is-local-frame';
 
-import type { MatchQuery } from '../engine-api';
-import type { TabContext } from '../tabs/tab-context';
+import { isLocalFrame } from '../../mv2/background/utils/is-local-frame';
+import type { MatchQuery } from '../../mv2/background/engine-api';
+import type { TabContext as TabContextMV2 } from '../../mv2/background/tabs/tab-context';
+import type { TabContext as TabContextMV3 } from '../../mv3/tabs/tab-context';
+import { MAIN_FRAME_ID } from '../constants';
 
 /**
  * Creates match query for frame based on content script data and background tab context.
@@ -17,7 +18,7 @@ import type { TabContext } from '../tabs/tab-context';
 export function createFrameMatchQuery(
     frameUrl: string,
     frameId: number,
-    tabContext: TabContext,
+    tabContext: TabContextMV2 | TabContextMV3,
 ): MatchQuery {
     const { info } = tabContext;
 

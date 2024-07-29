@@ -56,7 +56,7 @@ const contentScriptConfig = {
 // browser-polyfill in the target application.
 const cssHitsCounterConfig = {
     cache,
-    input: 'src/lib/mv2/content-script/css-hits-counter.ts',
+    input: 'src/lib/common/content-script/css-hits-counter.ts',
     output: [
         {
             file: `${OUTPUT_PATH}/css-hits-counter.js`,
@@ -68,7 +68,7 @@ const cssHitsCounterConfig = {
         '@adguard/extended-css',
     ],
     watch: {
-        include: 'src/lib/mv2/content-script/css-hits-counter.ts',
+        include: 'src/lib/common/content-script/css-hits-counter.ts',
     },
     plugins: commonPlugins,
 };
@@ -236,7 +236,7 @@ const gpcContentScriptConfig = {
     plugins: commonPlugins,
 };
 
-const hideDocumentReferrerContentScriptSrc = 'src/lib/mv3/content-script/hideDocumentReferrer.ts';
+const hideDocumentReferrerContentScriptSrc = 'src/lib/mv3/content-script/hide-document-referrer.ts';
 const hideDocumentReferrerContentScriptOutput = `${OUTPUT_PATH}/hideDocumentReferrer.js`;
 
 const hideDocumentReferrerContentScriptConfig = {

@@ -2,11 +2,12 @@ import { defaultParserOptions, type ParserOptions, RuleParser } from '@adguard/a
 
 import { extendConfig, type RecursivePartial } from '../../../helpers/config-extend';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
-import { ALLOWLIST_FILTER_ID, type ConfigurationMV2 } from '../../../../src/lib';
+import { type ConfigurationMV2 } from '../../../../src/lib';
 import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../src/lib/mv2/background/context';
 import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
+import { ALLOWLIST_FILTER_ID } from '../../../../src/lib/common/constants';
 
 jest.mock('@lib/mv2/background/context');
 

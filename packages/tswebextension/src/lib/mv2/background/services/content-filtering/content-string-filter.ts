@@ -6,7 +6,7 @@ import {
 } from '@adguard/tsurlfilter';
 import { nanoid } from 'nanoid';
 
-import { type RuleInfo } from '../../../content-script/rule-info';
+import { type RuleInfo } from '../../../../common/content-script/rule-info';
 import { FilteringEventType, type FilteringLog } from '../../../../common/filtering-log';
 import { getDomain } from '../../../../common/utils/url';
 

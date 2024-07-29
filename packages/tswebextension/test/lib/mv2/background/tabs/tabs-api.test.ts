@@ -5,9 +5,9 @@ import type {
     MatchingResult,
     NetworkRule,
 } from '@adguard/tsurlfilter';
+
 import {
     Frame,
-    MAIN_FRAME_ID,
     TabContext,
     type TabFrameRequestContext,
     type TabInfo,
@@ -18,6 +18,7 @@ import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { appContext } from '../../../../../src/lib/mv2/background/context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
+import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
 
 jest.mock('@lib/mv2/background/allowlist');
 jest.mock('@lib/mv2/background/engine-api');
