@@ -20,6 +20,17 @@ Table of contents:
     - [No new token types](#no-new-token-types)
 - [Example usage](#example-usage)
 - [API](#api)
+    - [Tokenizer functions](#tokenizer-functions)
+        - [`tokenize`](#tokenize)
+        - [`tokenizeExtended`](#tokenizeextended)
+    - [Utilities](#utilities)
+        - [`TokenizerContext`](#tokenizercontext)
+        - [`decodeIdent`](#decodeident)
+    - [`CSS_TOKENIZER_VERSION`](#css_tokenizer_version)
+    - [Token types](#token-types)
+        - [`TokenType`](#tokentype)
+        - [`getBaseTokenName`](#getbasetokenname)
+        - [`getFormattedTokenName`](#getformattedtokenname)
 - [Benchmark results](#benchmark-results)
 - [Ideas \& Questions](#ideas--questions)
 - [License](#license)
@@ -44,9 +55,9 @@ Extended CSS introduces additional pseudo-classes that are not defined in the CS
 please refer to the following resources:
 
 <!--markdownlint-disable MD013-->
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px"> [AdGuard: *Extended CSS capabilities*][adg-ext-css]
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" width="14px"> [uBlock Origin: *Procedural cosmetic filters*][ubo-procedural]
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px"> [Adblock Plus: *Extended CSS selectors*][abp-ext-css]
+- <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard: *Extended CSS capabilities*][adg-ext-css]
+- <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock Origin logo" width="14px"> [uBlock Origin: *Procedural cosmetic filters*][ubo-procedural]
+- <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus: *Extended CSS selectors*][abp-ext-css]
 <!--markdownlint-enable MD013-->
 
 ### Why do we need a custom tokenizer?
@@ -134,24 +145,172 @@ console.table(data, Object.values(COLUMNS));
 
 ## API
 
-Tokenization is accomplished by calling the tokenize or tokenizeExtended function. Both functions accept the following
-arguments:
+### Tokenizer functions
 
-- `source`: The CSS source string to tokenize.
-- `onToken`: A callback function invoked for each token found in the source string, with the following arguments:
-    <!-- TODO: Add link -->
-    - `token`: The token type (you can see token types here).
-    - `start`: The starting index of the token in the source string.
-    - `end`: The ending index of the token in the source string.
-- `onError`: A callback function called when an error occurs during tokenization. Errors do not break the tokenization
-process, as the tokenizer is tolerant and attempts to recover from errors in line with the CSS Syntax Level 3
-specification. The callback function accepts the following arguments:
-    - `message`: The error message.
-    - `start`: The starting index of the error in the source string.
-    - `end`: The ending index of the error in the source string.
-- `functionHandlers`: This allows for the customized handling of functions. Map keys correspond to function names,
-while the values are void callback functions serving as "tokenizer context" functions. These functions can be used to
-manage pseudo-classes and have only one argument: the shared tokenizer context object.
+#### `tokenize`
+
+```ts
+/**
+ * CSS tokenizer function
+ *
+ * @param source Source code to tokenize
+ * @param onToken Tokenizer callback which is called for each token found in source code
+ * @param onError Error callback which is called when a parsing error is found (optional)
+ * @param functionHandlers Custom function handlers (optional)
+ */
+function tokenize(
+    source: string,
+    onToken: OnTokenCallback,
+    onError: OnErrorCallback = () => {},
+    functionHandlers?: Map<number, TokenizerContextFunction>,
+): void;
+```
+
+where
+
+```ts
+/**
+ * Callback which is called when a token is found
+ *
+ * @param type Token type
+ * @param start Token start offset
+ * @param end Token end offset
+ * @param props Other token properties (if any)
+ * @note Hash tokens have a type flag set to either "id" or "unrestricted". The type flag defaults to "unrestricted" if
+ * not otherwise set
+ */
+type OnTokenCallback = (type: TokenType, start: number, end: number, props?: Record<string, unknown>) => void;
+```
+
+```ts
+/**
+ * Callback which is called when a parsing error is found. According to the spec, parsing errors are not fatal and
+ * therefore the tokenizer is quite permissive, but if needed, the error callback can be used.
+ *
+ * @param message Error message
+ * @param start Error start offset
+ * @param end Error end offset
+ * @see {@link https://www.w3.org/TR/css-syntax-3/#error-handling}
+ */
+type OnErrorCallback = (message: string, start: number, end: number) => void;
+```
+
+```ts
+/**
+ * Function handler
+ *
+ * @param context Reference to the tokenizer context instance
+ * @param ...args Additional arguments (if any)
+ */
+type TokenizerContextFunction = (context: TokenizerContext, ...args: any[]) => void;
+```
+
+#### `tokenizeExtended`
+
+`tokenizeExtended` is an extended version of the `tokenize` function that supports custom function handlers. This
+function is designed to handle special pseudo-classes like `:contains()` and `:xpath()`.
+
+```ts
+/**
+ * Extended CSS tokenizer function
+ *
+ * @param source Source code to tokenize
+ * @param onToken Tokenizer callback which is called for each token found in source code
+ * @param onError Error callback which is called when a parsing error is found (optional)
+ * @param functionHandlers Custom function handlers (optional)
+ * @note If you specify custom function handlers, they will be merged with the default function handlers. If you
+ * duplicate a function handler, the custom one will be used instead of the default one, so you can override the default
+ * function handlers this way, if you want to.
+ */
+function tokenizeExtended(
+    source: string,
+    onToken: OnTokenCallback,
+    onError: OnErrorCallback = () => {},
+    functionHandlers: Map<number, TokenizerContextFunction> = new Map(),
+): void
+```
+
+### Utilities
+
+#### `TokenizerContext`
+
+A class that represents the tokenizer context. It is used to manage the tokenizer state and provides access to the
+source code, current position, and other relevant information.
+
+#### `decodeIdent`
+
+```ts
+/**
+ * Decodes a CSS identifier according to the CSS Syntax Module Level 3 specification.
+ *
+ * @param ident CSS identifier to decode.
+ *
+ * @example
+ * ```ts
+ * decodeIdent(String.raw`\00075\00072\0006C`); // 'url'
+ * decodeIdent('url'); // 'url'
+ * ```
+ *
+ * @returns Decoded CSS identifier.
+ */
+function decodeIdent(ident: string): string;
+```
+
+### `CSS_TOKENIZER_VERSION`
+
+```ts
+/**
+ * @adguard/css-tokenizer version
+ */
+const CSS_TOKENIZER_VERSION: string;
+```
+
+### Token types
+
+#### `TokenType`
+
+An enumeration of token types recognized by the tokenizer.
+They are strictly based on the CSS Syntax Level 3 specification.
+
+See https://www.w3.org/TR/css-syntax-3/#tokenization for more details.
+
+#### `getBaseTokenName`
+
+```ts
+/**
+ * Get base token name by token type
+ *
+ * @param type Token type
+ *
+ * @example
+ * ```ts
+ * getBaseTokenName(TokenType.Ident); // 'ident'
+ * getBaseTokenName(-1); // 'unknown'
+ * ```
+ *
+ * @returns Base token name or 'unknown' if token type is unknown
+ */
+function getBaseTokenName(type: TokenType): string;
+```
+
+#### `getFormattedTokenName`
+
+```ts
+/**
+ * Get formatted token name by token type
+ *
+ * @param type Token type
+ *
+ * @example
+ * ```ts
+ * getFormattedTokenName(TokenType.Ident); // '<ident-token>'
+ * getFormattedTokenName(-1); // '<unknown-token>'
+ * ```
+ *
+ * @returns Formatted token name or `'<unknown-token>'` if token type is unknown
+ */
+function getFormattedTokenName(type: TokenType): string;
+```
 
 > [!NOTE]
 > Our API and token list is also compatible with the [CSSTree][css-tree-repo]'s tokenizer API, and in the long term, we
