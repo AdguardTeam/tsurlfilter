@@ -107,6 +107,7 @@ export class RequestContextStorage {
         /**
          * We store tab and frame id to request id mapping only for document and subdocument requests.
          * Otherwise, there might be other requests that can rewrite this mapping with unrelated data.
+         * For example, a request for a script or image might have the same tab and frame id too.
          */
         if (RequestContextStorage.isDocumentOrSubDocument(requestData.requestType)) {
             const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(requestData.tabId, requestData.frameId);
@@ -160,14 +161,13 @@ export class RequestContextStorage {
      * @param requestId Request id.
      */
     public delete(requestId: string): void {
-        this.requestMap.delete(requestId);
         const context = this.requestMap.get(requestId);
         if (!context) {
             return;
         }
 
         /**
-         * Document and subdocument requests are deleted from the deleteByTabAndFrame method.
+         * Document and subdocument requests are deleted by the deleteByTabAndFrame method.
          */
         if (!RequestContextStorage.isDocumentOrSubDocument(context.requestType)) {
             this.requestMap.delete(requestId);
