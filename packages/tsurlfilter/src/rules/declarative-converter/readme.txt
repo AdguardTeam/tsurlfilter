@@ -29,13 +29,13 @@
 ! Output result will contain only one rule:
 ! ```json
 ! {
-!   id: ruleId,
-!   action: { type: 'block' },
-!   condition: {
-!       urlFilter: '||persistent.com^',
-!       isUrlFilterCaseSensitive: false,
+!   "id": "<ruleId>",
+!   "action": {"type": "block"},
+!   "condition": {
+!     "urlFilter": "||persistent.com^",
+!     "isUrlFilterCaseSensitive": "false"
 !   },
-!   priority: 1,
+!   "priority": "1"
 ! }
 ! ```
 !
@@ -58,23 +58,23 @@
 ! ```adblock
 ! ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
 ! ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
-! ```adblock
-! vvvvvvv
+! ```
+! ↓↓↓↓ converted to ↓↓↓↓
 ! ```json
 ! {
-!     "id": 1,
-!     "action": {
-!         "type": "redirect",
-!         "redirect": { "transform": {"queryTransform": {"removeParams": [ "p1case1", "p2case1", ] } } }
-!     },
-!     "condition": {
-!         "urlFilter": "||testcases.adguard.com",
-!         "resourceTypes": [
-!             "xmlhttprequest"
-!         ],
-!         "isUrlFilterCaseSensitive": false
-!     },
-!     "priority": 101
+!   "id": 1,
+!   "action": {
+!     "type": "redirect",
+!     "redirect": {
+!       "transform": {"queryTransform": {"removeParams": ["p1case1", "p2case1"]}}
+!     }
+!   },
+!   "condition": {
+!     "urlFilter": "||testcases.adguard.com",
+!     "resourceTypes": ["xmlhttprequest"],
+!     "isUrlFilterCaseSensitive": false
+!   },
+!   "priority": 101
 ! }
 ! ```
 ! If we add rule `||testcases.adguard.com$xmlhttprequest,removeparam=p2case1,badfilter`
@@ -89,7 +89,7 @@
 ! !filter 2
 ! ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1,badfilter
 ! ```
-! vvvvvvv
+! ↓↓↓↓ converted to ↓↓↓↓
 ! ```json
 ! { }
 ! ```
