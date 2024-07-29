@@ -14,9 +14,8 @@ import { type TokenType } from '../enums/token-types';
  * @param props Other token properties (if any)
  * @note Hash tokens have a type flag set to either "id" or "unrestricted". The type flag defaults to "unrestricted" if
  * not otherwise set
- * @todo Create a more specific type for `props` parameter, if needed & possible
  */
-export type OnTokenCallback = (type: TokenType, start: number, end: number, props?: object) => void;
+export type OnTokenCallback = (type: TokenType, start: number, end: number, props?: Record<string, unknown>) => void;
 
 /**
  * Callback which is called when a parsing error is found. According to the spec, parsing errors are not fatal and
