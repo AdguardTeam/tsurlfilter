@@ -44,6 +44,19 @@ export type GetHeadersResponseParams = RequestParams & {
  */
 export class RequestBlockingApi {
     /**
+     * Checks if request rule is blocked.
+     *
+     * @param requestRule Request network rule or null.
+     * @returns True, if rule is request blocking, else returns false.
+     */
+    public static isRequestBlockedByRule(requestRule: NetworkRule | null): boolean {
+        return !!requestRule
+            && !requestRule.isAllowlist()
+            && !requestRule.isOptionEnabled(NetworkRuleOption.Replace)
+            && !requestRule.isOptionEnabled(NetworkRuleOption.Redirect);
+    }
+
+    /**
      * Closes the tab which considered as a popup.
      *
      * @param data Needed data for logging closing of tab.
@@ -156,8 +169,6 @@ export class RequestBlockingApi {
             return;
         }
 
-        // We need this only for count total blocked requests,
-        // so we can skip contentType.
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
             data: {

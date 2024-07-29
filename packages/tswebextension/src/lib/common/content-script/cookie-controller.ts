@@ -1,6 +1,6 @@
 import type { GetSaveCookieLogEventPayloadValidator } from '../message';
 
-type OnRuleAppliedData = GetSaveCookieLogEventPayloadValidator;
+export type OnRuleAppliedData = GetSaveCookieLogEventPayloadValidator;
 
 interface OnRuleAppliedCallback {
     (data: OnRuleAppliedData): void;

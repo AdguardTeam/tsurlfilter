@@ -7,6 +7,7 @@ import { tabsApi, type TabFrameRequestContext } from '../../../tabs/tabs-api';
 import { getRequestType } from '../../../../common/request-type';
 import { MAIN_FRAME_ID } from '../../../../common/constants';
 import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
+import { nanoid } from '../../../nanoid';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -224,8 +225,9 @@ export class RequestEvents {
             || url;
 
         // Retrieve the rest part of the request context for record all fields.
-        const requestContext = {
+        const context = {
             ...tabFrameRequestContext,
+            eventId: nanoid(),
             state: RequestContextState.BeforeRequest,
             timestamp: timeStamp,
             thirdParty: isThirdPartyRequest(url, referrerUrl),
@@ -234,9 +236,9 @@ export class RequestEvents {
             method: method as HTTPMethod,
         };
 
-        requestContextStorage.set(requestId, requestContext);
+        requestContextStorage.set(requestId, context);
 
-        return { details, context: requestContext };
+        return { details, context };
     }
 
     /**

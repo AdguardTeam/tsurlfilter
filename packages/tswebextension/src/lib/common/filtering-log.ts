@@ -6,23 +6,23 @@ import { EventChannel, type EventChannelInterface } from './utils';
  * Types of filtering events that can occur during request processing.
  */
 export enum FilteringEventType {
-    SendRequest = 'sendRequest', // done
-    TabReload = 'tabReload', // FIXME: needed in MV3?
-    ApplyBasicRule = 'applyBasicRule', // done
-    ApplyCosmeticRule = 'applyCosmeticRule',
+    SendRequest = 'sendRequest',
+    TabReload = 'tabReload',
+    ApplyBasicRule = 'applyBasicRule',
+    ApplyCosmeticRule = 'applyCosmeticRule', // FIXME: (AG-33733)
     ApplyCspRule = 'applyCspRule',
     ApplyPermissionsRule = 'applyPermissionsRule',
     ReceiveResponse = 'receiveResponse',
     Cookie = 'cookie',
-    RemoveHeader = 'removeHeader',
-    RemoveParam = 'removeParam',
+    RemoveHeader = 'removeHeader', // TODO: Add in MV3
+    RemoveParam = 'removeParam', // TODO: Add in MV3
     ReplaceRuleApply = 'replaceRuleApply',
     ContentFilteringStart = 'contentFilteringStart',
     ContentFilteringFinish = 'contentFilteringFinish',
-    StealthAction = 'stealthAction',
-    StealthAllowlistAction = 'stealthAllowlistAction',
+    StealthAction = 'stealthAction', // TODO: Add in MV3
+    StealthAllowlistAction = 'stealthAllowlistAction', // TODO: Add in MV3
     JsInject = 'jsInject',
-    CspReportBlocked = 'cspReportBlocked',
+    CspReportBlocked = 'cspReportBlocked', // TODO: Add in MV3
 }
 
 /**

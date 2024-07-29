@@ -148,6 +148,8 @@ import { BACKGROUND_TAB_ID, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
 import { RequestBlockingApi } from './request/request-blocking-api';
+import { CspService } from './services/csp-service';
+import { PermissionsPolicyService } from './services/permissions-policy-service';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -243,6 +245,14 @@ export class WebRequestApi {
 
         if (!isHttpOrWsRequest(requestUrl)) {
             return;
+        }
+
+        if (requestType === RequestType.Document && !requestContextStorage.get(requestId)) {
+            // dispatch filtering log reload event
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.TabReload,
+                data: { tabId },
+            });
         }
 
         defaultFilteringLog.publishEvent({
@@ -413,8 +423,16 @@ export class WebRequestApi {
             },
         });
 
-        if (!context?.matchingResult) {
+        if (!context) {
             return;
+        }
+
+        const { requestUrl, requestType } = context;
+
+        if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
+            CspService.onHeadersReceived(context);
+
+            PermissionsPolicyService.onHeadersReceived(context);
         }
 
         cookieFiltering.onHeadersReceived(context);
