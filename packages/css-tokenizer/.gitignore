@@ -23,8 +23,7 @@ node_modules/
 .eslintcache
 
 # Output of 'npm pack'
-# TODO: Allow this again
-# *.tgz
+ *.tgz
 
 # Yarn Integrity file
 .yarn-integrity
