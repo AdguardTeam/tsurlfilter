@@ -412,18 +412,20 @@ export class WebRequestApi {
         context,
         details,
     }: RequestData<WebRequest.OnHeadersReceivedDetailsType>): void {
-        defaultFilteringLog.publishEvent({
-            type: FilteringEventType.ReceiveResponse,
-            data: {
-                tabId: details.tabId,
-                eventId: details.requestId,
-                statusCode: details.statusCode,
-            },
-        });
-
         if (!context) {
             return;
         }
+
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.ReceiveResponse,
+            data: {
+                tabId: context.tabId,
+                // It's important to use same eventId as onBeforeRequest to match
+                // the request in the filtering log and update it's status.
+                eventId: context.eventId,
+                statusCode: details.statusCode,
+            },
+        });
 
         const { requestUrl, requestType } = context;
 
