@@ -10,16 +10,19 @@ environments:
   - npmjs • 1.x
   - npmjs • 2.x
   - npmjs • alpha
+  - npmjs • beta
 
-npmjs • 1.x:
-  docker:
+npmjs • 1.x: &npmjs
+  variables: &npmjs-variables
+    ADDITIONAL_PUBLISH_ARGS: --access public
+  docker: &npmjs-docker
     image: adguard/node-ssh:18.19--0
     volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  triggers: [ ]
+      ${system.PNPM_DIR}: ${bamboo.cachePnpm}
+  triggers: []
   tasks:
     - checkout:
-        force-clean-build: 'true'
+        force-clean-build: true
     - artifact-download:
         artifacts:
           - name: tsurlfilter.tgz
@@ -37,9 +40,9 @@ npmjs • 1.x:
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish tsurlfilter.tgz --access public
+            npm publish tsurlfilter.tgz ${bamboo.inject.ADDITIONAL_PUBLISH_ARGS}
   requirements:
-    - adg-docker: 'true'
+    - adg-docker: true
   notifications:
     - events:
         - deployment-started-and-finished
@@ -49,75 +52,19 @@ npmjs • 1.x:
             url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
 npmjs • 2.x:
+  <<: *npmjs
   docker:
+    <<: *npmjs-docker
     image: adguard/node-ssh:14.18--0
-    volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  triggers: [ ]
-  tasks:
-    - checkout:
-        force-clean-build: 'true'
-    - artifact-download:
-        artifacts:
-          - name: tsurlfilter.tgz
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            set -e
-            set -x
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -alt
-
-            export NPM_TOKEN=${bamboo.npmSecretToken}
-            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish tsurlfilter.tgz --access public
-  requirements:
-    - adg-docker: 'true'
-  notifications:
-    - events:
-        - deployment-started-and-finished
-      recipients:
-        - webhook:
-            name: Deploy webhook
-            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
 npmjs • alpha:
-  docker:
-    image: adguard/node-ssh:14.18--0
-    volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  triggers: [ ]
-  tasks:
-    - checkout:
-        force-clean-build: 'true'
-    - artifact-download:
-        artifacts:
-          - name: tsurlfilter.tgz
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            set -e
-            set -x
+  <<: *npmjs
+  variables:
+    <<: *npmjs-variables
+    ADDITIONAL_PUBLISH_ARGS: --tag alpha --access public
 
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -alt
-
-            export NPM_TOKEN=${bamboo.npmSecretToken}
-            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish tsurlfilter.tgz --tag alpha --access public
-  requirements:
-    - adg-docker: 'true'
-  notifications:
-    - events:
-        - deployment-started-and-finished
-      recipients:
-        - webhook:
-            name: Deploy webhook
-            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+npmjs • beta:
+  <<: *npmjs
+  variables:
+    <<: *npmjs-variables
+    ADDITIONAL_PUBLISH_ARGS: --tag beta --access public
