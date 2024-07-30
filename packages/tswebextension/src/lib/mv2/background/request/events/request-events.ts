@@ -4,17 +4,14 @@ import type { HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, type RequestData } from './request-event';
-import {
-    isThirdPartyRequest,
-    getRequestType,
-    isHttpRequest,
-    defaultFilteringLog,
-    FilteringEventType,
-} from '../../../../common';
-import { MAIN_FRAME_ID, type TabFrameRequestContext } from '../../tabs';
+import { type TabFrameRequestContext } from '../../tabs';
 import { tabsApi } from '../../api';
 import { isFirefox } from '../../utils';
 import CookieUtils from '../../services/cookie-filtering/utils';
+import { getRequestType } from '../../../../common/request-type';
+import { MAIN_FRAME_ID } from '../../../../common/constants';
+import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
+import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
 
 const MAX_URL_LENGTH = 1024 * 16;
 

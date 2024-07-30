@@ -3,9 +3,10 @@ import { RequestType, type HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, type RequestData } from './request-event';
-import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
 import { tabsApi, type TabFrameRequestContext } from '../../../tabs/tabs-api';
-import { MAIN_FRAME_ID } from '../../../tabs/frame';
+import { getRequestType } from '../../../../common/request-type';
+import { MAIN_FRAME_ID } from '../../../../common/constants';
+import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -30,6 +31,11 @@ export class RequestEvents {
     public static onBeforeRequest = new RequestEvent<
         OnBeforeRequestDetailsType,
         WebRequest.OnBeforeRequestOptions
+    >();
+
+    public static onResponseStarted = new RequestEvent<
+        WebRequest.OnResponseStartedDetailsType,
+        WebRequest.OnResponseStartedOptions
     >();
 
     public static onBeforeSendHeaders = new RequestEvent<
@@ -80,6 +86,14 @@ export class RequestEvents {
             onBeforeSendHeadersOptions,
         );
 
+        const onResponseStartedOptions: WebRequest.OnResponseStartedOptions[] = ['responseHeaders', 'extraHeaders'];
+        RequestEvents.onResponseStarted.init(
+            browser.webRequest.onResponseStarted,
+            RequestEvents.handleOnResponseStarted,
+            { urls: ['<all_urls>'] },
+            onResponseStartedOptions,
+        );
+
         const onHeadersReceivedOptions: WebRequest.OnHeadersReceivedOptions[] = ['responseHeaders'];
 
         const onHeadersReceivedOptionTypes = (browser as ChromiumBrowser).webRequest.OnHeadersReceivedOptions;
@@ -108,6 +122,25 @@ export class RequestEvents {
             RequestEvents.handleOnErrorOccurred,
             { urls: ['<all_urls>'] },
         );
+    }
+
+    /**
+     * Handles onResponseStarted event.
+     *
+     * @param details WebRequest details.
+     * @returns Request data with context.
+     */
+    private static handleOnResponseStarted(
+        details: WebRequest.OnResponseStartedDetailsType,
+    ): RequestData<WebRequest.OnResponseStartedDetailsType> {
+        const { requestId, timeStamp } = details;
+
+        const context = requestContextStorage.update(requestId, {
+            state: RequestContextState.ResponseStarted,
+            timestamp: timeStamp,
+        });
+
+        return { details, context };
     }
 
     /**
@@ -155,7 +188,7 @@ export class RequestEvents {
         const isDocumentRequest = requestType === RequestType.Document;
 
         // Pre-rendered documents can have a frame ID other than zero
-        frameId = isDocumentRequest ? MAIN_FRAME_ID : details.frameId;
+        frameId = isDocumentRequest ? MAIN_FRAME_ID : frameId;
 
         let requestFrameId = isDocumentRequest ? frameId : parentFrameId;
 
@@ -190,7 +223,7 @@ export class RequestEvents {
             || url;
 
         // Retrieve the rest part of the request context for record all fields.
-        const requestContext = requestContextStorage.create(requestId, {
+        const requestContext = {
             ...tabFrameRequestContext,
             state: RequestContextState.BeforeRequest,
             timestamp: timeStamp,
@@ -198,7 +231,9 @@ export class RequestEvents {
             referrerUrl,
             contentType,
             method: method as HTTPMethod,
-        });
+        };
+
+        requestContextStorage.set(requestId, requestContext);
 
         return { details, context: requestContext };
     }

@@ -1,4 +1,4 @@
-import { MemoryStorage } from '@lib/mv2/background/memory-storage';
+import { MemoryStorage } from '../../../../src/lib/common/memory-storage';
 
 describe('MemoryStorage', () => {
     let memoryStorage: MemoryStorage;

@@ -6,8 +6,9 @@ import { defaultFilteringLog, FilteringEventType } from '../../../common/filteri
 import { logger } from '../../../common/utils/logger';
 import { isChromium } from '../utils/browser-detector';
 import type { ConfigurationMV2 } from '../configuration';
-import { ContentType, NetworkRuleOption } from '..';
+import { NetworkRuleOption } from '..';
 import type { TabsApi } from '../tabs/tabs-api';
+import { ContentType } from '../../../common/request-type';
 
 /**
  * Params for {@link DocumentBlockingService.getDocumentBlockingResponse}.

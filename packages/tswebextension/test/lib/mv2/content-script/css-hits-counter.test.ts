@@ -4,7 +4,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { CssHitsCounter } from '@lib/mv2/content-script/css-hits-counter';
+import { CssHitsCounter } from '../../../../src/lib';
 
 describe('CssHitsCounter', () => {
     // Mock document

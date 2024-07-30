@@ -17,6 +17,13 @@ const EMPTY_STRING = '';
  * Decodes a CSS identifier according to the CSS Syntax Module Level 3 specification.
  *
  * @param ident CSS identifier to decode.
+ *
+ * @example
+ * ```ts
+ * decodeIdent(String.raw`\00075\00072\0006C`); // 'url'
+ * decodeIdent('url'); // 'url'
+ * ```
+ *
  * @returns Decoded CSS identifier.
  */
 export const decodeIdent = (ident: string): string => {

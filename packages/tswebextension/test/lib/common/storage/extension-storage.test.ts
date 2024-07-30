@@ -1,5 +1,6 @@
 import browser from 'webextension-polyfill';
-import { ExtensionStorage } from '@lib/common/storage/extension-storage';
+
+import { ExtensionStorage } from '../../../../src/lib/common/storage';
 
 describe('ExtensionStorage', () => {
     const key = 'test-key';

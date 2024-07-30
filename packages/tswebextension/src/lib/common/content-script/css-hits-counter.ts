@@ -1,8 +1,8 @@
 import { type IAffectedElement } from '@adguard/extended-css';
 
-import { ElementUtils } from './utils/element-utils';
 import { HitsStorage } from './hits-storage';
 import { type RuleInfo } from './rule-info';
+import { ElementUtils } from './utils/element-utils';
 
 /**
  * Counted element data structure.

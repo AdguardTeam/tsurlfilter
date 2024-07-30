@@ -3,8 +3,8 @@ import browser from 'webextension-polyfill';
 
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
-import { type AppInterface, defaultFilteringLog } from '../../common';
-import { getErrorMessage } from '../../common';
+import { extSessionStorage } from './ext-session-storage';
+import { appContext } from './app-context';
 import { logger } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
@@ -26,8 +26,11 @@ import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { WebRequestApi } from './web-request-api';
 import { StealthService } from './services/stealth-service';
 import { allowlistApi } from './allowlist-api';
-import { CosmeticJsApi } from './cosmetic-js-api';
 import { CompaniesDbApi } from './companies-db-api';
+import { type AppInterface } from '../../common/app';
+import { defaultFilteringLog } from '../../common/filtering-log';
+import { getErrorMessage } from '../../common/error';
+import { CosmeticApi } from './cosmetic-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -130,6 +133,10 @@ export class TsWebExtension implements AppInterface<
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.debug('[tswebextension.innerStart]: start');
 
+        if (!appContext.startTimeMs) {
+            appContext.startTimeMs = Date.now();
+        }
+
         try {
             if (this.companiesDbPath) {
                 // Init companies db stats api if necessary.
@@ -150,6 +157,7 @@ export class TsWebExtension implements AppInterface<
             // Compute and save matching result for tabs, opened before app initialization.
             await TabsCosmeticInjector.processOpenTabs();
 
+            appContext.isAppStarted = true;
             this.isStarted = true;
             this.startPromise = undefined;
 
@@ -218,7 +226,7 @@ export class TsWebExtension implements AppInterface<
     public async stop(): Promise<void> {
         await TsWebExtension.removeAllFilteringRules();
 
-        await declarativeFilteringLog.stop();
+        declarativeFilteringLog.stop();
 
         // Stop handle request events.
         WebRequestApi.stop();
@@ -226,6 +234,7 @@ export class TsWebExtension implements AppInterface<
         // Remove tabs listeners and clear context storage
         tabsApi.stop();
 
+        appContext.isAppStarted = false;
         this.isStarted = false;
     }
 
@@ -330,7 +339,7 @@ export class TsWebExtension implements AppInterface<
         // Reload request events listeners.
         await WebRequestApi.flushMemoryCache();
 
-        CosmeticJsApi.verbose = this.configuration?.settings.debugScriptlets || false;
+        CosmeticApi.verbose = this.configuration?.settings.debugScriptlets || false;
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
@@ -607,7 +616,8 @@ export class TsWebExtension implements AppInterface<
      */
     // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
-        logger.debug('[tswebextension.initStorage]: initStorage NOT IMPLEMENTED');
+        await extSessionStorage.init();
+        appContext.isStorageInitialized = true;
     }
 
     /**
@@ -628,27 +638,6 @@ export class TsWebExtension implements AppInterface<
     // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
     public setCollectHitStats(collect: boolean): void {
         logger.debug('[tswebextension.setCollectHitStats]: mv3 does not support setCollectHitStats yet');
-    }
-
-    /**
-     * TODO implement this method later if needed
-     * Sets prebuild local script rules.
-     *
-     * @param localScriptRules JSON object with pre-build JS rules.
-     * @param localScriptRules.comment Comment for the rules.
-     * @param localScriptRules.rules List of rules.
-     * @see {@link LocalScriptRulesService}
-     *
-     */
-    // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
-    public setLocalScriptRules(localScriptRules: {
-        comment: string, // TODO extract type to common
-        rules: {
-            domains: string,
-            script: string,
-        }[],
-    }): void {
-        logger.debug('[tswebextension.setLocalScriptRules]: mv3 does not support setLocalScriptRules yet');
     }
 
     /**

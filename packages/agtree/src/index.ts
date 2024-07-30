@@ -155,4 +155,4 @@ export {
 export { defaultParserOptions, type ParserOptions } from './parser/options';
 
 // Version
-export { version } from './version';
+export { AGTREE_VERSION } from './version';

@@ -2,9 +2,11 @@ import { z as zod } from 'zod';
 
 import {
     messageValidator as commonMessageValidator,
-    type getCssPayloadValidator,
+} from '../../common/message';
+
+import {
     MessageType as CommonMessageType,
-} from '../../common';
+} from '../../common/message-constants';
 
 enum ExtendedMV3MessageType {
     GetCollectedLog = 'GET_COLLECTED_LOG',
@@ -22,5 +24,3 @@ export const getCookieRulesPayloadValidator = zod.object({
     url: zod.string(),
     referrer: zod.string(),
 }).strict();
-
-export type GetCssPayload = zod.infer<typeof getCssPayloadValidator>;

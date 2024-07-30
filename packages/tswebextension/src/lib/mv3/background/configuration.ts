@@ -1,6 +1,5 @@
 import { z as zod } from 'zod';
-
-import { configurationValidator, settingsConfigValidator } from '../../common';
+import { configurationValidator, settingsConfigValidator } from '../../common/configuration';
 
 /**
  * Custom filter list configuration validator for MV3.

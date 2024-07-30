@@ -48,17 +48,16 @@ export const getExtendedCssPayloadValidator = z.object({
 export type GetExtendedCssPayloadValidator = z.infer<typeof getExtendedCssPayloadValidator>;
 
 /**
- * {@link MessageType.GetCss} Message payload validation schema.
+ * {@link MessageType.GetCosmeticData} Message payload validation schema.
  */
-export const getCssPayloadValidator = z.object({
-    url: z.string(),
-    referrer: z.string(),
+export const getCosmeticDataPayloadValidator = z.object({
+    documentUrl: z.string(),
 }).strict();
 
 /**
- * {@link MessageType.GetCss} Message payload type.
+ * {@link MessageType.GetCosmeticData} Message payload type.
  */
-export type GetCssPayloadValidator = z.infer<typeof getCssPayloadValidator>;
+export type GetCssPayloadValidator = z.infer<typeof getCosmeticDataPayloadValidator>;
 
 /**
  * {@link MessageType.GetCookieRules} Message payload validation schema.

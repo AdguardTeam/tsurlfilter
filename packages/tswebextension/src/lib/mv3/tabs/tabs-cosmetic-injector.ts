@@ -1,13 +1,14 @@
 import browser, { type Tabs } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { Frame, MAIN_FRAME_ID } from './frame';
+import { Frame } from './frame';
 import { TabContext } from './tab-context';
 import { tabsApi } from './tabs-api';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest } from '../../common/utils/url';
 import { engineApi } from '../background/engine-api';
-import { CosmeticJsApi } from '../background/cosmetic-js-api';
+import { MAIN_FRAME_ID } from '../../common/constants';
+import { CosmeticApi } from '../background/cosmetic-api';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -80,18 +81,17 @@ export class TabsCosmeticInjector {
 
             const cosmeticOption = frame.matchingResult.getCosmeticOption();
 
-            frame.cosmeticResult = engineApi.getCosmeticResult(frameUrl, cosmeticOption);
+            const cosmeticResult = engineApi.getCosmeticResult(frameUrl, cosmeticOption);
+            frame.cosmeticResult = cosmeticResult;
 
-            // TODO: Should be moved to CosmeticApi
-            CosmeticJsApi.getAndExecuteScripts(tabId, frameUrl);
+            CosmeticApi.applyCosmeticResult({
+                tabId,
+                frameId,
+                cosmeticResult,
+                frameUrl,
+            });
 
-            // const { cosmeticResult } = frame;
-
-            // TODO: Inject CSS and JS rules
-            // CosmeticApi.applyFrameCssRules(frameId, tabId);
-
-            // CosmeticApi.applyFrameJsRules(frameId, tabId);
-
+            // FIXME enable logging script rules
             // CosmeticApi.logScriptRules({
             //     url: frameUrl,
             //     tabId,

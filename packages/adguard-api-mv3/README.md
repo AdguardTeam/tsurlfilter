@@ -1,8 +1,5 @@
 # AdGuard API MV3
 
-> [!NOTE]
-> Version: **v0.1.0**
-
 AdGuard API is a filtering library that provides the following features:
 
 - Request and content filtering, using

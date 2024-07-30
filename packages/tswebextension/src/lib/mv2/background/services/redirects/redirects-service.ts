@@ -4,8 +4,8 @@ import type { ResourcesService } from '../resources-service';
 
 import { redirectsCache } from './redirects-cache';
 import { redirectsTokensCache } from './redirects-tokens-cache';
-import { logger } from '../../../../common';
 import { isFirefox } from '../../utils';
+import { logger } from '../../../../common/utils/logger';
 
 const BASE_64 = 'base64';
 const CONTENT_TYPE_SEPARATOR = ';';

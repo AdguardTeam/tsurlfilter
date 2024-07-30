@@ -15,7 +15,7 @@ import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
 import { engineApi, tabsApi } from './api';
-import { createFrameMatchQuery } from './utils/create-frame-match-query';
+import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
@@ -86,7 +86,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @see {@link LocalScriptRulesService} for details about script source.
      */
     public static async injectScript(scriptText: string, tabId: number, frameId = 0): Promise<void> {
-        return TabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
+        return TabsApi.injectScript(buildScriptText(scriptText, appContext.startTimeMs), tabId, frameId);
     }
 
     /**

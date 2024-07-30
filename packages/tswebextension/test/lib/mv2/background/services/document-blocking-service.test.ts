@@ -1,9 +1,9 @@
-import { DocumentBlockingService } from '@lib/mv2/background/services/document-blocking-service';
-import { type ConfigurationMV2, tabsApi } from '@lib/mv2';
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { getConfigurationMv2Fixture } from '../fixtures/configuration';
+import { DocumentBlockingService } from '../../../../../src/lib/mv2/background/services/document-blocking-service';
+import { type ConfigurationMV2, tabsApi } from '../../../../../src/lib';
 
-jest.mock('@lib/mv2/background/api');
+jest.mock('../../../../../src/lib/mv2/background/api');
 
 describe('DocumentBlockingService', () => {
     let documentBlockingService: DocumentBlockingService;

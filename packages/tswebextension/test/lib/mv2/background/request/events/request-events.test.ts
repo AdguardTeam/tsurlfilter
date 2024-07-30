@@ -2,10 +2,12 @@ import browser from 'sinon-chrome';
 import { type WebRequest } from 'webextension-polyfill';
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
-import { RequestEvents } from '@lib/mv2/background/request/events/request-events';
-import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
-
-import { ContentType } from '@lib/common';
+import {
+    type RequestContext,
+    RequestContextState,
+    RequestEvents,
+} from '../../../../../../src/lib';
+import { ContentType } from '../../../../../../src/lib/common/request-type';
 
 describe('Request Events', () => {
     const commonRequestData = {

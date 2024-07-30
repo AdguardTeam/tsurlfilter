@@ -22,6 +22,7 @@ import {
         filters: [
             2,
             3,
+            4,
         ],
         filteringEnabled: true,
         allowlist: ['www.example.com'],
