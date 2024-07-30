@@ -79,7 +79,7 @@ export class RequestEvents {
             browser.webRequest.onBeforeRequest,
             RequestEvents.handleOnBeforeRequest,
             { urls: ['<all_urls>'] },
-            ['blocking', 'requestBody'],
+            ['blocking'],
         );
 
         const onBeforeSendHeadersOptions: WebRequest.OnBeforeSendHeadersOptions[] = ['requestHeaders', 'blocking'];

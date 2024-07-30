@@ -311,8 +311,6 @@ export class CookieFiltering {
      * @param rule Applied modifying or deleting rule.
      * @param isModifyingCookieRule Is applied rule modifying or not.
      * @param requestThirdParty Whether request third party or not.
-     *
-     * TODO: Implement.
      */
     private static recordCookieEvent(
         tabId: number,

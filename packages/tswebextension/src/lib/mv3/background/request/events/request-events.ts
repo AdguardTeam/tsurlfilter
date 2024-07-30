@@ -69,7 +69,6 @@ export class RequestEvents {
             browser.webRequest.onBeforeRequest,
             RequestEvents.handleOnBeforeRequest,
             { urls: ['<all_urls>'] },
-            ['requestBody'],
         );
 
         const onBeforeSendHeadersOptions: WebRequest.OnBeforeSendHeadersOptions[] = ['requestHeaders'];

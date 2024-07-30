@@ -1,5 +1,9 @@
 import type { GetSaveCookieLogEventPayloadValidator } from '../message';
 
+/**
+ * Data which will be passed to filtering log,
+ * contains information about applied cookie rules.
+ */
 export type OnRuleAppliedData = GetSaveCookieLogEventPayloadValidator;
 
 interface OnRuleAppliedCallback {

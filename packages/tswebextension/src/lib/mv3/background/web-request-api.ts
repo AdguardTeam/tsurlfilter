@@ -316,8 +316,6 @@ export class WebRequestApi {
 
         const basicResult = result.getBasicResult();
 
-        // For a $replace rule, response will be undefined since we need to get
-        // the response in order to actually apply $replace rules to it.
         const response = RequestBlockingApi.getBlockingResponse({
             rule: basicResult,
             popupRule: result.getPopupRule(),

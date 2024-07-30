@@ -16,9 +16,8 @@ export class CspService {
      * It is applied when webRequest.onHeadersReceived event is fired.
      *
      * @param context Request context.
-     * @returns True if headers were modified.
      */
-    public static onHeadersReceived(context: RequestContext): boolean {
+    public static onHeadersReceived(context: RequestContext): void {
         const {
             matchingResult,
             responseHeaders,
@@ -29,7 +28,7 @@ export class CspService {
         } = context;
 
         if (!matchingResult) {
-            return false;
+            return;
         }
 
         const cspHeaders = [];
@@ -83,10 +82,6 @@ export class CspService {
             requestContextStorage.update(requestId, {
                 responseHeaders: responseHeaders ? [...responseHeaders, ...cspHeaders] : cspHeaders,
             });
-
-            return true;
         }
-
-        return false;
     }
 }

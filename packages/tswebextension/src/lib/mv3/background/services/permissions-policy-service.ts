@@ -26,9 +26,8 @@ export class PermissionsPolicyService {
     /**
      * Applies permissions policy directives to the response headers.
      * @param context Request context.
-     * @returns True if policies were set successfully.
      */
-    public static onHeadersReceived(context: RequestContext): boolean {
+    public static onHeadersReceived(context: RequestContext): void {
         const {
             matchingResult,
             responseHeaders,
@@ -40,14 +39,14 @@ export class PermissionsPolicyService {
         } = context;
 
         if (!matchingResult) {
-            return false;
+            return;
         }
 
         const permissionsPolicyRules = matchingResult.getPermissionsPolicyRules();
         const permissionsPolicyHeaders = [];
 
         if (permissionsPolicyRules.length === 0) {
-            return false;
+            return;
         }
 
         // Check if a global allowlist rule is present.
@@ -58,7 +57,7 @@ export class PermissionsPolicyService {
                     && !PermissionsPolicyService.isSubDocumentRule(rule),
             )
         ) {
-            return false;
+            return;
         }
 
         for (let i = 0; i < permissionsPolicyRules.length; i += 1) {
@@ -108,9 +107,5 @@ export class PermissionsPolicyService {
                 ...permissionsPolicyHeaders,
             ] : permissionsPolicyHeaders,
         });
-
-        return true;
     }
 }
-
-export const permissionsPolicyService = new PermissionsPolicyService();
