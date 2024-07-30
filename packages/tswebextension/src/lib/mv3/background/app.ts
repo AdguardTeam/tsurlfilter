@@ -27,7 +27,7 @@ import { WebRequestApi } from './web-request-api';
 import { StealthService } from './services/stealth-service';
 import { allowlistApi } from './allowlist-api';
 import { CosmeticJsApi } from './cosmetic-js-api';
-import { companiesDbService } from './services/companies-db-service';
+import { CompaniesDbApi } from './companies-db-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -131,9 +131,9 @@ export class TsWebExtension implements AppInterface<
         logger.debug('[tswebextension.innerStart]: start');
 
         try {
-            // Load companies database if necessary.
             if (this.companiesDbPath) {
-                await companiesDbService.loadCompanies(this.companiesDbPath);
+                // Init companies db stats api if necessary.
+                await CompaniesDbApi.start(this.companiesDbPath);
             }
 
             const res = await this.configure(config);

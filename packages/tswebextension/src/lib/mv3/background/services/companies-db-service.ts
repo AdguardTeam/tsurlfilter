@@ -44,13 +44,12 @@ class CompaniesDbService {
      */
     private companiesDb?: CompaniesDbMin;
 
-    // FIXME(Slava): remove if not used
-    // private categories: Record<string, number> | null = null;
-
     /**
      * Downloads and validates companies database.
      *
      * @param path Path to the companies database file.
+     *
+     * @throws Error if failed to load companies database.
      */
     public async loadCompanies(path: string): Promise<void> {
         const url = browser.runtime.getURL(path);
@@ -66,13 +65,28 @@ class CompaniesDbService {
     }
 
     /**
+     * Returns categories from the companiesdb data.
+     *
+     * @returns Categories from the companiesdb data.
+     *
+     * @throws Error if companies database is not loaded.
+     */
+    public getCompaniesDbCategories(): Record<string, string> {
+        if (!this.companiesDb) {
+            throw new Error('[CompaniesDbService] Companies database is not loaded');
+        }
+
+        return this.companiesDb.categories;
+    }
+
+    /**
      * Matches a URL to a tracker category id.
      *
      * List of categories ids can be found in {@link companiesDb.categories}.
      *
      * @param url Request URL to match.
      *
-     * @returns Actual tracker category ID or {@link UNKNOWN_CATEGORY} if not found or database is not loaded.
+     * @returns Matched tracker category ID or {@link UNKNOWN_CATEGORY} if not found or database is not loaded.
      */
     public match(url: string): number {
         if (!this.companiesDb) {
