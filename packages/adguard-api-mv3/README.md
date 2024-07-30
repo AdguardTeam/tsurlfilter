@@ -472,7 +472,7 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
          * filters identifiers from dnr-rulesets
          * @see https://filters.adtidy.org/extension/chromium/filters.json
          */
-        filters: [2, 3],
+        filters: [2, 3, 4],
         filteringEnabled: true,
         allowlist: ['www.example.com'],
         rules: ['example.org##h1'],
