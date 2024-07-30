@@ -102,6 +102,7 @@ export class TsWebExtension implements AppInterface<
     /**
      * Companies database path in the result bundle relative to the root dir.
      * Should start with leading slash '/'.
+     *
      * TODO: make private.
      */
     public readonly companiesDbPath: string | undefined;
