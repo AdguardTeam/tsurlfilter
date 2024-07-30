@@ -97,7 +97,9 @@ export type ApplyBasicRuleEventData = {
     requestType: ContentType,
 
     /**
-     * Supported only in MV3.
+     * Category id from companiesdb matched by the request.
+     *
+     * **Supported only in MV3**.
      */
     companyCategory?: number,
 } & RuleInfo & AdditionalNetworkRuleInfo;
