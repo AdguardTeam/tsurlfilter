@@ -70,14 +70,13 @@ AdGuard API is a filtering library that provides the following features:
 
 ### Required web accessible resources
 
-AdGuard API MV3 requires [web accessible resources][webaccessibleresources] from the
-[AdGuard Scriptlets library][scriptletsredirectres] to be able to redirect web
+AdGuard API MV3 requires [web accessible resources] from the
+[AdGuard Scriptlets library][scriptlets-redirectres] to be able to redirect web
 requests to a local "resource" using the `$redirect` rule modifier. You can use
-[@adguard/tswebextension CLI][tswebextensionusage] to download it.
+[@adguard/tswebextension CLI] to download it.
 
-[webaccessibleresources]: https://developer.chrome.com/docs/extensions/mv3/manifest/web_accessible_resources/
-[scriptletsredirectres]: https://github.com/AdguardTeam/Scriptlets#redirect-resources
-[tswebextensionusage]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tswebextension/README.md#cli
+[web accessible resources]: https://developer.chrome.com/docs/extensions/reference/manifest/web-accessible-resources
+[scriptlets-redirectres]: https://github.com/AdguardTeam/Scriptlets#redirect-resources
 
 ### Required declarativeNetRequest API assets
 
@@ -86,11 +85,11 @@ AdGuard API MV3 requires prebuilt DNR rule sets to be able to filter web request
 
 ### Required CompaniesDB data
 
-AdGuard API MV3 requires the `trackers.json` file from [AdguardTeam/companiesdb](companiesdb) repository to be able to determinate trackers categories for blocked requests. You can use
-[@adguard/tswebextension CLI][tswebextensionusage] to download it.
+AdGuard API MV3 requires the `trackers.json` file from [AdguardTeam/companiesdb] repository
+to be able to determinate trackers categories for blocked requests.
+You can use [@adguard/tswebextension CLI] to download it.
 
-[companiesdb]: https://github.com/AdguardTeam/companiesdb
-[tswebextensionusage]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tswebextension/README.md#cli
+[AdguardTeam/companiesdb]: https://github.com/AdguardTeam/companiesdb
 
 ## Configuration
 
@@ -447,7 +446,7 @@ adguardApi.onRequestBlocked.removeListener(
 > - `WEBSOCKET`
 > - `OTHER`
 
-Supported Tracker categories can be found in the [companiesdb](https://github.com/AdguardTeam/companiesdb?tab=readme-ov-file#tracker-categories) repository.
+Supported Tracker categories can be found in the [companiesdb](https://github.com/AdguardTeam/companiesdb/blob/main/README.md#tracker-categories) repository.
 
 ## Usage
 
@@ -571,3 +570,5 @@ npx lerna run build --scope @adguard/api-mv3 --include-dependencies
 ```shell
 pnpm run lint
 ```
+
+[@adguard/tswebextension CLI]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tswebextension/README.md#cli
