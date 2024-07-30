@@ -119,7 +119,7 @@
 ! different filters. Because of that, rules from different filter can conflict.
 !
 ! ## $redirect-rule
-! Works as `$redirect`.
+! Not supported. Awaiting implementation: https://github.com/w3c/webextensions/issues/493.
 
 ! <br />
 ! <br />
@@ -606,10 +606,7 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
 
 ! ## $redirect-rule
 ! <b>Status</b>: not supported
-! <br/>
-! <b>MV3 limitations:</b>
-! <br/>
-! Converting as $redirect rules
+! Awaiting implementation: https://github.com/w3c/webextensions/issues/493.
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>

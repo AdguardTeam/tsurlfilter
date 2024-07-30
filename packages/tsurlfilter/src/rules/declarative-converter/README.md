@@ -192,7 +192,7 @@ different filters. Because of that, rules from different filter can conflict.
 
 <a name="mv3_specific_limitations__$redirect-rule"></a>
 ## $redirect-rule
-Works as `$redirect`.
+Not supported. Awaiting implementation: https://github.com/w3c/webextensions/issues/493.
 <br />
 <br />
 
@@ -3306,10 +3306,7 @@ example 11
 <a name="advanced_capabilities__$redirect-rule"></a>
 ## $redirect-rule
 <b>Status</b>: not supported
-<br/>
-<b>MV3 limitations:</b>
-<br/>
-Converting as $redirect rules
+Awaiting implementation: https://github.com/w3c/webextensions/issues/493.
 <br/>
 <b>Examples:</b>
 <br/>
@@ -3332,19 +3329,6 @@ Converting as $redirect rules
 			"urlFilter": "||example.org/script.js"
 		},
 		"priority": 1
-	},
-	{
-		"id": 2,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopjs.js"
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.org^"
-		},
-		"priority": 1001
 	}
 ]
 
