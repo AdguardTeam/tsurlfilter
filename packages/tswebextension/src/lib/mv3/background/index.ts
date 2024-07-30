@@ -55,7 +55,6 @@ export { ContentType } from '../../common/request-type';
 export {
     NetworkRule,
     CosmeticRule,
-    CosmeticRuleType,
     NetworkRuleOption,
 } from '@adguard/tsurlfilter';
 
