@@ -2,7 +2,6 @@
 export {
     NetworkRule,
     CosmeticRule,
-    CosmeticRuleType,
     NetworkRuleOption,
     FilterListPreprocessor,
     type PreprocessedFilterList,
@@ -10,7 +9,6 @@ export {
     type FilterListSourceMap,
     getRuleSourceIndex,
     getRuleSourceText,
-    RuleCategorizer,
 } from '@adguard/tsurlfilter';
 
 // Re-export needed to print libraries version in extension popup.

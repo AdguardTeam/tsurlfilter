@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## [3.0.0-beta.0] - 2024-07-30
+
+### Fixed
+
+- `@adguard/agtree` dependency now used consistently in the project.
+
+[3.0.0-beta.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0-beta.0
+
 ## [3.0.0-alpha.1] - 2024-07-17
 
 ### Changed

@@ -2,9 +2,9 @@ import {
     type NetworkRule,
     type ReplaceModifier,
     type CosmeticRule,
-    CosmeticRuleType,
 } from '@adguard/tsurlfilter';
 import { nanoid } from 'nanoid';
+import { CosmeticRuleType } from '@adguard/agtree';
 
 import { type RuleInfo } from '../../../content-script/rule-info';
 import { FilteringEventType, type FilteringLog } from '../../../../common/filtering-log';
