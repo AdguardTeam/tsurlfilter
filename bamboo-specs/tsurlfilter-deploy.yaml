@@ -38,6 +38,8 @@ npmjs • 1.x: &npmjs
 
             ls -alt
 
+            echo "ADDITIONAL_PUBLISH_ARGS: $ADDITIONAL_PUBLISH_ARGS"
+
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish tsurlfilter.tgz ${bamboo.ADDITIONAL_PUBLISH_ARGS}
