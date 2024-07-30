@@ -14,7 +14,7 @@ environments:
 
 npmjs • 1.x: &npmjs
   variables: &npmjs-variables
-    ADDITIONAL_PUBLISH_ARGS: --access public
+    publishArgs: --access public
   docker: &npmjs-docker
     image: adguard/node-ssh:18.19--0
     volumes:
@@ -41,7 +41,7 @@ npmjs • 1.x: &npmjs
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
 
-            npm publish tsurlfilter.tgz $bamboo_ADDITIONAL_PUBLISH_ARGS
+            npm publish tsurlfilter.tgz $bamboo_publishArgs
   requirements:
     - adg-docker: true
   notifications:
@@ -62,10 +62,10 @@ npmjs • alpha:
   <<: *npmjs
   variables:
     <<: *npmjs-variables
-    ADDITIONAL_PUBLISH_ARGS: --tag alpha --access public
+    publishArgs: --tag alpha --access public
 
 npmjs • beta:
   <<: *npmjs
   variables:
     <<: *npmjs-variables
-    ADDITIONAL_PUBLISH_ARGS: --tag beta --access public
+    publishArgs: --tag beta --access public
