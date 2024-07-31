@@ -636,6 +636,17 @@ export abstract class DeclarativeRuleConverter {
         }
 
         /**
+         * Adds the main_frame resource type to the resourceTypes if the popup modifier is enabled.
+         * Popup rules apply only to document requests, so adding main_frame ensures the rules are correctly applied.
+         */
+        if (rule.isOptionEnabled(NetworkRuleOption.Popup)) {
+            condition.resourceTypes = condition.resourceTypes || [];
+            if (!condition.resourceTypes.includes(ResourceType.MainFrame)) {
+                condition.resourceTypes.push(ResourceType.MainFrame);
+            }
+        }
+
+        /**
          * Here we need to set 'main_frame' to apply to document requests
          * as well (because by default it applies to all requests except
          * document).

@@ -1,21 +1,30 @@
+<!-- omit in toc -->
 # Adblock rule parser
 
 This directory contains adblock rule parser. It supports all syntaxes
 currently in use:
 
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px"> [AdGuard][adg-url]
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" width="14px"> [uBlock Origin][ubo-url]
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px"> [Adblock Plus][abp-url]
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/ab_logo.svg" width="14px"> [AdBlock][ab-url]
+<!--markdownlint-disable MD013-->
+- <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard][adg-url]
+- <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock Origin logo" width="14px"> [uBlock Origin][ubo-url]
+- <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus][abp-url]
+- <img src="https://cdn.adguard.com/website/github.com/AGLint/ab_logo.svg" alt="AdBlock logo" width="14px"> [AdBlock][ab-url]
+<!--markdownlint-enable MD013-->
 
 Table of contents:
 
-- [Adblock rule parser](#adblock-rule-parser)
-    - [Parser API](#parser-api)
-    - [Examples](#examples)
-        - [Parsing single adblock rules](#parsing-single-adblock-rules)
-        - [Generating adblock rules from AST](#generating-adblock-rules-from-ast)
-        - [Parsing and generating complete filter lists](#parsing-and-generating-complete-filter-lists)
+- [Parser API](#parser-api)
+    - [Parser options](#parser-options)
+        - [Available options](#available-options)
+        - [Default parser options](#default-parser-options)
+        - [Example of passing options](#example-of-passing-options)
+- [Examples of using the parser API](#examples-of-using-the-parser-api)
+    - [Parsing single adblock rules](#parsing-single-adblock-rules)
+    - [Generating adblock rules from AST](#generating-adblock-rules-from-ast)
+    - [Parsing and generating complete filter lists](#parsing-and-generating-complete-filter-lists)
+- [Serializer / Deserializer](#serializer--deserializer)
+    - [Serialization](#serialization)
+    - [Deserialization](#deserialization)
 
 [ab-url]: https://getadblock.com
 [abp-url]: https://adblockplus.org
@@ -41,6 +50,8 @@ Each parser class has the following methods:
 
 - `parse`: parses a raw data (string) and returns an AST (Abstract Syntax Tree) node (string &#8594; AST)
 - `generate`: serializes an AST node back to a string (AST &#8594; string)
+- `serialize`: serializes an AST node to a byte buffer (AST &#8594; Buffer)
+- `deserialize`: deserializes data from a byte buffer to an AST node (Buffer &#8594; AST)
 
 We also provide some "sub-parser" classes, which are used by the main parser classes:
 
@@ -51,7 +62,51 @@ We also provide some "sub-parser" classes, which are used by the main parser cla
 Currently, these helper classes are not documented here, but you can find them in the source code. We only recommend
 them **only for advanced use cases and please keep in mind that they may change in the future**.
 
-## Examples
+### Parser options
+
+If you want to customize the parser behavior, you can pass options to the `parse` method.
+
+#### Available options
+
+Currently, the following options are supported:
+
+- `tolerant`: If `true`, then the parser will not throw an error if the rule is syntactically invalid, instead it will
+  return an `InvalidRule` object with the error attached to it.
+  It only affects the `RuleParser`, the `FilterListParser`.
+- `isLocIncluded`: Whether to include locations in the AST. If `true`, the parser will include locations in the AST.
+  Locations are useful for linters, since they allow you to point to the exact place in the rule where the error
+  occurred.
+- `parseAbpSpecificRules`: If `true`, the parser will parse Adblock Plus specific rules. By default, it is `true`.
+- `parseUboSpecificRules`: If `true`, the parser will parse uBlock Origin specific rules. By default, it is `true`.
+- `includeRaws`: If `true`, the parser will include raw data in the AST, like original rule text.
+  By default, it is `true`.
+- `ignoreComments`: If `true`, the parser will ignore comments. By default, it is `false`.
+  It only affects the `RuleParser`, the `FilterListParser`.
+- `parseHostRules`: If `true`, the parser will parse host rules. By default, it is `false`.
+
+#### Default parser options
+
+The default parser options are stored in the `defaultParserOptions` object:
+
+```typescript
+import { defaultParserOptions } from '@adguard/agtree';
+```
+
+#### Example of passing options
+
+Here is an example of how to pass options to the `RuleParser`:
+
+```typescript
+import { RuleParser, defaultParserOptions } from '@adguard/agtree';
+
+
+const ruleNode = RuleParser.parse("/ads.js^$script", {
+    ...defaultParserOptions,
+    isLocIncluded: true,
+});
+```
+
+## Examples of using the parser API
 
 In this section we will show some examples of using the parser API.
 
@@ -200,3 +255,69 @@ const easyListGenerated = FilterListParser.generate(ast);
 // Write generated filter list to file
 await writeFile("easylist-generated.txt", easyListGenerated);
 ```
+
+## Serializer / Deserializer
+
+The parser also provides a way to serialize and deserialize AST nodes.
+Its makes possible to store AST nodes in an size-efficient binary format
+and restore them later without parsing the data again.
+
+> [!NOTE]
+> First 4 byte of the buffers are reserved for the schema version. The schema version is used to determine the format
+> of the serialized data. If the schema version of the serialized data does not match the current schema version, the
+> deserialization will fail.
+
+### Serialization
+
+1. You need an output byte buffer to serialize the AST node:
+
+    ```typescript
+    import { OutputByteBuffer } from "@adguard/agtree";
+
+    const outBuffer = new OutputByteBuffer();
+    ```
+
+2. Once you have the output buffer, you can serialize the AST node to it:
+
+    ```typescript
+    RuleParser.serialize(ruleNode, outBuffer);
+    ```
+
+    It will write the serialized data to the end of the buffer. If needed, it will automatically resize the buffer.
+    Buffer internally uses 32 kilobytes chunks to store data.
+
+3. You can write the buffer data to a storage:
+
+    ```typescript
+    outBuffer.writeChunksToStorage(<storage>, <key>);
+    ```
+
+    This will write buffer's chunks to the storage under the specified key.
+
+### Deserialization
+
+1. You'll need to read the buffer data from the storage.
+2. You need an input byte buffer to deserialize the AST node:
+
+    ```typescript
+    import { InputByteBuffer } from "@adguard/agtree";
+
+    const inBuffer = new InputByteBuffer(outBuffer.buffer);
+    ```
+
+3. Once you have the input buffer, you can deserialize the AST node from it:
+
+    ```typescript
+    let ruleNode: AnyRule;
+    RuleParser.deserialize(inBuffer, ruleNode = {} as AnyRule);
+    ```
+
+    It will read the serialized data from the actual position of the buffer and write it to the `ruleNode` object,
+    and automatically move the buffer position to the end of the serialized data.
+
+    If you want to deserialize the AST node from a specific position, you'll need to create a new input buffer
+    with a new cursor position:
+
+    ```typescript
+    const inBufferNew = inBuffer.createCopyWithOffset(<offset>);
+    ```

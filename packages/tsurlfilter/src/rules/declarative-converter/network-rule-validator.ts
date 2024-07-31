@@ -4,6 +4,7 @@ import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
 import { RemoveParamModifier } from '../../modifiers/remove-param-modifier';
 import { type NetworkRule, NetworkRuleOption } from '../network-rule';
 import { OPTIONS_DELIMITER } from '../network-rule-options';
+import type { RedirectModifier } from '../../modifiers/redirect-modifier';
 
 import { UnsupportedModifierError } from './errors/conversion-errors/unsupported-modifier-error';
 
@@ -254,6 +255,29 @@ export class NetworkRuleDeclarativeValidator {
         );
     };
 
+    /**
+     * The $redirect-rule support will be possible to implement after browsers add this feature:
+     * https://github.com/w3c/webextensions/issues/493.
+     *
+     * @param r Network rule.
+     * @param name Modifier's name.
+     *
+     * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private static checkRedirectModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
+        const isRedirectRule = r.isOptionEnabled(NetworkRuleOption.Redirect)
+            && (r.getAdvancedModifier() as RedirectModifier).isRedirectingOnlyBlocked;
+        if (!isRedirectRule) {
+            return null;
+        }
+
+        return new UnsupportedModifierError(
+            'Network rule with $redirect-rule modifier is not supported',
+            r,
+        );
+    };
+
     private static optionsValidators: NetworkRuleValidators = {
         // Supported
         ThirdParty: { name: '$third-party' },
@@ -276,7 +300,14 @@ export class NetworkRuleDeclarativeValidator {
         // $popup is not supported in MV3, but rule with $all modifier includes $popup, so we should to skip it.
         Popup: { name: '$popup', customChecks: [NetworkRuleDeclarativeValidator.checkNotOnlyOneModifier] },
         Csp: { name: '$csp', customChecks: [NetworkRuleDeclarativeValidator.checkAllowRulesFn] },
-        Redirect: { name: '$redirect', customChecks: [NetworkRuleDeclarativeValidator.checkAllowRulesFn] },
+        Redirect: {
+            // $redirect and $redirect-rule modifiers are falling under this option
+            name: '$redirect',
+            customChecks: [
+                NetworkRuleDeclarativeValidator.checkAllowRulesFn,
+                NetworkRuleDeclarativeValidator.checkRedirectModifierFn,
+            ],
+        },
         RemoveParam: {
             name: '$removeparam',
             customChecks: [

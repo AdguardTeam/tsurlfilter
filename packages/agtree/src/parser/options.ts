@@ -46,7 +46,7 @@ export interface ParserOptions {
 /**
  * Default parser options.
  */
-export const defaultParserOptions: ParserOptions = {
+export const defaultParserOptions: ParserOptions = Object.freeze({
     tolerant: false,
     isLocIncluded: true,
     parseAbpSpecificRules: true,
@@ -54,4 +54,4 @@ export const defaultParserOptions: ParserOptions = {
     includeRaws: true,
     ignoreComments: false,
     parseHostRules: false,
-};
+});

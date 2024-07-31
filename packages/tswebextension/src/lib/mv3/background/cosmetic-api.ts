@@ -11,7 +11,7 @@ import { createFrameMatchQuery } from '../../common/utils/create-frame-match-que
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
-import { ScriptingApi } from './scripting-api';
+import { type ExecuteScriptParams, type InsertCSSParams, ScriptingApi } from './scripting-api';
 import { requestContextStorage } from './request/request-context-storage';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { getDomain } from '../../common/utils/url';
@@ -301,7 +301,36 @@ export class CosmeticApi extends CosmeticApiCommon {
                 frameId,
             });
         } catch (e) {
-            logger.debug('[applyCssByTabAndFrame] error occurred during injection', getErrorMessage(e));
+            logger.debug(
+                '[applyCssByTabAndFrame] error occurred during injection',
+                getErrorMessage(e),
+                'with request context:',
+                requestContext,
+            );
+        }
+    }
+
+    /**
+     * Wraps CSS injection with try-catch block.
+     * @param params Parameters for applying CSS rules.
+     */
+    private static async insertCSS(params: InsertCSSParams): Promise<void> {
+        try {
+            await ScriptingApi.insertCSS(params);
+        } catch (e) {
+            logger.debug('[insertCSS] error occurred during injection', getErrorMessage(e));
+        }
+    }
+
+    /**
+     * Wraps script execution with try-catch block.
+     * @param params Parameters for executing a script.
+     */
+    private static async executeScript(params: ExecuteScriptParams): Promise<void> {
+        try {
+            await ScriptingApi.executeScript(params);
+        } catch (e) {
+            logger.debug('[executeScript] error occurred during injection', getErrorMessage(e));
         }
     }
 
@@ -327,7 +356,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
         if (cssText) {
-            ScriptingApi.insertCSS({
+            CosmeticApi.insertCSS({
                 tabId,
                 frameId,
                 cssText,
@@ -335,7 +364,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         if (scriptText) {
-            ScriptingApi.executeScript({
+            CosmeticApi.executeScript({
                 tabId,
                 frameId,
                 scriptText,

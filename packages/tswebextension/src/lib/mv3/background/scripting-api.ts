@@ -4,7 +4,7 @@ import { BACKGROUND_TAB_ID } from '../../common/constants';
 /**
  * Parameters for applying CSS rules.
  */
-type InsertCSSParams = {
+export type InsertCSSParams = {
     tabId: number,
     frameId: number,
     cssText: string,
@@ -13,7 +13,7 @@ type InsertCSSParams = {
 /**
  * Parameters for executing script.
  */
-type ExecuteScriptParams = {
+export type ExecuteScriptParams = {
     tabId: number,
     frameId: number,
     scriptText: string,
