@@ -11,7 +11,7 @@ environments:
 
 npmjs: &npmjs
   variables: &npmjs-variables
-    ADDITIONAL_PUBLISH_ARGS: --access public
+    publishArgs: --access public
   docker:
     image: adguard/node-ssh:18.19--0
     volumes:
@@ -39,7 +39,7 @@ npmjs: &npmjs
             # Publish tarball to NPM package registry
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish css-tokenizer.tgz ${bamboo.inject.ADDITIONAL_PUBLISH_ARGS}
+            npm publish css-tokenizer.tgz $bamboo_publishArgs
   requirements:
     - adg-docker: true
   notifications:
@@ -54,10 +54,10 @@ npmjs • alpha:
   <<: *npmjs
   variables:
     <<: *npmjs-variables
-    ADDITIONAL_PUBLISH_ARGS: --tag alpha --access public
+    publishArgs: --tag alpha --access public
 
 npmjs • beta:
   <<: *npmjs
   variables:
     <<: *npmjs-variables
-    ADDITIONAL_PUBLISH_ARGS: --tag beta --access public
+    publishArgs: --tag beta --access public
