@@ -316,7 +316,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Logs js rules to specific frame.
+     * Logs js rules applied to specific frame.
      *
      * We need a separate function for logging because script rules can be logged before injection
      * to avoid duplicate logs while the js rule is being applied.

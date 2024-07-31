@@ -760,8 +760,8 @@ importers:
         specifier: ^17.0.2
         version: 17.0.2(react@17.0.2)
       webextension-polyfill:
-        specifier: ^0.10.0
-        version: 0.10.0
+        specifier: ^0.12.0
+        version: 0.12.0
     devDependencies:
       '@swc-node/register':
         specifier: ^1.6.6

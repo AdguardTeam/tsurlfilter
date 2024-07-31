@@ -12,19 +12,15 @@ import {
     redirectsService,
     documentBlockingService,
 } from '../api';
-import { type ContentType } from '../../../common/request-type';
+import { type RequestContext } from './request-context-storage';
 
 /**
  * Base params about request.
  */
-type RequestParams = {
-    tabId: number,
-    eventId: string,
-    referrerUrl: string,
-    requestUrl: string,
-    requestType: RequestType,
-    contentType: ContentType,
-};
+type RequestParams = Pick<
+    RequestContext,
+    'tabId' | 'eventId' | 'referrerUrl' | 'requestUrl' | 'requestType' | 'contentType'
+>;
 
 /**
  * Params for {@link RequestBlockingApi.getBlockingResponse}.

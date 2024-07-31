@@ -9,6 +9,7 @@ import { isHttpOrWsRequest } from '../../common/utils/url';
 import { engineApi } from '../background/engine-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { CosmeticApi } from '../background/cosmetic-api';
+import { ContentType } from '../../common/request-type';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -91,16 +92,15 @@ export class TabsCosmeticInjector {
                 frameUrl,
             });
 
-            // FIXME enable logging script rules
-            // CosmeticApi.logScriptRules({
-            //     url: frameUrl,
-            //     tabId,
-            //     cosmeticResult,
-            //     timestamp: Date.now(),
-            //     contentType: isDocumentFrame
-            //         ? ContentType.Document
-            //         : ContentType.Subdocument,
-            // });
+            CosmeticApi.logScriptRules({
+                url: frameUrl,
+                tabId,
+                cosmeticResult,
+                timestamp: Date.now(),
+                contentType: isDocumentFrame
+                    ? ContentType.Document
+                    : ContentType.Subdocument,
+            });
         });
     }
 }

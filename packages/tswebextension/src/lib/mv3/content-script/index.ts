@@ -1,4 +1,4 @@
-import { runCookieController } from './cookie-controller';
+import { CookieController } from './cookie-controller';
 import { initAssistant } from './assistant';
 import { CosmeticController } from './cosmetic-controller';
 
@@ -11,10 +11,11 @@ declare const global: CustomWindow;
 const cosmeticController = new CosmeticController();
 cosmeticController.init();
 
+const cookieController = new CookieController();
+cookieController.init();
+
 // Init assistant only once
 if (!global.isAssistantInitiated) {
     initAssistant();
     global.isAssistantInitiated = true;
 }
-
-runCookieController();

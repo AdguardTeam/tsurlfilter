@@ -59,7 +59,7 @@ export type RequestContext = TabFrameRequestContext & {
 /**
  * Create request context DTO.
  */
-export type CreateRequestContext = Omit<RequestContext, 'eventId'>;
+type CreateRequestContext = Omit<RequestContext, 'eventId'>;
 
 /**
  * Implementation of the request context storage.

@@ -303,8 +303,8 @@ export class CookieFiltering {
     }
 
     /**
-     * TODO: Return engine startup status data to content script
-     * to delay execution of cookie rules until the engine is ready.
+     * TODO: Use isAppStarted with interval to re-request cookie rules if engine
+     * is not started, as it implemented in CosmeticController.
      *
      * Looks up blocking rules for content-script.
      *

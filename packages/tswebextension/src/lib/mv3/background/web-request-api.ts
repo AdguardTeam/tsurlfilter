@@ -134,7 +134,7 @@ import browser, { type WebRequest, type WebNavigation } from 'webextension-polyf
 
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
+import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import { RequestEvents } from './request/events/request-events';
 import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
@@ -148,6 +148,8 @@ import { BACKGROUND_TAB_ID, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
 import { RequestBlockingApi } from './request/request-blocking-api';
+import { CspService } from './services/csp-service';
+import { PermissionsPolicyService } from './services/permissions-policy-service';
 
 const FRAME_DELETION_TIMEOUT = 3000;
 
@@ -235,11 +237,39 @@ export class WebRequestApi {
             method,
             tabId,
             frameId,
+            eventId,
+            contentType,
+            timestamp,
+            thirdParty,
         } = context;
 
         if (!isHttpOrWsRequest(requestUrl)) {
             return;
         }
+
+        if (requestType === RequestType.Document && !requestContextStorage.get(requestId)) {
+            // dispatch filtering log reload event
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.TabReload,
+                data: { tabId },
+            });
+        }
+
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.SendRequest,
+            data: {
+                tabId,
+                eventId,
+                requestUrl,
+                requestDomain: getDomain(requestUrl),
+                frameUrl: referrerUrl,
+                frameDomain: getDomain(referrerUrl),
+                requestType: contentType,
+                timestamp,
+                requestThirdParty: thirdParty,
+                method,
+            },
+        });
 
         let frameRule = null;
         if (requestType === RequestType.SubDocument) {
@@ -286,14 +316,14 @@ export class WebRequestApi {
 
         const basicResult = result.getBasicResult();
 
-        // For a $replace rule, response will be undefined since we need to get
-        // the response in order to actually apply $replace rules to it.
         const response = RequestBlockingApi.getBlockingResponse({
             rule: basicResult,
             popupRule: result.getPopupRule(),
+            eventId,
             requestUrl,
             referrerUrl,
             requestType,
+            contentType,
             tabId,
         });
 
@@ -382,17 +412,27 @@ export class WebRequestApi {
         context,
         details,
     }: RequestData<WebRequest.OnHeadersReceivedDetailsType>): void {
+        if (!context) {
+            return;
+        }
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ReceiveResponse,
             data: {
-                tabId: details.tabId,
-                eventId: details.requestId,
+                tabId: context.tabId,
+                // It's important to use same eventId as onBeforeRequest to match
+                // the request in the filtering log and update it's status.
+                eventId: context.eventId,
                 statusCode: details.statusCode,
             },
         });
 
-        if (!context?.matchingResult) {
-            return;
+        const { requestUrl, requestType } = context;
+
+        if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
+            CspService.onHeadersReceived(context);
+
+            PermissionsPolicyService.onHeadersReceived(context);
         }
 
         cookieFiltering.onHeadersReceived(context);

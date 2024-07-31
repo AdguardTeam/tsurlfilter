@@ -1,30 +1,48 @@
-import { type MatchingResult, NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
+import { NetworkRuleOption } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 
 import { type CookieRule } from '../../common/content-script/cookie-controller';
 import { logger } from '../../common/utils/logger';
 
-import { engineApi } from './engine-api';
 import { type TsWebExtension } from './app';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import {
     CommonMessageType,
     ExtendedMV3MessageType,
     type MessageMV3,
-    getCookieRulesPayloadValidator,
     messageMV3Validator,
 } from './messages';
 import { Assistant } from './assistant';
-import { DocumentApi } from './document-api';
 import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
-import { getAssistantCreateRulePayloadValidator, getCosmeticDataPayloadValidator } from '../../common/message';
+import {
+    getAssistantCreateRulePayloadValidator,
+    getSaveCookieLogEventPayloadValidator,
+    getCookieRulesPayloadValidator,
+    getCosmeticDataPayloadValidator,
+} from '../../common/message';
 import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
-import { isHttpOrWsRequest } from '../../common/utils/url';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { ContentType } from '../../common/request-type';
+import { appContext } from './app-context';
+import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
+import { nanoid } from '../nanoid';
 
 export type MessagesHandlerMV3 = (
     message: MessageMV3,
     sender: browser.Runtime.MessageSender,
 ) => Promise<unknown>;
+
+export type ContentScriptCookieRulesData = {
+    /**
+     * Is app started.
+     */
+    isAppStarted: boolean,
+
+    /**
+     * Cookie rules to apply.
+     */
+    cookieRules: CookieRule[] | undefined,
+};
 
 /**
  * MessageApi knows how to handle {@link MessageMV3}.
@@ -86,6 +104,12 @@ export class MessagesApi {
             }
             case CommonMessageType.GetCookieRules: {
                 return this.getCookieRules(
+                    sender,
+                    message.payload,
+                );
+            }
+            case CommonMessageType.SaveCookieLogEvent: {
+                return MessagesApi.handleSaveCookieLogEvent(
                     sender,
                     message.payload,
                 );
@@ -177,11 +201,19 @@ export class MessagesApi {
     private getCookieRules(
         sender: browser.Runtime.MessageSender,
         payload?: unknown,
-    ): CookieRule[] | undefined {
+    ): ContentScriptCookieRulesData | undefined {
         logger.debug('[tswebextension.getCookieRules]: received call: ', payload);
 
-        if (!this.tsWebExtension.isStarted) {
-            return undefined;
+        const { isStorageInitialized } = appContext;
+
+        const data: ContentScriptCookieRulesData = {
+            isAppStarted: false,
+            cookieRules: [],
+        };
+
+        // if storage is not initialized, then app is not ready yet.
+        if (!isStorageInitialized || !this.tsWebExtension.isStarted) {
+            return data;
         }
 
         const res = getCookieRulesPayloadValidator.safeParse(payload);
@@ -189,22 +221,28 @@ export class MessagesApi {
             return undefined;
         }
 
-        const { url, referrer } = res.data;
+        const { documentUrl } = res.data;
 
-        if (isEmptySrcFrame(url)) {
+        if (isEmptySrcFrame(documentUrl)) {
             logger.debug('[tswebextension.getCookieRules]: frame has empty src');
             return undefined;
         }
 
-        const result = MessagesApi.calculateMatchingResult(url, referrer, sender);
-
-        if (!result) {
+        const tabId = sender.tab?.id;
+        if (tabId === undefined) {
+            logger.debug('[tswebextension.getCookieRules]: tabId is undefined');
             return undefined;
         }
 
-        const cookieRules = result.getCookieRules();
+        let { frameId } = sender;
 
-        return cookieRules.map((rule) => ({
+        if (!frameId) {
+            frameId = 0;
+        }
+
+        const cookieRules = CookieFiltering.getBlockingRules(documentUrl, tabId, frameId);
+
+        data.cookieRules = cookieRules.map((rule) => ({
             ruleIndex: rule.getIndex(),
             match: rule.getAdvancedModifierValue(),
             isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
@@ -216,6 +254,57 @@ export class MessagesApi {
             isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
             advancedModifier: rule.getAdvancedModifierValue(),
         }));
+
+        return data;
+    }
+
+    /**
+     * Calls filtering to add an event from cookie-controller content-script.
+     *
+     * @param sender Tab which sent the message.
+     * @param payload Message payload.
+     * @returns True if event was published to filtering log.
+     */
+    private static handleSaveCookieLogEvent(
+        sender: browser.Runtime.MessageSender,
+        payload?: unknown,
+    ): boolean {
+        if (!payload || !sender?.tab?.id) {
+            return false;
+        }
+
+        const res = getSaveCookieLogEventPayloadValidator.safeParse(payload);
+        if (!res.success) {
+            return false;
+        }
+
+        const { data } = res;
+
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.Cookie,
+            data: {
+                eventId: nanoid(),
+                tabId: sender.tab.id,
+                cookieName: data.cookieName,
+                frameDomain: data.cookieDomain,
+                cookieValue: data.cookieValue,
+                filterId: data.filterId,
+                ruleIndex: data.ruleIndex,
+                isModifyingCookieRule: false,
+                requestThirdParty: data.thirdParty,
+                timestamp: Date.now(),
+                requestType: ContentType.Cookie,
+                // Additional rule properties
+                isAllowlist: data.isAllowlist,
+                isImportant: data.isImportant,
+                isDocumentLevel: data.isDocumentLevel,
+                isCsp: data.isCsp,
+                isCookie: data.isCookie,
+                advancedModifier: data.advancedModifier,
+            },
+        });
+
+        return true;
     }
 
     /**
@@ -226,42 +315,5 @@ export class MessagesApi {
      */
     public static async sendMessageToTab(tabId: number, message: unknown): Promise<void> {
         await browser.tabs.sendMessage(tabId, message);
-    }
-
-    /**
-     * Calculates matching result based on provided urls.
-     *
-     * @param url Current URL of document.
-     * @param referrer The URL of the location that referred the user
-     * to the current page.
-     * @param sender An object containing information about the script context
-     * that sent a message or request.
-     *
-     * @returns Null or matched result from engine if request has been matched
-     * by some rule.
-     */
-    private static calculateMatchingResult(
-        url: string,
-        referrer: string,
-        sender: browser.Runtime.MessageSender,
-    ): MatchingResult | null {
-        let isSubDocument = false;
-
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1498
-        // When document url for iframe is about:blank then we use tab url
-        if (!isHttpOrWsRequest(url) && sender.frameId !== 0 && sender.tab?.url) {
-            isSubDocument = true;
-        }
-
-        // TODO: Extract from cache
-        return engineApi.matchRequest({
-            requestUrl: url,
-            frameUrl: referrer,
-            // Always RequestType.Document or RequestType.SubDocument,
-            // because in MV3 we request CSS for the already loaded page
-            // from content-script.
-            requestType: isSubDocument ? RequestType.SubDocument : RequestType.Document,
-            frameRule: DocumentApi.matchFrame(url),
-        });
     }
 }

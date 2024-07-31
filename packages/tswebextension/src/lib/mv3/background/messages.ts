@@ -19,8 +19,3 @@ export const messageMV3Validator = commonMessageValidator.extend({
 });
 
 export type MessageMV3 = zod.infer<typeof messageMV3Validator>;
-
-export const getCookieRulesPayloadValidator = zod.object({
-    url: zod.string(),
-    referrer: zod.string(),
-}).strict();
