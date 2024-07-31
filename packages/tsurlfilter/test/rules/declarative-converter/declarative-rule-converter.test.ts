@@ -964,7 +964,32 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||test.com^',
                 resourceTypes: ['main_frame'],
+            },
+        });
+    });
 
+    it('it rule has $popup modifier it should be applied only to document requests', async () => {
+        const rules = [
+            '||example.org^$popup,third-party',
+        ];
+        const filterId = 0;
+        const filter = await createFilter(
+            filterId,
+            rules,
+        );
+        const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+
+        expect(declarativeRules).toHaveLength(1);
+        expect(declarativeRules[0]).toStrictEqual({
+            id: 1,
+            priority: 2,
+            action: {
+                type: 'block',
+            },
+            condition: {
+                urlFilter: '||example.org^',
+                domainType: 'thirdParty',
+                resourceTypes: ['main_frame'],
             },
         });
     });
