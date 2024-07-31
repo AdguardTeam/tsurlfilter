@@ -7,17 +7,15 @@ import {
 
 import { tabsApi } from '../../tabs/tabs-api';
 import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
-import { ContentType } from '..';
+import { type RequestContext } from './request-context-storage';
 
 /**
  * Base params about request.
  */
-type RequestParams = {
-    tabId: number,
-    referrerUrl: string,
-    requestUrl: string,
-    requestType: RequestType,
-};
+type RequestParams = Pick<
+    RequestContext,
+    'tabId' | 'eventId' | 'referrerUrl' | 'requestUrl' | 'requestType' | 'contentType'
+>;
 
 /**
  * Params for {@link RequestBlockingApi.getBlockingResponse}.
@@ -45,6 +43,19 @@ export type GetHeadersResponseParams = RequestParams & {
  * This class also provides method {@link isRequestBlockedByRule} for checking, if rule is blocking rule.
  */
 export class RequestBlockingApi {
+    /**
+     * Checks if request rule is blocked.
+     *
+     * @param requestRule Request network rule or null.
+     * @returns True, if rule is request blocking, else returns false.
+     */
+    public static isRequestBlockedByRule(requestRule: NetworkRule | null): boolean {
+        return !!requestRule
+            && !requestRule.isAllowlist()
+            && !requestRule.isOptionEnabled(NetworkRuleOption.Replace)
+            && !requestRule.isOptionEnabled(NetworkRuleOption.Redirect);
+    }
+
     /**
      * Closes the tab which considered as a popup.
      *
@@ -147,26 +158,23 @@ export class RequestBlockingApi {
     ): void {
         const {
             tabId,
+            eventId,
             referrerUrl,
             requestUrl,
             requestType,
+            contentType,
         } = data;
 
         if (!appliedRule || requestType === 0) {
             return;
         }
 
-        // We need this only for count total blocked requests,
-        // so we can skip contentType.
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
             data: {
                 tabId,
-                // TODO: Check if eventId is needed in mv3.
-                eventId: '1',
-                // TODO: Add saving correct request type to request context
-                // storage in the upper level.
-                requestType: ContentType.Document,
+                eventId,
+                requestType: contentType,
                 frameUrl: referrerUrl,
                 requestUrl,
                 filterId: appliedRule.getFilterListId(),

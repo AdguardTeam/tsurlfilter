@@ -186,6 +186,7 @@ export class TrustedTypesService {
     }
 
     /**
+     * TODO: Should we log it for filtering log?
      * Modifies CSP header of response headers —
      * adds `AGPolicy` and `'allow-duplicates'` to CSP header if there is a `trusted-types` directive,
      * and returns modified headers.

@@ -6,9 +6,9 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
+import type { ContentType } from '../../../common/request-type';
 import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
 import type { TabFrameRequestContext } from '../../tabs/tabs-api';
-import { type ContentType } from '../../../common/request-type';
 
 export const enum RequestContextState {
     BeforeRequest = 'beforeRequest',
@@ -26,8 +26,19 @@ export const enum RequestContextState {
  * Request context data.
  */
 export type RequestContext = TabFrameRequestContext & {
+    /**
+     * During redirect processing, multiple events are processed in the same request lifecycle.
+     * We need a unique identifier to separate these requests in the filtering log.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/webRequest/#life-cycle-of-requests
+     */
+    eventId: string;
+
     state: RequestContextState;
-    timestamp: number; // record time in ms
+    /**
+     * Record time in ms.
+     */
+    timestamp: number;
     referrerUrl: string;
     contentType: ContentType;
     thirdParty: boolean;
