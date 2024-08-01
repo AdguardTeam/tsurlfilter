@@ -52,14 +52,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
 [AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
 
-## [1.0.31] - 2024-08-01
+## [1.0.32] - 2024-08-01
 
 ### Changed
 
 - Updated `@adguard/tsurlfilter` to `v2.2.23`.
 - Updated `@adguard/scriptlets` to `v1.11.16`.
 
-[1.0.31]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.31
+[1.0.32]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.32
 
 ## [1.0.30] - 2024-07-17
 
