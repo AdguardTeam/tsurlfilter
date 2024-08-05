@@ -218,6 +218,8 @@ export class MessagesApi {
 
         const res = getCookieRulesPayloadValidator.safeParse(payload);
         if (!res.success) {
+            // this log message is added here as error for faster identification of the issue
+            logger.error('[tswebextension.getCookieRules]: cannot parse payload: ', payload, res.error);
             return undefined;
         }
 
@@ -233,6 +235,8 @@ export class MessagesApi {
             logger.debug('[tswebextension.getCookieRules]: tabId is undefined');
             return undefined;
         }
+
+        data.isAppStarted = true;
 
         let { frameId } = sender;
 
