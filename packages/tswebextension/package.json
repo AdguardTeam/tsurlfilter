@@ -86,7 +86,7 @@
     "@adguard/agtree": "workspace:^",
     "@adguard/assistant": "^4.3.70",
     "@adguard/extended-css": "^2.0.56",
-    "@adguard/scriptlets": "^1.11.6",
+    "@adguard/scriptlets": "^1.11.16",
     "@adguard/tsurlfilter": "workspace:^",
     "bowser": "2.11.0",
     "commander": "11.0.0",

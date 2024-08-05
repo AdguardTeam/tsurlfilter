@@ -801,8 +801,8 @@ importers:
         specifier: workspace:^
         version: link:../css-tokenizer
       '@adguard/scriptlets':
-        specifier: ^1.11.6
-        version: 1.11.6
+        specifier: ^1.11.16
+        version: 1.11.16
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -970,8 +970,8 @@ importers:
         specifier: ^2.0.56
         version: 2.0.56
       '@adguard/scriptlets':
-        specifier: ^1.11.6
-        version: 1.11.6
+        specifier: ^1.11.16
+        version: 1.11.16
       '@adguard/tsurlfilter':
         specifier: workspace:^
         version: link:../tsurlfilter
@@ -1121,7 +1121,7 @@ packages:
     engines: {node: '>=14'}
     dependencies:
       '@adguard/ecss-tree': 1.0.8
-      '@adguard/scriptlets': 1.10.25
+      '@adguard/scriptlets': 1.11.16
       clone-deep: 4.0.1
       json5: 2.2.3
       semver: 7.6.0
@@ -1164,22 +1164,8 @@ packages:
       - debug
     dev: false
 
-  /@adguard/scriptlets@1.10.25:
-    resolution: {integrity: sha512-q5s7PZ0oIizmcYQa/UI++MxQ7Cb3pdy1K9VY7yj+wtJ/xevEo/nxSLhnU/ijhSMvlAdFlGEkY898munZNfCUYA==}
-    dependencies:
-      '@babel/runtime': 7.24.1
-      js-yaml: 3.14.1
-    dev: false
-
-  /@adguard/scriptlets@1.11.1:
-    resolution: {integrity: sha512-HRDgDeHmYXEvplVec9ABOwV6Hwh9nN5E6rMSdb8yioPrHsj5orI5BQ2ABz+s2JgC9fjshauvk818jWTtDxX9aw==}
-    dependencies:
-      '@babel/runtime': 7.24.1
-      js-yaml: 3.14.1
-    dev: false
-
-  /@adguard/scriptlets@1.11.6:
-    resolution: {integrity: sha512-ArHRCGGOprZNQet+zpNNPWo8O4/Y/TdJ3k1y7XlKDE/FlEo/BDBDqD0GCYthAXEPtJvnmIFBOyV1MhlONqhM1A==}
+  /@adguard/scriptlets@1.11.16:
+    resolution: {integrity: sha512-E7lOVx1vgf1Pw3pGOH+bJFjluS99dGE3DZ+hqP1kn+6G1yHqHq4ofa7GnQRrVNMGJNmzOxbk6TiB5avubijhqA==}
     dependencies:
       '@babel/runtime': 7.24.1
       js-yaml: 3.14.1
@@ -1190,7 +1176,7 @@ packages:
     engines: {node: '>=6.0.0'}
     dependencies:
       '@adguard/extended-css': 2.0.56
-      '@adguard/scriptlets': 1.10.25
+      '@adguard/scriptlets': 1.11.16
       ip6addr: 0.2.5
       is-cidr: 4.0.2
       is-ip: 3.1.0
@@ -1207,7 +1193,7 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
     dependencies:
-      '@adguard/scriptlets': 1.11.1
+      '@adguard/scriptlets': 1.11.16
       cidr-tools: 6.4.2
       commander: 9.4.1
       is-cidr: 4.0.2
@@ -12821,7 +12807,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@18.7.1)(typescript@4.7.4)
+      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@20.11.30)(typescript@5.4.2)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
