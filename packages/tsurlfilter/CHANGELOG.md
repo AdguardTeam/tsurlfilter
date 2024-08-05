@@ -89,6 +89,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 
+## [2.2.23] - 2024-08-01
+
+### Changed
+
+- Updated `@adguard/scriptlets` to `v1.11.16`.
+
+[2.2.23]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.23
+
 ## [2.2.22] - 2024-07-17
 
 ### Fixed

@@ -5,11 +5,11 @@ deployment:
   source-plan: AJL-TSWEBEXTENSIONBUILD
 release-naming: ${bamboo.inject.version}
 environments:
-  - npmjs
+  - npmjs • 1.x
   - npmjs • alpha
   - npmjs • beta
 
-npmjs: &npmjs
+npmjs • 1.x: &npmjs
   variables: &npmjs-variables
     publishArgs: --access public
   docker:
