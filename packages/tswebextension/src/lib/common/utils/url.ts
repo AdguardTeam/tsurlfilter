@@ -8,7 +8,7 @@ import browser from 'webextension-polyfill';
  * @returns True if url starts with http{s?}.
  */
 export function isHttpRequest(url: unknown): boolean {
-    return typeof url === 'string' && !!url && url.indexOf('http') === 0;
+    return typeof url === 'string' && !!url && url.startsWith('http');
 }
 
 /**
@@ -18,7 +18,7 @@ export function isHttpRequest(url: unknown): boolean {
  * @returns True if url starts with http{s?} or ws.
  */
 export function isHttpOrWsRequest(url: string): boolean {
-    return !!url && (url.indexOf('http') === 0 || url.indexOf('ws') === 0);
+    return !!url && (url.startsWith('http') || url.startsWith('ws'));
 }
 
 /**
