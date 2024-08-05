@@ -8,7 +8,6 @@ import {
 import { tabsApi } from '../../tabs/tabs-api';
 import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
 import { companiesDbService } from '../services/companies-db-service';
-import { ContentType } from '..';
 
 import { type RequestContext } from './request-context-storage';
 
