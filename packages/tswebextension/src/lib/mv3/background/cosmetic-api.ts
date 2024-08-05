@@ -1,4 +1,5 @@
 import {
+    CosmeticRuleType,
     type CosmeticResult,
     type CosmeticRule,
 } from '@adguard/tsurlfilter';
@@ -12,6 +13,10 @@ import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { type ExecuteScriptParams, type InsertCSSParams, ScriptingApi } from './scripting-api';
 import { requestContextStorage } from './request/request-context-storage';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { getDomain } from '../../common/utils/url';
+import { type ContentType } from '../../common/request-type';
+import { nanoid } from '../nanoid';
 
 export type ContentScriptCosmeticData = {
     /**
@@ -35,6 +40,17 @@ type ApplyCosmeticResultParams = {
     frameId: number,
     cosmeticResult: CosmeticResult,
     frameUrl: string,
+};
+
+/**
+ * Information for logging js rules.
+ */
+type LogJsRulesParams = {
+    tabId: number,
+    cosmeticResult: CosmeticResult,
+    url: string,
+    contentType: ContentType,
+    timestamp: number,
 };
 
 /**
@@ -426,5 +442,56 @@ export class CosmeticApi extends CosmeticApiCommon {
         const injectStyles = injectRules.map((x) => CosmeticApi.addMarkerToInjectRule(x));
 
         return [...elemhideStyles, ...injectStyles];
+    }
+
+    /**
+     * Logs js rules applied to specific frame.
+     *
+     * We need a separate function for logging because script rules can be logged before injection
+     * to avoid duplicate logs while the js rule is being applied.
+     *
+     * See {@link WebRequestApi.onBeforeRequest} for details.
+     *
+     * @param params Data for js rule logging.
+     */
+    public static logScriptRules(params: LogJsRulesParams): void {
+        const {
+            tabId,
+            cosmeticResult,
+            url,
+            contentType,
+            timestamp,
+        } = params;
+
+        const scriptRules = cosmeticResult.getScriptRules();
+
+        for (const scriptRule of scriptRules) {
+            if (!scriptRule.isGeneric()) {
+                const ruleType = scriptRule.getType();
+                defaultFilteringLog.publishEvent({
+                    type: FilteringEventType.JsInject,
+                    data: {
+                        script: true,
+                        tabId,
+                        // for proper filtering log request info rule displaying
+                        // event id should be unique for each event, not copied from request
+                        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341
+                        eventId: nanoid(),
+                        requestUrl: url,
+                        frameUrl: url,
+                        frameDomain: getDomain(url) as string,
+                        requestType: contentType,
+                        timestamp,
+                        filterId: scriptRule.getFilterListId(),
+                        ruleIndex: scriptRule.getIndex(),
+                        cssRule: ruleType === CosmeticRuleType.ElementHidingRule
+                            || ruleType === CosmeticRuleType.CssInjectionRule,
+                        scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
+                            || ruleType === CosmeticRuleType.JsInjectionRule,
+                        contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
+                    },
+                });
+            }
+        }
     }
 }
