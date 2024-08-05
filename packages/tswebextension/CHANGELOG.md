@@ -16,8 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Add optional `companiesDbPath` argument to `TsWebExtension` constructor for MV3 to specify the path to the companies database file.
-- filtering log `ApplyBasicRuleEvent` now contains `companyCategory` id from `AdguardTeam/companiesdb` database in MV3 build. This update allows determinate the tracker category for the blocked request.
+- List of `TsWebExtension` constructor arguments for MV3 — added optional `companiesDbPath`
+  to specify the path to the companies database file.
+- Filtering log `ApplyBasicRuleEvent` now contains `companyCategory` property
+  which is a matched id from `AdguardTeam/companiesdb` database in MV3.
+  It allows to determinate the tracker category for the blocked request.
 
 
 ## [2.0.0-alpha.2] - 2024-07-17
