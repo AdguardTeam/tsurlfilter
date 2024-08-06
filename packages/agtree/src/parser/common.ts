@@ -3,9 +3,13 @@ import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '
 import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
 
 /**
- * Represents possible logical expression operators.
+ * Possible operators in the logical expression.
  */
-export type AnyOperator = '&&' | '||' | '!';
+export const enum OperatorValue {
+    Not = '!',
+    And = '&&',
+    Or = '||',
+}
 
 /**
  * Represents possible new line types.
@@ -439,7 +443,7 @@ export interface ExpressionVariableNode extends Node {
  */
 export interface ExpressionOperatorNode extends Node {
     type: 'Operator';
-    operator: AnyOperator;
+    operator: OperatorValue;
     left: AnyExpressionNode;
     right?: AnyExpressionNode;
 }
