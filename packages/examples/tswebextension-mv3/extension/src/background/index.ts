@@ -17,11 +17,12 @@ declare global {
     }
 }
 
-/** FIXME: failed start with stealth module */
 const tsWebExtension = new TsWebExtension(
     '/war/redirects',
     '/trackers.json',
 );
+
+await tsWebExtension.initStorage();
 
 tsWebExtension.onAssistantCreateRule.subscribe((rule) => {
     console.log(`assistant create rule ${rule}`);
