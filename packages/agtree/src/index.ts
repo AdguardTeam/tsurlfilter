@@ -10,7 +10,6 @@ export {
     type AnyCommentRule,
     type AnyCosmeticRule,
     type AnyExpressionNode,
-    type AnyOperator,
     type AnyRule,
     type CommentBase,
     CommentMarker,
