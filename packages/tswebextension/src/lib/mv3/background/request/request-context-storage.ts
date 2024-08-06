@@ -9,6 +9,7 @@ import {
 import type { ContentType } from '../../../common/request-type';
 import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
 import type { TabFrameRequestContext } from '../../tabs/tabs-api';
+import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS, isHttpOrWsRequest } from '../../../common';
 
 export const enum RequestContextState {
     BeforeRequest = 'beforeRequest',
@@ -77,9 +78,11 @@ export type RequestContext = TabFrameRequestContext & {
 type RequestMap = Map<string, RequestContext>;
 
 /**
- * Map of tab and frame id to request id.
+ * Map of tab and frame id to request ids.
+ * Sometimes we can have several request ids, for example, in cases where
+ * tab id and frame id information was not removed yet, but a new onBeforeRequestEvent fired.
  */
-type TabAndFrameMap = Map<string, string>;
+type TabAndFrameMap = Map<string, string[]>;
 
 /**
  * Request context storage used to keep track of request data
@@ -89,11 +92,13 @@ export class RequestContextStorage {
     /**
      * Map of request context data.
      */
-    requestMap:RequestMap = new Map();
+    requestMap: RequestMap = new Map();
 
     /**
      * Map of tab and frame id to request id.
      * We use the second map for faster search of context data when we have tab id and frame id only.
+     * Sometimes we can have several request ids, for example, in cases where
+     * the tab id and frame id information was not removed yet, but a new onBeforeRequestEvent fired.
      */
     tabAndFrameMap: TabAndFrameMap = new Map();
 
@@ -120,9 +125,18 @@ export class RequestContextStorage {
          * Otherwise, there might be other requests that can rewrite this mapping with unrelated data.
          * For example, a request for a script or image might have the same tab and frame id too.
          */
-        if (RequestContextStorage.isDocumentOrSubDocument(requestData.requestType)) {
+        if (RequestContextStorage.isForegroundDocumentRequest(requestData)) {
             const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(requestData.tabId, requestData.frameId);
-            this.tabAndFrameMap.set(tabAndFrameKey, requestId);
+
+            /**
+             * We store request ids in the array, because there might be cases when we have different
+             * requests with the same tab and frame id.
+             * For example when page was reloaded by user faster than the frame deletion
+             * timeout fires {@link FRAME_DELETION_TIMEOUT_MS}.
+             */
+            const requestIds = this.tabAndFrameMap.get(tabAndFrameKey) || [];
+            requestIds.push(requestId);
+            this.tabAndFrameMap.set(tabAndFrameKey, requestIds);
         }
     }
 
@@ -160,11 +174,12 @@ export class RequestContextStorage {
      */
     public getByTabAndFrame(tabId: number, frameId: number): RequestContext | undefined {
         const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(tabId, frameId);
-        const requestId = this.tabAndFrameMap.get(tabAndFrameKey);
-        if (!requestId) {
+        const requestIds = this.tabAndFrameMap.get(tabAndFrameKey);
+        if (!requestIds || requestIds.length === 0) {
             return undefined;
         }
-        return this.requestMap.get(requestId);
+        const lastRequestId = requestIds[requestIds.length - 1];
+        return this.requestMap.get(lastRequestId);
     }
 
     /**
@@ -180,18 +195,21 @@ export class RequestContextStorage {
         /**
          * Document and subdocument requests are deleted by the deleteByTabAndFrame method.
          */
-        if (!RequestContextStorage.isDocumentOrSubDocument(context.requestType)) {
+        if (!RequestContextStorage.isForegroundDocumentRequest(context)) {
             this.requestMap.delete(requestId);
         }
     }
 
     /**
-     * Checks if request type is document or subdocument.
-     * @param requestType Request type.
-     * @returns True if request type is document or subdocument.
+     * Checks if request type is document or subdocument and is not from a background tab with tabId === -1.
+     * @param requestContext Request context.
+     * @returns True if request type is document or subdocument and is not from a background tab.
      */
-    private static isDocumentOrSubDocument(requestType: RequestType): boolean {
-        return requestType === RequestType.Document || requestType === RequestType.SubDocument;
+    private static isForegroundDocumentRequest(requestContext: RequestContext): boolean {
+        const isBackgroundTab = requestContext.tabId === BACKGROUND_TAB_ID;
+        const isDocumentOrSubDocument = requestContext.requestType === RequestType.Document
+            || requestContext.requestType === RequestType.SubDocument;
+        return !isBackgroundTab && isDocumentOrSubDocument && isHttpOrWsRequest(requestContext.requestUrl);
     }
 
     /**
@@ -201,10 +219,23 @@ export class RequestContextStorage {
      */
     public deleteByTabAndFrame(tabId: number, frameId: number): void {
         const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(tabId, frameId);
-        const requestId = this.tabAndFrameMap.get(tabAndFrameKey);
-        if (requestId) {
-            this.requestMap.delete(requestId);
-            this.tabAndFrameMap.delete(tabAndFrameKey);
+        const requestIds = this.tabAndFrameMap.get(tabAndFrameKey);
+        if (requestIds) {
+            const currentTime = Date.now();
+            const filteredRequestIds = requestIds.filter((requestId) => {
+                const requestContext = this.requestMap.get(requestId);
+                if (requestContext && currentTime - requestContext.timestamp > FRAME_DELETION_TIMEOUT_MS) {
+                    this.requestMap.delete(requestId);
+                    return false;
+                }
+                return requestContext !== undefined;
+            });
+
+            if (filteredRequestIds.length > 0) {
+                this.tabAndFrameMap.set(tabAndFrameKey, filteredRequestIds);
+            } else {
+                this.tabAndFrameMap.delete(tabAndFrameKey);
+            }
         }
     }
 
