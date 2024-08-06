@@ -85,7 +85,7 @@ export type ToolBenchResult = {
     result: number | string;
 
     /**
-     * Run status (failed / no errors)
+     * Run status (failed or no errors)
      */
     status: string;
 };
