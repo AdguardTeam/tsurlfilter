@@ -144,14 +144,12 @@ import { requestContextStorage } from './request/request-context-storage';
 import { DocumentApi } from './document-api';
 import { CosmeticApi } from './cosmetic-api';
 import { getErrorMessage } from '../../common/error';
-import { BACKGROUND_TAB_ID, MAIN_FRAME_ID } from '../../common/constants';
+import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
 import { RequestBlockingApi } from './request/request-blocking-api';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
-
-const FRAME_DELETION_TIMEOUT = 3000;
 
 /**
  * API for applying rules from background service by handling
@@ -486,7 +484,7 @@ export class WebRequestApi {
 
         setTimeout(() => {
             requestContextStorage.deleteByTabAndFrame(tabId, frameId);
-        }, FRAME_DELETION_TIMEOUT);
+        }, FRAME_DELETION_TIMEOUT_MS);
 
         const tabContext = tabsApi.getTabContext(tabId);
 
@@ -505,7 +503,7 @@ export class WebRequestApi {
          *   - keep tab context if webNavigation.omCompleted has not been fired,
          * etc.
          */
-        setTimeout(() => tabContext.frames.delete(frameId), FRAME_DELETION_TIMEOUT);
+        setTimeout(() => tabContext.frames.delete(frameId), FRAME_DELETION_TIMEOUT_MS);
     }
 
     /**
@@ -521,8 +519,6 @@ export class WebRequestApi {
         Promise.all([
             CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
-        ]).then(() => {
-            requestContextStorage.deleteByTabAndFrame(tabId, frameId);
-        }).catch((e) => logger.error(e));
+        ]).catch((e) => logger.error(e));
     }
 }
