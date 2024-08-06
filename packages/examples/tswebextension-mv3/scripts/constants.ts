@@ -21,10 +21,9 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     ruleSetsPath: 'filters/declarative',
     filteringLogEnabled: false,
     settings: {
-        // TODO: use one content script instead of multiple?
-        assistantUrl: 'path-to-assistant-script',
-        gpcScriptUrl: 'path-to-gpc-script',
-        hideDocumentReferrerScriptUrl: 'path-to-hide-document-referrer-script',
+        assistantUrl: 'assistant-inject.js',
+        gpcScriptUrl: 'gpc.js',
+        hideDocumentReferrerScriptUrl: 'hide-document-referrer.js',
         collectStats: true,
         allowlistEnabled: true,
         allowlistInverted: false,
