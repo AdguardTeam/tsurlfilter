@@ -1,8 +1,10 @@
 import axios from 'axios';
+
 import { FILTERS_METADATA_URL } from './constants';
 
 /**
  * Filter metadata.
+ *
  * @see https://github.com/AdguardTeam/FiltersRegistry?tab=readme-ov-file#metadata
  */
 type FilterMetadata = {
@@ -20,28 +22,30 @@ type FilterMetadata = {
     timeUpdated: string;
     subscriptionUrl: string;
     diffPath?: string | undefined;
-}
+};
 
 /**
  * Filter groups metadata
+ *
  * @see https://github.com/AdguardTeam/FiltersRegistry?tab=readme-ov-file#-groups
  */
 type GroupMetadata = {
-    groupId: number,
-    groupName: string,
-    displayNumber: number,
-}
+    groupId: number;
+    groupName: string;
+    displayNumber: number;
+};
 
 /**
- * Metadata response payload. 
+ * Metadata response payload.
  */
 export type Metadata = {
     filters: FilterMetadata[];
     groups: GroupMetadata[];
-}
+};
 
 /**
  * Download metadata from {@link FILTERS_METADATA_URL}.
+ *
  * @returns Filter metadata
  */
 export async function getMetadata(): Promise<Metadata> {

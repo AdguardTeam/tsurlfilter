@@ -1,4 +1,3 @@
-
 const FILTERS_SERVER_URL = 'https://filters.adtidy.org/extension/chromium-mv3';
 
 export const BASE_DIR = './dist';

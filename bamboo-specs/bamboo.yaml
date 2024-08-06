@@ -110,6 +110,9 @@
 !include 'dnr-rulesets-build.yaml'
 
 ---
+!include 'dnr-rulesets-tests.yaml'
+
+---
 !include 'dnr-rulesets-deploy.yaml'
 
 ---
