@@ -1,15 +1,18 @@
 /* eslint-disable no-console */
+import path from 'path';
+
 import { copyWar, downloadCompaniesDb } from '@adguard/tswebextension/cli';
 import { AssetsLoader, ManifestPatcher } from '@adguard/dnr-rulesets';
-import path from 'path';
-import { buildRunner } from './build-runner';
-import { config } from './webpack.config';
+
 import {
     BUILD_PATH,
     BUILD_ZIP_FILE_NAME,
     WEB_ACCESSIBLE_RESOURCES_PATH,
     COMPANIES_DB_PATH,
 } from '../constants';
+
+import { buildRunner } from './build-runner';
+import { config } from './webpack.config';
 import { zipDirectory } from './zip-directory';
 
 const build = async () => {
