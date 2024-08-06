@@ -23,6 +23,8 @@ The following packages are available in this repository:
 | [`tsurlfilter`][tsurlfilterreadme]             | A library that enforces AdGuard's blocking rules logic.                              |
 | [`tswebextension`][tswebextensionreadme]       | Wraps the web extension API for use with [`tsurlfilter`][tsurlfilterreadme].         |
 | [`adguard-api`][adguardapireadme]              | Manages filter lists and ad filtering via [`tswebextension`][tswebextensionreadme].  |
+| [`adguard-api-mv3`][adguardapimv3readme]       | MV3 compatible version of [`adguard-api`][adguardapireadme].                         |
+| [`dnr-rulesets`][dnrrulesetsreadme]            | Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.                    |
 | [`examples/manifest-v2`][manifestv2]           | Example using Manifest V2.                                                           |
 | [`examples/manifest-v3`][manifestv3]           | Example using Manifest V3.                                                           |
 | [`examples/tswebextension-example`][tswebextensionexample] | Example for [`tswebextension`][tswebextensionreadme].                    |
@@ -31,6 +33,8 @@ The following packages are available in this repository:
 Detailed information on each package is available in the [`./packages`][packages-dir] directory.
 
 [adguardapireadme]: /packages/adguard-api/README.md
+[adguardapimv3readme]: /packages/adguard-api-mv3/README.md
+[dnrrulesetsreadme]: /packages/dnr-rulesets/README.md
 [agtreereadme]: /packages/agtree/README.md
 [csstokenizerreadme]: /packages/css-tokenizer/README.md
 [manifestv2]: /packages/examples/manifest-v2

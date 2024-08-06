@@ -1,35 +1,36 @@
-import fs from 'fs';
-import path from 'path';
 import { convertFilters } from '@adguard/tsurlfilter/cli';
 import axios from 'axios';
+import fs from 'fs';
 import { ensureDir } from 'fs-extra';
+import path from 'path';
 
-import { getMetadata, type Metadata } from './metadata';
-import {
-    FILTERS_URL,
-    FILTERS_DIR,
-    BASE_DIR,
-    RESOURCES_DIR,
-    DEST_RULE_SETS_DIR,
-} from './constants';
 import { version } from '../package.json';
+import {
+    BASE_DIR,
+    DEST_RULE_SETS_DIR,
+    FILTERS_DIR,
+    FILTERS_URL,
+    RESOURCES_DIR,
+} from './constants';
+import { getMetadata, type Metadata } from './metadata';
 
 /**
  * Filter data transfer object.
  */
 type FilterDTO = {
-    id: number,
-    url: string,
-    file: string,
+    id: number;
+    url: string;
+    file: string;
 };
 
 /**
  * Gets {@link FilterDTO} array from filter metadata.
- * @param metadata Filters metadata downloaded from {@link FILTERS_METADATA_URL}
+ *
+ * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`
  * @returns Array of filter data.
  */
 const getUrlsOfFiltersResources = async (
-    metadata: Metadata
+    metadata: Metadata,
 ): Promise<FilterDTO[]> => {
     return metadata.filters.map(({ filterId }) => ({
         id: filterId,
@@ -40,6 +41,7 @@ const getUrlsOfFiltersResources = async (
 
 /**
  * Downloads filter from the server and saves it to the specified directory.
+ *
  * @param filter Filter data transfer object.
  * @param filtersDir Filters directory.
  */
@@ -55,22 +57,27 @@ const downloadFilter = async (filter: FilterDTO, filtersDir: string) => {
 
 /**
  * Downloads filters from the server and saves them to the specified directory.
+ *
+ * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`
+ * @returns Promise that resolves when all filters are downloaded.
  */
 const startDownload = async (metadata: Metadata): Promise<void> => {
     await ensureDir(FILTERS_DIR);
     const urls = await getUrlsOfFiltersResources(metadata);
-    await Promise.all(urls.map((url) => downloadFilter(url, FILTERS_DIR)));
+    await Promise.all(urls.map(url => downloadFilter(url, FILTERS_DIR)));
 };
 
 /**
  * Creates build.txt file with package version.
+ *
+ * @returns Promise that resolves when build.txt is created.
  */
 const createTxt = async (): Promise<void> => {
     return fs.promises.writeFile(
         path.join(BASE_DIR, 'build.txt'),
-        `version=${version}`
+        `version=${version}`,
     );
-}
+};
 
 /**
  * Compiles rules to declarative json

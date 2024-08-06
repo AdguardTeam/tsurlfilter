@@ -5,11 +5,13 @@ Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.
 The list of available filters can be found [here](https://filters.adtidy.org/extension/chromium/filters.json)
 
 - [Dnr-rulesets](#dnr-rulesets)
-  - [How to use](#how-to-use)
+  - [Basic usage](#basic-usage)
     - [CLI](#cli)
     - [API](#api)
     - [Output structure](#output-structure)
-    - [Example](#example)
+  - [Advanced usage](#advanced-usage)
+    - [Injecting rulesets to the manifest object](#injecting-rulesets-to-the-manifest-object)
+  - [Example](#example)
   - [Included filter lists](#included-filter-lists)
     - [Ad Blocking](#ad-blocking)
       - [AdGuard Base filter](#adguard-base-filter)
@@ -72,7 +74,7 @@ The list of available filters can be found [here](https://filters.adtidy.org/ext
     - [build:docs](#builddocs)
     - [build](#build)
 
-## How to use
+## Basic usage
 
 Install package.
 
@@ -96,8 +98,10 @@ npm install --save-dev @adguard/dnr-rulesets
 ```
 
 `patch-manifest` command also provide two options:
-- `-f, --force-update` - set to true to overwrite existing rulesets.
-- `-i, --ids <ids>` - specify filter IDs to include.
+- `-f, --force-update` - force update rulesets with existing id (default: false)
+- `-i, --ids <ids...>` - filters ids to append (default: [])
+- `-e, --enable <ids...>` - enable filters by default (default: [])
+- `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
 
 1. Run the script to load DNR rulesets as part of your build flow.
 
@@ -115,22 +119,36 @@ npm run patch-manifest
 
 You can also integrate functions for downloading and updating the manifest into your build script:
 
+1. Load DNR rulesets.
+
 ```ts
-import { loadAssets, patchManifest } from '@adguard/dnr-rulesets';
+import { AssetsLoader } from '@adguard/dnr-rulesets';
 
-...
+const loader = new AssetsLoader();
+await loader.load('<path-to-output>');
+```
 
-await loadAssets('<path-to-output>');
-await patchManifest(
+2. Patch extension manifest.
+
+```ts
+import { ManifestPatcher } from '@adguard/dnr-rulesets';
+
+const patcher = new ManifestPatcher();
+
+patcher.path(
   '<path-to-manifest>',
   '<path-to-output>',
   {
     // Optional: specify filter IDs to include
     ids: ['2', '3'],
+    // Optional: specify enabled filter IDs
+    enabled: ['2'],
     // Optional: set to true to overwrite existing rulesets
     forceUpdate: true,
+    // Optional: set prefix for ruleset paths
+    rulesetPrefix: 'ruleset_',
   },
-);
+)
 ```
 
 ### Output structure
@@ -149,7 +167,40 @@ await patchManifest(
 |filter_<id>.txt // Original filter rules with specified id
 ```
 
-### Example
+## Advanced usage
+
+### Injecting rulesets to the manifest object
+
+We also provide flexible API to apply rulesets to the manifest object. 
+It can be useful if you want to patch to the manifest while bundling.
+
+```ts
+import { RulesetsInjector } from '@adguard/dnr-rulesets';
+
+const injector = new RulesetsInjector();
+
+const manifest = {
+  // Your manifest data
+};
+
+const ManifestWithRulesets = injector.applyRulesets(
+  (id) => `<path to rulesets>/${id}.json`,
+  manifest,
+  ['2', '3'],
+  {
+    // Optional: specify filter IDs to include
+    ids: ['2', '3'],
+    // Optional: specify enabled filter IDs
+    enabled: ['2'],
+    // Optional: set to true to overwrite existing rulesets
+    forceUpdate: true,
+    // Optional: set prefix for ruleset paths
+    rulesetPrefix: 'ruleset_',
+  },
+);
+```
+
+## Example
 
 Example of usage: [adguard-api-mv3](../examples/adguard-api-mv3)
 
