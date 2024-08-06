@@ -75,7 +75,7 @@ export type ToolBenchResult = {
     runsSampled: number;
 
     /**
-     * Average runtime in milliseconds / run
+     * Average runtime in milliseconds per run
      */
     averageRuntime: string;
 
