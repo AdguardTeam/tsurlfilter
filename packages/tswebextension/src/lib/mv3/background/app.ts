@@ -401,7 +401,7 @@ MessagesHandlerMV3
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
     retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        throw new Error('Method not implemented.');
+        throw new Error('Method is not implemented.');
     }
 
     /**
