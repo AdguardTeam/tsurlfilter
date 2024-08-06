@@ -1,23 +1,10 @@
 {
     "$schema": "https://json.schemastore.org/tsconfig",
+    "extends": "./tsconfig.base.json",
     "compilerOptions": {
-      "target": "esnext",
-      "module": "commonjs",
-      "moduleResolution": "node",
-      "strict": true,
-      "noUnusedLocals": true,
-      "noUnusedParameters": true,
-      "noImplicitReturns": true,
-      "noFallthroughCasesInSwitch": true,
-      "resolveJsonModule": true,
-      "skipLibCheck": true,
-      "esModuleInterop": true,
-      "types": ["node"],
-      "lib": ["es2022"],
-      "outDir": "dist",
+      "types": ["jest"],
     },
     "ts-node": {
       "swc": true
     },
-    "exclude": ["node_modules"],
 }

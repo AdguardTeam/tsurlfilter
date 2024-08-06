@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { copyWar, downloadCompaniesDb } from '@adguard/tswebextension/cli';
-import { loadAssets, patchManifest } from '@adguard/dnr-rulesets';
+import { AssetsLoader, ManifestPatcher } from '@adguard/dnr-rulesets';
 import path from 'path';
 import { buildRunner } from './build-runner';
 import { config } from './webpack.config';
@@ -14,8 +14,10 @@ import { zipDirectory } from './zip-directory';
 
 const build = async () => {
     try {
-        await loadAssets('./extension/filters');
-        await patchManifest(
+        const loader = new AssetsLoader();
+        await loader.load('./extension/filters');
+        const patcher = new ManifestPatcher();
+        patcher.patch(
             './extension/manifest.json',
             './extension/filters',
             {
