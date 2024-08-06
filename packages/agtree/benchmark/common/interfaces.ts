@@ -15,7 +15,7 @@ interface ToolConfig {
      * Function to benchmark the tool
      *
      * @param source Source code to benchmark
-     * @returns Result of the benchmark (typically, number of rules / tokens)
+     * @returns Result of the benchmark (typically, number of rules or tokens)
      */
     benchmark: (source: string) => number;
 }
