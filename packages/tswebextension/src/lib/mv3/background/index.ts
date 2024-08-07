@@ -27,7 +27,6 @@ export {
 export type {
     NetworkRule,
     CosmeticRule,
-    CosmeticRuleType,
     NetworkRuleOption,
 } from '@adguard/tsurlfilter';
 

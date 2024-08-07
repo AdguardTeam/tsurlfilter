@@ -3,6 +3,7 @@ import {
     Configuration,
     CommonMessageType,
 } from '@adguard/tswebextension/mv3';
+import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 import { MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 import browser from 'webextension-polyfill';
 
@@ -41,7 +42,7 @@ interface IMessageInner {
 export type ConfigResponse = {
     status: boolean,
     filters: number[],
-    rules: string[],
+    rules: string,
 };
 
 let config: Configuration;
@@ -59,8 +60,10 @@ const messageHandler = async (message: IMessage) => {
             const res: ConfigResponse = {
                 status: isStarted || false,
                 filters: config.staticFiltersIds,
-                // FIXME (David): Handle this userrules as UInt8Array
-                rules: config.userrules,
+                rules: FilterListPreprocessor.getOriginalFilterListText({
+                    rawFilterList: config.userrules.rawFilterList,
+                    conversionMap: config.userrules.conversionMap,
+                }),
             };
 
             return res;
@@ -101,8 +104,14 @@ const messageHandler = async (message: IMessage) => {
             return isStarted;
         }
         case Message.ApplyUserRules: {
-            // FIXME (David): Handle this userrules as UInt8Array
-            config.userrules = (data as string).split('\n');
+            const preprocessed = FilterListPreprocessor.preprocess(data as string);
+
+            config.userrules = {
+                rawFilterList: preprocessed.rawFilterList,
+                conversionMap: preprocessed.conversionMap,
+                content: preprocessed.filterList,
+                sourceMap: preprocessed.sourceMap,
+            };
 
             await tsWebExtension.configure(config);
 

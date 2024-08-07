@@ -1,8 +1,7 @@
 import {
     DeclarativeFilterConverter,
-    Filter,
-    type ConversionResult,
     type IFilter,
+    type ConversionResult,
     type IRuleSet,
     type UpdateStaticRulesOptions,
 } from '@adguard/tsurlfilter/es/declarative-converter';
@@ -47,9 +46,8 @@ export default class UserRulesApi {
      * Converts custom filters and user rules on the fly into a single merged
      * rule set and applies it via the declarativeNetRequest API.
      *
-     * @param userRules String[] contains user rules.
-     * @param allowlistRule String with combined allowlist rules in AG format
-     * (e.g. '@@$document,domain=example.com|example.org').
+     * @param userRules Filter with user rules.
+     * @param allowlistRules Filter with allowlist rules.
      * @param customFilters List of custom filters.
      * @param staticRuleSets List of enabled static rule sets to apply
      * $badfilter rules from dynamic rules to static.
@@ -64,24 +62,15 @@ export default class UserRulesApi {
      * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}
      */
     public static async updateDynamicFiltering(
-        userRules: string[],
-        allowlistRule: string,
+        userRules: IFilter,
+        allowlistRules: IFilter,
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
-            // FIXME: (David, v3.0): Change declarative converter to AST-based
-            new Filter(
-                // NOTE: Here we use USER_FILTER_ID for user rules and allowlist rules.
-                // But for tsurlfilter engine we use different filter id for
-                // allowlist rules - ALLOWLIST_FILTER_ID.
-                // TODO: This need to be changed in the future.
-                USER_FILTER_ID,
-                { getContent: () => Promise.resolve([allowlistRule].concat(userRules)) },
-                // user filter considered as trusted
-                true,
-            ),
+            allowlistRules,
+            userRules,
             ...customFilters,
         ];
 

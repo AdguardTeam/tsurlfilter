@@ -2,8 +2,8 @@
  * @file Utility functions for logical expression node.
  */
 
-import { type AnyExpressionNode, type ExpressionVariableNode } from '../parser/common';
-import { NodeType, OperatorValue } from '../parser/misc/logical-expression';
+import { OperatorValue, type AnyExpressionNode, type ExpressionVariableNode } from '../parser/common';
+import { NodeType } from '../parser/misc/logical-expression';
 
 const ERROR_PREFIX = {
     UNEXPECTED_NODE_TYPE: 'Unexpected node type',

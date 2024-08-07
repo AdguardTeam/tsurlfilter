@@ -1,5 +1,5 @@
-import { LF } from '../../common/constants';
 import { RULE_INDEX_NONE } from '../../rules/rule';
+import { findNextLineBreakIndex } from '../../utils/string-utils';
 import { type FilterListSourceMap } from './schema';
 
 /**
@@ -11,7 +11,7 @@ import { type FilterListSourceMap } from './schema';
  */
 export const getRuleSourceText = (lineStartIndex: number, source: string): string | null => {
     // note: checking for LF is enough, because we transform source before storing it, and it's always LF
-    let lineEndIndex = source.indexOf(LF, lineStartIndex);
+    let [lineEndIndex] = findNextLineBreakIndex(source, lineStartIndex);
 
     // If the line end index is not found, we assume that the rule is the last line in the source.
     if (lineEndIndex === -1) {
