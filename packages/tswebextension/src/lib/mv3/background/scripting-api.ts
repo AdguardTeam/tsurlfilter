@@ -2,6 +2,23 @@ import { appContext } from './app-context';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
 
 /**
+ * Trusted Types API used to describe to appease the type checker.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicy.
+ */
+declare const trustedTypes: {
+    createPolicy(name: string, policyOptions: {
+        createHTML?: (input: string) => string;
+        createScript?: (input: string) => string;
+        createScriptURL?: (input: string) => string;
+    }): {
+        createHTML: (input: string) => string;
+        createScript: (input: string) => string;
+        createScriptURL: (input: string) => string;
+    };
+};
+
+/**
  * Parameters for applying CSS rules.
  */
 export type InsertCSSParams = {
@@ -74,7 +91,26 @@ export class ScriptingApi {
                 return;
             }
 
-            const injectViaScriptTag = (): void => {
+            /**
+             * Keep constant here.
+             * Otherwise, it won't be available in the function from the outside.
+             */
+            const AG_POLICY_NAME = 'AGPolicy';
+
+            const AGPolicy = {
+                createHTML: (input: string) => input,
+                createScript: (input: string) => input,
+                createScriptURL: (input: string) => input,
+            };
+
+            let policy = AGPolicy;
+
+            if (trustedTypes) {
+                policy = trustedTypes.createPolicy(AG_POLICY_NAME, AGPolicy);
+            }
+
+            // eslint-disable-next-line @typescript-eslint/no-shadow
+            const injectViaScriptTag = (scriptText: string): void => {
                 const scriptTag = document.createElement('script');
                 scriptTag.setAttribute('type', 'text/javascript');
                 scriptTag.textContent = scriptText;
@@ -89,10 +125,10 @@ export class ScriptingApi {
 
             try {
                 // eslint-disable-next-line no-eval
-                eval(scriptText);
+                eval(policy.createScript(scriptText));
             } catch (e) {
                 // if eval fails, inject via script tag
-                injectViaScriptTag();
+                injectViaScriptTag(policy.createScript(scriptText));
             }
 
             // We don't care about types here
