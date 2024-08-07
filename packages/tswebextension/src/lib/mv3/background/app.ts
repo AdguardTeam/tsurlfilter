@@ -489,21 +489,6 @@ export class TsWebExtension implements AppInterface<
         return messagesApi.handleMessage;
     }
 
-    // TODO: Implement this method.
-    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
-    /**
-     * Retrieves rule node from a dynamic filter.
-     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
-     *
-     * @param filterId Filter id.
-     * @param ruleIndex Rule index.
-     * @returns Rule node or null.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
-    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        throw new Error('Method is not implemented.');
-    }
-
     /**
      * Extract partial configuration {@link ConfigurationMV3Context} from whole
      * {@link ConfigurationMV3}, excluding heavyweight fields which
@@ -675,5 +660,20 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             logger.currentLevel = LogLevel.Info;
         }
+    }
+
+    // TODO: Implement this method.
+    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
+    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        throw new Error('Method not implemented.');
     }
 }

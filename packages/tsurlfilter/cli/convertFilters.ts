@@ -107,6 +107,7 @@ export const convertFilters = async (
             return new Filter(
                 filterId,
                 { getContent: async () => FilterListPreprocessor.preprocess(data) },
+                // we consider that all preinstalled filters are trusted
                 true,
             );
         })
