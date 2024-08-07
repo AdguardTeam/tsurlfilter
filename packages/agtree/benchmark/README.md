@@ -27,7 +27,7 @@ The results will be displayed on the console and saved in [`benchmark/RESULTS.md
 
 You can find the list of supported tools in [`config/tools.ts`][tools-config].
 
-## Adding a new tool / resource
+## Adding a new tool or resource
 
 To incorporate a new tool or resource, follow these steps:
 

@@ -1,17 +1,26 @@
 import type { ScannedFilter } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { FilterScanner } from '../../../src/rules/declarative-converter/filter-scanner';
-import { NetworkRule, NetworkRuleOption } from '../../../src';
+import { FilterListPreprocessor, NetworkRule, NetworkRuleOption } from '../../../src';
+import { Filter, type IFilter } from '../../../src/rules/declarative-converter/filter';
 
-export const createFilter = async (
+export const createFilter = (
+    rules: string[],
+    filterId: number = 0,
+): IFilter => {
+    return new Filter(
+        filterId,
+        { getContent: async () => FilterListPreprocessor.preprocess(rules.join('\n')) },
+        true,
+    );
+};
+
+export const createScannedFilter = async (
     filterId: number,
     lines: string[],
 ): Promise<ScannedFilter> => {
-    const scanner = await FilterScanner.createNew({
-        getId: () => filterId,
-        getContent: async () => lines,
-        getRuleByIndex: async (index) => lines[index],
-        isTrusted: () => true,
-    });
+    const filter = createFilter(lines, filterId);
+
+    const scanner = await FilterScanner.createNew(filter);
 
     const { rules } = scanner.getIndexedRules();
 

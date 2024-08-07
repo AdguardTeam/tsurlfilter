@@ -24,7 +24,7 @@ export function App() {
 
             setIsFilteringEnabled(status);
             setEnabledFilters(filters);
-            setUserRules(rules?.join('\n'));
+            setUserRules(rules);
 
             setIsLoading(false);
         };

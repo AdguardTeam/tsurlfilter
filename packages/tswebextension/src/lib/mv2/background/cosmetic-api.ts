@@ -1,10 +1,10 @@
 /* eslint-disable jsdoc/require-returns */
 import { nanoid } from 'nanoid';
 import {
-    CosmeticRuleType,
     type CosmeticResult,
     type CosmeticRule,
 } from '@adguard/tsurlfilter';
+import { CosmeticRuleType } from '@adguard/agtree';
 
 import { appContext } from './context';
 import { getDomain } from '../../common/utils/url';
