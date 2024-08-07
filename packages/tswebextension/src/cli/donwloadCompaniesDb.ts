@@ -1,6 +1,4 @@
-import https from 'https';
 import fs from 'fs';
-import path from 'path';
 
 import { type CompaniesDbMin } from '../lib/mv3/background/services/companies-db-service';
 
@@ -105,33 +103,15 @@ const simplifyCompaniesDbTrackers = (rawData: CompaniesDbTrackers): CompaniesDbM
  * @returns Promise that resolves when the database is downloaded.
  * @throws Error if the download fails.
  */
-export function downloadCompaniesDb(dest: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(
-            path.resolve(process.cwd(), dest),
-        );
-
-        // eslint-disable-next-line no-console
-        console.info('Downloading companies db...');
-
-        https.get(COMPANIES_DB_URL, (res) => {
-            if (res.statusCode === 200) {
-                res.pipe(file);
-
-                res.on('end', () => {
-                    const rawData = fs.readFileSync(dest, 'utf8');
-                    const parsedData = JSON.parse(rawData);
-                    const simplifiedData = simplifyCompaniesDbTrackers(parsedData);
-                    fs.writeFileSync(dest, JSON.stringify(simplifiedData));
-                });
-            } else {
-                file.emit('error', new Error(`Failed to download file, status code: ${res.statusCode}`));
-            }
-        }).on('error', (err) => {
-            file.emit('error', err);
-        });
-
-        file.on('finish', resolve);
-        file.on('error', reject);
-    });
+export async function downloadCompaniesDb(dest: string): Promise<void> {
+    // eslint-disable-next-line no-console
+    console.info('Downloading companies db...');
+    const res = await fetch(COMPANIES_DB_URL);
+    if (res.ok) {
+        const data = await res.json();
+        const simplifiedData = simplifyCompaniesDbTrackers(data);
+        fs.writeFileSync(dest, JSON.stringify(simplifiedData));
+    } else {
+        throw new Error(`Failed to download file, status code: ${res.status}`);
+    }
 }
