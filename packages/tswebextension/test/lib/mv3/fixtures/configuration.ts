@@ -1,4 +1,10 @@
+import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { LF } from '../../../../src/lib/common/constants';
 import { type ConfigurationMV3 } from '../../../../src/lib/mv3/background/configuration';
+
+const preprocessedUserRules = FilterListPreprocessor.preprocess(
+    ['||example.org^', 'example.com##h1'].join(LF),
+);
 
 export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     staticFiltersIds: [1, 2],
@@ -6,7 +12,13 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     filtersPath: '',
     ruleSetsPath: '',
     allowlist: ['example.com'],
-    userrules: ['||example.org^', 'example.com##h1'],
+    userrules: {
+        content: preprocessedUserRules.filterList,
+        sourceMap: preprocessedUserRules.sourceMap,
+        conversionMap: preprocessedUserRules.conversionMap,
+        rawFilterList: preprocessedUserRules.rawFilterList,
+        trusted: true,
+    },
     verbose: false,
     filteringLogEnabled: false,
     settings: {
