@@ -1,8 +1,8 @@
 import {
-    CosmeticRuleType,
     type CosmeticResult,
     type CosmeticRule,
 } from '@adguard/tsurlfilter';
+import { CosmeticRuleType } from '@adguard/agtree';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
