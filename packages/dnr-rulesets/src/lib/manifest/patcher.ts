@@ -56,7 +56,9 @@ export class ManifestPatcher {
             rulesetId,
         );
 
-        const filterNames = fs.readdirSync(absoluteFiltersPath);
+        const filterNames = fs
+            .readdirSync(absoluteFiltersPath)
+            .filter(f => f.match(/filter_\d\.txt/));
 
         const patchedManifest = this.injector.applyRulesets(
             getPath,

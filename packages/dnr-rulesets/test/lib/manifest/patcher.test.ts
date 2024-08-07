@@ -13,7 +13,7 @@ describe('ManifestPatcher', () => {
     const dir = 'dir';
     const manifestPath = `${dir}/manifest.json`;
     const filtersPath = `${dir}/filters`;
-    const filterNames = ['filter_1', 'filter_2'];
+    const filterNames = ['filter_1.txt', 'filter_2.txt'];
 
     const mockIsAbsolute = jest.mocked(path.isAbsolute).mockReturnValue(true);
     // jest cannot mock process.cwd() directly, so we need to use spy
@@ -259,5 +259,21 @@ describe('ManifestPatcher', () => {
         expect(mockInjector.applyRulesets).toHaveBeenCalledWith(expect.any(Function), manifest, filterNames, undefined);
         expect(mockRelative).not.toHaveBeenCalled();
         expect(mockWriteFileSync).not.toHaveBeenCalled();
+    });
+
+    it('should ignore files that do not match the filter name pattern', () => {
+        const patcher = new ManifestPatcher(mockLoader, mockInjector);
+
+        mockReaddirSync.mockReturnValueOnce([
+            ...filterNames,
+            'filters.json',
+            'filters_i18n.json',
+        ]);
+
+        patcher.patch(manifestPath, filtersPath);
+
+        expect(
+            mockInjector.applyRulesets,
+        ).toHaveBeenCalledWith(expect.any(Function), manifest, filterNames, undefined);
     });
 });
