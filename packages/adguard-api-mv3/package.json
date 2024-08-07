@@ -26,7 +26,7 @@
     "lint": "pnpm lint:eslint && pnpm check-types",
     "e2e": "jest",
     "build": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
-    "postbuild": "pnpm types && ts-node tasks/build-txt",
+    "postbuild": "pnpm types && ts-node tasks/build-txt && ts-node tasks/build-companiesdb",
     "prepush": "pnpm build",
     "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
     "lint:eslint": "eslint --cache 'src/**/*.ts' 'tasks/**/*.ts'",

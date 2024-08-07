@@ -85,9 +85,10 @@ AdGuard API MV3 requires prebuilt DNR rule sets to be able to filter web request
 
 ### Required CompaniesDB data
 
-AdGuard API MV3 requires the `trackers.json` file from [AdguardTeam/companiesdb] repository
-to be able to determinate trackers categories for blocked requests.
-You can use [@adguard/tswebextension CLI] to download it.
+AdGuard API MV3 requires the `trackers.json` file to be able to determinate trackers categories for blocked requests. You can find it in the dist folder.
+
+Originally it is located in the [AdguardTeam/companiesdb] repository.
+You can use [@adguard/tswebextension CLI] to download its latest version.
 
 [AdguardTeam/companiesdb]: https://github.com/AdguardTeam/companiesdb
 

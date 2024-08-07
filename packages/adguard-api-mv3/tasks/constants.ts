@@ -15,21 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
-import fs from 'fs';
+
 import path from 'path';
-import { version } from '../package.json';
-import { distDirPath } from './constants';
 
-const FILENAME = 'build.txt';
+const DIST_DIR = '../dist';
 
-const main = (): void => {
-    const content = `version=${version}`;
-
-    if (!fs.existsSync(distDirPath)) {
-        fs.mkdirSync(distDirPath);
-    }
-
-    fs.writeFileSync(path.resolve(distDirPath, FILENAME), content);
-};
-
-main();
+export const distDirPath = path.resolve(__dirname, DIST_DIR);
