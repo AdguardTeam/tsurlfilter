@@ -484,7 +484,7 @@ export class WebRequestApi {
             },
         });
 
-        if (!context?.matchingResult) {
+        if (!context?.matchingResult || context.matchingResult.getBasicResult()?.isFilteringDisabled()) {
             return undefined;
         }
 

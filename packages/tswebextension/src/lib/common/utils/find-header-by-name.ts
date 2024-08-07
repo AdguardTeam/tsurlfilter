@@ -10,9 +10,10 @@ import HttpHeaders = WebRequest.HttpHeaders;
  * @returns Found header, or null if not found.
  */
 export function findHeaderByName(headers: HttpHeaders, headerName: string): HttpHeadersItemType | null {
-    for (let i = 0; i < headers.length; i += 1) {
-        const header = headers[i];
-        if (header.name.toLowerCase() === headerName.toLowerCase()) {
+    const lowerCaseHeaderName = headerName.toLowerCase();
+
+    for (const header of headers) {
+        if (header.name.toLowerCase() === lowerCaseHeaderName) {
             return header;
         }
     }

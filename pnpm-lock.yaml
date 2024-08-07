@@ -793,6 +793,9 @@ importers:
         specifier: ^0.12.0
         version: 0.12.0
     devDependencies:
+      '@adguard/tsurlfilter':
+        specifier: workspace:^
+        version: link:../../tsurlfilter
       '@swc-node/register':
         specifier: ^1.6.6
         version: 1.10.0(@swc/core@1.6.7)(@swc/types@0.1.12)(typescript@5.5.4)
@@ -1038,8 +1041,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       '@adguard/scriptlets':
-        specifier: ^1.11.6
-        version: 1.11.6
+        specifier: ^1.11.16
+        version: 1.11.16
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1200,6 +1203,9 @@ importers:
 
   packages/tswebextension:
     dependencies:
+      '@adguard/agtree':
+        specifier: workspace:^
+        version: link:../agtree
       '@adguard/assistant':
         specifier: ^4.3.70
         version: 4.3.70
@@ -1210,8 +1216,8 @@ importers:
         specifier: ^1.0.1
         version: link:../logger
       '@adguard/scriptlets':
-        specifier: ^1.11.6
-        version: 1.11.6
+        specifier: ^1.11.16
+        version: 1.11.16
       '@adguard/tsurlfilter':
         specifier: workspace:^
         version: link:../tsurlfilter
@@ -1252,9 +1258,6 @@ importers:
         specifier: 3.21.4
         version: 3.21.4
     devDependencies:
-      '@adguard/agtree':
-        specifier: workspace:^
-        version: link:../agtree
       '@rollup/plugin-commonjs':
         specifier: 25.0.2
         version: 25.0.2(rollup@3.29.4)
@@ -1411,6 +1414,13 @@ packages:
   /@adguard/re2-wasm@1.2.0:
     resolution: {integrity: sha512-yMtEJfThxN9rEYm2Zg3X8jUKaPYq5wByc90JbMspSWJo7MXw664gTvLD7/wijl6y79VSuAs77bXUIgBXutMp7A==}
     engines: {node: '>=10'}
+    dev: false
+
+  /@adguard/scriptlets@1.11.16:
+    resolution: {integrity: sha512-E7lOVx1vgf1Pw3pGOH+bJFjluS99dGE3DZ+hqP1kn+6G1yHqHq4ofa7GnQRrVNMGJNmzOxbk6TiB5avubijhqA==}
+    dependencies:
+      '@babel/runtime': 7.24.7
+      js-yaml: 3.14.1
     dev: false
 
   /@adguard/scriptlets@1.11.6:

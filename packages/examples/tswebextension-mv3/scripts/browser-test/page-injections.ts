@@ -1,4 +1,8 @@
-import { Configuration, TsWebExtension } from '@adguard/tswebextension/mv3';
+import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import {
+    type Configuration,
+    type TsWebExtension,
+} from '@adguard/tswebextension/mv3';
 import { LogDetails } from './logger';
 
 declare global {
@@ -35,10 +39,16 @@ export const addQunitListeners = (logResultFnName: string) => {
 export type SetTsWebExtensionConfigArg = [ defaultConfig: Configuration, userrules: string ];
 
 export const setTsWebExtensionConfig = async (arg: SetTsWebExtensionConfigArg) => {
-    // FIXME: (David) Handle this array as UInt8Array
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [ defaultConfig, userrules ] = arg;
     const configuration: Configuration = defaultConfig;
+    const preprocessed = FilterListPreprocessor.preprocess(userrules);
+    configuration.userrules = {
+        content: preprocessed.filterList,
+        sourceMap: preprocessed.sourceMap,
+        conversionMap: preprocessed.conversionMap,
+        rawFilterList: preprocessed.rawFilterList,
+        trusted: true,
+    };
     await self.tsWebExtension.configure(configuration);
 };
 

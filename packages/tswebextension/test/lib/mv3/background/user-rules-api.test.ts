@@ -1,14 +1,8 @@
 import browser from 'webextension-polyfill';
-import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
-import UserRulesApi from '../../../../src/lib/mv3/background/user-rules-api';
+import UserRulesApi, { USER_FILTER_ID } from '../../../../src/lib/mv3/background/user-rules-api';
+import { ALLOWLIST_FILTER_ID } from '../../../../src/lib/common/constants';
 
-const createFilter = (content: string[], filterId: number): IFilter => {
-    return new Filter(
-        filterId,
-        { getContent: (): Promise<string[]> => Promise.resolve(content) },
-        true,
-    );
-};
+import { createFilter } from '../helpers';
 
 describe('UserRulesApi', () => {
     describe('updateDynamicFiltering', () => {
@@ -31,8 +25,8 @@ describe('UserRulesApi', () => {
 
             // Test with MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES set to 1
             let conversionResult = await UserRulesApi.updateDynamicFiltering(
-                [userRule],
-                allowlistRule,
+                createFilter([userRule], USER_FILTER_ID),
+                createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
                 [createFilter([customRule], 1000)],
                 [],
             );
@@ -46,8 +40,8 @@ describe('UserRulesApi', () => {
             mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES = 2;
 
             conversionResult = await UserRulesApi.updateDynamicFiltering(
-                [userRule],
-                allowlistRule,
+                createFilter([userRule], USER_FILTER_ID),
+                createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
                 [createFilter([customRule], 1000)],
                 [],
             );
@@ -63,8 +57,8 @@ describe('UserRulesApi', () => {
             mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES = 3;
 
             conversionResult = await UserRulesApi.updateDynamicFiltering(
-                [userRule],
-                allowlistRule,
+                createFilter([userRule], USER_FILTER_ID),
+                createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
                 [createFilter([customRule], 1000)],
                 [],
             );
