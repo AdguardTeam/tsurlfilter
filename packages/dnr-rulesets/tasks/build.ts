@@ -9,10 +9,12 @@ import {
     BASE_DIR,
     DEST_RULE_SETS_DIR,
     FILTERS_DIR,
+    FILTERS_METADATA_FILE_NAME,
+    FILTERS_METADATA_I18N_FILE_NAME,
     FILTERS_URL,
     RESOURCES_DIR,
 } from './constants';
-import { getMetadata, type Metadata } from './metadata';
+import { getI18nMetadata, getMetadata, type Metadata } from './metadata';
 
 /**
  * Filter data transfer object.
@@ -58,13 +60,27 @@ const downloadFilter = async (filter: FilterDTO, filtersDir: string) => {
 /**
  * Downloads filters from the server and saves them to the specified directory.
  *
- * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`
  * @returns Promise that resolves when all filters are downloaded.
  */
-const startDownload = async (metadata: Metadata): Promise<void> => {
+const startDownload = async (): Promise<void> => {
     await ensureDir(FILTERS_DIR);
-    const urls = await getUrlsOfFiltersResources(metadata);
-    await Promise.all(urls.map(url => downloadFilter(url, FILTERS_DIR)));
+
+    const metadata = await getMetadata();
+
+    await fs.promises.writeFile(
+        path.join(FILTERS_DIR, FILTERS_METADATA_FILE_NAME),
+        JSON.stringify(metadata),
+    );
+
+    const i18nMetadata = await getI18nMetadata();
+
+    await fs.promises.writeFile(
+        path.join(FILTERS_DIR, FILTERS_METADATA_I18N_FILE_NAME),
+        JSON.stringify(i18nMetadata),
+    );
+
+    const filters = await getUrlsOfFiltersResources(metadata);
+    await Promise.all(filters.map(filter => downloadFilter(filter, FILTERS_DIR)));
 };
 
 /**
@@ -94,9 +110,7 @@ const createTxt = async (): Promise<void> => {
  * we should find corresponding text file in resources, and then convert and save json to path specified in the manifest
  */
 const build = async (): Promise<void> => {
-    const metadata = await getMetadata();
-    await startDownload(metadata);
-
+    await startDownload();
     await convertFilters(
         FILTERS_DIR,
         RESOURCES_DIR,
