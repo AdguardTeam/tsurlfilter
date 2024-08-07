@@ -1,10 +1,20 @@
 import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
+import {
+    filterListConversionMapValidator,
+    filterListSourceMapValidator,
+    type PreprocessedFilterList,
+    getFilterBinaryName,
+    getFilterConversionMapName,
+    getFilterName,
+    getFilterSourceMapName,
+} from '@adguard/tsurlfilter';
+import { ByteBuffer } from '@adguard/agtree';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
-import { getFilterName } from '../utils/get-filter-name';
 
 import { type ConfigurationMV3 } from './configuration';
+import { loadExtensionBinaryResource, loadExtensionTextResource } from '../utils/resource-loader';
 
 export const RULE_SET_NAME_PREFIX = 'ruleset_';
 
@@ -67,6 +77,25 @@ export default class FiltersApi {
     }
 
     /**
+     * Helper method to load chunks from ArrayBuffer.
+     *
+     * @param arrayBuffer ArrayBuffer to load chunks from.
+     *
+     * @returns List of Uint8Array chunks.
+     */
+    private static async loadChunksFromArrayBuffer(arrayBuffer: ArrayBuffer): Promise<Uint8Array[]> {
+        // we can assume that the arrayBuffer.byteLength is divisible by ByteBuffer.CHUNK_SIZE
+        const chunkSize = ByteBuffer.CHUNK_SIZE;
+        const totalChunks = arrayBuffer.byteLength / chunkSize;
+
+        return Array.from({ length: totalChunks }, (_, i) => {
+            const start = i * chunkSize;
+            const end = Math.min(start + chunkSize, arrayBuffer.byteLength);
+            return new Uint8Array(arrayBuffer.slice(start, end));
+        });
+    }
+
+    /**
      * Loads filters content from provided filtersPath (which has been extracted
      * from field 'filtersPath' of the {@link Configuration}).
      *
@@ -75,13 +104,26 @@ export default class FiltersApi {
      *
      * @returns Promise resolved file content as a list of strings.
      */
-    private static async loadFilterContent(id: number, filtersPath: string): Promise<string[]> {
-        const filterName = getFilterName(id);
-        const url = browser.runtime.getURL(`${filtersPath}/${filterName}`);
-        const file = await fetch(url);
-        const content = await file.text();
+    private static async loadFilterContent(id: number, filtersPath: string): Promise<PreprocessedFilterList> {
+        const rawFilterPath = `${filtersPath}/${getFilterName(id)}`;
+        const binaryFilterPath = `${filtersPath}/${getFilterBinaryName(id)}`;
+        const conversionMapPath = `${filtersPath}/${getFilterConversionMapName(id)}`;
+        const sourceMapPath = `${filtersPath}/${getFilterSourceMapName(id)}`;
 
-        return content.split(/\r?\n/);
+        const [rawFilterList, filterList, conversionMap, sourceMap] = await Promise.all([
+            // TODO (David): store raw filter list in byte-encoded form
+            loadExtensionTextResource(rawFilterPath),
+            loadExtensionBinaryResource(binaryFilterPath).then(this.loadChunksFromArrayBuffer),
+            loadExtensionTextResource(conversionMapPath).then(JSON.parse).then(filterListConversionMapValidator.parse),
+            loadExtensionTextResource(sourceMapPath).then(JSON.parse).then(filterListSourceMapValidator.parse),
+        ]);
+
+        return {
+            rawFilterList,
+            filterList,
+            conversionMap,
+            sourceMap,
+        };
     }
 
     /**
@@ -117,9 +159,14 @@ export default class FiltersApi {
         return customFilters.map((f) => new Filter(
             f.filterId,
             {
-                getContent: () => Promise.resolve(f.content.split('\n')),
+                getContent: () => Promise.resolve({
+                    rawFilterList: f.rawFilterList,
+                    filterList: f.content,
+                    conversionMap: f.conversionMap,
+                    sourceMap: f.sourceMap ?? {},
+                }),
             },
-            f.trusted,
+            true,
         ));
     }
 }

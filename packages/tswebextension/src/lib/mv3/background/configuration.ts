@@ -1,19 +1,18 @@
 import { z as zod } from 'zod';
-import { configurationValidator, settingsConfigValidator } from '../../common/configuration';
+import { basicFilterValidator, configurationValidator, settingsConfigValidator } from '../../common/configuration';
 
 /**
  * Custom filter list configuration validator for MV3.
  */
-export const customFilterMV3Validator = zod.object({
+export const customFilterMV3Validator = basicFilterValidator.extend({
     /**
      * Filter identifier.
      */
     filterId: zod.number(),
 
-    /**
-     * Filter text content.
-     */
-    content: zod.string(),
+    rawFilterList: zod.string(),
+
+    conversionMap: zod.record(zod.number(), zod.string()),
 
     /**
      * Filter trusted flag.
@@ -78,8 +77,10 @@ export const configurationMV3Validator = configurationValidator.extend({
 
     settings: settingsConfigMV3,
 
-    // FIXME: Make them UInt8Array
-    userrules: zod.array(zod.string()),
+    /**
+     * List of rules added by user.
+     */
+    userrules: customFilterMV3Validator.omit({ filterId: true }),
 });
 
 /**

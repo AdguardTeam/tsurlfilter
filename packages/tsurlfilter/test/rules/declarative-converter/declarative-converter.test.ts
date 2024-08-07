@@ -1,5 +1,4 @@
 import { DeclarativeFilterConverter } from '../../../src/rules/declarative-converter/filter-converter';
-import { Filter } from '../../../src/rules/declarative-converter/filter';
 import { TooManyRulesError } from '../../../src/rules/declarative-converter/errors/limitation-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
@@ -14,16 +13,7 @@ import { re2Validator } from '../../../src/rules/declarative-converter/re2-regex
 import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 import { createNetworkRule } from '../../helpers/rule-creator';
 
-const createFilter = (
-    rules: string[],
-    filterId: number = 0,
-) => {
-    return new Filter(
-        filterId,
-        { getContent: async () => rules },
-        true,
-    );
-};
+import { createFilter } from './helpers';
 
 describe('DeclarativeConverter', () => {
     const converter = new DeclarativeFilterConverter();
@@ -34,11 +24,9 @@ describe('DeclarativeConverter', () => {
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
         const declarativeRules = await ruleSet.getDeclarativeRules();
 
-        const ruleId = 1;
-
         expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules[0]).toStrictEqual({
-            id: ruleId,
+            id: expect.any(Number),
             action: { type: 'block' },
             condition: {
                 urlFilter: '||example.org^',
@@ -52,11 +40,9 @@ describe('DeclarativeConverter', () => {
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
         const declarativeRules = await ruleSet.getDeclarativeRules();
 
-        const ruleId = 1;
-
         expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules[0]).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             action: { type: 'block' },
             condition: {
                 regexFilter: 'banner\\d+',
@@ -71,11 +57,9 @@ describe('DeclarativeConverter', () => {
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
         const declarativeRules = await ruleSet.getDeclarativeRules();
 
-        const ruleId = 1;
-
         expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules[0]).toEqual({
-            id: ruleId,
+            id: expect.any(Number),
             action: { type: 'block' },
             condition: {
                 regexFilter: 'aaa?',
@@ -95,11 +79,9 @@ describe('DeclarativeConverter', () => {
             const { ruleSet } = await converter.convertStaticRuleSet(filter);
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
-            const ruleId = 3;
-
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||persistent.com^',
@@ -119,7 +101,7 @@ describe('DeclarativeConverter', () => {
 
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: 1,
+                id: expect.any(Number),
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||example.org^',
@@ -146,11 +128,9 @@ describe('DeclarativeConverter', () => {
             ], []);
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
-            const ruleId = 4;
-
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||persistent.com^',
@@ -172,11 +152,9 @@ describe('DeclarativeConverter', () => {
             const { ruleSet } = await converter.convertDynamicRuleSets([userRules], [staticRuleSet]);
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
-            const ruleId = 2;
-
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
-                id: ruleId,
+                id: expect.any(Number),
                 action: { type: 'block' },
                 condition: {
                     urlFilter: '||persistent.com^',
@@ -217,13 +195,19 @@ describe('DeclarativeConverter', () => {
 
             expect(rulesetId).toBe(ruleSet.getId());
 
-            expect(disableRuleIds[0]).toEqual(2);
-            let source = await ruleSet.getRulesById(2);
-            expect(source[0].sourceRule).toBe(ruleToCancel1);
+            const content = await staticFilter.getContent();
+            const keys = Object.keys(content.sourceMap);
+            let id = Number(keys[1]) + 1;
 
-            expect(disableRuleIds[1]).toEqual(4);
-            source = await ruleSet.getRulesById(4);
-            expect(source[0].sourceRule).toBe(ruleToCancel2);
+            expect(disableRuleIds[0]).toEqual(id);
+            let source = await ruleSet.getRulesById(id);
+            expect(source[0].sourceRule).toEqual(ruleToCancel1);
+
+            id = Number(keys[3]) + 1;
+
+            expect(disableRuleIds[1]).toEqual(id);
+            source = await ruleSet.getRulesById(id);
+            expect(source[0].sourceRule).toEqual(ruleToCancel2);
         });
 
         it('applies badfilter rules from custom filter and user rules to several static filters', async () => {
@@ -275,22 +259,32 @@ describe('DeclarativeConverter', () => {
 
             expect(disableStatic1.disableRuleIds).toHaveLength(2);
 
-            expect(disableStatic1.disableRuleIds[0]).toEqual(2);
-            let source = await staticRuleSets[0].getRulesById(2);
-            expect(source[0].sourceRule).toBe(ruleToCancel1);
+            const content1 = await staticFilter1.getContent();
+            let keys = Object.keys(content1.sourceMap);
+            let id = Number(keys[1]) + 1;
 
-            expect(disableStatic1.disableRuleIds[1]).toEqual(4);
-            source = await staticRuleSets[0].getRulesById(4);
-            expect(source[0].sourceRule).toBe(ruleToCancel2);
+            expect(disableStatic1.disableRuleIds[0]).toEqual(id);
+            let source = await staticRuleSets[0].getRulesById(id);
+            expect(source[0].sourceRule).toEqual(ruleToCancel1);
+
+            id = Number(keys[3]) + 1;
+
+            expect(disableStatic1.disableRuleIds[1]).toEqual(id);
+            source = await staticRuleSets[0].getRulesById(id);
+            expect(source[0].sourceRule).toEqual(ruleToCancel2);
 
             // Check second static filter.
             expect(disableStatic2.rulesetId).toBe(staticRuleSets[1].getId());
 
             expect(disableStatic2.disableRuleIds).toHaveLength(1);
 
-            expect(disableStatic2.disableRuleIds[0]).toEqual(3);
-            source = await staticRuleSets[1].getRulesById(3);
-            expect(source[0].sourceRule).toBe(ruleToCancel3);
+            const content2 = await staticFilter2.getContent();
+            keys = Object.keys(content2.sourceMap);
+            id = Number(keys[2]) + 1;
+
+            expect(disableStatic2.disableRuleIds[0]).toEqual(id);
+            source = await staticRuleSets[1].getRulesById(id);
+            expect(source[0].sourceRule).toEqual(ruleToCancel3);
         });
     });
 
@@ -315,7 +309,7 @@ describe('DeclarativeConverter', () => {
 
         expect(declarativeRules).toHaveLength(1);
         expect(declarativeRules[0]).toStrictEqual({
-            id: 1,
+            id: expect.any(Number),
             priority: 140101,
             action: { type: 'allowAllRequests' },
             condition: {
@@ -338,11 +332,17 @@ describe('DeclarativeConverter', () => {
         ]);
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
 
-        let sources = await ruleSet.getRulesById(1);
+        const content = await filter.getContent();
+        const keys = Object.keys(content.sourceMap);
+        let id = Number(keys[0]) + 1;
+
+        let sources = await ruleSet.getRulesById(id);
         let originalRules = sources.map(({ sourceRule }) => sourceRule);
         expect(originalRules).toEqual(expect.arrayContaining(rules));
 
-        sources = await ruleSet.getRulesById(4);
+        id = Number(keys[3]) + 1;
+
+        sources = await ruleSet.getRulesById(id);
         originalRules = sources.map(({ sourceRule }) => sourceRule);
         expect(originalRules).toEqual(expect.arrayContaining([additionalRule]));
     });
@@ -361,7 +361,7 @@ describe('DeclarativeConverter', () => {
         const filter = createFilter(rules);
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
 
-        const badFilterRules = await ruleSet.getBadFilterRules();
+        const badFilterRules = ruleSet.getBadFilterRules();
         expect(badFilterRules[0].rule.getText()).toEqual(rulesToCancel[0]);
         expect(badFilterRules[1].rule.getText()).toEqual(rulesToCancel[1]);
     });
@@ -382,7 +382,7 @@ describe('DeclarativeConverter', () => {
 
             expect(declarativeRules).toHaveLength(2);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1,
                 action: { type: 'block' },
                 condition: {
@@ -390,7 +390,7 @@ describe('DeclarativeConverter', () => {
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
-                id: 2,
+                id: expect.any(Number),
                 priority: 1,
                 action: { type: 'block' },
                 condition: {
@@ -419,7 +419,7 @@ describe('DeclarativeConverter', () => {
 
             expect(declarativeRules).toHaveLength(4);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1,
                 action: { type: 'block' },
                 condition: {
@@ -427,7 +427,7 @@ describe('DeclarativeConverter', () => {
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
-                id: 2,
+                id: expect.any(Number),
                 priority: 1,
                 action: { type: 'block' },
                 condition: {
@@ -435,7 +435,7 @@ describe('DeclarativeConverter', () => {
                 },
             });
             expect(declarativeRules[2]).toStrictEqual({
-                id: 3,
+                id: expect.any(Number),
                 priority: 1,
                 action: { type: 'block' },
                 condition: {
@@ -443,7 +443,7 @@ describe('DeclarativeConverter', () => {
                 },
             });
             expect(declarativeRules[3]).toStrictEqual({
-                id: 4,
+                id: expect.any(Number),
                 priority: 1,
                 action: { type: 'block' },
                 condition: {
@@ -456,7 +456,7 @@ describe('DeclarativeConverter', () => {
             const filter = createFilter([
                 '/.s/src/[a-z0-9]*.js/$domain=plasma.3dn.ru',
                 '/dbp/pre/$script,third-party',
-                '/wind10.ru/w*.js/$domain=wind10.ru,',
+                '/wind10.ru/w*.js/$domain=wind10.ru',
             ]);
 
             const { ruleSet } = await converter.convertStaticRuleSet(
@@ -467,7 +467,7 @@ describe('DeclarativeConverter', () => {
 
             expect(declarativeRules).toHaveLength(2);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 201,
                 action: { type: 'block' },
                 condition: {
@@ -476,7 +476,7 @@ describe('DeclarativeConverter', () => {
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
-                id: 2,
+                id: expect.any(Number),
                 priority: 102,
                 action: { type: 'block' },
                 condition: {
@@ -504,7 +504,7 @@ describe('DeclarativeConverter', () => {
 
             expect(declarativeRules).toHaveLength(2);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1,
                 action: { type: 'block' },
                 condition: {
@@ -512,7 +512,7 @@ describe('DeclarativeConverter', () => {
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
-                id: 2,
+                id: expect.any(Number),
                 priority: 1,
                 action: { type: 'block' },
                 condition: {
@@ -601,7 +601,7 @@ describe('DeclarativeConverter', () => {
 
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1101,
                 action: {
                     type: 'redirect',
@@ -627,7 +627,7 @@ describe('DeclarativeConverter', () => {
 
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toStrictEqual({
-                id: 1,
+                id: expect.any(Number),
                 priority: 1001,
                 action: {
                     type: 'redirect',
@@ -650,7 +650,7 @@ describe('DeclarativeConverter', () => {
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             // eslint-disable-next-line max-len
-            const err = new Error('Error during creating indexed rule with hash: Cannot create IRule from filter "0" and line "0": "Unknown modifier: webrtc" in the rule: "@@$webrtc,domain=example.com"');
+            const err = new Error('Error during creating indexed rule with hash: Cannot create IRule from filter "0" and byte offset "4": "Unknown modifier: webrtc" in the rule: "@@$webrtc,domain=example.com"');
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
             expect(errors[0]).toStrictEqual(err);
@@ -683,7 +683,7 @@ describe('DeclarativeConverter', () => {
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             // eslint-disable-next-line max-len
-            const err = new Error('Error during creating indexed rule with hash: Cannot create IRule from filter "0" and line "0": "modifier $to is not compatible with $denyallow modifier" in the rule: "/ads$to=good.org,denyallow=good.com"');
+            const err = new Error('Error during creating indexed rule with hash: Cannot create IRule from filter "0" and byte offset "4": "modifier $to is not compatible with $denyallow modifier" in the rule: "/ads$to=good.org,denyallow=good.com"');
 
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);

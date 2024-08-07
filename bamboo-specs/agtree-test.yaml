@@ -35,7 +35,7 @@ Test:
 
             ls -alt
 
-            # Set cache directorys
+            # Set cache directories
             pnpm config set store-dir ${bamboo.cachePnpm}
 
             branch="${bamboo_planRepository_branchName}"

@@ -4,10 +4,10 @@ import { StringUtils } from '../../utils/string';
 import {
     BinaryTypeMap,
     type AnyExpressionNode,
-    type AnyOperator,
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
     type ExpressionOperatorNode,
+    OperatorValue,
 } from '../common';
 import {
     AMPERSAND,
@@ -56,15 +56,6 @@ const enum ParenthesisNodeBinaryPropMap {
 }
 
 /**
- * Possible operators in the logical expression.
- */
-export const enum OperatorValue {
-    Not = '!',
-    And = '&&',
-    Or = '||',
-}
-
-/**
  * Possible token types in the logical expression.
  */
 const enum TokenType {
@@ -91,13 +82,13 @@ const OPERATOR_PRECEDENCE = {
     [OperatorValue.Or]: 1,
 };
 
-const OPERATOR_BINARY_MAP = new Map<AnyOperator, number>([
+const OPERATOR_BINARY_MAP = new Map<OperatorValue, number>([
     [OperatorValue.Not, 0],
     [OperatorValue.And, 1],
     [OperatorValue.Or, 2],
 ]);
 
-const OPERATOR_BINARY_MAP_REVERSE = new Map<number, AnyOperator>(
+const OPERATOR_BINARY_MAP_REVERSE = new Map<number, OperatorValue>(
     Array.from(OPERATOR_BINARY_MAP).map(([key, value]) => [value, key]),
 );
 
@@ -108,7 +99,7 @@ const OPERATOR_BINARY_MAP_REVERSE = new Map<number, AnyOperator>(
  * @returns String representation of the operator
  * @throws If the operator is unknown
  */
-const getOperatorOrFail = (binary: number): AnyOperator => {
+const getOperatorOrFail = (binary: number): OperatorValue => {
     const operator = OPERATOR_BINARY_MAP_REVERSE.get(binary);
     if (isUndefined(operator)) {
         throw new Error(`Unknown operator: ${binary}`);
@@ -375,7 +366,7 @@ export class LogicalExpressionParser extends ParserBase {
                 }
 
                 // It is safe to cast here, because we already checked the type
-                const operator = raw.slice(operatorToken.start, operatorToken.end) as AnyOperator;
+                const operator = raw.slice(operatorToken.start, operatorToken.end) as OperatorValue;
                 const precedence = OPERATOR_PRECEDENCE[operator];
 
                 if (precedence < minPrecedence) {

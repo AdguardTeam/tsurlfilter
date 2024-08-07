@@ -1,3 +1,4 @@
+import { RuleParser } from '@adguard/agtree';
 import {
     type IFilter,
     type IRuleSet,
@@ -78,7 +79,7 @@ export default class RuleSetsLoaderApi {
         // We don't need filter id and line index because this
         // indexedRulesWithHash will be used only for matching $badfilter rules.
         const badFilterRules = badFilterRulesRaw
-            .map((rawString) => IndexedNetworkRuleWithHash.createFromRawString(0, 0, rawString))
+            .map((rawString) => IndexedNetworkRuleWithHash.createFromNode(0, 0, RuleParser.parse(rawString)))
             .flat();
 
         return new RuleSet(

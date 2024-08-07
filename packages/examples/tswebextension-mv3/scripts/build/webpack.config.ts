@@ -5,6 +5,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import packageJson from '../../package.json';
+import { getIdFromFilterName } from '@adguard/tsurlfilter';
 
 const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
 const POPUP_PATH = path.join(__dirname, '../../extension/pages/popup');
@@ -25,12 +26,9 @@ const updateManifest = (content: Buffer) => {
 
         const rules = {
             rule_resources: nameList
-                .map((name: string) => {
-                    const rulesetIndex = name.match(/\d+/);
-                    return rulesetIndex ? rulesetIndex[0] : null;
-                })
-                .filter((rulesetIndex): rulesetIndex is string => rulesetIndex !== null && rulesetIndex !== undefined)
-                .map((rulesetIndex: string) => {
+                .map(getIdFromFilterName)
+                .filter((rulesetIndex): rulesetIndex is number => rulesetIndex !== null && rulesetIndex !== undefined)
+                .map((rulesetIndex: number) => {
                     const id = `ruleset_${rulesetIndex}`;
 
                     return {

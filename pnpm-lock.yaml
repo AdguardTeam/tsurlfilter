@@ -1038,7 +1038,7 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       '@adguard/scriptlets':
-        specifier: ^1.11.6
+        specifier: ^1.11.16
         version: 1.11.16
       cidr-tools:
         specifier: ^6.4.1
@@ -1200,6 +1200,9 @@ importers:
 
   packages/tswebextension:
     dependencies:
+      '@adguard/agtree':
+        specifier: workspace:^
+        version: link:../agtree
       '@adguard/assistant':
         specifier: ^4.3.70
         version: 4.3.70
@@ -1210,7 +1213,7 @@ importers:
         specifier: ^1.0.1
         version: link:../logger
       '@adguard/scriptlets':
-        specifier: ^1.11.6
+        specifier: ^1.11.16
         version: 1.11.16
       '@adguard/tsurlfilter':
         specifier: workspace:^
@@ -1252,9 +1255,6 @@ importers:
         specifier: 3.21.4
         version: 3.21.4
     devDependencies:
-      '@adguard/agtree':
-        specifier: workspace:^
-        version: link:../agtree
       '@rollup/plugin-commonjs':
         specifier: 25.0.2
         version: 25.0.2(rollup@3.29.4)

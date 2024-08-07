@@ -286,7 +286,6 @@ export class NetworkRuleDeclarativeValidator {
         To: { name: '$to' },
         Badfilter: { name: '$badfilter' },
         Permissions: { name: '$permissions' },
-        Header: { name: '$header' },
 
         // Supported without conversion.
         Elemhide: { name: '$elemhide', skipConversion: true },
@@ -332,6 +331,7 @@ export class NetworkRuleDeclarativeValidator {
         Method: { name: '$method', customChecks: [NetworkRuleDeclarativeValidator.checkMethodModifierFn] },
 
         // Not supported.
+        Header: { name: '$header', notSupported: true },
         // Not supported yet.
         Genericblock: { name: '$genericblock', notSupported: true },
         Stealth: { name: '$stealth', notSupported: true },

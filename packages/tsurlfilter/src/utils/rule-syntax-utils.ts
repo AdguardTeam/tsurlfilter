@@ -16,8 +16,9 @@ export class RuleSyntaxUtils {
 
     /**
      * Checks if rule can be matched by domain
-     * @param ruleText
-     * @param domain
+     *
+     * @param node Rule node
+     * @param domain Domain to check
      */
     public static isRuleForDomain(node: AnyRule, domain: string): boolean {
         const rule = RuleFactory.createRule(node, this.DUMMY_FILTER_ID) as RulesUnion | null;
@@ -32,9 +33,10 @@ export class RuleSyntaxUtils {
     }
 
     /**
-     * Checks if rule can be matched by url
-     * @param ruleText
-     * @param url
+     * Checks if rule can be matched by URL
+     *
+     * @param node Rule node
+     * @param url URL to check
      */
     public static isRuleForUrl(node: AnyRule, url: string): boolean {
         const domain = getHostname(url);

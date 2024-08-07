@@ -1,5 +1,10 @@
-import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
+import {
+    Filter,
+    type IFilter,
+    type IRuleSet,
+} from '@adguard/tsurlfilter/es/declarative-converter';
+import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
@@ -9,7 +14,7 @@ import { logger } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
-import UserRulesApi, { type ConversionResult } from './user-rules-api';
+import UserRulesApi, { USER_FILTER_ID, type ConversionResult } from './user-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
 import { declarativeFilteringLog, type RecordFiltered } from './declarative-filtering-log';
@@ -30,6 +35,7 @@ import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
 import { CosmeticApi } from './cosmetic-api';
+import { ALLOWLIST_FILTER_ID } from '../../common/constants';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -279,11 +285,30 @@ export class TsWebExtension implements AppInterface<
             // Combine all allowlist rules into one network rule.
             const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
 
+            const userRulesFilter = new Filter(
+                USER_FILTER_ID,
+                {
+                    getContent: () => Promise.resolve({
+                        filterList: configuration.userrules.content,
+                        sourceMap: configuration.userrules.sourceMap ?? {},
+                        conversionMap: configuration.userrules.conversionMap ?? {},
+                        rawFilterList: configuration.userrules.rawFilterList ?? '',
+                    }),
+                },
+                true,
+            );
+
+            const allowlistFilter = new Filter(
+                ALLOWLIST_FILTER_ID,
+                // TODO: Generate AST directly for allowlist rules.
+                { getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(combinedAllowlistRules)) },
+                true,
+            );
+
             // Convert custom filters and user rules into one rule set and apply it
             res.dynamicRules = await UserRulesApi.updateDynamicFiltering(
-                // FIXME: (David, v3.0): Handle this later
-                configuration.userrules,
-                combinedAllowlistRules,
+                userRulesFilter,
+                allowlistFilter,
                 customFilters,
                 staticRuleSets,
                 this.webAccessibleResourcesPath,
@@ -464,6 +489,21 @@ export class TsWebExtension implements AppInterface<
         return messagesApi.handleMessage;
     }
 
+    // TODO: Implement this method.
+    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
+    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        throw new Error('Method is not implemented.');
+    }
+
     /**
      * Extract partial configuration {@link ConfigurationMV3Context} from whole
      * {@link ConfigurationMV3}, excluding heavyweight fields which
@@ -635,20 +675,5 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             logger.currentLevel = LogLevel.Info;
         }
-    }
-
-    // TODO: Implement this method.
-    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
-    /**
-     * Retrieves rule node from a dynamic filter.
-     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
-     *
-     * @param filterId Filter id.
-     * @param ruleIndex Rule index.
-     * @returns Rule node or null.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
-    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        throw new Error('Method not implemented.');
     }
 }

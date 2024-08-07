@@ -1,3 +1,7 @@
+import { EMPTY_STRING } from '../../common/constants';
+import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
+import { getRuleSourceIndex, getRuleSourceText } from '../../filterlist/source-map';
+
 import { UnavailableFilterSourceError } from './errors/unavailable-sources-errors';
 
 /**
@@ -5,7 +9,7 @@ import { UnavailableFilterSourceError } from './errors/unavailable-sources-error
  */
 type IStringSourceProvider = {
     // Return content from string source
-    getContent: () => Promise<string[]>;
+    getContent: () => Promise<PreprocessedFilterList>;
 };
 
 /**
@@ -25,7 +29,7 @@ export interface IFilter {
     /**
      * Returns filter's content.
      */
-    getContent(): Promise<string[]>;
+    getContent(): Promise<PreprocessedFilterList>;
 
     /**
      * Returns if the filter is trusted or not.
@@ -42,7 +46,7 @@ export class Filter implements IFilter {
     private readonly id: number;
 
     // Content of filter, lazy load
-    private content: string[] = [];
+    private content: PreprocessedFilterList | null = null;
 
     // Provider of filter content
     private source: IStringSourceProvider;
@@ -79,10 +83,28 @@ export class Filter implements IFilter {
     }
 
     /**
-     * Loads content from provider to source.
+     * Returns the original filter rules with lazy loading.
+     *
+     * @throws UnavailableFilterSourceError if content is not available.
+     *
+     * @returns List of original filter rules.
      */
-    private async loadContent(): Promise<void> {
-        this.content = await this.source.getContent();
+    public async getContent(): Promise<PreprocessedFilterList> {
+        if (this.content) {
+            return this.content;
+        }
+
+        try {
+            this.content = await this.source.getContent();
+
+            if (!this.content || this.content.rawFilterList.length === 0 || this.content.filterList.length === 0) {
+                throw new Error('Loaded empty content');
+            }
+
+            return this.content;
+        } catch (e) {
+            throw new UnavailableFilterSourceError('Filter content is unavailable', this.id, e as Error);
+        }
     }
 
     /**
@@ -96,40 +118,12 @@ export class Filter implements IFilter {
      * @returns Original filtering rule by provided identifier.
      */
     public async getRuleByIndex(index: number): Promise<string> {
-        if (this.content.length === 0) {
-            try {
-                await this.loadContent();
+        const content = await this.getContent();
 
-                if (this.content.length === 0) {
-                    throw new Error('Loaded empty content');
-                }
-            } catch (e) {
-                const msg = 'Filter content is unavailable';
-                throw new UnavailableFilterSourceError(msg, this.id, e as Error);
-            }
-        }
+        const lineIndex = getRuleSourceIndex(index, content.sourceMap);
+        const sourceRule = getRuleSourceText(lineIndex, content.rawFilterList) ?? EMPTY_STRING;
 
-        return this.content[index];
-    }
-
-    /**
-     * Returns the original filter rules with lazy loading.
-     *
-     * @throws UnavailableFilterSourceError if content is not available.
-     *
-     * @returns List of original filter rules.
-     */
-    public async getContent(): Promise<string[]> {
-        if (this.content.length === 0) {
-            try {
-                await this.loadContent();
-            } catch (e) {
-                const msg = 'Filter content is unavailable';
-                throw new UnavailableFilterSourceError(msg, this.id, e as Error);
-            }
-        }
-
-        return this.content;
+        return sourceRule;
     }
 
     /**

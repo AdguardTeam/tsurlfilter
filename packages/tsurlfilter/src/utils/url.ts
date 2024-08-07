@@ -42,7 +42,7 @@ function normalizeQuery(query: string): string {
     // If we've collapsed the URL to the point where there's an '&' against the '?'
     // then we need to get rid of that.
     while (result.charAt(0) === '&') {
-        result = result.substr(1);
+        result = result.slice(1);
     }
 
     return result;
@@ -102,7 +102,7 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
  */
 export const getRelativeUrl = (url: string): string | null => {
     const i = url.indexOf('/', url.indexOf('://') + 3);
-    return i !== -1 ? url.substr(i) : null;
+    return i !== -1 ? url.slice(i) : null;
 };
 
 /**
@@ -112,5 +112,5 @@ export const getRelativeUrl = (url: string): string | null => {
  * @returns True if url starts with http{s?} or ws.
  */
 export function isHttpOrWsRequest(url: string): boolean {
-    return !!url && (url.indexOf('http') === 0 || url.indexOf('ws') === 0);
+    return !!url && (url.startsWith('http') || url.startsWith('ws'));
 }

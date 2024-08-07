@@ -6,11 +6,18 @@ import {
     type ConversionResult,
     type IRuleSet,
     DeclarativeFilterConverter,
-    Filter,
     METADATA_FILENAME,
     LAZY_METADATA_FILENAME,
+    Filter,
 } from '../src/rules/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
+import { FilterListPreprocessor } from '../src';
+import {
+    getFilterBinaryName,
+    getFilterConversionMapName,
+    getFilterSourceMapName,
+    getIdFromFilterName,
+} from '../src/utils/resource-names';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 
@@ -80,12 +87,7 @@ export const convertFilters = async (
     const filters = files
         .map((filePath: string) => {
             console.info(`Parsing ${filePath}...`);
-            if (filePath.endsWith('.json')) {
-                console.info(`${filePath} skipped`);
-                return null;
-            }
-
-            const index = filePath.match(/\d+/);
+            const index = getIdFromFilterName(filePath);
 
             if (!index) {
                 console.info(`${filePath} skipped`);
@@ -104,8 +106,7 @@ export const convertFilters = async (
 
             return new Filter(
                 filterId,
-                { getContent: async () => data.split(/\r?\n/) },
-                // we consider that all preinstalled filters are trusted
+                { getContent: async () => FilterListPreprocessor.preprocess(data) },
                 true,
             );
         })
@@ -218,5 +219,37 @@ export const convertFilters = async (
         console.info('(counters, source map, filter list) was saved');
         console.info(`to ${destRuleSetsDir}/${id}`);
         console.log('===============================================');
+    }
+
+    console.log('======================================');
+    console.log('Writing processed filters');
+    console.log('======================================');
+
+    for (let i = 0; i < filters.length; i += 1) {
+        const filter = filters[i];
+        const filterId = filter.getId();
+
+        console.info(`Writing filter #${filterId}...`);
+
+        // eslint-disable-next-line no-await-in-loop
+        const content = await filter.getContent();
+
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.all([
+            fs.promises.writeFile(
+                path.join(filtersDir, getFilterSourceMapName(filterId)),
+                JSON.stringify(content.sourceMap),
+            ),
+            fs.promises.writeFile(
+                path.join(filtersDir, getFilterConversionMapName(filterId)),
+                JSON.stringify(content.conversionMap),
+            ),
+            fs.promises.writeFile(
+                path.join(filtersDir, getFilterBinaryName(filterId)),
+                Buffer.concat(content.filterList),
+            ),
+        ]);
+
+        console.info(`Filter #${filterId} saved`);
     }
 };
