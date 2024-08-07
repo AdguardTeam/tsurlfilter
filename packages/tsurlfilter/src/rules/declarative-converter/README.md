@@ -214,8 +214,7 @@ Blocking by domain name
       "type": "block"
     },
     "condition": {
-      "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "||example.org^"
     },
     "priority": 1
   }
@@ -238,8 +237,7 @@ Blocking exact address
       "type": "block"
     },
     "condition": {
-      "urlFilter": "|http://example.org/",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "|http://example.org/"
     },
     "priority": 1
   }
@@ -269,8 +267,7 @@ Basic rule modifiers
       ],
       "resourceTypes": [
         "script"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 302
   }
@@ -293,8 +290,7 @@ Unblocking an address
       "type": "allow"
     },
     "condition": {
-      "urlFilter": "||example.org/banner",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "||example.org/banner"
     },
     "priority": 100001
   }
@@ -320,8 +316,7 @@ Unblocking everything on a website
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "main_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 140101
   }
@@ -377,8 +372,7 @@ example.org##.banner
       ],
       "resourceTypes": [
         "script"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 252
   }
@@ -414,8 +408,7 @@ example 1
       "urlFilter": "||baddomain.com^",
       "initiatorDomains": [
         "example.org"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 201
   }
@@ -442,8 +435,7 @@ example 2
       "initiatorDomains": [
         "example.org",
         "example.com"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 151
   }
@@ -469,8 +461,7 @@ example 3
       "urlFilter": "||baddomain.com^",
       "excludedInitiatorDomains": [
         "example.org"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 2
   }
@@ -499,8 +490,7 @@ example 4
       ],
       "excludedInitiatorDomains": [
         "foo.example.org"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 202
   }
@@ -516,19 +506,7 @@ example 5
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-  {
-    "id": 5,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "||baddomain.com^",
-      "isUrlFilterCaseSensitive": false
-    },
-    "priority": 201
-  }
-]
+[]
 
 ```
 example 6
@@ -552,8 +530,7 @@ example 6
         "a.com",
         "b.*",
         "/(^\\|.+\\\\.)c\\\\.(com\\\\|org)\\\\$/"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 2
   }
@@ -593,7 +570,6 @@ example 7
         "example.org",
         "example.com"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -637,8 +613,7 @@ example 8
       ],
       "resourceTypes": [
         "main_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 251
   }
@@ -664,8 +639,7 @@ page$domain=example.org
       "urlFilter": "page",
       "initiatorDomains": [
         "example.org"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 201
   }
@@ -691,8 +665,7 @@ page$domain=targetdomain.com
       "urlFilter": "page",
       "initiatorDomains": [
         "targetdomain.com"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 201
   }
@@ -718,8 +691,7 @@ example 11
       "urlFilter": "*page",
       "initiatorDomains": [
         "targetdomain.com"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 201
   }
@@ -758,7 +730,6 @@ example 12
       "initiatorDomains": [
         "targetdomain.com"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -788,22 +759,7 @@ example 13
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-  {
-    "id": 5,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "regexFilter": "/banner\\d+/",
-      "initiatorDomains": [
-        "targetdomain.com"
-      ],
-      "isUrlFilterCaseSensitive": false
-    },
-    "priority": 201
-  }
-]
+[]
 
 ```
 example 14
@@ -828,8 +784,7 @@ page$domain=targetdomain.com|~example.org
       ],
       "excludedInitiatorDomains": [
         "example.org"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 202
   }
@@ -855,18 +810,7 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.com^"
-		},
-		"priority": 51
-	}
-]
+[]
 
 ```
 example 2
@@ -878,18 +822,7 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.com^"
-		},
-		"priority": 51
-	}
-]
+[]
 
 ```
 example 3
@@ -901,18 +834,7 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.com^"
-		},
-		"priority": 100051
-	}
-]
+[]
 
 ```
 example 4
@@ -924,18 +846,7 @@ example 4
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.com^"
-		},
-		"priority": 100051
-	}
-]
+[]
 
 ```
 <a name="basic_modifiers__$important"></a>
@@ -963,8 +874,7 @@ blocking rule will block all requests despite of the exception rule
       "type": "block"
     },
     "condition": {
-      "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "||example.org^"
     },
     "priority": 1000001
   },
@@ -974,8 +884,7 @@ blocking rule will block all requests despite of the exception rule
       "type": "allow"
     },
     "condition": {
-      "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "||example.org^"
     },
     "priority": 100001
   }
@@ -1002,8 +911,7 @@ so no requests will not be blocked
       "type": "block"
     },
     "condition": {
-      "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "||example.org^"
     },
     "priority": 1000001
   },
@@ -1013,8 +921,7 @@ so no requests will not be blocked
       "type": "allow"
     },
     "condition": {
-      "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "||example.org^"
     },
     "priority": 1100001
   }
@@ -1043,8 +950,7 @@ the blocking rule will not be applied despite it has the `$important` modifier
       "type": "block"
     },
     "condition": {
-      "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "||example.org^"
     },
     "priority": 1000001
   },
@@ -1057,8 +963,7 @@ the blocking rule will not be applied despite it has the `$important` modifier
       "urlFilter": "||test.org^",
       "resourceTypes": [
         "main_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 140101
   }
@@ -1121,7 +1026,6 @@ example 1
         "get",
         "head"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -1163,7 +1067,6 @@ example 2
         "post",
         "put"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -1204,7 +1107,6 @@ example 3
       "requestMethods": [
         "get"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -1245,7 +1147,6 @@ example 4
       "excludedRequestMethods": [
         "post"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -1311,8 +1212,7 @@ example 1
     },
     "condition": {
       "urlFilter": "||domain.com^",
-      "domainType": "thirdParty",
-      "isUrlFilterCaseSensitive": false
+      "domainType": "thirdParty"
     },
     "priority": 2
   }
@@ -1336,8 +1236,7 @@ example 2
     },
     "condition": {
       "urlFilter": "||domain.com",
-      "domainType": "firstParty",
-      "isUrlFilterCaseSensitive": false
+      "domainType": "firstParty"
     },
     "priority": 2
   }
@@ -1371,7 +1270,6 @@ example 1
         "evil.com",
         "evil.org"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -1415,7 +1313,6 @@ example 2
       "excludedRequestDomains": [
         "not.evil.com"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -1457,7 +1354,6 @@ example 3
         "good.com",
         "good.org"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -1506,8 +1402,7 @@ example 1
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "image"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1534,8 +1429,7 @@ example 2
       "resourceTypes": [
         "stylesheet",
         "script"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 76
   }
@@ -1563,8 +1457,7 @@ example 3
         "stylesheet",
         "script",
         "image"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 2
   }
@@ -1592,8 +1485,7 @@ example 1
       "urlFilter": "||example.com^",
       "resourceTypes": [
         "main_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 140101
   }
@@ -1631,8 +1523,7 @@ example 3
       "urlFilter": "||example.com^",
       "resourceTypes": [
         "main_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1661,8 +1552,7 @@ example 4
       "urlFilter": "||example.com^",
       "resourceTypes": [
         "main_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 1101
   }
@@ -1697,8 +1587,7 @@ example 5
       "urlFilter": "||example.com^",
       "resourceTypes": [
         "main_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1737,8 +1626,7 @@ example 6
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "image"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1765,8 +1653,7 @@ example 6
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "stylesheet"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1793,8 +1680,7 @@ example 6
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "script"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1821,8 +1707,7 @@ example 6
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "object"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1849,8 +1734,7 @@ example 6
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "font"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1877,8 +1761,7 @@ example 6
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "media"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1906,8 +1789,7 @@ example 1
       "urlFilter": "||example.com^",
       "resourceTypes": [
         "sub_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1936,8 +1818,7 @@ example 2
       ],
       "resourceTypes": [
         "sub_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 301
   }
@@ -1964,8 +1845,7 @@ example 2
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "ping"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -1992,8 +1872,7 @@ example 2
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "xmlhttprequest"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -2020,8 +1899,7 @@ example 2
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "websocket"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -2076,8 +1954,7 @@ example 2
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "other"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -2290,8 +2167,7 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
         "media",
         "websocket",
         "other"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 55
   }
@@ -2339,8 +2215,7 @@ example 2
       "type": "block"
     },
     "condition": {
-      "urlFilter": "||example.com,image",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "||example.com,image"
     },
     "priority": 1
   }
@@ -2434,8 +2309,7 @@ example 8
         "example.com",
         "example.org",
         "example.io"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 135
   }
@@ -2452,19 +2326,7 @@ example 9
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[
-  {
-    "id": 5,
-    "action": {
-      "type": "block"
-    },
-    "condition": {
-      "urlFilter": "/some",
-      "isUrlFilterCaseSensitive": false
-    },
-    "priority": 201
-  }
-]
+[]
 
 ```
 example 10
@@ -2489,8 +2351,7 @@ example 10
         "example.com",
         "example.org",
         "example.io"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 135
   }
@@ -2548,7 +2409,6 @@ example 2
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -2703,7 +2563,6 @@ example 1
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -2772,7 +2631,6 @@ example 4
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -2813,8 +2671,7 @@ example 5
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "main_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 140101
   },
@@ -2832,7 +2689,6 @@ example 5
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -2887,7 +2743,6 @@ example 1
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -2925,7 +2780,6 @@ example 2
     },
     "condition": {
       "urlFilter": "||example.org/page/*",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -2963,7 +2817,6 @@ example 3
     },
     "condition": {
       "urlFilter": "||example.org/page/*",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3011,7 +2864,6 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
         "example.org",
         "example.com"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3057,7 +2909,6 @@ example 5
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3084,8 +2935,7 @@ example 5
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "main_frame"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 140101
   }
@@ -3124,8 +2974,7 @@ example 1
       "urlFilter": "||example.org/script.js",
       "resourceTypes": [
         "script"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 1101
   }
@@ -3154,8 +3003,7 @@ example 2
       "urlFilter": "||example.org/test.mp4",
       "resourceTypes": [
         "media"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 1101
   }
@@ -3205,8 +3053,7 @@ example 5
       }
     },
     "condition": {
-      "urlFilter": "*/redirect-test.css",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "*/redirect-test.css"
     },
     "priority": 1001
   }
@@ -3232,8 +3079,7 @@ example 6
       }
     },
     "condition": {
-      "urlFilter": "*/redirect-test.js",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "*/redirect-test.js"
     },
     "priority": 1001
   }
@@ -3259,8 +3105,7 @@ example 7
       }
     },
     "condition": {
-      "urlFilter": "*/redirect-test.png",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "*/redirect-test.png"
     },
     "priority": 1001
   }
@@ -3286,8 +3131,7 @@ example 8
       }
     },
     "condition": {
-      "urlFilter": "*/redirect-test.html",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "*/redirect-test.html"
     },
     "priority": 1001
   }
@@ -3313,8 +3157,7 @@ example 9
       }
     },
     "condition": {
-      "urlFilter": "*/redirect-test.txt",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "*/redirect-test.txt"
     },
     "priority": 1001
   }
@@ -3341,8 +3184,7 @@ example 10
       }
     },
     "condition": {
-      "urlFilter": "*/redirect-exception-test.js",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "*/redirect-exception-test.js"
     },
     "priority": 1001
   },
@@ -3352,8 +3194,7 @@ example 10
       "type": "allow"
     },
     "condition": {
-      "urlFilter": "*/redirect-exception-test.js",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "*/redirect-exception-test.js"
     },
     "priority": 100001
   }
@@ -3380,8 +3221,7 @@ example 11
       }
     },
     "condition": {
-      "urlFilter": "*/redirect-priority-test.js",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "*/redirect-priority-test.js"
     },
     "priority": 1001
   },
@@ -3399,7 +3239,6 @@ example 11
     },
     "condition": {
       "urlFilter": "*/redirect-priority-test.js",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3443,24 +3282,9 @@ Awaiting implementation: https://github.com/w3c/webextensions/issues/493.
       "type": "block"
     },
     "condition": {
-      "urlFilter": "||example.org/script.js",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "||example.org/script.js"
     },
     "priority": 1
-  },
-  {
-    "id": 39,
-    "action": {
-      "type": "redirect",
-      "redirect": {
-        "extensionPath": "/path/to/resources/noopjs.js"
-      }
-    },
-    "condition": {
-      "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false
-    },
-    "priority": 1001
   }
 ]
 
@@ -3544,7 +3368,6 @@ example 1
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3588,7 +3411,6 @@ example 2
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3656,7 +3478,6 @@ example 5
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3700,7 +3521,6 @@ example 6
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3746,7 +3566,6 @@ $removeheader=location,domain=example.com
       "initiatorDomains": [
         "example.com"
       ],
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3806,7 +3625,6 @@ skip rules with a negation, or regexp or the rule is a allowlist
     },
     "condition": {
       "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3864,7 +3682,6 @@ $removeparam=utm_source
       }
     },
     "condition": {
-      "isUrlFilterCaseSensitive": false,
       "resourceTypes": [
         "main_frame",
         "sub_frame",
@@ -3992,8 +3809,7 @@ $xmlhttprequest,removeparam=p1case2
       "urlFilter": "||testcases.adguard.com",
       "resourceTypes": [
         "xmlhttprequest"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   },
@@ -4014,8 +3830,7 @@ $xmlhttprequest,removeparam=p1case2
     "condition": {
       "resourceTypes": [
         "xmlhttprequest"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 101
   }
@@ -4102,8 +3917,7 @@ example 4
       "domainType": "firstParty",
       "initiatorDomains": [
         "example.org"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 202
   }
@@ -4135,8 +3949,7 @@ example 1.
       }
     },
     "condition": {
-      "urlFilter": "||example.org^",
-      "isUrlFilterCaseSensitive": false
+      "urlFilter": "||example.org^"
     },
     "priority": 1001
   }
@@ -4171,8 +3984,7 @@ example 1.
       "urlFilter": "||example.com/videos/",
       "resourceTypes": [
         "media"
-      ],
-      "isUrlFilterCaseSensitive": false
+      ]
     },
     "priority": 1101
   }
