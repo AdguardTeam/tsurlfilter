@@ -109,22 +109,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [2.2.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.21
 
-## [2.2.22] - 2024-07-17
-
-### Fixed
-
-- listId -1 not found in the storage
-
-[2.2.22]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.22
-
-## [2.2.21] - 2024-07-12
-
-### Changed
-
-- Updated `@adguard/scriptlets` to `v1.11.6`.
-
-[2.2.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.21
-
 ## [2.2.20] - 2024-07-01
 
 ### Added
