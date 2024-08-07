@@ -245,7 +245,10 @@ export class WebRequestApi {
             return;
         }
 
-        if (requestType === RequestType.Document && !requestContextStorage.get(requestId)) {
+        // We do not check for exists request context here (as it was in MV2),
+        // because in MV3 $removeparam rules applied by browser and doesn't
+        // follow to reload page.
+        if (requestType === RequestType.Document) {
             // dispatch filtering log reload event
             defaultFilteringLog.publishEvent({
                 type: FilteringEventType.TabReload,

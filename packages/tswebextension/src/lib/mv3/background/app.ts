@@ -246,6 +246,8 @@ export class TsWebExtension implements AppInterface<
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 
+        // FIXME: Find a better way to log binary content of filters.
+        // (maybe just not log it at all)
         logger.debug('[tswebextension.configure]: start with ', config);
 
         const configuration = configurationMV3Validator.parse(config);
@@ -662,18 +664,17 @@ export class TsWebExtension implements AppInterface<
         }
     }
 
-    // TODO: Implement this method.
-    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
     /**
      * Retrieves rule node from a dynamic filter.
-     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     * Dynamic filters are filters that are not loaded from the storage but
+     * created on the fly: now only for allowlist.
      *
      * @param filterId Filter id.
      * @param ruleIndex Rule index.
      * @returns Rule node or null.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
-    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        throw new Error('Method not implemented.');
+    // eslint-disable-next-line class-methods-use-this
+    public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        return engineApi.retrieveDynamicRuleNode(filterId, ruleIndex);
     }
 }

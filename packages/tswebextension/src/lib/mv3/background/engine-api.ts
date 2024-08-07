@@ -16,6 +16,7 @@ import {
 import browser from 'webextension-polyfill';
 
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
+import { type AnyRule } from '@adguard/agtree';
 
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
@@ -24,6 +25,7 @@ import { type ConfigurationMV3 } from './configuration';
 import { allowlistApi } from './allowlist-api';
 import { DocumentApi } from './document-api';
 import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
+import { ALLOWLIST_FILTER_ID } from '../../common/constants';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
@@ -59,6 +61,11 @@ export class EngineApi {
      * startEngine and waits for it.
      */
     waitingForEngine: Promise<void> | undefined;
+
+    /**
+     * Store here links to dynamic filters which created on the fly.
+     */
+    private dynamicFilters: Map<number, IRuleList> = new Map();
 
     /**
      * Starts the engine with the provided bunch of rules,
@@ -112,6 +119,7 @@ export class EngineApi {
         const allowlistRulesList = allowlistApi.getAllowlistRules();
         if (allowlistRulesList) {
             lists.push(allowlistRulesList);
+            this.dynamicFilters.set(ALLOWLIST_FILTER_ID, allowlistRulesList);
         }
 
         const ruleStorage = new RuleStorage(lists);
@@ -244,6 +252,25 @@ export class EngineApi {
         );
 
         return this.engine.matchRequest(request, frameRule);
+    }
+
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but
+     * created on the fly: now only for allowlist rules.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        const ruleList = this.dynamicFilters.get(filterId);
+
+        if (!ruleList) {
+            return null;
+        }
+
+        return ruleList.retrieveRuleNode(ruleIndex);
     }
 }
 
