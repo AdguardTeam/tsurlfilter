@@ -26,11 +26,11 @@ import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { WebRequestApi } from './web-request-api';
 import { StealthService } from './services/stealth-service';
 import { allowlistApi } from './allowlist-api';
-import { CompaniesDbApi } from './companies-db-api';
 import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
 import { CosmeticApi } from './cosmetic-api';
+import { companiesDbService } from './services/companies-db-service';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -140,8 +140,8 @@ export class TsWebExtension implements AppInterface<
 
         try {
             if (this.companiesDbPath) {
-                // Init companies db stats api if necessary.
-                await CompaniesDbApi.start(this.companiesDbPath);
+                // Load companies for the companiesdb service if necessary.
+                await companiesDbService.loadCompanies(this.companiesDbPath);
             }
 
             const res = await this.configure(config);
