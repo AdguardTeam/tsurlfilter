@@ -1,4 +1,5 @@
-import { ConfigurationMV2, FilterListPreprocessor } from '@adguard/tswebextension';
+import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { type ConfigurationMV2 } from '@adguard/tswebextension';
 import { LogDetails } from './logger';
 
 export const addQunitListeners = (logResultFnName: string) => {

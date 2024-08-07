@@ -111,6 +111,7 @@ const messageHandler = async (message: IMessage) => {
                 conversionMap: preprocessed.conversionMap,
                 content: preprocessed.filterList,
                 sourceMap: preprocessed.sourceMap,
+                trusted: true,
             };
 
             await tsWebExtension.configure(config);

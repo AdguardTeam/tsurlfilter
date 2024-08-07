@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import browser from 'webextension-polyfill';
+
 // TODO: change example to IndexedDB, because it's more suitable for this case
 export const enum StorageKeys {
     IsStarted = 'isStarted',
@@ -44,7 +45,9 @@ class Storage {
      * @returns Deserialized object.
      */
     private deserialize = (value: unknown): unknown => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if (value && typeof value === 'object' && (value as any).__type === 'Uint8Array') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return new Uint8Array((value as any).data);
         } else if (Array.isArray(value)) {
             return value.map(this.deserialize);
@@ -60,7 +63,7 @@ class Storage {
 
     get = <T>(key: string): Promise<T | undefined> => {
         return new Promise((resolve, reject) => {
-            this.storage.get([key], (result: { [x: string]: T }) => {
+            this.storage.get([key]).then((result: { [x: string]: T }) => {
                 if (chrome.runtime.lastError) {
                     reject(chrome.runtime.lastError);
                 }
@@ -73,7 +76,7 @@ class Storage {
     set = (key: string, value: unknown): Promise<void> => {
         return new Promise((resolve, reject) => {
             const serializedValue = this.serialize(value);
-            this.storage.set({ [key]: serializedValue }, () => {
+            this.storage.set({ [key]: serializedValue }).then(() => {
                 if (chrome.runtime.lastError) {
                     reject(chrome.runtime.lastError);
                 }
