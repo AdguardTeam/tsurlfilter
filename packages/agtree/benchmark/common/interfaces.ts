@@ -15,7 +15,7 @@ interface ToolConfig {
      * Function to benchmark the tool
      *
      * @param source Source code to benchmark
-     * @returns Result of the benchmark (typically, number of rules / tokens)
+     * @returns Result of the benchmark (typically, number of rules or tokens)
      */
     benchmark: (source: string) => number;
 }
@@ -75,7 +75,7 @@ export type ToolBenchResult = {
     runsSampled: number;
 
     /**
-     * Average runtime in milliseconds / run
+     * Average runtime in milliseconds per run
      */
     averageRuntime: string;
 
@@ -85,7 +85,7 @@ export type ToolBenchResult = {
     result: number | string;
 
     /**
-     * Run status (failed / no errors)
+     * Run status (failed or no errors)
      */
     status: string;
 };

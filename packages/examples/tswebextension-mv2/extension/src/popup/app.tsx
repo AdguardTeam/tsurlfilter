@@ -22,7 +22,7 @@ export function App() {
                 const { userrules, allowlist } = response.payload;
 
                 setFormValue({
-                    userrules: rulesArrayToText(userrules),
+                    userrules,
                     allowlist: rulesArrayToText(allowlist),
                 });
             }
@@ -51,7 +51,7 @@ export function App() {
             initialValues={formValue}
             onSubmit={values => {
                 const payload = {
-                    userrules: rulesTextToArray(values.userrules),
+                    userrules: values.userrules,
                     allowlist: rulesTextToArray(values.allowlist),
                 };
                 chrome.runtime.sendMessage({

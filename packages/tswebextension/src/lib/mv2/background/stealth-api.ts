@@ -115,7 +115,7 @@ export class StealthApi {
             return null;
         }
 
-        // FIXME (David, v3.0): Double check, consider make it consistent with allowlist
+        // TODO (David): Change to AST generation
         const rulesTexts = this.stealthService.getCookieRulesTexts().join('\n');
 
         return new BufferRuleList(

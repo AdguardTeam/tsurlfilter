@@ -9,8 +9,13 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     staticFiltersIds: [1, 2, 3, 4, 9, 14],
     customFilters: [],
     allowlist: [],
-    // FIXME: (David) Handle this array as UInt8Array
-    userrules: [],
+    userrules: {
+        content: [],
+        sourceMap: {},
+        rawFilterList: '',
+        conversionMap: {},
+    },
+    trustedDomains: [],
     verbose: false,
     filtersPath: 'filters',
     ruleSetsPath: 'filters/declarative',

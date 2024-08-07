@@ -1,30 +1,34 @@
+import { FilterListPreprocessor } from '../../../src';
 import { Filter } from '../../../src/rules/declarative-converter';
 
 describe('Filter', () => {
-    const content = '||example.com^$document\r\n||example.net^\r\n@@||example.io^';
-    const splittedContent = content.split(/\r?\n/);
+    const rawContent = '||example.com^$document\r\n||example.net^\r\n@@||example.io^';
 
     it('loads content from string source provider', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => splittedContent },
+            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
             true,
         );
 
         const loadedContent = await filter.getContent();
 
-        expect(loadedContent).toStrictEqual(splittedContent);
+        expect(loadedContent.rawFilterList).toStrictEqual(rawContent);
     });
 
     it('returns original rule by index', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => splittedContent },
+            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
             true,
         );
 
-        const secondRule = await filter.getRuleByIndex(1);
+        const content = await filter.getContent();
 
-        expect(secondRule).toStrictEqual(splittedContent[1]);
+        const indexes = Object.keys(content.sourceMap).map(Number);
+        const rules = await Promise.all(indexes.map(async (index) => filter.getRuleByIndex(index)));
+        const rawContentSplitted = rawContent.split('\r\n');
+
+        expect(rules).toStrictEqual(rawContentSplitted);
     });
 });

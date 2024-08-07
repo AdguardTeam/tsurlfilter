@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
 
-import { createFilter } from './helpers';
+import { createScannedFilter } from './helpers';
 
 const generateRules = (rulesNumber: number) => {
     const rules = [];
@@ -15,7 +15,7 @@ describe('test declarative rule converter performance', () => {
     it('tests declarative rule converter performance', async () => {
         const rules = generateRules(300_000);
         const filterId = 1;
-        const filter = await createFilter(
+        const filter = await createScannedFilter(
             filterId,
             rules,
         );

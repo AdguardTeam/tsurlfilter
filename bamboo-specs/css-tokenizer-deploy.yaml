@@ -7,16 +7,19 @@ release-naming: ${bamboo.inject.version}
 environments:
   - npmjs
   - npmjs • alpha
+  - npmjs • beta
 
-npmjs:
+npmjs: &npmjs
+  variables: &npmjs-variables
+    publishArgs: --access public
   docker:
     image: adguard/node-ssh:18.19--0
     volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  triggers: [ ]
+      ${system.PNPM_DIR}: ${bamboo.cachePnpm}
+  triggers: []
   tasks:
     - checkout:
-        force-clean-build: 'true'
+        force-clean-build: true
     # Download previously built tarball from Bamboo artifacts
     - artifact-download:
         artifacts:
@@ -36,9 +39,9 @@ npmjs:
             # Publish tarball to NPM package registry
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish css-tokenizer.tgz --access public
+            npm publish css-tokenizer.tgz $bamboo_publishArgs
   requirements:
-    - adg-docker: 'true'
+    - adg-docker: true
   notifications:
     - events:
         - deployment-started-and-finished
@@ -48,41 +51,13 @@ npmjs:
             url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
 npmjs • alpha:
-  docker:
-    image: adguard/node-ssh:18.19--0
-    volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  triggers: [ ]
-  tasks:
-    - checkout:
-        force-clean-build: 'true'
-    # Download previously built tarball from Bamboo artifacts
-    - artifact-download:
-        artifacts:
-          - name: css-tokenizer.tgz
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            set -e
-            set -x
+  <<: *npmjs
+  variables:
+    <<: *npmjs-variables
+    publishArgs: --tag alpha --access public
 
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -alt
-
-            # Publish tarball to NPM package registry
-            export NPM_TOKEN=${bamboo.npmSecretToken}
-            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish css-tokenizer.tgz --tag alpha --access public
-  requirements:
-    - adg-docker: 'true'
-  notifications:
-    - events:
-        - deployment-started-and-finished
-      recipients:
-        - webhook:
-            name: Deploy webhook
-            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
-
+npmjs • beta:
+  <<: *npmjs
+  variables:
+    <<: *npmjs-variables
+    publishArgs: --tag beta --access public

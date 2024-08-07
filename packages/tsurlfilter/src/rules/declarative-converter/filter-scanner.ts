@@ -1,3 +1,9 @@
+import { InputByteBuffer } from '@adguard/agtree';
+
+import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
+import { BufferReader } from '../../filterlist/reader/buffer-reader';
+import { getRuleSourceIndex, getRuleSourceText } from '../../filterlist/source-map';
+
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type IFilter } from './filter';
 
@@ -21,20 +27,18 @@ type ScannedRulesWithErrors = {
  * FilterScanner returns indexed, only network rules from IFilter's content.
  */
 export class FilterScanner implements IFilterScanner {
-    // Filter's content
-    private readonly filterContent: string[];
+    private readonly filter: PreprocessedFilterList;
 
-    // Filter's id
     private readonly filterId: number;
 
     /**
      * Constructor of FilterScanner.
      *
-     * @param filterContent Filter rules.
-     * @param filterId Filter id.
+     * @param filter From which filter the rules should be scanned.
+     * @param filterId Id of filter.
      */
-    constructor(filterContent: string[], filterId: number) {
-        this.filterContent = filterContent;
+    constructor(filter: PreprocessedFilterList, filterId: number) {
+        this.filter = filter;
         this.filterId = filterId;
     }
 
@@ -67,33 +71,44 @@ export class FilterScanner implements IFilterScanner {
     public getIndexedRules(
         filterFn?: (r: IndexedNetworkRuleWithHash) => boolean,
     ): ScannedRulesWithErrors {
-        const { filterContent, filterId } = this;
+        const { filterList } = this.filter;
 
         const result: ScannedRulesWithErrors = {
             errors: [],
             rules: [],
         };
 
-        for (let lineIndex = 0; lineIndex < filterContent.length; lineIndex += 1) {
-            const line = filterContent[lineIndex];
-            if (!line) {
-                continue;
+        const buffer = new InputByteBuffer(filterList);
+        const reader = new BufferReader(buffer);
+
+        while (true) {
+            const ruleBufferIndex = reader.getCurrentPos();
+            const ruleNode = reader.readNext();
+            if (ruleNode === null) {
+                break;
             }
 
             let indexedNetworkRulesWithHash: IndexedNetworkRuleWithHash[] = [];
 
             try {
-                indexedNetworkRulesWithHash = IndexedNetworkRuleWithHash.createFromRawString(
-                    filterId,
-                    lineIndex,
-                    line,
+                indexedNetworkRulesWithHash = IndexedNetworkRuleWithHash.createFromNode(
+                    this.filterId,
+                    ruleBufferIndex,
+                    ruleNode,
                 );
             } catch (e) {
                 if (e instanceof Error) {
                     result.errors.push(e);
                 } else {
+                    const lineIndex = getRuleSourceIndex(ruleBufferIndex, this.filter.sourceMap);
+                    const rawRule = getRuleSourceText(lineIndex, this.filter.rawFilterList);
+                    const originalRawRule = this.filter.conversionMap[lineIndex];
                     // eslint-disable-next-line max-len
-                    const err = new Error(`Unknown error during creating indexed rule with hash from raw string: filter id - ${filterId}, line index - ${lineIndex}, line - ${line}`);
+                    let errorMessage = `Unknown error during creating indexed rule with hash from raw string: filter id - ${this.filterId}, line index - ${lineIndex}, line - ${rawRule}`;
+                    if (originalRawRule) {
+                        errorMessage += `, original line - ${originalRawRule}`;
+                    }
+                    const err = new Error(errorMessage);
                     result.errors.push(err);
                 }
                 continue;

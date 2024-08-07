@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { filterListSourceMapValidator } from '../source-map/schema';
 
 /**
- * Map of converted rules to original rules.
+ * Validator for filter list conversion map.
  *
  * @note This is only needed to show the original rule text in the filtering log if a converted rule is applied.
  */
@@ -10,7 +10,7 @@ export const filterListConversionMapValidator = z.record(
     /**
      * Converted rule line start offset.
      */
-    z.number(),
+    z.string(),
 
     /**
      * Original rule text.
@@ -21,7 +21,12 @@ export const filterListConversionMapValidator = z.record(
 export type FilterListConversionMap = z.infer<typeof filterListConversionMapValidator>;
 
 /**
- * Filter list conversion result.
+ * Validator for filter list chunks.
+ */
+export const filterListChunksValidator = z.array(z.instanceof(Uint8Array));
+
+/**
+ * Validator for preprocessed filter list.
  */
 export const preprocessedFilterListValidator = z.object({
     /**
@@ -32,7 +37,7 @@ export const preprocessedFilterListValidator = z.object({
     /**
      * Processed filter list, but in a serialized form.
      */
-    filterList: z.array(z.instanceof(Uint8Array)),
+    filterList: filterListChunksValidator,
 
     /**
      * Map of converted rules to original rules.

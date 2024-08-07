@@ -32,7 +32,7 @@ export class OutputByteBuffer extends ByteBuffer {
 
     /**
      * Represents the maximum value that can be written as a 'storage optimized' unsigned integer.
-     * 0x1FFFFFFF means 32 bits minus 3 bits, because the last bit in each byte is a flag indicating
+     * 0x1FFFFFFF means 29 bits — 32 bits minus 3 bits — because the last bit in each byte is a flag indicating
      * if there are more bytes (except for the last byte).
      */
     public static MAX_OPTIMIZED_UINT = 0x1FFFFFFF;
