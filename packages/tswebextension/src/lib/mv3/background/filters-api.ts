@@ -159,14 +159,9 @@ export default class FiltersApi {
         return customFilters.map((f) => new Filter(
             f.filterId,
             {
-                getContent: () => Promise.resolve({
-                    rawFilterList: f.rawFilterList,
-                    filterList: f.content,
-                    conversionMap: f.conversionMap,
-                    sourceMap: f.sourceMap ?? {},
-                }),
+                getContent: () => Promise.resolve(f),
             },
-            true,
+            f.trusted,
         ));
     }
 }

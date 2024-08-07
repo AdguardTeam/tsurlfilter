@@ -290,12 +290,7 @@ export class TsWebExtension implements AppInterface<
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
                 {
-                    getContent: () => Promise.resolve({
-                        filterList: configuration.userrules.content,
-                        sourceMap: configuration.userrules.sourceMap ?? {},
-                        conversionMap: configuration.userrules.conversionMap ?? {},
-                        rawFilterList: configuration.userrules.rawFilterList ?? '',
-                    }),
+                    getContent: () => Promise.resolve(configuration.userrules),
                 },
                 true,
             );
