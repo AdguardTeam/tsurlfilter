@@ -14,6 +14,12 @@ export type TabFrameRequestContext = FrameRequestContext & {
     tabId: number;
 };
 
+type ExecuteScriptParams = {
+    scriptText: string;
+    tabId: number;
+    frameId: number;
+};
+
 /**
  * Tabs API. Wrapper around browser.tabs API.
  */
@@ -493,6 +499,25 @@ export class TabsApi {
         };
 
         await browser.tabs.executeScript(tabId, injectDetails);
+    }
+
+    /**
+     *
+     * @param root0
+     * @param root0.scriptTetx
+     * @param root0.tabId
+     * @param root0.frameId
+     * @param root0.scriptText
+     */
+    public static async executeScript({
+        scriptText, tabId, frameId,
+    }: ExecuteScriptParams): Promise<void> {
+        await browser.tabs.executeScript(tabId, {
+            code: scriptText,
+            frameId,
+            runAt: 'document_start',
+            matchAboutBlank: true,
+        });
     }
 
     /**

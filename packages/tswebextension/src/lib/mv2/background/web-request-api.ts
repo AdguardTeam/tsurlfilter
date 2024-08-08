@@ -357,8 +357,13 @@ export class WebRequestApi {
 
             tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
 
+            // FIXME fix add collectingCosmeticRulesHits
+            const cssText = CosmeticApi.getCssText(cosmeticResult);
+            const scriptText = CosmeticApi.getScriptText(cosmeticResult);
+
             requestContextStorage.update(requestId, {
-                cosmeticResult,
+                cssText,
+                scriptText,
             });
         }
 
@@ -578,45 +583,44 @@ export class WebRequestApi {
             return;
         }
 
-        const {
-            tabId,
-            frameId,
-            requestType,
-        } = context;
+        const { requestType } = context;
 
-        if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
+        if (requestType !== RequestType.Document
+            && requestType !== RequestType.SubDocument) {
             return;
         }
 
-        const tabContext = tabsApi.getTabContext(tabId);
+        CosmeticApi.applyJsByRequestId(context.requestId);
 
-        if (!tabContext) {
-            return;
-        }
-
-        const frame = tabContext.frames.get(frameId);
-
-        if (!frame || !frame.cosmeticResult) {
-            return;
-        }
-
-        /**
-         * Actual tab url may not be committed by navigation event during response processing.
-         * If {@link tabContext.info.url} and {@link url} are not the same, this means
-         * that tab navigation steel is being processed and js injection may be causing the error.
-         * In this case, js will be injected in the {@link WebNavigation.onCommitted} event.
-         */
-        if (requestType === RequestType.Document
-            /**
-             * Check if url exists because it might be empty for new tabs.
-             * In this case we may inject on response started
-             * (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571).
-             */
-            && tabContext.info.url && tabContext.info.url !== frame.url) {
-            return;
-        }
-
-        CosmeticApi.applyFrameJsRules(frameId, tabId);
+        // const tabContext = tabsApi.getTabContext(tabId);
+        //
+        // if (!tabContext) {
+        //     return;
+        // }
+        //
+        // const frame = tabContext.frames.get(frameId);
+        //
+        // if (!frame || !frame.cosmeticResult) {
+        //     return;
+        // }
+        //
+        // /**
+        //  * Actual tab url may not be committed by navigation event during response processing.
+        //  * If {@link tabContext.info.url} and {@link url} are not the same, this means
+        //  * that tab navigation steel is being processed and js injection may be causing the error.
+        //  * In this case, js will be injected in the {@link WebNavigation.onCommitted} event.
+        //  */
+        // if (requestType === RequestType.Document
+        //     /**
+        //      * Check if url exists because it might be empty for new tabs.
+        //      * In this case we may inject on response started
+        //      * (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571).
+        //      */
+        //     && tabContext.info.url && tabContext.info.url !== frame.url) {
+        //     return;
+        // }
+        //
+        // CosmeticApi.applyFrameJsRules(frameId, tabId);
     }
 
     /**

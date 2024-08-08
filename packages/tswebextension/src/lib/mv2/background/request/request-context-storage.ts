@@ -50,10 +50,18 @@ export type RequestContext = TabFrameRequestContext & {
      */
     matchingResult?: MatchingResult | null;
 
+    // FIXME consider removing cosmetic result
     /**
      * Filtering data from {@link EngineApi.getCosmeticResult}.
      */
     cosmeticResult?: CosmeticResult;
+
+    /**
+     * FIXME write documentation that we calculate those in the most beginning in onBeforeRequest
+     */
+    cssText?: string;
+
+    scriptText?: string;
 };
 
 /**

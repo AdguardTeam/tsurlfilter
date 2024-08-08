@@ -21,6 +21,7 @@ import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 
 import type { ContentType } from '../../common/request-type';
+import { requestContextStorage } from './request/request-context-storage';
 
 export type ApplyCosmeticRulesParams = {
     tabId: number,
@@ -168,9 +169,11 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameUrl Frame url.
      * @returns Script text or empty string if no script rules are passed.
      */
-    public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string {
+    public static getScriptText(cosmeticResult: CosmeticResult, frameUrl?: string): string | undefined {
+        const rules = cosmeticResult.getScriptRules();
+        console.log(rules);
         if (rules.length === 0) {
-            return '';
+            return undefined;
         }
 
         const permittedRules = CosmeticApi.sanitizeScriptRules(rules);
@@ -190,12 +193,20 @@ export class CosmeticApi extends CosmeticApiCommon {
             frameUrl,
         };
 
-        const scriptText = permittedRules
-            .map((rule) => rule.getScript(scriptParams))
-            .join('\n');
+        const uniqueScripts = new Set();
+        for (let i = 0; i < permittedRules.length; i += 1) {
+            const rule = permittedRules[i];
+            const script = rule.getScript(scriptParams);
+            if (script) {
+                uniqueScripts.add(script);
+            }
+        }
+
+        const scriptText = [...uniqueScripts]
+            .join(';\n');
 
         if (!scriptText) {
-            return '';
+            return undefined;
         }
 
         return `
@@ -293,9 +304,9 @@ export class CosmeticApi extends CosmeticApiCommon {
             url,
         } = params;
 
-        const scriptRules = cosmeticResult.getScriptRules();
+        // const scriptRules = cosmeticResult.getScriptRules();
 
-        let scriptText = CosmeticApi.getScriptText(scriptRules, url);
+        let scriptText = CosmeticApi.getScriptText(cosmeticResult, url);
 
         const tabContext = tabsApi.getTabContext(tabId);
         if (tabContext) {
@@ -365,6 +376,29 @@ export class CosmeticApi extends CosmeticApiCommon {
                     },
                 });
             }
+        }
+    }
+
+    /**
+     * Injects js to specified frame based on provided data and injection FSM state.
+     *
+     * @param frameId Frame id.
+     * @param tabId Tab id.
+     */
+    public static async applyJsByRequestId(requestId: string): Promise<void> {
+        const requestContext = requestContextStorage.get(requestId);
+        if (!requestContext?.scriptText) {
+            return;
+        }
+
+        try {
+            await TabsApi.executeScript({
+                tabId: requestContext.tabId,
+                frameId: requestContext.requestFrameId,
+                scriptText: requestContext.scriptText,
+            });
+        } catch (e) {
+            logger.debug(`[applyJsByRequestId] error occurred during injection: ${getErrorMessage(e)}`);
         }
     }
 
