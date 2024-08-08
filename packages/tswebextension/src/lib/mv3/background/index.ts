@@ -32,10 +32,9 @@ export type {
 
 export * from './app';
 
-export { USER_FILTER_ID } from './user-rules-api';
 export { tabsApi } from '../tabs/tabs-api';
 export { TabContext } from '../tabs/tab-context';
-export { MAIN_FRAME_ID } from '../../common/constants';
+export { USER_FILTER_ID, MAIN_FRAME_ID } from '../../common/constants';
 
 export type {
     ConfigurationMV3 as Configuration,

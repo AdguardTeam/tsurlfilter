@@ -25,10 +25,9 @@ import { type ConfigurationMV3 } from './configuration';
 import { allowlistApi } from './allowlist-api';
 import { DocumentApi } from './document-api';
 import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
-import { ALLOWLIST_FILTER_ID } from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
-const USER_FILTER_ID = 0;
 
 type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'verbose'> & {
     filters: IFilter[],

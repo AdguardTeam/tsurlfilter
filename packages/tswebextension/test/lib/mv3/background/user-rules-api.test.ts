@@ -1,6 +1,6 @@
 import browser from 'webextension-polyfill';
-import UserRulesApi, { USER_FILTER_ID } from '../../../../src/lib/mv3/background/user-rules-api';
-import { ALLOWLIST_FILTER_ID } from '../../../../src/lib/common/constants';
+import UserRulesApi from '../../../../src/lib/mv3/background/user-rules-api';
+import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../../../src/lib/common/constants';
 
 import { createFilter } from '../helpers';
 
