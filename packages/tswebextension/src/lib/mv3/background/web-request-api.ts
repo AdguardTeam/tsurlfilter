@@ -246,8 +246,8 @@ export class WebRequestApi {
         }
 
         // We do not check for exists request context here (as it was in MV2),
-        // because in MV3 $removeparam rules are applied by browser and doesn't
-        // follow to reload page.
+        // because in MV3 $removeparam rules are applied by browser and does not
+        // require page reload after the applying.
         if (requestType === RequestType.Document) {
             // dispatch filtering log reload event
             defaultFilteringLog.publishEvent({
