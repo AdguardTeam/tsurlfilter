@@ -90,23 +90,6 @@ export class TabsCosmeticInjector {
             const cosmeticOption = frame.matchingResult.getCosmeticOption();
 
             frame.cosmeticResult = engineApi.getCosmeticResult(frameUrl, cosmeticOption);
-
-            // const { cosmeticResult } = frame;
-
-            // TODO: Inject CSS and JS rules
-            // CosmeticApi.applyFrameCssRules(frameId, tabId);
-
-            // CosmeticApi.applyFrameJsRules(frameId, tabId);
-
-            // CosmeticApi.logScriptRules({
-            //     url: frameUrl,
-            //     tabId,
-            //     cosmeticResult,
-            //     timestamp: Date.now(),
-            //     contentType: isDocumentFrame
-            //         ? ContentType.Document
-            //         : ContentType.Subdocument,
-            // });
         });
     }
 }

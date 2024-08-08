@@ -2,6 +2,8 @@ import { type RuleInfo } from '../mv2/content-script/rule-info';
 import type { ContentType } from './request-type';
 import { EventChannel, type EventChannelInterface } from './utils';
 
+// TODO: Add 'is' prefix to cssRule, scriptRule and contentRule properties.
+
 /**
  * Types of filtering events that can occur during request processing.
  */
@@ -29,11 +31,34 @@ export enum FilteringEventType {
  * Additional network rule info.
  */
 type AdditionalNetworkRuleInfo = {
+    /**
+     * Whether the rule is exception.
+     */
     isAllowlist: boolean,
+
+    /**
+     * Whether the rule is important.
+     */
     isImportant: boolean,
+
+    /**
+     * Whether the rule is document level.
+     */
     isDocumentLevel: boolean,
+
+    /**
+     * Whether the rule is CSP-related.
+     */
     isCsp: boolean,
+
+    /**
+     * Whether the rule is a cookie rule.
+     */
     isCookie: boolean,
+
+    /**
+     * Advanced modifier value, if present.
+     */
     advancedModifier: string | null,
 };
 

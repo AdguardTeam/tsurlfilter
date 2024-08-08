@@ -245,8 +245,8 @@ export class MessagesApi {
     ): MatchingResult | null {
         let isSubDocument = false;
 
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1498
         // When document url for iframe is about:blank then we use tab url
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1498
         if (!isHttpOrWsRequest(url) && sender.frameId !== 0 && sender.tab?.url) {
             isSubDocument = true;
         }

@@ -11,8 +11,14 @@ export const customFilterMV3Validator = basicFilterValidator.extend({
      */
     filterId: zod.number(),
 
+    /**
+     * Raw filter list.
+     */
     rawFilterList: zod.string(),
 
+    /**
+     * Conversion map for the raw filter list. Key is the rule line start index, value is the original rule.
+     */
     conversionMap: zod.record(zod.number(), zod.string()),
 });
 

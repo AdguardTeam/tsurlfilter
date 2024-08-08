@@ -43,6 +43,7 @@ export class AbpSnippetInjectionBodyParser extends ParserBase {
      *
      * @note Only 256 values can be represented this way.
      */
+    // TODO: Update this map with the actual values
     private static readonly FREQUENT_ARGS_SERIALIZATION_MAP = new Map<string, number>([
         ['abort-current-inline-script', 0],
         ['abort-on-property-read', 1],

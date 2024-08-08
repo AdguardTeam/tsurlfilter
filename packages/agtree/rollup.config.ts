@@ -15,6 +15,7 @@ import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
+import { type Plugin } from 'rollup';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -79,8 +80,14 @@ const commonPlugins = [
     typeScriptPlugin,
 ];
 
-// Plugins for Node.js builds
-export const nodePlugins = (esm = false) => [
+/**
+ * Plugins for Node.js builds.
+ *
+ * @param esm Whether to build an ESM module.
+ *
+ * @returns List of Rollup plugins.
+ */
+export const getNodePlugins = (esm = false): Plugin[] => [
     ...commonPlugins,
     alias({
         // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
@@ -175,7 +182,7 @@ const cjs = {
             banner,
         },
     ],
-    plugins: nodePlugins(),
+    plugins: getNodePlugins(),
 };
 
 // ECMAScript build configuration
@@ -189,7 +196,7 @@ const esm = {
             banner,
         },
     ],
-    plugins: nodePlugins(),
+    plugins: getNodePlugins(),
 };
 
 // Browser-friendly UMD build configuration
