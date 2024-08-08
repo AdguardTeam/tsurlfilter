@@ -20,7 +20,9 @@ import {
     TsWebExtension,
     type Configuration as TsWebExtensionConfiguration,
     type MessagesHandlerMV3,
+    FilterListPreprocessor,
 } from '@adguard/tswebextension/mv3';
+import { type BasicFilterValidator, LF } from '@adguard/tswebextension';
 import { type Configuration, configurationValidator } from './configuration';
 import { RequestBlockingLogger } from './request-blocking-logger';
 
@@ -158,7 +160,27 @@ export class AdguardApi {
             allowlist = this.configuration.allowlist;
         }
 
-        const userrules = this.configuration.rules || [];
+        const userrules: BasicFilterValidator & {
+            rawFilterList: string,
+            conversionMap: Record<string, string>,
+            trusted: boolean,
+        } = {
+            content: [],
+            rawFilterList: '',
+            conversionMap: {},
+            trusted: false,
+        };
+
+        if (this.configuration.rules) {
+            // TODO: Change the interface later
+            const convertedUserRules = FilterListPreprocessor.preprocess(this.configuration.rules.join(LF));
+
+            userrules.sourceMap = convertedUserRules.sourceMap;
+            userrules.content = convertedUserRules.filterList;
+            userrules.conversionMap = convertedUserRules.conversionMap;
+            userrules.rawFilterList = convertedUserRules.rawFilterList;
+            userrules.trusted = true;
+        }
 
         return {
             filtersPath: this.configuration.assetsPath,

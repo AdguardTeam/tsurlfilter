@@ -1,6 +1,9 @@
-import { Configuration, TsWebExtension } from '@adguard/tswebextension/mv3';
+import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import {
+    type Configuration,
+    type TsWebExtension,
+} from '@adguard/tswebextension/mv3';
 import { LogDetails } from './logger';
-import { FilterListPreprocessor } from '@adguard/tswebextension';
 
 declare global {
     interface Window {
@@ -44,6 +47,7 @@ export const setTsWebExtensionConfig = async (arg: SetTsWebExtensionConfigArg) =
         sourceMap: preprocessed.sourceMap,
         conversionMap: preprocessed.conversionMap,
         rawFilterList: preprocessed.rawFilterList,
+        trusted: true,
     };
     await self.tsWebExtension.configure(configuration);
 };
