@@ -5,11 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2024-08-07
+## [1.1.0] - 2024-08-08
+
+### Added
+
+- New `ManifestPatcher.patch` method option `filtersMatch` to specify the filters matching glob pattern. default is `filter_+([0-9]).txt`.
+- New CLI option `--filters-match` for customizing search pattern via `manifest` command.
 
 ### Fixed
 
-- Download missed filters metadata.
+- Download missed filters metadata files.
 
 
 ## [1.0.0] - 2024-08-06
