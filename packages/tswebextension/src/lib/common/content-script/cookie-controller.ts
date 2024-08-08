@@ -34,22 +34,22 @@ export interface CookieRule {
     /**
      * Whether the rule is exception.
      */
-    isAllowlist: boolean,
+    isAllowlist: boolean;
 
     /**
      * Whether the rule is important.
      */
-    isImportant: boolean,
+    isImportant: boolean;
 
     /**
      * Whether the rule is document level.
      */
-    isDocumentLevel: boolean,
+    isDocumentLevel: boolean;
 
     /**
      * Advanced modifier value, if present.
      */
-    advancedModifier: string | null,
+    advancedModifier: string | null;
 }
 
 /**
