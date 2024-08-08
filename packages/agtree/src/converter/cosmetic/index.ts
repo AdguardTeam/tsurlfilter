@@ -124,6 +124,7 @@ export class CosmeticRuleConverter extends RuleConverterBase {
      * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
      */
+    // TODO: Add support for other cosmetic rule types
     public static convertToUbo(rule: AnyCosmeticRule): NodeConversionResult<AnyRule> {
         // Convert cosmetic rule based on its type
         if (rule.type === CosmeticRuleType.ScriptletInjectionRule) {

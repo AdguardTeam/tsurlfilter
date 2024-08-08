@@ -128,6 +128,8 @@ describe('Scriptlet conversion', () => {
         });
     });
 
+    // Tests migrated from:
+    // https://github.com/AdguardTeam/Scriptlets/blob/d8d25ec625406faeaa5669627f143c7bad1a0328/tests/api/index.spec.js#L276-L374
     describe('convertToUbo', () => {
         test.each([
             {

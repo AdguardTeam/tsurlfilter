@@ -66,6 +66,7 @@ export class RuleConverter extends RuleConverterBase {
      * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
      */
+    // TODO: Add support for other rule types
     public static convertToUbo(rule: AnyRule): NodeConversionResult<AnyRule> {
         if (rule.category === RuleCategory.Cosmetic) {
             return CosmeticRuleConverter.convertToUbo(rule);
