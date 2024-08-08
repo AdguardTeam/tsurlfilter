@@ -38,6 +38,7 @@ program
     .option('-i, --ids <ids...>', 'filters ids to append', [])
     .option('-e, --enable <ids...>', 'enable filters by default', [])
     .option('-r, --ruleset-prefix <prefix>', 'prefix for filters ids', 'ruleset_')
+    .option('-m, --filters-match <match>', 'filters files match glob pattern', 'filter_+([0-9]).txt')
     .action((
         manifestPath: string,
         filtersPath: string,

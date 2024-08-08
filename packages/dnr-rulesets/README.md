@@ -102,6 +102,7 @@ npm install --save-dev @adguard/dnr-rulesets
 - `-i, --ids <ids...>` - filters ids to append (default: [])
 - `-e, --enable <ids...>` - enable filters by default (default: [])
 - `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
+- `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
 
 1. Run the script to load DNR rulesets as part of your build flow.
 
@@ -147,6 +148,8 @@ patcher.path(
     forceUpdate: true,
     // Optional: set prefix for ruleset paths
     rulesetPrefix: 'ruleset_',
+    // Optional: specify filter files matching glob pattern
+    filtersMatch: 'filter_+([0-9]).txt',
   },
 )
 ```

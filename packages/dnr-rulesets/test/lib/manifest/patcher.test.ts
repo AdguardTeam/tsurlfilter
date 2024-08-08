@@ -1,3 +1,4 @@
+import fastGlob from 'fast-glob';
 import fs from 'fs';
 import path from 'path';
 
@@ -7,6 +8,7 @@ import { ManifestPatcher } from '../../../src/lib/manifest/patcher';
 
 jest.mock('fs');
 jest.mock('path');
+jest.mock('fast-glob');
 
 describe('ManifestPatcher', () => {
     const cwd = 'cwd';
@@ -14,6 +16,7 @@ describe('ManifestPatcher', () => {
     const manifestPath = `${dir}/manifest.json`;
     const filtersPath = `${dir}/filters`;
     const filterNames = ['filter_1.txt', 'filter_2.txt'];
+    const filterGlob = 'filter_+([0-9]).txt';
 
     const mockIsAbsolute = jest.mocked(path.isAbsolute).mockReturnValue(true);
     // jest cannot mock process.cwd() directly, so we need to use spy
@@ -22,7 +25,7 @@ describe('ManifestPatcher', () => {
     const mockExistsSync = jest.mocked(fs.existsSync).mockReturnValue(true);
     const mockRelative = jest.mocked(path.relative);
     const mockDirname = jest.mocked(path.dirname).mockReturnValue(dir);
-    const mockReaddirSync = jest.mocked<(path: string) => string[]>(fs.readdirSync).mockReturnValue(filterNames);
+    const mockGlobSync = jest.mocked(fastGlob.globSync).mockReturnValue(filterNames);
     const mockWriteFileSync = jest.mocked(fs.writeFileSync);
 
     const manifest = {
@@ -74,7 +77,7 @@ describe('ManifestPatcher', () => {
         mockExistsSync.mockClear();
         mockRelative.mockClear();
         mockDirname.mockClear();
-        mockReaddirSync.mockClear();
+        mockGlobSync.mockClear();
         mockWriteFileSync.mockClear();
         mockLoader.load.mockClear();
         mockInjector.applyRulesets.mockClear();
@@ -101,8 +104,8 @@ describe('ManifestPatcher', () => {
         expect(mockLoader.load).toHaveBeenCalledWith(manifestPath);
         expect(mockDirname).toHaveBeenCalledTimes(1);
         expect(mockDirname).toHaveBeenCalledWith(manifestPath);
-        expect(mockReaddirSync).toHaveBeenCalledTimes(1);
-        expect(mockReaddirSync).toHaveBeenCalledWith(filtersPath);
+        expect(mockGlobSync).toHaveBeenCalledTimes(1);
+        expect(mockGlobSync).toHaveBeenCalledWith(filterGlob, { onlyFiles: true, cwd: filtersPath });
         expect(mockInjector.applyRulesets).toHaveBeenCalledTimes(1);
         expect(mockInjector.applyRulesets).toHaveBeenCalledWith(expect.any(Function), manifest, filterNames, undefined);
         expect(mockRelative).toHaveBeenCalledTimes(2);
@@ -150,8 +153,8 @@ describe('ManifestPatcher', () => {
         expect(mockLoader.load).toHaveBeenCalledWith(resolvedManifestPath);
         expect(mockDirname).toHaveBeenCalledTimes(1);
         expect(mockDirname).toHaveBeenCalledWith(resolvedManifestPath);
-        expect(mockReaddirSync).toHaveBeenCalledTimes(1);
-        expect(mockReaddirSync).toHaveBeenCalledWith(resolvedFiltersPath);
+        expect(mockGlobSync).toHaveBeenCalledTimes(1);
+        expect(mockGlobSync).toHaveBeenCalledWith(filterGlob, { onlyFiles: true, cwd: resolvedFiltersPath });
         expect(mockInjector.applyRulesets).toHaveBeenCalledTimes(1);
         expect(mockInjector.applyRulesets).toHaveBeenCalledWith(expect.any(Function), manifest, filterNames, undefined);
         expect(mockRelative).toHaveBeenCalledTimes(2);
@@ -179,7 +182,7 @@ describe('ManifestPatcher', () => {
         expect(mockExistsSync).toHaveBeenCalledWith(manifestPath);
         expect(mockLoader.load).not.toHaveBeenCalled();
         expect(mockDirname).not.toHaveBeenCalled();
-        expect(mockReaddirSync).not.toHaveBeenCalled();
+        expect(mockGlobSync).not.toHaveBeenCalled();
         expect(mockInjector.applyRulesets).not.toHaveBeenCalled();
         expect(mockRelative).not.toHaveBeenCalled();
         expect(mockWriteFileSync).not.toHaveBeenCalled();
@@ -202,14 +205,14 @@ describe('ManifestPatcher', () => {
         expect(mockLoader.load).toHaveBeenCalledTimes(1);
         expect(mockLoader.load).toHaveBeenCalledWith(manifestPath);
         expect(mockDirname).not.toHaveBeenCalled();
-        expect(mockReaddirSync).not.toHaveBeenCalled();
+        expect(mockGlobSync).not.toHaveBeenCalled();
         expect(mockInjector.applyRulesets).not.toHaveBeenCalled();
         expect(mockRelative).not.toHaveBeenCalled();
         expect(mockWriteFileSync).not.toHaveBeenCalled();
     });
 
     it('should throw an error if filter names cannot be loaded', () => {
-        mockReaddirSync.mockImplementationOnce(() => {
+        mockGlobSync.mockImplementationOnce(() => {
             throw new Error();
         });
 
@@ -226,8 +229,8 @@ describe('ManifestPatcher', () => {
         expect(mockLoader.load).toHaveBeenCalledWith(manifestPath);
         expect(mockDirname).toHaveBeenCalledTimes(1);
         expect(mockDirname).toHaveBeenCalledWith(manifestPath);
-        expect(mockReaddirSync).toHaveBeenCalledTimes(1);
-        expect(mockReaddirSync).toHaveBeenCalledWith(filtersPath);
+        expect(mockGlobSync).toHaveBeenCalledTimes(1);
+        expect(mockGlobSync).toHaveBeenCalledWith(filterGlob, { onlyFiles: true, cwd: filtersPath });
         expect(mockInjector.applyRulesets).not.toHaveBeenCalled();
         expect(mockRelative).not.toHaveBeenCalled();
         expect(mockWriteFileSync).not.toHaveBeenCalled();
@@ -253,27 +256,23 @@ describe('ManifestPatcher', () => {
         expect(mockLoader.load).toHaveBeenCalledWith(manifestPath);
         expect(mockDirname).toHaveBeenCalledTimes(1);
         expect(mockDirname).toHaveBeenCalledWith(manifestPath);
-        expect(mockReaddirSync).toHaveBeenCalledTimes(1);
-        expect(mockReaddirSync).toHaveBeenCalledWith(filtersPath);
+        expect(mockGlobSync).toHaveBeenCalledTimes(1);
+        expect(mockGlobSync).toHaveBeenCalledWith(filterGlob, { onlyFiles: true, cwd: filtersPath });
         expect(mockInjector.applyRulesets).toHaveBeenCalledTimes(1);
         expect(mockInjector.applyRulesets).toHaveBeenCalledWith(expect.any(Function), manifest, filterNames, undefined);
         expect(mockRelative).not.toHaveBeenCalled();
         expect(mockWriteFileSync).not.toHaveBeenCalled();
     });
 
-    it('should ignore files that do not match the filter name pattern', () => {
+    it('should scan dir with custom glob pattern', () => {
+        const customGlob = '*.txt';
         const patcher = new ManifestPatcher(mockLoader, mockInjector);
 
-        mockReaddirSync.mockReturnValueOnce([
-            ...filterNames,
-            'filters.json',
-            'filters_i18n.json',
-        ]);
+        patcher.patch(manifestPath, filtersPath, {
+            filtersMatch: customGlob,
+        });
 
-        patcher.patch(manifestPath, filtersPath);
-
-        expect(
-            mockInjector.applyRulesets,
-        ).toHaveBeenCalledWith(expect.any(Function), manifest, filterNames, undefined);
+        expect(mockGlobSync).toHaveBeenCalledTimes(1);
+        expect(mockGlobSync).toHaveBeenCalledWith(customGlob, { onlyFiles: true, cwd: filtersPath });
     });
 });

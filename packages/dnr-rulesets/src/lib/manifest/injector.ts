@@ -1,9 +1,9 @@
 import type { Manifest } from './parser';
 
 /**
- * Options for patching manifest.
+ * Options for apply rulesets to manifest.
  */
-export type PatchManifestOptions = {
+export type ApplyRulesetsOptions = {
     /**
      * Array of filters ids to append. If empty, all filters will be appended.
      * Appended filters will be disabled by default.
@@ -48,7 +48,7 @@ export interface RulesetsInjectorInterface {
      * @param generateRulesetPath Function that generates relative path for ruleset.
      * @param manifest Manifest record.
      * @param filterNames Array of filter file names.
-     * @param options Patch options {@link PatchManifestOptions}.
+     * @param options Apply options {@link ApplyRulesetsOptions}.
      *
      * @returns Patched manifest with defined declarative_net_request.
      */
@@ -56,7 +56,7 @@ export interface RulesetsInjectorInterface {
         generateRulesetPath: RulesetPathGenerator,
         manifest: T,
         filterNames: string[],
-        options?: Partial<PatchManifestOptions>
+        options?: Partial<ApplyRulesetsOptions>
     ): T;
 }
 
@@ -78,7 +78,7 @@ export class RulesetsInjector implements RulesetsInjectorInterface {
         generateRulesetPath: RulesetPathGenerator,
         manifest: T,
         filterNames: string[],
-        options?: PatchManifestOptions,
+        options?: ApplyRulesetsOptions,
     ): T {
         if (!manifest.declarative_net_request) {
             manifest.declarative_net_request = {};
