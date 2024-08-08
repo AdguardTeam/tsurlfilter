@@ -1,9 +1,10 @@
+import fastGlob from 'fast-glob';
 import fs from 'fs';
 import path from 'path';
 import process from 'process';
 
 import {
-    type PatchManifestOptions,
+    type ApplyRulesetsOptions,
     RulesetsInjector,
     type RulesetsInjectorInterface,
 } from './injector';
@@ -12,10 +13,24 @@ import {
     type ManifestLoaderInterface,
 } from './loader';
 
+export type PatchManifestOptions = ApplyRulesetsOptions & {
+    /**
+     * Match pattern to match filter files.
+     *
+     * @default `filter_+([0-9]).txt`
+     */
+    filtersMatch?: string;
+};
+
 /**
  * Api for patching manifest.
  */
 export class ManifestPatcher {
+    /**
+     * Default glob patter to match filter files.
+     */
+    private static readonly DEFAULT_FILTERS_MATCH_GLOB = 'filter_+([0-9]).txt';
+
     /**
      * Create new instance of {@link ManifestPatcher}.
      *
@@ -25,7 +40,7 @@ export class ManifestPatcher {
     constructor(
         private loader: ManifestLoaderInterface = new ManifestLoader(),
         private injector: RulesetsInjectorInterface = new RulesetsInjector(),
-    ) {}
+    ) { }
 
     /**
      * Append rulesets into manifest `declarative_net_request` property.
@@ -56,7 +71,12 @@ export class ManifestPatcher {
             rulesetId,
         );
 
-        const filterNames = fs.readdirSync(absoluteFiltersPath);
+        const filtersMatchGlob = options?.filtersMatch ?? ManifestPatcher.DEFAULT_FILTERS_MATCH_GLOB;
+
+        const filterNames = fastGlob.globSync(filtersMatchGlob, {
+            onlyFiles: true,
+            cwd: absoluteFiltersPath,
+        });
 
         const patchedManifest = this.injector.applyRulesets(
             getPath,
