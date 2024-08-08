@@ -37,7 +37,7 @@ export type RequestContext = TabFrameRequestContext & {
     state: RequestContextState;
 
     /**
-     * WebRequest event timestamp.
+     * WebRequest event timestamp, in milliseconds since the epoch.
      */
     timestamp: number;
     referrerUrl: string;
