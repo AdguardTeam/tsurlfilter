@@ -68,7 +68,7 @@
     "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
     "postbuild": "node tasks/build-txt",
     "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-    "start": "rollup -c rollup.config.ts -w",
+    "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc -w",
     "test": "jest --coverage",
     "test:smoke": "cd test/builders/rollup-ts && pnpm test",
     "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache --runInBand",
