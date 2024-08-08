@@ -16,7 +16,15 @@ import {
  * For example developer tools tabs.
  */
 export type TabInfo = Tabs.Tab & {
+    /**
+     * ID of the tab.
+     */
     id: number,
+
+    /**
+     * Tab creation timestamp in milliseconds.
+     */
+    createdAtMs?: number,
 };
 
 /**
@@ -73,6 +81,11 @@ export class TabContext {
     public assistantInitTimestamp?: number | null = null;
 
     /**
+     * Tab creation timestamp in milliseconds.
+     */
+    public readonly createdAtMs: number;
+
+    /**
      * Context constructor.
      *
      * @param info Webextension API tab data.
@@ -85,6 +98,7 @@ export class TabContext {
         private readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
         this.info = info;
+        this.createdAtMs = Date.now();
     }
 
     /**
