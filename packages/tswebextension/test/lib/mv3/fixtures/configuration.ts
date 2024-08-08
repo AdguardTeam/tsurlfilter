@@ -13,7 +13,7 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     ruleSetsPath: '',
     allowlist: ['example.com'],
     userrules: {
-        content: preprocessedUserRules.filterList,
+        filterList: preprocessedUserRules.filterList,
         sourceMap: preprocessedUserRules.sourceMap,
         conversionMap: preprocessedUserRules.conversionMap,
         rawFilterList: preprocessedUserRules.rawFilterList,

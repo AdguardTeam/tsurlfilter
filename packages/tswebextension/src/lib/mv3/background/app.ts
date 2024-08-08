@@ -10,11 +10,11 @@ import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { extSessionStorage } from './ext-session-storage';
 import { appContext } from './app-context';
-import { logger } from '../../common/utils/logger';
+import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
-import UserRulesApi, { USER_FILTER_ID, type ConversionResult } from './user-rules-api';
+import UserRulesApi, { type ConversionResult } from './user-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
 import { declarativeFilteringLog, type RecordFiltered } from './declarative-filtering-log';
@@ -35,7 +35,7 @@ import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
 import { CosmeticApi } from './cosmetic-api';
-import { ALLOWLIST_FILTER_ID } from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -246,7 +246,9 @@ export class TsWebExtension implements AppInterface<
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 
-        logger.debug('[tswebextension.configure]: start with ', config);
+        // Exclude binary fields from logged config.
+        const binaryFields = ['userrules', 'sourceMap', 'rawFilterList', 'filterList', 'conversionMap'];
+        logger.debug('[tswebextension.configure]: start with ', stringifyObjectWithoutKeys(config, binaryFields));
 
         const configuration = configurationMV3Validator.parse(config);
 
@@ -288,12 +290,7 @@ export class TsWebExtension implements AppInterface<
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
                 {
-                    getContent: () => Promise.resolve({
-                        filterList: configuration.userrules.content,
-                        sourceMap: configuration.userrules.sourceMap ?? {},
-                        conversionMap: configuration.userrules.conversionMap ?? {},
-                        rawFilterList: configuration.userrules.rawFilterList ?? '',
-                    }),
+                    getContent: () => Promise.resolve(configuration.userrules),
                 },
                 true,
             );
@@ -662,18 +659,17 @@ export class TsWebExtension implements AppInterface<
         }
     }
 
-    // TODO: Implement this method.
-    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
     /**
      * Retrieves rule node from a dynamic filter.
-     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     * Dynamic filters are filters that are not loaded from the storage but
+     * created on the fly: now only for allowlist.
      *
      * @param filterId Filter id.
      * @param ruleIndex Rule index.
      * @returns Rule node or null.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
-    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        throw new Error('Method not implemented.');
+    // eslint-disable-next-line class-methods-use-this
+    public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        return engineApi.retrieveDynamicRuleNode(filterId, ruleIndex);
     }
 }

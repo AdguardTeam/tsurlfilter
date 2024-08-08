@@ -10,7 +10,7 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     customFilters: [],
     allowlist: [],
     userrules: {
-        content: [],
+        filterList: [],
         sourceMap: {},
         rawFilterList: '',
         conversionMap: {},
