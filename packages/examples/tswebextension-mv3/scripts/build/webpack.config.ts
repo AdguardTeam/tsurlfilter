@@ -11,6 +11,12 @@ const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/backgroun
 const POPUP_PATH = path.join(__dirname, '../../extension/pages/popup');
 const DOCUMENT_BLOCKING_PATH = path.join(__dirname, '../../extension/pages/document-blocking');
 const CONTENT_SCRIPT = path.join(__dirname, '../../extension/pages/content-script');
+const ASSISTANT_INJECT = path.join(__dirname, '../../extension/pages/content-script/assistant-inject');
+const GPC_SCRIPT = path.join(__dirname, '../../extension/pages/content-script/gpc');
+const HIDE_DOCUMENT_REFERRER_SCRIPT = path.join(
+    __dirname,
+    '../../extension/pages/content-script/hide-document-referrer',
+);
 const BUILD_PATH = path.resolve(__dirname, '../../build');
 const FILTERS_DIR = path.resolve(__dirname, '../../extension/filters');
 const DEVTOOLS_PATH = path.resolve(__dirname, '../../extension/src/devtools');
@@ -55,6 +61,9 @@ export const config: Configuration = {
         background: BACKGROUND_PATH,
         'pages/popup': POPUP_PATH,
         'content-script': CONTENT_SCRIPT,
+        'assistant-inject': ASSISTANT_INJECT,
+        'gpc': GPC_SCRIPT,
+        'hide-document-referrer': HIDE_DOCUMENT_REFERRER_SCRIPT,
         devtools: DEVTOOLS_PATH,
         debugging: DEBUGGING_PATH,
     },
@@ -64,7 +73,7 @@ export const config: Configuration = {
         sourceMapFilename: '[name].js.map',
     },
     resolve: {
-        extensions: ['*', '.tsx', '.ts', '.js'],
+        extensions: ['.*', '.tsx', '.ts', '.js'],
     },
     module: {
         rules: [
