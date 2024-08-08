@@ -253,8 +253,7 @@ export class AdguardApi {
 
         if (this.configuration.rules) {
             // TODO: Change the interface later
-            const userRules = this.configuration.rules.join(LF);
-            const convertedUserRules = FilterListPreprocessor.preprocess(userRules);
+            const convertedUserRules = FilterListPreprocessor.preprocess(this.configuration.rules.join(LF));
 
             userrules.sourceMap = convertedUserRules.sourceMap;
             userrules.content = convertedUserRules.filterList;
