@@ -22,7 +22,7 @@ import {
     type MessagesHandlerMV3,
     FilterListPreprocessor,
 } from '@adguard/tswebextension/mv3';
-import { type BasicFilterValidator, LF } from '@adguard/tswebextension';
+import { LF } from '@adguard/tswebextension';
 import { type Configuration, configurationValidator } from './configuration';
 import { RequestBlockingLogger } from './request-blocking-logger';
 
@@ -160,15 +160,12 @@ export class AdguardApi {
             allowlist = this.configuration.allowlist;
         }
 
-        const userrules: BasicFilterValidator & {
-            rawFilterList: string,
-            conversionMap: Record<string, string>,
-            trusted: boolean,
-        } = {
-            content: [],
+        const userrules: TsWebExtensionConfiguration['userrules'] = {
+            filterList: [],
             rawFilterList: '',
             conversionMap: {},
-            trusted: false,
+            sourceMap: {},
+            trusted: true,
         };
 
         if (this.configuration.rules) {
@@ -176,7 +173,7 @@ export class AdguardApi {
             const convertedUserRules = FilterListPreprocessor.preprocess(this.configuration.rules.join(LF));
 
             userrules.sourceMap = convertedUserRules.sourceMap;
-            userrules.content = convertedUserRules.filterList;
+            userrules.filterList = convertedUserRules.filterList;
             userrules.conversionMap = convertedUserRules.conversionMap;
             userrules.rawFilterList = convertedUserRules.rawFilterList;
             userrules.trusted = true;

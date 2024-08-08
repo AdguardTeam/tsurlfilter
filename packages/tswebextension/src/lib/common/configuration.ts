@@ -1,7 +1,7 @@
 import { z as zod } from 'zod';
 import { LogLevel } from '@adguard/logger';
 
-import { filterListSourceMapValidator } from '@adguard/tsurlfilter';
+import { filterListChunksValidator, filterListSourceMapValidator } from '@adguard/tsurlfilter';
 import { version } from '../../../package.json';
 
 export const TSWEBEXTENSION_VERSION = version;
@@ -82,8 +82,7 @@ export const basicFilterValidator = zod.object({
     /**
      * Filter list text content.
      */
-    // TODO: change to byte buffer
-    content: zod.array(zod.instanceof(Uint8Array)),
+    content: filterListChunksValidator,
 
     /**
      * Source map.

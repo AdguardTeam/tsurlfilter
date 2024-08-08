@@ -12,8 +12,6 @@ import { getErrorMessage } from '../../common/error';
 
 export type { ConversionResult };
 
-export const USER_FILTER_ID = 0;
-
 /**
  * UserRulesApi knows how to handle dynamic rules: apply a list of custom
  * filters along with user rules and disable all dynamic rules

@@ -107,10 +107,7 @@ const messageHandler = async (message: IMessage) => {
             const preprocessed = FilterListPreprocessor.preprocess(data as string);
 
             config.userrules = {
-                rawFilterList: preprocessed.rawFilterList,
-                conversionMap: preprocessed.conversionMap,
-                content: preprocessed.filterList,
-                sourceMap: preprocessed.sourceMap,
+                ...preprocessed,
                 trusted: true,
             };
 

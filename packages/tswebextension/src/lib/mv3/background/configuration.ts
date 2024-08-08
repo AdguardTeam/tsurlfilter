@@ -1,18 +1,15 @@
 import { z as zod } from 'zod';
-import { basicFilterValidator, configurationValidator, settingsConfigValidator } from '../../common/configuration';
+import { preprocessedFilterListValidator } from '@adguard/tsurlfilter';
+import { configurationValidator, settingsConfigValidator } from '../../common/configuration';
 
 /**
  * Custom filter list configuration validator for MV3.
  */
-export const customFilterMV3Validator = basicFilterValidator.extend({
+export const customFilterMV3Validator = preprocessedFilterListValidator.extend({
     /**
      * Filter identifier.
      */
     filterId: zod.number(),
-
-    rawFilterList: zod.string(),
-
-    conversionMap: zod.record(zod.number(), zod.string()),
 
     /**
      * Filter trusted flag.
