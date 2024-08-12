@@ -62,26 +62,26 @@ export class ScriptingApi {
     }
 
     /**
-     * Executes a script in the scope of the page.
+     * Executes a script within the scope of the page.
      *
-     * @param params Parameters for executing a script.
-     * @param params.tabId Tab id.
-     * @param params.frameId Frame id.
-     * @param params.scriptText Script text.
+     * @param params Parameters for executing the script.
+     * @param params.tabId The ID of the tab.
+     * @param params.frameId The ID of the frame.
+     * @param params.scriptText The script content to be executed.
      * @returns Promise that resolves when the script is executed.
      */
     public static async executeScript({ tabId, frameId, scriptText }: ExecuteScriptParams): Promise<void> {
-        // There is no sense to inject a script into the background page
+        // There is no reason to inject a script into the background page
         if (tabId === BACKGROUND_TAB_ID) {
             return;
         }
 
         /**
-         * Executes scripts in the scope of the page.
-         * To prevent multiple script execution, the function checks if the script was already executed.
+         * Executes the script within the scope of the page.
+         * To prevent multiple executions, this function checks if the script has already been executed.
          *
-         * @param scriptText Script text.
-         * @param executedFlag Flag to check if the script was already executed.
+         * @param scriptText The script content to be executed.
+         * @param executedFlag A flag to check if the script has already been executed.
          */
         // eslint-disable-next-line @typescript-eslint/no-shadow
         function injectFunc(scriptText: string, executedFlag: string): void {
@@ -92,8 +92,8 @@ export class ScriptingApi {
             }
 
             /**
-             * Keep constant here.
-             * Otherwise, it won't be available in the function from the outside.
+             * Keep this constant here.
+             * Otherwise, it won't be accessible from within the function.
              */
             const AG_POLICY_NAME = 'AGPolicy';
 
@@ -112,23 +112,46 @@ export class ScriptingApi {
             // eslint-disable-next-line @typescript-eslint/no-shadow
             const injectViaScriptTag = (scriptText: string): void => {
                 const scriptTag = document.createElement('script');
-                scriptTag.setAttribute('type', 'text/javascript');
-                scriptTag.textContent = scriptText;
+
+                let blob;
+                let url;
+                try {
+                    // This method is used to inject the script if inline scripts are not allowed by the CSP policy.
+                    // It is attempted first because it will throw an error if it fails.
+                    blob = new Blob([scriptText], { type: 'text/javascript; charset=utf-8' });
+                    url = URL.createObjectURL(blob);
+                    scriptTag.src = policy.createScriptURL(url);
+                } catch (e) {
+                    // This method does not throw an error in case of CSP policy restrictions,
+                    // which is why it is used in the catch block.
+                    scriptTag.setAttribute('type', 'text/javascript');
+                    scriptTag.appendChild(document.createTextNode(scriptText));
+                }
 
                 const parent = document.head || document.documentElement;
-                parent.appendChild(scriptTag);
+                if (parent) {
+                    parent.appendChild(scriptTag);
+                }
+
+                if (url) {
+                    URL.revokeObjectURL(url);
+                }
 
                 if (scriptTag.parentNode) {
                     scriptTag.parentNode.removeChild(scriptTag);
                 }
+
+                if (scriptTag) {
+                    scriptTag.textContent = policy.createScript('');
+                }
             };
 
+            const scriptTextWithPolicy = policy.createScript(scriptText);
             try {
                 // eslint-disable-next-line no-eval
-                eval(policy.createScript(scriptText));
+                eval(scriptTextWithPolicy);
             } catch (e) {
-                // if eval fails, inject via script tag
-                injectViaScriptTag(policy.createScript(scriptText));
+                injectViaScriptTag(scriptTextWithPolicy);
             }
 
             // We don't care about types here
