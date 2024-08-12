@@ -174,6 +174,8 @@ export class CosmeticApi extends CosmeticApiCommon {
             return '';
         }
 
+        // The "//# sourceURL=ag-scripts.js" line is necessary to ensure the script always has the same URL,
+        // making it possible to debug consistently.
         return `
         (function () {
             try {
@@ -182,6 +184,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 console.error('Error executing AG js: ' + ex);
             }
         })();
+        //# sourceURL=ag-scripts.js
         `;
     }
 
