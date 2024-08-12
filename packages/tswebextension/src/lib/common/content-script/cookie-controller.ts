@@ -6,15 +6,50 @@ interface OnRuleAppliedCallback {
     (data: OnRuleAppliedData): void;
 }
 
+/**
+ * Represents cookie rule.
+ */
 export interface CookieRule {
+    /**
+     * Matcher string, the value of the $cookie modifier,
+     * or null if the modifier does not have a value.
+     */
     match: string | null;
+
+    /**
+     * Whether the rule is for third-party context.
+     */
     isThirdParty: boolean;
+
+    /**
+     * Filter ID rule belongs to.
+     */
     filterId: number;
+
+    /**
+     * Rule start index in the byte buffer.
+     */
     ruleIndex: number;
+
+    /**
+     * Whether the rule is exception.
+     */
     isAllowlist: boolean;
+
+    /**
+     * Whether the rule is important.
+     */
     isImportant: boolean;
-    isDocumentLevel: boolean,
-    advancedModifier: string | null,
+
+    /**
+     * Whether the rule is document level.
+     */
+    isDocumentLevel: boolean;
+
+    /**
+     * Advanced modifier value, if present.
+     */
+    advancedModifier: string | null;
 }
 
 /**
