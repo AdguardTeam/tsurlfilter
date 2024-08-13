@@ -16,19 +16,12 @@ type ChromiumBrowser = typeof browser & {
     }
 };
 
-type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
-    /**
-     * The UUID of the document making the request.
-     */
-    documentId?: string;
-};
-
 /**
  * Request events class.
  */
 export class RequestEvents {
     public static onBeforeRequest = new RequestEvent<
-        OnBeforeRequestDetailsType,
+        WebRequest.OnBeforeRequestDetailsType,
         WebRequest.OnBeforeRequestOptions
     >();
 
@@ -117,8 +110,8 @@ export class RequestEvents {
      * @returns Request data.
      */
     private static handleOnBeforeRequest(
-        details: OnBeforeRequestDetailsType,
-    ): RequestData<OnBeforeRequestDetailsType> {
+        details: WebRequest.OnBeforeRequestDetailsType,
+    ): RequestData<WebRequest.OnBeforeRequestDetailsType> {
         const {
             requestId,
             type,

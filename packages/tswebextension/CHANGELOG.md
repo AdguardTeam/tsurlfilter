@@ -50,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Content Script for setting GPC signal bundled to separate module `@adguard/tswebextension/mv3/gpc`.
 - Content Script for hiding Document Referrer bundled to separate module `@adguard/tswebextension/mv3/hideDocumentReferrer`.
 - Possibility to retrieve AST for dynamically generated rules via the `retrieveDynamicRuleNode` method.
+- Support for `$cookie` modifier in MV3 via `browser.cookies` API and content-script.
+- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100].
 
 ### Changed
 
@@ -68,6 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Breakage of cookie string in Firefox and unnecessary cookie serialization [AdguardBrowserExtension#2552].
 - Use data URL-based redirect resources where possible [AdguardBrowserExtension#2278].
 - `$permissions` modifier service now correctly handles subdocuments and exceptions.
+- Applying `$cookie` rules on the content-script side.
+- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
 
 [2.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.0
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
@@ -76,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
 [AdguardBrowserExtension#2552]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2552
 [AdguardBrowserExtension#2598]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598
+[#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
 
 ## [1.0.32] - 2024-08-01
 
@@ -338,7 +343,6 @@ mode toggle.
 ### Changed
 
 - Updated `@adguard/extended-css` to `v2.0.56`.
-
 - Updated `@adguard/tsurlfilter` to `v2.2.8`.
 
 ### Fixed
@@ -522,18 +526,6 @@ its setting [#2584].
 [#2497]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2497
 
 [0.3.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.21
-
-## Unreleased
-
-### Fixed
-- Applying $cookie rules on the content-script side.
-- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
-
-## Added
-- Support for `POST` requests to `$removeparam` modifier [#99](https://github.com/AdguardTeam/tsurlfilter/issues/99).
-- Support for `$cookie` modifier in MV3 via browser.cookies API and content-script.
-- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100](https://github.com/AdguardTeam/tsurlfilter/issues/100).
-
 
 ## [0.3.20] - 2023-09-19
 

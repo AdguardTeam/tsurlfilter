@@ -138,6 +138,7 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import {
     BACKGROUND_TAB_ID,
+    FRAME_DELETION_TIMEOUT,
     FilteringEventType,
     defaultFilteringLog,
     getErrorMessage,
@@ -150,8 +151,6 @@ import { tabsApi } from '../tabs/tabs-api';
 import { MAIN_FRAME_ID } from '../tabs/frame';
 import { requestContextStorage } from './request/request-context-storage';
 import { RequestBlockingApi } from './request/request-blocking-api';
-
-const FRAME_DELETION_TIMEOUT = 3000;
 
 /**
  * API for applying rules from background service by handling

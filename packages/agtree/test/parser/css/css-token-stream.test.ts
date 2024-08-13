@@ -111,12 +111,12 @@ describe('CssTokenStream', () => {
         expect(stream.lookahead()).toMatchObject({ type: TokenType.CloseCurlyBracket }); // not the first semicolon
     });
 
-    test('skipUntilEx', () => {
+    test('skipUntilExt', () => {
         // ident, whitespace, number
         const stream = new CssTokenStream('ident 2');
         stream.advance(); // eat ident
         stream.advance(); // eat whitespace
-        const { skipped, skippedTrimmed } = stream.skipUntilEx(TokenType.Ident, 0);
+        const { skipped, skippedTrimmed } = stream.skipUntilExt(TokenType.Ident, 0);
         expect(skipped).toBe(1);
         expect(skippedTrimmed).toBe(1);
     });

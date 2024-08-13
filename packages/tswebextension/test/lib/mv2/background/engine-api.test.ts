@@ -2,8 +2,9 @@ import browser from 'sinon-chrome';
 import { type CosmeticOption, Engine, CosmeticResult } from '@adguard/tsurlfilter';
 import { Allowlist } from '@lib/mv2/background/allowlist';
 import { appContext } from '@lib/mv2/background/context';
-import { EngineApi, type MatchQuery } from '@lib/mv2/background/engine-api';
+import { EngineApi } from '@lib/mv2/background/engine-api';
 import { stealthApi } from '@lib/mv2/background/stealth-api';
+import { type MatchQuery } from '@lib/common/interfaces';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 
 jest.mock('@adguard/tsurlfilter');

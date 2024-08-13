@@ -11,7 +11,6 @@ import {
     type CosmeticRule,
     type NetworkRule,
     type MatchingResult,
-    type HTTPMethod,
 } from '@adguard/tsurlfilter';
 
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
@@ -22,6 +21,7 @@ import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { logger } from '../utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
+import { type MatchQuery } from '../../common/interfaces';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
@@ -29,17 +29,6 @@ const USER_FILTER_ID = 0;
 type EngineConfig = Pick<ConfigurationMV3, 'userrules'> & {
     filters: IFilter[],
 };
-
-/**
- * Request Match Query, contains request details.
- */
-interface MatchQuery {
-    requestUrl: string;
-    frameUrl: string;
-    requestType: RequestType;
-    frameRule?: NetworkRule | null;
-    method?: HTTPMethod;
-}
 
 export type CosmeticRules = {
     css: string[],

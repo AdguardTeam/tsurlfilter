@@ -1,4 +1,4 @@
-import { type RuleInfo } from '../rule-info';
+import { type RuleInfo } from '../../../common/content-script/rule-info';
 
 /**
  * Utils class.
