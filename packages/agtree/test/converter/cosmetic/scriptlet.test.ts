@@ -63,6 +63,15 @@ describe('Scriptlet conversion', () => {
 
     describe('uBO to ADG', () => {
         test.each([
+            // empty scriptlet
+            {
+                actual: 'example.org#@#+js()',
+                expected: [
+                    'example.org#@%#//scriptlet()',
+                ],
+                shouldConvert: true,
+            },
+            // regular scriptlet
             {
                 actual: 'example.org##+js(aopr, foo)',
                 expected: [
@@ -101,6 +110,15 @@ describe('Scriptlet conversion', () => {
     // leave ADG rules as is
     describe('ADG to ADG', () => {
         test.each([
+            // empty exception scriptlet
+            {
+                actual: 'example.org#@%#//scriptlet()',
+                expected: [
+                    'example.org#@%#//scriptlet()',
+                ],
+                shouldConvert: false,
+            },
+            // regular scriptlet
             {
                 actual: 'example.org#%#//scriptlet(\'abort-on-property-read\', \'foo\')',
                 expected: [
@@ -132,6 +150,11 @@ describe('Scriptlet conversion', () => {
     // https://github.com/AdguardTeam/Scriptlets/blob/d8d25ec625406faeaa5669627f143c7bad1a0328/tests/api/index.spec.js#L276-L374
     describe('convertToUbo', () => {
         test.each([
+            {
+                actual: 'example.org#@%#//scriptlet()',
+                expected: ['example.org#@#+js()'],
+                shouldConvert: true,
+            },
             {
                 actual: "example.org#%#//scriptlet('prevent-setTimeout', '[native code]', '8000')",
                 expected: [
