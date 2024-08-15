@@ -11,7 +11,7 @@ describe('Filter', () => {
 
         const loadedContent = await filter.getContent();
 
-        expect(loadedContent.rawFilterList).toStrictEqual(rawContent);
+        expect(FilterListPreprocessor.getOriginalFilterListText(loadedContent)).toStrictEqual(rawContent);
     });
 
     it('returns original rule by index', async () => {
