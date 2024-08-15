@@ -134,7 +134,7 @@ export class CosmeticRuleConverter extends RuleConverterBase {
                     'uBO scriptlet injection rules do not support cosmetic rule modifiers',
                 );
             }
-            return ScriptletRuleConverter.convertToAdg(rule);
+            return ScriptletRuleConverter.convertToUbo(rule);
         }
 
         return createNodeConversionResult([rule], false);
