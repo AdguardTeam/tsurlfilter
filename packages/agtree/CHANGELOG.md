@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD024 -->
 # AGTree Changelog
 
 All notable changes to this project will be documented in this file.
@@ -7,21 +8,61 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
-## Unreleased
+
+## [2.0.0] - 2024-08-15
 
 ### Added
 
+- Integrated `@adguard/css-tokenizer` package.
+- Adjustable syntax parsing. This makes possible to disable parsing of uBO and ABP syntaxes, which can be useful when
+  parsing known-syntax filters.
+- `PositionProvider` to convert offsets to line/column pairs.
+- `OutputByteBuffer` and `InputByteBuffer` utility classes.
+- Binary serialization / deserialization for AST nodes. Practically, this means adding `serialize` and `deserialize`
+  methods to AGTree classes.
+- `decodeTextPolyfill` and `encodeIntoPolyfill` utility functions.
+- `includeRaws` parser option.
+- `HostRuleParser` parser class to make it possible to parse host-like rules to `HostRule` node.
 - Compatibility table API.
-- Compatibility table wiki, which is generated from the compatibility table API.
+- Compatibility table wiki, which is generated via the compatibility table API.
+- Protected Audience API directives to `$permissions` modifier validator.
+- Possibility to convert scriptlet rules to uBO syntax.
+- Performance benchmarking.
 
 ### Changed
 
+- Reworked CSS parsing. Now it is based on `@adguard/css-tokenizer` package, and only necessary parts of CSS are parsed.
+- Consistent signature for all parser classes: `ParserClass.parse(source, options)`.
+- Location parsing now optional. It can be disabled by passing `isLocIncluded: false` option to the parsers. This
+  reduces memory consumption and improves performance if location is not needed.
+- Modifier node's `modifier` property renamed to `name`.
+- `ScriptletInjectionBodyParser` divided into `AdgScriptletInjectionBodyParser`, `UboScriptletInjectionBodyParser`
+  and `AbpSnippetInjectionBodyParser`.
+- Locations (`offset`, `line`, `column`) are changed to only one `offset` value. If you need to get line/column, you
+  should use `PositionProvider` class.
+- Parser functions signature to `parse(source, options, baseOffset, ...additionalArgs)`.
+- Removed `Parameter` node from the AST and replaced it with `Value` node.
+- If a parameter is empty, it parsed as `null` instead of empty string.
+- `SimpleCommentParser` now has a separate class.
+- Logical operator types are now consistent, we only use the `OperatorValue` enum.
 - Reworked the compatibility table structure.
 - Library now use CJS.
+- `version` export renamed to `AGTREE_VERSION`.
+
+### Fixed
+
+- HTML rule converter now correctly handles the new `:contains()` syntax.
+- Location handling for `FilterListParser`.
+- Performance issues.
 
 ### Removed
 
-- Scriptlets library, since it is not needed anymore, because AGTree now has its own compatibility tables.
+- `@adguard/scriptlets` library. It is not needed anymore, because AGTree now has its own compatibility tables.
+- `css-tree` library. It is not needed anymore, because AGTree now uses `@adguard/css-tokenizer` package.
+- `##^`/`#@#^` and `##+`/`#@#+` from the cosmetic rule separator finder. Instead, `##`/`#@#` is used, and the `^`/`+` is
+  checked in the body parser.
+
+[2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.0.0
 
 ## 1.1.8 - 2024-04-24
 

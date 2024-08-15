@@ -1,9 +1,18 @@
-import { CommentRuleType, CosmeticRuleType, RuleCategory } from '../../src/parser/common';
+import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error';
+import {
+    type AnyRule,
+    CommentRuleType,
+    CosmeticRuleType,
+    RuleCategory,
+} from '../../src/parser/common';
+import { type ParserOptions } from '../../src/parser/options';
 import { RuleParser } from '../../src/parser/rule';
 import { AdblockSyntax } from '../../src/utils/adblockers';
+import { defaultParserOptions } from '../../src/parser/options';
 
 describe('RuleParser', () => {
     test('parse', () => {
+        // TODO: Refactor to test.each
         // ! It is enough just to look at the basics, each unit is tested in detail elsewhere
 
         // Empty lines
@@ -806,6 +815,102 @@ describe('RuleParser', () => {
         });
     });
 
+    describe('parser options should work as expected', () => {
+        test.each<{ options: Partial<ParserOptions>; actual: string; expected: AnyRule | AdblockSyntaxError }>([
+            {
+                options: {
+                    ...defaultParserOptions,
+                    // do not include location in the nodes
+                    isLocIncluded: false,
+                },
+                actual: '||example.com^$script',
+                expected: {
+                    type: 'NetworkRule',
+                    raws: {
+                        text: '||example.com^$script',
+                    },
+                    category: RuleCategory.Network,
+                    syntax: AdblockSyntax.Common,
+                    exception: false,
+                    pattern: {
+                        type: 'Value',
+                        value: '||example.com^',
+                    },
+                    modifiers: {
+                        type: 'ModifierList',
+                        children: [
+                            {
+                                type: 'Modifier',
+                                name: {
+                                    type: 'Value',
+                                    value: 'script',
+                                },
+                                exception: false,
+                            },
+                        ],
+                    },
+                },
+            },
+            {
+                options: {
+                    ...defaultParserOptions,
+                    // do not throw on invalid rules - instead, return an InvalidRule node
+                    tolerant: true,
+                },
+                // missing closing parenthesis - the rule is invalid
+                actual: '##+js(scriptlet',
+                expected: {
+                    type: 'InvalidRule',
+                    raws: {
+                        text: '##+js(scriptlet',
+                    },
+                    category: RuleCategory.Invalid,
+                    syntax: AdblockSyntax.Common,
+                    raw: '##+js(scriptlet',
+                    error: {
+                        type: 'InvalidRuleError',
+                        name: 'AdblockSyntaxError',
+                        message: "Invalid uBO scriptlet call, no closing parentheses ')' found",
+                        start: 5,
+                        end: 15,
+                    },
+                    start: 0,
+                    end: 15,
+                },
+            },
+            {
+                options: {
+                    ...defaultParserOptions,
+                    // throw on invalid rules
+                    tolerant: false,
+                },
+                // missing closing parenthesis - the rule is invalid
+                actual: '##+js(scriptlet',
+                expected: new AdblockSyntaxError(
+                    "Invalid uBO scriptlet call, no closing parentheses ')' found",
+                    5,
+                    15,
+                ),
+            },
+        ])('parser options should work for $actual', ({ options, actual, expected }) => {
+            const fn = jest.fn(() => RuleParser.parse(actual, options));
+
+            if (expected instanceof Error) {
+                // parse should throw
+                expect(fn).toThrow();
+
+                // check the thrown error
+                const error = fn.mock.results[0].value;
+                expect(error).toBeInstanceOf(AdblockSyntaxError);
+                expect(error).toHaveProperty('message', expected.message);
+                expect(error).toHaveProperty('start', expected.start);
+                expect(error).toHaveProperty('end', expected.end);
+            } else {
+                expect(fn()).toEqual(expected);
+            }
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = RuleParser.parse(raw);
@@ -817,6 +922,7 @@ describe('RuleParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         // Empty lines
         expect(parseAndGenerate('')).toEqual('');
         expect(parseAndGenerate(' ')).toEqual('');
@@ -910,7 +1016,7 @@ describe('RuleParser', () => {
         );
         expect(
             parseAndGenerate(
-                '#$?#@media (min-height: 1024px) and (max-height:1920px) { body:has(.ads) { padding: 0; } }',
+                '#$?#@media (min-height: 1024px) and (max-height: 1920px) { body:has(.ads) { padding: 0; } }',
             ),
         ).toEqual('#$?#@media (min-height: 1024px) and (max-height: 1920px) { body:has(.ads) { padding: 0; } }');
         expect(
@@ -1106,5 +1212,87 @@ describe('RuleParser', () => {
         expect(
             parseAndGenerate('@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i'),
         ).toEqual('@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i');
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            // empty lines
+            '',
+            ' ',
+
+            // comments
+            '! This is just a comment',
+            '# This is just a comment',
+
+            // agents
+            '[Adblock Plus 2.0]',
+            '[Adblock Plus]',
+            '[AdGuard]',
+            '[AdGuard 3.0]',
+            '[uBlock Origin]',
+
+            // hints
+            '!+NOT_OPTIMIZED',
+            '!+ NOT_OPTIMIZED',
+            '!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(android, ios)',
+
+            // pre-processors
+            '!#if (adguard)',
+            '!#if (adguard && !adguard_ext_safari)',
+
+            // metadata comments
+            '! Title: My List',
+
+            // cosmetic rules
+            '##.ad',
+            'example.com,~example.org##.ad',
+            '#@#.ad',
+            'example.com,~example.org#@#.ad',
+
+            '#$#body { padding: 0; }',
+            'example.com,~example.org#$#body { padding: 0; }',
+            '#@$#body { padding: 0; }',
+            'example.com,~example.org#@$#body { padding: 0; }',
+
+            '#$?#:contains(ad) { color: red; padding: 0 !important; }',
+            'example.com,~example.org#$?#:contains(ad) { color: red; padding: 0 !important; }',
+            '#@$?#:contains(ad) { color: red; padding: 0 !important; }',
+            'example.com,~example.org#@$?#:contains(ad) { color: red; padding: 0 !important; }',
+            '#$#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+            'example.com,~example.org#$#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
+
+            "#%#//scriptlet('foo', 'bar')",
+            "example.com,~example.org#%#//scriptlet('foo', 'bar')",
+
+            '##+js(foo, bar)',
+            'example.com,~example.org##+js(foo, bar)',
+            '#@#+js(foo, bar)',
+            'example.com,~example.org#@#+js(foo, bar)',
+
+            '#$#scriptlet0 arg0 arg1',
+            'example.com,~example.org#$#scriptlet0 arg0 arg1',
+            '#@$#scriptlet0 arg0 arg1',
+            'example.com,~example.org#@$#scriptlet0 arg0 arg1',
+
+            '##^script:has-text(ads)',
+            'example.com,~example.org##^script:has-text(ads)',
+            '#@#^script:has-text(ads)',
+            'example.com,~example.org#@#^script:has-text(ads)',
+
+            '$$script[tag-content="ads"]',
+            'example.com,~example.org$$script[tag-content="ads"]',
+            '$@$script[tag-content="ads"]',
+            'example.com,~example.org$@$script[tag-content="ads"]',
+
+            // ADG modifiers
+            '[$path=/foo/bar]##.foo',
+            '[$path=/foo/bar]example.com,~example.org##.foo',
+
+            // uBO modifiers
+            '##:matches-path(/foo/bar) .foo',
+            'example.com,~example.org##:matches-path(/foo/bar) .foo',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(RuleParser);
+        });
     });
 });

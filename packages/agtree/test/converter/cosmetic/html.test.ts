@@ -1,6 +1,10 @@
-import { HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
+import { sprintf } from 'sprintf-js';
+import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
+
+import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { type HtmlFilteringRule } from '../../../src/parser/common';
 import { RuleParser } from '../../../src/parser/rule';
+
 import '../../matchers/check-conversion';
 
 describe('HtmlRuleConverter', () => {
@@ -9,17 +13,29 @@ describe('HtmlRuleConverter', () => {
         test.each([
             {
                 actual: 'example.com,~example.net##^script:has-text(aaa)div',
-                expected: 'Tag selector should be the first child, if present',
+                expected: sprintf(
+                    ERROR_MESSAGES.TAG_SHOULD_BE_FIRST_CHILD,
+                    getFormattedTokenName(TokenType.Ident),
+                    'div',
+                ),
             },
             {
                 actual: 'example.com,~example.net##^div + div',
-                expected: 'Unsupported node type \'Combinator\'',
+                expected: sprintf(
+                    ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
+                    getFormattedTokenName(TokenType.Delim),
+                    '+',
+                ),
             },
             // we're only support quite few pseudo classes, and we should
             // discard any invalid ones
             {
                 actual: 'example.com##^body > script:has-text(test)',
-                expected: 'Unsupported node type \'Combinator\'',
+                expected: sprintf(
+                    ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
+                    getFormattedTokenName(TokenType.Delim),
+                    '>',
+                ),
             },
             {
                 actual: 'example.com##^script:some-another-rule(test)',
@@ -27,17 +43,39 @@ describe('HtmlRuleConverter', () => {
             },
             {
                 actual: 'example.com##^:aaa',
-                expected: 'Pseudo class \'aaa\' has no argument',
+                expected: "Expected '<function-token>', but got '<ident-token>'",
             },
             // TODO: add some support for RegExp patterns later
             {
                 actual: 'example.com##^script:has-text(/^aaa/)',
-                expected: 'Conversion of RegExp patterns is not yet supported',
+                expected: sprintf(
+                    ERROR_MESSAGES.REGEXP_NOT_SUPPORTED,
+                    '/^aaa/',
+                    'has-text',
+                ),
             },
             // syntax error in the base rule
             {
                 actual: 'example.com##^[identifier-cannot-start-with-a-digit=2bad-identifier]',
-                expected: 'ECSSTree parsing error: \'Identifier is expected\'',
+                expected: sprintf(
+                    ERROR_MESSAGES.INVALID_ATTRIBUTE_VALUE,
+                    getFormattedTokenName(TokenType.Dimension),
+                    '2bad-identifier',
+                ),
+            },
+            // Only '=' operator is supported
+            {
+                actual: 'example.com##^[attr*="value"]',
+                expected: "Expected '<delim-token>' with value '=', but got '*'",
+            },
+            // Flags are not supported
+            {
+                actual: 'example.com##^[attr="value"i]',
+                expected: ERROR_MESSAGES.FLAGS_NOT_SUPPORTED,
+            },
+            {
+                actual: 'example.com##^[attr="value" i]',
+                expected: ERROR_MESSAGES.FLAGS_NOT_SUPPORTED,
             },
         ])('should throw \'$expected\' for \'$actual\'', ({ actual, expected }) => {
             expect(() => {

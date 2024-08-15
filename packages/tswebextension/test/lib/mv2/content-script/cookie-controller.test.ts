@@ -2,8 +2,10 @@
  * @jest-environment jsdom
  */
 
-import { CookieController } from '@lib/mv2/content-script/cookie-controller';
-import { NetworkRule, NetworkRuleOption } from '@adguard/tsurlfilter';
+import { CookieController } from '@lib/common/content-script/cookie-controller';
+import { NetworkRuleOption } from '@adguard/tsurlfilter';
+import { createNetworkRule } from '../../../helpers/rule-creator';
+import { getNetworkRuleFields } from '../background/helpers/rule-fields';
 
 describe('Cookie Controller Tests', () => {
     const onAppliedCallback = jest.fn(() => {});
@@ -14,15 +16,13 @@ describe('Cookie Controller Tests', () => {
 
     it('checks apply simple rule', () => {
         const rules = [
-            new NetworkRule('||example.org^$cookie=user_one', 1),
+            createNetworkRule('||example.org^$cookie=user_one', 1),
         ];
 
         const rulesData = rules.map((rule) => ({
-            ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: false,
-            filterId: rule.getFilterListId(),
-            isAllowlist: rule.isAllowlist(),
+            ...getNetworkRuleFields(rule),
         }));
 
         const controller = new CookieController(onAppliedCallback);
@@ -37,15 +37,13 @@ describe('Cookie Controller Tests', () => {
 
     it('checks to not apply non-matching rule', () => {
         const rules = [
-            new NetworkRule('||example.org^$cookie=user', 1),
+            createNetworkRule('||example.org^$cookie=user', 1),
         ];
 
         const rulesData = rules.map((rule) => ({
-            ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: false,
-            filterId: rule.getFilterListId(),
-            isAllowlist: rule.isAllowlist(),
+            ...getNetworkRuleFields(rule),
         }));
 
         const controller = new CookieController(onAppliedCallback);
@@ -63,15 +61,13 @@ describe('Cookie Controller Tests', () => {
 
     it('checks apply wildcard rule', () => {
         const rules = [
-            new NetworkRule('||example.org^$cookie', 1),
+            createNetworkRule('||example.org^$cookie', 1),
         ];
 
         const rulesData = rules.map((rule) => ({
-            ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: false,
-            filterId: rule.getFilterListId(),
-            isAllowlist: rule.isAllowlist(),
+            ...getNetworkRuleFields(rule),
         }));
 
         const controller = new CookieController(onAppliedCallback);
@@ -83,16 +79,14 @@ describe('Cookie Controller Tests', () => {
 
     it('checks apply regexp rule', () => {
         const rules = [
-            new NetworkRule('||example.org^$cookie=/user/', 1),
-            new NetworkRule('||example.org^$cookie=/not_match/', 1),
+            createNetworkRule('||example.org^$cookie=/user/', 1),
+            createNetworkRule('||example.org^$cookie=/not_match/', 1),
         ];
 
         const rulesData = rules.map((rule) => ({
-            ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: false,
-            filterId: rule.getFilterListId(),
-            isAllowlist: rule.isAllowlist(),
+            ...getNetworkRuleFields(rule),
         }));
 
         const controller = new CookieController(onAppliedCallback);
@@ -104,16 +98,14 @@ describe('Cookie Controller Tests', () => {
 
     it('checks not apply allowlisted rule', () => {
         const rules = [
-            new NetworkRule('$cookie=/pick|other/,domain=example.org', 1),
-            new NetworkRule('@@||example.org^$cookie=pick', 1),
+            createNetworkRule('$cookie=/pick|other/,domain=example.org', 1, 0),
+            createNetworkRule('@@||example.org^$cookie=pick', 1, 1),
         ];
 
         const rulesData = rules.map((rule) => ({
-            ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: false,
-            filterId: rule.getFilterListId(),
-            isAllowlist: rule.isAllowlist(),
+            ...getNetworkRuleFields(rule),
         }));
 
         const controller = new CookieController(onAppliedCallback);
@@ -125,7 +117,7 @@ describe('Cookie Controller Tests', () => {
         expect(onAppliedCallback).toHaveBeenLastCalledWith(expect.objectContaining({
             cookieName: 'pick',
             cookieValue: 'test',
-            ruleText: '@@||example.org^$cookie=pick',
+            ruleIndex: 1,
         }));
 
         document.cookie = 'other=test';
@@ -133,22 +125,20 @@ describe('Cookie Controller Tests', () => {
         expect(onAppliedCallback).toHaveBeenLastCalledWith(expect.objectContaining({
             cookieName: 'other',
             cookieValue: 'test',
-            ruleText: '$cookie=/pick|other/,domain=example.org',
+            ruleIndex: 0,
         }));
     });
 
     it('checks apply important blocking rule', () => {
         const rules = [
-            new NetworkRule('@@||example.org^$cookie', 1),
-            new NetworkRule('||example.org^$cookie,important', 1),
+            createNetworkRule('@@||example.org^$cookie', 1, 0),
+            createNetworkRule('||example.org^$cookie,important', 1, 1),
         ];
 
         const rulesData = rules.map((rule) => ({
-            ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: false,
-            filterId: rule.getFilterListId(),
-            isAllowlist: rule.isAllowlist(),
+            ...getNetworkRuleFields(rule),
         }));
 
         const controller = new CookieController(onAppliedCallback);
@@ -156,21 +146,19 @@ describe('Cookie Controller Tests', () => {
         controller.apply(rulesData);
 
         expect(onAppliedCallback).toHaveBeenLastCalledWith(expect.objectContaining({
-            ruleText: '||example.org^$cookie,important',
+            ruleIndex: 1,
         }));
     });
 
     it('check third-party rules are skipped for first-party cookies', () => {
         const rules = [
-            new NetworkRule('||example.org^$third-party,cookie=/user/', 1),
+            createNetworkRule('||example.org^$third-party,cookie=/user/', 1),
         ];
 
         const rulesData = rules.map((rule) => ({
-            ruleText: rule.getText()!,
             match: rule.getAdvancedModifierValue()!,
             isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
-            filterId: rule.getFilterListId(),
-            isAllowlist: rule.isAllowlist(),
+            ...getNetworkRuleFields(rule),
         }));
 
         const controller = new CookieController(onAppliedCallback);

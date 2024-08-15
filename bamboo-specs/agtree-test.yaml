@@ -35,7 +35,7 @@ Test:
 
             ls -alt
 
-            # Set cache directory
+            # Set cache directories
             pnpm config set store-dir ${bamboo.cachePnpm}
 
             branch="${bamboo_planRepository_branchName}"
@@ -57,6 +57,9 @@ Test:
 
             # Install dependencies
             pnpm install
+
+            # Build dependencies before running tests
+            pnpm --filter "@adguard/agtree^..." --depth=-1 build
 
             # Check TypeScript types with TSC
             pnpm --filter @adguard/agtree check-types

@@ -1,5 +1,6 @@
 import CookieUtils from '@lib/mv2/background/services/cookie-filtering/utils';
-import ParsedCookie from '@lib/mv2/background/services/cookie-filtering/parsed-cookie';
+import { ParsedCookie } from '@lib/common/cookie-filtering/parsed-cookie';
+import { getResponseHeaders } from '../../fixtures/response-headers';
 
 const TEST_URL = 'https://test.com/url';
 
@@ -241,5 +242,48 @@ describe('Cookie utils - serialize cookie', () => {
         const setCookieValue = CookieUtils.serializeCookieToResponseHeader(cookie as ParsedCookie);
         expect(setCookieValue)
             .toBe('_octo=GH1.1.635223982.1507661197; Path=/; Expires=Tue, 23 Oct 2018 13:40:11 GMT; HttpOnly; Secure');
+    });
+});
+
+describe('Cookie utils - splitMultilineCookies', () => {
+    const MULTILINE_COOKIE_HEADER = {
+        name: 'set-cookie',
+        // eslint-disable-next-line max-len
+        value: 'dwac_beJKsiaagurPYaaadbVLZSmGcd=x29CbV1wh5hgR6skMQkC_JQIylx4LpAjnkw%3D|dw-only|||EUR|false|Europe%2FBerlin|true; Path=/; Secure; SameSite=None\nsid=x29CbV1wh5hgR6skMQkC_JQIylx4LpAjnkw; Path=/; Secure; SameSite=None\n__cq_dnt=0; Path=/; Secure; SameSite=None\ndw_dnt=0; Path=/; Secure; SameSite=None\n__cf_bm=Ul3s_twxhCUYID4W90IHl2txSLb4sOSq0SwlQ4BSW9g-1709212297-1.0-AXjt6hn9UjCnbvFTW7CIfjHMzkcu7HZ6FWgGYzc2UVYnwKplwwEoIBp8994KcnLlxPxzquO4UAEdh4nHzh0r4ug=; path=/; expires=Thu, 29-Feb-24 13:41:37 GMT; domain=.eu.puma.com; HttpOnly; Secure; SameSite=None',
+    };
+
+    const MULTILINE_COOKIES_COUNT = 5;
+
+    const SINGLE_LINE_COOKIE = {
+        name: 'set-cookie',
+        value: 'sid=x29CbV1wh5hgR6skMQkC_JQIylx4LpAjnkw; Path=/; Secure; SameSite=None',
+    };
+
+    it('splits single `set-cookie` header into multiple', () => {
+        let responseHeaders = [...getResponseHeaders(), MULTILINE_COOKIE_HEADER];
+        const initialLength = responseHeaders.length;
+
+        CookieUtils.splitMultilineCookies(responseHeaders);
+
+        // One set-cookie header should be converted into multiple
+        expect(responseHeaders.length).toBe(initialLength + MULTILINE_COOKIES_COUNT - 1);
+        // Resulting cookies are parsable
+        expect(CookieUtils.parseSetCookieHeaders(responseHeaders, 'https://example.org')).toHaveLength(MULTILINE_COOKIES_COUNT);
+
+        // Change `set-cookie` header placement
+        responseHeaders = [MULTILINE_COOKIE_HEADER, ...getResponseHeaders()];
+        CookieUtils.splitMultilineCookies(responseHeaders);
+        expect(responseHeaders.length).toBe(initialLength + MULTILINE_COOKIES_COUNT - 1);
+        expect(CookieUtils.parseSetCookieHeaders(responseHeaders, 'https://example.org')).toHaveLength(MULTILINE_COOKIES_COUNT);
+    });
+
+    it('does nothing for a single line `set-cookie` headers or any other', () => {
+        const responseHeaders = [...getResponseHeaders(), SINGLE_LINE_COOKIE];
+        const initialLength = responseHeaders.length;
+
+        CookieUtils.splitMultilineCookies(responseHeaders);
+
+        expect(responseHeaders.length).toBe(initialLength);
+        expect(CookieUtils.parseSetCookieHeaders(responseHeaders, 'https://example.org')).toHaveLength(1);
     });
 });

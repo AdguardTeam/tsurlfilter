@@ -1,30 +1,32 @@
 // eslint-disable-next-line max-classes-per-file
-import type * as rule from './rule';
+import { type ModifierList, type NetworkRule as NetworkRuleNode, RuleParser } from '@adguard/agtree';
+
+import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
 import { type Request } from '../request';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
-import { parseOptionsString } from '../utils/parse-options-string';
-import { stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
+import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
 import { type IAdvancedModifier } from '../modifiers/advanced-modifier';
 import { type IValueListModifier } from '../modifiers/value-list-modifier';
 import { ReplaceModifier } from '../modifiers/replace-modifier';
 import { CspModifier } from '../modifiers/csp-modifier';
 import { CookieModifier } from '../modifiers/cookie-modifier';
+import { StealthModifier } from '../modifiers/stealth-modifier';
 import { RedirectModifier } from '../modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
 import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
 import { AppModifier, type IAppModifier } from '../modifiers/app-modifier';
 import { type HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
+import { HeaderModifier, type HttpHeadersItem, type HttpHeaderMatcher } from '../modifiers/header-modifier';
 import { ToModifier } from '../modifiers/to-modifier';
+import { PermissionsModifier } from '../modifiers/permissions-modifier';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
 import {
-    ESCAPE_CHARACTER,
     MASK_ALLOWLIST,
     NETWORK_RULE_OPTIONS,
     NOT_MARK,
     OPTIONS_DELIMITER,
 } from './network-rule-options';
-import { getErrorMessage } from '../common/error';
 import { RequestType } from '../request-type';
 import { ClientModifier } from '../modifiers/dns/client-modifier';
 import { DnsRewriteModifier } from '../modifiers/dns/dnsrewrite-modifier';
@@ -32,6 +34,7 @@ import { DnsTypeModifier } from '../modifiers/dns/dnstype-modifier';
 import { CtagModifier } from '../modifiers/dns/ctag-modifier';
 import { Pattern } from './pattern';
 import { countEnabledBits, getBitCount } from '../utils/bit-utils';
+import { EMPTY_STRING } from '../common/constants';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -141,6 +144,15 @@ export enum NetworkRuleGroupOptions {
         | NetworkRuleOption.Ctag,
 
     /**
+     * Cosmetic option modifiers
+     */
+    CosmeticOption = NetworkRuleOption.Elemhide
+    | NetworkRuleOption.Generichide
+    | NetworkRuleOption.Specifichide
+    | NetworkRuleOption.Jsinject
+    | NetworkRuleOption.Content,
+
+    /**
      * Removeparam compatible modifiers
      *
      * $removeparam rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
@@ -162,29 +174,28 @@ export enum NetworkRuleGroupOptions {
         | NetworkRuleOption.ThirdParty
         | NetworkRuleOption.Important
         | NetworkRuleOption.MatchCase
+        | NetworkRuleOption.Header
         | NetworkRuleOption.Badfilter,
-}
-
-/**
- * Helper class that is used for passing {@link NetworkRule.parseRuleText}
- * result to the caller. Should not be used outside of this file.
- */
-class BasicRuleParts {
-    /**
-     * Basic rule pattern (which can be easily converted into a regex).
-     * See {@link SimpleRegex} for more details.
-     */
-    public pattern: string | undefined;
 
     /**
-     * String with all rule options (modifiers).
+     * Permissions compatible modifiers
+     *
+     * $permissions is compatible with the limited list of modifiers: $domain, $important, and $subdocument
      */
-    public options: string | undefined;
+    PermissionsCompatibleOptions = NetworkRuleOption.Permissions
+        | NetworkRuleOption.Important
+        | NetworkRuleOption.Badfilter,
 
     /**
-     * Indicates if rule is "allowlist" (e.g. it should unblock requests, not block them).
+     * Header compatible modifiers
+     *
+     * $header is compatible with the limited list of modifiers: $csp and $removeheader (on response headers).
      */
-    public allowlist: boolean | undefined;
+    HeaderCompatibleOptions = NetworkRuleOption.Header
+        | NetworkRuleOption.Important
+        | NetworkRuleOption.Csp
+        | NetworkRuleOption.RemoveHeader
+        | NetworkRuleOption.Badfilter,
 }
 
 /**
@@ -192,17 +203,13 @@ class BasicRuleParts {
  * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
  */
 export class NetworkRule implements rule.IRule {
-    private readonly ruleText: string;
+    private readonly ruleIndex: number;
 
     private readonly filterListId: number;
 
     private readonly allowlist: boolean;
 
     private readonly pattern: Pattern;
-
-    private permittedDomains: string[] | null = null;
-
-    private restrictedDomains: string[] | null = null;
 
     /**
      * Domains in denyallow modifier providing exceptions for permitted domains
@@ -236,6 +243,11 @@ export class NetworkRule implements rule.IRule {
     private advancedModifier: IAdvancedModifier | null = null;
 
     /**
+     * Rule Domain modifier
+     */
+    private domainModifier: DomainModifier | null = null;
+
+    /**
      * Rule App modifier
      */
     private appModifier: IAppModifier | null = null;
@@ -246,9 +258,24 @@ export class NetworkRule implements rule.IRule {
     private methodModifier: IValueListModifier<HTTPMethod> | null = null;
 
     /**
+     * Rule header modifier
+     */
+    private headerModifier: HeaderModifier | null = null;
+
+    /**
      * Rule To modifier
      */
     private toModifier: IValueListModifier<string> | null = null;
+
+    /**
+     * Rule Stealth modifier
+     */
+    private stealthModifier: StealthModifier | null = null;
+
+    /**
+     * Options used by the rule, regardless of whether they are enabled or disabled.
+     */
+    private usedOptionNames: Set<string> = new Set();
 
     /**
      * Rule priority, which is needed when the engine has to choose between
@@ -354,14 +381,6 @@ export class NetworkRule implements rule.IRule {
     public static readonly OPTIONS_DELIMITER = OPTIONS_DELIMITER;
 
     /**
-     * This character is used to escape special characters in modifiers values
-     */
-    private static ESCAPE_CHARACTER = ESCAPE_CHARACTER;
-
-    // eslint-disable-next-line max-len
-    private static RE_ESCAPED_OPTIONS_DELIMITER = new RegExp(`${NetworkRule.ESCAPE_CHARACTER}${NetworkRule.OPTIONS_DELIMITER}`, 'g');
-
-    /**
      * A marker that is used in rules of exception.
      * To turn off filtering for a request, start your rule with this marker.
      */
@@ -378,12 +397,44 @@ export class NetworkRule implements rule.IRule {
     public static readonly OPTIONS = NETWORK_RULE_OPTIONS;
 
     /**
-     * Returns the original text of the rule from which it was parsed.
-     *
-     * @returns Original text of the rule.
+     * Rule options that can be negated
      */
+    public static readonly NEGATABLE_OPTIONS = new Set([
+        // General options
+        NetworkRule.OPTIONS.FIRST_PARTY,
+        NetworkRule.OPTIONS.THIRD_PARTY,
+        NetworkRule.OPTIONS.MATCH_CASE,
+
+        NetworkRule.OPTIONS.DOCUMENT,
+        NetworkRule.OPTIONS.DOC,
+
+        // Content type options
+        NetworkRule.OPTIONS.SCRIPT,
+        NetworkRule.OPTIONS.STYLESHEET,
+        NetworkRule.OPTIONS.SUBDOCUMENT,
+        NetworkRule.OPTIONS.OBJECT,
+        NetworkRule.OPTIONS.IMAGE,
+        NetworkRule.OPTIONS.XMLHTTPREQUEST,
+        NetworkRule.OPTIONS.MEDIA,
+        NetworkRule.OPTIONS.FONT,
+        NetworkRule.OPTIONS.WEBSOCKET,
+        NetworkRule.OPTIONS.OTHER,
+        NetworkRule.OPTIONS.PING,
+
+        // Dns modifiers
+        NetworkRule.OPTIONS.EXTENSION,
+    ]);
+
+    // TODO: Remove .getText() completely
+    private ruleText: string;
+
+    // TODO: Remove .getText() completely
     getText(): string {
         return this.ruleText;
+    }
+
+    getIndex(): number {
+        return this.ruleIndex;
     }
 
     /**
@@ -393,6 +444,16 @@ export class NetworkRule implements rule.IRule {
      */
     getFilterListId(): number {
         return this.filterListId;
+    }
+
+    /**
+     * Returns all options that are used in the rule, regardless of whether they are
+     * enabled or disabled.
+     *
+     * @return Set of option names
+     */
+    getUsedOptionNames(): Set<string> {
+        return this.usedOptionNames;
     }
 
     /**
@@ -468,7 +529,21 @@ export class NetworkRule implements rule.IRule {
      * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
      */
     getPermittedDomains(): string[] | null {
-        return this.permittedDomains;
+        if (this.domainModifier) {
+            return this.domainModifier.getPermittedDomains();
+        }
+        return null;
+    }
+
+    /**
+     * Gets list of restricted domains.
+     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
+     */
+    getRestrictedDomains(): string[] | null {
+        if (this.domainModifier) {
+            return this.domainModifier.getRestrictedDomains();
+        }
+        return null;
     }
 
     /**
@@ -477,14 +552,6 @@ export class NetworkRule implements rule.IRule {
      */
     getDenyAllowDomains(): string[] | null {
         return this.denyAllowDomains;
-    }
-
-    /**
-     * Gets list of restricted domains.
-     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
-     */
-    getRestrictedDomains(): string[] | null {
-        return this.restrictedDomains;
     }
 
     /**
@@ -577,10 +644,27 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
+     * Stealth modifier
+     */
+    getStealthModifier(): StealthModifier | null {
+        return this.stealthModifier;
+    }
+
+    /**
      * Advanced modifier value
      */
     getAdvancedModifierValue(): string | null {
         return this.advancedModifier && this.advancedModifier.getValue();
+    }
+
+    /**
+     * Retrieves the header modifier value.
+     */
+    getHeaderModifierValue(): HttpHeaderMatcher | null {
+        if (!this.headerModifier) {
+            return null;
+        }
+        return this.headerModifier.getHeaderModifierValue();
     }
 
     /**
@@ -592,14 +676,6 @@ export class NetworkRule implements rule.IRule {
             this.getPattern().startsWith(SimpleRegex.MASK_REGEX_RULE)
             && this.getPattern().endsWith(SimpleRegex.MASK_REGEX_RULE)
         );
-    }
-
-    public matchesPermittedDomains(hostname: string): boolean {
-        if (this.hasPermittedDomains()
-            && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!)) {
-            return true;
-        }
-        return false;
     }
 
     /**
@@ -674,30 +750,6 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * matchDomain checks if the filtering rule is allowed on this domain.
-     * @param domain - domain to check.
-     */
-    private matchDomain(domain: string): boolean {
-        if (this.hasRestrictedDomains()) {
-            if (DomainModifier.isDomainOrSubdomainOfAny(domain, this.restrictedDomains!)) {
-                // Domain or host is restricted
-                // i.e. $domain=~example.org
-                return false;
-            }
-        }
-
-        if (this.hasPermittedDomains()) {
-            if (!DomainModifier.isDomainOrSubdomainOfAny(domain, this.permittedDomains!)) {
-                // Domain is not among permitted
-                // i.e. $domain=example.org and we're checking example.com
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * Check if request matches domain modifier by request referrer (general case) or by request target
      *
      * In some cases the $domain modifier can match not only the referrer domain, but also the target domain.
@@ -713,29 +765,29 @@ export class NetworkRule implements rule.IRule {
      * @param request
      */
     matchDomainModifier(request: Request): boolean {
-        if (!this.permittedDomains && !this.restrictedDomains) {
+        if (!this.domainModifier) {
             return true;
         }
+
+        const { domainModifier } = this;
 
         const isDocumentType = request.requestType === RequestType.Document
             || request.requestType === RequestType.SubDocument;
 
-        const hasOnlyExcludedDomains = (!this.permittedDomains || this.permittedDomains.length === 0)
-            && this.restrictedDomains
-            && this.restrictedDomains.length > 0;
+        const hasOnlyExcludedDomains = !domainModifier.hasPermittedDomains()
+            && domainModifier.hasRestrictedDomains();
 
         const patternIsRegex = this.isRegexRule();
         const patternIsDomainSpecific = this.pattern.isPatternDomainSpecific();
-
         const matchesTargetByPatternCondition = !patternIsRegex && !patternIsDomainSpecific;
 
         if (isDocumentType && (hasOnlyExcludedDomains || matchesTargetByPatternCondition)) {
             // check if matches source hostname if exists or if matches target hostname
-            return (request.sourceHostname && this.matchDomain(request.sourceHostname))
-                || this.matchDomain(request.hostname);
+            return (request.sourceHostname && domainModifier.matchDomain(request.sourceHostname))
+                || domainModifier.matchDomain(request.hostname);
         }
 
-        return this.matchDomain(request.sourceHostname || '');
+        return domainModifier.matchDomain(request.sourceHostname || '');
     }
 
     /**
@@ -840,20 +892,6 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Checks if rule has permitted domains
-     */
-    private hasPermittedDomains(): boolean {
-        return this.permittedDomains != null && this.permittedDomains.length > 0;
-    }
-
-    /**
-     * Checks if rule has restricted domains
-     */
-    private hasRestrictedDomains(): boolean {
-        return this.restrictedDomains != null && this.restrictedDomains.length > 0;
-    }
-
-    /**
      * Checks if rule has permitted apps
      */
     private hasPermittedApps(): boolean {
@@ -925,13 +963,61 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Checks if pattern has spaces
-     * Used in order to do not create network rules from host rules
-     * @param pattern
-     * @private
+     * Checks if request's response headers matches with
+     * the rule's $header modifier value
+     *
+     * @param responseHeadersItems request's response headers
+     * @returns true, if rule must be applied to the request
      */
-    private static hasSpaces(pattern: string): boolean {
-        return pattern.indexOf(' ') > -1;
+    matchResponseHeaders(responseHeadersItems: HttpHeadersItem[] | undefined): boolean {
+        if (!responseHeadersItems || responseHeadersItems.length === 0) {
+            return false;
+        }
+
+        const ruleData = this.getHeaderModifierValue();
+
+        if (!ruleData) {
+            return false;
+        }
+
+        const {
+            header: ruleHeaderName,
+            value: ruleHeaderValue,
+        } = ruleData;
+
+        return responseHeadersItems.some((responseHeadersItem) => {
+            const {
+                name: responseHeaderName,
+                value: responseHeaderValue,
+            } = responseHeadersItem;
+
+            // Header name matching is case-insensitive
+            if (ruleHeaderName.toLowerCase() !== responseHeaderName.toLowerCase()) {
+                return false;
+            }
+
+            if (ruleHeaderValue === null) {
+                return true;
+            }
+
+            // Unlike header name, header value matching is case-sensitive
+            if (typeof ruleHeaderValue === 'string') {
+                return ruleHeaderValue === responseHeaderValue;
+            }
+
+            if (responseHeaderValue && ruleHeaderValue instanceof RegExp) {
+                return ruleHeaderValue.test(responseHeaderValue);
+            }
+
+            return false;
+        });
+    }
+
+    /**
+     * Checks if a network rule is too general.
+     */
+    public static isTooGeneral(node: NetworkRuleNode): boolean {
+        return !(node.modifiers?.children?.length) && node.pattern.value.length < 4;
     }
 
     /**
@@ -939,47 +1025,32 @@ export class NetworkRule implements rule.IRule {
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
      *
-     * @param ruleText - original rule text.
-     * @param filterListId - ID of the filter list this rule belongs to.
+     * @param inputRule Original rule text.
+     * @param filterListId ID of the filter list this rule belongs to.
+     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
+     * the rule does not have source index.
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
-        this.ruleText = ruleText;
+    constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
+        this.ruleIndex = ruleIndex;
+        // TODO: Remove this completely
+        this.ruleText = RuleParser.generate(node);
         this.filterListId = filterListId;
+        this.allowlist = node.exception;
 
-        const ruleParts = NetworkRule.parseRuleText(ruleText);
-        this.allowlist = !!ruleParts.allowlist;
-
-        const pattern = ruleParts.pattern!;
-        if (pattern && NetworkRule.hasSpaces(pattern)) {
+        const pattern = node.pattern.value;
+        if (pattern && hasSpaces(pattern)) {
             throw new SyntaxError('Rule has spaces, seems to be an host rule');
         }
 
-        if (ruleParts.options) {
-            this.loadOptions(ruleParts.options);
+        if (node.modifiers?.children?.length) {
+            this.loadOptions(node.modifiers);
         }
 
-        if (
-            pattern === SimpleRegex.MASK_START_URL
-            || pattern === SimpleRegex.MASK_ANY_CHARACTER
-            || pattern === ''
-            || pattern.length < SimpleRegex.MIN_GENERIC_RULE_LENGTH
-        ) {
-            // Except cookie, removeparam rules and dns compatible rules, they have their own atmosphere
-            const hasCookieModifier = this.advancedModifier instanceof CookieModifier;
-            const hasRemoveParamModifier = this.advancedModifier instanceof RemoveParamModifier;
-            // https://github.com/AdguardTeam/tsurlfilter/issues/56
-            const isDnsCompatible = isCompatibleWith(CompatibilityTypes.Dns);
-
-            if (!hasCookieModifier && !hasRemoveParamModifier && !isDnsCompatible) {
-                if (!(this.hasPermittedDomains() || this.hasPermittedApps())) {
-                    // Rule matches too much and does not have any domain restriction
-                    // We should not allow this kind of rules
-                    // eslint-disable-next-line max-len
-                    throw new SyntaxError('The rule is too wide, add domain restriction or make the pattern more specific');
-                }
-            }
+        if (NetworkRule.isTooGeneral(node)) {
+            throw new SyntaxError(`Rule is too general: ${RuleParser.generate(node)}`);
         }
 
         this.calculatePriorityWeight();
@@ -992,29 +1063,20 @@ export class NetworkRule implements rule.IRule {
      * More on the rule modifiers:
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers
      *
-     * @param options - string with the rule modifiers
+     * @param options - Modifier list node.
      *
      * @throws an error if there is an unsupported modifier
      */
-    private loadOptions(options: string): void {
-        let optionParts;
-        try {
-            optionParts = parseOptionsString(options);
-        } catch (e) {
-            const errorMessage = getErrorMessage(e);
-            throw new Error(`Cannot parse ${options}: ${errorMessage}`);
-        }
+    private loadOptions(options: ModifierList): void {
+        for (const option of options.children) {
+            let value = EMPTY_STRING;
 
-        for (let i = 0; i < optionParts.length; i += 1) {
-            const option = optionParts[i];
-            const valueIndex = option.indexOf('=');
-            let optionName = option;
-            let optionValue = '';
-            if (valueIndex > 0) {
-                optionName = option.substring(0, valueIndex);
-                optionValue = option.substring(valueIndex + 1);
+            if (option.value && option.value.value) {
+                value = option.value.value;
             }
-            this.loadOption(optionName, optionValue);
+
+            this.loadOption(option.name.value, value, option.exception);
+            this.usedOptionNames.add(option.name.value);
         }
 
         this.validateOptions();
@@ -1028,6 +1090,13 @@ export class NetworkRule implements rule.IRule {
      */
     hasOption(option: NetworkRuleOption): boolean {
         return this.isOptionEnabled(option) || this.isOptionDisabled(option);
+    }
+
+    /**
+     * Returns true if rule has at least one cosmetic option enabled.
+     */
+    hasCosmeticOption(): boolean {
+        return (this.enabledOptions & NetworkRuleGroupOptions.CosmeticOption) !== 0;
     }
 
     /**
@@ -1075,7 +1144,7 @@ export class NetworkRule implements rule.IRule {
      * @return {boolean}
      */
     isGeneric(): boolean {
-        return !this.hasPermittedDomains();
+        return !this.domainModifier?.hasPermittedDomains();
     }
 
     /**
@@ -1111,11 +1180,11 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (!stringArraysEquals(this.restrictedDomains, specifiedRule.restrictedDomains)) {
+        if (!stringArraysEquals(this.getRestrictedDomains(), specifiedRule.getRestrictedDomains())) {
             return false;
         }
 
-        if (!stringArraysHaveIntersection(this.permittedDomains, specifiedRule.permittedDomains)) {
+        if (!stringArraysHaveIntersection(this.getPermittedDomains(), specifiedRule.getPermittedDomains())) {
             return false;
         }
 
@@ -1126,7 +1195,7 @@ export class NetworkRule implements rule.IRule {
      * Checks if this rule can be used for hosts-level blocking
      */
     isHostLevelNetworkRule(): boolean {
-        if (this.hasPermittedDomains() || this.hasRestrictedDomains()) {
+        if (this.domainModifier?.hasPermittedDomains() || this.domainModifier?.hasRestrictedDomains()) {
             return false;
         }
 
@@ -1203,11 +1272,12 @@ export class NetworkRule implements rule.IRule {
             );
         }
 
-        if (domainModifier.permittedDomains
-            && domainModifier.permittedDomains.some((x) => x.includes(SimpleRegex.MASK_ANY_CHARACTER))) {
-            throw new SyntaxError(
-                'Invalid modifier: $denyallow domains wildcards are not supported',
-            );
+        if (domainModifier.permittedDomains) {
+            if (domainModifier.permittedDomains.some(DomainModifier.isWildcardOrRegexDomain)) {
+                throw new SyntaxError(
+                    'Invalid modifier: $denyallow does not support wildcards and regex domains',
+                );
+            }
         }
 
         this.denyAllowDomains = domainModifier.permittedDomains;
@@ -1219,11 +1289,12 @@ export class NetworkRule implements rule.IRule {
      *
      * @param optionName - modifier name.
      * @param optionValue - modifier value.
+     * @param exception - true if the modifier is negated.
      *
      * @throws an error if there is an unsupported modifier
      */
-    private loadOption(optionName: string, optionValue: string): void {
-        const { OPTIONS } = NetworkRule;
+    private loadOption(optionName: string, optionValue: string, exception = false): void {
+        const { OPTIONS, NEGATABLE_OPTIONS } = NetworkRule;
 
         if (optionName.startsWith(OPTIONS.NOOP)) {
             /**
@@ -1236,25 +1307,24 @@ export class NetworkRule implements rule.IRule {
             }
         }
 
+        // TODO: Speed up this by creating a map from names to bit mask positions
+        if (exception && !NEGATABLE_OPTIONS.has(optionName)) {
+            throw new SyntaxError(`Invalid modifier: '${optionName}' cannot be negated`);
+        }
+
         switch (optionName) {
             // General options
-            // $third-party, $~first-party
-            case OPTIONS.THIRD_PARTY:
-            case NOT_MARK + OPTIONS.FIRST_PARTY:
-                this.setOptionEnabled(NetworkRuleOption.ThirdParty, true);
-                break;
-            // $first-party, $~third-party
-            case NOT_MARK + OPTIONS.THIRD_PARTY:
+            // $first-party, $~first-party
             case OPTIONS.FIRST_PARTY:
-                this.setOptionEnabled(NetworkRuleOption.ThirdParty, false);
+                this.setOptionEnabled(NetworkRuleOption.ThirdParty, exception);
                 break;
-            // $match-case
+            // $third-party, $~third-party
+            case OPTIONS.THIRD_PARTY:
+                this.setOptionEnabled(NetworkRuleOption.ThirdParty, !exception);
+                break;
+            // $match-case, $~match-case
             case OPTIONS.MATCH_CASE:
-                this.setOptionEnabled(NetworkRuleOption.MatchCase, true);
-                break;
-            // $~match-case
-            case NOT_MARK + OPTIONS.MATCH_CASE:
-                this.setOptionEnabled(NetworkRuleOption.MatchCase, false);
+                this.setOptionEnabled(NetworkRuleOption.MatchCase, !exception);
                 break;
             // $important
             case OPTIONS.IMPORTANT:
@@ -1262,10 +1332,7 @@ export class NetworkRule implements rule.IRule {
                 break;
             // $domain
             case OPTIONS.DOMAIN:
-                // eslint-disable-next-line no-case-declarations
-                const domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
-                this.permittedDomains = domainModifier.permittedDomains;
-                this.restrictedDomains = domainModifier.restrictedDomains;
+                this.domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
                 break;
             // $denyallow
             case OPTIONS.DENYALLOW:
@@ -1279,12 +1346,8 @@ export class NetworkRule implements rule.IRule {
             }
             // $header modifier
             case OPTIONS.HEADER:
-                // simple validation of $header rules for compiler.
-                // should be fully supported in tsurlfilter v2.3 and the browser extension v4.4. AG-16357
-                if (isCompatibleWith(CompatibilityTypes.Extension)) {
-                    throw new SyntaxError('Extension does not support $header modifier yet');
-                }
                 this.setOptionEnabled(NetworkRuleOption.Header, true);
+                this.headerModifier = new HeaderModifier(optionValue);
                 break;
             // $to modifier
             case OPTIONS.TO: {
@@ -1335,9 +1398,14 @@ export class NetworkRule implements rule.IRule {
                 this.setRequestType(RequestType.Document, true);
                 this.setRequestType(RequestType.SubDocument, true);
                 break;
-            // $document, $doc
+            // $document, $doc / $~document, $~doc
             case OPTIONS.DOCUMENT:
             case OPTIONS.DOC:
+                if (exception) {
+                    this.setRequestType(RequestType.Document, false);
+                    break;
+                }
+
                 this.setRequestType(RequestType.Document, true);
                 // In the case of allowlist rules $document implicitly includes
                 // all these modifiers: `$content`, `$elemhide`, `$jsinject`,
@@ -1349,107 +1417,59 @@ export class NetworkRule implements rule.IRule {
                     this.setOptionEnabled(NetworkRuleOption.Content, true, true);
                 }
                 break;
-            // $~document, $~doc
-            case NOT_MARK + OPTIONS.DOCUMENT:
-            case NOT_MARK + OPTIONS.DOC:
-                this.setRequestType(RequestType.Document, false);
-                break;
             // $stealth
             case OPTIONS.STEALTH:
                 this.setOptionEnabled(NetworkRuleOption.Stealth, true);
+                this.stealthModifier = new StealthModifier(optionValue);
                 break;
             // $popup
             case OPTIONS.POPUP:
                 this.setOptionEnabled(NetworkRuleOption.Popup, true);
                 break;
             // Content type options
-            // $script
+            // $script, $~script
             case OPTIONS.SCRIPT:
-                this.setRequestType(RequestType.Script, true);
+                this.setRequestType(RequestType.Script, !exception);
                 break;
-            // $~script
-            case NOT_MARK + OPTIONS.SCRIPT:
-                this.setRequestType(RequestType.Script, false);
-                break;
-            // $stylesheet
+            // $stylesheet, $~stylesheet
             case OPTIONS.STYLESHEET:
-                this.setRequestType(RequestType.Stylesheet, true);
+                this.setRequestType(RequestType.Stylesheet, !exception);
                 break;
-            // $~stylesheet
-            case NOT_MARK + OPTIONS.STYLESHEET:
-                this.setRequestType(RequestType.Stylesheet, false);
-                break;
-            // $subdocument
+            // $subdocument, $~subdocument
             case OPTIONS.SUBDOCUMENT:
-                this.setRequestType(RequestType.SubDocument, true);
+                this.setRequestType(RequestType.SubDocument, !exception);
                 break;
-            // $~subdocument
-            case NOT_MARK + OPTIONS.SUBDOCUMENT:
-                this.setRequestType(RequestType.SubDocument, false);
-                break;
-            // $object
+            // $object, $~object
             case OPTIONS.OBJECT:
-                this.setRequestType(RequestType.Object, true);
+                this.setRequestType(RequestType.Object, !exception);
                 break;
-            // $~object
-            case NOT_MARK + OPTIONS.OBJECT:
-                this.setRequestType(RequestType.Object, false);
-                break;
-            // $image
+            // $image, $~image
             case OPTIONS.IMAGE:
-                this.setRequestType(RequestType.Image, true);
+                this.setRequestType(RequestType.Image, !exception);
                 break;
-            // $~image
-            case NOT_MARK + OPTIONS.IMAGE:
-                this.setRequestType(RequestType.Image, false);
-                break;
-            // $xmlhttprequest
+            // $xmlhttprequest, $~xmlhttprequest
             case OPTIONS.XMLHTTPREQUEST:
-                this.setRequestType(RequestType.XmlHttpRequest, true);
+                this.setRequestType(RequestType.XmlHttpRequest, !exception);
                 break;
-            // $~xmlhttprequest
-            case NOT_MARK + OPTIONS.XMLHTTPREQUEST:
-                this.setRequestType(RequestType.XmlHttpRequest, false);
-                break;
-            // $media
+            // $media, $~media
             case OPTIONS.MEDIA:
-                this.setRequestType(RequestType.Media, true);
+                this.setRequestType(RequestType.Media, !exception);
                 break;
-            // $~media
-            case NOT_MARK + OPTIONS.MEDIA:
-                this.setRequestType(RequestType.Media, false);
-                break;
-            // $font
+            // $font, $~font
             case OPTIONS.FONT:
-                this.setRequestType(RequestType.Font, true);
+                this.setRequestType(RequestType.Font, !exception);
                 break;
-            // $~font
-            case NOT_MARK + OPTIONS.FONT:
-                this.setRequestType(RequestType.Font, false);
-                break;
-            // $websocket
+            // $websocket, $~websocket
             case OPTIONS.WEBSOCKET:
-                this.setRequestType(RequestType.WebSocket, true);
+                this.setRequestType(RequestType.WebSocket, !exception);
                 break;
-            // $~websocket
-            case NOT_MARK + OPTIONS.WEBSOCKET:
-                this.setRequestType(RequestType.WebSocket, false);
-                break;
-            // $other
+            // $other, $~other
             case OPTIONS.OTHER:
-                this.setRequestType(RequestType.Other, true);
+                this.setRequestType(RequestType.Other, !exception);
                 break;
-            // $~other
-            case NOT_MARK + OPTIONS.OTHER:
-                this.setRequestType(RequestType.Other, false);
-                break;
-            // $ping
+            // $ping, $~ping
             case OPTIONS.PING:
-                this.setRequestType(RequestType.Ping, true);
-                break;
-            // $~ping
-            case NOT_MARK + OPTIONS.PING:
-                this.setRequestType(RequestType.Ping, false);
+                this.setRequestType(RequestType.Ping, !exception);
                 break;
             // Special modifiers
             // $badfilter
@@ -1474,12 +1494,12 @@ export class NetworkRule implements rule.IRule {
             // $redirect
             case OPTIONS.REDIRECT:
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
-                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isAllowlist());
+                this.advancedModifier = new RedirectModifier(optionValue, this.isAllowlist());
                 break;
             // $redirect-rule
             case OPTIONS.REDIRECTRULE:
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
-                this.advancedModifier = new RedirectModifier(optionValue, this.ruleText, this.isAllowlist(), true);
+                this.advancedModifier = new RedirectModifier(optionValue, this.isAllowlist(), true);
                 break;
             // $removeparam
             case OPTIONS.REMOVEPARAM:
@@ -1493,12 +1513,8 @@ export class NetworkRule implements rule.IRule {
                 break;
             // $permissions
             case OPTIONS.PERMISSIONS:
-                // simple validation of permissions rules for compiler.
-                // should be fully supported in tsurlfilter v2.3 and the browser extension v4.4. AG-17467
-                if (isCompatibleWith(CompatibilityTypes.Extension)) {
-                    throw new SyntaxError('Extension does not support $permissions modifier yet');
-                }
                 this.setOptionEnabled(NetworkRuleOption.Permissions, true);
+                this.advancedModifier = new PermissionsModifier(optionValue, this.isAllowlist());
                 break;
             // $jsonprune
             // simple validation of jsonprune rules for compiler
@@ -1580,19 +1596,12 @@ export class NetworkRule implements rule.IRule {
                 }
                 this.setOptionEnabled(NetworkRuleOption.Network, true);
                 break;
-            // $extension
+            // $extension, $~extension
             case OPTIONS.EXTENSION:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $extension modifier');
                 }
-                this.setOptionEnabled(NetworkRuleOption.Extension, true);
-                break;
-            // $~extension
-            case NOT_MARK + OPTIONS.EXTENSION:
-                if (isCompatibleWith(CompatibilityTypes.Extension)) {
-                    throw new SyntaxError('Extension doesn\'t support $extension modifier');
-                }
-                this.setOptionEnabled(NetworkRuleOption.Extension, false);
+                this.setOptionEnabled(NetworkRuleOption.Extension, !exception);
                 break;
             // $all
             case OPTIONS.ALL:
@@ -1664,7 +1673,8 @@ export class NetworkRule implements rule.IRule {
             this.priorityWeight += 1;
         }
 
-        if (this.restrictedDomains && this.restrictedDomains.length > 0) {
+        const { domainModifier } = this;
+        if (domainModifier?.hasRestrictedDomains()) {
             this.priorityWeight += 1;
         }
 
@@ -1683,13 +1693,16 @@ export class NetworkRule implements rule.IRule {
         }
 
         /**
-         * Category 2: permitted request types and methods.
+         * Category 2: permitted request types, methods, headers, $popup.
          * Specified content-types add `50 + 50 / number_of_content_types`,
          * for example: `||example.com^$image,script` will add
          * `50 + 50 / 2 = 50 + 25 = 75` to the total weight of the rule.
          * The `$popup` also belongs to this category, because it implicitly
          * adds the modifier `$document`.
          * Similarly, specific exceptions add `$document,subdocument`.
+         *
+         * Learn more about it here:
+         * https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-2
          */
         if (this.permittedRequestTypes !== RequestType.NotSet) {
             const numberOfPermittedRequestTypes = getBitCount(this.permittedRequestTypes);
@@ -1704,6 +1717,11 @@ export class NetworkRule implements rule.IRule {
             this.priorityWeight += NetworkRule.CategoryTwoWeight + relativeWeight;
         }
 
+        if (this.headerModifier) {
+            // $header modifier in the rule adds 50
+            this.priorityWeight += NetworkRule.CategoryTwoWeight;
+        }
+
         /**
          * Category 3: permitted domains.
          * Specified domains through `$domain` and specified applications
@@ -1714,9 +1732,9 @@ export class NetworkRule implements rule.IRule {
          * `||example.com^$app=org.example.app1|org.example.app2`
          * will add `100 + 100 / 2 = 151`.
          */
-        if (this.permittedDomains && this.permittedDomains.length > 0) {
+        if (domainModifier?.hasPermittedDomains()) {
             // More permitted domains mean less priority weight.
-            const relativeWeight = NetworkRule.CategoryThreeWeight / this.permittedDomains.length;
+            const relativeWeight = NetworkRule.CategoryThreeWeight / domainModifier.getPermittedDomains()!.length;
             this.priorityWeight += NetworkRule.CategoryThreeWeight + relativeWeight;
         }
 
@@ -1753,10 +1771,45 @@ export class NetworkRule implements rule.IRule {
             this.validateRemoveParamRule();
         } else if (this.advancedModifier instanceof RemoveHeaderModifier) {
             this.validateRemoveHeaderRule();
+        } else if (this.advancedModifier instanceof PermissionsModifier) {
+            this.validatePermissionsRule();
+        } else if (this.headerModifier instanceof HeaderModifier) {
+            this.validateHeaderRule();
         } else if (this.toModifier !== null) {
             this.validateToRule();
         } else if (this.denyAllowDomains !== null) {
             this.validateDenyallowRule();
+        }
+    }
+
+    /**
+     * $header rules are not compatible with any other
+     * modifiers except for $important, $csp, $removeheader, $badfilter.
+     * The rules with any other modifiers are considered invalid and will be discarded.
+     */
+    private validateHeaderRule(): void {
+        if ((this.enabledOptions | NetworkRuleGroupOptions.HeaderCompatibleOptions)
+                        !== NetworkRuleGroupOptions.HeaderCompatibleOptions) {
+            throw new SyntaxError('$header rules are not compatible with some other modifiers');
+        }
+        if (this.advancedModifier && this.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
+            const removeHeaderValue = this.getAdvancedModifierValue();
+            if (!removeHeaderValue || removeHeaderValue.includes('request:')) {
+                const message = '$header rules are only compatible with response headers removal of $removeheader.';
+                throw new SyntaxError(message);
+            }
+        }
+    }
+
+    /**
+     * $permissions rules are not compatible with any other
+     * modifiers except $domain, $important, and $subdocument.
+     * The rules with any other modifiers are considered invalid and will be discarded.
+     */
+    private validatePermissionsRule(): void {
+        if ((this.enabledOptions | NetworkRuleGroupOptions.PermissionsCompatibleOptions)
+                !== NetworkRuleGroupOptions.PermissionsCompatibleOptions) {
+            throw new SyntaxError('$permissions rules are not compatible with some other modifiers');
         }
     }
 
@@ -1782,6 +1835,13 @@ export class NetworkRule implements rule.IRule {
             !== NetworkRuleGroupOptions.RemoveHeaderCompatibleOptions) {
             throw new SyntaxError('$removeheader rules are not compatible with some other modifiers');
         }
+        if (this.headerModifier && this.isOptionEnabled(NetworkRuleOption.Header)) {
+            const removeHeaderValue = this.getAdvancedModifierValue();
+            if (!removeHeaderValue || removeHeaderValue.includes('request:')) {
+                const message = 'Request headers removal of $removeheaders is not compatible with $header rules.';
+                throw new SyntaxError(message);
+            }
+        }
     }
 
     /**
@@ -1802,70 +1862,5 @@ export class NetworkRule implements rule.IRule {
         if (this.toModifier) {
             throw new SyntaxError('modifier $to is not compatible with $denyallow modifier');
         }
-    }
-
-    /**
-     * parseRuleText splits the rule text into multiple parts.
-     * @param ruleText - original rule text
-     * @returns basic rule parts
-     *
-     * @throws error if the rule is empty (for instance, empty string or `@@`)
-     */
-    static parseRuleText(ruleText: string): BasicRuleParts {
-        const ruleParts = new BasicRuleParts();
-        ruleParts.allowlist = false;
-
-        let startIndex = 0;
-        if (ruleText.startsWith(NetworkRule.MASK_ALLOWLIST)) {
-            ruleParts.allowlist = true;
-            startIndex = NetworkRule.MASK_ALLOWLIST.length;
-        }
-
-        if (ruleText.length <= startIndex) {
-            throw new SyntaxError('Rule is too short');
-        }
-
-        // Setting pattern to rule text (for the case of empty options)
-        ruleParts.pattern = ruleText.substring(startIndex);
-
-        // Avoid parsing options inside of a regex rule
-        if (ruleParts.pattern.startsWith(SimpleRegex.MASK_REGEX_RULE)
-            && ruleParts.pattern.endsWith(SimpleRegex.MASK_REGEX_RULE)
-            && !ruleParts.pattern.includes(`${NetworkRule.OPTIONS.REPLACE}=`)
-        ) {
-            return ruleParts;
-        }
-
-        const removeParamIndex = ruleText.lastIndexOf(`${NetworkRule.OPTIONS.REMOVEPARAM}=`);
-        const endIndex = removeParamIndex >= 0 ? removeParamIndex : ruleText.length - 2;
-
-        let foundEscaped = false;
-        for (let i = endIndex; i >= startIndex; i -= 1) {
-            const c = ruleText.charAt(i);
-
-            if (c === NetworkRule.OPTIONS_DELIMITER) {
-                if (i > startIndex && ruleText.charAt(i - 1) === NetworkRule.ESCAPE_CHARACTER) {
-                    foundEscaped = true;
-                } else {
-                    ruleParts.pattern = ruleText.substring(startIndex, i);
-                    ruleParts.options = ruleText.substring(i + 1);
-
-                    if (foundEscaped) {
-                        // Find and replace escaped options delimiter
-                        ruleParts.options = ruleParts.options.replace(
-                            NetworkRule.RE_ESCAPED_OPTIONS_DELIMITER,
-                            NetworkRule.OPTIONS_DELIMITER,
-                        );
-                        // Reset the regexp state
-                        NetworkRule.RE_ESCAPED_OPTIONS_DELIMITER.lastIndex = 0;
-                    }
-
-                    // Options delimiter was found, exiting loop
-                    break;
-                }
-            }
-        }
-
-        return ruleParts;
     }
 }

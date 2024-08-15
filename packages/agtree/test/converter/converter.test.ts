@@ -79,7 +79,7 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: 'example.com##^body > script:has-text(test)',
-                    expected: "Unsupported node type 'Combinator'",
+                    expected: "Unexpected token '<delim-token>' with value '>'",
                 },
                 {
                     actual: 'example.com##^script:some-another-rule(test)',
@@ -140,7 +140,7 @@ describe('Converter integration tests', () => {
                 {
                     actual: 'example.com#@#:not(:matches-path(/page))h1:style(background-color: blue !important)',
                     // eslint-disable-next-line max-len
-                    expected: [String.raw`[$path=/^((?!\/page).)*$/]example.com#@$#h1 { background-color: blue !important; }`],
+                    expected: [String.raw`[$path=/^((?!\/page).)*$/]example.com#@$#h1 { background-color: blue !important }`],
                 },
                 {
                     // eslint-disable-next-line max-len
@@ -179,11 +179,11 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: 'example.com##h1:style(background-color: blue !important)',
-                    expected: ['example.com#$#h1 { background-color: blue !important; }'],
+                    expected: ['example.com#$#h1 { background-color: blue !important }'],
                 },
                 {
                     actual: 'example.com#@#h1:style(background-color: blue !important)',
-                    expected: ['example.com#@$#h1 { background-color: blue !important; }'],
+                    expected: ['example.com#@$#h1 { background-color: blue !important }'],
                 },
                 {
                     actual: 'example.org##p:has-text(/[\\w\\W]{30,}/):style(background: #ff0033 !important;)',
@@ -501,6 +501,18 @@ describe('Converter integration tests', () => {
                     shouldConvert: false,
                 },
 
+                // allow $redirect without value if the rule is exception
+                {
+                    actual: '@@||example.org^$redirect',
+                    expected: ['@@||example.org^$redirect'],
+                    shouldConvert: false,
+                },
+                {
+                    actual: '@@||example.org^$rewrite',
+                    expected: ['@@||example.org^$redirect'],
+                    shouldConvert: true,
+                },
+
                 // https://github.com/AdguardTeam/tsurlfilter/blob/7de315b85675ddafaa7457ee1b0c77ddc79f25f0/packages/tsurlfilter/test/rules/rule-converter.test.ts#L46
                 {
                     actual: String.raw`/\/\?[0-9a-zA-Z]{32}&[0-9]{5}&(https?|undefined$)/$1p,script`,
@@ -605,12 +617,48 @@ describe('Converter integration tests', () => {
             test.each([
                 {
                     actual: 'example.com##^body > script:has-text(test)',
-                    expected: 'Unsupported node type \'Combinator\'',
+                    expected: "Unexpected token '<delim-token>' with value '>'",
                 },
             ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
                 expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(
                     new RuleConversionError(expected),
                 );
+            });
+        });
+
+        describe('should add ExtCss separator when needed', () => {
+            test.each([
+                // change separator if selector contains an ExtCss element that
+                // does not supported natively by any browser
+                {
+                    actual: '##*:contains(foo)',
+                    expected: ['#?#*:contains(foo)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '#$#*:contains(foo) { display: none; }',
+                    expected: ['#$?#*:contains(foo) { display: none; }'],
+                    shouldConvert: true,
+                },
+                // but does not change separator if ExtCss element may supported by some browsers
+                {
+                    actual: '##*:has(foo)',
+                    expected: ['##*:has(foo)'],
+                    shouldConvert: false,
+                },
+                {
+                    actual: '#$#*:has(foo) { display: none; }',
+                    expected: ['#$#*:has(foo) { display: none; }'],
+                    shouldConvert: false,
+                },
+                // sometimes we need to force selecting by ExtCss engine, even if we do not have any ExtCss elements
+                {
+                    actual: '#?#.banner',
+                    expected: ['#?#.banner'],
+                    shouldConvert: false,
+                },
+            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
     });

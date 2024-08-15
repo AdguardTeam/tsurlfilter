@@ -96,13 +96,13 @@ From these three filters:
 Output result will contain only one rule:
 ```json
 {
-  id: ruleId,
-  action: { type: 'block' },
-  condition: {
-      urlFilter: '||persistent.com^',
-      isUrlFilterCaseSensitive: false,
+  "id": "<ruleId>",
+  "action": {"type": "block"},
+  "condition": {
+    "urlFilter": "||persistent.com^",
+    "isUrlFilterCaseSensitive": "false"
   },
-  priority: 1,
+  "priority": "1"
 }
 ```
 
@@ -127,23 +127,23 @@ Also, sometimes, several raw rules combined into one declarative rules, for exam
 ```adblock
 ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1
 ||testcases.adguard.com$xmlhttprequest,removeparam=p2case1
-```adblock
-vvvvvvv
+```
+↓↓↓↓ converted to ↓↓↓↓
 ```json
 {
-    "id": 1,
-    "action": {
-        "type": "redirect",
-        "redirect": { "transform": {"queryTransform": {"removeParams": [ "p1case1", "p2case1", ] } } }
-    },
-    "condition": {
-        "urlFilter": "||testcases.adguard.com",
-        "resourceTypes": [
-            "xmlhttprequest"
-        ],
-        "isUrlFilterCaseSensitive": false
-    },
-    "priority": 101
+  "id": 1,
+  "action": {
+    "type": "redirect",
+    "redirect": {
+      "transform": {"queryTransform": {"removeParams": ["p1case1", "p2case1"]}}
+    }
+  },
+  "condition": {
+    "urlFilter": "||testcases.adguard.com",
+    "resourceTypes": ["xmlhttprequest"],
+    "isUrlFilterCaseSensitive": false
+  },
+  "priority": 101
 }
 ```
 If we add rule `||testcases.adguard.com$xmlhttprequest,removeparam=p2case1,badfilter`
@@ -158,7 +158,7 @@ it will cancel not only one raw rule and regerate declarative, but cancel full
 !filter 2
 ||testcases.adguard.com$xmlhttprequest,removeparam=p1case1,badfilter
 ```
-vvvvvvv
+↓↓↓↓ converted to ↓↓↓↓
 ```json
 { }
 ```
@@ -208,17 +208,17 @@ Blocking by domain name
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -232,17 +232,17 @@ Blocking exact address
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "|http://example.org/",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "|http://example.org/",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -256,24 +256,24 @@ Basic rule modifiers
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"domainType": "thirdParty",
-			"initiatorDomains": [
-				"example.com"
-			],
-			"resourceTypes": [
-				"script"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 302
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "domainType": "thirdParty",
+      "initiatorDomains": [
+        "example.com"
+      ],
+      "resourceTypes": [
+        "script"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 302
+  }
 ]
 
 ```
@@ -287,17 +287,17 @@ Unblocking an address
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.org/banner",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "||example.org/banner",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 100001
+  }
 ]
 
 ```
@@ -311,20 +311,20 @@ Unblocking everything on a website
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 140101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "allowAllRequests"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 140101
+  }
 ]
 
 ```
@@ -360,28 +360,28 @@ example.org##.banner
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "*",
-			"initiatorDomains": [
-				"a.com",
-				"b.com"
-			],
-			"excludedRequestDomains": [
-				"x.com",
-				"y.com"
-			],
-			"resourceTypes": [
-				"script"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 252
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*",
+      "initiatorDomains": [
+        "a.com",
+        "b.com"
+      ],
+      "excludedRequestDomains": [
+        "x.com",
+        "y.com"
+      ],
+      "resourceTypes": [
+        "script"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 252
+  }
 ]
 
 ```
@@ -405,20 +405,20 @@ example 1
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||baddomain.com^",
-			"initiatorDomains": [
-				"example.org"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 201
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||baddomain.com^",
+      "initiatorDomains": [
+        "example.org"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 201
+  }
 ]
 
 ```
@@ -432,21 +432,21 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||baddomain.com^",
-			"initiatorDomains": [
-				"example.org",
-				"example.com"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 151
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||baddomain.com^",
+      "initiatorDomains": [
+        "example.org",
+        "example.com"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 151
+  }
 ]
 
 ```
@@ -460,20 +460,20 @@ example 3
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||baddomain.com^",
-			"excludedInitiatorDomains": [
-				"example.org"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 2
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||baddomain.com^",
+      "excludedInitiatorDomains": [
+        "example.org"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 2
+  }
 ]
 
 ```
@@ -487,23 +487,23 @@ example 4
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||baddomain.com^",
-			"initiatorDomains": [
-				"example.org"
-			],
-			"excludedInitiatorDomains": [
-				"foo.example.org"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 202
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||baddomain.com^",
+      "initiatorDomains": [
+        "example.org"
+      ],
+      "excludedInitiatorDomains": [
+        "foo.example.org"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 202
+  }
 ]
 
 ```
@@ -517,22 +517,17 @@ example 5
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||baddomain.com^",
-			"initiatorDomains": [
-				"/(^\\\\",
-				".+\\\\.)example\\\\.(com\\\\",
-				"org)\\\\$/"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 135
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||baddomain.com^",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 201
+  }
 ]
 
 ```
@@ -546,26 +541,22 @@ example 6
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||baddomain.com^",
-			"initiatorDomains": [
-				".+\\\\.)c\\\\.(com\\\\",
-				"org)\\\\$/"
-			],
-			"excludedInitiatorDomains": [
-				"a.com",
-				"b.*",
-				"/(^\\\\"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 152
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||baddomain.com^",
+      "excludedInitiatorDomains": [
+        "a.com",
+        "b.*",
+        "/(^\\|.+\\\\.)c\\\\.(com\\\\|org)\\\\$/"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 2
+  }
 ]
 
 ```
@@ -578,7 +569,49 @@ example 7
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "remove",
+          "header": "Set-Cookie"
+        }
+      ],
+      "requestHeaders": [
+        {
+          "operation": "remove",
+          "header": "Cookie"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*",
+      "initiatorDomains": [
+        "example.org",
+        "example.com"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 151
+  }
+]
 
 ```
 example 8
@@ -591,24 +624,24 @@ example 8
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "*",
-			"initiatorDomains": [
-				"example.org",
-				"example.com"
-			],
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 251
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*",
+      "initiatorDomains": [
+        "example.org",
+        "example.com"
+      ],
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 251
+  }
 ]
 
 ```
@@ -622,20 +655,20 @@ page$domain=example.org
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "page",
-			"initiatorDomains": [
-				"example.org"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 201
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "page",
+      "initiatorDomains": [
+        "example.org"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 201
+  }
 ]
 
 ```
@@ -649,20 +682,20 @@ page$domain=targetdomain.com
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "page",
-			"initiatorDomains": [
-				"targetdomain.com"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 201
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "page",
+      "initiatorDomains": [
+        "targetdomain.com"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 201
+  }
 ]
 
 ```
@@ -676,20 +709,20 @@ example 11
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "*page",
-			"initiatorDomains": [
-				"targetdomain.com"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 201
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*page",
+      "initiatorDomains": [
+        "targetdomain.com"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 201
+  }
 ]
 
 ```
@@ -702,7 +735,48 @@ example 12
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "remove",
+          "header": "Set-Cookie"
+        }
+      ],
+      "requestHeaders": [
+        {
+          "operation": "remove",
+          "header": "Cookie"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*page",
+      "initiatorDomains": [
+        "targetdomain.com"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 201
+  }
+]
 
 ```
 example 13
@@ -715,20 +789,20 @@ example 13
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"regexFilter": "/banner\\d+/",
-			"initiatorDomains": [
-				"targetdomain.com"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 201
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "regexFilter": "/banner\\d+/",
+      "initiatorDomains": [
+        "targetdomain.com"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 201
+  }
 ]
 
 ```
@@ -742,23 +816,23 @@ page$domain=targetdomain.com|~example.org
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "page",
-			"initiatorDomains": [
-				"targetdomain.com"
-			],
-			"excludedInitiatorDomains": [
-				"example.org"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 202
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "page",
+      "initiatorDomains": [
+        "targetdomain.com"
+      ],
+      "excludedInitiatorDomains": [
+        "example.org"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 202
+  }
 ]
 
 ```
@@ -839,28 +913,28 @@ blocking rule will block all requests despite of the exception rule
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1000001
-	},
-	{
-		"id": 2,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1000001
+  },
+  {
+    "id": 45,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 100001
+  }
 ]
 
 ```
@@ -878,28 +952,28 @@ so no requests will not be blocked
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1000001
-	},
-	{
-		"id": 2,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1100001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1000001
+  },
+  {
+    "id": 45,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1100001
+  }
 ]
 
 ```
@@ -919,31 +993,31 @@ the blocking rule will not be applied despite it has the `$important` modifier
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1000001
-	},
-	{
-		"id": 2,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||test.org^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 140101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1000001
+  },
+  {
+    "id": 45,
+    "action": {
+      "type": "allowAllRequests"
+    },
+    "condition": {
+      "urlFilter": "||test.org^",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 140101
+  }
 ]
 
 ```
@@ -962,17 +1036,17 @@ the blocking rule will not be applied despite it has the `$important` modifier
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "*/BannerAd.gif",
-			"isUrlFilterCaseSensitive": true
-		},
-		"priority": 2
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "*/BannerAd.gif",
+      "isUrlFilterCaseSensitive": true
+    },
+    "priority": 2
+  }
 ]
 
 ```
@@ -992,35 +1066,35 @@ example 1
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||evil.com^",
-			"requestMethods": [
-				"get",
-				"head"
-			],
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 76
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||evil.com^",
+      "requestMethods": [
+        "get",
+        "head"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 76
+  }
 ]
 
 ```
@@ -1034,35 +1108,35 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||evil.com^",
-			"excludedRequestMethods": [
-				"post",
-				"put"
-			],
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 2
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||evil.com^",
+      "excludedRequestMethods": [
+        "post",
+        "put"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 2
+  }
 ]
 
 ```
@@ -1076,34 +1150,34 @@ example 3
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||evil.com",
-			"requestMethods": [
-				"get"
-			],
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 100101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "||evil.com",
+      "requestMethods": [
+        "get"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 100101
+  }
 ]
 
 ```
@@ -1117,34 +1191,34 @@ example 4
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "||evil.com",
-			"excludedRequestMethods": [
-				"post"
-			],
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 100002
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "||evil.com",
+      "excludedRequestMethods": [
+        "post"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 100002
+  }
 ]
 
 ```
@@ -1186,18 +1260,18 @@ example 1
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||domain.com^",
-			"domainType": "thirdParty",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 2
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||domain.com^",
+      "domainType": "thirdParty",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 2
+  }
 ]
 
 ```
@@ -1211,18 +1285,18 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||domain.com",
-			"domainType": "firstParty",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 2
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||domain.com",
+      "domainType": "firstParty",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 2
+  }
 ]
 
 ```
@@ -1242,35 +1316,35 @@ example 1
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "/ads",
-			"requestDomains": [
-				"evil.com",
-				"evil.org"
-			],
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 2
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/ads",
+      "requestDomains": [
+        "evil.com",
+        "evil.org"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 2
+  }
 ]
 
 ```
@@ -1284,37 +1358,37 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "/ads",
-			"requestDomains": [
-				"evil.com"
-			],
-			"excludedRequestDomains": [
-				"not.evil.com"
-			],
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 2
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/ads",
+      "requestDomains": [
+        "evil.com"
+      ],
+      "excludedRequestDomains": [
+        "not.evil.com"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 2
+  }
 ]
 
 ```
@@ -1328,35 +1402,35 @@ example 3
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "/ads",
-			"excludedRequestDomains": [
-				"good.com",
-				"good.org"
-			],
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 2
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/ads",
+      "excludedRequestDomains": [
+        "good.com",
+        "good.org"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 2
+  }
 ]
 
 ```
@@ -1379,20 +1453,20 @@ example 1
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"image"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "image"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1406,21 +1480,21 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"stylesheet",
-				"script"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 76
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "stylesheet",
+        "script"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 76
+  }
 ]
 
 ```
@@ -1434,22 +1508,22 @@ example 3
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"excludedResourceTypes": [
-				"stylesheet",
-				"script",
-				"image"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 2
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "excludedResourceTypes": [
+        "stylesheet",
+        "script",
+        "image"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 2
+  }
 ]
 
 ```
@@ -1465,20 +1539,20 @@ example 1
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 140101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "allowAllRequests"
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 140101
+  }
 ]
 
 ```
@@ -1504,20 +1578,20 @@ example 3
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1531,23 +1605,23 @@ example 4
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopframe.html"
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/noopframe.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1101
+  }
 ]
 
 ```
@@ -1561,29 +1635,29 @@ example 5
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"transform": {
-					"queryTransform": {
-						"removeParams": [
-							"test"
-						]
-					}
-				}
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "queryTransform": {
+            "removeParams": [
+              "test"
+            ]
+          }
+        }
+      }
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1610,20 +1684,20 @@ example 6
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"image"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "image"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1638,20 +1712,20 @@ example 6
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"stylesheet"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "stylesheet"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1666,20 +1740,20 @@ example 6
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"script"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "script"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1694,20 +1768,20 @@ example 6
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"object"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "object"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1722,20 +1796,20 @@ example 6
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"font"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "font"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1750,20 +1824,20 @@ example 6
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"media"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "media"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1779,20 +1853,20 @@ example 1
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"resourceTypes": [
-				"sub_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "resourceTypes": [
+        "sub_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1806,23 +1880,23 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.com^",
-			"initiatorDomains": [
-				"domain.com"
-			],
-			"resourceTypes": [
-				"sub_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 301
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.com^",
+      "initiatorDomains": [
+        "domain.com"
+      ],
+      "resourceTypes": [
+        "sub_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 301
+  }
 ]
 
 ```
@@ -1837,20 +1911,20 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"ping"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "ping"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1865,20 +1939,20 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"xmlhttprequest"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1893,20 +1967,20 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"websocket"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "websocket"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -1949,20 +2023,20 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"other"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "other"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -2152,31 +2226,31 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 55
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 55
+  }
 ]
 
 ```
@@ -2215,17 +2289,17 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.com,image",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.com,image",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -2305,22 +2379,22 @@ example 8
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "/some",
-			"initiatorDomains": [
-				"example.com",
-				"example.org",
-				"example.io"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 135
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/some",
+      "initiatorDomains": [
+        "example.com",
+        "example.org",
+        "example.io"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 135
+  }
 ]
 
 ```
@@ -2335,20 +2409,17 @@ example 9
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "/some",
-			"initiatorDomains": [
-				"example.*"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 201
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/some",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 201
+  }
 ]
 
 ```
@@ -2363,22 +2434,22 @@ example 10
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "/some",
-			"initiatorDomains": [
-				"example.com",
-				"example.org",
-				"example.io"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 135
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "/some",
+      "initiatorDomains": [
+        "example.com",
+        "example.org",
+        "example.io"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 135
+  }
 ]
 
 ```
@@ -2409,7 +2480,45 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "remove",
+          "header": "Set-Cookie"
+        }
+      ],
+      "requestHeaders": [
+        {
+          "operation": "remove",
+          "header": "Cookie"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
+]
 
 ```
 example 3
@@ -2530,38 +2639,38 @@ example 1
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "modifyHeaders",
-			"responseHeaders": [
-				{
-					"operation": "append",
-					"header": "Content-Security-Policy",
-					"value": "frame-src 'none'"
-				}
-			]
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Content-Security-Policy",
+          "value": "frame-src 'none'"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -2599,38 +2708,38 @@ example 4
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "modifyHeaders",
-			"responseHeaders": [
-				{
-					"operation": "append",
-					"header": "Content-Security-Policy",
-					"value": "script-src 'self' 'unsafe-eval' http: https:"
-				}
-			]
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Content-Security-Policy",
+          "value": "script-src 'self' 'unsafe-eval' http: https:"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -2645,52 +2754,52 @@ example 5
 
 ```json
 [
-	{
-		"id": 2,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 140101
-	},
-	{
-		"id": 1,
-		"action": {
-			"type": "modifyHeaders",
-			"responseHeaders": [
-				{
-					"operation": "append",
-					"header": "Content-Security-Policy",
-					"value": "script-src 'self' 'unsafe-eval' http: https:"
-				}
-			]
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 1
-	}
+  {
+    "id": 94,
+    "action": {
+      "type": "allowAllRequests"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 140101
+  },
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Content-Security-Policy",
+          "value": "script-src 'self' 'unsafe-eval' http: https:"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -2709,7 +2818,40 @@ example 1
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Permissions-Policy",
+          "value": "sync-xhr=()"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
+]
 
 ```
 example 2
@@ -2721,7 +2863,33 @@ example 2
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 5,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "||example.org/page/*",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 100001
+  }
+]
 
 ```
 example 3
@@ -2733,7 +2901,33 @@ example 3
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 5,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "||example.org/page/*",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 100001
+  }
+]
 
 ```
 example 4
@@ -2745,7 +2939,43 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
 ↓↓↓↓ converted to ↓↓↓↓
 
 ```json
-[]
+[
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Permissions-Policy",
+          "value": "oversized-images=(), sync-script=(), unsized-media=()"
+        }
+      ]
+    },
+    "condition": {
+      "initiatorDomains": [
+        "example.org",
+        "example.com"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 151
+  }
+]
 
 ```
 example 5
@@ -2759,20 +2989,52 @@ example 5
 
 ```json
 [
-	{
-		"id": 2,
-		"action": {
-			"type": "allowAllRequests"
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"resourceTypes": [
-				"main_frame"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 140101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Permissions-Policy",
+          "value": "sync-xhr=()"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  },
+  {
+    "id": 61,
+    "action": {
+      "type": "allowAllRequests"
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "resourceTypes": [
+        "main_frame"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 140101
+  }
 ]
 
 ```
@@ -2796,23 +3058,23 @@ example 1
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopjs.js"
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.org/script.js",
-			"resourceTypes": [
-				"script"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/noopjs.js"
+      }
+    },
+    "condition": {
+      "urlFilter": "||example.org/script.js",
+      "resourceTypes": [
+        "script"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1101
+  }
 ]
 
 ```
@@ -2826,23 +3088,23 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopmp4.mp4"
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.org/test.mp4",
-			"resourceTypes": [
-				"media"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/noopmp4.mp4"
+      }
+    },
+    "condition": {
+      "urlFilter": "||example.org/test.mp4",
+      "resourceTypes": [
+        "media"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1101
+  }
 ]
 
 ```
@@ -2880,20 +3142,20 @@ example 5
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopcss.css"
-			}
-		},
-		"condition": {
-			"urlFilter": "*/redirect-test.css",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/noopcss.css"
+      }
+    },
+    "condition": {
+      "urlFilter": "*/redirect-test.css",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1001
+  }
 ]
 
 ```
@@ -2907,20 +3169,20 @@ example 6
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopjs.js"
-			}
-		},
-		"condition": {
-			"urlFilter": "*/redirect-test.js",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/noopjs.js"
+      }
+    },
+    "condition": {
+      "urlFilter": "*/redirect-test.js",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1001
+  }
 ]
 
 ```
@@ -2934,20 +3196,20 @@ example 7
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/2x2-transparent.png"
-			}
-		},
-		"condition": {
-			"urlFilter": "*/redirect-test.png",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/2x2-transparent.png"
+      }
+    },
+    "condition": {
+      "urlFilter": "*/redirect-test.png",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1001
+  }
 ]
 
 ```
@@ -2961,20 +3223,20 @@ example 8
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopframe.html"
-			}
-		},
-		"condition": {
-			"urlFilter": "*/redirect-test.html",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/noopframe.html"
+      }
+    },
+    "condition": {
+      "urlFilter": "*/redirect-test.html",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1001
+  }
 ]
 
 ```
@@ -2988,20 +3250,20 @@ example 9
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/nooptext.js"
-			}
-		},
-		"condition": {
-			"urlFilter": "*/redirect-test.txt",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/nooptext.js"
+      }
+    },
+    "condition": {
+      "urlFilter": "*/redirect-test.txt",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1001
+  }
 ]
 
 ```
@@ -3016,31 +3278,31 @@ example 10
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopjs.js"
-			}
-		},
-		"condition": {
-			"urlFilter": "*/redirect-exception-test.js",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1001
-	},
-	{
-		"id": 2,
-		"action": {
-			"type": "allow"
-		},
-		"condition": {
-			"urlFilter": "*/redirect-exception-test.js",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 100001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/noopjs.js"
+      }
+    },
+    "condition": {
+      "urlFilter": "*/redirect-exception-test.js",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1001
+  },
+  {
+    "id": 66,
+    "action": {
+      "type": "allow"
+    },
+    "condition": {
+      "urlFilter": "*/redirect-exception-test.js",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 100001
+  }
 ]
 
 ```
@@ -3055,52 +3317,52 @@ example 11
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopjs.js"
-			}
-		},
-		"condition": {
-			"urlFilter": "*/redirect-priority-test.js",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1001
-	},
-	{
-		"id": 2,
-		"action": {
-			"type": "modifyHeaders",
-			"responseHeaders": [
-				{
-					"operation": "append",
-					"header": "Content-Security-Policy",
-					"value": "script-src 'self'"
-				}
-			]
-		},
-		"condition": {
-			"urlFilter": "*/redirect-priority-test.js",
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 1000001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/noopjs.js"
+      }
+    },
+    "condition": {
+      "urlFilter": "*/redirect-priority-test.js",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1001
+  },
+  {
+    "id": 65,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "operation": "append",
+          "header": "Content-Security-Policy",
+          "value": "script-src 'self'"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "*/redirect-priority-test.js",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1000001
+  }
 ]
 
 ```
@@ -3124,31 +3386,31 @@ Converting as $redirect rules
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.org/script.js",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1
-	},
-	{
-		"id": 2,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopjs.js"
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.org/script.js",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1
+  },
+  {
+    "id": 39,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/noopjs.js"
+      }
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1001
+  }
 ]
 
 ```
@@ -3216,37 +3478,37 @@ example 1
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "modifyHeaders",
-			"responseHeaders": [
-				{
-					"header": "header-name",
-					"operation": "remove"
-				}
-			]
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "header": "header-name",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -3260,37 +3522,37 @@ example 2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "modifyHeaders",
-			"requestHeaders": [
-				{
-					"header": "header-name",
-					"operation": "remove"
-				}
-			]
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "header-name",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -3328,37 +3590,37 @@ example 5
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "modifyHeaders",
-			"responseHeaders": [
-				{
-					"header": "refresh",
-					"operation": "remove"
-				}
-			]
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "header": "refresh",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -3372,37 +3634,37 @@ example 6
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "modifyHeaders",
-			"requestHeaders": [
-				{
-					"header": "x-client-data",
-					"operation": "remove"
-				}
-			]
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "x-client-data",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -3416,39 +3678,39 @@ $removeheader=location,domain=example.com
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "modifyHeaders",
-			"responseHeaders": [
-				{
-					"header": "location",
-					"operation": "remove"
-				}
-			]
-		},
-		"condition": {
-			"initiatorDomains": [
-				"example.com"
-			],
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 201
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "modifyHeaders",
+      "responseHeaders": [
+        {
+          "header": "location",
+          "operation": "remove"
+        }
+      ]
+    },
+    "condition": {
+      "initiatorDomains": [
+        "example.com"
+      ],
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 201
+  }
 ]
 
 ```
@@ -3479,36 +3741,36 @@ skip rules with a negation, or regexp or the rule is a allowlist
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"transform": {
-					"query": ""
-				}
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "query": ""
+        }
+      }
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -3534,39 +3796,39 @@ $removeparam=utm_source
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"transform": {
-					"queryTransform": {
-						"removeParams": [
-							"utm_source"
-						]
-					}
-				}
-			}
-		},
-		"condition": {
-			"isUrlFilterCaseSensitive": false,
-			"resourceTypes": [
-				"main_frame",
-				"sub_frame",
-				"stylesheet",
-				"script",
-				"image",
-				"font",
-				"object",
-				"xmlhttprequest",
-				"ping",
-				"media",
-				"websocket",
-				"other"
-			]
-		},
-		"priority": 1
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "queryTransform": {
+            "removeParams": [
+              "utm_source"
+            ]
+          }
+        }
+      }
+    },
+    "condition": {
+      "isUrlFilterCaseSensitive": false,
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame",
+        "stylesheet",
+        "script",
+        "image",
+        "font",
+        "object",
+        "xmlhttprequest",
+        "ping",
+        "media",
+        "websocket",
+        "other"
+      ]
+    },
+    "priority": 1
+  }
 ]
 
 ```
@@ -3657,53 +3919,53 @@ $xmlhttprequest,removeparam=p1case2
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"transform": {
-					"queryTransform": {
-						"removeParams": [
-							"p1case1",
-							"p2case1",
-							"P3Case1"
-						]
-					}
-				}
-			}
-		},
-		"condition": {
-			"urlFilter": "||testcases.adguard.com",
-			"resourceTypes": [
-				"xmlhttprequest"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	},
-	{
-		"id": 4,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"transform": {
-					"queryTransform": {
-						"removeParams": [
-							"p1case2"
-						]
-					}
-				}
-			}
-		},
-		"condition": {
-			"resourceTypes": [
-				"xmlhttprequest"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "queryTransform": {
+            "removeParams": [
+              "p1case1",
+              "p2case1",
+              "P3Case1"
+            ]
+          }
+        }
+      }
+    },
+    "condition": {
+      "urlFilter": "||testcases.adguard.com",
+      "resourceTypes": [
+        "xmlhttprequest"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  },
+  {
+    "id": 215,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "transform": {
+          "queryTransform": {
+            "removeParams": [
+              "p1case2"
+            ]
+          }
+        }
+      }
+    },
+    "condition": {
+      "resourceTypes": [
+        "xmlhttprequest"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 101
+  }
 ]
 
 ```
@@ -3777,21 +4039,21 @@ example 4
 
 ```json
 [
-	{
-		"id": 2,
-		"action": {
-			"type": "block"
-		},
-		"condition": {
-			"urlFilter": "||example.com",
-			"domainType": "firstParty",
-			"initiatorDomains": [
-				"example.org"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 202
-	}
+  {
+    "id": 84,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "urlFilter": "||example.com",
+      "domainType": "firstParty",
+      "initiatorDomains": [
+        "example.org"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 202
+  }
 ]
 
 ```
@@ -3811,20 +4073,20 @@ example 1.
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/nooptext.js"
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.org^",
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1001
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/nooptext.js"
+      }
+    },
+    "condition": {
+      "urlFilter": "||example.org^",
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1001
+  }
 ]
 
 ```
@@ -3844,23 +4106,23 @@ example 1.
 
 ```json
 [
-	{
-		"id": 1,
-		"action": {
-			"type": "redirect",
-			"redirect": {
-				"extensionPath": "/path/to/resources/noopmp4.mp4"
-			}
-		},
-		"condition": {
-			"urlFilter": "||example.com/videos/",
-			"resourceTypes": [
-				"media"
-			],
-			"isUrlFilterCaseSensitive": false
-		},
-		"priority": 1101
-	}
+  {
+    "id": 5,
+    "action": {
+      "type": "redirect",
+      "redirect": {
+        "extensionPath": "/path/to/resources/noopmp4.mp4"
+      }
+    },
+    "condition": {
+      "urlFilter": "||example.com/videos/",
+      "resourceTypes": [
+        "media"
+      ],
+      "isUrlFilterCaseSensitive": false
+    },
+    "priority": 1101
+  }
 ]
 
 ```

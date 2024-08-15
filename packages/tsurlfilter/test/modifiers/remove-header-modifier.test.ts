@@ -1,26 +1,26 @@
-import { NetworkRule } from '../../src';
 import { RemoveHeaderModifier } from '../../src/modifiers/remove-header-modifier';
+import { createNetworkRule } from '../helpers/rule-creator';
 
 describe('NetworkRule - removeheader rules', () => {
     it('works if removeheader modifier is correctly parsed', () => {
-        let rule = new NetworkRule('||example.org^$removeheader=header-name', 0);
+        let rule = createNetworkRule('||example.org^$removeheader=header-name', 0);
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveHeaderModifier);
         expect(rule.getAdvancedModifierValue()).toBe('header-name');
 
-        rule = new NetworkRule('||example.org^$removeheader=request:header-name', 0);
+        rule = createNetworkRule('||example.org^$removeheader=request:header-name', 0);
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveHeaderModifier);
         expect(rule.getAdvancedModifierValue()).toBe('request:header-name');
 
-        rule = new NetworkRule('@@||example.org^$removeheader', 0);
+        rule = createNetworkRule('@@||example.org^$removeheader', 0);
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveHeaderModifier);
         expect(rule.getAdvancedModifierValue()).toBe('');
 
-        rule = new NetworkRule('@@||example.org^$removeheader=header', 0);
+        rule = createNetworkRule('@@||example.org^$removeheader=header', 0);
         expect(rule.getAdvancedModifier()).toBeInstanceOf(RemoveHeaderModifier);
         expect(rule.getAdvancedModifierValue()).toBe('header');
 
         expect(() => {
-            new NetworkRule('||example.org^$removeheader', 0);
+            createNetworkRule('||example.org^$removeheader', 0);
         }).toThrow(new SyntaxError('Invalid $removeheader rule, removeheader value must not be empty'));
     });
 });

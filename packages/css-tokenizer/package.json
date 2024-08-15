@@ -1,6 +1,6 @@
 {
   "name": "@adguard/css-tokenizer",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "CSS / Extended CSS tokenizer",
   "keywords": [
     "css",
@@ -18,8 +18,19 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer#readme",
   "main": "dist/csstokenizer.js",
-  "browser": "dist/csstokenizer.iife.min.js",
+  "module": "dist/csstokenizer.esm.mjs",
+  "browser": "dist/csstokenizer.umd.min.js",
   "types": "dist/csstokenizer.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/csstokenizer.d.ts",
+      "import": "./dist/csstokenizer.esm.mjs",
+      "require": "./dist/csstokenizer.js"
+    },
+    "./es": "./dist/csstokenizer.esm.mjs",
+    "./iife": "./dist/csstokenizer.iife.min.js",
+    "./umd": "./dist/csstokenizer.umd.min.js"
+  },
   "files": [
     "dist"
   ],

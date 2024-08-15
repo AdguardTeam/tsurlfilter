@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /**
  * Pre-processor directives
  *
@@ -5,7 +6,6 @@
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
  */
 
-import { locRange, shiftLoc } from '../../utils/location';
 import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
@@ -14,6 +14,7 @@ import {
     HASHMARK,
     IF,
     INCLUDE,
+    NULL,
     OPEN_PARENTHESIS,
     PREPROCESSOR_MARKER,
     PREPROCESSOR_MARKER_LEN,
@@ -24,14 +25,97 @@ import {
 import { StringUtils } from '../../utils/string';
 import type {
     AnyExpressionNode,
-    Location,
+    ParameterList,
     PreProcessorCommentRule,
     Value,
 } from '../common';
-import { CommentRuleType, RuleCategory, defaultLocation } from '../common';
+import {
+    BinaryTypeMap,
+    CommentRuleType,
+    RuleCategory,
+    SYNTAX_SERIALIZATION_MAP,
+    SYNTAX_DESERIALIZATION_MAP,
+} from '../common';
 import { LogicalExpressionParser } from '../misc/logical-expression';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
+import { defaultParserOptions } from '../options';
+import { ParserBase } from '../interface';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { ValueParser } from '../misc/value';
+import { isUndefined } from '../../utils/type-guards';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum PreProcessorRuleSerializationMap {
+    Name = 1,
+    Params,
+    Syntax,
+    Start,
+    End,
+}
+
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ *
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#preprocessor-directives}
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
+ */
+const FREQUENT_DIRECTIVES_SERIALIZATION_MAP = new Map<string, number>([
+    ['if', 0],
+    ['else', 1],
+    ['endif', 2],
+    ['include', 3],
+    ['safari_cb_affinity', 4],
+]);
+
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+const FREQUENT_DIRECTIVES_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_DIRECTIVES_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+);
+
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const FREQUENT_PARAMS_SERIALIZATION_MAP = new Map<string, number>([
+    // safari_cb_affinity parameters
+    ['general', 0],
+    ['privacy', 1],
+    ['social', 2],
+    ['security', 3],
+    ['other', 4],
+    ['custom', 5],
+    ['all', 6],
+]);
+
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+const FREQUENT_PARAMS_DESERIALIZATION_MAP = new Map<number, string>(
+    Array.from(FREQUENT_PARAMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+);
 
 /**
  * `PreProcessorParser` is responsible for parsing preprocessor rules.
@@ -49,7 +133,7 @@ import { ParameterListParser } from '../misc/parameter-list';
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
  */
-export class PreProcessorCommentRuleParser {
+export class PreProcessorCommentRuleParser extends ParserBase {
     /**
      * Determines whether the rule is a pre-processor rule.
      *
@@ -66,12 +150,13 @@ export class PreProcessorCommentRuleParser {
     /**
      * Parses a raw rule as a pre-processor comment.
      *
-     * @param raw Raw rule
-     * @param loc Base location
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      * @returns
      * Pre-processor comment AST or null (if the raw rule cannot be parsed as a pre-processor comment)
      */
-    public static parse(raw: string, loc: Location = defaultLocation): PreProcessorCommentRule | null {
+    public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): PreProcessorCommentRule | null {
         // Ignore non-pre-processor rules
         if (!PreProcessorCommentRuleParser.isPreProcessorRule(raw)) {
             return null;
@@ -108,11 +193,7 @@ export class PreProcessorCommentRuleParser {
         const nameEnd = offset;
 
         // Create name node
-        const name: Value = {
-            type: 'Value',
-            loc: locRange(loc, nameStart, nameEnd),
-            value: raw.substring(nameStart, nameEnd),
-        };
+        const name = ValueParser.parse(raw.slice(nameStart, nameEnd), options, baseOffset + nameStart);
 
         // Ignore whitespace characters after the directive name (if any)
         // Note: this may incorrect according to the spec, but we do it for tolerance
@@ -124,7 +205,8 @@ export class PreProcessorCommentRuleParser {
             if (offset > nameEnd) {
                 throw new AdblockSyntaxError(
                     `Unexpected whitespace after "${SAFARI_CB_AFFINITY}" directive name`,
-                    locRange(loc, nameEnd, offset),
+                    baseOffset + nameEnd,
+                    baseOffset + offset,
                 );
             }
 
@@ -136,7 +218,8 @@ export class PreProcessorCommentRuleParser {
                 if (raw[offset] !== OPEN_PARENTHESIS) {
                     throw new AdblockSyntaxError(
                         `Unexpected character '${raw[offset]}' after '${SAFARI_CB_AFFINITY}' directive name`,
-                        locRange(loc, offset, offset + 1),
+                        baseOffset + offset,
+                        baseOffset + offset + 1,
                     );
                 }
 
@@ -155,7 +238,8 @@ export class PreProcessorCommentRuleParser {
                 if (closingParenthesesIndex === -1 || raw[closingParenthesesIndex] !== CLOSE_PARENTHESIS) {
                     throw new AdblockSyntaxError(
                         `Missing closing parenthesis for '${SAFARI_CB_AFFINITY}' directive`,
-                        locRange(loc, offset, raw.length),
+                        baseOffset + offset,
+                        baseOffset + raw.length,
                     );
                 }
 
@@ -163,22 +247,32 @@ export class PreProcessorCommentRuleParser {
                 const parameterListEnd = closingParenthesesIndex;
 
                 // Parse parameters between the opening and closing parentheses
-                return {
+                const result: PreProcessorCommentRule = {
                     type: CommentRuleType.PreProcessorCommentRule,
-                    loc: locRange(loc, 0, raw.length),
-                    raws: {
-                        text: raw,
-                    },
                     category: RuleCategory.Comment,
                     syntax: AdblockSyntax.Adg,
                     name,
                     // comma separated list of parameters
                     params: ParameterListParser.parse(
-                        raw.substring(parameterListStart, parameterListEnd),
+                        raw.slice(parameterListStart, parameterListEnd),
+                        options,
+                        baseOffset + parameterListStart,
                         COMMA,
-                        shiftLoc(loc, parameterListStart),
                     ),
                 };
+
+                if (options.includeRaws) {
+                    result.raws = {
+                        text: raw,
+                    };
+                }
+
+                if (options.isLocIncluded) {
+                    result.start = baseOffset;
+                    result.end = baseOffset + raw.length;
+                }
+
+                return result;
             }
         }
 
@@ -191,20 +285,30 @@ export class PreProcessorCommentRuleParser {
             if (name.value === IF || name.value === INCLUDE) {
                 throw new AdblockSyntaxError(
                     `Directive "${name.value}" requires parameters`,
-                    locRange(loc, 0, raw.length),
+                    baseOffset,
+                    baseOffset + raw.length,
                 );
             }
 
-            return {
+            const result: PreProcessorCommentRule = {
                 type: CommentRuleType.PreProcessorCommentRule,
-                loc: locRange(loc, 0, raw.length),
-                raws: {
-                    text: raw,
-                },
                 category: RuleCategory.Comment,
                 syntax: AdblockSyntax.Common,
                 name,
             };
+
+            if (options.includeRaws) {
+                result.raws = {
+                    text: raw,
+                };
+            }
+
+            if (options.isLocIncluded) {
+                result.start = baseOffset;
+                result.end = baseOffset + raw.length;
+            }
+
+            return result;
         }
 
         // Get start and end offsets of the directive parameters
@@ -218,60 +322,169 @@ export class PreProcessorCommentRuleParser {
         // separately.
         if (name.value === IF) {
             params = LogicalExpressionParser.parse(
-                raw.substring(paramsStart, paramsEnd),
-                shiftLoc(loc, paramsStart),
+                raw.slice(paramsStart, paramsEnd),
+                options,
+                baseOffset + paramsStart,
             );
         } else {
-            params = {
-                type: 'Value',
-                loc: locRange(loc, paramsStart, paramsEnd),
-                value: raw.substring(paramsStart, paramsEnd),
-            };
+            params = ValueParser.parse(raw.slice(paramsStart, paramsEnd), options, baseOffset + paramsStart);
         }
 
-        return {
+        const result: PreProcessorCommentRule = {
             type: CommentRuleType.PreProcessorCommentRule,
-            loc: locRange(loc, 0, raw.length),
-            raws: {
-                text: raw,
-            },
             category: RuleCategory.Comment,
             syntax: AdblockSyntax.Common,
             name,
             params,
         };
+
+        if (options.includeRaws) {
+            result.raws = {
+                text: raw,
+            };
+        }
+
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
+        }
+
+        return result;
     }
 
     /**
-     * Converts a pre-processor comment AST to a string.
+     * Converts a pre-processor comment node to a string.
      *
-     * @param ast - Pre-processor comment AST
+     * @param node Pre-processor comment node
      * @returns Raw string
      */
-    public static generate(ast: PreProcessorCommentRule): string {
+    public static generate(node: PreProcessorCommentRule): string {
         let result = EMPTY;
 
         result += PREPROCESSOR_MARKER;
-        result += ast.name.value;
+        result += node.name.value;
 
-        if (ast.params) {
-            // Space is not allowed after "safari_cb_affinity" directive,
-            // so we need to handle it separately.
-            if (ast.name.value !== SAFARI_CB_AFFINITY) {
+        if (node.params) {
+            // Space is not allowed after "safari_cb_affinity" directive, so we need to handle it separately.
+            if (node.name.value !== SAFARI_CB_AFFINITY) {
                 result += SPACE;
             }
 
-            if (ast.params.type === 'Value') {
-                result += ast.params.value;
-            } else if (ast.params.type === 'ParameterList') {
+            if (node.params.type === 'Value') {
+                result += ValueParser.generate(node.params);
+            } else if (node.params.type === 'ParameterList') {
                 result += OPEN_PARENTHESIS;
-                result += ParameterListParser.generate(ast.params);
+                result += ParameterListParser.generate(node.params);
                 result += CLOSE_PARENTHESIS;
             } else {
-                result += LogicalExpressionParser.generate(ast.params);
+                result += LogicalExpressionParser.generate(node.params);
             }
         }
 
         return result;
+    }
+
+    /**
+     * Serializes a pre-processor comment node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    public static serialize(node: PreProcessorCommentRule, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.PreProcessorCommentRuleNode);
+
+        buffer.writeUint8(PreProcessorRuleSerializationMap.Name);
+        ValueParser.serialize(node.name, buffer, FREQUENT_DIRECTIVES_SERIALIZATION_MAP);
+
+        buffer.writeUint8(PreProcessorRuleSerializationMap.Syntax);
+        buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+
+        if (!isUndefined(node.params)) {
+            buffer.writeUint8(PreProcessorRuleSerializationMap.Params);
+
+            if (node.params.type === 'Value') {
+                ValueParser.serialize(node.params, buffer);
+            } else if (node.params.type === 'ParameterList') {
+                ParameterListParser.serialize(node.params, buffer, FREQUENT_PARAMS_SERIALIZATION_MAP, true);
+            } else {
+                LogicalExpressionParser.serialize(node.params, buffer);
+            }
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(PreProcessorRuleSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(PreProcessorRuleSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Deserializes a pre-processor comment node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<PreProcessorCommentRule>): void {
+        buffer.assertUint8(BinaryTypeMap.PreProcessorCommentRuleNode);
+
+        node.type = CommentRuleType.PreProcessorCommentRule;
+        node.category = RuleCategory.Comment;
+        node.syntax = AdblockSyntax.Common;
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case PreProcessorRuleSerializationMap.Name:
+                    ValueParser.deserialize(buffer, node.name = {} as Value, FREQUENT_DIRECTIVES_DESERIALIZATION_MAP);
+                    break;
+
+                case PreProcessorRuleSerializationMap.Syntax:
+                    node.syntax = SYNTAX_DESERIALIZATION_MAP.get(buffer.readUint8()) ?? AdblockSyntax.Common;
+                    break;
+
+                case PreProcessorRuleSerializationMap.Params:
+                    switch (buffer.peekUint8()) {
+                        case BinaryTypeMap.ValueNode:
+                            ValueParser.deserialize(buffer, node.params = {} as Value);
+                            break;
+
+                        case BinaryTypeMap.ParameterListNode:
+                            // eslint-disable-next-line max-len
+                            ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, FREQUENT_PARAMS_DESERIALIZATION_MAP);
+                            break;
+
+                        case BinaryTypeMap.ExpressionOperatorNode:
+                        case BinaryTypeMap.ExpressionParenthesisNode:
+                        case BinaryTypeMap.ExpressionVariableNode:
+                            LogicalExpressionParser.deserialize(buffer, node.params = {} as AnyExpressionNode);
+                            break;
+
+                        default:
+                            throw new Error(`Invalid binary type: ${prop}`);
+                    }
+                    break;
+
+                case PreProcessorRuleSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case PreProcessorRuleSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}`);
+            }
+
+            prop = buffer.readUint8();
+        }
     }
 }

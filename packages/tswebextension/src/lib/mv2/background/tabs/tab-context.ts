@@ -8,15 +8,23 @@ import type { DocumentApi } from '../document-api';
 import {
     type FilteringLog,
     defaultFilteringLog,
-    FilteringEventType,
-} from '../../../common/filtering-log';
-
+    isHttpOrWsRequest,
+    isHttpRequest,
+} from '../../../common';
 /**
  * We need tab id in the tab information, otherwise we do not process it.
  * For example developer tools tabs.
  */
 export type TabInfo = Tabs.Tab & {
+    /**
+     * ID of the tab.
+     */
     id: number,
+
+    /**
+     * Tab creation timestamp in milliseconds.
+     */
+    createdAtMs?: number,
 };
 
 /**
@@ -73,6 +81,11 @@ export class TabContext {
     public assistantInitTimestamp?: number | null = null;
 
     /**
+     * Tab creation timestamp in milliseconds.
+     */
+    public readonly createdAtMs: number;
+
+    /**
      * Context constructor.
      *
      * @param info Webextension API tab data.
@@ -85,6 +98,7 @@ export class TabContext {
         private readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
         this.info = info;
+        this.createdAtMs = Date.now();
     }
 
     /**
@@ -99,33 +113,51 @@ export class TabContext {
         // If the tab was updated it means that it wasn't used to send requests in the background.
         this.isSyntheticTab = false;
 
-        // Update main frame data when we navigate to another page with document request caching enabled.
-        if (changeInfo.url) {
-            // Get current main frame.
-            const frame = this.frames.get(MAIN_FRAME_ID);
-
-            // If main frame url is the same as request url, do nothing.
-            if (frame?.url === changeInfo.url) {
-                return;
-            }
-
-            // If the main frame doesn't exist or its URL is different from the request URL,
-            // it means that the document request hasn't been processed by the WebRequestApi yet.
-            // In this case, we mark the tab as using the cache and update its context using the tabsApi.
-            this.isDocumentRequestCached = true;
-
-            // Update main frame data.
-            this.handleMainFrameRequest(changeInfo.url);
-        }
-
-        // When the cached page is reloaded, we need to manually update
-        // the main frame rule for correct document-level rule processing.
+        /**
+         * When the cached page is reloaded, we need to manually update
+         * the main frame rule for correct document-level rule processing.
+         *
+         * Prop `isDocumentRequestCached` is being set at {@link updateMainFrameData} method,
+         * which is fired on main frame update before first {@link browser.tabs.onUpdated} event.
+         */
         if (!changeInfo.url
             && changeInfo.status === 'loading'
             && this.isDocumentRequestCached
             && this.info.url) {
             this.handleMainFrameRequest(this.info.url);
         }
+    }
+
+    /**
+     * Updates main frame data.
+     *
+     * Note: this method will be called on tab reload before the first {@link browser.tabs.onUpdated} event
+     * and {@link handleTabUpdate} and {@link updateTabInfo} calls.
+     *
+     * @param tabId Tab ID.
+     * @param url Url.
+     */
+    public updateMainFrameData(tabId: number, url: string): void {
+        this.info.url = url;
+        this.info.id = tabId;
+
+        // Get current main frame.
+        const frame = this.frames.get(MAIN_FRAME_ID);
+
+        // If main frame url is the same as request url, do nothing.
+        if (frame?.url === url) {
+            return;
+        }
+
+        /**
+         * If the main frame doesn't exist or its URL is different from the request URL,
+         * we mark the tab as using the cache and update its context using the tabsApi,
+         * as it means that the document request hasn't been processed by the WebRequestApi yet.
+         */
+        this.isDocumentRequestCached = true;
+
+        // Update main frame data.
+        this.handleMainFrameRequest(url);
     }
 
     /**
@@ -145,9 +177,8 @@ export class TabContext {
      * CosmeticResult is handled in {@link handleFrameCosmeticResult}.
      *
      * @param requestContext Request context data.
-     * @param isRemoveparamRedirect Indicates whether the request is a $removeparam redirect.
      */
-    public handleFrameRequest(requestContext: FrameRequestContext, isRemoveparamRedirect = false): void {
+    public handleFrameRequest(requestContext: FrameRequestContext): void {
         // This method is called in the WebRequest onBeforeRequest handler.
         // It means that the request is being processed.
         this.isDocumentRequestCached = false;
@@ -159,8 +190,13 @@ export class TabContext {
             requestType,
         } = requestContext;
 
+        // Ignore non-http requests.
+        if (!isHttpRequest(requestUrl)) {
+            return;
+        }
+
         if (requestType === RequestType.Document) {
-            this.handleMainFrameRequest(requestUrl, requestId, isRemoveparamRedirect);
+            this.handleMainFrameRequest(requestUrl, requestId);
         } else {
             this.frames.set(frameId, new Frame(requestUrl, requestId));
         }
@@ -206,13 +242,8 @@ export class TabContext {
      *
      * @param requestUrl Request url.
      * @param requestId Request id.
-     * @param isRemoveparamRedirect Indicates whether the request is a $removeparam redirect.
      */
-    private handleMainFrameRequest(
-        requestUrl: string,
-        requestId?: string,
-        isRemoveparamRedirect = false,
-    ): void {
+    private handleMainFrameRequest(requestUrl: string, requestId?: string): void {
         // Clear frames data on tab reload.
         this.frames.clear();
 
@@ -223,27 +254,17 @@ export class TabContext {
         this.mainFrameRule = this.documentApi.matchFrame(requestUrl);
         // Reset tab blocked count.
         this.blockedRequestCount = 0;
-
-        if (!isRemoveparamRedirect) {
-            // dispatch filtering log reload event
-            this.filteringLog.publishEvent({
-                type: FilteringEventType.TabReload,
-                data: {
-                    tabId: this.info.id,
-                },
-            });
-        }
     }
 
     /**
      * Creates context for new tab.
      *
      * @param tab Webextension API tab data.
-     * @param allowlistApi Allowlist API.
+     * @param documentApi Document API.
      * @returns Tab context for new tab.
      */
-    public static createNewTabContext(tab: TabInfo, allowlistApi: DocumentApi): TabContext {
-        const tabContext = new TabContext(tab, allowlistApi);
+    public static createNewTabContext(tab: TabInfo, documentApi: DocumentApi): TabContext {
+        const tabContext = new TabContext(tab, documentApi);
 
         // In some cases, tab is created while browser navigation processing.
         // For example: when you navigate outside the browser or create new empty tab.
@@ -251,8 +272,8 @@ export class TabContext {
         // If server returns redirect, new main frame url will be processed in WebRequestApi.
         const url = tab.pendingUrl || tab.url;
 
-        if (url) {
-            tabContext.mainFrameRule = allowlistApi.matchFrame(url);
+        if (url && isHttpOrWsRequest(url)) {
+            tabContext.mainFrameRule = documentApi.matchFrame(url);
 
             tabContext.frames.set(MAIN_FRAME_ID, new Frame(url));
         }

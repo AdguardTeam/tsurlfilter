@@ -2,34 +2,34 @@
  * @jest-environment jsdom
  */
 
-import { CosmeticRule } from '@adguard/tsurlfilter';
 import { HtmlRuleParser } from '@lib/mv2/background/services/content-filtering/rule/html-rule-parser';
+import { createCosmeticRule } from '../../../../../../helpers/rule-creator';
 
 describe('Html rule attributes parser', () => {
     it('checks simple attributes parsing', () => {
         let ruleText = 'example.org$$div[id="ad_text"]';
-        let rule = new CosmeticRule(ruleText, 0);
+        let rule = createCosmeticRule(ruleText, 0);
 
         let parsed = HtmlRuleParser.parse(rule);
         expect(parsed.tagName).toBe('div');
         expect(parsed.selector).toBe('div[id*="ad_text"]');
 
         ruleText = 'example.org$$div';
-        rule = new CosmeticRule(ruleText, 0);
+        rule = createCosmeticRule(ruleText, 0);
 
         parsed = HtmlRuleParser.parse(rule);
         expect(parsed.tagName).toBe('div');
         expect(parsed.selector).toBe('div');
 
         ruleText = 'example.org$$div[id]';
-        rule = new CosmeticRule(ruleText, 0);
+        rule = createCosmeticRule(ruleText, 0);
 
         parsed = HtmlRuleParser.parse(rule);
         expect(parsed.tagName).toBe('div');
         expect(parsed.selector).toBe('div');
 
         ruleText = 'example.org$$div[id=""';
-        rule = new CosmeticRule(ruleText, 0);
+        rule = createCosmeticRule(ruleText, 0);
 
         parsed = HtmlRuleParser.parse(rule);
         expect(parsed.tagName).toBe('div');
@@ -39,7 +39,7 @@ describe('Html rule attributes parser', () => {
     it('checks complicated attributes parsing', () => {
         // eslint-disable-next-line max-len
         const ruleText = 'example.org$$div[id="ad_text"][tag-content="teas""ernet"][max-length="500"][min-length="50"][wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]';
-        const rule = new CosmeticRule(ruleText, 0);
+        const rule = createCosmeticRule(ruleText, 0);
 
         const parsed = HtmlRuleParser.parse(rule);
         expect(parsed.tagName).toBe('div');

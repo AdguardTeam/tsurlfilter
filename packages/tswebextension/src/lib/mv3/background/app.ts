@@ -1,14 +1,15 @@
-import { type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
+import { Filter, type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
 
-import { type AppInterface, defaultFilteringLog, getErrorMessage } from '../../common';
+import { type AnyRule } from '@adguard/agtree';
+import { type AppInterface, defaultFilteringLog } from '../../common';
+import { getErrorMessage } from '../../common';
 import { logger } from '../utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
-import UserRulesApi, { type ConversionResult } from './user-rules-api';
+import UserRulesApi, { USER_FILTER_ID, type ConversionResult } from './user-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
-import { TabsApi, tabsApi } from './tabs-api';
 import { getAndExecuteScripts } from './scriptlets';
 import { engineApi } from './engine-api';
 import { declarativeFilteringLog, type RecordFiltered } from './declarative-filtering-log';
@@ -19,6 +20,10 @@ import {
     type ConfigurationMV3Context,
     configurationMV3Validator,
 } from './configuration';
+import { RequestEvents } from './request/events/request-events';
+import { TabsApi, tabsApi } from '../tabs/tabs-api';
+import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
+import { WebRequestApi } from './web-request-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -119,6 +124,18 @@ MessagesHandlerMV3
             const res = await this.configure(config);
             await this.executeScriptlets();
 
+            // Start listening for request events.
+            RequestEvents.init();
+            // Start handle request events.
+            WebRequestApi.start();
+
+            // Add tabs listeners
+            await tabsApi.start();
+
+            // TODO: Inject cosmetic rules into tabs, opened before app initialization.
+            // Compute and save matching result for tabs, opened before app initialization.
+            await TabsCosmeticInjector.processOpenTabs();
+
             this.isStarted = true;
             this.startPromise = undefined;
             logger.debug('[START]: started');
@@ -165,9 +182,6 @@ MessagesHandlerMV3
     public async start(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.debug('[START]: is started ', this.isStarted);
 
-        // Add tabs listeners
-        await tabsApi.start();
-
         if (this.isStarted) {
             throw new Error('Already started');
         }
@@ -196,6 +210,9 @@ MessagesHandlerMV3
         await engineApi.stopEngine();
 
         await declarativeFilteringLog.stop();
+
+        // Stop handle request events.
+        WebRequestApi.stop();
 
         // Remove tabs listeners and clear context storage
         tabsApi.stop();
@@ -252,7 +269,14 @@ MessagesHandlerMV3
 
         // Convert custom filters and user rules into one rule set and apply it
         const dynamicRules = await UserRulesApi.updateDynamicFiltering(
-            configuration.userrules,
+            new Filter(USER_FILTER_ID, {
+                getContent: () => Promise.resolve({
+                    filterList: configuration.userrules.content,
+                    sourceMap: configuration.userrules.sourceMap ?? {},
+                    conversionMap: configuration.userrules.conversionMap ?? {},
+                    rawFilterList: configuration.userrules.rawFilterList ?? '',
+                }),
+            }),
             customFilters,
             staticRuleSets,
             this.webAccessibleResourcesPath,
@@ -268,6 +292,10 @@ MessagesHandlerMV3
         });
         await engineApi.waitingForEngine;
 
+        // Update previously opened tabs with new rules - find for each tab
+        // new main frame rule.
+        await tabsApi.updateCurrentTabsMainFrameRules();
+
         // TODO: Recreate only dynamic rule set, because static cannot be changed
         const ruleSets = [
             ...staticRuleSets,
@@ -280,7 +308,9 @@ MessagesHandlerMV3
             configuration.filteringLogEnabled,
         );
 
-        // Save only lightweight copy of configuration to decrease memory usage.
+        // Reload request events listeners.
+        await WebRequestApi.flushMemoryCache();
+
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
         logger.debug('[CONFIGURE]: end');
@@ -342,6 +372,8 @@ MessagesHandlerMV3
     /**
      * Executes scriptlets for the currently active tab and adds a listener to
      * the {@link chrome.webNavigation.onCommitted} hook to execute scriptlets.
+     *
+     * TODO: Move to RequestEvents.
      */
     public async executeScriptlets(): Promise<void> {
         const activeTab = await TabsApi.getActiveTab();
@@ -353,7 +385,23 @@ MessagesHandlerMV3
             await getAndExecuteScripts(id, url, verbose);
         }
 
+        // TODO: Move to RequestEvents.
         chrome.webNavigation.onCommitted.addListener(this.onCommitted);
+    }
+
+    // TODO: Implement this method.
+    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
+    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        throw new Error('Method is not implemented.');
     }
 
     /**

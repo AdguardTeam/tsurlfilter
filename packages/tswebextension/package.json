@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tswebextension",
-  "version": "1.0.32",
+  "version": "2.0.0",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
   "main": "dist/index.js",
   "typings": "dist/types/src/lib/mv2/background/index.d.ts",
@@ -63,11 +63,12 @@
   "scripts": {
     "lint": "eslint . && pnpm lint:tsc",
     "lint:tsc": "tsc --noEmit",
+    "check-types": "pnpm lint:tsc",
     "prebuild": "rimraf dist",
     "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
     "postbuild": "node tasks/build-txt",
     "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-    "start": "rollup -c rollup.config.ts -w",
+    "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc -w",
     "test": "jest --coverage",
     "test:smoke": "cd test/builders/rollup-ts && pnpm test",
     "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache --runInBand",
@@ -82,10 +83,11 @@
     ]
   },
   "dependencies": {
+    "@adguard/agtree": "workspace:^",
     "@adguard/assistant": "^4.3.70",
     "@adguard/extended-css": "^2.0.56",
     "@adguard/scriptlets": "^1.11.16",
-    "@adguard/tsurlfilter": "^2.2.23",
+    "@adguard/tsurlfilter": "workspace:^",
     "bowser": "2.11.0",
     "commander": "11.0.0",
     "fs-extra": "11.1.1",
@@ -106,7 +108,7 @@
     "@rollup/plugin-typescript": "^11.1.1",
     "@swc/core": "1.4.8",
     "@swc/jest": "0.2.36",
-    "@types/chrome": "^0.0.237",
+    "@types/chrome": "^0.0.242",
     "@types/fs-extra": "^11.0.1",
     "@types/jest": "29.5.2",
     "@types/lodash-es": "^4.17.9",

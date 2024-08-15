@@ -46,11 +46,13 @@ describe('SimpleRegex.extractShortcut', () => {
     });
 
     it('works if it is able to extract regex shortcuts', () => {
-        let shortcut = SimpleRegex.extractShortcut('/example/');
+        let shortcut: string;
+
+        shortcut = SimpleRegex.extractShortcut('/example/');
         expect(shortcut).toEqual('example');
 
         shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/example/');
-        expect(shortcut).toEqual('/example');
+        expect(shortcut).toEqual('example');
 
         shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/[a-z]+\\.example/');
         expect(shortcut).toEqual('.example');
@@ -60,6 +62,20 @@ describe('SimpleRegex.extractShortcut', () => {
 
         shortcut = SimpleRegex.extractShortcut('/(https?:\\/\\/)142\\.91\\.159\\..{100,}/');
         expect(shortcut).toEqual('');
+
+        shortcut = SimpleRegex.extractShortcut('/^https:\\/\\/sm\\.l/');
+        expect(shortcut).toEqual('sm.l');
+
+        shortcut = SimpleRegex.extractShortcut('/https://reg\\.com/');
+        expect(shortcut).toEqual('reg.com');
+
+        // zero-length alternative regexp case
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2240#issuecomment-1344807910
+        shortcut = SimpleRegex.extractShortcut(
+            // eslint-disable-next-line no-useless-escape
+            '/^http(s|):\/\/([a-z0-9-\.]+|)+[a-z0-9-]+\.[a-z]+\/adManager\/(css|js)\/[A-z]+\.(css|js)$/',
+        );
+        expect(shortcut).toEqual('admanager');
     });
 
     it('works if it discards incorrect patterns', () => {

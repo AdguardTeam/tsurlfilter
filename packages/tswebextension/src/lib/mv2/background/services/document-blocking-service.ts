@@ -6,7 +6,7 @@ import { defaultFilteringLog, FilteringEventType } from '../../../common/filteri
 import { logger } from '../../../common/utils/logger';
 import { isChromium } from '../utils/browser-detector';
 import type { ConfigurationMV2 } from '../configuration';
-import { ContentType } from '..';
+import { ContentType, NetworkRuleOption } from '..';
 import type { TabsApi } from '../tabs/tabs-api';
 
 /**
@@ -90,10 +90,17 @@ export class DocumentBlockingService {
             data: {
                 eventId,
                 tabId,
-                rule,
+                filterId: rule.getFilterListId(),
+                ruleIndex: rule.getIndex(),
                 requestUrl,
                 frameUrl: referrerUrl,
                 requestType: ContentType.Document,
+                isAllowlist: rule.isAllowlist(),
+                isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                advancedModifier: rule.getAdvancedModifierValue(),
             },
         });
 

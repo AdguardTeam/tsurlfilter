@@ -1,3 +1,5 @@
+import { type RuleInfo } from '../../../common/content-script/rule-info';
+
 /**
  * Utils class.
  */
@@ -76,12 +78,12 @@ export class ElementUtils {
     /**
      * Parses hits info from style content.
      *
-     * @param content Style.
+     * @param content Style content.
      * @param attributeMarker Attribute marker.
      *
-     * @returns Info with filterId, ruleText or null.
+     * @returns Rule info or null.
      */
-    public static parseInfo(content: string, attributeMarker: string): { filterId: number; ruleText: string } | null {
+    public static parseInfo(content: string, attributeMarker: string): RuleInfo | null {
         if (!content || content.indexOf(attributeMarker) < 0) {
             return null;
         }
@@ -91,20 +93,23 @@ export class ElementUtils {
         filterIdAndRuleText = ElementUtils.removeQuotes(filterIdAndRuleText);
         // Remove prefix
         filterIdAndRuleText = filterIdAndRuleText.substring(attributeMarker.length);
-        // Attribute 'content' in css looks like: {content: 'adguard{filterId};{ruleText}'}
+        // Attribute 'content' in css looks like: {content: 'adguard{filterId};{ruleIndex}'}
         const index = filterIdAndRuleText.indexOf(';');
         if (index < 0) {
             return null;
         }
 
-        const filterId = parseInt(filterIdAndRuleText.substring(0, index), 10);
+        const filterId = Number.parseInt(filterIdAndRuleText.slice(0, index), 10);
         if (Number.isNaN(filterId)) {
             return null;
         }
 
-        const ruleText = filterIdAndRuleText.substring(index + 1);
+        const ruleIndex = Number.parseInt(filterIdAndRuleText.slice(index + 1), 10);
+        if (Number.isNaN(ruleIndex)) {
+            return null;
+        }
 
-        return { filterId, ruleText };
+        return { filterId, ruleIndex };
     }
 
     /**
@@ -113,12 +118,12 @@ export class ElementUtils {
      * @param content Style.
      * @param attributeMarker Attribute marker.
      *
-     * @returns Info with filterId, ruleText or null.
+     * @returns Rule info or null.
      */
     public static parseExtendedStyleInfo(
         content: string,
         attributeMarker: string,
-    ): { filterId: number; ruleText: string } | null {
+    ): RuleInfo | null {
         const important = '!important';
         const indexOfImportant = content.lastIndexOf(important);
         if (indexOfImportant === -1) {

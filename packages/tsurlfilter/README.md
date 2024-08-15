@@ -1,384 +1,623 @@
+<!-- omit in toc -->
 # TSUrlFilter
 
-[![NPM](https://nodei.co/npm/@adguard/tsurlfilter.png?compact=true)](https://www.npmjs.com/package/@adguard/tsurlfilter/)
+[![npm-badge]][npm-url] [![license-badge]][license-url]
+
+[npm-badge]: https://img.shields.io/npm/v/@adguard/tsurlfilter
+[npm-url]: https://www.npmjs.com/package/@adguard/tsurlfilter
+[license-badge]: https://img.shields.io/npm/l/@adguard/tsurlfilter
+[license-url]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/LICENSE
 
 This is a TypeScript library that implements AdGuard's content blocking rules.
 
-- [TSUrlFilter](#tsurlfilter)
-  - [Idea](#idea)
-  - [Usage](#usage)
-    - [API description](#api-description)
-      - [Public properties](#public-properties)
-        - [TSURLFILTER_VERSION](#tsurlfilter-version)
-      - [Public classes](#public-classes)
-        - [Engine](#engine)
-          - [**Constructor**](#constructor)
-          - [**matchRequest**](#matchrequest)
-          - [**matchFrame**](#matchframe)
-          - [Starting engine](#starting-engine)
-          - [Matching requests](#matching-requests)
-          - [Retrieving cosmetic data](#retrieving-cosmetic-data)
-        - [MatchingResult](#matchingresult)
-          - [**getBasicResult**](#getbasicresult)
-          - [**getCosmeticOption**](#getcosmeticoption)
-          - [**Other rules**](#other-rules)
-        - [CosmeticResult](#cosmeticresult)
-          - [Applying cosmetic result - css](#applying-cosmetic-result---css)
-          - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
-        - [DnsEngine](#dnsengine)
-          - [**Constructor**](#constructor-1)
-          - [**match**](#match)
-          - [Matching hostname](#matching-hostname)
-        - [RuleConverter](#ruleconverter)
-          - [**convertRules**](#convertrules)
-        - [RuleValidator](#rulevalidator)
-          - [Public methods](#public-methods)
-        - [RuleSyntaxUtils](#rulesyntaxutils)
-          - [Public methods](#public-methods-1)
-        - [DeclarativeConverter](#declarativeconverter)
-          - [Public methods](#public-methods-2)
-          - [Problems](#problems)
-  - [Development](#development)
-    - [NPM scripts](#npm-scripts)
-    - [Excluding peerDependencies](#excluding-peerdependencies)
-    - [Git Hooks](#git-hooks)
+- [Idea](#idea)
+- [Installation](#installation)
+- [API description](#api-description)
+  - [Public properties](#public-properties)
+    - [`TSURLFILTER_VERSION`](#tsurlfilter_version)
+  - [Public classes](#public-classes)
+    - [Engine](#engine)
+      - [**Constructor**](#constructor)
+      - [**matchRequest**](#matchrequest)
+      - [**matchFrame**](#matchframe)
+      - [Starting engine](#starting-engine)
+      - [Matching requests](#matching-requests)
+      - [Retrieving cosmetic data](#retrieving-cosmetic-data)
+    - [MatchingResult](#matchingresult)
+      - [**getBasicResult**](#getbasicresult)
+      - [**getCosmeticOption**](#getcosmeticoption)
+      - [**Other rules**](#other-rules)
+    - [CosmeticResult](#cosmeticresult)
+      - [Applying cosmetic result - CSS](#applying-cosmetic-result---css)
+      - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
+    - [DnsEngine](#dnsengine)
+      - [**Constructor**](#constructor-1)
+      - [**match**](#match)
+      - [Matching hostname](#matching-hostname)
+    - [RuleSyntaxUtils](#rulesyntaxutils)
+      - [Public methods](#public-methods)
+    - [FilterListPreprocessor](#filterlistpreprocessor)
+      - [Understanding the data structure](#understanding-the-data-structure)
+        - [Requirements](#requirements)
+        - [`PreprocessedFilterList` interface](#preprocessedfilterlist-interface)
+        - [Example to illustrate the requirements](#example-to-illustrate-the-requirements)
+      - [Public methods](#public-methods-1)
+    - [DeclarativeFilterConverter](#declarativefilterconverter)
+      - [Public methods](#public-methods-2)
+      - [Example of use](#example-of-use)
+      - [Declarative converter documentation](#declarative-converter-documentation)
+      - [Problems](#problems)
+- [Development](#development)
+  - [NPM scripts](#npm-scripts)
+  - [Excluding peerDependencies](#excluding-peerdependencies)
+  - [Git Hooks](#git-hooks)
 
-## <a id="idea"></a> Idea
+## <a id="idea"></a>Idea
 
 The idea is to have a single library that we can reuse for the following tasks:
 
 - Doing content blocking in our Chrome and Firefox extensions (obviously)
 - Using this library for parsing rules and converting to Safari-compatible content blocking lists (see [AdGuard for Safari](https://github.com/AdguardTeam/AdguardForSafari), [AdGuard for iOS](https://github.com/AdguardTeam/AdguardForiOS))
 - Using this library for validating and linting filter lists (see [FiltersRegistry](https://github.com/AdguardTeam/FiltersRegistry), [AdguardFilters](https://github.com/AdguardTeam/AdguardFilters))
-- It could also be used as a basis for the [VS code extension](https://github.com/ameshkov/VscodeAdblockSyntax/)
 
-## <a id="usage"></a> Usage
+## <a id="usage"></a>Installation
 
-Install the tsurlfilter:
+You can install the package via:
 
-```
-npm install @adguard/tsurlfilter
-```
+- [Yarn][yarn-pkg-manager-url]: `yarn add @adguard/tsurlfilter`
+- [NPM][npm-pkg-manager-url]: `npm install @adguard/tsurlfilter`
+- [PNPM][pnpm-pkg-manager-url]: `pnpm install @adguard/tsurlfilter`
 
-### <a id="api-description"></a> API description
+[npm-pkg-manager-url]: https://www.npmjs.com/get-npm
+[yarn-pkg-manager-url]: https://yarnpkg.com/en/docs/install
+[pnpm-pkg-manager-url]: https://pnpm.io/
 
-#### <a id="public-properties"></a> Public properties
+## <a id="api-description"></a>API description
 
-#### <a id="tsurlfilter-version"></a> TSURLFILTER_VERSION
+### <a id="public-properties"></a>Public properties
+
+#### <a id="tsurlfilter-version"></a>`TSURLFILTER_VERSION`
 
 type: `string`
 
 Version of the library.
 
-#### <a id="public-classes"></a> Public classes
+### <a id="public-classes"></a>Public classes
 
-#### <a id="engine"></a> Engine
+#### <a id="engine"></a>Engine
 
 Engine is a main class of this library. It represents the filtering functionality for loaded rules
 
 ##### **Constructor**
 
-```
-    /**
-     * Creates an instance of Engine
-     * Parses filtering rules and creates a filtering engine of them
-     *
-     * @param ruleStorage storage
-     * @param configuration optional configuration
-     *
-     * @throws
-     */
-    constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined)
+```ts
+/**
+ * Creates an instance of Engine
+ * Parses filtering rules and creates a filtering engine of them
+ *
+ * @param ruleStorage storage
+ * @param configuration optional configuration
+ *
+ * @throws
+ */
+constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined);
 ```
 
 ##### **matchRequest**
 
-```
-
-
-    /**
-     * Matches the specified request against the filtering engine and returns the matching result.
-     * In case frameRules parameter is not specified, frame rules will be selected matching request.sourceUrl.
-     *
-     * @param request - request to check
-     * @param frameRules - source rules or undefined
-     * @return matching result
-     */
-    matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult
+```ts
+/**
+ * Matches the specified request against the filtering engine and returns the matching result.
+ * In case frameRules parameter is not specified, frame rules will be selected matching request.sourceUrl.
+ *
+ * @param request - request to check
+ * @param frameRules - source rules or undefined
+ * @return matching result
+ */
+matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult;
 ```
 
 ##### **matchFrame**
 
-```
-    /**
-     * Matches current frame and returns document-level allowlist rule if found.
-     *
-     * @param frameUrl
-     */
-    matchFrame(frameUrl: string): NetworkRule | null
+```ts
+/**
+  * Matches current frame and returns document-level allowlist rule if found.
+  *
+  * @param frameUrl
+  */
+matchFrame(frameUrl: string): NetworkRule | null;
 ```
 
 ##### Starting engine
 
-```
-    const list = new StringRuleList(listId, rulesText, false, false);
-    const ruleStorage = new RuleStorage([list]);
+```ts
+import {
+    BufferRuleList,
+    Engine,
+    FilterListPreprocessor,
+    RuleStorage,
+    setConfiguration,
+} from '@adguard/tsurlfilter';
 
-    const config = {
-        engine: 'extension',
-        version: '1.0.0',
-        verbose: true,
-    };
+const rawFilter = [
+  '[AdGuard]',
+  '! Title: Example filter',
+  '! Description: This is just an example filter.',
+  'example.com##h1',
+].join('\n');
 
-    setConfiguration(config)
+// Practically, you can read this data from the storage
+const processedFilter = FilterListPreprocessor.preprocess(rawFilter);
+const list = new BufferRuleList(0, processedFilter.filterList, false, false, false, processedFilter.sourceMap);
+const ruleStorage = new RuleStorage([list]);
 
-    const engine = new Engine(ruleStorage);
+const config = {
+    engine: 'extension',
+    version: '1.0.0',
+    verbose: true,
+};
+
+setConfiguration(config);
+
+const engine = new Engine(ruleStorage);
+
+console.log(`Engine loaded with ${engine.getRulesCount()} rule(s)`);
 ```
 
 ##### Matching requests
 
-```
-    const request = new Request(url, sourceUrl, RequestType.Document);
-    const result = engine.matchRequest(request);
+```ts
+const request = new Request(url, sourceUrl, RequestType.Document);
+const result = engine.matchRequest(request);
 ```
 
 ##### Retrieving cosmetic data
 
-```
-    const cosmeticResult = engine.getCosmeticResult(request, CosmeticOption.CosmeticOptionAll);
+```ts
+const cosmeticResult = engine.getCosmeticResult(request, CosmeticOption.CosmeticOptionAll);
 ```
 
-#### <a id="matching-result"></a> MatchingResult
+#### <a id="matching-result"></a>MatchingResult
 
 MatchingResult contains all the rules matching a web request, and provides methods that define how a web request should be processed
 
 ##### **getBasicResult**
 
-```
-    /**
-     * GetBasicResult returns a rule that should be applied to the web request.
-     * Possible outcomes are:
-     * returns null -- bypass the request.
-     * returns a allowlist rule -- bypass the request.
-     * returns a blocking rule -- block the request.
-     *
-     * @return basic result rule
-     */
-    getBasicResult(): NetworkRule | null
+```ts
+/**
+ * GetBasicResult returns a rule that should be applied to the web request.
+ * Possible outcomes are:
+ * returns null -- bypass the request.
+ * returns a allowlist rule -- bypass the request.
+ * returns a blocking rule -- block the request.
+ *
+ * @return basic result rule
+ */
+getBasicResult(): NetworkRule | null;
 ```
 
 ##### **getCosmeticOption**
 
 This flag should be used for `getCosmeticResult(request: Request, option: CosmeticOption)`
 
-```
-    /**
-     * Returns a bit-flag with the list of cosmetic options
-     *
-     * @return {CosmeticOption} mask
-     */
-    getCosmeticOption(): CosmeticOption
+```ts
+/**
+  * Returns a bit-flag with the list of cosmetic options
+  *
+  * @return {CosmeticOption} mask
+  */
+getCosmeticOption(): CosmeticOption;
 ```
 
 ##### **Other rules**
 
+```ts
+/**
+  * Return an array of replace rules
+  */
+getReplaceRules(): NetworkRule[]
+
+/**
+  * Returns an array of csp rules
+  */
+getCspRules(): NetworkRule[]
+
+/**
+  * Returns an array of cookie rules
+  */
+getCookieRules(): NetworkRule[]
 ```
-    /**
-     * Return an array of replace rules
-     */
-    getReplaceRules(): NetworkRule[]
 
-    /**
-     * Returns an array of csp rules
-     */
-    getCspRules(): NetworkRule[]
-
-    /**
-     * Returns an array of cookie rules
-     */
-    getCookieRules(): NetworkRule[]
-```
-
-#### <a id="cosmetic-result"></a> CosmeticResult
+#### <a id="cosmetic-result"></a>CosmeticResult
 
 Cosmetic result is the representation of matching cosmetic rules.
 It contains the following properties:
 
+```ts
+/**
+ * Storage of element hiding rules
+ */
+public elementHiding: CosmeticStylesResult;
+
+/**
+ * Storage of CSS rules
+ */
+public CSS: CosmeticStylesResult;
+
+/**
+ * Storage of JS rules
+ */
+public JS: CosmeticScriptsResult;
+
+/**
+ * Storage of Html filtering rules
+ */
+public Html: CosmeticHtmlResult;
+
+/**
+ * Script rules
+ */
+public getScriptRules(): CosmeticRule[];
 ```
-    /**
-     * Storage of element hiding rules
-     */
-    public elementHiding: CosmeticStylesResult;
 
-    /**
-     * Storage of CSS rules
-     */
-    public CSS: CosmeticStylesResult;
+##### Applying cosmetic result - CSS
 
-    /**
-     * Storage of JS rules
-     */
-    public JS: CosmeticScriptsResult;
+```ts
+const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
+        .map((rule) => `${rule.getContent()} { display: none!important; }`);
 
-    /**
-     * Storage of Html filtering rules
-     */
-    public Html: CosmeticHtmlResult;
+const styleText = css.join('\n');
+const injectDetails = {
+    code: styleText,
+    runAt: 'document_start',
+};
 
-    /**
-     * Script rules
-     */
-    public getScriptRules(): CosmeticRule[];
-```
-
-##### Applying cosmetic result - css
-
-```
-   const css = [...cosmeticResult.elementHiding.generic, ...cosmeticResult.elementHiding.specific]
-           .map((rule) => `${rule.getContent()} { display: none!important; }`);
-
-    const styleText = css.join('\n');
-    const injectDetails = {
-        code: styleText,
-        runAt: 'document_start',
-    };
-
-    chrome.tabs.insertCSS(tabId, injectDetails);
+chrome.tabs.insertCSS(tabId, injectDetails);
 ```
 
 ##### Applying cosmetic result - scripts
 
-```
-    const cosmeticRules = cosmeticResult.getScriptRules();
-    const scriptsCode = cosmeticRules.map((x) => x.getScript()).join('\r\n');
-    const toExecute = buildScriptText(scriptsCode);
+```ts
+const cosmeticRules = cosmeticResult.getScriptRules();
+const scriptsCode = cosmeticRules.map((x) => x.getScript()).join('\r\n');
+const toExecute = buildScriptText(scriptsCode);
 
-    chrome.tabs.executeScript(tabId, {
-        code: toExecute,
-    });
+chrome.tabs.executeScript(tabId, {
+    code: toExecute,
+});
 ```
 
-#### <a id="dns-engine"></a> DnsEngine
+#### <a id="dns-engine"></a>DnsEngine
 
 DNSEngine combines host rules and network rules and is supposed to quickly find matching rules for hostnames.
 
 ##### **Constructor**
 
-```
-    /**
-     * Builds an instance of dns engine
-     *
-     * @param storage
-     */
-    constructor(storage: RuleStorage)
+```ts
+/**
+  * Builds an instance of dns engine
+  *
+  * @param storage
+  */
+constructor(storage: RuleStorage);
 ```
 
 ##### **match**
 
-```
-    /**
-     * Match searches over all filtering and host rules loaded to the engine
-     *
-     * @param hostname to check
-     * @return dns result object
-     */
-    public match(hostname: string): DnsResult
+```ts
+/**
+ * Match searches over all filtering and host rules loaded to the engine
+ *
+ * @param hostname to check
+ * @return dns result object
+ */
+public match(hostname: string): DnsResult;
 ```
 
 ##### Matching hostname
 
-```
-    const dnsResult = dnsEngine.match(hostname);
-    if (dnsResult.basicRule && !dnsResult.basicRule.isAllowlist()) {
-        // blocking rule found
-        ..
-    }
+```ts
+const dnsResult = dnsEngine.match(hostname);
+if (dnsResult.basicRule && !dnsResult.basicRule.isAllowlist()) {
+    // blocking rule found
+    ...
+}
 
-    if (dnsResult.hostRules.length > 0) {
-        // hosts rules found
-        ..
-    }
-```
-
-#### <a id="rule-converter"></a> RuleConverter
-
-Before saving downloaded text with rules it could be useful to run converter on it.
-The text will be processed line by line, converting each line from known external format to Adguard syntax.
-
-##### **convertRules**
-
-```
-    /**
-     * Converts rules text
-     *
-     * @param rulesText
-     */
-    public static convertRules(rulesText: string): string {
+if (dnsResult.hostRules.length > 0) {
+    // hosts rules found
+    ...
+}
 ```
 
-#### <a id="rule-validator"></a> RuleValidator
-
-This module is not used in the engine directly, but it can be used to validate filter rules in other libraries or tools
-
-##### Public methods
-
-```
-    /**
-     * Validates raw rule string
-     * @param rawRule
-     */
-    public static validate(rawRule: string): ValidationResult
-```
-
-```
-    /**
-    * Valid true - means that the rule is valid, otherwise rule is not valid
-    * If rule is not valid, reason is returned in the error field
-    */
-    interface ValidationResult {
-        valid: boolean;
-        error: string | null;
-    }
-```
-
-#### <a id="rule-syntax-utils"></a> RuleSyntaxUtils
+#### <a id="rule-syntax-utils"></a>RuleSyntaxUtils
 
 This module is not used in the engine directly, but it can be used in other libraries
 
 ##### Public methods
 
+```ts
+/**
+ * Checks if rule can be matched by domain
+ *
+ * @param node Rule node
+ * @param domain Domain to check
+ */
+public static isRuleForDomain(node: AnyRule, domain: string): boolean
 ```
+
+```ts
+/**
+ * Checks if rule can be matched by URL
+ *
+ * @param node Rule node
+ * @param url URL to check
+ */
+public static isRuleForUrl(node: AnyRule, url: string): boolean;
+```
+
+#### <a id="filter-list-preprocessor"></a>FilterListPreprocessor
+
+Provides a utility to process filter lists before using them in the engine.
+
+##### Understanding the data structure
+
+###### Requirements
+
+The processed data structure must meet two requirements:
+
+1. Provide the data necessary for the operation of the filtering engine:
+   - Binary serialized filter list without invalid rules and comments
+2. Make it possible to display the applied rules (and their original equivalent) in the filtering log
+   (only for debugging purposes):
+   - Source map (maps the start index in the serialized buffer to the line start index in the raw filter list)
+   - Raw filter list
+   - Conversion map (maps the start index in the raw filter list to the original rule, if the rule was converted)
+
+###### `PreprocessedFilterList` interface
+
+```ts
+/**
+ * Represents a preprocessed filter list.
+ */
+interface PreprocessedFilterList {
     /**
-     * Checks if rule can be matched by domain
-     * @param ruleText
-     * @param domain
+     * Raw filter list, but rules are converted to the AdGuard format.
      */
-    public static isRuleForDomain(ruleText: string, domain: string): boolean {
-```
+    rawFilterList: string;
 
-```
     /**
-     * Checks if rule can be matched by url
-     * @param ruleText
-     * @param url
+     * Serialized version of the rawFilterList.
      */
-    public static isRuleForUrl(ruleText: string, url: string): boolean {
+    filterList: Uint8Array[];
+
+    /**
+     * Mapping between the original and converted rules.
+     * Key is the line start index in the rawFilterList, value is the converted rule.
+     */
+    conversionMap: Record<string, string>;
+
+    /**
+     * Source map for the rawFilterList. Key is the start index in the serialized buffer, value is the line start index in the rawFilterList.
+     */
+    sourceMap: Record<string, number>;
+}
 ```
 
-#### <a id="declarative-converter"></a> DeclarativeConverter
+###### Example to illustrate the requirements
 
-Provides a functionality of conversion AG rules to manifest v3 declarative syntax. See `examples/manifest-v3/` for an example usage.
+Suppose we want to use the following filter list:
+
+```adblock
+! Title: Test filter list
+example.com##+js(set, foo, 1)
+example.com##h1
+```
+
+As you can see, the filter list contains two rules:
+
+- first is a uBO rule, and
+- the second is a common rule (which is compatible with AdGuard).
+
+Before loading this list into the engine, we have to convert its rules to AdGuard format.
+So we need such a `rawFilterList`:
+
+```adblock
+! Title: Test filter list
+example.com#%#//scriptlet('ubo-set', 'foo', '1')
+example.com##h1
+```
+
+and its binary serialized form, which will be used by the engine: `filterList`.
+
+When we initialize the engine, it scans the byte buffer `filterList` and builds the filtering engine, lookup tables, etc.
+and assigns the start indexes from the byte buffer `filterList` to the TSUrlFilter rule instances.
+
+We don't know anything about the original rules at the engine level and we don't need to know it.
+
+However, on the extension level, we know all of the properties of the preprocessed filter list.
+When a rule is applied, engine reports us the applied TSUrlFilter rule instance and its start index in the byte buffer `filterList`.
+
+So, when we want to display the applied rule in the filtering log, we can do the following:
+
+1. We will receive the byte buffer start index for the applied rule from the engine.
+1. To get the **applied rule text**, we will use the `sourceMap` property to map the byte buffer start index to the line start index in the `rawFilterList`,
+   - We can do this with the `getRuleSourceIndex` helper method:
+
+     ```ts
+     const lineStartIndex = getRuleSourceIndex(byteBufferStartIndex, sourceMap);
+     ```
+
+   - We can get rule text from the `rawFilterList` by the line start index with the `getRuleSourceText` helper function:
+
+     ```ts
+     const ruleText = getRuleSourceText(lineStartIndex, rawFilterList);
+     ```
+
+1. To get the **original rule text**, we will use the `conversionMap` property to find the original rule text from the line start index in the `rawFilterList`, if we have a key in the `conversionMap` for the start index, we will get the original rule text
+
+For example, for the first rule, the applied rule text will be `example.com#%#//scriptlet('ubo-set', 'foo', '1')`
+and the original rule text will be `example.com##+js(set, foo, 1)`.
+For the second rule, the applied rule text will be `example.com##h1` and the original rule text will be `undefined`,
+which means that the rule was not converted.
 
 ##### Public methods
 
+```ts
+/**
+ * Processes the raw filter list and converts it to the AdGuard format.
+ *
+ * @param filterList Raw filter list to convert.
+ * @param parseHosts If true, the preprocessor will parse host rules.
+ * @returns A {@link PreprocessedFilterList} object which contains the converted filter list,
+ * the mapping between the original and converted rules, and the source map.
+ */
+public static preprocess(filterList: string, parseHosts = false): PreprocessedFilterList;
 ```
-    /**
-     * Converts a set of rules to declarative rules array
-     *
-     * @param ruleList
-     */
-    public convert(ruleList: IRuleList): DeclarativeRule[] {
+
+```ts
+/**
+ * Gets the original filter list text from the preprocessed filter list.
+ *
+ * @param preprocessedFilterList Preprocessed filter list.
+ * @returns Original filter list text.
+ */
+public static getOriginalFilterListText(preprocessedFilterList: RawListWithConversionMap): string;
 ```
+
+```ts
+/**
+ * Gets the original rules from the preprocessed filter list.
+ *
+ * @param preprocessedFilterList Preprocessed filter list.
+ * @returns Array of original rules.
+ */
+public static getOriginalRules(preprocessedFilterList: RawListWithConversionMap): string[];
+```
+
+where
+
+```ts
+type RawListWithConversionMap = Pick<PreprocessedFilterList, 'rawFilterList' | 'conversionMap'>;
+```
+
+#### <a id="declarative-filter-converter"></a>DeclarativeFilterConverter
+
+Converts a list of IFilters to a single rule set or to a list of rule sets. See `examples/manifest-v3/` for an example usage.
+
+##### Public methods
+
+```ts
+/**
+ * Extracts content from the provided static filter and converts to a set
+ * of declarative rules with error-catching non-convertible rules and
+ * checks that converted ruleset matches the constraints (reduce if not).
+ *
+ * @param filterList List of {@link IFilter} to convert.
+ * @param options Options from {@link DeclarativeConverterOptions}.
+ *
+ * @throws Error {@link UnavailableFilterSourceError} if filter content
+ * is not available OR some of {@link ResourcesPathError},
+ * {@link EmptyOrNegativeNumberOfRulesError},
+ * {@link NegativeNumberOfRegexpRulesError}.
+ * @see {@link DeclarativeFilterConverter#checkConverterOptions}
+ * for details.
+ *
+ * @returns Item of {@link ConversionResult}.
+ */
+convertStaticRuleSet(
+    filterList: IFilter,
+    options?: DeclarativeConverterOptions,
+): Promise<ConversionResult>;
+```
+
+```ts
+/**
+ * Extracts content from the provided list of dynamic filters and converts
+ * all together into one set of rules with declarative rules.
+ * During the conversion, it catches unconvertible rules and checks if
+ * the converted ruleset matches the constraints (reduce if not).
+ *
+ * @param filterList List of {@link IFilter} to convert.
+ * @param staticRuleSets List of already converted static rulesets. It is
+ * needed to apply $badfilter rules from dynamic rules to these rules from
+ * converted filters.
+ * @param options Options from {@link DeclarativeConverterOptions}.
+ *
+ * @throws Error {@link UnavailableFilterSourceError} if filter content
+ * is not available OR some of {@link ResourcesPathError},
+ * {@link EmptyOrNegativeNumberOfRulesError},
+ * {@link NegativeNumberOfRegexpRulesError}.
+ * @see {@link DeclarativeFilterConverter#checkConverterOptions}
+ * for details.
+ *
+ * @returns Item of {@link ConversionResult}.
+ */
+convertDynamicRuleSets(
+    filterList: IFilter[],
+    staticRuleSets: IRuleSet[],
+    options?: DeclarativeConverterOptions,
+): Promise<ConversionResult>;
+```
+
+##### Example of use
+
+```ts
+import { CompatibilityTypes, FilterListPreprocessor, setConfiguration } from '@adguard/tsurlfilter';
+import { DeclarativeFilterConverter, Filter } from '@adguard/tsurlfilter/es/declarative-converter';
+
+const rawFilter1 = [
+    '||example.com^$document',
+    '/ads.js^$script,third-party,domain=example.com|example.net',
+].join('\n');
+
+const rawFilter2 = [
+    '||example.com^$document',
+    '-ad-350-',
+    // flags second rule from rawFilter1 as badfilter
+    '/ads.js^$script,third-party,domain=example.com|example.net,badfilter',
+].join('\n');
+
+setConfiguration({
+    engine: 'extension',
+    version: '3',
+    verbose: true,
+    compatibility: CompatibilityTypes.Extension,
+});
+
+const converter = new DeclarativeFilterConverter();
+
+let filterId = 0;
+
+;(async () => {
+    const { ruleSet: staticRuleSet } = await converter.convertStaticRuleSet(
+        new Filter(filterId++, {
+            getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(rawFilter1)),
+        }),
+    );
+
+    // get declarative rules from static rule set
+    console.log(await staticRuleSet.getDeclarativeRules());
+
+    const { declarativeRulesToCancel, ruleSet: dynamicRuleSet } = await converter.convertDynamicRuleSets(
+        [
+            new Filter(filterId++, {
+                getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(rawFilter2)),
+            }),
+        ],
+        [staticRuleSet],
+    );
+
+    // will print rule from rawFilter1 which flagged as badfilter
+    console.log(declarativeRulesToCancel);
+
+    // get declarative rules from dynamic rule set
+    console.log(await dynamicRuleSet.getDeclarativeRules());
+})();
+```
+
+##### Declarative converter documentation
+
+For more information about the declarative converter, see the its [documentation](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/tsurlfilter/src/rules/declarative-converter/README.md).
 
 ##### Problems
 
@@ -389,11 +628,15 @@ Provides a functionality of conversion AG rules to manifest v3 declarative synta
 - We cannot filter by request methods
 - Only one rule applies for a redirect. For this reason, different rules with the same url may not work. Example below:
 
-```
-Works   ||testcases.adguard.com$removeparam=p1case6|p2case6
+```adblock
+! Works
+||testcases.adguard.com$removeparam=p1case6|p2case6
 
-Failed  ||testcases.adguard.com$removeparam=p1case6
-Works   ||testcases.adguard.com$removeparam=p2case6
+! Failed
+||testcases.adguard.com$removeparam=p1case6
+
+! Works
+||testcases.adguard.com$removeparam=p2case6
 ```
 
 ## Development
@@ -405,7 +648,7 @@ It is highly recommended to use `lerna` for commands as it will execute scripts 
 npx lerna run --scope=@adguard/tsurlfilter:<script>
 ```
 
-### <a id="npm-scripts"></a> NPM scripts
+### <a id="npm-scripts"></a>NPM scripts
 
 - `start`: Run `build` in watch mode
 - `test:watch`: Run test suite in [interactive watch mode](https://jestjs.io/docs/en/cli#--watch)
@@ -413,12 +656,12 @@ npx lerna run --scope=@adguard/tsurlfilter:<script>
 - `build`: Generate bundles and typings, create docs
 - `lint`: Lints code
 
-### <a id="excluding-peer-dependencies"></a> Excluding peerDependencies
+### <a id="excluding-peer-dependencies"></a>Excluding peerDependencies
 
 On library development, one might want to set some peer dependencies, and thus remove those from the final bundle. You can see in [Rollup docs](https://rollupjs.org/#peer-dependencies) how to do that.
 
 Good news: the setup is here for you, you must only include the dependency name in `external` property within `rollup.config.js`. For example, if you want to exclude `lodash`, just write there `external: ['lodash']`.
 
-### <a id="git-hooks"></a> Git Hooks
+### <a id="git-hooks"></a>Git Hooks
 
 There is already set a `precommit` hook for formatting your code with Eslint :nail_care:

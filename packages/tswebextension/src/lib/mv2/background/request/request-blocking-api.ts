@@ -35,6 +35,13 @@ export type GetBlockingResponseParams = RequestParams & {
 };
 
 /**
+ * Params for {@link RequestBlockingApi.getResponseOnHeadersReceived}.
+ */
+export type GetHeadersResponseParams = RequestParams & {
+    rule: NetworkRule | null,
+};
+
+/**
  * Api for processing request filtering.
  *
  * Method {@link getBlockingResponse} processes rule applying for request and computes response
@@ -157,7 +164,7 @@ export class RequestBlockingApi {
                 // redirects should be considered as blocked for the tab blocked request count
                 // which is displayed on the extension badge
                 // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
-                tabsApi.incrementTabBlockedRequestCount(tabId);
+                tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
                 return { redirectUrl };
             }
         }
@@ -203,6 +210,26 @@ export class RequestBlockingApi {
     }
 
     /**
+     * Processes rule applying for request and compute response for {@link WebRequestApi.onHeadersReceived} listener.
+     *
+     * @param responseHeaders Response headers.
+     * @param data Data for request processing.
+     *
+     * @returns Response for {@link WebRequestApi.onHeadersReceived} listener.
+     */
+    public static getResponseOnHeadersReceived(
+        responseHeaders: WebRequest.HttpHeaders | undefined,
+        data: GetHeadersResponseParams,
+    ): WebRequest.BlockingResponse | undefined {
+        if (!data.rule || !responseHeaders) {
+            return undefined;
+        }
+
+        RequestBlockingApi.logRuleApplying(data, data.rule);
+        return data.rule.isAllowlist() ? undefined : { cancel: true };
+    }
+
+    /**
      * Creates {@link FilteringLog} event of rule applying for processed request.
      *
      * @param data Data for request processing.
@@ -232,7 +259,14 @@ export class RequestBlockingApi {
                 requestType: contentType,
                 frameUrl: referrerUrl,
                 requestUrl,
-                rule: appliedRule,
+                filterId: appliedRule.getFilterListId(),
+                ruleIndex: appliedRule.getIndex(),
+                isAllowlist: appliedRule.isAllowlist(),
+                isImportant: appliedRule.isOptionEnabled(NetworkRuleOption.Important),
+                isDocumentLevel: appliedRule.isDocumentLevelAllowlistRule(),
+                isCsp: appliedRule.isOptionEnabled(NetworkRuleOption.Csp),
+                isCookie: appliedRule.isOptionEnabled(NetworkRuleOption.Cookie),
+                advancedModifier: appliedRule.getAdvancedModifierValue(),
             },
         });
     }

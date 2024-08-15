@@ -1,18 +1,16 @@
+import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 import { CspService } from '@lib/mv2/background/services/csp-service';
-import { MatchingResult, NetworkRule, RequestType } from '@adguard/tsurlfilter';
-import { ContentType, FilteringEventType } from '@lib/common';
 import { type RequestContext } from '@lib/mv2/background/request';
+import { FilteringEventType, ContentType } from '@lib/common';
+import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 
-describe('Csp service', () => {
+describe('Content Security Policy service', () => {
     const mockFilteringLog = new MockFilteringLog();
     const cspService = new CspService(mockFilteringLog);
 
-    let context: RequestContext;
-
-    beforeEach(() => {
-        mockFilteringLog.publishEvent.mockClear();
-        context = {
+    const getContext = (): RequestContext => {
+        return {
             requestUrl: 'https://example.org',
             referrerUrl: 'https://example.org',
             requestType: RequestType.Document,
@@ -22,22 +20,51 @@ describe('Csp service', () => {
             requestFrameId: 0,
             timestamp: Date.now(),
             thirdParty: false,
-            matchingResult: null,
-            requestHeaders: [{
-                name: 'test_name',
-                value: 'test_value',
-            }],
+            matchingResult: new MatchingResult([], null),
             responseHeaders: [{
                 name: 'test_name',
                 value: 'test_value',
             }],
         } as RequestContext;
+    };
+
+    let context = getContext();
+
+    const runOnHeadersReceived = (): boolean => {
+        return cspService.onHeadersReceived(context);
+    };
+
+    beforeEach(() => {
+        context = getContext();
+        mockFilteringLog.publishEvent.mockClear();
+    });
+
+    it('correctly applies matching header modifier rules', () => {
+        context.matchingResult = new MatchingResult([
+            createNetworkRule(String.raw`||example.org^$header=test_name:test_value,csp=frame-src 'none'`, 0),
+        ], null);
+        const headersModified = runOnHeadersReceived();
+        expect(headersModified).toBeTruthy();
+        expect(mockFilteringLog.publishEvent).toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.ApplyCspRule }),
+        );
+    });
+
+    it('does not apply non-matching header modifier rules', () => {
+        context.matchingResult = new MatchingResult([
+            createNetworkRule(String.raw`||example.org^$header=NOT_test_name:test_value,csp=frame-src 'none'`, 0),
+        ], null);
+        const headersModified = runOnHeadersReceived();
+        expect(headersModified).toBeFalsy();
+        expect(mockFilteringLog.publishEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({ type: FilteringEventType.ApplyCspRule }),
+        );
     });
 
     it('allowlists rules', () => {
         context.matchingResult = new MatchingResult([
-            new NetworkRule('||example.com$csp=style-src *', 0),
-            new NetworkRule('@@||example.com$csp=style-src *', 0),
+            createNetworkRule('||example.com$csp=style-src *', 0),
+            createNetworkRule('@@||example.com$csp=style-src *', 0),
         ], null);
         const hasModified = cspService.onHeadersReceived(context);
 

@@ -1,8 +1,9 @@
 import { CosmeticApi } from '@lib/mv2/background/cosmetic-api';
 import { localScriptRulesService } from '@lib/mv2/background/services/local-script-rules-service';
 
-import { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import { CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { USER_FILTER_ID } from '@lib/common/constants';
+import { createCosmeticRule } from '../../../helpers/rule-creator';
 import { getLocalScriptRulesFixture } from './fixtures/local-script-rules';
 import { MockAppContext } from './mocks/mock-context';
 
@@ -19,8 +20,8 @@ jest.mock('@lib/mv2/background/context', () => ({
  */
 const getElemhideCosmeticResult = (rules: string[]): CosmeticResult => {
     const cosmeticResult = new CosmeticResult();
-    rules.forEach((rule) => {
-        cosmeticResult.elementHiding.append(new CosmeticRule(rule, 0));
+    rules.forEach((rule, ruleIndex) => {
+        cosmeticResult.elementHiding.append(createCosmeticRule(rule, 0, ruleIndex));
     });
     return cosmeticResult;
 };
@@ -34,8 +35,8 @@ const getElemhideCosmeticResult = (rules: string[]): CosmeticResult => {
  */
 const getCssCosmeticResult = (rules: string[]): CosmeticResult => {
     const cosmeticResult = new CosmeticResult();
-    rules.forEach((rule) => {
-        cosmeticResult.CSS.append(new CosmeticRule(rule, 0));
+    rules.forEach((rule, ruleIndex) => {
+        cosmeticResult.CSS.append(createCosmeticRule(rule, 0, ruleIndex));
     });
     return cosmeticResult;
 };
@@ -114,7 +115,7 @@ describe('cosmetic api', () => {
                         'example.com##h1',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { display: none !important; content: \'adguard0%3Bexample.com%23%23h1\' !important; }',
+                    expected: 'h1 { display: none !important; content: \'adguard0%3B0\' !important; }',
                 },
                 {
                     // few specific rules
@@ -123,7 +124,7 @@ describe('cosmetic api', () => {
                         'example.org##h2',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { display: none !important; content: \'adguard0%3Bexample.com%23%23h1\' !important; }\r\nh2 { display: none !important; content: \'adguard0%3Bexample.org%23%23h2\' !important; }',
+                    expected: 'h1 { display: none !important; content: \'adguard0%3B0\' !important; }\r\nh2 { display: none !important; content: \'adguard0%3B1\' !important; }',
                 },
                 {
                     // few generic rules
@@ -132,7 +133,7 @@ describe('cosmetic api', () => {
                         '##h2',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { display: none !important; content: \'adguard0%3B%23%23h1\' !important; }\r\nh2 { display: none !important; content: \'adguard0%3B%23%23h2\' !important; }',
+                    expected: 'h1 { display: none !important; content: \'adguard0%3B0\' !important; }\r\nh2 { display: none !important; content: \'adguard0%3B1\' !important; }',
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
@@ -149,7 +150,7 @@ describe('cosmetic api', () => {
                         'example.com#$#h1 { color: black !important; }',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { color: black !important; content: \'adguard0%3Bexample.com%23%24%23h1%20%7B%20color%3A%20black%20!important%3B%20%7D\' !important; }',
+                    expected: 'h1 { color: black !important; content: \'adguard0%3B0\' !important; }',
                 },
                 {
                     // few specific rules
@@ -158,7 +159,7 @@ describe('cosmetic api', () => {
                         'example.org#$#h2 { color: red !important; }',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { color: black !important; content: \'adguard0%3Bexample.com%23%24%23h1%20%7B%20color%3A%20black%20!important%3B%20%7D\' !important; }\r\nh2 { color: red !important; content: \'adguard0%3Bexample.org%23%24%23h2%20%7B%20color%3A%20red%20!important%3B%20%7D\' !important; }',
+                    expected: 'h1 { color: black !important; content: \'adguard0%3B0\' !important; }\r\nh2 { color: red !important; content: \'adguard0%3B1\' !important; }',
                 },
                 {
                     // few generic rules
@@ -167,7 +168,7 @@ describe('cosmetic api', () => {
                         '#$#h2 { color: red !important; }',
                     ],
                     // eslint-disable-next-line max-len
-                    expected: 'h1 { color: black !important; content: \'adguard0%3B%23%24%23h1%20%7B%20color%3A%20black%20!important%3B%20%7D\' !important; }\r\nh2 { color: red !important; content: \'adguard0%3B%23%24%23h2%20%7B%20color%3A%20red%20!important%3B%20%7D\' !important; }',
+                    expected: 'h1 { color: black !important; content: \'adguard0%3B0\' !important; }\r\nh2 { color: red !important; content: \'adguard0%3B1\' !important; }',
                 },
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
@@ -267,7 +268,7 @@ describe('cosmetic api', () => {
                         'example.com#?#h1',
                     ],
                     expected: [
-                        'h1 { display: none !important; content: \'adguard0%3Bexample.com%23%3F%23h1\' !important; }',
+                        'h1 { display: none !important; content: \'adguard0%3B0\' !important; }',
                     ],
                 },
                 {
@@ -277,8 +278,8 @@ describe('cosmetic api', () => {
                         'example.org#?#h2',
                     ],
                     expected: [
-                        'h1 { display: none !important; content: \'adguard0%3Bexample.com%23%3F%23h1\' !important; }',
-                        'h2 { display: none !important; content: \'adguard0%3Bexample.org%23%3F%23h2\' !important; }',
+                        'h1 { display: none !important; content: \'adguard0%3B0\' !important; }',
+                        'h2 { display: none !important; content: \'adguard0%3B1\' !important; }',
                     ],
                 },
                 {
@@ -288,8 +289,8 @@ describe('cosmetic api', () => {
                         '#?#h2',
                     ],
                     expected: [
-                        'h1 { display: none !important; content: \'adguard0%3B%23%3F%23h1\' !important; }',
-                        'h2 { display: none !important; content: \'adguard0%3B%23%3F%23h2\' !important; }',
+                        'h1 { display: none !important; content: \'adguard0%3B0\' !important; }',
+                        'h2 { display: none !important; content: \'adguard0%3B1\' !important; }',
                     ],
                 },
             ];
@@ -308,7 +309,7 @@ describe('cosmetic api', () => {
                     ],
                     expected: [
                         // eslint-disable-next-line max-len
-                        'h1 { color: black !important; content: \'adguard0%3Bexample.com%23%24%3F%23h1%20%7B%20color%3A%20black%20!important%3B%20%7D\' !important; }',
+                        'h1 { color: black !important; content: \'adguard0%3B0\' !important; }',
                     ],
                 },
                 {
@@ -319,9 +320,9 @@ describe('cosmetic api', () => {
                     ],
                     expected: [
                         // eslint-disable-next-line max-len
-                        'h1 { color: black !important; content: \'adguard0%3Bexample.com%23%24%3F%23h1%20%7B%20color%3A%20black%20!important%3B%20%7D\' !important; }',
+                        'h1 { color: black !important; content: \'adguard0%3B0\' !important; }',
                         // eslint-disable-next-line max-len
-                        'h2 { color: red !important; content: \'adguard0%3Bexample.org%23%24%3F%23h2%20%7B%20color%3A%20red%20!important%3B%20%7D\' !important; }',
+                        'h2 { color: red !important; content: \'adguard0%3B1\' !important; }',
                     ],
                 },
                 {
@@ -332,9 +333,9 @@ describe('cosmetic api', () => {
                     ],
                     expected: [
                         // eslint-disable-next-line max-len
-                        'h1 { color: black !important; content: \'adguard0%3B%23%24%3F%23h1%20%7B%20color%3A%20black%20!important%3B%20%7D\' !important; }',
+                        'h1 { color: black !important; content: \'adguard0%3B0\' !important; }',
                         // eslint-disable-next-line max-len
-                        'h2 { color: red !important; content: \'adguard0%3B%23%24%3F%23h2%20%7B%20color%3A%20red%20!important%3B%20%7D\' !important; }',
+                        'h2 { color: red !important; content: \'adguard0%3B1\' !important; }',
                     ],
                 },
             ];
@@ -348,19 +349,19 @@ describe('cosmetic api', () => {
     describe('returns correct script text', () => {
         const getScriptRules = (id: number): CosmeticRule[] => {
             return [
-                new CosmeticRule('example.com#%#window.confirm = undefined;', id),
+                createCosmeticRule('example.com#%#window.confirm = undefined;', id),
             ];
         };
 
         const getLocalScriptRules = (id: number): CosmeticRule[] => {
             return [
-                new CosmeticRule('example.com#%#window.open = undefined;', id),
+                createCosmeticRule('example.com#%#window.open = undefined;', id),
             ];
         };
 
         const getScriptletsRules = (id: number): CosmeticRule[] => {
             return [
-                new CosmeticRule('example.com#%#//scriptlet("abort-on-property-read", "alert")', id),
+                createCosmeticRule('example.com#%#//scriptlet("abort-on-property-read", "alert")', id),
             ];
         };
 

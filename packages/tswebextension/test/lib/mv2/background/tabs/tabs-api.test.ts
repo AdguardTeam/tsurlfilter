@@ -116,7 +116,7 @@ describe('TabsApi', () => {
 
             tabsApi.handleFrameRequest(frameRequestContext);
 
-            expect(TabContext.prototype.handleFrameRequest).toBeCalledWith(frameRequestContext, false);
+            expect(TabContext.prototype.handleFrameRequest).toBeCalledWith(frameRequestContext);
         });
 
         it('should not handle frame request if tab context is not found', () => {
@@ -215,18 +215,39 @@ describe('TabsApi', () => {
     describe('incrementTabBlockedRequestCount method', () => {
         it('should increment tab context blocked request count', () => {
             const tabId = 1;
+            const url = 'https://example.org';
 
-            const tabContext = createTestTabContext();
+            const tabContext = {
+                info: { url },
+                incrementBlockedRequestCount: jest.fn(),
+            } as unknown as TabContext;
+            const tabContextIncrement = jest.spyOn(tabContext, 'incrementBlockedRequestCount');
 
             tabsApi.context.set(tabId, tabContext);
+            tabsApi.incrementTabBlockedRequestCount(tabId, url);
 
-            tabsApi.incrementTabBlockedRequestCount(tabId);
+            expect(tabContextIncrement).toBeCalled();
+        });
 
-            expect(TabContext.prototype.incrementBlockedRequestCount).toBeCalled();
+        it('should not increment tab context blocked request count if origin and referer domains are different', () => {
+            const tabId = 1;
+            const originUrl = 'https://example.org';
+            const referrerUrl = 'https://ref.com';
+
+            const tabContext = {
+                info: { url: originUrl },
+                incrementBlockedRequestCount: jest.fn(),
+            } as unknown as TabContext;
+            const tabContextIncrement = jest.spyOn(tabContext, 'incrementBlockedRequestCount');
+
+            tabsApi.context.set(tabId, tabContext);
+            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+
+            expect(tabContextIncrement).not.toBeCalled();
         });
 
         it('should not increment tab context blocked request count if tab context is not found', () => {
-            tabsApi.incrementTabBlockedRequestCount(1);
+            tabsApi.incrementTabBlockedRequestCount(1, '');
 
             expect(TabContext.prototype.incrementBlockedRequestCount).not.toBeCalled();
         });
@@ -272,15 +293,13 @@ describe('TabsApi', () => {
 
     describe('isNewPopupTab method', () => {
         const cases = [
-            { url: 'about:blank', expected: true },
-            { url: '', expected: true },
-            { url: undefined, expected: true },
-            { url: 'https://example.com', expected: false },
+            { url: 'https://example.com', createdAtMs: Date.now() - Math.round(TabsApi.POPUP_TAB_TIMEOUT_MS * 1.5), expected: false },
+            { url: 'https://example.com', createdAtMs: Date.now(), expected: true },
         ];
-        it.each(cases)('should return $expected if tab has url $url', ({ url, expected }) => {
+        it.each(cases)('should return $expected if tab has url $url', ({ url, createdAtMs, expected }) => {
             const tabId = 1;
 
-            const tabContext = { info: { url } } as TabContext;
+            const tabContext = { info: { url }, createdAtMs } as TabContext;
 
             tabsApi.context.set(tabId, tabContext);
 
@@ -324,6 +343,23 @@ describe('TabsApi', () => {
             await TabsApi.injectCss(code, tabId, frameId);
 
             expect(browser.tabs.insertCSS.calledOnceWith(tabId, injectDetails)).toBe(true);
+        });
+    });
+
+    describe('handleTabNavigation', () => {
+        it('should not handle non http requests', () => {
+            const tabId = 1;
+
+            const tabContext = createTestTabContext();
+
+            tabsApi.context.set(tabId, tabContext);
+            tabsApi.context.set(tabId, tabContext);
+
+            tabsApi.handleTabNavigation(1, 'chrome://new-tab-page/');
+            expect(TabContext.prototype.updateMainFrameData).not.toBeCalled();
+
+            tabsApi.handleTabNavigation(1, 'https://example.org');
+            expect(TabContext.prototype.updateMainFrameData).toBeCalled();
         });
     });
 });

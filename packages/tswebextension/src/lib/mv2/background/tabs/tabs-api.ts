@@ -5,6 +5,7 @@ import { EventChannel } from '../../../common/utils/channels';
 import type { DocumentApi } from '../document-api';
 import { type FrameRequestContext, TabContext } from './tab-context';
 import { type Frame, MAIN_FRAME_ID } from './frame';
+import { isHttpRequest, getDomain } from '../../../common';
 
 /**
  * Request context data related to the tab's frame.
@@ -29,6 +30,11 @@ export class TabsApi {
     public onActivate = new EventChannel<TabContext>();
 
     public onReplace = new EventChannel<TabContext>();
+
+    /**
+     * Timeout for popup tabs in milliseconds. We consider a tab as a popup if it was created within this time period.
+     */
+    public static readonly POPUP_TAB_TIMEOUT_MS = 250;
 
     /**
      * Tabs API constructor.
@@ -80,6 +86,7 @@ export class TabsApi {
         browser.tabs.onRemoved.removeListener(this.handleTabDelete);
         browser.tabs.onUpdated.removeListener(this.handleTabUpdate);
         browser.tabs.onActivated.removeListener(this.handleTabActivate);
+        browser.tabs.onReplaced.removeListener(this.handleTabReplace);
 
         // Firefox for android doesn't support windows API
         if (browser.windows) {
@@ -142,9 +149,8 @@ export class TabsApi {
      * Records request context to the tab context.
      *
      * @param requestContext Tab's frame's request context.
-     * @param isRemoveparamRedirect Indicates whether the request is a $removeparam redirect.
      */
-    public handleFrameRequest(requestContext: TabFrameRequestContext, isRemoveparamRedirect = false): void {
+    public handleFrameRequest(requestContext: TabFrameRequestContext): void {
         const { tabId } = requestContext;
 
         const tabContext = this.context.get(tabId);
@@ -153,7 +159,7 @@ export class TabsApi {
             return;
         }
 
-        tabContext.handleFrameRequest(requestContext, isRemoveparamRedirect);
+        tabContext.handleFrameRequest(requestContext);
     }
 
     /**
@@ -262,11 +268,23 @@ export class TabsApi {
      * Increments tab context blocked request count.
      *
      * @param tabId Tab ID.
+     * @param referrerUrl Request initiator url.
      */
-    public incrementTabBlockedRequestCount(tabId: number): void {
+    public incrementTabBlockedRequestCount(tabId: number, referrerUrl: string): void {
         const tabContext = this.context.get(tabId);
 
         if (!tabContext) {
+            return;
+        }
+
+        const tabUrl = tabContext.info?.url;
+        /**
+         * Only increment count for requests that are initiated from the same domain as the tab.
+         *
+         * This prevents count 'leaks' when moving between main frames due to async nature of
+         * {@link browser.webRequest.onBeforeRequest} and {@link browser.tabs.onUpdated} events.
+         */
+        if (!tabUrl || !referrerUrl || getDomain(tabUrl) !== getDomain(referrerUrl)) {
             return;
         }
 
@@ -281,7 +299,7 @@ export class TabsApi {
     public updateTabMainFrameRule(tabId: number): void {
         const tabContext = this.context.get(tabId);
 
-        if (!tabContext?.info.url) {
+        if (!tabContext?.info.url || !isHttpRequest(tabContext.info.url)) {
             return;
         }
 
@@ -308,13 +326,10 @@ export class TabsApi {
     /**
      * Checks if tab is a new tab.
      *
-     * TODO: Change in AG-22715: if the lifetime of the tab is less than N
-     * seconds (for example 5 seconds), then it is a popup and we close it. If
-     * the opposite is true, then we block it with a stub.
-     *
      * @param tabId Tab ID.
      * @returns True if tab is a new tab.
      */
+    // TODO: Improve popup detection
     public isNewPopupTab(tabId: number): boolean {
         const tab = this.context.get(tabId);
 
@@ -322,11 +337,10 @@ export class TabsApi {
             return false;
         }
 
-        const url = tab.info?.url;
+        const createdAt = tab.createdAtMs;
+        const tabAgeMs = Date.now() - createdAt;
 
-        return url === undefined
-            || url === ''
-            || url === 'about:blank';
+        return tabAgeMs < TabsApi.POPUP_TAB_TIMEOUT_MS;
     }
 
     /**
@@ -362,7 +376,31 @@ export class TabsApi {
     }
 
     /**
+     * Uses {@link browser.webNavigation.onBeforeNavigate} event data
+     * to update tab context data in conjunction with {@link handleTabUpdate}.
+     *
+     * Note: it is being specifically called at onBeforeNavigate
+     * to handle initial tab update before {@link browser.tab.onUpdate} and {@link handleTabUpdate}.
+     *
+     * @param tabId Tab ID.
+     * @param url Url.
+     */
+    public handleTabNavigation(tabId: number, url: string): void {
+        const tabContext = this.context.get(tabId);
+        if (!tabContext) {
+            return;
+        }
+
+        if (!isHttpRequest(url)) {
+            return;
+        }
+
+        tabContext.updateMainFrameData(tabId, url);
+    }
+
+    /**
      * Updates tab context data on tab update.
+     * Works in conjunction with {@link handleTabNavigation}.
      *
      * @param tabId Tab ID.
      * @param changeInfo Tab change info.
@@ -372,6 +410,9 @@ export class TabsApi {
         // TODO: we can ignore some events (favicon url update etc.)
         const tabContext = this.context.get(tabId);
         if (tabContext && TabContext.isBrowserTab(tabInfo)) {
+            if (changeInfo.url && !isHttpRequest(changeInfo.url)) {
+                return;
+            }
             tabContext.updateTabInfo(changeInfo, tabInfo);
             this.onUpdate.dispatch(tabContext);
         }

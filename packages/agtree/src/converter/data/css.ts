@@ -3,18 +3,37 @@
  * TODO: Implement a compatibility table for Extended CSS
  */
 
+/**
+ * Legacy Extended CSS attribute prefix.
+ *
+ * @example
+ * ```css
+ * [-ext-<name>=...]
+ * ```
+ */
 export const LEGACY_EXT_CSS_ATTRIBUTE_PREFIX = '-ext-';
 
 /**
- * Known Extended CSS pseudo-classes. Please, keep this list sorted.
+ * ABP Extended CSS prefix.
+ *
+ * @example
+ * ```css
+ * [-abp-<name>=...]
+ * -abp-<name>(...)
+ * ```
  */
-export const EXT_CSS_PSEUDO_CLASSES = new Set([
+export const ABP_EXT_CSS_PREFIX = '-abp';
+
+/**
+ * Known _strict_ Extended CSS pseudo-classes. Please, keep this list sorted.
+ * Strict means that these pseudo-classes are not supported by any browser natively,
+ * and they always require Extended CSS libraries to work.
+ */
+export const EXT_CSS_PSEUDO_CLASSES_STRICT = new Set([
     // AdGuard
     // https://github.com/AdguardTeam/ExtendedCss
     'contains',
-    'has',
     'if-not',
-    'is',
     'matches-attr',
     'matches-css',
     'matches-property',
@@ -37,6 +56,25 @@ export const EXT_CSS_PSEUDO_CLASSES = new Set([
     '-abp-contains',
     '-abp-has',
     '-abp-properties',
+]);
+
+/**
+ * _ALL_ known Extended CSS pseudo-classes. Please, keep this list sorted.
+ * It includes strict pseudo-classes and additional pseudo-classes that may be
+ * supported by some browsers natively.
+ */
+export const EXT_CSS_PSEUDO_CLASSES = new Set([
+    ...EXT_CSS_PSEUDO_CLASSES_STRICT,
+
+    /**
+     * https://developer.mozilla.org/en-US/docs/Web/CSS/:has
+     */
+    'has',
+
+    /**
+     * https://developer.mozilla.org/en-US/docs/Web/CSS/:is
+     */
+    'is',
 ]);
 
 /**

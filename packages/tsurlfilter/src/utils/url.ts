@@ -42,7 +42,7 @@ function normalizeQuery(query: string): string {
     // If we've collapsed the URL to the point where there's an '&' against the '?'
     // then we need to get rid of that.
     while (result.charAt(0) === '&') {
-        result = result.substr(1);
+        result = result.slice(1);
     }
 
     return result;
@@ -96,26 +96,21 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
     return result + split.hash;
 }
 
-const DOMAIN_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](?:\.[a-zA-Z]{2,})+$/;
-
-/**
- * Check if the string could be a domain name
- *
- * @param text
- */
-export const isDomainName = (text: string): boolean => {
-    if (text.indexOf('.') < 0 || text.endsWith('.')) {
-        return false;
-    }
-
-    return DOMAIN_REGEX.test(text);
-};
-
 /**
  * Extract relative part from hierarchical structured URL
  * @param url
  */
 export const getRelativeUrl = (url: string): string | null => {
     const i = url.indexOf('/', url.indexOf('://') + 3);
-    return i !== -1 ? url.substr(i) : null;
+    return i !== -1 ? url.slice(i) : null;
 };
+
+/**
+ * Checks if url is http or websocket.
+ *
+ * @param url Request url.
+ * @returns True if url starts with http{s?} or ws.
+ */
+export function isHttpOrWsRequest(url: string): boolean {
+    return !!url && (url.startsWith('http') || url.startsWith('ws'));
+}

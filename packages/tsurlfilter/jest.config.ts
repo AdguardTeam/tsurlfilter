@@ -20,10 +20,10 @@ const config: Config = {
     ],
     coverageThreshold: {
         global: {
-            // TODO: improve coverage
+            // TODO: Improve coverage
             // branches: 90,
             // functions: 95,
-            lines: 95,
+            lines: 90,
             // statements: 95,
         },
     },

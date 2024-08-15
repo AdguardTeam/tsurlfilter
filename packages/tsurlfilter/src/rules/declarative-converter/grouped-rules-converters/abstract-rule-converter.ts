@@ -132,6 +132,8 @@ import { type RedirectModifier } from '../../../modifiers/redirect-modifier';
 import { type RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
 import { HTTPMethod } from '../../../modifiers/method-modifier';
+import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../modifiers/permissions-modifier';
+import { SimpleRegex } from '../../simple-regex';
 import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
 
@@ -284,9 +286,7 @@ export abstract class DeclarativeRuleConverter {
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
             const resourcesPath = this.webAccessibleResourcesPath;
             if (!resourcesPath) {
-                const ruleText = rule.getText();
-                const msg = `Empty web accessible resources path: ${ruleText}`;
-                throw new ResourcesPathError(msg);
+                throw new ResourcesPathError('Empty web accessible resources path');
             }
             const advancedModifier = rule.getAdvancedModifier();
             const redirectTo = advancedModifier as RedirectModifier;
@@ -355,11 +355,37 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
-     * Returns rule modify headers action with adding CSP headers to response.
+     * Returns rule modify headers action with removing Cookie headers from response and request.
      *
      * @param rule Network rule.
      *
      * @returns Add headers action, which describes which headers should be added.
+     */
+    private static getRemovingCookieHeadersAction(
+        rule: NetworkRule,
+    ): Pick<RuleAction, 'requestHeaders' | 'responseHeaders'> | null {
+        if (!rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
+            return null;
+        }
+
+        return {
+            responseHeaders: [{
+                operation: HeaderOperation.Remove,
+                header: 'Set-Cookie',
+            }],
+            requestHeaders: [{
+                operation: HeaderOperation.Remove,
+                header: 'Cookie',
+            }],
+        };
+    }
+
+    /**
+     * Returns rule modify headers action with adding CSP headers to response.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Add headers action, which describes what headers should be added.
      */
     private static getAddingCspHeadersAction(rule: NetworkRule): ModifyHeaderInfo | null {
         if (!rule.isOptionEnabled(NetworkRuleOption.Csp)) {
@@ -372,6 +398,30 @@ export abstract class DeclarativeRuleConverter {
                 operation: HeaderOperation.Append,
                 header: CSP_HEADER_NAME,
                 value: cspHeaderValue,
+            };
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns rule modify headers action with adding Permissions headers to response.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Add headers action, which describes what headers should be added.
+     */
+    private static getAddingPermissionsHeadersAction(rule: NetworkRule): ModifyHeaderInfo | null {
+        if (!rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
+            return null;
+        }
+
+        const permissionsHeaderValue = rule.getAdvancedModifierValue();
+        if (permissionsHeaderValue) {
+            return {
+                operation: HeaderOperation.Append,
+                header: PERMISSIONS_POLICY_HEADER_NAME,
+                value: permissionsHeaderValue,
             };
         }
 
@@ -425,11 +475,34 @@ export abstract class DeclarativeRuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
-            const addCspHeadersAction = DeclarativeRuleConverter.getAddingCspHeadersAction(rule);
-            if (addCspHeadersAction) {
+            const headersAction = DeclarativeRuleConverter.getAddingCspHeadersAction(rule);
+            if (headersAction) {
                 return {
                     type: RuleActionType.MODIFY_HEADERS,
-                    responseHeaders: [addCspHeadersAction],
+                    responseHeaders: [headersAction],
+                };
+            }
+        }
+
+        if (rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
+            const headersAction = DeclarativeRuleConverter.getAddingPermissionsHeadersAction(rule);
+            if (headersAction) {
+                return {
+                    type: RuleActionType.MODIFY_HEADERS,
+                    responseHeaders: [headersAction],
+                };
+            }
+        }
+
+        if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
+            const removeCookieHeaders = DeclarativeRuleConverter.getRemovingCookieHeadersAction(rule);
+            if (removeCookieHeaders) {
+                const { responseHeaders, requestHeaders } = removeCookieHeaders;
+
+                return {
+                    type: RuleActionType.MODIFY_HEADERS,
+                    responseHeaders,
+                    requestHeaders,
                 };
             }
         }
@@ -470,14 +543,17 @@ export abstract class DeclarativeRuleConverter {
         }
 
         // set initiatorDomains
-        const permittedDomains = rule.getPermittedDomains();
-        if (permittedDomains && permittedDomains.length !== 0) {
+        const permittedDomains = rule.getPermittedDomains()?.filter((d) => {
+            // Wildcard and regex domains are not supported by declarative converter
+            return !d.includes(SimpleRegex.MASK_ANY_CHARACTER) && !SimpleRegex.isRegexPattern(d);
+        });
+        if (permittedDomains && permittedDomains.length > 0) {
             condition.initiatorDomains = this.toASCII(permittedDomains);
         }
 
         // set excludedInitiatorDomains
         const excludedDomains = rule.getRestrictedDomains();
-        if (excludedDomains && excludedDomains.length !== 0) {
+        if (excludedDomains && excludedDomains.length > 0) {
             condition.excludedInitiatorDomains = this.toASCII(excludedDomains);
         }
 
@@ -489,6 +565,7 @@ export abstract class DeclarativeRuleConverter {
         // Can be specified $to or $denyallow, but not together.
         const denyAllowDomains = rule.getDenyAllowDomains();
         const restrictedToDomains = rule.getRestrictedToDomains();
+
         if (denyAllowDomains && denyAllowDomains.length !== 0) {
             condition.excludedRequestDomains = this.toASCII(denyAllowDomains);
         } else if (restrictedToDomains && restrictedToDomains.length !== 0) {
@@ -532,9 +609,13 @@ export abstract class DeclarativeRuleConverter {
         const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
             || rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
             || rule.isOptionEnabled(NetworkRuleOption.Csp)
+            || rule.isOptionEnabled(NetworkRuleOption.Permissions)
+            || rule.isOptionEnabled(NetworkRuleOption.Cookie)
             || rule.isOptionEnabled(NetworkRuleOption.To)
             || rule.isOptionEnabled(NetworkRuleOption.Method);
+
         const emptyResourceTypes = !condition.resourceTypes && !condition.excludedResourceTypes;
+
         if (shouldMatchAllResourcesTypes && emptyResourceTypes) {
             condition.resourceTypes = [
                 ResourceType.MainFrame,
@@ -633,9 +714,7 @@ export abstract class DeclarativeRuleConverter {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
 
         if (resourceTypes?.length === 0) {
-            const ruleText = networkRule.getText();
-            const msg = `Conversion resourceTypes is empty: "${ruleText}"`;
-            return new EmptyResourcesError(msg, networkRule, declarativeRule);
+            return new EmptyResourcesError('Conversion resourceTypes is empty', networkRule, declarativeRule);
         }
 
         // More complex regex than allowed as part of the "regexFilter" key.
@@ -649,10 +728,8 @@ export abstract class DeclarativeRuleConverter {
             if (regexArr.length > maxGroups
                 || regexArr.some((i) => i.length > maxGroupLength)
             ) {
-                const ruleText = networkRule.getText();
-                const msg = `More complex regex than allowed: "${ruleText}"`;
                 return new TooComplexRegexpError(
-                    msg,
+                    'More complex regex than allowed',
                     networkRule,
                     declarativeRule,
                 );
@@ -662,9 +739,8 @@ export abstract class DeclarativeRuleConverter {
         // Back reference, possessive and negative lookahead are not supported
         // See more: https://github.com/google/re2/wiki/Syntax
         if (regexFilter?.match(/\\[1-9]|\(\?<?(!|=)|{\S+}/g)) {
-            const msg = `Invalid regex in the: "${networkRule.getText()}"`;
             return new UnsupportedRegexpError(
-                msg,
+                'Invalid regex',
                 networkRule,
                 declarativeRule,
             );
@@ -699,7 +775,7 @@ export abstract class DeclarativeRuleConverter {
             return e;
         }
 
-        const msg = `Non-categorized error during a conversion rule: ${rule.getText()} (index - ${index}, id - ${id})`;
+        const msg = `Non-categorized error during a conversion rule (index - ${index}, id - ${id})`;
         return e instanceof Error
             ? new Error(msg, { cause: e })
             : new Error(msg);

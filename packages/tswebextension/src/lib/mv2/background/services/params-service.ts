@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { type NetworkRule, type RemoveParamModifier } from '@adguard/tsurlfilter';
+import { NetworkRuleOption, type NetworkRule, type RemoveParamModifier } from '@adguard/tsurlfilter';
 
 import { requestContextStorage } from '../request';
 import {
@@ -69,8 +69,15 @@ export class ParamsService {
                         frameUrl: url,
                         frameDomain: getDomain(url) as string,
                         requestType: contentType,
-                        rule,
+                        filterId: rule.getFilterListId(),
+                        ruleIndex: rule.getIndex(),
                         timestamp,
+                        isAllowlist: rule.isAllowlist(),
+                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                        advancedModifier: rule.getAdvancedModifierValue(),
                     },
                 });
                 return url;
@@ -93,8 +100,15 @@ export class ParamsService {
                         frameUrl: modifiedUrl,
                         frameDomain: getDomain(modifiedUrl) as string,
                         requestType: contentType,
-                        rule,
+                        filterId: rule.getFilterListId(),
+                        ruleIndex: rule.getIndex(),
                         timestamp,
+                        isAllowlist: rule.isAllowlist(),
+                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                        advancedModifier: rule.getAdvancedModifierValue(),
                     },
                 });
             }

@@ -6,13 +6,13 @@
  * the corresponding "sub-converter".
  */
 
-import { type AnyRule, RuleCategory } from '../parser/common';
+import { type AnyRule, RuleCategory, NetworkRuleType } from '../parser/common';
 import { CommentRuleConverter } from './comment';
 import { CosmeticRuleConverter } from './cosmetic';
 import { NetworkRuleConverter } from './network';
 import { RuleConversionError } from '../errors/rule-conversion-error';
 import { RuleConverterBase } from './base-interfaces/rule-converter-base';
-import { type NodeConversionResult } from './base-interfaces/conversion-result';
+import { createConversionResult, type NodeConversionResult } from './base-interfaces/conversion-result';
 
 /**
  * Adblock filtering rule converter class
@@ -40,10 +40,38 @@ export class RuleConverter extends RuleConverterBase {
                 return CosmeticRuleConverter.convertToAdg(rule);
 
             case RuleCategory.Network:
+                // TODO: Handle hosts rules later
+                if (rule.type === NetworkRuleType.HostRule) {
+                    return createConversionResult([rule], false);
+                }
                 return NetworkRuleConverter.convertToAdg(rule);
 
+            case RuleCategory.Invalid:
+            case RuleCategory.Empty:
+                // Just forward the rule as is
+                return createConversionResult([rule], false);
+
             default:
-                throw new RuleConversionError(`Unknown rule category: ${rule.category}`);
+                // Never happens during normal operation
+                throw new RuleConversionError('Unknown rule category');
         }
+    }
+
+    /**
+     * Converts an adblock filtering rule to uBlock Origin format, if possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    // TODO: Add support for other rule types
+    public static convertToUbo(rule: AnyRule): NodeConversionResult<AnyRule> {
+        if (rule.category === RuleCategory.Cosmetic) {
+            return CosmeticRuleConverter.convertToUbo(rule);
+        }
+
+        return createConversionResult([rule], false);
     }
 }

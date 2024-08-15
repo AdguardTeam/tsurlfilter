@@ -12,8 +12,8 @@ describe('CssHitsCounter', () => {
         <p>test</p>
         <div id="testDiv">
             <div id="childDiv"></div>
-            <div id="hiddenDiv1" style="display: none; content:'adguard1;test-rule-one';"></div>
-            <div id="hiddenDiv2" style="display: none !important; content:'adguard2;test-rule-two' !important;"></div>
+            <div id="hiddenDiv1" style="display: none; content:'adguard1;1';"></div>
+            <div id="hiddenDiv2" style="display: none !important; content:'adguard2;2' !important;"></div>
          </div>
         `;
 
@@ -34,14 +34,14 @@ describe('CssHitsCounter', () => {
             expect(stats).toHaveLength(2);
 
             expect(stats[0].filterId).toBe(1);
-            expect(stats[0].ruleText).toBe('test-rule-one');
+            expect(stats[0].ruleIndex).toBe(1);
             expect(stats[0].element)
-                .toBe('<div id="hiddenDiv1" style="display: none; content:\'adguard1;test-rule-one\';">');
+                .toBe('<div id="hiddenDiv1" style="display: none; content:\'adguard1;1\';">');
 
             expect(stats[1].filterId).toBe(2);
-            expect(stats[1].ruleText).toBe('test-rule-two');
+            expect(stats[1].ruleIndex).toBe(2);
             // eslint-disable-next-line max-len
-            expect(stats[1].element).toBe('<div id="hiddenDiv2" style="display: none !important; content:\'adguard2;test-rule-two\' !important;">');
+            expect(stats[1].element).toBe('<div id="hiddenDiv2" style="display: none !important; content:\'adguard2;2\' !important;">');
         });
 
         const cssHitsCounter = new CssHitsCounter(onCssHitsFound);
@@ -119,7 +119,7 @@ describe('CssHitsCounter', () => {
 
         const template = document.createElement('div');
         // eslint-disable-next-line max-len
-        template.innerHTML = '<div id="mutationDiv" style="display: none !important; content:\'adguard3;test-rule-three\';"></div>';
+        template.innerHTML = '<div id="mutationDiv" style="display: none !important; content:\'adguard3;3\';"></div>';
 
         const mutationRecord = {
             addedNodes: [template],
@@ -132,8 +132,8 @@ describe('CssHitsCounter', () => {
         expect(onCssHitsFound).toHaveBeenCalledTimes(2);
         expect(onCssHitsFound).toHaveBeenLastCalledWith([{
             filterId: 3,
-            ruleText: 'test-rule-three',
-            element: '<div id="mutationDiv" style="display: none !important; content:\'adguard3;test-rule-three\';">',
+            ruleIndex: 3,
+            element: '<div id="mutationDiv" style="display: none !important; content:\'adguard3;3\';">',
         }]);
 
         cssHitsCounter.stop();
@@ -154,7 +154,7 @@ describe('CssHitsCounter', () => {
         let affectedElement = cssHitsCounter.countAffectedByExtendedCss(elementToCount);
         expect(affectedElement).toBe(elementToCount);
 
-        elementToCount.rules[0].style.content = 'adguard4;test-rule-ext-css';
+        elementToCount.rules[0].style.content = 'adguard4;4';
 
         affectedElement = cssHitsCounter.countAffectedByExtendedCss(elementToCount);
 
@@ -163,7 +163,7 @@ describe('CssHitsCounter', () => {
         expect(onCssHitsFound).toHaveBeenCalledTimes(3);
         expect(onCssHitsFound).toHaveBeenLastCalledWith([{
             filterId: 4,
-            ruleText: 'test-rule-ext-css',
+            ruleIndex: 4,
             element: '<div id="testDiv">',
         }]);
 

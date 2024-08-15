@@ -1,8 +1,10 @@
 import { MetadataCommentRuleParser } from '../../../src/parser/comment/metadata';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('MetadataCommentRuleParser', () => {
     test('parse', () => {
+        // TODO: Refactor to test.each
         expect(MetadataCommentRuleParser.parse(EMPTY)).toBeNull();
         expect(MetadataCommentRuleParser.parse(SPACE)).toBeNull();
 
@@ -34,264 +36,104 @@ describe('MetadataCommentRuleParser', () => {
 
         expect(MetadataCommentRuleParser.parse('! Title: FilterList Title')).toMatchObject({
             type: 'MetadataCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 25,
-                    line: 1,
-                    column: 26,
-                },
-            },
+            start: 0,
+            end: 25,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             header: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 7,
-                        line: 1,
-                        column: 8,
-                    },
-                },
+                start: 2,
+                end: 7,
                 value: 'Title',
             },
             value: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                    end: {
-                        offset: 25,
-                        line: 1,
-                        column: 26,
-                    },
-                },
+                start: 9,
+                end: 25,
                 value: 'FilterList Title',
             },
         });
 
         expect(MetadataCommentRuleParser.parse('# Title: FilterList Title')).toMatchObject({
             type: 'MetadataCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 25,
-                    line: 1,
-                    column: 26,
-                },
-            },
+            start: 0,
+            end: 25,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '#',
             },
             header: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 7,
-                        line: 1,
-                        column: 8,
-                    },
-                },
+                start: 2,
+                end: 7,
                 value: 'Title',
             },
             value: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                    end: {
-                        offset: 25,
-                        line: 1,
-                        column: 26,
-                    },
-                },
+                start: 9,
+                end: 25,
                 value: 'FilterList Title',
             },
         });
 
         expect(MetadataCommentRuleParser.parse('! title: FilterList Title')).toMatchObject({
             type: 'MetadataCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 25,
-                    line: 1,
-                    column: 26,
-                },
-            },
+            start: 0,
+            end: 25,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             header: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 7,
-                        line: 1,
-                        column: 8,
-                    },
-                },
+                start: 2,
+                end: 7,
                 value: 'title',
             },
             value: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 9,
-                        line: 1,
-                        column: 10,
-                    },
-                    end: {
-                        offset: 25,
-                        line: 1,
-                        column: 26,
-                    },
-                },
+                start: 9,
+                end: 25,
                 value: 'FilterList Title',
             },
         });
 
         expect(MetadataCommentRuleParser.parse('!    title:    Filter   ')).toMatchObject({
             type: 'MetadataCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 24,
-                    line: 1,
-                    column: 25,
-                },
-            },
+            start: 0,
+            end: 24,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             header: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 5,
-                        line: 1,
-                        column: 6,
-                    },
-                    end: {
-                        offset: 10,
-                        line: 1,
-                        column: 11,
-                    },
-                },
+                start: 5,
+                end: 10,
                 value: 'title',
             },
             value: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 15,
-                        line: 1,
-                        column: 16,
-                    },
-                    end: {
-                        offset: 21,
-                        line: 1,
-                        column: 22,
-                    },
-                },
+                start: 15,
+                end: 21,
                 value: 'Filter',
             },
         });
@@ -300,68 +142,61 @@ describe('MetadataCommentRuleParser', () => {
             MetadataCommentRuleParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
         ).toMatchObject({
             type: 'MetadataCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 57,
-                    line: 1,
-                    column: 58,
-                },
-            },
+            start: 0,
+            end: 57,
             category: 'Comment',
             syntax: 'Common',
             marker: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 1,
-                        line: 1,
-                        column: 2,
-                    },
-                },
+                start: 0,
+                end: 1,
                 value: '!',
             },
             header: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 2,
-                        line: 1,
-                        column: 3,
-                    },
-                    end: {
-                        offset: 10,
-                        line: 1,
-                        column: 11,
-                    },
-                },
+                start: 2,
+                end: 10,
                 value: 'Homepage',
             },
             value: {
                 type: 'Value',
-                loc: {
-                    start: {
-                        offset: 12,
-                        line: 1,
-                        column: 13,
-                    },
-                    end: {
-                        offset: 57,
-                        line: 1,
-                        column: 58,
-                    },
-                },
+                start: 12,
+                end: 57,
                 value: 'https://github.com/AdguardTeam/some-repo/wiki',
             },
+        });
+    });
+
+    describe('parser options should work as expected', () => {
+        // TODO: Add template for test.each
+        test.each([
+            {
+                actual: '! Title: FilterList Title',
+                expected: {
+                    type: 'MetadataCommentRule',
+                    category: 'Comment',
+                    syntax: 'Common',
+                    raws: {
+                        text: '! Title: FilterList Title',
+                    },
+                    marker: {
+                        type: 'Value',
+                        value: '!',
+                    },
+                    header: {
+                        type: 'Value',
+                        value: 'Title',
+                    },
+                    value: {
+                        type: 'Value',
+                        value: 'FilterList Title',
+                    },
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(
+                MetadataCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
         });
     });
 
@@ -376,6 +211,7 @@ describe('MetadataCommentRuleParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('! Title: Filter')).toEqual('! Title: Filter');
         expect(parseAndGenerate('!   Title: Filter   ')).toEqual('! Title: Filter');
         expect(parseAndGenerate('# Title: Filter')).toEqual('# Title: Filter');
@@ -387,5 +223,16 @@ describe('MetadataCommentRuleParser', () => {
         expect(parseAndGenerate('# Homepage: https://github.com/AdguardTeam/some-repo/wiki')).toEqual(
             '# Homepage: https://github.com/AdguardTeam/some-repo/wiki',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '! Title: FilterList Title',
+            '!   Title: Filter   ',
+            '# Title: Filter',
+            '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(MetadataCommentRuleParser);
+        });
     });
 });

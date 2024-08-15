@@ -91,6 +91,11 @@ export class ResourcesService implements ResourcesServiceInterface {
     public async loadResource(path: string): Promise<string> {
         const url = this.createResourceUrl(path);
         const response = await fetch(url);
+
+        // redefine url property of the response
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
+        Object.defineProperty(response, 'url', { value: path });
+
         return response.text();
     }
 

@@ -6,4 +6,12 @@ export enum ErrorStatusCodes {
     RemoveparamInversionIsNotSupported = 1005,
 }
 
+export const DOT = '.';
+export const EMPTY_STRING = '';
 export const SEPARATOR = '|';
+export const SPACE = ' ';
+export const WILDCARD = '*';
+
+export const LF = '\n';
+export const CR = '\r';
+export const FF = '\f';

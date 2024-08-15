@@ -1,7 +1,8 @@
-import type { NetworkRule, CosmeticRule } from '@adguard/tsurlfilter';
-
+import { type RuleInfo } from './content-script/rule-info';
 import type { ContentType } from './request-type';
 import { EventChannel, type EventChannelInterface } from './utils';
+
+// TODO: Add 'is' prefix to cssRule, scriptRule and contentRule properties.
 
 /**
  * Types of filtering events that can occur during request processing.
@@ -12,6 +13,7 @@ export enum FilteringEventType {
     ApplyBasicRule = 'applyBasicRule',
     ApplyCosmeticRule = 'applyCosmeticRule',
     ApplyCspRule = 'applyCspRule',
+    ApplyPermissionsRule = 'applyPermissionsRule',
     ReceiveResponse = 'receiveResponse',
     Cookie = 'cookie',
     RemoveHeader = 'removeHeader',
@@ -20,9 +22,45 @@ export enum FilteringEventType {
     ContentFilteringStart = 'contentFilteringStart',
     ContentFilteringFinish = 'contentFilteringFinish',
     StealthAction = 'stealthAction',
+    StealthAllowlistAction = 'stealthAllowlistAction',
     JsInject = 'jsInject',
     CspReportBlocked = 'cspReportBlocked',
 }
+
+/**
+ * Additional network rule info.
+ */
+type AdditionalNetworkRuleInfo = {
+    /**
+     * Whether the rule is exception.
+     */
+    isAllowlist: boolean,
+
+    /**
+     * Whether the rule is important.
+     */
+    isImportant: boolean,
+
+    /**
+     * Whether the rule is document level.
+     */
+    isDocumentLevel: boolean,
+
+    /**
+     * Whether the rule is CSP-related.
+     */
+    isCsp: boolean,
+
+    /**
+     * Whether the rule is a cookie rule.
+     */
+    isCookie: boolean,
+
+    /**
+     * Advanced modifier value, if present.
+     */
+    advancedModifier: string | null,
+};
 
 /**
  * Type schemas for plain objects passed to filtering event channels during request processing.
@@ -41,9 +79,9 @@ export type SendRequestEventData = {
     tabId: number,
     eventId: string,
     requestUrl: string,
-    requestDomain: string,
+    requestDomain: string | null,
     frameUrl: string,
-    frameDomain: string,
+    frameDomain: string | null,
     requestType: ContentType,
     timestamp: number,
     requestThirdParty: boolean,
@@ -79,11 +117,10 @@ export type TabReloadEvent = {
 export type ApplyBasicRuleEventData = {
     tabId: number,
     eventId: string,
-    rule: NetworkRule,
     requestUrl: string,
     frameUrl: string,
     requestType: ContentType,
-};
+} & RuleInfo & AdditionalNetworkRuleInfo;
 
 /**
  * Dispatched by WebRequestApi manifest v2 module on request block or allowlist rule matching in onBeforeRequest event
@@ -100,13 +137,12 @@ export type ApplyBasicRuleEvent = {
 export type ApplyCspRuleEventData = {
     tabId: number,
     eventId: string,
-    rule: NetworkRule,
     requestUrl: string,
     frameUrl: string,
-    frameDomain: string,
+    frameDomain: string | null,
     requestType: ContentType,
     timestamp: number,
-};
+} & RuleInfo & AdditionalNetworkRuleInfo;
 
 /**
  * Dispatched by manifest v2 csp service.
@@ -116,18 +152,29 @@ export type ApplyCspRuleEvent = {
     data: ApplyCspRuleEventData,
 };
 
+export type ApplyPermissionsRuleEventData = ApplyCspRuleEventData;
+
+export type ApplyPermissionsRuleEvent = {
+    type: FilteringEventType.ApplyPermissionsRule,
+    data: ApplyPermissionsRuleEventData,
+};
+
 /**
  * {@link ApplyCosmeticRuleEvent} Event data.
  */
 export type ApplyCosmeticRuleEventData = {
     tabId: number,
     eventId: string,
-    rule: CosmeticRule,
+    filterId: number,
+    ruleIndex: number,
     element: string,
     frameUrl: string,
     frameDomain: string,
     requestType: ContentType,
     timestamp: number,
+    cssRule: boolean,
+    scriptRule: boolean,
+    contentRule: boolean,
 };
 
 /**
@@ -165,16 +212,15 @@ export type CookieEventData = {
     cookieName: string,
     cookieValue: string,
     frameDomain: string,
-    rule: NetworkRule,
     isModifyingCookieRule: boolean,
     requestThirdParty: boolean,
     timestamp: number,
     requestType: ContentType,
-};
+} & RuleInfo & AdditionalNetworkRuleInfo;
 
 /**
- * Dispatched by CookieFiltering manifest v2 module on cookie filtering in onBeforeSendHeaders and onHeadersReceived
- * event handlers.
+ * Dispatched by CookieFiltering module on cookie filtering in
+ * onBeforeSendHeaders and onHeadersReceived event handlers.
  */
 export type CookieEvent = {
     type: FilteringEventType.Cookie;
@@ -194,11 +240,10 @@ export type RemoveHeaderEventData = {
     frameDomain: string;
     requestType: ContentType;
     timestamp: number,
-    rule: NetworkRule;
-};
+} & RuleInfo & AdditionalNetworkRuleInfo;
 
 /**
- * Dispatched by HeadersService manifest v2 module on request header removing in onBeforeSendHeaders and
+ * Dispatched by RemoveHeadersService manifest v2 module on request header removing in onBeforeSendHeaders and
  * onHeadersReceived event handlers.
  */
 export type RemoveHeaderEvent = {
@@ -218,8 +263,7 @@ export type RemoveParamEventData = {
     frameDomain: string;
     requestType: ContentType;
     timestamp: number,
-    rule: NetworkRule,
-};
+} & RuleInfo & AdditionalNetworkRuleInfo;
 
 /**
  * Dispatched by ParamsService manifest v2 module on request param removing in WebRequestApi.onBeforeRequest event
@@ -236,7 +280,7 @@ export type RemoveParamEvent = {
 export type ReplaceRuleApplyEventData = {
     tabId: number;
     eventId: string;
-    rules: NetworkRule[];
+    rules: RuleInfo[];
 };
 
 /**
@@ -298,6 +342,27 @@ export type StealthActionEvent = {
 };
 
 /**
+ * {@link StealthAllowlistActionEvent} Event data.
+ */
+export type StealthAllowlistActionEventData = {
+    tabId: number;
+    eventId: string;
+    rules: (RuleInfo & AdditionalNetworkRuleInfo)[];
+    requestUrl: string,
+    frameUrl: string,
+    requestType: ContentType,
+    timestamp: number,
+};
+
+/**
+ * Dispatched by manifest v2 StealthApi on allowlist stealth rule matching in onBeforeSendHeaders event handler.
+ */
+export type StealthAllowlistActionEvent = {
+    type: FilteringEventType.StealthAllowlistAction
+    data: StealthAllowlistActionEventData;
+};
+
+/**
  * {@link JsInjectEvent} Event data.
  */
 export type JsInjectEventData = {
@@ -309,7 +374,11 @@ export type JsInjectEventData = {
     frameDomain: string,
     requestType: ContentType,
     timestamp: number,
-    rule: CosmeticRule,
+    filterId: number,
+    ruleIndex: number,
+    cssRule: boolean,
+    scriptRule: boolean,
+    contentRule: boolean,
 };
 
 /**
@@ -352,10 +421,12 @@ export type FilteringLogEvent =
     | ContentFilteringStartEvent
     | ContentFilteringFinishEvent
     | StealthActionEvent
+    | StealthAllowlistActionEvent
     | SendRequestEvent
     | TabReloadEvent
     | ApplyBasicRuleEvent
     | ApplyCspRuleEvent
+    | ApplyPermissionsRuleEvent
     | ApplyCosmeticRuleEvent
     | ReceiveResponseEvent
     | JsInjectEvent

@@ -1,8 +1,10 @@
 import { HintCommentRuleParser } from '../../../src/parser/comment/hint-rule';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
+import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('HintCommentRuleParser', () => {
     test('isHintRule', () => {
+        // TODO: Refactor to test.each
         expect(HintCommentRuleParser.isHintRule(EMPTY)).toBeFalsy();
         expect(HintCommentRuleParser.isHintRule(SPACE)).toBeFalsy();
         expect(HintCommentRuleParser.isHintRule('! comment')).toBeFalsy();
@@ -16,52 +18,23 @@ describe('HintCommentRuleParser', () => {
     });
 
     test('parse', () => {
+        // TODO: Refactor to test.each
         // Without parameters
         expect(HintCommentRuleParser.parse('!+NOT_OPTIMIZED')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 15,
-                    line: 1,
-                    column: 16,
-                },
-            },
+            start: 0,
+            end: 15,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 2,
-                            line: 1,
-                            column: 3,
-                        },
-                        end: {
-                            offset: 15,
-                            line: 1,
-                            column: 16,
-                        },
-                    },
+                    start: 2,
+                    end: 15,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 2,
-                                line: 1,
-                                column: 3,
-                            },
-                            end: {
-                                offset: 15,
-                                line: 1,
-                                column: 16,
-                            },
-                        },
+                        start: 2,
+                        end: 15,
                         value: 'NOT_OPTIMIZED',
                     },
                 },
@@ -70,49 +43,19 @@ describe('HintCommentRuleParser', () => {
 
         expect(HintCommentRuleParser.parse('!+ NOT_OPTIMIZED')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 16,
-                    line: 1,
-                    column: 17,
-                },
-            },
+            start: 0,
+            end: 16,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 16,
-                            line: 1,
-                            column: 17,
-                        },
-                    },
+                    start: 3,
+                    end: 16,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                        },
+                        start: 3,
+                        end: 16,
                         value: 'NOT_OPTIMIZED',
                     },
                 },
@@ -122,80 +65,30 @@ describe('HintCommentRuleParser', () => {
         // Multiple, without parameters
         expect(HintCommentRuleParser.parse('!+ HINT_NAME1 HINT_NAME2')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 24,
-                    line: 1,
-                    column: 25,
-                },
-            },
+            start: 0,
+            end: 24,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 13,
-                            line: 1,
-                            column: 14,
-                        },
-                    },
+                    start: 3,
+                    end: 13,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                        },
+                        start: 3,
+                        end: 13,
                         value: 'HINT_NAME1',
                     },
                 },
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 14,
-                            line: 1,
-                            column: 15,
-                        },
-                        end: {
-                            offset: 24,
-                            line: 1,
-                            column: 25,
-                        },
-                    },
+                    start: 14,
+                    end: 24,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                            end: {
-                                offset: 24,
-                                line: 1,
-                                column: 25,
-                            },
-                        },
+                        start: 14,
+                        end: 24,
                         value: 'HINT_NAME2',
                     },
                 },
@@ -205,65 +98,25 @@ describe('HintCommentRuleParser', () => {
         // Without parameters, but with empty parameter list ()
         expect(HintCommentRuleParser.parse('!+ HINT_NAME1()')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 15,
-                    line: 1,
-                    column: 16,
-                },
-            },
+            start: 0,
+            end: 15,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 15,
-                            line: 1,
-                            column: 16,
-                        },
-                    },
+                    start: 3,
+                    end: 15,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                        },
+                        start: 3,
+                        end: 13,
                         value: 'HINT_NAME1',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                            end: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                        },
+                        start: 14,
+                        end: 14,
                         children: [],
                     },
                 },
@@ -272,66 +125,28 @@ describe('HintCommentRuleParser', () => {
 
         expect(HintCommentRuleParser.parse('!+ HINT_NAME1(     )')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 20,
-                    line: 1,
-                    column: 21,
-                },
-            },
+            start: 0,
+            end: 20,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 20,
-                            line: 1,
-                            column: 21,
-                        },
-                    },
+                    start: 3,
+                    end: 20,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                        },
+                        start: 3,
+                        end: 13,
                         value: 'HINT_NAME1',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                            end: {
-                                offset: 19,
-                                line: 1,
-                                column: 20,
-                            },
-                        },
-                        children: [],
+                        start: 14,
+                        end: 19,
+                        children: [
+                            null,
+                        ],
                     },
                 },
             ],
@@ -339,112 +154,42 @@ describe('HintCommentRuleParser', () => {
 
         expect(HintCommentRuleParser.parse('!+ HINT_NAME1() HINT_NAME2()')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 28,
-                    line: 1,
-                    column: 29,
-                },
-            },
+            start: 0,
+            end: 28,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 15,
-                            line: 1,
-                            column: 16,
-                        },
-                    },
+                    start: 3,
+                    end: 15,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                        },
+                        start: 3,
+                        end: 13,
                         value: 'HINT_NAME1',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                            end: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                        },
+                        start: 14,
+                        end: 14,
                         children: [],
                     },
                 },
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 16,
-                            line: 1,
-                            column: 17,
-                        },
-                        end: {
-                            offset: 28,
-                            line: 1,
-                            column: 29,
-                        },
-                    },
+                    start: 16,
+                    end: 28,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                            end: {
-                                offset: 26,
-                                line: 1,
-                                column: 27,
-                            },
-                        },
+                        start: 16,
+                        end: 26,
                         value: 'HINT_NAME2',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 27,
-                                line: 1,
-                                column: 28,
-                            },
-                            end: {
-                                offset: 27,
-                                line: 1,
-                                column: 28,
-                            },
-                        },
+                        start: 27,
+                        end: 27,
                         children: [],
                     },
                 },
@@ -454,96 +199,36 @@ describe('HintCommentRuleParser', () => {
         // Variadic
         expect(HintCommentRuleParser.parse('!+ HINT_NAME1(param0, param1) HINT_NAME2()')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 42,
-                    line: 1,
-                    column: 43,
-                },
-            },
+            start: 0,
+            end: 42,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 29,
-                            line: 1,
-                            column: 30,
-                        },
-                    },
+                    start: 3,
+                    end: 29,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                        },
+                        start: 3,
+                        end: 13,
                         value: 'HINT_NAME1',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 14,
-                                line: 1,
-                                column: 15,
-                            },
-                            end: {
-                                offset: 28,
-                                line: 1,
-                                column: 29,
-                            },
-                        },
+                        start: 14,
+                        end: 28,
                         children: [
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 14,
-                                        line: 1,
-                                        column: 15,
-                                    },
-                                    end: {
-                                        offset: 20,
-                                        line: 1,
-                                        column: 21,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 14,
+                                end: 20,
                                 value: 'param0',
                             },
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 22,
-                                        line: 1,
-                                        column: 23,
-                                    },
-                                    end: {
-                                        offset: 28,
-                                        line: 1,
-                                        column: 29,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 22,
+                                end: 28,
                                 value: 'param1',
                             },
                         ],
@@ -551,48 +236,18 @@ describe('HintCommentRuleParser', () => {
                 },
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 30,
-                            line: 1,
-                            column: 31,
-                        },
-                        end: {
-                            offset: 42,
-                            line: 1,
-                            column: 43,
-                        },
-                    },
+                    start: 30,
+                    end: 42,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 30,
-                                line: 1,
-                                column: 31,
-                            },
-                            end: {
-                                offset: 40,
-                                line: 1,
-                                column: 41,
-                            },
-                        },
+                        start: 30,
+                        end: 40,
                         value: 'HINT_NAME2',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 41,
-                                line: 1,
-                                column: 42,
-                            },
-                            end: {
-                                offset: 41,
-                                line: 1,
-                                column: 42,
-                            },
-                        },
+                        start: 41,
+                        end: 41,
                         children: [],
                     },
                 },
@@ -602,96 +257,36 @@ describe('HintCommentRuleParser', () => {
         expect(HintCommentRuleParser.parse('!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)')).toMatchObject(
             {
                 type: 'HintCommentRule',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 48,
-                        line: 1,
-                        column: 49,
-                    },
-                },
+                start: 0,
+                end: 48,
                 category: 'Comment',
                 syntax: 'AdGuard',
                 children: [
                     {
                         type: 'Hint',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 29,
-                                line: 1,
-                                column: 30,
-                            },
-                        },
+                        start: 3,
+                        end: 29,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 3,
-                                    line: 1,
-                                    column: 4,
-                                },
-                                end: {
-                                    offset: 13,
-                                    line: 1,
-                                    column: 14,
-                                },
-                            },
+                            start: 3,
+                            end: 13,
                             value: 'HINT_NAME1',
                         },
                         params: {
                             type: 'ParameterList',
-                            loc: {
-                                start: {
-                                    offset: 14,
-                                    line: 1,
-                                    column: 15,
-                                },
-                                end: {
-                                    offset: 28,
-                                    line: 1,
-                                    column: 29,
-                                },
-                            },
+                            start: 14,
+                            end: 28,
                             children: [
                                 {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 14,
-                                            line: 1,
-                                            column: 15,
-                                        },
-                                        end: {
-                                            offset: 20,
-                                            line: 1,
-                                            column: 21,
-                                        },
-                                    },
+                                    type: 'Value',
+                                    start: 14,
+                                    end: 20,
                                     value: 'param0',
                                 },
                                 {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 22,
-                                            line: 1,
-                                            column: 23,
-                                        },
-                                        end: {
-                                            offset: 28,
-                                            line: 1,
-                                            column: 29,
-                                        },
-                                    },
+                                    type: 'Value',
+                                    start: 22,
+                                    end: 28,
                                     value: 'param1',
                                 },
                             ],
@@ -699,63 +294,23 @@ describe('HintCommentRuleParser', () => {
                     },
                     {
                         type: 'Hint',
-                        loc: {
-                            start: {
-                                offset: 30,
-                                line: 1,
-                                column: 31,
-                            },
-                            end: {
-                                offset: 48,
-                                line: 1,
-                                column: 49,
-                            },
-                        },
+                        start: 30,
+                        end: 48,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 30,
-                                    line: 1,
-                                    column: 31,
-                                },
-                                end: {
-                                    offset: 40,
-                                    line: 1,
-                                    column: 41,
-                                },
-                            },
+                            start: 30,
+                            end: 40,
                             value: 'HINT_NAME2',
                         },
                         params: {
                             type: 'ParameterList',
-                            loc: {
-                                start: {
-                                    offset: 41,
-                                    line: 1,
-                                    column: 42,
-                                },
-                                end: {
-                                    offset: 47,
-                                    line: 1,
-                                    column: 48,
-                                },
-                            },
+                            start: 41,
+                            end: 47,
                             children: [
                                 {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 41,
-                                            line: 1,
-                                            column: 42,
-                                        },
-                                        end: {
-                                            offset: 47,
-                                            line: 1,
-                                            column: 48,
-                                        },
-                                    },
+                                    type: 'Value',
+                                    start: 41,
+                                    end: 47,
                                     value: 'param0',
                                 },
                             ],
@@ -768,112 +323,78 @@ describe('HintCommentRuleParser', () => {
         // Skipped parameters
         expect(HintCommentRuleParser.parse('!+ HINT_NAME(param0, , param1)')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 30,
-                    line: 1,
-                    column: 31,
-                },
-            },
+            start: 0,
+            end: 30,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 30,
-                            line: 1,
-                            column: 31,
-                        },
-                    },
+                    start: 3,
+                    end: 30,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 3,
+                        end: 12,
                         value: 'HINT_NAME',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                            end: {
-                                offset: 29,
-                                line: 1,
-                                column: 30,
-                            },
-                        },
+                        start: 13,
+                        end: 29,
                         children: [
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 13,
-                                        line: 1,
-                                        column: 14,
-                                    },
-                                    end: {
-                                        offset: 19,
-                                        line: 1,
-                                        column: 20,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 13,
+                                end: 19,
                                 value: 'param0',
                             },
+                            null,
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 21,
-                                        line: 1,
-                                        column: 22,
-                                    },
-                                    end: {
-                                        offset: 20,
-                                        line: 1,
-                                        column: 21,
-                                    },
-                                },
-                                value: ' ',
+                                type: 'Value',
+                                start: 23,
+                                end: 29,
+                                value: 'param1',
                             },
+                        ],
+                    },
+                },
+            ],
+        });
+
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME(param0,    , param1)')).toMatchObject({
+            type: 'HintCommentRule',
+            start: 0,
+            end: 33,
+            category: 'Comment',
+            syntax: 'AdGuard',
+            children: [
+                {
+                    type: 'Hint',
+                    start: 3,
+                    end: 33,
+                    name: {
+                        type: 'Value',
+                        start: 3,
+                        end: 12,
+                        value: 'HINT_NAME',
+                    },
+                    params: {
+                        type: 'ParameterList',
+                        start: 13,
+                        end: 32,
+                        children: [
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 23,
-                                        line: 1,
-                                        column: 24,
-                                    },
-                                    end: {
-                                        offset: 29,
-                                        line: 1,
-                                        column: 30,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 13,
+                                end: 19,
+                                value: 'param0',
+                            },
+                            null,
+                            {
+                                type: 'Value',
+                                start: 26,
+                                end: 32,
                                 value: 'param1',
                             },
                         ],
@@ -885,130 +406,35 @@ describe('HintCommentRuleParser', () => {
         expect(HintCommentRuleParser.parse('!+ HINT_NAME(param0, , , )')).toMatchObject(
             {
                 type: 'HintCommentRule',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 26,
-                        line: 1,
-                        column: 27,
-                    },
-                },
+                start: 0,
+                end: 26,
                 category: 'Comment',
                 syntax: 'AdGuard',
                 children: [
                     {
                         type: 'Hint',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 26,
-                                line: 1,
-                                column: 27,
-                            },
-                        },
+                        start: 3,
+                        end: 26,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 3,
-                                    line: 1,
-                                    column: 4,
-                                },
-                                end: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                            },
+                            start: 3,
+                            end: 12,
                             value: 'HINT_NAME',
                         },
                         params: {
                             type: 'ParameterList',
-                            loc: {
-                                start: {
-                                    offset: 13,
-                                    line: 1,
-                                    column: 14,
-                                },
-                                end: {
-                                    offset: 25,
-                                    line: 1,
-                                    column: 26,
-                                },
-                            },
+                            start: 13,
+                            end: 25,
                             children: [
                                 {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 13,
-                                            line: 1,
-                                            column: 14,
-                                        },
-                                        end: {
-                                            offset: 19,
-                                            line: 1,
-                                            column: 20,
-                                        },
-                                    },
+                                    type: 'Value',
+                                    start: 13,
+                                    end: 19,
                                     value: 'param0',
                                 },
-                                {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 21,
-                                            line: 1,
-                                            column: 22,
-                                        },
-                                        end: {
-                                            offset: 20,
-                                            line: 1,
-                                            column: 21,
-                                        },
-                                    },
-                                    value: ' ',
-                                },
-                                {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 23,
-                                            line: 1,
-                                            column: 24,
-                                        },
-                                        end: {
-                                            offset: 22,
-                                            line: 1,
-                                            column: 23,
-                                        },
-                                    },
-                                    value: ' ',
-                                },
-                                {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 25,
-                                            line: 1,
-                                            column: 26,
-                                        },
-                                        end: {
-                                            offset: 24,
-                                            line: 1,
-                                            column: 25,
-                                        },
-                                    },
-                                    value: ' ',
-                                },
+                                null,
+                                null,
+                                null,
                             ],
                         },
                     },
@@ -1019,130 +445,30 @@ describe('HintCommentRuleParser', () => {
         expect(HintCommentRuleParser.parse('!+ HINT_NAME( , , , )')).toMatchObject(
             {
                 type: 'HintCommentRule',
-                loc: {
-                    start: {
-                        offset: 0,
-                        line: 1,
-                        column: 1,
-                    },
-                    end: {
-                        offset: 21,
-                        line: 1,
-                        column: 22,
-                    },
-                },
+                start: 0,
+                end: 21,
                 category: 'Comment',
                 syntax: 'AdGuard',
                 children: [
                     {
                         type: 'Hint',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 21,
-                                line: 1,
-                                column: 22,
-                            },
-                        },
+                        start: 3,
+                        end: 21,
                         name: {
                             type: 'Value',
-                            loc: {
-                                start: {
-                                    offset: 3,
-                                    line: 1,
-                                    column: 4,
-                                },
-                                end: {
-                                    offset: 12,
-                                    line: 1,
-                                    column: 13,
-                                },
-                            },
+                            start: 3,
+                            end: 12,
                             value: 'HINT_NAME',
                         },
                         params: {
                             type: 'ParameterList',
-                            loc: {
-                                start: {
-                                    offset: 13,
-                                    line: 1,
-                                    column: 14,
-                                },
-                                end: {
-                                    offset: 20,
-                                    line: 1,
-                                    column: 21,
-                                },
-                            },
+                            start: 13,
+                            end: 20,
                             children: [
-                                {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 14,
-                                            line: 1,
-                                            column: 15,
-                                        },
-                                        end: {
-                                            offset: 13,
-                                            line: 1,
-                                            column: 14,
-                                        },
-                                    },
-                                    value: ' ',
-                                },
-                                {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 16,
-                                            line: 1,
-                                            column: 17,
-                                        },
-                                        end: {
-                                            offset: 15,
-                                            line: 1,
-                                            column: 16,
-                                        },
-                                    },
-                                    value: ' ',
-                                },
-                                {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 18,
-                                            line: 1,
-                                            column: 19,
-                                        },
-                                        end: {
-                                            offset: 17,
-                                            line: 1,
-                                            column: 18,
-                                        },
-                                    },
-                                    value: ' ',
-                                },
-                                {
-                                    type: 'Parameter',
-                                    loc: {
-                                        start: {
-                                            offset: 20,
-                                            line: 1,
-                                            column: 21,
-                                        },
-                                        end: {
-                                            offset: 19,
-                                            line: 1,
-                                            column: 20,
-                                        },
-                                    },
-                                    value: ' ',
-                                },
+                                null,
+                                null,
+                                null,
+                                null,
                             ],
                         },
                     },
@@ -1152,114 +478,29 @@ describe('HintCommentRuleParser', () => {
 
         expect(HintCommentRuleParser.parse('!+ HINT_NAME(,,,)')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 17,
-                    line: 1,
-                    column: 18,
-                },
-            },
+            start: 0,
+            end: 17,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 17,
-                            line: 1,
-                            column: 18,
-                        },
-                    },
+                    start: 3,
+                    end: 17,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 3,
+                        end: 12,
                         value: 'HINT_NAME',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                            end: {
-                                offset: 16,
-                                line: 1,
-                                column: 17,
-                            },
-                        },
+                        start: 13,
+                        end: 16,
                         children: [
-                            {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 13,
-                                        line: 1,
-                                        column: 14,
-                                    },
-                                    end: {
-                                        offset: 13,
-                                        line: 1,
-                                        column: 14,
-                                    },
-                                },
-                                value: '',
-                            },
-                            {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 14,
-                                        line: 1,
-                                        column: 15,
-                                    },
-                                    end: {
-                                        offset: 14,
-                                        line: 1,
-                                        column: 15,
-                                    },
-                                },
-                                value: '',
-                            },
-                            {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 15,
-                                        line: 1,
-                                        column: 16,
-                                    },
-                                    end: {
-                                        offset: 15,
-                                        line: 1,
-                                        column: 16,
-                                    },
-                                },
-                                value: '',
-                            },
+                            null,
+                            null,
+                            null,
                         ],
                     },
                 },
@@ -1269,128 +510,48 @@ describe('HintCommentRuleParser', () => {
         // Spaces
         expect(HintCommentRuleParser.parse('!+ HINT_NAME(    p0  ,   p1 ,   p2 ,     p3)')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 44,
-                    line: 1,
-                    column: 45,
-                },
-            },
+            start: 0,
+            end: 44,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 44,
-                            line: 1,
-                            column: 45,
-                        },
-                    },
+                    start: 3,
+                    end: 44,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 3,
+                        end: 12,
                         value: 'HINT_NAME',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                            end: {
-                                offset: 43,
-                                line: 1,
-                                column: 44,
-                            },
-                        },
+                        start: 13,
+                        end: 43,
                         children: [
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 17,
-                                        line: 1,
-                                        column: 18,
-                                    },
-                                    end: {
-                                        offset: 19,
-                                        line: 1,
-                                        column: 20,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 17,
+                                end: 19,
                                 value: 'p0',
                             },
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 25,
-                                        line: 1,
-                                        column: 26,
-                                    },
-                                    end: {
-                                        offset: 27,
-                                        line: 1,
-                                        column: 28,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 25,
+                                end: 27,
                                 value: 'p1',
                             },
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 32,
-                                        line: 1,
-                                        column: 33,
-                                    },
-                                    end: {
-                                        offset: 34,
-                                        line: 1,
-                                        column: 35,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 32,
+                                end: 34,
                                 value: 'p2',
                             },
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 41,
-                                        line: 1,
-                                        column: 42,
-                                    },
-                                    end: {
-                                        offset: 43,
-                                        line: 1,
-                                        column: 44,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 41,
+                                end: 43,
                                 value: 'p3',
                             },
                         ],
@@ -1401,96 +562,36 @@ describe('HintCommentRuleParser', () => {
 
         expect(HintCommentRuleParser.parse('!+ HINT_NAME(hello world, hello   world)')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 40,
-                    line: 1,
-                    column: 41,
-                },
-            },
+            start: 0,
+            end: 40,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 40,
-                            line: 1,
-                            column: 41,
-                        },
-                    },
+                    start: 3,
+                    end: 40,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 3,
+                        end: 12,
                         value: 'HINT_NAME',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                            end: {
-                                offset: 39,
-                                line: 1,
-                                column: 40,
-                            },
-                        },
+                        start: 13,
+                        end: 39,
                         children: [
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 13,
-                                        line: 1,
-                                        column: 14,
-                                    },
-                                    end: {
-                                        offset: 24,
-                                        line: 1,
-                                        column: 25,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 13,
+                                end: 24,
                                 value: 'hello world',
                             },
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 26,
-                                        line: 1,
-                                        column: 27,
-                                    },
-                                    end: {
-                                        offset: 39,
-                                        line: 1,
-                                        column: 40,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 26,
+                                end: 39,
                                 value: 'hello   world',
                             },
                         ],
@@ -1501,96 +602,36 @@ describe('HintCommentRuleParser', () => {
 
         expect(HintCommentRuleParser.parse('!+ hint_name(hello world, hello   world)')).toMatchObject({
             type: 'HintCommentRule',
-            loc: {
-                start: {
-                    offset: 0,
-                    line: 1,
-                    column: 1,
-                },
-                end: {
-                    offset: 40,
-                    line: 1,
-                    column: 41,
-                },
-            },
+            start: 0,
+            end: 40,
             category: 'Comment',
             syntax: 'AdGuard',
             children: [
                 {
                     type: 'Hint',
-                    loc: {
-                        start: {
-                            offset: 3,
-                            line: 1,
-                            column: 4,
-                        },
-                        end: {
-                            offset: 40,
-                            line: 1,
-                            column: 41,
-                        },
-                    },
+                    start: 3,
+                    end: 40,
                     name: {
                         type: 'Value',
-                        loc: {
-                            start: {
-                                offset: 3,
-                                line: 1,
-                                column: 4,
-                            },
-                            end: {
-                                offset: 12,
-                                line: 1,
-                                column: 13,
-                            },
-                        },
+                        start: 3,
+                        end: 12,
                         value: 'hint_name',
                     },
                     params: {
                         type: 'ParameterList',
-                        loc: {
-                            start: {
-                                offset: 13,
-                                line: 1,
-                                column: 14,
-                            },
-                            end: {
-                                offset: 39,
-                                line: 1,
-                                column: 40,
-                            },
-                        },
+                        start: 13,
+                        end: 39,
                         children: [
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 13,
-                                        line: 1,
-                                        column: 14,
-                                    },
-                                    end: {
-                                        offset: 24,
-                                        line: 1,
-                                        column: 25,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 13,
+                                end: 24,
                                 value: 'hello world',
                             },
                             {
-                                type: 'Parameter',
-                                loc: {
-                                    start: {
-                                        offset: 26,
-                                        line: 1,
-                                        column: 27,
-                                    },
-                                    end: {
-                                        offset: 39,
-                                        line: 1,
-                                        column: 40,
-                                    },
-                                },
+                                type: 'Value',
+                                start: 26,
+                                end: 39,
                                 value: 'hello   world',
                             },
                         ],
@@ -1624,6 +665,65 @@ describe('HintCommentRuleParser', () => {
         );
     });
 
+    describe('parser options should work as expected', () => {
+        // TODO: Add template for test.each
+        test.each([
+            {
+                actual: '!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)',
+                expected: {
+                    type: 'HintCommentRule',
+                    category: 'Comment',
+                    syntax: 'AdGuard',
+                    raws: {
+                        text: '!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)',
+                    },
+                    children: [
+                        {
+                            type: 'Hint',
+                            name: {
+                                type: 'Value',
+                                value: 'HINT_NAME1',
+                            },
+                            params: {
+                                type: 'ParameterList',
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        value: 'param0',
+                                    },
+                                    {
+                                        type: 'Value',
+                                        value: 'param1',
+                                    },
+                                ],
+                            },
+                        },
+                        {
+                            type: 'Hint',
+                            name: {
+                                type: 'Value',
+                                value: 'HINT_NAME2',
+                            },
+                            params: {
+                                type: 'ParameterList',
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        value: 'param0',
+                                    },
+                                ],
+                            },
+                        },
+                    ],
+                },
+            },
+        ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
+            expect(
+                HintCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+            ).toEqual(expected);
+        });
+    });
+
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
             const ast = HintCommentRuleParser.parse(raw);
@@ -1635,10 +735,14 @@ describe('HintCommentRuleParser', () => {
             return null;
         };
 
+        // TODO: Refactor to test.each
         expect(parseAndGenerate('!+ NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+ NOT_OPTIMIZED()')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+    NOT_OPTIMIZED   ')).toEqual('!+ NOT_OPTIMIZED');
+
+        expect(parseAndGenerate('!+ PLATFORM(,,windows,,)')).toEqual('!+ PLATFORM(, , windows, ,)');
+        expect(parseAndGenerate('!+ PLATFORM(,,,)')).toEqual('!+ PLATFORM(, , ,)');
 
         expect(parseAndGenerate('!+ NOT_OPTIMIZED PLATFORM(windows)')).toEqual('!+ NOT_OPTIMIZED PLATFORM(windows)');
 
@@ -1657,5 +761,16 @@ describe('HintCommentRuleParser', () => {
         expect(parseAndGenerate('!+  NOT_OPTIMIZED  PLATFORM( windows     ,  mac  )  NOT_PLATFORM( mac )')).toEqual(
             '!+ NOT_OPTIMIZED PLATFORM(windows, mac) NOT_PLATFORM(mac)',
         );
+    });
+
+    describe('serialize & deserialize', () => {
+        test.each([
+            '!+ NOT_OPTIMIZED',
+            '!+ NOT_OPTIMIZED PLATFORM(windows)',
+            '!+ NOT_OPTIMIZED PLATFORM(, , ,)',
+            '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac, ios)',
+        ])("should serialize and deserialize '%p'", async (input) => {
+            await expect(input).toBeSerializedAndDeserializedProperly(HintCommentRuleParser);
+        });
     });
 });

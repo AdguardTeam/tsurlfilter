@@ -1,4 +1,4 @@
-import { BufferRuleList } from '@adguard/tsurlfilter';
+import { BufferRuleList, FilterListPreprocessor } from '@adguard/tsurlfilter';
 import { Allowlist } from '@lib/mv2/background/allowlist';
 import { ALLOWLIST_FILTER_ID } from '@lib/common/constants';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
@@ -38,7 +38,9 @@ describe('Allowlist Api', () => {
                 inverted: false,
                 expected: new BufferRuleList(
                     ALLOWLIST_FILTER_ID,
-                    '@@///(www\\.)?example\\.com/$document,important',
+                    FilterListPreprocessor.preprocess(
+                        '@@///(www\\.)?example\\.com/$document,important',
+                    ).filterList,
                 ),
             },
             {
