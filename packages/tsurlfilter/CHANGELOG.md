@@ -8,23 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## [3.0.0-beta.3] - 2024-07-30
-
-### Fixed
-
-- `@adguard/agtree` dependency now used consistently in the project.
-
-[3.0.0-beta.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0-beta.3
-
-## [3.0.0-alpha.1] - 2024-07-17
-
-### Changed
-
-- Updated `@adguard/scriptlets` to `v1.11.6`.
-
-[3.0.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0-alpha.1
-
-## [3.0.0-alpha.0] - 2024-06-21
+## [3.0.0] - 2024-08-15
 
 ### Added
 
@@ -58,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed `IRuleList`s `retrieveRuleText` method to `retrieveRuleNode`.
 - `BufferRuleList` now expects an AGTree byte buffer in the constructor.
 - `ILineReader` changed to `IReader`.
+- `$header` modifier removed from supported modifiers list in the declarative converter.
+- Updated `@adguard/scriptlets` to `v1.11.6`.
 
 ### Fixed
 
@@ -73,21 +59,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `RuleConverter` classes.
 - Cosmetic rule parser.
 
-[3.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0-alpha.0
-[#116]: https://github.com/AdguardTeam/tsurlfilter/issues/116
-[#110]: https://github.com/AdguardTeam/tsurlfilter/issues/110
+[3.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0
 [#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
-[#85]: https://github.com/AdguardTeam/tsurlfilter/issues/85
-[#69]: https://github.com/AdguardTeam/tsurlfilter/issues/69
-[#66]: https://github.com/AdguardTeam/tsurlfilter/issues/66
-[#64]: https://github.com/AdguardTeam/tsurlfilter/issues/64
-[#63]: https://github.com/AdguardTeam/tsurlfilter/issues/63
-[#41]: https://github.com/AdguardTeam/tsurlfilter/issues/41
-[AdguardBrowserExtension#2690]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2690
-[AdguardBrowserExtension#2481]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481
-[AdguardBrowserExtension#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
-[AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
+[#110]: https://github.com/AdguardTeam/tsurlfilter/issues/110
+[#116]: https://github.com/AdguardTeam/tsurlfilter/issues/116
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
+[#41]: https://github.com/AdguardTeam/tsurlfilter/issues/41
+[#63]: https://github.com/AdguardTeam/tsurlfilter/issues/63
+[#64]: https://github.com/AdguardTeam/tsurlfilter/issues/64
+[#66]: https://github.com/AdguardTeam/tsurlfilter/issues/66
+[#69]: https://github.com/AdguardTeam/tsurlfilter/issues/69
+[#85]: https://github.com/AdguardTeam/tsurlfilter/issues/85
+[AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
+[AdguardBrowserExtension#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
+[AdguardBrowserExtension#2481]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481
+[AdguardBrowserExtension#2690]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2690
 
 ## [2.2.23] - 2024-08-01
 

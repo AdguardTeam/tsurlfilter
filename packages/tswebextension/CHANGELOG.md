@@ -8,41 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## [2.0.0-beta.1] - 2024-08-08
-
-### Fixed
-
-- Detection of popup tabs [#2890].
-
-[2.0.0-beta.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-beta.1
-[#2890]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2890
-
-## [2.0.0-beta.0] - 2024-07-30
-
-### Fixed
-
-- `@adguard/agtree` dependency now used consistently in the project.
-
-[2.0.0-beta.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-beta.0
-
-## [2.0.0-alpha.2] - 2024-07-17
-
-### Changed
-
-- Updated `@adguard/tsurlfilter` to `v3.0.0-alpha.1`.
-- Updated `@adguard/scriptlets` to `v1.11.6`.
-
-[2.0.0-alpha.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.2
-
-## [2.0.0-alpha.1] - 2024-07-08
-
-### Added
-
-- Export `EventChannel` utility class in MV3 build.
-
-[2.0.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.1
-
-## [2.0.0-alpha.0] - 2024-06-21
+## [2.0.0] - 2024-08-15
 
 ### Added
 
@@ -52,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Possibility to retrieve AST for dynamically generated rules via the `retrieveDynamicRuleNode` method.
 - Support for `$cookie` modifier in MV3 via `browser.cookies` API and content-script.
 - Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100].
+- Export `EventChannel` utility class in MV3 build.
 
 ### Changed
 
@@ -62,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CSS hits counter uses rule index instead of rule text.
 - Filtering log events are simplified and now contain only the necessary information, not the entire rule.
 - Allowlist rule generation logic is moved to `@adguard/tsurlfilter` package.
+- Updated `@adguard/tsurlfilter` to `v3.0.0`.
+- Updated `@adguard/scriptlets` to `v1.11.6`.
 
 ### Fixed
 
@@ -72,15 +41,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$permissions` modifier service now correctly handles subdocuments and exceptions.
 - Applying `$cookie` rules on the content-script side.
 - `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
+- Detection of popup tabs [#2890].
 
-[2.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.0
+[2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0
+[#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
+[#2890]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2890
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
 [AdguardBrowserExtension#2194]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2194
 [AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
 [AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
 [AdguardBrowserExtension#2552]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2552
 [AdguardBrowserExtension#2598]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598
-[#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
 
 ## [1.0.32] - 2024-08-01
 
