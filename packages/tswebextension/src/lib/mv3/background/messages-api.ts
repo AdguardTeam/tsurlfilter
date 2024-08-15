@@ -5,13 +5,6 @@ import { type CookieRule } from '../../common/content-script/cookie-controller';
 import { logger } from '../../common/utils/logger';
 
 import { type TsWebExtension } from './app';
-import { declarativeFilteringLog } from './declarative-filtering-log';
-import {
-    CommonMessageType,
-    ExtendedMV3MessageType,
-    type MessageMV3,
-    messageMV3Validator,
-} from './messages';
 import { Assistant } from './assistant';
 import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
 import {
@@ -19,7 +12,10 @@ import {
     getSaveCookieLogEventPayloadValidator,
     getCookieRulesPayloadValidator,
     getCosmeticDataPayloadValidator,
+    type Message,
+    messageValidator,
 } from '../../common/message';
+import { MessageType } from '../../common/message-constants';
 import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { ContentType } from '../../common/request-type';
@@ -28,7 +24,7 @@ import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { nanoid } from '../nanoid';
 
 export type MessagesHandlerMV3 = (
-    message: MessageMV3,
+    message: Message,
     sender: browser.Runtime.MessageSender,
 ) => Promise<unknown>;
 
@@ -45,7 +41,7 @@ export type ContentScriptCookieRulesData = {
 };
 
 /**
- * MessageApi knows how to handle {@link MessageMV3}.
+ * MessageApi knows how to handle {@link Message}.
  */
 export class MessagesApi {
     /**
@@ -66,7 +62,7 @@ export class MessagesApi {
     }
 
     /**
-     * Handles message with {@link CommonMessageType}
+     * Handles message with {@link MessageType}
      * or {@link ExtendedMV3MessageType}.
      *
      * @param message Message.
@@ -75,13 +71,13 @@ export class MessagesApi {
      * @returns Data according to the received message.
      */
     public async handleMessage(
-        message: MessageMV3,
+        message: Message,
         sender: browser.Runtime.MessageSender,
     ): Promise<unknown> {
         logger.debug('[tswebextension.handleMessage]: ', message);
 
         try {
-            message = messageMV3Validator.parse(message);
+            message = messageValidator.parse(message);
         } catch (e) {
             logger.error('[tswebextension.handleMessage]: cannot parse message: ', message);
             // Ignore this message
@@ -90,25 +86,22 @@ export class MessagesApi {
 
         const { type } = message;
         switch (type) {
-            case CommonMessageType.GetCosmeticData: {
+            case MessageType.GetCosmeticData: {
                 return this.handleGetCosmeticData(sender, message.payload);
             }
-            case ExtendedMV3MessageType.GetCollectedLog: {
-                return declarativeFilteringLog.getCollected();
-            }
-            case CommonMessageType.AssistantCreateRule: {
+            case MessageType.AssistantCreateRule: {
                 return this.handleAssistantCreateRuleMessage(
                     sender,
                     message.payload,
                 );
             }
-            case CommonMessageType.GetCookieRules: {
+            case MessageType.GetCookieRules: {
                 return this.getCookieRules(
                     sender,
                     message.payload,
                 );
             }
-            case CommonMessageType.SaveCookieLogEvent: {
+            case MessageType.SaveCookieLogEvent: {
                 return MessagesApi.handleSaveCookieLogEvent(
                     sender,
                     message.payload,

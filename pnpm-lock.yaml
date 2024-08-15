@@ -874,6 +874,9 @@ importers:
 
   packages/examples/tswebextension-mv3:
     dependencies:
+      '@adguard/logger':
+        specifier: workspace:^
+        version: link:../../logger
       '@adguard/tswebextension':
         specifier: workspace:^
         version: link:../../tswebextension

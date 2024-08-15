@@ -15,7 +15,8 @@
         "storage",
         "unlimitedStorage",
         "scripting",
-        "cookies"
+        "cookies",
+        "privacy"
     ],
     "host_permissions": [
         "<all_urls>"
@@ -26,7 +27,6 @@
     "action": {
         "default_popup": "pages/popup.html"
     },
-    "devtools_page": "devtools.html",
     "content_scripts": [
         {
             "js": [

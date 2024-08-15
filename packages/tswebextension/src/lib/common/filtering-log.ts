@@ -1,3 +1,4 @@
+import { type SourceRuleAndFilterId } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type RuleInfo } from './content-script/rule-info';
 import type { ContentType } from './request-type';
 import { EventChannel, type EventChannelInterface } from './utils';
@@ -23,7 +24,20 @@ export enum FilteringEventType {
     StealthAllowlistAction = 'stealthAllowlistAction', // TODO: Add in MV3
     JsInject = 'jsInject',
     CspReportBlocked = 'cspReportBlocked', // TODO: Add in MV3
+    /**
+     * Used only in MV3.
+     */
+    MatchedDeclarativeRule = 'matchedDeclarativeRule',
 }
+
+/**
+ * Advanced information about declarative network rule with source rule list and
+ * JSON version of declarative network rule.
+ */
+export type DeclarativeRuleInfo = {
+    sourceRules: SourceRuleAndFilterId[]
+    declarativeRuleJson: string
+};
 
 /**
  * Additional network rule info.
@@ -382,6 +396,23 @@ export type CspReportBlockedEvent = {
 };
 
 /**
+ * {@link DeclarativeRuleEvent} Event data.
+ */
+export type DeclarativeRuleEventData = {
+    tabId: number;
+    declarativeRuleInfo: DeclarativeRuleInfo;
+} & WithEventId;
+
+/**
+ * Dispatched by manifest v3 chrome.declarativeNetRequest.onRuleMatchedDebug
+ * handler when matched declarative rule for request.
+ */
+export type DeclarativeRuleEvent = {
+    type: FilteringEventType.MatchedDeclarativeRule
+    data: DeclarativeRuleEventData;
+};
+
+/**
  * Filtering events union.
  *
  * Used for type extraction in generic {@link FilteringLog} methods and common {@link FilteringLog.onLogEvent} channel
@@ -404,7 +435,8 @@ export type FilteringLogEvent =
     | ApplyCosmeticRuleEvent
     | ReceiveResponseEvent
     | JsInjectEvent
-    | CspReportBlockedEvent;
+    | CspReportBlockedEvent
+    | DeclarativeRuleEvent;
 
 /**
  * Utility type for mapping {@link FilteringEventType} with specified {@link FilteringLogEvent}.

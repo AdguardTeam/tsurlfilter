@@ -66,12 +66,6 @@ export const configurationMV3Validator = configurationValidator.extend({
      */
     ruleSetsPath: zod.string(),
 
-    /**
-     * Enables filtering log if true.
-     */
-    // TODO: use settings.collectStats instead?
-    filteringLogEnabled: zod.boolean(),
-
     settings: settingsConfigMV3,
 
     /**

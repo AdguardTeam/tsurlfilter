@@ -150,6 +150,7 @@ import { logger } from '../../common/utils/logger';
 import { RequestBlockingApi } from './request/request-blocking-api';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
+import { declarativeFilteringLog } from './declarative-filtering-log';
 
 /**
  * API for applying rules from background service by handling
@@ -461,19 +462,31 @@ export class WebRequestApi {
     private static onErrorOccurred({
         details,
     }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
-        requestContextStorage.delete(details.requestId);
+        if (declarativeFilteringLog.isListening) {
+            setTimeout(() => {
+                requestContextStorage.delete(details.requestId);
+            }, FRAME_DELETION_TIMEOUT_MS);
+        } else {
+            requestContextStorage.delete(details.requestId);
+        }
     }
 
     /**
-     * Event handler for onErrorOccurred event. It fires when an error occurs.
+     * This is handler for the last event from the request lifecycle.
      *
-     * @param event On error occurred event.
-     * @param event.details On error occurred event details.
+     * @param event On completed event.
+     * @param event.details Request details.
      */
     private static onCompleted({
         details,
     }: RequestData<WebRequest.OnCompletedDetailsType>): void {
-        requestContextStorage.delete(details.requestId);
+        if (declarativeFilteringLog.isListening) {
+            setTimeout(() => {
+                requestContextStorage.delete(details.requestId);
+            }, FRAME_DELETION_TIMEOUT_MS);
+        } else {
+            requestContextStorage.delete(details.requestId);
+        }
     }
 
     /**
@@ -502,7 +515,7 @@ export class WebRequestApi {
          *
          * TODO: add the ability to prolong request and tab/frame contexts lives if it was not yet consumed
          * at webRequest or webNavigation events, i.e
-         *   - keep requestContext, if webRequest.onCommitted has not been fired,
+         *   - keep requestContext if webRequest.onCommitted has not been fired,
          *   - keep tab context if webNavigation.omCompleted has not been fired,
          * etc.
          */
