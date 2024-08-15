@@ -46,6 +46,8 @@ const commonConfig = {
 };
 
 const commonExternal = [
+    '@adguard/agtree',
+    '@adguard/css-tokenizer',
     '@adguard/scriptlets',
     'is-ip',
     'punycode/',
@@ -61,7 +63,6 @@ const esmConfig = {
         'src/index.ts',
         'src/request-type.ts',
         'src/rules/simple-regex.ts',
-        'src/rules/cosmetic-rule-marker.ts',
         'src/rules/network-rule-options.ts',
     ],
     output: [

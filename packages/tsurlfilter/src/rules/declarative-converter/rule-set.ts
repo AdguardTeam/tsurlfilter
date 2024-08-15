@@ -1,4 +1,5 @@
 import { z as zod } from 'zod';
+import { RuleParser } from '@adguard/agtree';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
@@ -401,12 +402,12 @@ export class RuleSet implements IRuleSet {
         let networkIndexedRulesWithHash: IndexedNetworkRuleWithHash[] = [];
 
         try {
-            networkIndexedRulesWithHash = IndexedNetworkRuleWithHash.createFromRawString(
+            networkIndexedRulesWithHash = IndexedNetworkRuleWithHash.createFromNode(
                 filterId,
                 // We don't need line index because this indexedNetworkRulesWithHash
                 // will be used only for matching $badfilter rules.
                 0,
-                sourceRule,
+                RuleParser.parse(sourceRule),
             );
         } catch (e) {
             return [];
@@ -531,6 +532,7 @@ export class RuleSet implements IRuleSet {
             regexpRulesCount: this.regexpRulesCount,
             rulesCount: this.rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
+            // TODO: Remove .getText() completely
             badFilterRulesRaw: this.badFilterRules.map((r) => r.rule.getText()) || [],
         };
 

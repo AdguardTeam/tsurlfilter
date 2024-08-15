@@ -3,7 +3,6 @@
  *
  * ! Please ALWAYS use the "pnpm build" command for building!
  */
-
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
@@ -16,8 +15,12 @@ import json from '@rollup/plugin-json';
 import terser from '@rollup/plugin-terser';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
+import { type Plugin } from 'rollup';
 
-const ROOT_DIR = './';
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+
+const ROOT_DIR = __dirname;
 const BASE_FILE_NAME = 'agtree';
 const BASE_NAME = 'AGTree';
 const PKG_FILE_NAME = 'package.json';
@@ -53,6 +56,7 @@ const banner = `/*
 
 // Pre-configured TypeScript plugin
 const typeScriptPlugin = typescript({
+    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
     compilerOptions: {
         // Don't emit declarations, we will do it in a separate command
         declaration: false,
@@ -76,8 +80,14 @@ const commonPlugins = [
     typeScriptPlugin,
 ];
 
-// Plugins for Node.js builds
-const nodePlugins = [
+/**
+ * Plugins for Node.js builds.
+ *
+ * @param esm Whether to build an ESM module.
+ *
+ * @returns List of Rollup plugins.
+ */
+export const getNodePlugins = (esm = false): Plugin[] => [
     ...commonPlugins,
     alias({
         // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
@@ -92,10 +102,27 @@ const nodePlugins = [
         ],
     }),
     externals(),
+    // Provide better browser compatibility with Babel
+    getBabelOutputPlugin({
+        presets: [
+            [
+                '@babel/preset-env',
+                {
+                    modules: esm ? false : 'auto',
+                    // at least Node.js 17
+                    targets: {
+                        node: '17',
+                    },
+                },
+            ],
+        ],
+        allowAllFormats: true,
+        compact: false,
+    }),
 ];
 
 // Plugins for browser builds
-const browserPlugins = [
+export const browserPlugins = [
     ...commonPlugins,
     nodePolyfills(),
     // The build of CSSTree is a bit complicated (patches, require "emulation", etc.),
@@ -117,12 +144,12 @@ const browserPlugins = [
                 '@babel/preset-env',
                 {
                     targets: {
-                        // Simply use the recommended practice
-                        // https://github.com/browserslist/browserslist#best-practices
                         browsers: [
-                            'last 2 versions',
-                            'not dead',
-                            '> 0.2%',
+                            'chrome >= 80',
+                            'firefox >= 78',
+                            'edge >= 80',
+                            'opera >= 67',
+                            'safari >= 14',
                         ],
                     },
                 },
@@ -136,6 +163,9 @@ const browserPlugins = [
         output: {
             // Keep the banner in the minified output
             preamble: banner,
+        },
+        compress: {
+            passes: 3,
         },
     }),
 ];
@@ -152,7 +182,7 @@ const cjs = {
             banner,
         },
     ],
-    plugins: nodePlugins,
+    plugins: getNodePlugins(),
 };
 
 // ECMAScript build configuration
@@ -166,7 +196,7 @@ const esm = {
             banner,
         },
     ],
-    plugins: nodePlugins,
+    plugins: getNodePlugins(),
 };
 
 // Browser-friendly UMD build configuration

@@ -204,7 +204,7 @@ describe('LogicalExpressionUtils', () => {
                 type: 'Invalid',
             },
             {},
-        )).toThrowError("Unexpected AST node type 'Invalid'");
+        )).toThrowError("Unexpected node type 'Invalid'");
 
         // Invalid right operand
         expect(() => LogicalExpressionUtils.evaluate(
@@ -214,7 +214,7 @@ describe('LogicalExpressionUtils', () => {
                 operator: '&&',
             },
             {},
-        )).toThrowError('Unexpected right operand');
+        )).toThrowError("Unexpected operator '&&'");
 
         expect(() => LogicalExpressionUtils.evaluate(
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -223,7 +223,7 @@ describe('LogicalExpressionUtils', () => {
                 operator: '||',
             },
             {},
-        )).toThrowError('Unexpected right operand');
+        )).toThrowError("Unexpected operator '||'");
 
         // Variable itself
         expect(

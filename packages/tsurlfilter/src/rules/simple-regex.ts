@@ -8,6 +8,7 @@ const specialCharacters = ['.', '+', '?', '$', '{', '}', '(', ')', '[', ']', '/'
 const reSpecialCharacters = new RegExp(`[${specialCharacters.join('\\')}]`, 'g');
 const reSpecialCharactersFull = /[.*+?^${}()|[\]\\]/g;
 const reEscapedSpecialCharactersFull = /\\[.*+?^${}()|[\]\\]/g;
+const protocolMarker = String.raw`:\/\/`;
 
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#using_special_characters_in_strings
 const escapeSequence: { [key: string]: string } = {
@@ -118,6 +119,40 @@ export class SimpleRegex {
     private static readonly rePatternSpecialCharacters: RegExp = new RegExp('[*^|]');
 
     /**
+     * Checks if char is valid for regexp shortcut – is alphanumeric or escaped period or forward slash
+     *
+     * @param str string
+     * @param i index of char
+     * @returns  true if char is valid for regexp shortcut
+     */
+    private static isValidRegexpShortcutChar = (str: string, i: number) => {
+        const charCode = str.charCodeAt(i);
+        if (SimpleRegex.isAlphaNumericChar(charCode)) {
+            return true;
+        }
+
+        // Escaped period or escaped forward slash are allowed in regexp shortcut
+        if (i > 0 && str[i - 1] === '\\') {
+            if (charCode === 46 || charCode === 47) {
+                return true;
+            }
+        }
+
+        return false;
+    };
+
+    /**
+     * Checks if char is alpha-numeric
+     * @param charCode - char code
+     * @returns true if char is alpha-numeric
+     */
+    private static isAlphaNumericChar = (charCode: number) => {
+        return (charCode > 47 && charCode < 58) // numeric (0-9)
+                || (charCode > 64 && charCode < 91) // upper alpha (A-Z)
+                || (charCode > 96 && charCode < 123); // lower alpha (a-z)
+    };
+
+    /**
      * Extracts the shortcut from the rule's pattern.
      * Shortcut is the longest substring of the pattern that does not contain
      * any special characters.
@@ -177,35 +212,36 @@ export class SimpleRegex {
             return '';
         }
 
-        const specialCharacter = '$$$';
-
-        // Prepend specialCharacter for the following replace calls to work properly
-        reText = specialCharacter + reText;
-
-        // Strip all types of brackets
-        reText = reText.replace(/[^\\]\(.*[^\\]\)/, specialCharacter);
-        reText = reText.replace(/[^\\]\[.*[^\\]\]/, specialCharacter);
-        reText = reText.replace(/[^\\]\{.*[^\\]\}/, specialCharacter);
-
-        // Strip some special characters
-        reText = reText.replace(/[^\\]\\[a-zA-Z]/, specialCharacter);
-
-        // Replace \. with .
-        reText = reText.replace(/\\\./g, '.');
-
-        // Split by special characters
-        // `.` is one of the special characters so our `specialCharacter`
-        // will be removed from the resulting array
-        const parts = reText.split(/[\\^$*+?()|[\]{}]/);
-        let longest = '';
-        for (let i = 0; i < parts.length; i += 1) {
-            const part = parts[i];
-            if (part.length > longest.length) {
-                longest = part;
-            }
+        // Remove protocol part to avoid useless shortcuts like "http"
+        const protocolIndex = reText.indexOf(protocolMarker);
+        if (protocolIndex > -1) {
+            reText = reText.substring(protocolIndex + protocolMarker.length);
         }
 
-        return longest.toLowerCase();
+        let currentLongest = '';
+        let token = '';
+
+        for (let i = 0; i < reText.length; i += 1) {
+            const char = reText[i];
+            if (char === '\\') {
+                // Don't break token on escapes
+                continue;
+            }
+
+            if (SimpleRegex.isValidRegexpShortcutChar(reText, i)) {
+                token += char;
+                if (i !== reText.length - 1) {
+                    continue;
+                }
+            }
+
+            if (token.length > currentLongest.length) {
+                currentLongest = token;
+            }
+            token = '';
+        }
+
+        return currentLongest.toLowerCase();
     }
 
     /**

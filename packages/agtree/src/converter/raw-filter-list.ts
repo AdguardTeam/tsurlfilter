@@ -8,6 +8,7 @@ import { createConversionResult, type ConversionResult } from './base-interfaces
 import { ConverterBase } from './base-interfaces/converter-base';
 import { FilterListParser } from '../parser/filterlist';
 import { FilterListConverter } from './filter-list';
+import { defaultParserOptions } from '../parser/options';
 
 /**
  * Adblock filter list converter class.
@@ -33,7 +34,14 @@ export class RawFilterListConverter extends ConverterBase {
      */
     public static convertToAdg(rawFilterList: string, tolerant = true): ConversionResult<string> {
         const conversionResult = FilterListConverter.convertToAdg(
-            FilterListParser.parse(rawFilterList, tolerant),
+            FilterListParser.parse(
+                rawFilterList,
+                {
+                    ...defaultParserOptions,
+                    isLocIncluded: false,
+                    tolerant,
+                },
+            ),
             tolerant,
         );
 

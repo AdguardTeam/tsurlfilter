@@ -3,7 +3,7 @@
  */
 
 import { type Modifier, type ModifierList } from '../parser/common';
-import { isUndefined } from '../utils/common';
+import { isUndefined } from '../utils/type-guards';
 import { clone } from '../utils/clone';
 
 /**
@@ -18,7 +18,7 @@ export function createModifierNode(name: string, value: string | undefined = und
     const result: Modifier = {
         type: 'Modifier',
         exception,
-        modifier: {
+        name: {
             type: 'Value',
             value: name,
         },

@@ -2,8 +2,8 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { MAIN_FRAME_ID } from '../tabs/frame';
 import { isLocalFrame } from './is-local-frame';
 
-import type { MatchQuery } from '../engine-api';
 import type { TabContext } from '../tabs/tab-context';
+import { type MatchQuery } from '../../../common/interfaces';
 
 /**
  * Creates match query for frame based on content script data and background tab context.

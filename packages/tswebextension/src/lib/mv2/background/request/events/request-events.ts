@@ -4,9 +4,17 @@ import type { HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { RequestEvent, type RequestData } from './request-event';
-import { isThirdPartyRequest, getRequestType, isHttpRequest } from '../../../../common';
+import {
+    isThirdPartyRequest,
+    getRequestType,
+    isHttpRequest,
+    defaultFilteringLog,
+    FilteringEventType,
+} from '../../../../common';
 import { MAIN_FRAME_ID, type TabFrameRequestContext } from '../../tabs';
 import { tabsApi } from '../../api';
+import { isFirefox } from '../../utils';
+import CookieUtils from '../../services/cookie-filtering/utils';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -214,9 +222,17 @@ export class RequestEvents {
         };
 
         if (isDocumentRequest || requestType === RequestType.SubDocument) {
-            const isRemoveparamRedirect = requestContextStorage.has(requestId);
             // Saves the current tab url to retrieve it correctly below.
-            tabsApi.handleFrameRequest(tabFrameRequestContext, isRemoveparamRedirect);
+            tabsApi.handleFrameRequest(tabFrameRequestContext);
+        }
+
+        // Do not reload filtering log on requests that are being redirected by $removeparam
+        if (isDocumentRequest && !requestContextStorage.has(requestId)) {
+            // dispatch filtering log reload event
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.TabReload,
+                data: { tabId },
+            });
         }
 
         const referrerUrl = originUrl
@@ -295,6 +311,14 @@ export class RequestEvents {
             responseHeaders,
             statusCode,
         } = details;
+
+        /**
+         * Firefox packs all cookies in a single set-cookie header concatenated with `\n`
+         * https://bugzilla.mozilla.org/show_bug.cgi?id=1349151#c1.
+         */
+        if (responseHeaders && isFirefox) {
+            CookieUtils.splitMultilineCookies(responseHeaders);
+        }
 
         const context = requestContextStorage.update(requestId, {
             state: RequestContextState.HeadersReceived,

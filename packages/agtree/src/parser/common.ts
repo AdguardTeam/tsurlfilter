@@ -1,17 +1,15 @@
-import {
-    type DeclarationListPlain,
-    type FunctionNodePlain,
-    type MediaQueryListPlain,
-    type SelectorListPlain,
-} from '@adguard/ecss-tree';
-
-import { type AdblockSyntax } from '../utils/adblockers';
+import { AdblockSyntax } from '../utils/adblockers';
 import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '../utils/constants';
+import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
 
 /**
- * Represents possible logical expression operators.
+ * Possible operators in the logical expression.
  */
-export type AnyOperator = '&&' | '||' | '!';
+export const enum OperatorValue {
+    Not = '!',
+    And = '&&',
+    Or = '||',
+}
 
 /**
  * Represents possible new line types.
@@ -33,7 +31,7 @@ export type AnyRule =
     | EmptyRule
     | AnyCommentRule
     | AnyCosmeticRule
-    | NetworkRule
+    | AnyNetworkRule
     | InvalidRule;
 
 /**
@@ -58,13 +56,9 @@ export type AnyCosmeticRule =
     | JsInjectionRule;
 
 /**
- * Default location for AST nodes.
+ * Represents any network adblock rule.
  */
-export const defaultLocation: Location = {
-    offset: 0,
-    line: 1,
-    column: 1,
-};
+export type AnyNetworkRule = NetworkRule | HostRule;
 
 /**
  * Represents the different comment markers that can be used in an adblock rule.
@@ -90,7 +84,7 @@ export const enum CommentMarker {
  * Represents the main categories that an adblock rule can belong to.
  * Of course, these include additional subcategories.
  */
-export const enum RuleCategory {
+export enum RuleCategory {
     /**
      * Empty "rules" that are only containing whitespaces. These rules are handled just for convenience.
      */
@@ -123,6 +117,7 @@ export const enum RuleCategory {
  * which may be separated by a comma `,` (only for DomainList) or a pipe `|`.
  */
 export const enum ListNodeType {
+    Unknown = 'Unknown',
     AppList = 'AppList',
     DomainList = 'DomainList',
     MethodList = 'MethodList',
@@ -132,7 +127,8 @@ export const enum ListNodeType {
 /**
  * Represents child items for {@link ListNodeType}.
  */
-export const enum ListItemNodeType {
+export enum ListItemNodeType {
+    Unknown = 'Unknown',
     App = 'App',
     Domain = 'Domain',
     Method = 'Method',
@@ -142,7 +138,7 @@ export const enum ListItemNodeType {
 /**
  * Represents possible comment types.
  */
-export const enum CommentRuleType {
+export enum CommentRuleType {
     AgentCommentRule = 'AgentCommentRule',
     CommentRule = 'CommentRule',
     ConfigCommentRule = 'ConfigCommentRule',
@@ -154,7 +150,7 @@ export const enum CommentRuleType {
 /**
  * Represents possible cosmetic rule types.
  */
-export const enum CosmeticRuleType {
+export enum CosmeticRuleType {
     ElementHidingRule = 'ElementHidingRule',
     CssInjectionRule = 'CssInjectionRule',
     ScriptletInjectionRule = 'ScriptletInjectionRule',
@@ -235,27 +231,97 @@ export const enum CosmeticRuleSeparator {
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules}
      */
     AdgHtmlFilteringException = '$@$',
-
-    /**
-     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
-     */
-    UboScriptletInjection = '##+',
-
-    /**
-     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
-     */
-    UboScriptletInjectionException = '#@#+',
-
-    /**
-     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
-     */
-    UboHtmlFiltering = '##^',
-
-    /**
-     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
-     */
-    UboHtmlFilteringException = '#@#^',
 }
+
+/**
+ * Type map for binary serialization.
+ *
+ * @note Values should be fit into 8 bits.
+ */
+export const enum BinaryTypeMap {
+    // Basic types
+    Null = 1,
+    Undefined,
+    Boolean,
+    Int,
+    Float,
+    NotANumber,
+    String,
+
+    // AGTree nodes
+    FilterListNode,
+    EmptyRule,
+    InvalidRule,
+
+    CommentRuleNode,
+    AgentNode,
+    AgentRuleNode,
+    HintNode,
+    HintRuleNode,
+    MetadataCommentRuleNode,
+    ConfigCommentRuleNode,
+    PreProcessorCommentRuleNode,
+    ConfigNode,
+
+    NetworkRuleNode,
+    HostRuleNode,
+
+    ElementHidingRule,
+    CssInjectionRule,
+    ScriptletInjectionRule,
+    JsInjectionRule,
+    HtmlFilteringRule,
+
+    ScriptletInjectionRuleBodyNode,
+    ElementHidingRuleBody,
+    CssInjectionRuleBody,
+    HtmlFilteringRuleBody,
+    JsInjectionRuleBody,
+
+    ValueNode,
+    RawNode,
+    ModifierNode,
+    ModifierListNode,
+    ParameterListNode,
+    DomainListNode,
+    DomainNode,
+    MethodListNode,
+    MethodNode,
+    StealthOptionListNode,
+    StealthOptionNode,
+    AppListNode,
+    AppNode,
+    HostnameListNode,
+
+    InvalidRuleErrorNode,
+
+    ExpressionVariableNode,
+    ExpressionOperatorNode,
+    ExpressionParenthesisNode,
+}
+
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+export const SYNTAX_SERIALIZATION_MAP: Map<AdblockSyntax, number> = new Map([
+    [AdblockSyntax.Common, 0],
+    [AdblockSyntax.Abp, 1],
+    [AdblockSyntax.Adg, 2],
+    [AdblockSyntax.Ubo, 3],
+]);
+
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+export const SYNTAX_DESERIALIZATION_MAP = new Map<number, AdblockSyntax>(
+    Array.from(SYNTAX_SERIALIZATION_MAP, ([key, value]) => [value, key]),
+);
 
 /**
  * Represents a basic node in the AST.
@@ -267,29 +333,19 @@ export interface Node {
     type: string;
 
     /**
-     * Every node should support a loc property, which refers to the location of the node in the source code.
-     */
-    loc?: LocationRange;
-
-    /**
      * Optionally the raw representation of the node in the source code.
      */
     raw?: string;
-}
-
-/**
- * Represents a location range in the source code.
- */
-export interface LocationRange {
-    /**
-     * The start location of the node.
-     */
-    start: Location;
 
     /**
-     * The end location of the node.
+     * Start offset of the node.
      */
-    end: Location;
+    start?: number;
+
+    /**
+     * End offset of the node.
+     */
+    end?: number;
 }
 
 /**
@@ -313,6 +369,30 @@ export interface Location {
 }
 
 /**
+ * Represents a location range in the source code.
+ */
+export interface LocationRange {
+    /**
+     * The start location of the node.
+     */
+    start: Location;
+
+    /**
+     * The end location of the node.
+     */
+    end: Location;
+}
+
+/**
+ * Default location for AST nodes.
+ */
+export const defaultLocation: Location = {
+    offset: 0,
+    line: 1,
+    column: 1,
+};
+
+/**
  * Represents a basic value node in the AST.
  */
 export interface Value<T = string> extends Node {
@@ -325,10 +405,10 @@ export interface Value<T = string> extends Node {
 }
 
 /**
- * Represents a basic parameter node in the AST.
+ * Represents a raw value node.
  */
-export interface Parameter extends Node {
-    type: 'Parameter';
+export interface Raw extends Node {
+    type: 'Raw';
 
     /**
      * Value of the node.
@@ -344,8 +424,10 @@ export interface ParameterList extends Node {
 
     /**
      * List of values
+     *
+     * @note `null` values are allowed in the list, they represent empty parameters.
      */
-    children: Parameter[];
+    children: (Value | null)[];
 }
 
 /**
@@ -361,7 +443,7 @@ export interface ExpressionVariableNode extends Node {
  */
 export interface ExpressionOperatorNode extends Node {
     type: 'Operator';
-    operator: AnyOperator;
+    operator: OperatorValue;
     left: AnyExpressionNode;
     right?: AnyExpressionNode;
 }
@@ -418,6 +500,20 @@ export interface RuleBase extends Node {
     }
 }
 
+export interface InvalidRuleError extends Node {
+    type: 'InvalidRuleError';
+
+    /**
+     * Error name
+     */
+    name: string;
+
+    /**
+     * Error message
+     */
+    message: string;
+}
+
 /**
  * Represents an invalid rule (used by tolerant mode).
  */
@@ -437,22 +533,7 @@ export interface InvalidRule extends RuleBase {
     /**
      * Error details
      */
-    error: {
-        /**
-         * Error name
-         */
-        name: string;
-
-        /**
-         * Error message
-         */
-        message: string;
-
-        /**
-         * Error location (if any)
-         */
-        loc?: LocationRange;
-    }
+    error: InvalidRuleError;
 }
 
 /**
@@ -500,7 +581,7 @@ export interface CommentRule extends CommentBase {
      * - If the rule is `! This is just a comment`, then the marker will be `!`.
      * - If the rule is `# This is just a comment`, then the marker will be `#`.
      */
-    marker: Value<CommentMarker>;
+    marker: Value;
 
     /**
      * Comment text.
@@ -528,7 +609,7 @@ export interface MetadataCommentRule extends CommentBase {
     /**
      * Comment marker.
      */
-    marker: Value<CommentMarker>;
+    marker: Value;
 
     /**
      * Metadata header name.
@@ -539,6 +620,22 @@ export interface MetadataCommentRule extends CommentBase {
      * Metadata header value (always should present).
      */
     value: Value;
+}
+
+/**
+ * Represents an AGLint configuration node.
+ *
+ * Used within config comments.
+ *
+ * @example
+ * ```adblock
+ * ! aglint "rule-1": ["warn", { "option1": "value1" }], "rule-2": "off"
+ * !        ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+ * ```
+ */
+export interface ConfigNode extends Node {
+    type: 'ConfigNode';
+    value: object;
 }
 
 /**
@@ -558,7 +655,7 @@ export interface ConfigCommentRule extends CommentBase {
     /**
      * The marker for the comment. It can be `!` or `#`. It is always the first non-whitespace character in the comment.
      */
-    marker: Value<CommentMarker>;
+    marker: Value;
 
     /**
      * The command for the comment. It is always begins with the `aglint` prefix.
@@ -580,7 +677,7 @@ export interface ConfigCommentRule extends CommentBase {
      * ```
      * the params would be `["some-rule", "another-rule"]`.
      */
-    params?: Value<object> | ParameterList;
+    params?: ConfigNode | ParameterList;
 
     /**
      * Config comment text. The idea is generally the same as in ESLint.
@@ -635,7 +732,7 @@ export interface Agent extends Node {
     /**
      * Adblock version (if specified).
      */
-    version: Value | null;
+    version?: Value;
 
     /**
      * Needed for network rules modifier validation.
@@ -714,7 +811,7 @@ export interface HintCommentRule extends RuleBase {
     /**
      * Currently only AdGuard supports hints.
      */
-    syntax: AdblockSyntax.Adg;
+    syntax: AdblockSyntax;
 
     /**
      * List of hints.
@@ -752,11 +849,10 @@ export interface ModifierList extends Node {
  * `domain` and the value property will be `example.com`.
  */
 export interface Modifier extends Node {
-    // TODO: change 'modifier' to 'name'
     /**
      * Modifier name
      */
-    modifier: Value;
+    name: Value;
 
     /**
      * Is this modifier an exception? For example, `~third-party` is an exception
@@ -798,8 +894,8 @@ export type DomainListSeparator = CommaSeparator | PipeSeparator;
  * Common interface for a list item of $app, $denyallow, $domain, $method
  * which have similar syntax.
  */
-export interface ListItem extends Node {
-    type: ListItemNodeType;
+export interface ListItem<T extends ListItemNodeType> extends Node {
+    type: T;
 
     /**
      * Value of the node.
@@ -816,38 +912,29 @@ export interface ListItem extends Node {
 }
 
 /**
- * Represents a {@link ListItem} without the `type` property.
- * Needed for parsing similar-syntax modifier values with a common parse function.
- */
-export type ListItemNoType = Omit<ListItem, 'type'>;
-
-/**
  * Represents an element of the app list — $app.
  */
-export interface App extends ListItem {
-    type: ListItemNodeType.App;
-}
+export type App = ListItem<ListItemNodeType.App>;
 
 /**
  * Represents an element of the domain list — $domain, $denyallow.
  */
-export interface Domain extends ListItem {
-    type: ListItemNodeType.Domain;
-}
+export type Domain = ListItem<ListItemNodeType.Domain>;
 
 /**
  * Represents an element of the method list — $method.
  */
-export interface Method extends ListItem {
-    type: ListItemNodeType.Method;
-}
+export type Method = ListItem<ListItemNodeType.Method>;
 
 /**
  * Represents an element of the stealth option list — $stealth.
  */
-export interface StealthOption extends ListItem {
-    type: ListItemNodeType.StealthOption;
-}
+export type StealthOption = ListItem<ListItemNodeType.StealthOption>;
+
+/**
+ * Represents any list item.
+ */
+export type AnyListItem = App | Domain | Method | StealthOption;
 
 /**
  * Represents a list of domains.
@@ -952,19 +1039,40 @@ export interface CssInjectionRuleBody extends Node {
     type: 'CssInjectionRuleBody';
 
     /**
-     * Media query list (if any)
+     * Media query, if any.
+     *
+     * @example
+     *
+     * ```text
+     * @media (max-width: 768px) { ... }
+     *         ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * ```
      */
-    mediaQueryList?: MediaQueryListPlain;
+    mediaQueryList?: Value;
 
     /**
-     * Selector list
+     * CSS selector list.
+     *
+     * @example
+     * section:has(> .ad) { display: none; }
+     * ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * section:has(> .ad), article > p[advert] { display: none; }
+     * ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
      */
-    selectorList: SelectorListPlain;
+    selectorList: Value;
 
     /**
-     * Declaration block / remove flag
+     * Declaration list.
+     *
+     * @example
+     * section:has(> .ad) { display: none; }
+     *                      ↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * section:has(> .ad), article > p[advert] { display: none; }
+     *                                           ↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * div[ad] { padding-top: 10px; padding-bottom: 10px; }
+     *           ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
      */
-    declarationList?: DeclarationListPlain;
+    declarationList?: Value;
 
     /**
      * Remove flag
@@ -982,7 +1090,7 @@ export interface ElementHidingRuleBody extends Node {
     /**
      * Element hiding rule selector(s).
      */
-    selectorList: SelectorListPlain;
+    selectorList: Value;
 }
 
 /**
@@ -1006,7 +1114,7 @@ export interface HtmlFilteringRuleBody extends Node {
     /**
      * HTML rule selector(s).
      */
-    body: SelectorListPlain | FunctionNodePlain;
+    body: Value;
 }
 
 /**
@@ -1161,7 +1269,7 @@ export interface ScriptletInjectionRule extends CosmeticRule {
  */
 export interface HtmlFilteringRule extends CosmeticRule {
     type: CosmeticRuleType.HtmlFilteringRule;
-    body: HtmlFilteringRuleBody;
+    body: Value;
 }
 
 /**
@@ -1181,12 +1289,42 @@ export interface JsInjectionRule extends CosmeticRule {
 }
 
 /**
+ * Represents the different types of network rules.
+ */
+export enum NetworkRuleType {
+    NetworkRule = 'NetworkRule',
+    HostRule = 'HostRule',
+}
+
+/**
  * Represents the common properties of network rules
  */
-export interface NetworkRule extends RuleBase {
+export interface NetworkRuleBase extends RuleBase {
+    /**
+     * Category of the adblock rule.
+     */
     category: RuleCategory.Network;
-    type: 'NetworkRule';
+
+    /**
+     * Type of the network rule.
+     */
+    type: NetworkRuleType;
+
+    /**
+     * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
+     * we should use `AdblockSyntax.Common` as the value.
+     */
     syntax: AdblockSyntax;
+}
+
+/**
+ * Represents the common properties of network rules
+ */
+export interface NetworkRule extends NetworkRuleBase {
+    /**
+     * Type of the node.
+     */
+    type: NetworkRuleType.NetworkRule;
 
     /**
      * If the rule is an exception rule. If the rule begins with `@@`, it means that it is an exception rule.
@@ -1234,4 +1372,65 @@ export interface NetworkRule extends RuleBase {
      *   then the modifiers of this rule are `["third-party"]`.
      */
     modifiers?: ModifierList;
+}
+
+/**
+ * Represents a list of hostnames.
+ */
+export interface HostnameList extends Node {
+    /**
+     * Type of the node.
+     */
+    type: 'HostnameList';
+
+    /**
+     * List of hostnames.
+     */
+    children: Value[];
+}
+
+/**
+ * Represents the common properties of host rules.
+ *
+ * @see https://adguard-dns.io/kb/general/dns-filtering-syntax/#etc-hosts-syntax
+ */
+export interface HostRule extends NetworkRuleBase {
+    /**
+     * Type of the node.
+     */
+    type: NetworkRuleType.HostRule;
+
+    /**
+     * IP address. It can be an IPv4 or IPv6 address.
+     *
+     * @example
+     * ```text
+     * 127.0.0.1 example.com example.org
+     * ↑↑↑↑↑↑↑↑↑
+     * ```
+     * @note If IP is not specified in the rule, it parsed as null IP: `0.0.0.0`.
+     */
+    ip: Value;
+
+    /**
+     * Hostnames.
+     *
+     * @example
+     * ```text
+     * 127.0.0.1 example.com example.org
+     *           ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * ```
+     */
+    hostnames: HostnameList;
+
+    /**
+     * Comment (optional).
+     *
+     * @example
+     * ```text
+     * 127.0.0.1 localhost # This is just a comment
+     *                     ↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑↑
+     * ```
+     */
+    comment?: Value;
 }

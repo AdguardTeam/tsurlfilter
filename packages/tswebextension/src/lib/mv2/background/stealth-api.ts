@@ -1,6 +1,11 @@
 import browser from 'webextension-polyfill';
 import {
-    type IRuleList, BufferRuleList, type NetworkRule, type MatchingResult,
+    type IRuleList,
+    BufferRuleList,
+    STEALTH_MODE_FILTER_ID,
+    StealthOptionName,
+    type NetworkRule, type MatchingResult,
+    FilterListPreprocessor,
 } from '@adguard/tsurlfilter';
 
 import { StealthActions, StealthService } from './services/stealth-service';
@@ -26,14 +31,9 @@ export class StealthApi {
     };
 
     /**
-     * Stealth filter identifier.
-     */
-    private static readonly STEALTH_MODE_FILTER_ID = -1;
-
-    /**
      * Stealth service.
      */
-    private readonly engine: StealthService;
+    private readonly stealthService: StealthService;
 
     /**
      * Filtering log.
@@ -84,7 +84,7 @@ export class StealthApi {
     constructor(appContextInstance: AppContext, filteringLog: FilteringLogInterface) {
         this.appContext = appContextInstance;
         this.filteringLog = filteringLog;
-        this.engine = new StealthService(this.appContext, this.filteringLog);
+        this.stealthService = new StealthService(this.appContext, this.filteringLog);
     }
 
     /**
@@ -113,13 +113,19 @@ export class StealthApi {
      * @returns String rule list or null.
      */
     public getStealthModeRuleList(): IRuleList | null {
-        if (!this.engine || !this.isStealthModeEnabled) {
+        if (!this.stealthService || !this.isStealthModeEnabled) {
             return null;
         }
 
-        const rulesTexts = this.engine.getCookieRulesTexts().join('\n');
+        // TODO (David): Change to AST generation
+        const rulesTexts = this.stealthService.getCookieRulesTexts().join('\n');
 
-        return new BufferRuleList(StealthApi.STEALTH_MODE_FILTER_ID, rulesTexts, false, false);
+        return new BufferRuleList(
+            STEALTH_MODE_FILTER_ID,
+            FilterListPreprocessor.preprocess(rulesTexts).filterList,
+            false,
+            false,
+        );
     }
 
     /**
@@ -134,11 +140,11 @@ export class StealthApi {
             return false;
         }
 
-        if (!this.canApplyStealthActionsToContext(context)) {
+        if (!this.isStealthModeEnabled || !this.isFilteringEnabled) {
             return false;
         }
 
-        const stealthActions = this.engine.processRequestHeaders(context);
+        const stealthActions = this.stealthService.processRequestHeaders(context);
 
         return stealthActions !== StealthActions.None;
     }
@@ -153,27 +159,6 @@ export class StealthApi {
     }
 
     /**
-     * Checks if stealth actions can be applied to request context.
-     *
-     * @param context Request context.
-     * @returns True if stealth actions can be applied to request context.
-     */
-    private canApplyStealthActionsToContext(context: RequestContext): boolean {
-        if (!this.isStealthAllowed()) {
-            return false;
-        }
-
-        const { matchingResult } = context;
-        if (matchingResult) {
-            if (matchingResult.documentRule || matchingResult.stealthRule) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * Returns stealth script to apply to the frame.
      *
      * TODO this should be expanded for v2.3 to accommodate for $stealth values feature,
@@ -185,22 +170,28 @@ export class StealthApi {
      * @returns Stealth script.
      */
     public getStealthScript(mainFrameRule: NetworkRule | null, matchingResult?: MatchingResult | null): string {
-        if (!this.isStealthAllowed()) {
+        if (!this.isStealthModeEnabled || !this.isFilteringEnabled) {
             return '';
         }
-
-        let stealthScript = '';
 
         let documentRule: NetworkRule | null = null;
         // Matching result may be missing in case of dynamically created frames without url
         if (matchingResult) {
-            documentRule = matchingResult.documentRule || matchingResult.stealthRule;
+            documentRule = matchingResult.documentRule || matchingResult.getStealthRule();
         } else {
             documentRule = mainFrameRule;
         }
 
-        if (!documentRule) {
+        if (documentRule) {
+            return '';
+        }
+
+        let stealthScript = '';
+        if (!matchingResult?.getStealthRule(StealthOptionName.DoNotTrack)) {
             stealthScript += this.getSetDomSignalScript();
+        }
+
+        if (!matchingResult?.getStealthRule(StealthOptionName.HideReferrer)) {
             stealthScript += this.getHideDocumentReferrerScript();
         }
 
@@ -213,7 +204,7 @@ export class StealthApi {
      * @returns Dom signal script.
      */
     public getSetDomSignalScript(): string {
-        return this.engine.getSetDomSignalScript();
+        return this.stealthService.getSetDomSignalScript();
     }
 
     /**
@@ -222,7 +213,7 @@ export class StealthApi {
      * @returns Hide referrer script.
      */
     public getHideDocumentReferrerScript(): string {
-        return this.engine.getHideDocumentReferrerScript();
+        return this.stealthService.getHideDocumentReferrerScript();
     }
 
     /**

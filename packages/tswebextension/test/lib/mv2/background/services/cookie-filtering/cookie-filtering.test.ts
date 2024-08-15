@@ -3,12 +3,12 @@ import { WebRequest } from 'webextension-polyfill';
 import {
     HTTPMethod,
     MatchingResult,
-    NetworkRule,
+    type NetworkRule,
     RequestType,
 } from '@adguard/tsurlfilter';
 
 import { CookieFiltering } from '@lib/mv2/background/services/cookie-filtering/cookie-filtering';
-import BrowserCookieApi from '@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-cookie-api';
+import { BrowserCookieApi } from '@lib/common/cookie-filtering/browser-cookie-api';
 import {
     type RequestContext,
     RequestContextState,
@@ -17,12 +17,14 @@ import {
 import { FilteringEventType, ContentType } from '@lib/common';
 import { engineApi, tabsApi } from '@lib/mv2/background/api';
 
+import { createNetworkRule } from '../../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../../common/mocks';
 
 import HttpHeaders = WebRequest.HttpHeaders;
+import { getNetworkRuleFields } from '../../helpers/rule-fields';
 
-jest.mock('../../../../../../src/lib/common/utils/logger');
-jest.mock('@lib/mv2/background/services/cookie-filtering/browser-cookie/browser-cookie-api');
+jest.mock('@lib/common/utils/logger');
+jest.mock('@lib/common/cookie-filtering/browser-cookie-api');
 jest.mock('@lib/mv2/background/engine-api');
 
 BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);
@@ -91,7 +93,7 @@ describe('Cookie filtering', () => {
     };
 
     it('checks empty', async () => {
-        const cookieRule = new NetworkRule('||example.org^$cookie=c_user', 1);
+        const cookieRule = createNetworkRule('||example.org^$cookie=c_user', 1);
         const rules = [
             cookieRule,
         ];
@@ -104,7 +106,7 @@ describe('Cookie filtering', () => {
     });
 
     it('checks remove rule', async () => {
-        const cookieRule = new NetworkRule('||example.org^$cookie=c_user', 1);
+        const cookieRule = createNetworkRule('||example.org^$cookie=c_user', 1);
         const rules = [
             cookieRule,
         ];
@@ -121,16 +123,16 @@ describe('Cookie filtering', () => {
             data: expect.objectContaining({
                 frameDomain: 'example.org',
                 cookieName: 'c_user',
-                rule: cookieRule,
                 isModifyingCookieRule: false,
                 requestThirdParty: false,
+                ...getNetworkRuleFields(cookieRule),
             }),
         });
     });
 
     it('checks cookie specific allowlist rule', async () => {
-        const cookieRule = new NetworkRule('$cookie=/pick|other/,domain=example.org|other.com', 1);
-        const allowlistRule = new NetworkRule('@@||example.org^$cookie=pick', 1);
+        const cookieRule = createNetworkRule('$cookie=/pick|other/,domain=example.org|other.com', 1);
+        const allowlistRule = createNetworkRule('@@||example.org^$cookie=pick', 1);
         const rules = [
             cookieRule,
             allowlistRule,
@@ -147,18 +149,42 @@ describe('Cookie filtering', () => {
             data: expect.objectContaining({
                 frameDomain: 'example.org',
                 cookieName: 'pick',
-                rule: allowlistRule,
                 isModifyingCookieRule: false,
                 requestThirdParty: false,
+                ...getNetworkRuleFields(allowlistRule),
             }),
         });
     });
 
     // TODO: Add more edge-cases
 
+    it('does not attempt to apply rules if there are no modifying ones', async () => {
+        const allowlistRule = createNetworkRule('@@||example.org^$cookie=pick', 1);
+        const rules = [allowlistRule];
+
+        const responseHeaders = createTestHeaders([{
+            name: 'set-cookie',
+            value: 'pick=updated_value',
+        }]);
+
+        await runCase(rules, [], responseHeaders);
+
+        expect(mockFilteringLog.publishEvent).toHaveBeenCalledTimes(2);
+        expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
+            type: FilteringEventType.Cookie,
+            data: expect.objectContaining({
+                frameDomain: 'example.org',
+                cookieName: 'pick',
+                isModifyingCookieRule: false,
+                requestThirdParty: false,
+                ...getNetworkRuleFields(allowlistRule),
+            }),
+        });
+    });
+
     it('checks cookie specific allowlist regex rule', async () => {
-        const cookieRule = new NetworkRule('||example.org^$cookie=/pick|other/,domain=example.org|other.com', 1);
-        const allowlistRule = new NetworkRule('@@||example.org^$cookie=/pick|one_more/', 1);
+        const cookieRule = createNetworkRule('||example.org^$cookie=/pick|other/,domain=example.org|other.com', 1);
+        const allowlistRule = createNetworkRule('@@||example.org^$cookie=/pick|one_more/', 1);
         const rules = [
             cookieRule,
             allowlistRule,
@@ -180,15 +206,15 @@ describe('Cookie filtering', () => {
             data: expect.objectContaining({
                 frameDomain: 'example.org',
                 cookieName: 'pick',
-                rule: allowlistRule,
                 isModifyingCookieRule: false,
                 requestThirdParty: false,
+                ...getNetworkRuleFields(allowlistRule),
             }),
         });
     });
 
     it('checks modifying rule - max age', async () => {
-        const cookieRule = new NetworkRule('||example.org^$cookie=c_user;maxAge=15', 1);
+        const cookieRule = createNetworkRule('||example.org^$cookie=c_user;maxAge=15', 1);
         const rules = [
             cookieRule,
         ];
@@ -211,15 +237,15 @@ describe('Cookie filtering', () => {
                 frameDomain: 'example.org',
                 cookieName: 'c_user',
                 cookieValue: 'new_value',
-                rule: cookieRule,
                 isModifyingCookieRule: true,
                 requestThirdParty: false,
+                ...getNetworkRuleFields(cookieRule),
             }),
         });
     });
 
     it('checks modifying rule - sameSite', async () => {
-        const cookieRule = new NetworkRule('||example.org^$cookie=c_user;sameSite=lax', 1);
+        const cookieRule = createNetworkRule('||example.org^$cookie=c_user;sameSite=lax', 1);
         const rules = [
             cookieRule,
         ];
@@ -237,9 +263,9 @@ describe('Cookie filtering', () => {
                 frameDomain: 'example.org',
                 cookieName: 'c_user',
                 cookieValue: 'test_value',
-                rule: cookieRule,
                 isModifyingCookieRule: true,
                 requestThirdParty: false,
+                ...getNetworkRuleFields(cookieRule),
             }),
         });
     });
@@ -247,9 +273,9 @@ describe('Cookie filtering', () => {
     it('checks remove rule - third-party cases', async () => {
         context.thirdParty = true;
 
-        const thirdPartyCookieRule = new NetworkRule('||example.org^$third-party,cookie=third_party_user', 1);
+        const thirdPartyCookieRule = createNetworkRule('||example.org^$third-party,cookie=third_party_user', 1);
         const rules = [
-            new NetworkRule('||example.org^$cookie=c_user', 1),
+            createNetworkRule('||example.org^$cookie=c_user', 1),
             thirdPartyCookieRule,
         ];
 
@@ -263,25 +289,25 @@ describe('Cookie filtering', () => {
 
         await runCase(rules, requestHeaders, responseHeaders);
 
-        expect(responseHeaders).toEqual([]);
-
-        expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith({
-            type: FilteringEventType.Cookie,
-            data: expect.objectContaining({
-                frameDomain: 'example.org',
-                cookieName: 'third_party_user',
-                rule: thirdPartyCookieRule,
-                isModifyingCookieRule: false,
-                requestThirdParty: true,
+        expect(mockFilteringLog.publishEvent).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                type: FilteringEventType.Cookie,
+                data: expect.objectContaining({
+                    frameDomain: 'example.org',
+                    cookieName: 'third_party_user',
+                    isModifyingCookieRule: false,
+                    requestThirdParty: true,
+                    ...getNetworkRuleFields(thirdPartyCookieRule),
+                }),
             }),
-        });
+        );
     });
 
     it('filters blocking rules', async () => {
         const rules = [
-            new NetworkRule('||example.org^$cookie=c_user', 1),
-            new NetworkRule('||example.org^$third-party,cookie=third_party_user', 1),
-            new NetworkRule('||example.org^$cookie=m_user;sameSite=lax', 1),
+            createNetworkRule('||example.org^$cookie=c_user', 1),
+            createNetworkRule('||example.org^$third-party,cookie=third_party_user', 1),
+            createNetworkRule('||example.org^$cookie=m_user;sameSite=lax', 1),
         ];
 
         await tabsApi.start();

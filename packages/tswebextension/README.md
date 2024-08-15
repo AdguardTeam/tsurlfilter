@@ -11,8 +11,8 @@ Table of content:
   - [CLI](#cli)
   - [API](#api)
     - [configuration](#configuration)
-      - [TSWEBEXTENSION_VERSION](#tswebextension-version)
-      - [EXTENDED_CSS_VERSION](#extended_css_version)
+      - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
+      - [EXTENDED\_CSS\_VERSION](#extended_css_version)
       - [filters (MV2 only)](#filters-mv2-only)
         - [filterId](#filterid)
         - [content](#content)
@@ -20,14 +20,24 @@ Table of content:
       - [staticFiltersIds (MV3 only)](#staticfiltersids-mv3-only)
       - [customFilters (MV3 only)](#customfilters-mv3-only)
         - [filterId](#filterid-1)
+        - [rawFilterList](#rawfilterlist)
+        - [sourceMap](#sourcemap)
+        - [conversionMap](#conversionmap)
         - [content](#content-1)
       - [filtersPath (MV3 only)](#filterspath-mv3-only)
       - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
       - [filteringLogEnabled (MV3 only)](#filteringlogenabled-mv3-only)
       - [allowlist](#allowlist)
       - [trustedDomains](#trusteddomains)
-      - [userrules](#userrules)
-      - [verbose (deprecated)](#-verbose-deprecated)
+      - [userrules (MV2)](#userrules-mv2)
+        - [content](#content-2)
+        - [sourceMap](#sourcemap-1)
+      - [userrules (MV3)](#userrules-mv3)
+        - [rawFilterList](#rawfilterlist-1)
+        - [sourceMap](#sourcemap-2)
+        - [conversionMap](#conversionmap-1)
+        - [content](#content-3)
+      - [verbose (deprecated)](#verbose-deprecated)
       - [logLevel](#loglevel)
       - [settings](#settings)
         - [allowlistInverted](#allowlistinverted)
@@ -61,6 +71,7 @@ Table of content:
         - [openAssistant()](#openassistant)
         - [closeAssistant()](#closeassistant)
         - [getRulesCount()](#getrulescount)
+        - [retrieveDynamicRuleNode](#retrievedynamicrulenode)
         - [getMessageHandler()](#getmessagehandler)
         - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
         - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
@@ -90,6 +101,7 @@ Table of content:
       - [contentFilteringStart](#contentfilteringstart)
       - [contentFilteringFinish](#contentfilteringfinish)
       - [stealthAction](#stealthaction)
+      - [stealthAllowlistAction](#stealthallowlistaction)
       - [JsInject](#jsinject)
     - [properties](#properties-1)
       - [onLogEvent](#onlogevent)
@@ -199,9 +211,9 @@ Filter identifier.
 
 ##### content
 
-type: `string`
+type: `Uint8Array[]`
 
-Filter list text string.
+AGTree byte buffer chunks.
 
 ##### trusted
 
@@ -227,11 +239,29 @@ type: `number`
 
 Filter identifier.
 
-##### content
+##### rawFilterList
 
 type: `string`
 
-Filter list text string.
+Raw filter list.
+
+##### sourceMap
+
+type: `Record<string, number>`
+
+Source map, where key is the rule start index in the byte buffer `content` and value is the line start index in the raw filter list.
+
+##### conversionMap
+
+type: `Record<string, string>`
+
+Conversion map, where key is the line start index in the raw filter list and value is the rule text.
+
+##### content
+
+type: `Uint8Array[]`
+
+AGTree byte buffer chunks.
 
 #### filtersPath (MV3 only)
 
@@ -263,13 +293,48 @@ type: `string[]`
 
 List of domain names of sites, which should be temporary excluded from document blocking.
 
-#### userrules
+#### userrules (MV2)
 
-type: `string[]`
+##### content
 
-List of rules added by user.
+type: `Uint8Array[]`
 
-#### <a name="verbose"></a> verbose (deprecated)
+AGTree byte buffer chunks.
+
+##### sourceMap
+
+type: `Record<string, number> | undefined`
+
+Source map, where key is the rule start index in the byte buffer `content` and value is the line start index in the raw filter list.
+Optional field, can be omitted.
+
+#### userrules (MV3)
+
+##### rawFilterList
+
+type: `string`
+
+Raw filter list.
+
+##### sourceMap
+
+type: `Record<string, number>`
+
+Source map, where key is the rule start index in the byte buffer `content` and value is the line start index in the raw filter list.
+
+##### conversionMap
+
+type: `Record<string, string>`
+
+Conversion map, where key is the line start index in the raw filter list and value is the rule text.
+
+##### content
+
+type: `Uint8Array[]`
+
+AGTree byte buffer chunks.
+
+#### <a name="verbose"></a>verbose (deprecated)
 
 type: `boolean | undefined`
 
@@ -468,6 +533,12 @@ type: `(tabId: number) => void`
 type: `() => number`
 
 Returns number of active rules.
+
+##### retrieveDynamicRuleNode
+
+type: `(filterId: number, ruleIndex: number): AnyRule | null`
+
+Retrieves rule node from a dynamically created filter, like stealth rules.
 
 ##### getMessageHandler()
 
@@ -669,6 +740,12 @@ Dispatched on content filtering end.
 type: `StealthActionEvent`
 
 Dispatched on stealth action.
+
+#### stealthAllowlistAction
+
+type: `StealthAllowlistActionEvent`
+
+Dispatched on preventing stealth action with `$stealth` rule.
 
 #### JsInject
 

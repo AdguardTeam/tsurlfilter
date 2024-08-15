@@ -50,7 +50,7 @@ export class AdgCosmeticRuleModifierConverter {
 
         modifierList.children.forEach((modifier, index) => {
             // :matches-path
-            if (modifier.modifier.value === UBO_MATCHES_PATH_OPERATOR) {
+            if (modifier.name.value === UBO_MATCHES_PATH_OPERATOR) {
                 if (!modifier.value) {
                     throw new RuleConversionError(`'${UBO_MATCHES_PATH_OPERATOR}' operator requires a value`);
                 }

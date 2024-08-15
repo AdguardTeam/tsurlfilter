@@ -1,7 +1,9 @@
+import { CookieModifier } from '../../modifiers/cookie-modifier';
 import { HTTPMethod } from '../../modifiers/method-modifier';
 import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
 import { RemoveParamModifier } from '../../modifiers/remove-param-modifier';
-import { NetworkRule, NetworkRuleOption } from '../network-rule';
+import { type NetworkRule, NetworkRuleOption } from '../network-rule';
+import { OPTIONS_DELIMITER } from '../network-rule-options';
 
 import { UnsupportedModifierError } from './errors/conversion-errors/unsupported-modifier-error';
 
@@ -80,7 +82,7 @@ export class NetworkRuleDeclarativeValidator {
 
         if (!removeParam.getMV3Validity()) {
             return new UnsupportedModifierError(
-                `Network rule with $removeparam modifier with negation or regexp is not supported: "${r.getText()}"`,
+                'Network rule with $removeparam modifier with negation or regexp is not supported',
                 r,
             );
         }
@@ -99,7 +101,7 @@ export class NetworkRuleDeclarativeValidator {
     private static checkAllowRulesFn(r: NetworkRule, name: string): UnsupportedModifierError | null {
         if (r.isAllowlist()) {
             return new UnsupportedModifierError(
-                `Network allowlist rule with ${name} modifier is not supported: "${r.getText()}"`,
+                `Network allowlist rule with ${name} modifier is not supported`,
                 r,
             );
         }
@@ -116,11 +118,18 @@ export class NetworkRuleDeclarativeValidator {
      * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
      */
     private static checkNotOnlyOneModifier(r: NetworkRule, name: string): UnsupportedModifierError | null {
-        // TODO: Remove small hack with "re-parsing" rule to extract only options part.
-        const { options } = NetworkRule.parseRuleText(r.getText());
-        if (options === name.replace('$', '')) {
+        let nameToCheck = name;
+
+        // Remove leading dollar sign, if any
+        if (nameToCheck.startsWith(OPTIONS_DELIMITER)) {
+            nameToCheck = nameToCheck.slice(OPTIONS_DELIMITER.length);
+        }
+
+        // Get all used modifier names from the network rule
+        const optionNames = r.getUsedOptionNames();
+        if (optionNames.size === 1 && optionNames.has(nameToCheck)) {
             return new UnsupportedModifierError(
-                `Network rule with only one enabled modifier ${name} is not supported: "${r.getText()}"`,
+                `Network rule with only one enabled modifier ${name} is not supported`,
                 r,
             );
         }
@@ -152,7 +161,7 @@ export class NetworkRuleDeclarativeValidator {
         if (!removeHeader.isValid) {
             return new UnsupportedModifierError(
                 // eslint-disable-next-line max-len
-                `Network rule with $removeheader modifier containing some of the unsupported headers is not supported: "${r.getText()}"`,
+                'Network rule with $removeheader modifier contains some of the unsupported headers',
                 r,
             );
         }
@@ -178,13 +187,44 @@ export class NetworkRuleDeclarativeValidator {
                 || restrictedMethods?.some((method) => method === HTTPMethod.TRACE)
         ) {
             return new UnsupportedModifierError(
-                `Network rule with $method modifier containing 'trace' method is not supported: "${r.getText()}"`,
+                'Network rule with $method modifier containing \'trace\' method is not supported',
                 r,
             );
         }
 
         return null;
     }
+
+    /**
+     * Checks if the $cookie values in the provided network rule
+     * are supported for conversion to MV3.
+     *
+     * @param r Network rule.
+     * @param name Modifier's name.
+     *
+     * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private static checkCookieModifierFn = (r: NetworkRule, name: string): UnsupportedModifierError | null => {
+        const cookieModifier = r.getAdvancedModifier();
+
+        if (!cookieModifier) {
+            return null;
+        }
+
+        if (!CookieModifier.isCookieModifier(cookieModifier)) {
+            return null;
+        }
+
+        if (!cookieModifier.isEmpty()) {
+            // eslint-disable-next-line max-len
+            const msg = 'The use of additional parameters in $cookie (apart from $cookie itself) is not supported';
+
+            return new UnsupportedModifierError(msg, r);
+        }
+
+        return null;
+    };
 
     /**
      * Checks if rule is a "document"-allowlist and contains all these
@@ -209,7 +249,7 @@ export class NetworkRuleDeclarativeValidator {
         }
 
         return new UnsupportedModifierError(
-            `Network rule with "${name}" modifier is not supported: "${r.getText()}"`,
+            `Network rule with "${name}" modifier is not supported`,
             r,
         );
     };
@@ -221,6 +261,7 @@ export class NetworkRuleDeclarativeValidator {
         Important: { name: '$important' },
         To: { name: '$to' },
         Badfilter: { name: '$badfilter' },
+        Permissions: { name: '$permissions' },
 
         // Supported without conversion.
         Elemhide: { name: '$elemhide', skipConversion: true },
@@ -249,15 +290,20 @@ export class NetworkRuleDeclarativeValidator {
                 NetworkRuleDeclarativeValidator.checkRemoveHeaderModifierFn,
             ],
         },
+        Cookie: {
+            name: '$cookie',
+            customChecks: [
+                NetworkRuleDeclarativeValidator.checkAllowRulesFn,
+                NetworkRuleDeclarativeValidator.checkCookieModifierFn,
+            ],
+        },
         Method: { name: '$method', customChecks: [NetworkRuleDeclarativeValidator.checkMethodModifierFn] },
 
         // Not supported.
+        Header: { name: '$header', notSupported: true },
         // Not supported yet.
-        Cookie: { name: '$cookie', notSupported: true },
         Genericblock: { name: '$genericblock', notSupported: true },
         Stealth: { name: '$stealth', notSupported: true },
-        Permissions: { name: '$permissions', notSupported: true },
-        Header: { name: '$header', notSupported: true },
         // Will not be supported.
         Replace: { name: '$replace', notSupported: true },
         JsonPrune: { name: '$jsonprune', notSupported: true },
@@ -291,10 +337,11 @@ export class NetworkRuleDeclarativeValidator {
      * $specifichide;
      *
      * Other:
+     * $header;
      * $popup;
      * $csp;
      * $replace;
-     * $cookie;
+     * $cookie - if modifier is not empty and contains any parameters;
      * $redirect - if the rule is a allowlist;
      * $removeparam - if it contains a negation, or regexp,
      * or the rule is a allowlist;
@@ -341,7 +388,7 @@ export class NetworkRuleDeclarativeValidator {
 
             if (notSupported) {
                 throw new UnsupportedModifierError(
-                    `Unsupported option "${name}" in the rule: "${rule.getText()}"`,
+                    `Unsupported option "${name}"`,
                     rule,
                 );
             }

@@ -1,20 +1,25 @@
 import { z as zod } from 'zod';
 
-import { configurationValidator } from '../../common';
+import { basicFilterValidator, configurationValidator } from '../../common';
 
 /**
  * Custom filter list configuration validator for MV3.
  */
-export const customFilterMV3Validator = zod.object({
+export const customFilterMV3Validator = basicFilterValidator.extend({
     /**
      * Filter identifier.
      */
     filterId: zod.number(),
 
     /**
-     * Filter text content.
+     * Raw filter list.
      */
-    content: zod.string(),
+    rawFilterList: zod.string(),
+
+    /**
+     * Conversion map for the raw filter list. Key is the rule line start index, value is the original rule.
+     */
+    conversionMap: zod.record(zod.number(), zod.string()),
 });
 
 /**
@@ -55,6 +60,11 @@ export const configurationMV3Validator = configurationValidator.extend({
      */
     // TODO: use settings.collectStats instead?
     filteringLogEnabled: zod.boolean(),
+
+    /**
+     * List of rules added by user.
+     */
+    userrules: customFilterMV3Validator.omit({ filterId: true }),
 });
 
 /**

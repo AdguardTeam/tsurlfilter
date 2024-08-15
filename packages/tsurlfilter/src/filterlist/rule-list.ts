@@ -1,3 +1,4 @@
+import { type AnyRule } from '@adguard/agtree';
 import { type RuleScanner } from './scanner/rule-scanner';
 import { type ScannerType } from './scanner/scanner-type';
 
@@ -25,11 +26,23 @@ export interface IRuleList {
     newScanner(scannerType: ScannerType): RuleScanner;
 
     /**
-     * Retrieves rule text by its index.
+     * Retrieves a rule node by its index.
      *
-     * @param ruleIdx - Rule index in the storage.
+     * If there's no rule by that index or the rule is invalid, it will return
+     * null.
+     *
+     * @param ruleIdx Rule index.
+     * @return Rule node or `null`.
      */
-    retrieveRuleText(ruleIdx: number): string | null;
+    retrieveRuleNode(ruleIdx: number): AnyRule | null
+
+    /**
+     * Finds the rule source index by its index.
+     *
+     * @param ruleIdx rule index.
+     * @return rule source index or RULE_INDEX_NONE (-1).
+     */
+    retrieveRuleSourceIndex(ruleIdx: number): number;
 
     /**
      * Closes the rules list.

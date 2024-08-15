@@ -1,15 +1,31 @@
+/* eslint-disable max-classes-per-file */
 import scriptlets, { type IConfiguration } from '@adguard/scriptlets';
-import type * as rule from './rule';
-import { CosmeticRuleMarker, isExtCssMarker, ADG_SCRIPTLET_MASK } from './cosmetic-rule-marker';
+import {
+    type AnyCosmeticRule,
+    COMMA_DOMAIN_LIST_SEPARATOR,
+    CosmeticRuleParser,
+    type CosmeticRuleSeparator,
+    CosmeticRuleSeparatorUtils,
+    CosmeticRuleType,
+    type DomainList,
+    DomainUtils,
+    PIPE_MODIFIER_SEPARATOR,
+    QuoteUtils,
+    ADG_SCRIPTLET_MASK,
+    QuoteType,
+} from '@adguard/agtree';
+
+import * as rule from './rule';
 import { DomainModifier } from '../modifiers/domain-modifier';
-import { hasUnquotedSubstring, indexOfAny } from '../utils/string-utils';
 import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
-import { CosmeticRuleParser } from './cosmetic-rule-parser';
 import { type Request } from '../request';
 import { Pattern } from './pattern';
 import { config } from '../configuration';
-import { ScriptletsParams } from './scriptlets-params';
+import { EMPTY_STRING, WILDCARD } from '../common/constants';
+import { validateSelectorList } from './css/selector-list-validator';
+import { validateDeclarationList } from './css/declaration-list-validator';
+import { getErrorMessage } from '../common/error';
 
 /**
  * Init script params
@@ -37,82 +53,108 @@ type ScriptData = {
 };
 
 /**
- * CosmeticRuleType is an enumeration of the possible
- * cosmetic rule types.
- * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-rules
+ * Represents scriptlet properties parsed from the rule content.
  */
-export enum CosmeticRuleType {
-    /**
-     * Cosmetic rules that just hide page elements.
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules
-     */
-    ElementHiding,
+export type ScriptletsProps = {
+    name: string;
+    args: string[],
+};
 
-    /**
-     * Cosmetic rules that allow adding custom CSS styles.
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules
-     */
-    Css,
+class ScriptletParams {
+    private props: ScriptletsProps | null = null;
 
-    /**
-     * Cosmetic rules that allow executing custom JS scripts.
-     * Some restrictions are applied to this type of rules by default.
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#javascript-rules
-     */
-    Js,
+    constructor(name?: string, args?: string[]) {
+        if (typeof name !== 'undefined') {
+            this.props = {
+                name,
+                args: args || [],
+            };
+        }
+    }
 
-    /**
-     * Special type of rules that allows filtering HTML code of web pages.
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules
-     */
-    Html,
+    get name(): string | undefined {
+        return this.props?.name;
+    }
+
+    get args(): string[] {
+        return this.props?.args ?? [];
+    }
+
+    public toString(): string {
+        const result: string[] = [];
+
+        result.push(ADG_SCRIPTLET_MASK);
+        result.push('(');
+
+        if (this.name) {
+            result.push(QuoteUtils.setStringQuoteType(this.name, QuoteType.Single));
+        }
+
+        if (this.args.length) {
+            result.push(', ');
+            result.push(this.args.map((arg) => QuoteUtils.setStringQuoteType(arg, QuoteType.Single)).join(', '));
+        }
+
+        result.push(')');
+
+        return result.join(EMPTY_STRING);
+    }
 }
 
 /**
- * Pseudo class indicators. They are used to detect if rule is extended or not even if rule does not
- * have extended css marker
+ * Represents possible modifiers for cosmetic rules.
  */
-export const EXT_CSS_PSEUDO_INDICATORS = [
+const enum CosmeticRuleModifier {
     /**
-     * Pseudo-classes :is(), and :not() may use native implementation
-     * so they are not listed here
-     * https://github.com/AdguardTeam/ExtendedCss#extended-css-is
-     * https://github.com/AdguardTeam/ExtendedCss#extended-css-not
-     */
-    /**
-     * :has() should also be conditionally considered as extended and should not be in this list
-     * https://github.com/AdguardTeam/ExtendedCss#extended-css-has
-     * but there is a bug with content blocker in safari
-     * https://bugs.webkit.org/show_bug.cgi?id=248868
+     * $domain modifier
      *
-     * TODO: remove ':has(' later
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-domain-modifier}
      */
-    ':has(',
-    ':contains(',
-    ':matches-css(',
-    ':matches-attr(',
-    ':matches-property(',
-    ':xpath(',
-    ':upward(',
-    ':nth-ancestor(',
-    ':remove(',
-    // aliases for :has()
-    ':-abp-has(',
-    // aliases for :contains()
-    ':has-text(',
-    ':-abp-contains(',
-    // old syntax
-    '[-ext-has=',
-    '[-ext-contains=',
-    '[-ext-has-text=',
-    '[-ext-matches-css=',
-    '[-ext-matches-css-before=',
-    '[-ext-matches-css-after=',
-    // obsolete since ExtendedCss v2.0.2 but still compatible
-    // https://github.com/AdguardTeam/ExtendedCss/releases/tag/v2.0.2
-    ':matches-css-before(',
-    ':matches-css-after(',
-];
+    Domain = 'domain',
+
+    /**
+     * $path modifier
+     *
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-path-modifier}
+     */
+    Path = 'path',
+
+    /**
+     * $url modifier
+     *
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-url-modifier}
+     */
+    Url = 'url',
+}
+
+/**
+ * Represents a cosmetic rule validation result.
+ */
+interface ValidationResult {
+    /**
+     * Boolean flag indicating whether the rule is valid.
+     */
+    isValid: boolean;
+
+    /**
+     * Boolean flag indicating whether the rule is ExtendedCss.
+     */
+    isExtendedCss: boolean;
+
+    /**
+     * Error message if the rule is invalid.
+     */
+    errorMessage?: string;
+}
+
+/**
+ * Represents processed modifiers
+ */
+interface ProcessedModifiers {
+    domainModifier?: DomainModifier;
+    pathModifier?: Pattern;
+    urlModifier?: Pattern;
+}
 
 /**
  * Implements a basic cosmetic rule.
@@ -136,26 +178,35 @@ export const EXT_CSS_PSEUDO_INDICATORS = [
  * * `example.org$$div[id="test"]` -- HTML filtering rule
  */
 export class CosmeticRule implements rule.IRule {
-    private readonly ruleText: string;
+    private readonly ruleIndex: number;
 
     private readonly filterListId: number;
 
-    private readonly type: CosmeticRuleType;
-
     private readonly content: string;
+
+    private readonly type: CosmeticRuleType;
 
     private allowlist = false;
 
     private extendedCss = false;
 
-    private readonly permittedDomains: string[] | undefined = undefined;
-
-    private readonly restrictedDomains: string[] | undefined = undefined;
+    /**
+     * $domain modifier pattern. It is only set if $domain modifier is specified for this rule.
+     */
+    private domainModifier: DomainModifier | null = null;
 
     /**
      * $path modifier pattern. It is only set if $path modifier is specified for this rule.
      */
     public pathModifier: Pattern | undefined;
+
+    /**
+     * $url modifier pattern. It is only set if $url modifier is specified for this rule,
+     * but $path and $domain modifiers are not.
+     *
+     * TODO add this to test cases
+     */
+    public urlModifier: Pattern | undefined;
 
     /**
      * Js script to execute
@@ -175,102 +226,28 @@ export class CosmeticRule implements rule.IRule {
     private scriptletData: ScriptletData | null = null;
 
     /**
+     * Scriptlet parameters
+     */
+    public scriptletParams: ScriptletParams;
+
+    /**
      * If the rule contains scriptlet content
      */
     public isScriptlet = false;
 
-    /**
-     * Scriptlet parameters. This property is used to store parsed scriptlet parameters in a lazy way.
-     */
-    public scriptletParams: ScriptletsParams;
-
-    /**
-     * The problem with pseudo-classes is that any unknown pseudo-class makes browser ignore the whole CSS rule,
-     * which contains a lot more selectors. So, if CSS selector contains a pseudo-class, we should try to validate it.
-     * <p>
-     * One more problem with pseudo-classes is that they are actively used in uBlock, hence it may mess AG styles.
-     */
-    private static readonly SUPPORTED_PSEUDO_CLASSES = [':active',
-        ':checked', ':contains', ':disabled', ':empty', ':enabled', ':first-child', ':first-of-type',
-        ':focus', ':has', ':has-text', ':hover', ':if', ':if-not', ':in-range', ':invalid', ':lang',
-        ':last-child', ':last-of-type', ':link', ':matches-css', ':matches-css-before', ':matches-css-after',
-        ':not', ':nth-child', ':nth-last-child', ':nth-last-of-type', ':nth-of-type',
-        ':only-child', ':only-of-type', ':optional', ':out-of-range', ':read-only',
-        ':read-write', ':required', ':root', ':target', ':valid', ':visited',
-        ':-abp-has', ':-abp-contains', ':xpath', ':nth-ancestor', ':upward', ':remove',
-        ':matches-attr', ':matches-property', ':is', ':where'];
-
-    /**
-     * Parses first pseudo class from the specified CSS selector
-     *
-     * @param selector
-     * @returns pseudo class name if found or null
-     */
-    static parsePseudoClass(selector: string): string | null {
-        let beginIndex = 0;
-        let nameStartIndex = -1;
-        let squareBracketIndex = 0;
-
-        while (squareBracketIndex >= 0) {
-            nameStartIndex = selector.indexOf(':', beginIndex);
-            if (nameStartIndex < 0) {
-                return null;
-            }
-
-            if (nameStartIndex > 0 && selector.charAt(nameStartIndex - 1) === '\\') {
-                // Escaped colon character
-                return null;
-            }
-
-            squareBracketIndex = selector.indexOf('[', beginIndex);
-            while (squareBracketIndex >= 0) {
-                if (nameStartIndex > squareBracketIndex) {
-                    const squareEndBracketIndex = selector.indexOf(']', squareBracketIndex + 1);
-                    beginIndex = squareEndBracketIndex + 1;
-                    if (nameStartIndex < squareEndBracketIndex) {
-                        // Means that colon character is somewhere inside attribute selector
-                        // Something like a[src^="http://domain.com"]
-                        break;
-                    }
-
-                    if (squareEndBracketIndex > 0) {
-                        squareBracketIndex = selector.indexOf('[', beginIndex);
-                    } else {
-                        // bad rule, example: a[src="http:
-                        return null;
-                    }
-                } else {
-                    squareBracketIndex = -1;
-                    break;
-                }
-            }
-        }
-
-        let nameEndIndex = indexOfAny(
-            selector,
-            [' ', ',', '\t', '>', '(', '[', '.', '#', ':', '+', '~', '"', '\''],
-            nameStartIndex + 1,
-        );
-
-        if (nameEndIndex < 0) {
-            nameEndIndex = selector.length;
-        }
-
-        const name = selector.substring(nameStartIndex, nameEndIndex);
-        if (name.length <= 1) {
-            // Either empty name or a pseudo element (like ::content)
-            return null;
-        }
-
-        return name;
-    }
-
-    getText(): string {
-        return this.ruleText;
+    getIndex(): number {
+        return this.ruleIndex;
     }
 
     getFilterListId(): number {
         return this.filterListId;
+    }
+
+    /**
+     * Returns the rule content.
+     */
+    getContent(): string {
+        return this.content;
     }
 
     /**
@@ -286,15 +263,6 @@ export class CosmeticRule implements rule.IRule {
      */
     isAllowlist(): boolean {
         return this.allowlist;
-    }
-
-    /**
-     * Gets the rule content. The meaning of this field depends on the rule type.
-     * For instance, for an element hiding rule, this is just a CSS selector.
-     * While, for a CSS rule, this is a CSS selector + style.
-     */
-    getContent(): string {
-        return this.content;
     }
 
     /**
@@ -329,8 +297,21 @@ export class CosmeticRule implements rule.IRule {
     /**
      * Gets list of permitted domains.
      */
-    getPermittedDomains(): string[] | undefined {
-        return this.permittedDomains;
+    getPermittedDomains(): string[] | null {
+        if (this.domainModifier) {
+            return this.domainModifier.getPermittedDomains();
+        }
+        return null;
+    }
+
+    /**
+     * Gets list of restricted domains.
+     */
+    getRestrictedDomains(): string[] | null {
+        if (this.domainModifier) {
+            return this.domainModifier.getRestrictedDomains();
+        }
+        return null;
     }
 
     /**
@@ -341,18 +322,227 @@ export class CosmeticRule implements rule.IRule {
      * @return {boolean}
      */
     isGeneric(): boolean {
-        return !this.permittedDomains || this.permittedDomains.length === 0;
-    }
-
-    /**
-     * Gets list of restricted domains.
-     */
-    getRestrictedDomains(): string[] | undefined {
-        return this.restrictedDomains;
+        return !this.domainModifier?.hasPermittedDomains();
     }
 
     isExtendedCss(): boolean {
         return this.extendedCss;
+    }
+
+    /**
+     * Processes cosmetic rule modifiers, e.g. `$path`.
+     *
+     * @param ruleNode Cosmetic rule node to process
+     * @returns Processed modifiers ({@link ProcessedModifiers}) or `null` if there are no modifiers
+     * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#modifiers-for-non-basic-type-of-rules}
+     */
+    private static processModifiers(ruleNode: AnyCosmeticRule): ProcessedModifiers | null {
+        // Do nothing if there are no modifiers in the rule node
+        if (!ruleNode.modifiers) {
+            return null;
+        }
+
+        const result: ProcessedModifiers = {};
+
+        // We don't allow duplicate modifiers, so we collect them in a set
+        const usedModifiers = new Set<string>();
+
+        // Destructure the modifiers array just for convenience
+        const { children: modifierNodes } = ruleNode.modifiers;
+
+        // AGTree parser tolerates this case: [$]example.com##.foo
+        // However, we should throw an error here if the modifier list is empty
+        // (if the modifier list isn't specified at all, then ruleNode.modifiers
+        // will be undefined, so we won't get here)
+        if (modifierNodes.length < 1) {
+            throw new SyntaxError('Modifiers list cannot be be empty');
+        }
+
+        for (const modifierNode of modifierNodes) {
+            const modifierName = modifierNode.name.value;
+
+            // Check if the modifier is already used
+            if (usedModifiers.has(modifierName)) {
+                throw new Error(`Duplicated modifier: '${modifierName}'`);
+            }
+
+            // Mark the modifier as used by adding it to the set
+            usedModifiers.add(modifierName);
+
+            const modifierValue = modifierNode.value?.value || EMPTY_STRING;
+
+            // Every modifier should have a value at the moment, so for simplicity we throw an error here if the
+            // modifier value is not present.
+            // TODO: Improve this when we decide to add modifiers without values
+            if (modifierValue.length < 1 && modifierName !== CosmeticRuleModifier.Path) {
+                throw new SyntaxError(`'$${modifierName}' modifier should have a value`);
+            }
+
+            // Process the modifier based on its name
+            switch (modifierName) {
+                case CosmeticRuleModifier.Domain:
+                    if (ruleNode.domains.children.length > 0) {
+                        throw new SyntaxError(`'$${modifierName}' modifier is not allowed in a domain-specific rule`);
+                    }
+
+                    result.domainModifier = new DomainModifier(modifierValue, PIPE_MODIFIER_SEPARATOR);
+                    break;
+
+                case CosmeticRuleModifier.Path:
+                    result.pathModifier = new Pattern(
+                        SimpleRegex.isRegexPattern(modifierValue)
+                            // eslint-disable-next-line max-len
+                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
+                            : modifierValue,
+                    );
+                    break;
+
+                case CosmeticRuleModifier.Url:
+                    if (ruleNode.domains.children.length > 0) {
+                        throw new SyntaxError(`'$${modifierName}' modifier is not allowed in a domain-specific rule`);
+                    }
+
+                    result.urlModifier = new Pattern(
+                        SimpleRegex.isRegexPattern(modifierValue)
+                            // eslint-disable-next-line max-len
+                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
+                            : modifierValue,
+                    );
+                    break;
+
+                // Don't allow unknown modifiers
+                default:
+                    throw new SyntaxError(`'$${modifierName}' modifier is not supported`);
+            }
+        }
+
+        // $url modifier can't be used with other modifiers
+        // TODO: Extend / change this check if we decide to add more such modifiers
+        if (result.urlModifier && usedModifiers.size > 1) {
+            throw new SyntaxError(`'$${CosmeticRuleModifier.Url}' modifier cannot be used with other modifiers`);
+        }
+
+        return result;
+    }
+
+    /**
+     * Validates cosmetic rule node.
+     *
+     * @param ruleNode Cosmetic rule node to validate
+     * @returns Validation result ({@link ValidationResult})
+     */
+    private static validate(ruleNode: AnyCosmeticRule): ValidationResult {
+        const result: ValidationResult = {
+            isValid: true,
+            isExtendedCss: false,
+        };
+
+        let scriptletName;
+        let selectorListValidationResult;
+        const { type: ruleType } = ruleNode;
+
+        try {
+            // Common validation: every cosmetic rule has a domain list
+            if (ruleNode.domains?.children.length) {
+                // Iterate over the domain list and check every domain
+                for (const { value: domain } of ruleNode.domains.children) {
+                    if (!DomainUtils.isValidDomainOrHostname(domain)) {
+                        throw new Error(`'${domain}' is not a valid domain name`);
+                    }
+                }
+            }
+
+            // Type-specific validation
+            switch (ruleType) {
+                case CosmeticRuleType.ElementHidingRule:
+                    selectorListValidationResult = validateSelectorList(ruleNode.body.selectorList.value);
+
+                    if (!selectorListValidationResult.isValid) {
+                        throw new Error(selectorListValidationResult.errorMessage);
+                    }
+
+                    // Detect ExtendedCss and unsupported pseudo-classes
+                    result.isExtendedCss = selectorListValidationResult.isExtendedCss;
+                    break;
+
+                case CosmeticRuleType.CssInjectionRule:
+                    selectorListValidationResult = validateSelectorList(ruleNode.body.selectorList.value);
+
+                    if (!selectorListValidationResult.isValid) {
+                        throw new Error(selectorListValidationResult.errorMessage);
+                    }
+
+                    // Detect ExtendedCss and unsupported pseudo-classes
+                    result.isExtendedCss = selectorListValidationResult.isExtendedCss;
+
+                    // AGTree won't allow the following rule:
+                    // `#$#selector { remove: true; padding: 0; }`
+                    // because it mixes removal and non-removal declarations.
+                    if (ruleNode.body.declarationList) {
+                        // eslint-disable-next-line max-len
+                        const declarationListValidationResult = validateDeclarationList(ruleNode.body.declarationList.value);
+
+                        if (!declarationListValidationResult.isValid) {
+                            throw new Error(declarationListValidationResult.errorMessage);
+                        }
+
+                        // If the selector list is not ExtendedCss, then we should set this flag based on the
+                        // declaration list validation result
+                        if (!result.isExtendedCss) {
+                            result.isExtendedCss = declarationListValidationResult.isExtendedCss;
+                        }
+                    }
+                    break;
+
+                case CosmeticRuleType.ScriptletInjectionRule:
+                    // Scriptlet name is the first child of the parameter list
+                    // eslint-disable-next-line max-len
+                    scriptletName = QuoteUtils.removeQuotes(ruleNode.body.children[0]?.children[0]?.value ?? EMPTY_STRING);
+
+                    // Special case: scriptlet name is empty, e.g. '#%#//scriptlet()'
+                    if (scriptletName.length === 0) {
+                        break;
+                    }
+
+                    // Check if the scriptlet name is valid
+                    if (!scriptlets.isValidScriptletName(scriptletName)) {
+                        throw new Error(`'${scriptletName}' is not a known scriptlet name`);
+                    }
+                    break;
+
+                case CosmeticRuleType.HtmlFilteringRule:
+                    // TODO: Validate HTML filtering rules
+                    break;
+
+                case CosmeticRuleType.JsInjectionRule:
+                    // TODO: Validate JS injection rules
+                    break;
+
+                default:
+                    break;
+            }
+        } catch (error: unknown) {
+            result.isValid = false;
+            result.errorMessage = getErrorMessage(error);
+        }
+
+        return result;
+    }
+
+    /**
+     * Checks if the domain list contains any domains, but returns `false` if only
+     * the wildcard domain is specified.
+     *
+     * @param domainListNode Domain list node to check
+     * @returns `true` if the domain list contains any domains, `false` otherwise
+     */
+    private static isAnyDomainSpecified(domainListNode: DomainList): boolean {
+        if (domainListNode.children.length > 0) {
+            // Skip wildcard domain list (*)
+            return !(domainListNode.children.length === 1 && domainListNode.children[0].value === WILDCARD);
+        }
+
+        return false;
     }
 
     /**
@@ -363,65 +553,74 @@ export class CosmeticRule implements rule.IRule {
      * Depending on the rule type, the content might be transformed in
      * one of the helper classes, or kept as string when it's appropriate.
      *
-     * @param ruleText - original rule text.
-     * @param filterListId - ID of the filter list this rule belongs to.
+     * @param inputRule Original rule text.
+     * @param filterListId ID of the filter list this rule belongs to.
+     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
+     * the rule does not have source index.
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(ruleText: string, filterListId: number) {
-        this.ruleText = ruleText;
+    constructor(node: AnyCosmeticRule, filterListId: number, ruleIndex: number = rule.RULE_INDEX_NONE) {
+        this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 
-        const {
-            pattern,
-            marker,
-            content,
-        } = CosmeticRuleParser.parseRuleTextByMarker(ruleText);
+        this.allowlist = CosmeticRuleSeparatorUtils.isException(node.separator.value as CosmeticRuleSeparator);
+        this.type = node.type;
+        this.isScriptlet = node.type === CosmeticRuleType.ScriptletInjectionRule;
 
-        this.content = content;
-        this.type = CosmeticRule.parseType(marker);
+        this.content = CosmeticRuleParser.generateBody(node);
 
-        this.extendedCss = isExtCssMarker(marker);
-        if (!this.extendedCss
-            && (this.type === CosmeticRuleType.ElementHiding
-                || this.type === CosmeticRuleType.Css)) {
-            // additional check if rule is extended css rule by pseudo class indicators
-            for (let i = 0; i < EXT_CSS_PSEUDO_INDICATORS.length; i += 1) {
-                if (this.content.indexOf(EXT_CSS_PSEUDO_INDICATORS[i]) !== -1) {
-                    this.extendedCss = true;
-                    break;
-                }
+        // Store the scriptlet parameters. They will be used later, when we initialize the scriptlet,
+        // but at this point we need to store them in order to avoid double parsing
+        if (node.type === CosmeticRuleType.ScriptletInjectionRule) {
+            // Transform complex node into a simple array of strings
+            const params = node.body.children[0].children.map(
+                (param) => (param === null ? EMPTY_STRING : QuoteUtils.removeQuotesAndUnescape(param.value)),
+            );
+
+            this.scriptletParams = new ScriptletParams(params[0] ?? '', params.slice(1));
+        } else {
+            this.scriptletParams = new ScriptletParams();
+        }
+
+        const validationResult = CosmeticRule.validate(node);
+
+        // We should throw an error if the validation failed for any reason
+        if (!validationResult.isValid) {
+            throw new SyntaxError(validationResult.errorMessage);
+        }
+
+        // Check if the rule is ExtendedCss
+        const isExtendedCssSeparator = CosmeticRuleSeparatorUtils.isExtendedCssMarker(
+            node.separator.value as CosmeticRuleSeparator,
+        );
+
+        this.extendedCss = isExtendedCssSeparator || validationResult.isExtendedCss;
+
+        // Process cosmetic rule modifiers
+        const processedModifiers = CosmeticRule.processModifiers(node);
+
+        if (processedModifiers) {
+            if (processedModifiers.domainModifier) {
+                this.domainModifier = processedModifiers.domainModifier;
+            }
+
+            if (processedModifiers.pathModifier) {
+                this.pathModifier = processedModifiers.pathModifier;
+            }
+
+            if (processedModifiers.urlModifier) {
+                this.urlModifier = processedModifiers.urlModifier;
             }
         }
 
-        CosmeticRule.validate(ruleText, this.type, content, this.extendedCss);
+        // Process domain list, if at least one domain is specified
+        const { domains: domainListNode } = node;
 
-        if (pattern) {
-            // This means that the marker is preceded by the list of domains and modifiers
-            // Now it's a good time to parse them.
-            const {
-                path,
-                permittedDomains,
-                restrictedDomains,
-            } = CosmeticRuleParser.parseRulePattern(pattern);
-
-            if (path || path === '') {
-                this.pathModifier = new Pattern(path);
-            }
-
-            if (permittedDomains) {
-                this.permittedDomains = permittedDomains;
-            }
-
-            if (restrictedDomains) {
-                this.restrictedDomains = restrictedDomains;
-            }
+        if (CosmeticRule.isAnyDomainSpecified(domainListNode)) {
+            this.domainModifier = new DomainModifier(domainListNode, COMMA_DOMAIN_LIST_SEPARATOR);
         }
-
-        this.allowlist = CosmeticRule.parseAllowlist(marker);
-        this.isScriptlet = this.content.startsWith(ADG_SCRIPTLET_MASK);
-
-        this.scriptletParams = new ScriptletsParams(this.content);
     }
 
     /**
@@ -430,24 +629,19 @@ export class CosmeticRule implements rule.IRule {
      * @param request - request to check
      */
     match(request: Request): boolean {
-        if (!this.permittedDomains && !this.restrictedDomains && !this.pathModifier) {
+        if (!this.domainModifier
+            && !this.pathModifier
+            && !this.urlModifier
+        ) {
             return true;
         }
 
-        if (this.matchesRestrictedDomains(request.hostname)) {
-            /**
-             * Domain or host is restricted
-             * i.e. ~example.org##rule
-             */
-            return false;
+        if (this.urlModifier) {
+            return this.urlModifier.matchPattern(request, false);
         }
 
-        if (this.hasPermittedDomains()) {
-            if (!DomainModifier.isDomainOrSubdomainOfAny(request.hostname, this.permittedDomains!)) {
-                /**
-                 * Domain is not among permitted
-                 * i.e. example.org##rule and we're checking example.org
-                 */
+        if (this.domainModifier) {
+            if (!this.domainModifier.matchDomain(request.hostname)) {
                 return false;
             }
         }
@@ -462,196 +656,6 @@ export class CosmeticRule implements rule.IRule {
         }
 
         return true;
-    }
-
-    static parseType(marker: string): CosmeticRuleType {
-        switch (marker) {
-            case CosmeticRuleMarker.ElementHiding:
-            case CosmeticRuleMarker.ElementHidingExtCSS:
-                return CosmeticRuleType.ElementHiding;
-            case CosmeticRuleMarker.ElementHidingException:
-            case CosmeticRuleMarker.ElementHidingExtCSSException:
-                return CosmeticRuleType.ElementHiding;
-            case CosmeticRuleMarker.Css:
-            case CosmeticRuleMarker.CssExtCSS:
-                return CosmeticRuleType.Css;
-            case CosmeticRuleMarker.CssException:
-            case CosmeticRuleMarker.CssExtCSSException:
-                return CosmeticRuleType.Css;
-            case CosmeticRuleMarker.Js:
-                return CosmeticRuleType.Js;
-            case CosmeticRuleMarker.JsException:
-                return CosmeticRuleType.Js;
-            case CosmeticRuleMarker.Html:
-                return CosmeticRuleType.Html;
-            case CosmeticRuleMarker.HtmlException:
-                return CosmeticRuleType.Html;
-            default:
-                throw new SyntaxError('Unsupported rule type');
-        }
-    }
-
-    /**
-     * Determines if rule is allowlist rule
-     * @param marker
-     * @private
-     */
-    private static parseAllowlist(marker: string): boolean {
-        switch (marker) {
-            case CosmeticRuleMarker.ElementHidingException:
-            case CosmeticRuleMarker.ElementHidingExtCSSException:
-            case CosmeticRuleMarker.CssException:
-            case CosmeticRuleMarker.CssExtCSSException:
-            case CosmeticRuleMarker.JsException:
-            case CosmeticRuleMarker.HtmlException:
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * Validate pseudo-classes
-     *
-     * @param ruleText
-     * @param ruleContent
-     * @throws SyntaxError
-     */
-    private static validatePseudoClasses(ruleText: string, ruleContent: string): void {
-        const pseudoClass = CosmeticRule.parsePseudoClass(ruleContent);
-        if (pseudoClass !== null) {
-            if (CosmeticRule.SUPPORTED_PSEUDO_CLASSES.indexOf(pseudoClass) < 0) {
-                throw new SyntaxError(`Unknown pseudo-class '${pseudoClass}' in selector: '${ruleContent}'`);
-            }
-        }
-    }
-
-    private static ELEMHIDE_VALIDATION_REGEX = / {.+}/;
-
-    /**
-     * Simple validation for elemhide rules
-     *
-     * @param ruleText
-     * @param ruleContent
-     * @throws SyntaxError
-     */
-    private static validateElemhideRule(ruleText: string, ruleContent: string): void {
-        if (ruleText.startsWith(SimpleRegex.MASK_START_URL)) {
-            throw new SyntaxError('Element hiding rule shouldn\'t start with "||"');
-        }
-        if (CosmeticRule.ELEMHIDE_VALIDATION_REGEX.test(ruleContent)) {
-            throw new SyntaxError('Invalid elemhide rule, style presented');
-        }
-    }
-
-    private static validateJsRules(ruleText: string, ruleContent: string): void {
-        if (ruleContent.startsWith(ADG_SCRIPTLET_MASK)) {
-            if (!scriptlets.isValidScriptletRule(ruleText)) {
-                throw new SyntaxError('Invalid scriptlet');
-            }
-        }
-    }
-
-    /**
-     * Validates css injection rules
-     *
-     * @param ruleText
-     * @param ruleContent
-     * @throws SyntaxError
-     */
-    private static validateCssRules(ruleText: string, ruleContent: string): void {
-        // Simple validation for css injection rules
-        if (!/{.+}/.test(ruleContent)) {
-            throw new SyntaxError('Invalid CSS modifying rule, no style presented');
-        }
-        // discard css inject rules containing "url"
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1196
-        if (/{.*url\(.*\)/gi.test(ruleContent)) {
-            throw new SyntaxError('CSS modifying rule with \'url\' was omitted');
-        }
-
-        // discard css inject rules containing other unsafe selectors
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1920
-        if (/{.*image-set\(.*\)/gi.test(ruleContent)
-            || /{.*image\(.*\)/gi.test(ruleContent)
-            || /{.*cross-fade\(.*\)/gi.test(ruleContent)) {
-            throw new SyntaxError('CSS modifying rule with unsafe style was omitted');
-        }
-
-        // Prohibit "\" character in style of CSS injection rules
-        // Check slash character only after the index of last opening curly brackets
-        if (ruleContent.indexOf('\\', ruleContent.lastIndexOf('{')) > -1) {
-            throw new SyntaxError('CSS injection rule with \'\\\' was omitted');
-        }
-    }
-
-    /**
-     * Checks if the rule has permitted domains
-     */
-    private hasPermittedDomains(): boolean {
-        return this.permittedDomains != null && this.permittedDomains.length > 0;
-    }
-
-    /**
-     * Checks if the rule has restricted domains
-     */
-    private hasRestrictedDomains(): boolean {
-        return this.restrictedDomains != null && this.restrictedDomains.length > 0;
-    }
-
-    /**
-     * Checks if the hostname matches permitted domains
-     * @param hostname
-     */
-    public matchesPermittedDomains(hostname: string): boolean {
-        return this.hasPermittedDomains() && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.permittedDomains!);
-    }
-
-    /**
-     * Checks if the hostname matches the restricted domains.
-     * @param hostname
-     */
-    public matchesRestrictedDomains(hostname: string): boolean {
-        return this.hasRestrictedDomains()
-            && DomainModifier.isDomainOrSubdomainOfAny(hostname, this.restrictedDomains!);
-    }
-
-    /**
-     * Validates cosmetic rule text
-     * @param ruleText
-     * @param type
-     * @param content
-     * @param isExtCss
-     * @private
-     */
-    private static validate(ruleText: string, type: CosmeticRuleType, content: string, isExtCss: boolean): void {
-        if (type !== CosmeticRuleType.Css
-            && type !== CosmeticRuleType.Js
-            && type !== CosmeticRuleType.Html) {
-            CosmeticRule.validatePseudoClasses(ruleText, content);
-
-            if (hasUnquotedSubstring(content, '{')) {
-                throw new SyntaxError('Invalid cosmetic rule, wrong brackets');
-            }
-        }
-
-        if (type === CosmeticRuleType.ElementHiding) {
-            CosmeticRule.validateElemhideRule(ruleText, content);
-        }
-
-        if (type === CosmeticRuleType.Css) {
-            CosmeticRule.validateCssRules(ruleText, content);
-        }
-
-        if (type === CosmeticRuleType.Js) {
-            CosmeticRule.validateJsRules(ruleText, content);
-        }
-
-        if ((!isExtCss && hasUnquotedSubstring(content, '/*'))
-            || hasUnquotedSubstring(content, ' /*')
-            || hasUnquotedSubstring(content, ' //')) {
-            throw new SyntaxError('Cosmetic rule should not contain comments');
-        }
     }
 
     /**
@@ -687,18 +691,17 @@ export class CosmeticRule implements rule.IRule {
         // https://github.com/AdguardTeam/Scriptlets/issues/377
         // or it is considered invalid if the scriptlet was invalid.
         // This does not require finding scriptData and scriptletData.
-        if (!this.scriptletParams.name) {
+        if (!this.scriptletParams?.name) {
             return;
         }
 
         const params: scriptlets.IConfiguration = {
             args: this.scriptletParams.args,
-            engine: config.engine || '',
+            engine: config.engine || EMPTY_STRING,
             name: this.scriptletParams.name,
-            ruleText: this.getText(),
             verbose: debug,
             domainName: frameUrl,
-            version: config.version || '',
+            version: config.version || EMPTY_STRING,
         };
 
         this.scriptData = {

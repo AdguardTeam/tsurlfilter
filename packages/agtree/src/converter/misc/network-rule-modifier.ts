@@ -111,23 +111,24 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
      * Converts a network rule modifier list to AdGuard format, if possible.
      *
      * @param modifierList Network rule modifier list node to convert
+     * @param isException If `true`, the rule is an exception rule
      * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
      * the converted node, and its `isConverted` flag indicates whether the original node was converted.
      * If the node was not converted, the result will contain the original node with the same object reference
      * @throws If the conversion is not possible
      */
-    public static convertToAdg(modifierList: ModifierList): ConversionResult<ModifierList> {
+    public static convertToAdg(modifierList: ModifierList, isException = false): ConversionResult<ModifierList> {
         const conversionMap = new MultiValueMap<number, Modifier>();
 
         // Special case: $csp modifier
         let cspCount = 0;
 
         modifierList.children.forEach((modifierNode, index) => {
-            const modifierConversions = ADG_CONVERSION_MAP.get(modifierNode.modifier.value);
+            const modifierConversions = ADG_CONVERSION_MAP.get(modifierNode.name.value);
 
             if (modifierConversions) {
                 for (const modifierConversion of modifierConversions) {
-                    const name = modifierConversion.name(modifierNode.modifier.value);
+                    const name = modifierConversion.name(modifierNode.name.value);
 
                     const exception = modifierConversion.exception
                         // If the exception value is undefined in the original modifier, it
@@ -141,7 +142,7 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
 
                     // Check if the name or the value is different from the original modifier
                     // If so, add the converted modifier to the list
-                    if (name !== modifierNode.modifier.value || value !== modifierNode.value?.value) {
+                    if (name !== modifierNode.name.value || value !== modifierNode.value?.value) {
                         conversionMap.add(index, createModifierNode(name, value, exception));
                     }
 
@@ -155,37 +156,41 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
             }
 
             // Handle special case: resource redirection modifiers
-            if (REDIRECT_MODIFIERS.has(modifierNode.modifier.value)) {
+            if (REDIRECT_MODIFIERS.has(modifierNode.name.value)) {
                 // Redirect modifiers can't be negated
                 if (modifierNode.exception === true) {
                     throw new RuleConversionError(
-                        `Modifier '${modifierNode.modifier.value}' cannot be negated`,
+                        `Modifier '${modifierNode.name.value}' cannot be negated`,
                     );
                 }
 
                 // Convert the redirect resource name to ADG format
                 const redirectResource = modifierNode.value?.value;
 
-                if (!redirectResource) {
+                // Special case: for exception rules, $redirect without value is allowed,
+                // and in this case it means an exception for all redirects
+                if (!redirectResource && !isException) {
                     throw new RuleConversionError(
-                        `No redirect resource specified for '${modifierNode.modifier.value}' modifier`,
+                        `No redirect resource specified for '${modifierNode.name.value}' modifier`,
                     );
                 }
 
                 // Leave $redirect and $redirect-rule modifiers as is, but convert $rewrite to $redirect
-                const modifierName = modifierNode.modifier.value === ABP_REWRITE_MODIFIER
+                const modifierName = modifierNode.name.value === ABP_REWRITE_MODIFIER
                     ? REDIRECT_MODIFIER
-                    : modifierNode.modifier.value;
+                    : modifierNode.name.value;
 
-                const convertedRedirectResource = redirectsCompatibilityTable.getFirst(
-                    redirectResource,
-                    GenericPlatform.AdgAny,
-                )?.name;
+                const convertedRedirectResource = redirectResource
+                    ? redirectsCompatibilityTable.getFirst(
+                        redirectResource,
+                        GenericPlatform.AdgAny,
+                    )?.name
+                    : undefined;
 
                 // Check if the modifier name or the redirect resource name is different from the original modifier.
                 // If so, add the converted modifier to the list
                 if (
-                    modifierName !== modifierNode.modifier.value
+                    modifierName !== modifierNode.name.value
                     || (convertedRedirectResource !== undefined && convertedRedirectResource !== redirectResource)
                 ) {
                     conversionMap.add(
@@ -224,7 +229,7 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                 const cspValues: string[] = [];
 
                 modifierListClone.children = modifierListClone.children.filter((modifierNode) => {
-                    if (modifierNode.modifier.value === CSP_MODIFIER) {
+                    if (modifierNode.name.value === CSP_MODIFIER) {
                         if (!modifierNode.value?.value) {
                             throw new RuleConversionError(
                                 '$csp modifier value is missing',
@@ -247,7 +252,7 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
             // Before returning the result, remove duplicated modifiers
             modifierListClone.children = modifierListClone.children.filter(
                 (modifierNode, index, self) => self.findIndex(
-                    (m) => m.modifier.value === modifierNode.modifier.value
+                    (m) => m.name.value === modifierNode.name.value
                         && m.exception === modifierNode.exception
                         && m.value?.value === modifierNode.value?.value,
                 ) === index,

@@ -543,8 +543,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
 
                     disableRuleIds.push(...ids);
                 } catch (e) {
-                    // eslint-disable-next-line max-len
-                    errors.push(new Error(`Cannot apply badfilter rule ${badFilterRule.rule.getText()}: ${getErrorMessage(e)}`));
+                    errors.push(new Error(`Cannot apply badfilter: ${getErrorMessage(e)}`));
                 }
             }
 

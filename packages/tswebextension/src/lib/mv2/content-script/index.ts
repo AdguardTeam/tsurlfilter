@@ -1,12 +1,12 @@
 // Import directly from files to avoid side effects of tree shaking.
 // If import from '../../common', entire tsurlfilter will be in the package.
-import { type CookieRule, MessageType, sendAppMessage } from '../../common/content-script';
-import { CookieController } from './cookie-controller';
+import { MessageType, sendAppMessage } from '../../common/content-script';
+import { CookieController, type CookieRule } from '../../common/content-script/cookie-controller';
 import { CosmeticController } from './cosmetic-controller';
 import { initAssistant } from './assistant';
 
 export { StealthHelper } from '../../common/stealth-helper';
-export { CookieController } from './cookie-controller';
+export { CookieController } from '../../common/content-script/cookie-controller';
 export { CssHitsCounter } from './css-hits-counter';
 
 const cosmeticController = new CosmeticController();

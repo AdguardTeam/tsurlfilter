@@ -78,21 +78,9 @@ export class CosmeticRuleSeparatorUtils {
 
         for (let i = 0; i < rule.length; i += 1) {
             if (rule[i] === '#') {
-                if (rule[i + 1] === '#') {
-                    if (rule[i + 2] === '+') {
-                        // ##+
-                        return createResult(i, CosmeticRuleSeparator.UboScriptletInjection);
-                    }
-
-                    if (rule[i + 2] === '^') {
-                        // ##^
-                        return createResult(i, CosmeticRuleSeparator.UboHtmlFiltering);
-                    }
-
-                    if (rule[i - 1] !== SPACE) {
-                        // ##
-                        return createResult(i, CosmeticRuleSeparator.ElementHiding);
-                    }
+                if (rule[i + 1] === '#' && rule[i - 1] !== SPACE) {
+                    // ##
+                    return createResult(i, CosmeticRuleSeparator.ElementHiding);
                 }
 
                 if (rule[i + 1] === '?' && rule[i + 2] === '#') {
@@ -119,21 +107,9 @@ export class CosmeticRuleSeparatorUtils {
 
                 // Exceptions
                 if (rule[i + 1] === '@') {
-                    if (rule[i + 2] === '#') {
-                        if (rule[i + 3] === '+') {
-                            // #@#+
-                            return createResult(i, CosmeticRuleSeparator.UboScriptletInjectionException);
-                        }
-
-                        if (rule[i + 3] === '^') {
-                            // #@#^
-                            return createResult(i, CosmeticRuleSeparator.UboHtmlFilteringException);
-                        }
-
-                        if (rule[i - 1] !== SPACE) {
-                            // #@#
-                            return createResult(i, CosmeticRuleSeparator.ElementHidingException);
-                        }
+                    if (rule[i + 2] === '#' && rule[i - 1] !== SPACE) {
+                        // #@#
+                        return createResult(i, CosmeticRuleSeparator.ElementHidingException);
                     }
 
                     if (rule[i + 2] === '?' && rule[i + 3] === '#') {

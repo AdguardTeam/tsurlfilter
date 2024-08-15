@@ -5,6 +5,7 @@ import {
     BufferRuleList,
     DnsEngine,
     Engine,
+    FilterListPreprocessor,
     NetworkEngine,
     RuleStorage,
     setLogger,
@@ -77,10 +78,11 @@ describe('Start Engine Benchmark', () => {
     it('starts engine', async () => {
         const rulesFilePath = './test/resources/adguard_base_filter.txt';
 
-        const ruleText = await fs.promises.readFile(rulesFilePath, 'utf8');
+        const rawFilterList = await fs.promises.readFile(rulesFilePath, 'utf8');
+        const processed = FilterListPreprocessor.preprocess(rawFilterList);
 
         runBenchmark('engine', () => {
-            const list = new BufferRuleList(1, ruleText, false);
+            const list = new BufferRuleList(1, processed.filterList, false, false, false, processed.sourceMap);
             const ruleStorage = new RuleStorage([list]);
 
             const start = performance.now();
@@ -88,7 +90,7 @@ describe('Start Engine Benchmark', () => {
             const end = performance.now() - start;
 
             expect(engine).toBeTruthy();
-            expect(engine.getRulesCount()).toEqual(91694);
+            expect(engine.getRulesCount()).toEqual(91691);
 
             return end;
         });
@@ -97,10 +99,11 @@ describe('Start Engine Benchmark', () => {
     it('starts network engine', async () => {
         const rulesFilePath = './test/resources/adguard_base_filter.txt';
 
-        const ruleText = await fs.promises.readFile(rulesFilePath, 'utf8');
+        const rawFilterList = await fs.promises.readFile(rulesFilePath, 'utf8');
+        const processed = FilterListPreprocessor.preprocess(rawFilterList);
 
         runBenchmark('network engine', () => {
-            const list = new BufferRuleList(1, ruleText, false);
+            const list = new BufferRuleList(1, processed.filterList, false, false, false, processed.sourceMap);
             const ruleStorage = new RuleStorage([list]);
 
             const start = performance.now();
@@ -108,7 +111,7 @@ describe('Start Engine Benchmark', () => {
             const end = performance.now() - start;
 
             expect(networkEngine).toBeTruthy();
-            expect(networkEngine.rulesCount).toEqual(44613);
+            expect(networkEngine.rulesCount).toEqual(44614);
 
             return end;
         });
@@ -119,11 +122,27 @@ describe('Start Engine Benchmark', () => {
         const hostsFilePath = './test/resources/hosts';
 
         const rulesText = await fs.promises.readFile(rulesFilePath, 'utf8');
+        const rulesProcessed = FilterListPreprocessor.preprocess(rulesText);
         const hostsText = await fs.promises.readFile(hostsFilePath, 'utf8');
+        const hostsProcessed = FilterListPreprocessor.preprocess(hostsText, true);
 
         runBenchmark('dns engine', () => {
-            const ruleList = new BufferRuleList(1, rulesText, false);
-            const hostList = new BufferRuleList(2, hostsText, false);
+            const ruleList = new BufferRuleList(
+                1,
+                rulesProcessed.filterList,
+                false,
+                false,
+                false,
+                rulesProcessed.sourceMap,
+            );
+            const hostList = new BufferRuleList(
+                2,
+                hostsProcessed.filterList,
+                false,
+                false,
+                false,
+                hostsProcessed.sourceMap,
+            );
             const ruleStorage = new RuleStorage([ruleList, hostList]);
 
             const start = performance.now();
@@ -131,7 +150,7 @@ describe('Start Engine Benchmark', () => {
             const end = performance.now() - start;
 
             expect(dnsEngine).toBeTruthy();
-            expect(dnsEngine.rulesCount).toEqual(55999);
+            expect(dnsEngine.rulesCount).toEqual(55997);
 
             return end;
         });

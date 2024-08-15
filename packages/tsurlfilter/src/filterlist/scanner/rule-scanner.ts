@@ -1,10 +1,13 @@
+import { type AnyRule, CosmeticRuleType } from '@adguard/agtree';
+
 import { IndexedRule, type IRule } from '../../rules/rule';
 import { RuleFactory } from '../../rules/rule-factory';
-import { type ILineReader } from '../reader/line-reader';
-import { CosmeticRule, CosmeticRuleType } from '../../rules/cosmetic-rule';
+import { type IReader } from '../reader/reader';
+import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { ScannerType } from './scanner-type';
 import { NetworkRule } from '../../rules/network-rule';
 import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
+import { type FilterListSourceMap } from '../source-map';
 
 /**
  * Represents the RuleScanner configuration.
@@ -32,11 +35,17 @@ export interface RuleScannerConfiguration {
      * TODO(ameshkov): Reconsider how "unsafe" works (does not include JS now).
      */
     ignoreUnsafe?: boolean;
+
+    /**
+     * Source map for the filter list.
+     */
+    sourceMap?: FilterListSourceMap;
 }
 
 /**
  * Rule scanner provides the functionality for reading rules from a filter list.
  */
+// TODO: Change string filter list to byte buffer.
 export class RuleScanner {
     /**
      * Filter list ID.
@@ -71,7 +80,7 @@ export class RuleScanner {
     /**
      * Underlying reader object.
      */
-    private readonly reader: ILineReader;
+    private readonly reader: IReader;
 
     /**
      * Current rule.
@@ -84,13 +93,22 @@ export class RuleScanner {
     private currentRuleIndex = 0;
 
     /**
+     * Source map for the filter list.
+     */
+    private readonly sourceMap: FilterListSourceMap;
+
+    /**
      * Constructor of a RuleScanner object.
      *
      * @param reader - Source of the filtering rules
      * @param listId - Filter list ID
      * @param configuration - Scanner configuration object
      */
-    constructor(reader: ILineReader, listId: number, configuration: RuleScannerConfiguration) {
+    constructor(
+        reader: IReader,
+        listId: number,
+        configuration: RuleScannerConfiguration,
+    ) {
         this.reader = reader;
         this.listId = listId;
 
@@ -101,6 +119,8 @@ export class RuleScanner {
 
         this.ignoreJS = !!configuration.ignoreJS;
         this.ignoreUnsafe = !!configuration.ignoreUnsafe;
+
+        this.sourceMap = configuration.sourceMap ?? {};
     }
 
     /**
@@ -109,31 +129,32 @@ export class RuleScanner {
      *
      * @return - False when the scan stops, either by reaching the end of the
      * input or an error. If there's a rule available, returns true.
-    */
+     */
     public scan(): boolean {
-        while (true) {
-            const lineIndex = this.reader.getCurrentPos();
-            const line = this.readNextLine();
-            if (line === null) {
-                return false;
+        let lineIndex = this.reader.getCurrentPos();
+        let line = this.readNext();
+
+        while (line) {
+            const rule = RuleFactory.createRule(
+                line,
+                this.listId,
+                lineIndex,
+                this.ignoreNetwork,
+                this.ignoreCosmetic,
+                this.ignoreHost,
+            );
+
+            if (rule && !this.isIgnored(rule)) {
+                this.currentRule = rule;
+                this.currentRuleIndex = lineIndex;
+                return true;
             }
 
-            if (line) {
-                const rule = RuleFactory.createRule(
-                    line,
-                    this.listId,
-                    this.ignoreNetwork,
-                    this.ignoreCosmetic,
-                    this.ignoreHost,
-                );
-
-                if (rule && !this.isIgnored(rule)) {
-                    this.currentRule = rule;
-                    this.currentRuleIndex = lineIndex;
-                    return true;
-                }
-            }
+            lineIndex = this.reader.getCurrentPos();
+            line = this.readNext();
         }
+
+        return false;
     }
 
     /**
@@ -171,14 +192,8 @@ export class RuleScanner {
      *
      * @return - Next line string or null.
      */
-    private readNextLine(): string | null {
-        const line = this.reader.readLine();
-
-        if (line != null) {
-            return line.trim();
-        }
-
-        return null;
+    private readNext(): AnyRule | null {
+        return this.reader.readNext();
     }
 
     /**
@@ -199,7 +214,11 @@ export class RuleScanner {
             // Ignore JS type rules.
             // TODO: in the future we may allow CSS rules and Scriptlets (except
             // for "trusted" scriptlets).
-            return (this.ignoreJS && rule.getType() === CosmeticRuleType.Js);
+            const type = rule.getType();
+            return (
+                this.ignoreJS
+                && (type === CosmeticRuleType.JsInjectionRule || type === CosmeticRuleType.ScriptletInjectionRule)
+            );
         }
 
         if (this.ignoreUnsafe) {

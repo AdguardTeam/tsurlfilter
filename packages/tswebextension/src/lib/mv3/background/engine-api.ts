@@ -7,7 +7,6 @@ import {
     Request,
     CosmeticResult,
     type CosmeticOption,
-    RuleConverter,
     type ScriptletData,
     type CosmeticRule,
     type NetworkRule,
@@ -22,6 +21,7 @@ import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { logger } from '../utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
+import { type MatchQuery } from '../../common/interfaces';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 const USER_FILTER_ID = 0;
@@ -29,16 +29,6 @@ const USER_FILTER_ID = 0;
 type EngineConfig = Pick<ConfigurationMV3, 'userrules'> & {
     filters: IFilter[],
 };
-
-/**
- * Request Match Query, contains request details.
- */
-interface MatchQuery {
-    requestUrl: string;
-    sourceUrl: string;
-    requestType: RequestType;
-    frameRule?: NetworkRule | null;
-}
 
 export type CosmeticRules = {
     css: string[],
@@ -49,7 +39,7 @@ export type CosmeticRules = {
  * EngineApi - TSUrlFilter engine wrapper which controls how to work with
  * cosmetic rules.
  */
-class EngineApi {
+export class EngineApi {
     /**
      * Link to current Engine.
      */
@@ -74,29 +64,40 @@ class EngineApi {
 
         const lists: IRuleList[] = [];
 
-        // Wrap IFilter to IRuleList
-        const tasks = filters.map(async (filter) => {
-            const content = await filter.getContent();
-            // TODO: Maybe pass filters content via FilterList to exclude double conversion
-            const convertedContent = RuleConverter.convertRules(content.join('\n'));
-            lists.push(new BufferRuleList(filter.getId(), convertedContent));
-        });
+        for (let i = 0; i < filters.length; i += 1) {
+            try {
+                const filter = filters[i];
+                // eslint-disable-next-line no-await-in-loop
+                const content = await filter.getContent();
 
-        try {
-            await Promise.all(tasks);
-        } catch (e) {
-            const filterListIds = filters.map((f) => f.getId());
-
-            // eslint-disable-next-line max-len
-            logger.error(`Cannot create IRuleList for list of filters ${filterListIds} due to: ${getErrorMessage(e)}`);
-
-            // Do not return value here because we can try to convert at least user rules.
+                lists.push(
+                    new BufferRuleList(
+                        filter.getId(),
+                        content.filterList,
+                        false,
+                        false,
+                        false,
+                        content.sourceMap,
+                    ),
+                );
+            } catch (e) {
+                const filterId = filters[i].getId();
+                logger.error(`Cannot create IRuleList for filter ${filterId} due to: ${getErrorMessage(e)}`);
+            }
         }
 
-        // Wrap user rules to IRuleList
-        if (userrules.length > 0) {
-            const convertedUserRules = RuleConverter.convertRules(userrules.join('\n'));
-            lists.push(new BufferRuleList(USER_FILTER_ID, convertedUserRules));
+        if (userrules.content.length > 0) {
+            // Note: rules are already converted at the extension side
+            lists.push(
+                new BufferRuleList(
+                    USER_FILTER_ID,
+                    userrules.content,
+                    false,
+                    false,
+                    false,
+                    userrules.sourceMap,
+                ),
+            );
         }
 
         const ruleStorage = new RuleStorage(lists);
@@ -144,7 +145,7 @@ class EngineApi {
      * @param option Mask of enabled cosmetic types.
      * @returns Cosmetic result.
      */
-    private getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
+    public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
         if (!this.engine) {
             return new CosmeticResult();
         }
@@ -153,8 +154,8 @@ class EngineApi {
 
         // Checks if an allowlist rule exists at the document level,
         // then discards all cosmetic rules.
-        const frameRule = this.engine.matchFrame(url);
-        if (frameRule?.isAllowlist()) {
+        const allowlistFrameRule = this.engine.matchFrame(url);
+        if (allowlistFrameRule) {
             return new CosmeticResult();
         }
 
@@ -283,14 +284,14 @@ class EngineApi {
 
         const {
             requestUrl,
-            sourceUrl,
+            frameUrl,
             requestType,
             frameRule,
         } = matchQuery;
 
         const request = new Request(
             requestUrl,
-            sourceUrl,
+            frameUrl,
             requestType,
         );
 

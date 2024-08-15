@@ -4,17 +4,16 @@ import zlib from 'zlib';
 import console from 'console';
 import { performance } from 'perf_hooks';
 import {
-    type IRuleList,
     CosmeticOption,
     Engine,
     Request,
     RequestType,
     BufferRuleList,
-    StringRuleList,
     RuleStorage,
     DnsEngine,
     CosmeticEngine,
     setLogger,
+    FilterListPreprocessor,
 } from '../../src';
 
 /**
@@ -261,13 +260,7 @@ describe('Benchmarks', () => {
         setLogger(console);
     });
 
-    /**
-     * Using a generic constructor to trick typescrpit into accepting a class
-     * that extends IRuleList as a function argument (see below).
-     */
-    interface IRuleListConstructor<T extends IRuleList> {
-        new(...args: any[]): T;
-    }
+    const easyListPrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/easylist.txt', 'utf8'));
 
     /**
      * Helper function that formats memory usage.
@@ -295,14 +288,10 @@ describe('Benchmarks', () => {
      * parameterizing the storage type (IRuleList). This test ignores cosmetic
      * rules.
      *
-     * @param listClass - controls that IRuleList implementation will be used
-     * when running the test.
      * @param loadAsync - controls how the NetworkEngine will be initialized
      * (synchronously or not).
      */
-    async function benchNetworkEngine<T extends IRuleList>(listClass: IRuleListConstructor<T>, loadAsync: boolean) {
-        const rulesFilePath = './test/resources/easylist.txt';
-
+    async function benchNetworkEngine(loadAsync: boolean) {
         /**
          * Expected matches for specified requests and rules
          */
@@ -313,15 +302,12 @@ describe('Benchmarks', () => {
         const requests = await parseRequests();
 
         const initMem = memoryUsage(baseMem);
-        const filterText = await fs.promises.readFile(rulesFilePath, 'utf8');
 
         console.log(`Memory after initialization: ${formatMemory(initMem)}`);
 
         const startParse = Date.now();
-        const ignoreCosmetic = true;
 
-        // eslint-disable-next-line new-cap
-        const list = new listClass(1, filterText, ignoreCosmetic);
+        const list = new BufferRuleList(1, easyListPrepared.filterList, true, false, false, easyListPrepared.sourceMap);
         const ruleStorage = new RuleStorage([list]);
 
         const engine = new Engine(ruleStorage, loadAsync);
@@ -367,17 +353,14 @@ describe('Benchmarks', () => {
         console.log(`Allocations + cache overhead: ${formatMemory(matchingOverheadMem)}`);
     }
 
+    const adguardSdnFilterPrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/adguard_sdn_filter.txt', 'utf8'));
+    const hostsFilePrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/hosts', 'utf8'), true);
+
     /**
      * Runs a bench on the DnsEngine. This function allows parameterizing the
      * storage type (IRuleList). This test ignores cosmetic rules.
-     *
-     * @param listClass - controls that IRuleList implementation will be used
-     * when running the test.
      */
-    async function benchDnsEngine<T extends IRuleList>(listClass: IRuleListConstructor<T>) {
-        const rulesFilePath = './test/resources/adguard_sdn_filter.txt';
-        const hostsFilePath = './test/resources/hosts';
-
+    async function benchDnsEngine() {
         /**
          * Expected matches for specified requests and rules
          */
@@ -385,17 +368,12 @@ describe('Benchmarks', () => {
 
         const baseMem = memoryUsage();
         const requests = await parseRequests();
-        const rulesText = await fs.promises.readFile(rulesFilePath, 'utf8');
-        const hostsText = await fs.promises.readFile(hostsFilePath, 'utf8');
-
         const initMem = memoryUsage(baseMem);
         console.log(`Memory after initialization: ${formatMemory(initMem)})`);
 
         const startParse = Date.now();
-        // eslint-disable-next-line new-cap
-        const ruleList = new listClass(1, rulesText, true);
-        // eslint-disable-next-line new-cap
-        const hostsList = new listClass(2, hostsText, true);
+        const ruleList = new BufferRuleList(1, adguardSdnFilterPrepared.filterList, true, false, false, adguardSdnFilterPrepared.sourceMap);
+        const hostsList = new BufferRuleList(2, hostsFilePrepared.filterList, true, false, false, hostsFilePrepared.sourceMap);
         const ruleStorage = new RuleStorage([ruleList, hostsList]);
 
         const engine = new DnsEngine(ruleStorage);
@@ -438,16 +416,13 @@ describe('Benchmarks', () => {
         console.log(`Allocations + cache overhead: ${formatMemory(matchingOverheadMem)}`);
     }
 
+    const adguardBaseFilterPrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/adguard_base_filter.txt', 'utf8'));
+
     /**
      * Runs a bench on the CosmeticEngine. This function allows parameterizing
      * the storage type (IRuleList). This test ignores cosmetic rules.
-     *
-     * @param listClass - controls that IRuleList implementation will be used
-     * when running the test.
      */
-    async function benchCosmeticEngine<T extends IRuleList>(listClass: IRuleListConstructor<T>) {
-        const rulesFilePath = './test/resources/adguard_base_filter.txt';
-
+    async function benchCosmeticEngine() {
         /**
          * Expected matches for specified requests and rules
          */
@@ -455,14 +430,13 @@ describe('Benchmarks', () => {
 
         const baseMem = memoryUsage();
         const requests = await parseRequests();
-        const rulesText = await fs.promises.readFile(rulesFilePath, 'utf8');
 
         const initMem = memoryUsage(baseMem);
         console.log(`Memory after initialization: ${formatMemory(initMem)}`);
 
         const startParse = Date.now();
         // eslint-disable-next-line new-cap
-        const list = new listClass(1, rulesText, false);
+        const list = new BufferRuleList(1, adguardBaseFilterPrepared.filterList, false, false, false, adguardBaseFilterPrepared.sourceMap);
         const ruleStorage = new RuleStorage([list]);
 
         const engine = new CosmeticEngine(ruleStorage);
@@ -501,31 +475,19 @@ describe('Benchmarks', () => {
         console.log(`Allocations + cache overhead: ${formatMemory(matchingOverheadMem)}`);
     }
 
-    it('runs network-engine with a StringRuleList storage', async () => {
-        await benchNetworkEngine(StringRuleList, false);
-    });
-
     it('runs network-engine with a BufferRuleList storage', async () => {
-        await benchNetworkEngine(BufferRuleList, false);
+        await benchNetworkEngine(false);
     });
 
     it('runs network-engine with async load', async () => {
-        await benchNetworkEngine(BufferRuleList, true);
-    });
-
-    it('runs dns-engine with a StringRuleList storage', async () => {
-        await benchDnsEngine(StringRuleList);
+        await benchNetworkEngine(true);
     });
 
     it('runs dns-engine with a BufferRuleList storage', async () => {
-        await benchDnsEngine(BufferRuleList);
-    });
-
-    it('runs cosmetic-engine with a StringRuleList storage', async () => {
-        await benchCosmeticEngine(StringRuleList);
+        await benchDnsEngine();
     });
 
     it('runs cosmetic-engine with a BufferRuleList storage', async () => {
-        await benchCosmeticEngine(BufferRuleList);
+        await benchCosmeticEngine();
     });
 });

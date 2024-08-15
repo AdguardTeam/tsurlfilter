@@ -17,8 +17,7 @@ import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { AdgCosmeticRuleModifierConverter } from './rule-modifiers/adg';
 import { CssInjectionRuleConverter } from './css';
 import { ElementHidingRuleConverter } from './element-hiding';
-import { HeaderRemovalRuleConverter, UBO_RESPONSEHEADER_MARKER } from './header-removal';
-import { CssTreeNodeType } from '../../utils/csstree-constants';
+import { HeaderRemovalRuleConverter } from './header-removal';
 import {
     type NodeConversionResult,
     createNodeConversionResult,
@@ -59,14 +58,14 @@ export class CosmeticRuleConverter extends RuleConverterBase {
 
             case CosmeticRuleType.HtmlFilteringRule:
                 // Handle special case: uBO response header filtering rule
-                if (
-                    rule.body.body.type === CssTreeNodeType.Function
-                    && rule.body.body.name === UBO_RESPONSEHEADER_MARKER
-                ) {
-                    subconverterResult = HeaderRemovalRuleConverter.convertToAdg(rule);
-                } else {
-                    subconverterResult = HtmlRuleConverter.convertToAdg(rule);
+                // TODO: Optimize double CSS tokenization here
+                subconverterResult = HeaderRemovalRuleConverter.convertToAdg(rule);
+
+                if (subconverterResult.isConverted) {
+                    break;
                 }
+
+                subconverterResult = HtmlRuleConverter.convertToAdg(rule);
                 break;
 
             // Note: Currently, only ADG supports JS injection rules, so we don't need to convert them
@@ -111,6 +110,31 @@ export class CosmeticRuleConverter extends RuleConverterBase {
             });
 
             return subconverterResult;
+        }
+
+        return createNodeConversionResult([rule], false);
+    }
+
+    /**
+     * Converts a cosmetic rule to uBlock Origin syntax, if possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    // TODO: Add support for other cosmetic rule types
+    public static convertToUbo(rule: AnyCosmeticRule): NodeConversionResult<AnyRule> {
+        // Convert cosmetic rule based on its type
+        if (rule.type === CosmeticRuleType.ScriptletInjectionRule) {
+            if (rule.syntax === AdblockSyntax.Adg && rule.modifiers?.children.length) {
+                // e.g. example.com##+js(set-constant.js, foo, bar):matches-path(/baz)
+                throw new RuleConversionError(
+                    'uBO scriptlet injection rules do not support cosmetic rule modifiers',
+                );
+            }
+            return ScriptletRuleConverter.convertToUbo(rule);
         }
 
         return createNodeConversionResult([rule], false);

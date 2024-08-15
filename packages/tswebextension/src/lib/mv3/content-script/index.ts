@@ -4,6 +4,7 @@ import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import type { GetCssPayload } from '../background/messages';
 import { logger } from '../utils/logger';
+import { runCookieController } from './cookie-controller';
 
 import { initAssistant } from './assistant';
 
@@ -67,3 +68,6 @@ const applyExtendedCss = (extendedCssRules: string[] | undefined): void => {
         applyExtendedCss(extendedCss);
     }
 })();
+
+// Apply cookie rules from content-script and watch for change document.cookie
+runCookieController();

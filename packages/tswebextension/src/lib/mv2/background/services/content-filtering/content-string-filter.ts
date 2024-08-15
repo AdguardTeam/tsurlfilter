@@ -1,10 +1,12 @@
-import type {
-    NetworkRule,
-    ReplaceModifier,
-    CosmeticRule,
+import {
+    type NetworkRule,
+    type ReplaceModifier,
+    type CosmeticRule,
 } from '@adguard/tsurlfilter';
 import { nanoid } from 'nanoid';
+import { CosmeticRuleType } from '@adguard/agtree';
 
+import { type RuleInfo } from '../../../../common/content-script/rule-info';
 import { FilteringEventType, type FilteringLog } from '../../../../common/filtering-log';
 import { getDomain } from '../../../../common/utils/url';
 
@@ -113,6 +115,8 @@ export class ContentStringFilter implements ContentStringFilterInterface {
                             contentType,
                         } = this.context;
 
+                        const ruleType = rule.getType();
+
                         this.filteringLog.publishEvent({
                             type: FilteringEventType.ApplyCosmeticRule,
                             data: {
@@ -120,10 +124,16 @@ export class ContentStringFilter implements ContentStringFilterInterface {
                                 eventId: nanoid(),
                                 element: element.innerHTML,
                                 frameUrl: requestUrl,
-                                rule,
+                                filterId: rule.getFilterListId(),
+                                ruleIndex: rule.getIndex(),
                                 frameDomain: getDomain(requestUrl) as string,
                                 requestType: contentType,
                                 timestamp,
+                                cssRule: ruleType === CosmeticRuleType.ElementHidingRule
+                                    || ruleType === CosmeticRuleType.CssInjectionRule,
+                                scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
+                                    || ruleType === CosmeticRuleType.JsInjectionRule,
+                                contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
                             },
                         });
 
@@ -159,12 +169,16 @@ export class ContentStringFilter implements ContentStringFilterInterface {
 
         for (let i = 0; i < this.replaceRules!.length; i += 1) {
             const replaceRule = this.replaceRules![i];
+            const replaceRuleInfo: RuleInfo = {
+                filterId: replaceRule.getFilterListId(),
+                ruleIndex: replaceRule.getIndex(),
+            };
             if (replaceRule.isAllowlist()) {
-                appliedRules.push(replaceRule);
+                appliedRules.push(replaceRuleInfo);
             } else {
                 const advancedModifier = replaceRule.getAdvancedModifier() as ReplaceModifier;
                 modifiedContent = advancedModifier.getApplyFunc()(modifiedContent);
-                appliedRules.push(replaceRule);
+                appliedRules.push(replaceRuleInfo);
             }
         }
 

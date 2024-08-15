@@ -2,15 +2,12 @@ import { type IAffectedElement } from '@adguard/extended-css';
 
 import { ElementUtils } from './utils/element-utils';
 import { HitsStorage } from './hits-storage';
+import { type RuleInfo } from '../../common/content-script/rule-info';
 
 /**
  * Counted element data structure.
  */
-interface ICountedElement {
-    filterId: number;
-    ruleText: string;
-    element: string | Element;
-}
+type ICountedElement = RuleInfo & { element: string | Element };
 
 const DEFAULT_ELEMENT_TO_STRING = true;
 
@@ -129,23 +126,23 @@ export class CssHitsCounter {
 
             for (const rule of affectedEl.rules) {
                 if (rule.style && rule.style.content) {
-                    const styleInfo = ElementUtils.parseExtendedStyleInfo(
+                    const ruleInfo = ElementUtils.parseExtendedStyleInfo(
                         rule.style.content,
                         CssHitsCounter.CONTENT_ATTR_PREFIX,
                     );
-                    if (styleInfo === null) {
+                    if (ruleInfo === null) {
                         continue;
                     }
 
-                    const { filterId, ruleText } = styleInfo;
-                    if (filterId !== undefined && ruleText !== undefined) {
+                    const { filterId, ruleIndex } = ruleInfo;
+                    if (filterId !== undefined && ruleIndex !== undefined) {
                         const element = this.elementToString
                             ? ElementUtils.elementToString(affectedEl.node)
                             : affectedEl.node;
 
                         result.push({
                             filterId,
-                            ruleText,
+                            ruleIndex,
                             element,
                         });
 
@@ -254,7 +251,7 @@ export class CssHitsCounter {
      * @param start Start of batch.
      * @param length Length of batch.
      *
-     * @returns Data with information about filter id, rule text and element.
+     * @returns Data with information about rule and element.
      */
     private countCssHitsForElements(
         elements: NodeListOf<Element> | Element[],
@@ -273,8 +270,8 @@ export class CssHitsCounter {
                 continue;
             }
 
-            const { filterId, ruleText } = cssHitData;
-            const ruleAndFilterString = filterId + RULE_FILTER_SEPARATOR + ruleText;
+            const { filterId, ruleIndex } = cssHitData;
+            const ruleAndFilterString = filterId + RULE_FILTER_SEPARATOR + ruleIndex;
 
             if (this.hitsStorage.isCounted(element, ruleAndFilterString)) {
                 continue;
@@ -283,7 +280,7 @@ export class CssHitsCounter {
 
             result.push({
                 filterId,
-                ruleText,
+                ruleIndex,
                 element: this.elementToString ? ElementUtils.elementToString(element) : element,
             });
         }
@@ -421,9 +418,9 @@ export class CssHitsCounter {
      * Function retrieves css hits data from element style content attribute contains data injected with AdGuard.
      *
      * @param element Element to check.
-     * @returns Filter id and rule text or null.
+     * @returns Rule info or null.
      */
-    private static getCssHitData(element: Element): { filterId: number; ruleText: string } | null {
+    private static getCssHitData(element: Element): RuleInfo | null {
         const style = getComputedStyle(element);
         return ElementUtils.parseInfo(style.content, CssHitsCounter.CONTENT_ATTR_PREFIX);
     }

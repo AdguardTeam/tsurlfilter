@@ -6,9 +6,9 @@ import { CosmeticRuleSeparator, type CssInjectionRule } from '../../parser/commo
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { CssSelectorConverter } from '../css';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { CssTree } from '../../utils/csstree';
 import { clone } from '../../utils/clone';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
+import { CssTokenStream } from '../../parser/css/css-token-stream';
 
 /**
  * CSS injection rule converter class
@@ -28,19 +28,23 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
     public static convertToAdg(rule: CssInjectionRule): NodeConversionResult<CssInjectionRule> {
         const separator = rule.separator.value;
         let convertedSeparator = separator;
+        const stream = new CssTokenStream(rule.body.selectorList.value);
+        const convertedSelectorList = CssSelectorConverter.convertToAdg(stream);
 
-        // Change the separator if the rule contains ExtendedCSS selectors
-        if (CssTree.hasAnySelectorExtendedCssNode(rule.body.selectorList) || rule.body.remove) {
+        // Change the separator if the rule contains ExtendedCSS elements,
+        // but do not force non-extended CSS separator if the rule does not contain any ExtendedCSS selectors,
+        // because sometimes we use it to force executing ExtendedCSS library.
+        if (stream.hasAnySelectorExtendedCssNodeStrict() || rule.body.remove) {
             convertedSeparator = rule.exception
                 ? CosmeticRuleSeparator.AdgExtendedCssInjectionException
                 : CosmeticRuleSeparator.AdgExtendedCssInjection;
-        } else {
+        } else if (rule.syntax !== AdblockSyntax.Adg) {
+            // If the original rule syntax is not AdGuard, use the default separator
+            // e.g. if the input rule is from uBO, we need to convert ## to #$#.
             convertedSeparator = rule.exception
                 ? CosmeticRuleSeparator.AdgCssInjectionException
                 : CosmeticRuleSeparator.AdgCssInjection;
         }
-
-        const convertedSelectorList = CssSelectorConverter.convertToAdg(rule.body.selectorList);
 
         // Check if the rule needs to be converted
         if (
@@ -53,7 +57,7 @@ export class CssInjectionRuleConverter extends RuleConverterBase {
 
             ruleClone.syntax = AdblockSyntax.Adg;
             ruleClone.separator.value = convertedSeparator;
-            ruleClone.body.selectorList = convertedSelectorList.result;
+            ruleClone.body.selectorList.value = convertedSelectorList.result;
 
             return createNodeConversionResult([ruleClone], true);
         }

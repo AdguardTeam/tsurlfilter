@@ -8,49 +8,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## [2.0.0-alpha.2] - 2024-07-17
-
-### Changed
-
-- Updated `@adguard/tsurlfilter` to `v3.0.0-alpha.1`.
-- Updated `@adguard/scriptlets` to `v1.11.6`.
-
-[2.0.0-alpha.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.2
-
-## [2.0.0-alpha.1] - 2024-07-08
-
-### Added
-
-- Export `EventChannel` utility class in MV3 build.
-
-[2.0.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.1
-
-## [2.0.0-alpha.0] - 2024-06-21
+## [2.0.0] - 2024-08-15
 
 ### Added
 
 - Stealth Mode support for MV3. New required `gpcScriptUrl` and `hideDocumentReferrerScriptUrl` configuration properties are provided to specify the path to stealth content scripts.
 - Content Script for setting GPC signal bundled to separate module `@adguard/tswebextension/mv3/gpc`.
 - Content Script for hiding Document Referrer bundled to separate module `@adguard/tswebextension/mv3/hideDocumentReferrer`.
+- Possibility to retrieve AST for dynamically generated rules via the `retrieveDynamicRuleNode` method.
+- Support for `$cookie` modifier in MV3 via `browser.cookies` API and content-script.
+- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100].
+- Export `EventChannel` utility class in MV3 build.
 
 ### Changed
 
 - Filtering log to not reload on History API navigation [AdguardBrowserExtension#2598].
 - Extension to stop injecting content-script into xml documents
   to prevent pretty printer breakage in Firefox [AdguardBrowserExtension#2194].
+- Configuration interface now expects an AGTree byte buffer instead of a raw filter list.
+- CSS hits counter uses rule index instead of rule text.
+- Filtering log events are simplified and now contain only the necessary information, not the entire rule.
+- Allowlist rule generation logic is moved to `@adguard/tsurlfilter` package.
+- Updated `@adguard/tsurlfilter` to `v3.0.0`.
+- Updated `@adguard/scriptlets` to `v1.11.6`.
 
 ### Fixed
 
 - Handling of internal urls (e.g `view-source:...`) [AdguardBrowserExtension#2549].
 - Blocked ads count leaking between websites [AdguardBrowserExtension#2080].
-- Breakage of cookie string in Firefox and unnecessary cookie serialization [AdguardBrowserExtension#2549].
+- Breakage of cookie string in Firefox and unnecessary cookie serialization [AdguardBrowserExtension#2552].
+- Use data URL-based redirect resources where possible [AdguardBrowserExtension#2278].
+- `$permissions` modifier service now correctly handles subdocuments and exceptions.
+- Applying `$cookie` rules on the content-script side.
+- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
+- Detection of popup tabs [#2890].
 
-[2.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.0
-[AdguardBrowserExtension#2598]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598
-[AdguardBrowserExtension#2194]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2194
-[AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
+[2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0
+[#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
+[#2890]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2890
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
+[AdguardBrowserExtension#2194]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2194
+[AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
 [AdguardBrowserExtension#2549]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
+[AdguardBrowserExtension#2552]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2552
+[AdguardBrowserExtension#2598]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2598
 
 ## [1.0.32] - 2024-08-01
 
@@ -135,7 +136,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Do not block "Should collapse" mechanism with `$popup` rules
+- Do not block "Should collapse" mechanism with `$popup` rules.
+
+[1.0.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.21
+
 
 [1.0.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.21
 
@@ -309,6 +313,7 @@ mode toggle.
 
 ### Changed
 
+- Updated `@adguard/extended-css` to `v2.0.56`.
 - Updated `@adguard/tsurlfilter` to `v2.2.8`.
 
 ### Fixed

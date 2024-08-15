@@ -1,8 +1,12 @@
-import { type NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { type CookieModifier } from '../modifiers/cookie-modifier';
-import { CosmeticOption } from './cosmetic-option';
+import { type HttpHeadersItem } from '../modifiers/header-modifier';
 import { type RedirectModifier } from '../modifiers/redirect-modifier';
+import { StealthOptionName, STEALTH_MODE_FILTER_ID } from '../modifiers/stealth-modifier';
 import { RequestType } from '../request-type';
+import { type NetworkRule, NetworkRuleOption } from '../rules/network-rule';
+import { logger } from '../utils/logger';
+
+import { CosmeticOption } from './cosmetic-option';
 
 /**
  * MatchingResult contains all the rules matching a web request, and provides methods
@@ -66,11 +70,30 @@ export class MatchingResult {
     public readonly removeHeaderRules: NetworkRule[] | null;
 
     /**
-     * StealthRule - this is a allowlist rule that negates stealth mode features
-     * Note that the stealth rule can be be received from both rules and sourceRules
+     * Permissions rules - a set of rules modifying permissions policy
+     * See $permissions modifier
+     */
+    public readonly permissionsRules: NetworkRule[] | null;
+
+    /**
+     * Headers rules - a set of rules for blocking rules by headers.
+     */
+    public readonly headerRules: NetworkRule[] | null;
+
+    /**
+     * Stealth rules - a set of allowlist rules with $stealth modifier,
+     * that negates stealth mode features.
+     *
+     * Note that the stealth rule can be received from both rules and sourceRules
      * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#stealth-modifier
      */
-    public stealthRule: NetworkRule | null;
+    public readonly stealthRules: NetworkRule[] | null;
+
+    /**
+     * CosmeticExceptionRule - a rule that disables cosmetic rules for the document or subdocument.
+     * It is moved to it's own filed to not interfere with applying network blocking rules.
+     */
+    public readonly cosmeticExceptionRule: NetworkRule | null;
 
     /**
      * PopupRule - this is a rule that specified which way should be used
@@ -97,8 +120,11 @@ export class MatchingResult {
         this.removeParamRules = null;
         this.removeHeaderRules = null;
         this.redirectRules = null;
-        this.stealthRule = null;
+        this.stealthRules = null;
+        this.permissionsRules = null;
+        this.headerRules = null;
         this.popupRule = null;
+        this.cosmeticExceptionRule = null;
 
         // eslint-disable-next-line no-param-reassign
         rules = MatchingResult.removeBadfilterRules(rules);
@@ -122,50 +148,63 @@ export class MatchingResult {
 
         // Iterate through the list of rules and fill the MatchingResult
         for (const rule of rules) {
-            if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
-                if (!this.cookieRules) {
-                    this.cookieRules = [];
+            if (rule.hasCosmeticOption()) {
+                if (!this.cosmeticExceptionRule || rule.isHigherPriority(this.cosmeticExceptionRule)) {
+                    this.cosmeticExceptionRule = rule;
                 }
-                this.cookieRules.push(rule);
+
+                /**
+                 * Some rules include both cosmetic options and network modifiers,
+                 * and affect both network and cosmetic engines matching.
+                 *
+                 * Such rules should also compete for `basicRule` slot down below,
+                 * e.g `@@||example.org$document` and `@@||nhk.or.jp^$content`.
+                 *
+                 * Cosmetic options rules that don't contain such modifiers should only affect cosmetic engine.
+                 */
+                if (!rule.isOptionEnabled(NetworkRuleOption.Urlblock)
+                    && !rule.isOptionEnabled(NetworkRuleOption.Genericblock)
+                    && !rule.isOptionEnabled(NetworkRuleOption.Content)
+                ) {
+                    continue;
+                }
+            }
+            if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
+                (this.cookieRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Replace)) {
-                if (!this.replaceRules) {
-                    this.replaceRules = [];
-                }
-                this.replaceRules.push(rule);
+                (this.replaceRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
-                if (!this.removeParamRules) {
-                    this.removeParamRules = [];
-                }
-                this.removeParamRules.push(rule);
+                (this.removeParamRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
-                if (!this.removeHeaderRules) {
-                    this.removeHeaderRules = [];
-                }
-                this.removeHeaderRules.push(rule);
+                (this.removeHeaderRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
-                if (!this.redirectRules) {
-                    this.redirectRules = [];
-                }
-                this.redirectRules.push(rule);
+                (this.redirectRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
-                if (!this.cspRules) {
-                    this.cspRules = [];
-                }
-                this.cspRules.push(rule);
+                (this.cspRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Stealth)) {
-                this.stealthRule = rule;
+                (this.stealthRules ??= []).push(rule);
+                continue;
+            }
+
+            if (rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
+                (this.permissionsRules ??= []).push(rule);
+                continue;
+            }
+
+            if (rule.isOptionEnabled(NetworkRuleOption.Header)) {
+                (this.headerRules ??= []).push(rule);
                 continue;
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
@@ -210,9 +249,15 @@ export class MatchingResult {
      */
     getBasicResult(): NetworkRule | null {
         let basic = this.basicRule;
+
+        // e.g. @@||example.com^$generichide
+        if (this.cosmeticExceptionRule && (!basic || this.cosmeticExceptionRule.isHigherPriority(basic))) {
+            return this.cosmeticExceptionRule;
+        }
+
         if (!basic) {
             // Only document-level frame rule would be returned as a basic result,
-            // cause only those rules could block or modify page subrequests.
+            // cause only those rules could block or modify page sub-requests.
             // Other frame rules (generichide, elemhide etc) will be used in getCosmeticOption function.
             if (this.documentRule && this.documentRule.isDocumentLevelAllowlistRule()) {
                 basic = this.documentRule;
@@ -255,14 +300,93 @@ export class MatchingResult {
     }
 
     /**
+     * Returns a single stealth rule, that is corresponding to the given option.
+     * If no option is given, returns a rule that disables stealth completely if any.
+     *
+     * @param stealthOption stealth option name
+     * @returns stealth rule or null
+     */
+    getStealthRule(stealthOption?: StealthOptionName): NetworkRule | null {
+        if (!this.stealthRules) {
+            return null;
+        }
+
+        return this.stealthRules.find((r: NetworkRule) => {
+            const stealthModifier = r.getStealthModifier();
+            if (!stealthModifier) {
+                logger.debug(`Stealth rule without stealth modifier: ${r}`);
+                return false;
+            }
+            if (stealthOption) {
+                return stealthModifier.hasStealthOption(stealthOption);
+            }
+
+            // $stealth rules without values are globally disabling stealth mode
+            return !stealthModifier.hasValues();
+        }) ?? null;
+    }
+
+    /**
+     * Returns a single rule with $header modifier,
+     * that should be applied to the web request, if any.
+     *
+     * Function is intended to be called on onHeadersReceived event as an alternative to getBasicResult,
+     * it returns only a blocking or allowlist rule without modifiers which could modify the request.
+     * Request modifying rules with $header modifier are handled in a corresponding service.
+     *
+     * TODO: filterAdvancedModifierRules may not be optimal for sorting rules with $header modifier,
+     * as $header is not an advanced modifier.
+     *
+     * @param responseHeaders response headers
+     * @returns header result rule or null
+     */
+    getResponseHeadersResult(responseHeaders: HttpHeadersItem[] | undefined): NetworkRule | null {
+        if (!responseHeaders || responseHeaders.length === 0) {
+            return null;
+        }
+
+        const { basicRule, documentRule } = this;
+        let { headerRules } = this;
+
+        if (!headerRules) {
+            return null;
+        }
+
+        if (!basicRule) {
+            if (documentRule && documentRule.isDocumentLevelAllowlistRule()) {
+                return null;
+            }
+        } else if (basicRule.isAllowlist()) {
+            return null;
+        }
+
+        headerRules = headerRules.filter((rule) => rule.matchResponseHeaders(responseHeaders));
+
+        // Handle allowlist rules with $header modifier,
+        // filtering out blocking rules which are allowlisted
+        const rules = MatchingResult.filterAdvancedModifierRules(
+            headerRules,
+            (bRule) => ((aRule): boolean => {
+                const bHeaderData = bRule.getHeaderModifierValue();
+                const aHeaderData = aRule.getHeaderModifierValue();
+                return bHeaderData?.header === aHeaderData?.header
+                    && bHeaderData?.value?.toString() === aHeaderData?.value?.toString();
+            }),
+        );
+
+        return MatchingResult.getHighestPriorityRule(rules);
+    }
+
+    /**
      * Returns a bit-flag with the list of cosmetic options
      *
      * @return {CosmeticOption} mask
      */
     getCosmeticOption(): CosmeticOption {
-        const { basicRule, documentRule } = this;
+        const { basicRule, documentRule, cosmeticExceptionRule } = this;
 
-        let rule = basicRule;
+        let rule = cosmeticExceptionRule || basicRule;
+
         // We choose a non-empty rule and the one of the two with the higher
         // priority in order to accurately calculate cosmetic options.
         if ((!rule && documentRule) || (rule && documentRule?.isHigherPriority(rule))) {
@@ -412,6 +536,80 @@ export class MatchingResult {
     }
 
     /**
+     * Checks if a network rule is sub document rule.
+     *
+     * @param rule Rule to check.
+     * @returns `true` if the rule is sub document rule.
+     */
+    private static isSubDocumentRule(rule: NetworkRule): boolean {
+        return (rule.getPermittedRequestTypes() & RequestType.SubDocument) === RequestType.SubDocument;
+    }
+
+    /**
+     * Returns an array of permission policy rules
+     */
+    getPermissionsPolicyRules(): NetworkRule[] {
+        if (!this.permissionsRules) {
+            return [];
+        }
+
+        const allowlistRules: NetworkRule[] = [];
+        const blockingRules: NetworkRule[] = [];
+
+        let globalAllowlistRule: NetworkRule | null = null;
+        let globalSubDocAllowlistRule: NetworkRule | null = null;
+
+        for (let i = 0; i < this.permissionsRules.length; i += 1) {
+            const rule = this.permissionsRules[i];
+
+            if (rule.isAllowlist()) {
+                // Global allowlist rule, where $permissions modifier doesn't have a value
+                if (!rule.getAdvancedModifierValue()) {
+                    if (MatchingResult.isSubDocumentRule(rule)) {
+                        if (!globalSubDocAllowlistRule) {
+                            // e.g. @@||example.com^$subdocument,permissions
+                            globalSubDocAllowlistRule = rule;
+                        }
+                    } else if (!globalAllowlistRule) {
+                        // e.g. @@||example.com^$permissions
+                        globalAllowlistRule = rule;
+                    }
+                } else {
+                    allowlistRules.push(rule);
+                }
+            } else {
+                blockingRules.push(rule);
+            }
+        }
+
+        if (globalAllowlistRule) {
+            return [globalAllowlistRule];
+        }
+
+        const result: Set<NetworkRule> = new Set();
+
+        blockingRules.forEach((rule) => {
+            if (MatchingResult.isSubDocumentRule(rule) && globalSubDocAllowlistRule) {
+                result.add(globalSubDocAllowlistRule);
+                return;
+            }
+
+            const allowlistRule = allowlistRules.find(
+                (a) => !rule.isHigherPriority(a) && rule.getAdvancedModifierValue() === a.getAdvancedModifierValue()
+                && MatchingResult.isSubDocumentRule(a) === MatchingResult.isSubDocumentRule(rule),
+            );
+
+            if (allowlistRule) {
+                result.add(allowlistRule);
+            } else {
+                result.add(rule);
+            }
+        });
+
+        return Array.from(result);
+    }
+
+    /**
      * Returns a redirect rule or null if redirect rules are empty.
      * $redirect-rule is only returned if there's a blocking rule also matching
      * this request.
@@ -443,13 +641,11 @@ export class MatchingResult {
         });
 
         if (allWeatherRedirectRules.length > 0) {
-            return allWeatherRedirectRules
-                .sort((a, b) => (b.isHigherPriority(a) ? 1 : -1))[0];
+            return MatchingResult.getHighestPriorityRule(allWeatherRedirectRules);
         }
 
         if (conditionalRedirectRules.length > 0 && this.basicRule && !this.basicRule.isAllowlist()) {
-            return conditionalRedirectRules
-                .sort((a, b) => (b.isHigherPriority(a) ? 1 : -1))[0];
+            return MatchingResult.getHighestPriorityRule(conditionalRedirectRules);
         }
 
         return null;
@@ -486,7 +682,22 @@ export class MatchingResult {
             }
         );
 
-        const filtered = MatchingResult.filterAdvancedModifierRules(this.cookieRules, allowlistPredicate);
+        let filtered = MatchingResult.filterAdvancedModifierRules(this.cookieRules, allowlistPredicate);
+
+        // Cookie rule may also be disabled by a stealth rule with corresponding `1p-cookie` or `3p-cookie` value
+        // If corresponding $stealth rule is found, such cookie rule does not get into resulting array
+        filtered = filtered.filter((cookieRule) => {
+            if (cookieRule.getFilterListId() !== STEALTH_MODE_FILTER_ID) {
+                return true;
+            }
+
+            if (cookieRule.isOptionEnabled(NetworkRuleOption.ThirdParty)) {
+                return !this.getStealthRule(StealthOptionName.ThirdPartyCookies);
+            }
+
+            return !this.getStealthRule(StealthOptionName.FirstPartyCookies);
+        });
+
         return filtered.concat([...this.cookieRules.filter((r) => r.isAllowlist())]);
     }
 
@@ -580,5 +791,18 @@ export class MatchingResult {
         }
 
         return rules;
+    }
+
+    /**
+     * Returns the highest priority rule from the given array.
+     *
+     * @param rules array of network rules
+     * @returns hightest priority rule or null if the array is empty
+     */
+    static getHighestPriorityRule(rules: NetworkRule[]): NetworkRule | null {
+        if (rules.length === 0) {
+            return null;
+        }
+        return rules.sort((a, b) => (b.isHigherPriority(a) ? 1 : -1))[0];
     }
 }

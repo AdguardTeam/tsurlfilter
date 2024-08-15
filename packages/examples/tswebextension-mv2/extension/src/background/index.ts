@@ -1,6 +1,7 @@
 import browser, { Events } from 'webextension-polyfill';
 import {
     type ConfigurationMV2,
+    FilterListPreprocessor,
     MESSAGE_HANDLER_NAME,
     createTsWebExtension,
 } from '@adguard/tswebextension';
@@ -21,11 +22,18 @@ declare global {
 
 window.tsWebExtension = tsWebExtension;
 
+// simple in-memory storage for user rules and allowlist
+let userrules = FilterListPreprocessor.preprocess('example.com##h1');
+let allowlist: string[] = [];
+
 const defaultConfig: ConfigurationMV2 = {
     filters: [],
-    allowlist: [],
+    allowlist,
     trustedDomains: [],
-    userrules: [],
+    userrules: {
+        content: userrules.filterList,
+        sourceMap: userrules.sourceMap,
+    },
     verbose: false,
     settings: {
         assistantUrl: `${BuildOutput.AssistantInject}.js`,
@@ -34,7 +42,7 @@ const defaultConfig: ConfigurationMV2 = {
         collectStats: true,
         debugScriptlets: false,
         allowlistInverted: false,
-        allowlistEnabled: false,
+        allowlistEnabled: true,
         documentBlockingPageUrl: browser.runtime.getURL('pages/document-blocking.html'),
         stealth: {
             blockChromeClientData: false,
@@ -68,13 +76,29 @@ const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
     }
 
     switch (message.type) {
+        // change user rules and allowlist
         case MessageTypes.GET_CONFIG: {
-            const config = tsWebExtension.configuration;
-            sendResponse({ type: MessageTypes.GET_CONFIG_SUCCESS, payload: config });
+            sendResponse({
+                type: MessageTypes.GET_CONFIG_SUCCESS,
+                payload: {
+                    allowlist,
+                    userrules: FilterListPreprocessor.getOriginalFilterListText(userrules),
+                },
+            });
             break;
         }
+        // get current user rules and allowlist
         case MessageTypes.SET_CONFIG: {
-            const config = { ...defaultConfig, ...message.payload };
+            userrules = FilterListPreprocessor.preprocess(message.payload.userrules);
+            allowlist = message.payload.allowlist;
+            const config = {
+                ...defaultConfig,
+                userrules: {
+                    content: userrules.filterList,
+                    sourceMap: userrules.sourceMap,
+                },
+                allowlist,
+            };
             tsWebExtension.configure(config).then(() => {
                 alert('loaded');
                 sendResponse({ type: MessageTypes.GET_CONFIG_SUCCESS, payload: config });

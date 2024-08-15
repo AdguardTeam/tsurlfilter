@@ -99,14 +99,16 @@ export class RuleStorage {
             return null;
         }
 
-        const ruleText = list.retrieveRuleText(ruleId);
-        if (!ruleText) {
+        const ruleNode = list.retrieveRuleNode(ruleId);
+
+        if (!ruleNode) {
             logger.warn(`Failed to retrieve rule ${ruleId}, should not happen in normal operation`);
 
             return null;
         }
 
-        const result = RuleFactory.createRule(ruleText, listId, false, false, ignoreHost);
+        const result = RuleFactory.createRule(ruleNode, listId, ruleId, false, false, ignoreHost);
+
         if (result) {
             this.cache.set(storageIdx, result);
         }

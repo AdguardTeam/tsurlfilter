@@ -2,6 +2,8 @@
  * @file Constant values used by all parts of the library
  */
 
+// TODO: remove unused constants
+
 // General
 
 /**
@@ -217,7 +219,8 @@ export const NUMBERS = new Set([
 export const REGEX_MARKER = '/';
 
 export const ADG_SCRIPTLET_MASK = '//scriptlet';
-export const UBO_SCRIPTLET_MASK = 'js';
+export const UBO_SCRIPTLET_MASK = '+js';
+export const UBO_HTML_MASK = '^';
 
 // Modifiers are separated by ",". For example: "script,domain=example.com"
 export const MODIFIERS_SEPARATOR = ',';
@@ -292,3 +295,9 @@ export const PREPROCESSOR_SEPARATOR = ' ';
 export const SAFARI_CB_AFFINITY = 'safari_cb_affinity';
 export const IF = 'if';
 export const INCLUDE = 'include';
+
+export const NULL = 0;
+
+export const UINT8_MAX = 255;
+export const UINT16_MAX = 65535;
+export const UINT32_MAX = 4294967295;

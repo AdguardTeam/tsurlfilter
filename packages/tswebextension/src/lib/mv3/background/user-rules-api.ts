@@ -1,8 +1,7 @@
 import {
     DeclarativeFilterConverter,
-    Filter,
-    type ConversionResult,
     type IFilter,
+    type ConversionResult,
     type IRuleSet,
     type UpdateStaticRulesOptions,
 } from '@adguard/tsurlfilter/es/declarative-converter';
@@ -28,7 +27,7 @@ export default class UserRulesApi {
      * Converts custom filters and user rules on the fly into a single merged
      * rule set and applies it via the declarativeNetRequest API.
      *
-     * @param userRules String[] contains user rules.
+     * @param userRules User rules.
      * @param customFilters List of custom filters.
      * @param staticRuleSets List of static rule sets to apply $badfilter rules
      * from dynamic rules to static.
@@ -39,16 +38,13 @@ export default class UserRulesApi {
      * limitations. @see {@link ConversionResult}.
      */
     public static async updateDynamicFiltering(
-        userRules: string[],
+        userRules: IFilter,
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
-            new Filter(
-                USER_FILTER_ID,
-                { getContent: () => Promise.resolve(userRules) },
-            ),
+            userRules,
             ...customFilters,
         ];
 

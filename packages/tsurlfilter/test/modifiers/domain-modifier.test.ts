@@ -1,4 +1,6 @@
 import { DomainModifier } from '../../src/modifiers/domain-modifier';
+import { setLogger } from '../../src';
+import { LoggerMock } from '../mocks';
 
 describe('Domain modifier', () => {
     describe('constructor and valid domains string', () => {
@@ -43,6 +45,13 @@ describe('Domain modifier', () => {
                 actual: 'example.*,~example.com',
                 expected: {
                     permitted: ['example.*'],
+                    restricted: ['example.com'],
+                },
+            },
+            {
+                actual: 'example.org,~example.com,example.*,/io/|~/net/',
+                expected: {
+                    permitted: ['example.org', 'example.*', '/io/|~/net/'],
                     restricted: ['example.com'],
                 },
             },
@@ -122,15 +131,20 @@ describe('Domain modifier', () => {
 
     describe('constructor and invalid domains', () => {
         const COMMA_SEPARATOR = ',';
-        const EMPTY_DOMAIN_ERROR = 'Empty domain specified in';
+        const NO_DOMAINS_ERROR = 'At least one domain must be specified';
+        const EMPTY_DOMAIN_ERROR = 'Empty value specified in the list';
+        const STARTS_WITH_SEPARATOR_ERROR = 'Value list cannot start with a separator';
+        const ENDS_WITH_SEPARATOR_ERROR = 'Value list cannot end with a separator';
+        const HAS_INVALID_WILDCARD = 'Wildcards are only supported for top-level domains:';
+        const SPACE_AFTER_EXCEPTION_ERROR = 'Exception marker cannot be followed by whitespace';
         const invalidCases = [
             {
                 actual: '',
-                error: 'Modifier $domain cannot be empty',
+                error: NO_DOMAINS_ERROR,
             },
             {
                 actual: ' ',
-                error: EMPTY_DOMAIN_ERROR,
+                error: NO_DOMAINS_ERROR,
             },
             {
                 actual: '~',
@@ -138,23 +152,19 @@ describe('Domain modifier', () => {
             },
             {
                 actual: '~  ,',
-                error: EMPTY_DOMAIN_ERROR,
+                error: ENDS_WITH_SEPARATOR_ERROR,
             },
             {
-                actual: ',',
-                error: EMPTY_DOMAIN_ERROR,
+                actual: '~ example.com',
+                error: SPACE_AFTER_EXCEPTION_ERROR,
             },
             {
                 actual: 'example.com,',
-                error: EMPTY_DOMAIN_ERROR,
-            },
-            {
-                actual: ',example.com',
-                error: EMPTY_DOMAIN_ERROR,
+                error: ENDS_WITH_SEPARATOR_ERROR,
             },
             {
                 actual: 'example.com, ',
-                error: EMPTY_DOMAIN_ERROR,
+                error: ENDS_WITH_SEPARATOR_ERROR,
             },
             {
                 actual: 'example.com,,example.org',
@@ -164,6 +174,18 @@ describe('Domain modifier', () => {
                 actual: 'example.com,  ,example.org',
                 error: EMPTY_DOMAIN_ERROR,
             },
+            {
+                actual: ',example.com',
+                error: STARTS_WITH_SEPARATOR_ERROR,
+            },
+            {
+                actual: ',',
+                error: STARTS_WITH_SEPARATOR_ERROR,
+            },
+            {
+                actual: 'example.com,*.org',
+                error: HAS_INVALID_WILDCARD,
+            },
         ];
         test.each(invalidCases)('%s', ({ actual, error }) => {
             expect(() => {
@@ -172,24 +194,53 @@ describe('Domain modifier', () => {
         });
     });
 
-    it('works in common cases', () => {
-        expect(DomainModifier.isDomainOrSubdomainOfAny('example.org', ['example.org'])).toBeTruthy();
+    describe('DomainModifier.isDomainOrSubdomainOfAny', () => {
+        const { isDomainOrSubdomainOfAny } = DomainModifier;
+        it('works in common cases', () => {
+            expect(isDomainOrSubdomainOfAny('example.org', ['example.org'])).toBeTruthy();
 
-        expect(DomainModifier.isDomainOrSubdomainOfAny('example.com', ['example.org'])).toBeFalsy();
-        expect(DomainModifier.isDomainOrSubdomainOfAny('', ['example.org'])).toBeFalsy();
-        expect(DomainModifier.isDomainOrSubdomainOfAny('example.org', [])).toBeFalsy();
+            expect(isDomainOrSubdomainOfAny('example.com', ['example.org'])).toBeFalsy();
+            expect(isDomainOrSubdomainOfAny('', ['example.org'])).toBeFalsy();
+            expect(isDomainOrSubdomainOfAny('example.org', [])).toBeFalsy();
+        });
+
+        it('works in wildcard cases', () => {
+            expect(isDomainOrSubdomainOfAny('example.org', ['example.*', 'test.com'])).toBeTruthy();
+            expect(isDomainOrSubdomainOfAny('sub.example.org', ['example.*', 'test.com'])).toBeTruthy();
+            expect(isDomainOrSubdomainOfAny(
+                'example.org',
+                ['one.*', 'example.*', 'test.com'],
+            )).toBeTruthy();
+            expect(isDomainOrSubdomainOfAny('www.chrono24.ch', ['chrono24.*'])).toBeTruthy();
+
+            expect(isDomainOrSubdomainOfAny('example.com', ['test.*'])).toBeFalsy();
+            expect(isDomainOrSubdomainOfAny('subexample.org', ['example.*'])).toBeFalsy();
+            expect(isDomainOrSubdomainOfAny('example.eu.uk', ['example.*'])).toBeFalsy();
+            expect(isDomainOrSubdomainOfAny('example.org', ['sub.example.*', 'test.com'])).toBeFalsy();
+            expect(isDomainOrSubdomainOfAny('', ['example.*', 'test.com'])).toBeFalsy();
+        });
+
+        it('logs debug message on invalid regexp pattern', () => {
+            const loggerMock = new LoggerMock();
+            setLogger(loggerMock);
+
+            const msg = 'Invalid regular expression as domain pattern: "/example[org/"';
+
+            isDomainOrSubdomainOfAny('example.org', ['/example[org/']);
+
+            expect(loggerMock.error).toHaveBeenCalledTimes(1);
+            expect(loggerMock.error).toHaveBeenCalledWith(msg);
+
+            setLogger(console);
+        });
     });
 
-    it('works in wildcard cases', () => {
-        expect(DomainModifier.isDomainOrSubdomainOfAny('example.org', ['example.*', 'test.com'])).toBeTruthy();
-        expect(DomainModifier.isDomainOrSubdomainOfAny('sub.example.org', ['example.*', 'test.com'])).toBeTruthy();
-        expect(DomainModifier.isDomainOrSubdomainOfAny('example.org', ['one.*', 'example.*', 'test.com'])).toBeTruthy();
-        expect(DomainModifier.isDomainOrSubdomainOfAny('www.chrono24.ch', ['chrono24.*'])).toBeTruthy();
-
-        expect(DomainModifier.isDomainOrSubdomainOfAny('example.com', ['test.*'])).toBeFalsy();
-        expect(DomainModifier.isDomainOrSubdomainOfAny('subexample.org', ['example.*'])).toBeFalsy();
-        expect(DomainModifier.isDomainOrSubdomainOfAny('example.eu.uk', ['example.*'])).toBeFalsy();
-        expect(DomainModifier.isDomainOrSubdomainOfAny('example.org', ['sub.example.*', 'test.com'])).toBeFalsy();
-        expect(DomainModifier.isDomainOrSubdomainOfAny('', ['example.*', 'test.com'])).toBeFalsy();
+    describe('DomainModifier.isNonPlainDomain', () => {
+        const { isWildcardOrRegexDomain } = DomainModifier;
+        it('distinguishes plain domains from patterns', () => {
+            expect(isWildcardOrRegexDomain('example.co.uk')).toBeFalsy();
+            expect(isWildcardOrRegexDomain('example.*')).toBeTruthy();
+            expect(isWildcardOrRegexDomain(String.raw`/another\.(org|com)/`)).toBeTruthy();
+        });
     });
 });

@@ -1,11 +1,27 @@
-import { HostRule } from '../../src/rules/host-rule';
+import { HostRuleParser, type HostRule as HostRuleNode } from '@adguard/agtree';
+import { isString } from 'lodash';
+
+import { HostRule as HostRuleOriginal } from '../../src/rules/host-rule';
+
+class HostRule extends HostRuleOriginal {
+    constructor(rule: string | HostRuleNode, filterListId: number, ruleIndex?: number) {
+        let node: HostRuleNode;
+
+        if (isString(rule)) {
+            node = HostRuleParser.parse(rule.trim());
+        } else {
+            node = rule;
+        }
+
+        super(node, filterListId, ruleIndex);
+    }
+}
 
 describe('Constructor', () => {
     it('works when it parses the basic rules properly', () => {
         let ruleText = '127.0.0.1       thishost.mydomain.org  thishost';
         let rule = new HostRule(ruleText, 1);
         expect(rule.getFilterListId()).toEqual(1);
-        expect(rule.getText()).toEqual(ruleText);
         expect(rule.getIp()).toEqual('127.0.0.1');
         expect(rule.getHostnames()).toHaveLength(2);
         expect(rule.getHostnames()).toContain('thishost.mydomain.org');
@@ -14,7 +30,6 @@ describe('Constructor', () => {
         ruleText = '209.237.226.90  www.opensource.org';
         rule = new HostRule(ruleText, 1);
         expect(rule.getFilterListId()).toEqual(1);
-        expect(rule.getText()).toEqual(ruleText);
         expect(rule.getIp()).toEqual('209.237.226.90');
         expect(rule.getHostnames()).toHaveLength(1);
         expect(rule.getHostnames()).toContain('www.opensource.org');
@@ -22,7 +37,6 @@ describe('Constructor', () => {
         ruleText = '::1             localhost ip6-localhost ip6-loopback';
         rule = new HostRule(ruleText, 1);
         expect(rule.getFilterListId()).toEqual(1);
-        expect(rule.getText()).toEqual(ruleText);
         expect(rule.getIp()).toEqual('::1');
         expect(rule.getHostnames()).toHaveLength(3);
         expect(rule.getHostnames()).toContain('localhost');
@@ -32,7 +46,6 @@ describe('Constructor', () => {
         ruleText = 'example.org';
         rule = new HostRule(ruleText, 1);
         expect(rule.getFilterListId()).toEqual(1);
-        expect(rule.getText()).toEqual(ruleText);
         expect(rule.getIp()).toEqual('0.0.0.0');
         expect(rule.getHostnames()).toHaveLength(1);
         expect(rule.getHostnames()).toContain('example.org');
@@ -40,38 +53,30 @@ describe('Constructor', () => {
         ruleText = '0.0.0.0 www.ruclicks.com  #[clicksagent.com]';
         rule = new HostRule(ruleText, 1);
         expect(rule.getFilterListId()).toEqual(1);
-        expect(rule.getText()).toEqual(ruleText);
         expect(rule.getIp()).toEqual('0.0.0.0');
         expect(rule.getHostnames()).toHaveLength(1);
         expect(rule.getHostnames()).toContain('www.ruclicks.com');
 
         ruleText = '#::1             localhost ip6-localhost ip6-loopback';
-        rule = new HostRule(ruleText, 1);
-        expect(rule.isInvalid()).toBeTruthy();
+        expect(() => new HostRule(ruleText, 1)).toThrowError();
 
         ruleText = '';
-        rule = new HostRule(ruleText, 1);
-        expect(rule.isInvalid()).toBeTruthy();
+        expect(() => new HostRule(ruleText, 1)).toThrowError();
 
         ruleText = 'invalidhost.';
-        rule = new HostRule(ruleText, 1);
-        expect(rule.isInvalid()).toBeTruthy();
+        expect(() => new HostRule(ruleText, 1)).toThrowError();
 
         ruleText = '999.1.1.1 host.com';
-        rule = new HostRule(ruleText, 1);
-        expect(rule.isInvalid()).toBeTruthy();
+        expect(() => new HostRule(ruleText, 1)).toThrowError();
 
         ruleText = '_prebid_';
-        rule = new HostRule(ruleText, 1);
-        expect(rule.isInvalid()).toBeTruthy();
+        expect(() => new HostRule(ruleText, 1)).toThrowError();
 
         ruleText = '_728x90.';
-        rule = new HostRule(ruleText, 1);
-        expect(rule.isInvalid()).toBeTruthy();
+        expect(() => new HostRule(ruleText, 1)).toThrowError();
 
         ruleText = '_prebid._';
-        rule = new HostRule(ruleText, 1);
-        expect(rule.isInvalid()).toBeTruthy();
+        expect(() => new HostRule(ruleText, 1)).toThrowError();
     });
 
     it('works when it matches rules', () => {

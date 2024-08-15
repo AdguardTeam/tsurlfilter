@@ -62,7 +62,9 @@ export class RuleStorageScanner {
      * @return true if there is some result
      */
     public scan(): boolean {
-        if (this.scanners.length === 0) {
+        const scannersLength = this.scanners.length;
+
+        if (scannersLength === 0) {
             return false;
         }
 
@@ -72,26 +74,25 @@ export class RuleStorageScanner {
             this.setListOffset(this.currentScanner.getListId(), this.storageOffset);
         }
 
-        while (true) {
+        while (this.currentScannerIdx < scannersLength) {
             if (this.currentScanner.scan()) {
                 return true;
-            }
-
-            // Take the next scanner or just return false if there's nothing more
-            if (this.currentScannerIdx === (this.scanners.length - 1)) {
-                return false;
             }
 
             // Accumulate the length of the current scanner before moving to the next one
             this.storageOffset += this.currentScanner.getDataLength();
 
-            // Take the next scanner
+            // Move to the next scanner
             this.currentScannerIdx += 1;
-            this.currentScanner = this.scanners[this.currentScannerIdx];
 
-            // Store the offset for the next scanner
-            this.setListOffset(this.currentScanner.getListId(), this.storageOffset);
+            // Check if there's a next scanner
+            if (this.currentScannerIdx < this.scanners.length) {
+                this.currentScanner = this.scanners[this.currentScannerIdx];
+                this.setListOffset(this.currentScanner.getListId(), this.storageOffset);
+            }
         }
+
+        return false;
     }
 
     /**

@@ -4,9 +4,12 @@ import type { CosmeticResult, MatchingResult, HTTPMethod } from '@adguard/tsurlf
 
 import { logger } from '../../../common/utils/logger';
 import type { ContentType } from '../../../common/request-type';
-import type ParsedCookie from '../services/cookie-filtering/parsed-cookie';
+import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
 import type { TabFrameRequestContext } from '../tabs/tabs-api';
 
+/**
+ * Request context state. It represents the current state of the request processing.
+ */
 export const enum RequestContextState {
     BeforeRequest = 'beforeRequest',
     BeforeSendHeaders = 'beforeSendHeaders',
@@ -32,7 +35,11 @@ export type RequestContext = TabFrameRequestContext & {
     eventId: string;
 
     state: RequestContextState;
-    timestamp: number; // webRequest event timestamp
+
+    /**
+     * WebRequest event timestamp, in milliseconds since the epoch.
+     */
+    timestamp: number;
     referrerUrl: string;
     contentType: ContentType;
     requestFrameId: number;
