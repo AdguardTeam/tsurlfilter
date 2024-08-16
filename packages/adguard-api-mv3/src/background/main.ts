@@ -21,8 +21,8 @@ import {
     type Configuration as TsWebExtensionConfiguration,
     type MessagesHandlerMV3,
     FilterListPreprocessor,
+    LF,
 } from '@adguard/tswebextension/mv3';
-import { LF } from '@adguard/tswebextension';
 import { type Configuration, configurationValidator } from './configuration';
 import { RequestBlockingLogger } from './request-blocking-logger';
 
