@@ -207,7 +207,7 @@ export class TsWebExtension implements AppInterface<
 
         await StealthService.clearAll();
 
-        TsWebExtension.updateRuleSetsForFilteringLog([]);
+        TsWebExtension.updateRuleSetsForFilteringLog([], false);
 
         engineApi.stopEngine();
     }
@@ -333,7 +333,7 @@ export class TsWebExtension implements AppInterface<
             ];
 
             // Update rulesets in declarative filtering log.
-            TsWebExtension.updateRuleSetsForFilteringLog(ruleSets);
+            TsWebExtension.updateRuleSetsForFilteringLog(ruleSets, configuration.extendedDeclarativeLogEnabled);
 
             res.staticFilters = staticRuleSets;
         } else {
@@ -507,6 +507,7 @@ export class TsWebExtension implements AppInterface<
             settings,
             filtersPath,
             ruleSetsPath,
+            extendedDeclarativeLogEnabled,
         } = configuration;
 
         return {
@@ -514,6 +515,7 @@ export class TsWebExtension implements AppInterface<
             customFilters: customFilters.map(({ filterId }) => filterId),
             filtersPath,
             ruleSetsPath,
+            extendedDeclarativeLogEnabled,
             verbose,
             settings,
         };
@@ -597,11 +599,19 @@ export class TsWebExtension implements AppInterface<
      * Set provided list of rule sets to a filtering log.
      *
      * @param allRuleSets List of {@link IRuleSet}.
+     * @param extendedDeclarativeLogEnabled Should we log matched declarative rules.
      */
     private static updateRuleSetsForFilteringLog(
         allRuleSets: IRuleSet[],
+        extendedDeclarativeLogEnabled: boolean,
     ): void {
         declarativeFilteringLog.ruleSets = allRuleSets;
+
+        if (extendedDeclarativeLogEnabled) {
+            declarativeFilteringLog.start();
+        } else {
+            declarativeFilteringLog.stop();
+        }
     }
 
     /**

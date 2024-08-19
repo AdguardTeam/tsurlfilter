@@ -66,6 +66,13 @@ export const configurationMV3Validator = configurationValidator.extend({
      */
     ruleSetsPath: zod.string(),
 
+    /**
+     * Enables logging declarative rules, which will increase used memory,
+     * because to extract matched source rule text we need to load ruleset
+     * in memory.
+     */
+    extendedDeclarativeLogEnabled: zod.boolean(),
+
     settings: settingsConfigMV3,
 
     /**

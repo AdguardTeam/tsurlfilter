@@ -4,26 +4,11 @@ import { requestContextStorage } from './request';
 import { logger } from '../../common/utils/logger';
 
 /**
- * Describes a declarative filtering log that can record information about the
+ * Declarative filtering log that can record information about the
  * applied declarative network rules with information about the original rule
  * text and the filter identifier.
  */
-interface IDeclarativeFilteringLog {
-    /**
-     * Starts record matched requests.
-     */
-    start(): void;
-
-    /**
-     * Stops record matched requests.
-     */
-    stop(): void;
-}
-
-/**
- * Described in @see {@link IDeclarativeFilteringLog}.
- */
-class DeclarativeFilteringLog implements IDeclarativeFilteringLog {
+class DeclarativeFilteringLog {
     /**
      * Stores list of rule sets.
      */

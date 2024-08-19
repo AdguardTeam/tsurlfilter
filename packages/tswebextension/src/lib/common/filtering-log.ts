@@ -15,8 +15,8 @@ export enum FilteringEventType {
     ApplyPermissionsRule = 'applyPermissionsRule',
     ReceiveResponse = 'receiveResponse',
     Cookie = 'cookie',
-    RemoveHeader = 'removeHeader', // TODO: Add in MV3
-    RemoveParam = 'removeParam', // TODO: Add in MV3
+    RemoveHeader = 'removeHeader',
+    RemoveParam = 'removeParam',
     ReplaceRuleApply = 'replaceRuleApply',
     ContentFilteringStart = 'contentFilteringStart',
     ContentFilteringFinish = 'contentFilteringFinish',
@@ -239,6 +239,8 @@ export type RemoveHeaderEventData = {
 /**
  * Dispatched by RemoveHeadersService manifest v2 module on request header removing in onBeforeSendHeaders and
  * onHeadersReceived event handlers.
+ * Cannot be detected in MV3 because browser will applied $removeheader
+ * (via DNR `modifyHeaders`) to request before passing it to extension.
  */
 export type RemoveHeaderEvent = {
     type: FilteringEventType.RemoveHeader;
@@ -261,6 +263,8 @@ export type RemoveParamEventData = {
 /**
  * Dispatched by ParamsService manifest v2 module on request param removing in WebRequestApi.onBeforeRequest event
  * handler.
+ * Cannot be detected in MV3 because browser will applied $removeheader
+ * (via DNR `redirect`) to request before passing it to extension.
  */
 export type RemoveParamEvent = {
     type: FilteringEventType.RemoveParam;
