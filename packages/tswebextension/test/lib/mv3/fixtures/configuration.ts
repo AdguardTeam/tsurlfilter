@@ -20,7 +20,7 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
         trusted: true,
     },
     verbose: false,
-    filteringLogEnabled: false,
+    extendedDeclarativeLogEnabled: false,
     settings: {
         filteringEnabled: true,
         stealthModeEnabled: true,
