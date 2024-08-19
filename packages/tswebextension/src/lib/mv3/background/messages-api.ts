@@ -62,8 +62,7 @@ export class MessagesApi {
     }
 
     /**
-     * Handles message with {@link MessageType}
-     * or {@link ExtendedMV3MessageType}.
+     * Handles message with {@link MessageType}.
      *
      * @param message Message.
      * @param sender Sender of message.
