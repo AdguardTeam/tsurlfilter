@@ -95,6 +95,9 @@
 !include 'examples-tswebextension-mv3-tests.yaml'
 
 ---
+!include 'adguard-api-mv3-tests.yaml'
+
+---
 !include 'adguard-api-mv3-build.yaml'
 
 ---

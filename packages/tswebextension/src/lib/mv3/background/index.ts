@@ -73,7 +73,7 @@ export {
     type DeclarativeRuleEvent,
     type DeclarativeRuleInfo,
 } from '../../common/filtering-log';
-export { BACKGROUND_TAB_ID } from '../../common/constants';
+export { BACKGROUND_TAB_ID, LF } from '../../common/constants';
 export { ContentType } from '../../common/request-type';
 export type { RequestData } from './request/events/request-event';
 export type { MessagesHandlerMV3 } from './messages-api';
