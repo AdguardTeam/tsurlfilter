@@ -69,14 +69,14 @@ const startDownload = async (): Promise<void> => {
 
     await fs.promises.writeFile(
         path.join(FILTERS_DIR, FILTERS_METADATA_FILE_NAME),
-        JSON.stringify(metadata),
+        JSON.stringify(metadata, null, '\t'),
     );
 
     const i18nMetadata = await getI18nMetadata();
 
     await fs.promises.writeFile(
         path.join(FILTERS_DIR, FILTERS_METADATA_I18N_FILE_NAME),
-        JSON.stringify(i18nMetadata),
+        JSON.stringify(i18nMetadata, null, '\t'),
     );
 
     const filters = await getUrlsOfFiltersResources(metadata);
