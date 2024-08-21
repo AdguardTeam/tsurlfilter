@@ -348,7 +348,7 @@ export class TsWebExtension implements AppInterface<
             ];
 
             // Update rulesets in declarative filtering log.
-            TsWebExtension.updateRuleSetsForFilteringLog(ruleSets, configuration.extendedDeclarativeLogEnabled);
+            TsWebExtension.updateRuleSetsForFilteringLog(ruleSets, configuration.declarativeLogEnabled);
 
             res.staticFilters = staticRuleSets;
         } else {
@@ -521,7 +521,7 @@ export class TsWebExtension implements AppInterface<
             settings,
             filtersPath,
             ruleSetsPath,
-            extendedDeclarativeLogEnabled,
+            declarativeLogEnabled,
         } = configuration;
 
         return {
@@ -529,7 +529,7 @@ export class TsWebExtension implements AppInterface<
             customFilters: customFilters.map(({ filterId }) => filterId),
             filtersPath,
             ruleSetsPath,
-            extendedDeclarativeLogEnabled,
+            declarativeLogEnabled,
             verbose,
             settings,
         };
@@ -613,15 +613,15 @@ export class TsWebExtension implements AppInterface<
      * Set provided list of rule sets to a filtering log.
      *
      * @param allRuleSets List of {@link IRuleSet}.
-     * @param extendedDeclarativeLogEnabled Should we log matched declarative rules.
+     * @param declarativeLogEnabled Should we log matched declarative rules.
      */
     private static updateRuleSetsForFilteringLog(
         allRuleSets: IRuleSet[],
-        extendedDeclarativeLogEnabled: boolean,
+        declarativeLogEnabled: boolean,
     ): void {
         declarativeFilteringLog.ruleSets = allRuleSets;
 
-        if (extendedDeclarativeLogEnabled) {
+        if (declarativeLogEnabled) {
             declarativeFilteringLog.start();
         } else {
             declarativeFilteringLog.stop();

@@ -184,7 +184,7 @@ export class AdguardApi {
             ruleSetsPath: this.configuration.assetsPath + AdguardApi.DECLARATIVE_RULES_PATH,
             customFilters: [],
             // This is needed only for filters developers.
-            extendedDeclarativeLogEnabled: false,
+            declarativeLogEnabled: false,
             staticFiltersIds: this.configuration.filters,
             allowlist,
             userrules,

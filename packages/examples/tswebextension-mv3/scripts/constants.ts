@@ -21,7 +21,7 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     verbose: true,
     filtersPath: 'filters',
     ruleSetsPath: 'filters/declarative',
-    extendedDeclarativeLogEnabled: true,
+    declarativeLogEnabled: true,
     settings: {
         assistantUrl: 'assistant-inject.js',
         gpcScriptUrl: 'gpc.js',

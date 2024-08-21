@@ -71,7 +71,7 @@ export const configurationMV3Validator = configurationValidator.extend({
      * because to extract matched source rule text we need to load ruleset
      * in memory.
      */
-    extendedDeclarativeLogEnabled: zod.boolean(),
+    declarativeLogEnabled: zod.boolean(),
 
     settings: settingsConfigMV3,
 
