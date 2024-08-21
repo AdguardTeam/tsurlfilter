@@ -462,13 +462,7 @@ export class WebRequestApi {
     private static onErrorOccurred({
         details,
     }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
-        if (declarativeFilteringLog.isListening) {
-            setTimeout(() => {
-                requestContextStorage.delete(details.requestId);
-            }, FRAME_DELETION_TIMEOUT_MS);
-        } else {
-            requestContextStorage.delete(details.requestId);
-        }
+        WebRequestApi.deleteRequestContext(details.requestId);
     }
 
     /**
@@ -480,12 +474,25 @@ export class WebRequestApi {
     private static onCompleted({
         details,
     }: RequestData<WebRequest.OnCompletedDetailsType>): void {
+        WebRequestApi.deleteRequestContext(details.requestId);
+    }
+
+    /**
+     * Delete request context immediately or with timeout,
+     * if declarativeFilteringLog is listening.
+     *
+     * @param requestId Request id.
+     */
+    private static deleteRequestContext(requestId: string): void {
+        // If declarativeFilteringLog is listening, we should wait some time
+        // before deleting the request context to extract context event id to
+        // link request with matched declarative rule.
         if (declarativeFilteringLog.isListening) {
             setTimeout(() => {
-                requestContextStorage.delete(details.requestId);
+                requestContextStorage.delete(requestId);
             }, FRAME_DELETION_TIMEOUT_MS);
         } else {
-            requestContextStorage.delete(details.requestId);
+            requestContextStorage.delete(requestId);
         }
     }
 

@@ -23,10 +23,11 @@ export class RemoveHeadersService {
     }
 
     /**
-     * Modifies headers by applying remove header rules.
+     * Modifies headers by applying $removeheader rules.
      *
      * @param context Request context.
-     * @param isRequestHeaders Is request headers or not.
+     * @param isRequestHeaders Is headers are _request_ headers, i.e. `false`
+     * for _response_ headers.
      * @param headersToModify Headers to modify.
      *
      * @returns True if headers were modified.
@@ -141,7 +142,9 @@ export class RemoveHeadersService {
      *
      * @param headers Headers.
      * @param rule Rule to apply if it has remove header modifier.
-     * @param isRequestHeaders Is request headers.
+     * @param isRequestHeaders Is headers are _request_ headers, i.e. `false`
+     * for _response_ headers.
+     *
      * @returns True if headers removed by rule.
      */
     private static applyRule(
@@ -162,7 +165,9 @@ export class RemoveHeadersService {
      *
      * @param headers   Headers.
      * @param rule  Rule with $removeheader modifier.
-     * @param isRequestHeaders Is request headers.
+     * @param isRequestHeaders Is headers are _request_ headers, i.e. `false`
+     * for _response_ headers.
+     *
      * @returns True if rule is applicable.
      */
     private static isApplicableRemoveHeaderRule(
@@ -182,7 +187,9 @@ export class RemoveHeadersService {
      * Returns header name if rule has remove header modifier and it is applicable.
      *
      * @param rule Rule with $removeheader modifier.
-     * @param isRequestHeaders Is request headers.
+     * @param isRequestHeaders Is headers are _request_ headers, i.e. `false`
+     * for _response_ headers.
+     *
      * @returns Header name or null if rule is not applicable.
      */
     private static getApplicableHeaderName(

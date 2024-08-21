@@ -25,18 +25,25 @@ export enum FilteringEventType {
     JsInject = 'jsInject',
     CspReportBlocked = 'cspReportBlocked', // TODO: Add in MV3
     /**
-     * Used only in MV3.
+     * Used only in unpacked MV3.
      */
     MatchedDeclarativeRule = 'matchedDeclarativeRule',
 }
 
 /**
  * Advanced information about declarative network rule with source rule list and
- * JSON version of declarative network rule.
+ * stringified JSON version of declarative network rule.
  */
 export type DeclarativeRuleInfo = {
-    sourceRules: SourceRuleAndFilterId[]
-    declarativeRuleJson: string
+    /**
+     * Source rule list and filter id. Sometimes one declarative rule can be
+     * generated from multiple source rules, that's why we use array here.
+     */
+    sourceRules: SourceRuleAndFilterId[],
+    /**
+     * DNR rule.
+     */
+    declarativeRuleJson: string,
 };
 
 /**
@@ -239,7 +246,7 @@ export type RemoveHeaderEventData = {
 /**
  * Dispatched by RemoveHeadersService manifest v2 module on request header removing in onBeforeSendHeaders and
  * onHeadersReceived event handlers.
- * Cannot be detected in MV3 because browser will applied $removeheader
+ * Cannot be detected in MV3 because browser applies $removeheader
  * (via DNR `modifyHeaders`) to request before passing it to extension.
  */
 export type RemoveHeaderEvent = {
@@ -263,7 +270,7 @@ export type RemoveParamEventData = {
 /**
  * Dispatched by ParamsService manifest v2 module on request param removing in WebRequestApi.onBeforeRequest event
  * handler.
- * Cannot be detected in MV3 because browser will applied $removeheader
+ * Cannot be detected in MV3 because browser applies $removeparam
  * (via DNR `redirect`) to request before passing it to extension.
  */
 export type RemoveParamEvent = {

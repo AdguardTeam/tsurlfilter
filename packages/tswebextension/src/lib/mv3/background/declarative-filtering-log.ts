@@ -76,19 +76,19 @@ class DeclarativeFilteringLog {
             rule: { rulesetId, ruleId },
         } = record;
 
+        const context = requestContextStorage.get(requestId);
+
+        if (!context) {
+            logger.debug('[logMatchedRule]: cannot find request context for request id', requestId);
+            return;
+        }
+
         let declarativeRuleInfo: DeclarativeRuleInfo;
 
         try {
             declarativeRuleInfo = await this.getRuleInfo(rulesetId, ruleId);
         } catch (e) {
             logger.debug(e);
-            return;
-        }
-
-        const context = requestContextStorage.get(requestId);
-
-        if (!context) {
-            logger.debug('[logMatchedRule]: cannot find request context for request id', requestId);
             return;
         }
 
@@ -124,8 +124,10 @@ class DeclarativeFilteringLog {
                 }
 
                 chrome.declarativeNetRequest.onRuleMatchedDebug.addListener(this.logMatchedRule);
+                this.#isListening = true;
             } else {
                 chrome.declarativeNetRequest.onRuleMatchedDebug.removeListener(this.logMatchedRule);
+                this.#isListening = false;
             }
         } catch (e) {
             const message = needToAddListener
@@ -141,8 +143,6 @@ class DeclarativeFilteringLog {
      */
     public start = (): void => {
         this.toggleListener(true);
-
-        this.#isListening = true;
     };
 
     /**
@@ -150,8 +150,6 @@ class DeclarativeFilteringLog {
      */
     public stop = (): void => {
         this.toggleListener(false);
-
-        this.#isListening = false;
     };
 }
 

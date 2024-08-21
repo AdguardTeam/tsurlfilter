@@ -2,8 +2,8 @@ import { FilterListPreprocessor } from '../../../src';
 import { Filter } from '../../../src/rules/declarative-converter';
 
 describe('Filter', () => {
-    // NOTE: It's important that testing filter should contains some of
-    // convertible while preprocessing rules.
+    // NOTE: Testing filter SHOULD contain some of convertible while
+    // preprocessing rules.
     // eslint-disable-next-line max-len
     const rawContent = '||example.com^$document\r\n||example.net^\r\n@@||example.io^\r\n||googletagmanager.com/gtm.js$script,xmlhttprequest,redirect=googletagmanager-gtm,domain=einthusan.ca|einthusan.tv|einthusan.com\r\n||googletagmanager.com/gtm.js$script,redirect=googletagmanager-gtm,domain=lastampa.it\r\nsamnytt.se#@#div[class=""], a, .sticky > div[style="display:grid"], .post-content > div.mx-auto:has-text(/annons/i)\r\nwolt.com##button:has(> div > div > div > span:has-text(Sponsored))\r\n4wank.com#?#.video-holder > center > :-abp-contains(/^Advertisement$/)';
 

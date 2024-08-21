@@ -32,10 +32,8 @@ export type RequestBlockingEvent = {
     requestUrl: string;
     /**  Referrer URL. */
     referrerUrl: string;
-    // FIXME: Check this field
     /** Assumed Filtering rule, which has blocked this request. */
     assumedRuleIndex: number;
-    // FIXME: Check this field
     /** Assumed rule's filter identifier. */
     assumedFilterId: number;
     /** Request mime type. */

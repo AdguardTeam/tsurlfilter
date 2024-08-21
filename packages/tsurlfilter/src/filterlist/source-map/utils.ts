@@ -28,7 +28,7 @@ export const getRuleSourceText = (lineStartIndex: number, source: string): strin
 
     // WARNING!
     // Potential memory leak mitigation for substring operation due to V8 optimizations:
-    // When extracting a substring with rule.substring(), there's a concern in some JS environments
+    // When extracting a substring with rule.slice(), there's a concern in some JS environments
     // that the resulting substring might retain a hidden reference to the entire original 'rule' string.
     // This could prevent the garbage collector (GC) from freeing the memory allocated for filter rules.
     // This hidden reference occurs because the substring might not create a new string but rather

@@ -226,10 +226,10 @@ export class StealthApi {
             return;
         }
 
-        const webRTCDisabled = this.configuration.blockWebRTC && this.isStealthAllowed;
+        const isWebRTCDisabled = this.configuration.blockWebRTC && this.isStealthAllowed;
 
         try {
-            if (webRTCDisabled) {
+            if (isWebRTCDisabled) {
                 await browser.privacy.network.webRTCIPHandlingPolicy.set({
                     value: 'disable_non_proxied_udp',
                     scope: 'regular',
@@ -246,7 +246,7 @@ export class StealthApi {
         // privacy.network.peerConnectionEnabled is currently only supported in Firefox
         if (typeof browser.privacy.network.peerConnectionEnabled === 'object') {
             try {
-                if (webRTCDisabled) {
+                if (isWebRTCDisabled) {
                     await browser.privacy.network.peerConnectionEnabled.set({
                         value: false,
                         scope: 'regular',
