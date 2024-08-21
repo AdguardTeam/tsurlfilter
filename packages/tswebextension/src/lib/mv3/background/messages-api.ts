@@ -109,7 +109,7 @@ export class MessagesApi {
                     message.payload,
                 );
             }
-            case CommonMessageType.SaveCssHitsStats: {
+            case MessageType.SaveCssHitsStats: {
                 return this.handleSaveCssHitsStats(sender, message.payload);
             }
             default: {
