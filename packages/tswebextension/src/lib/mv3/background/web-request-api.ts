@@ -310,6 +310,7 @@ export class WebRequestApi {
             const cssText = CosmeticApi.getCssText(cosmeticResult);
 
             requestContextStorage.update(requestId, {
+                cosmeticResult,
                 scriptText,
                 cssText,
             });
@@ -333,17 +334,6 @@ export class WebRequestApi {
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
         if (response?.cancel || response?.redirectUrl !== undefined) {
             tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
-
-            // TODO: Check, if we need collapse elements, we should uncomment this code.
-            // const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
-            // hideRequestInitiatorElement(
-            //     tabId,
-            //     requestFrameId,
-            //     requestUrl,
-            //     mainFrameUrl || referrerUrl,
-            //     requestType,
-            //     thirdParty,
-            // );
         }
     }
 
@@ -468,12 +458,36 @@ export class WebRequestApi {
      * Event handler for onErrorOccurred event. It fires when an error occurs.
      *
      * @param event On error occurred event.
-     * @param event.details On error occurred event details.
+     * @param event.context On completed occurred event context.
      */
     private static onCompleted({
-        details,
+        context,
     }: RequestData<WebRequest.OnCompletedDetailsType>): void {
-        requestContextStorage.delete(details.requestId);
+        if (!context) {
+            return;
+        }
+
+        const {
+            requestType,
+            tabId,
+            requestUrl,
+            timestamp,
+            contentType,
+            cosmeticResult,
+        } = context;
+
+        if (cosmeticResult
+            && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
+            CosmeticApi.logScriptRules({
+                tabId,
+                cosmeticResult,
+                url: requestUrl,
+                contentType,
+                timestamp,
+            });
+        }
+
+        requestContextStorage.delete(context.requestId);
     }
 
     /**

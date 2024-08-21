@@ -1,10 +1,10 @@
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
+import { getDomain } from 'tldts';
 
-import { type CookieRule } from '../../common/content-script/cookie-controller';
+import type { CookieRule } from '../../common/content-script/cookie-controller';
 import { logger } from '../../common/utils/logger';
-
-import { type TsWebExtension } from './app';
+import type { TsWebExtension } from './app';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import {
     CommonMessageType,
@@ -21,11 +21,12 @@ import {
     getCosmeticDataPayloadValidator,
 } from '../../common/message';
 import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
-import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import { ContentType } from '../../common/request-type';
 import { appContext } from './app-context';
 import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { nanoid } from '../nanoid';
+import type { TabsApi } from '../tabs/tabs-api';
 
 export type MessagesHandlerMV3 = (
     message: MessageMV3,
@@ -49,19 +50,20 @@ export type ContentScriptCookieRulesData = {
  */
 export class MessagesApi {
     /**
-     * Stores link to {@link TsWebExtension} app to save context.
-     */
-    private tsWebExtension: TsWebExtension;
-
-    /**
      * Creates new {@link MessagesApi}.
      *
      * @param tsWebExtension Current {@link TsWebExtension} app.
+     * @param tabsApi Tabs API.
+     * @param filteringLog Filtering log.
      *
      * @returns New {@link MessagesApi} handler.
      */
-    constructor(tsWebExtension: TsWebExtension) {
-        this.tsWebExtension = tsWebExtension;
+    constructor(
+        private readonly tsWebExtension: TsWebExtension,
+        private readonly tabsApi: TabsApi,
+        private readonly filteringLog: FilteringLog,
+
+    ) {
         this.handleMessage = this.handleMessage.bind(this);
     }
 
@@ -113,6 +115,9 @@ export class MessagesApi {
                     sender,
                     message.payload,
                 );
+            }
+            case CommonMessageType.SaveCssHitsStats: {
+                return this.handleSaveCssHitsStats(sender, message.payload);
             }
             default: {
                 logger.error('[tswebextension.handleMessage]: did not found handler for message');
@@ -260,6 +265,60 @@ export class MessagesApi {
         }));
 
         return data;
+    }
+
+    /**
+     * Handle message about saving css hits stats.
+     *
+     * @param sender Tab, which sent message.
+     * @param payload Message payload.
+     * @returns True if stats was saved.
+     */
+    private handleSaveCssHitsStats(
+        sender: browser.Runtime.MessageSender,
+        // TODO add payload type
+        payload?: any,
+    ): boolean {
+        if (!payload || !sender?.tab?.id) {
+            return false;
+        }
+
+        const tabId = sender.tab.id;
+
+        const tabContext = this.tabsApi.getTabContext(tabId);
+
+        if (!tabContext?.info.url) {
+            return false;
+        }
+
+        const { url } = tabContext.info;
+
+        let published = false;
+
+        for (let i = 0; i < payload.length; i += 1) {
+            const stat = payload[i];
+
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.ApplyCosmeticRule,
+                data: {
+                    tabId,
+                    eventId: nanoid(),
+                    filterId: stat.filterId,
+                    ruleIndex: stat.ruleIndex,
+                    element: stat.element,
+                    frameUrl: url,
+                    frameDomain: getDomain(url) as string,
+                    requestType: ContentType.Document,
+                    timestamp: Date.now(),
+                    cssRule: true,
+                    scriptRule: false,
+                    contentRule: false,
+                },
+            });
+            published = true;
+        }
+
+        return published;
     }
 
     /**

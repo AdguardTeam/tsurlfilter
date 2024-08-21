@@ -83,8 +83,23 @@ export class TsWebExtension implements AppInterface<
     /**
      * This is where the configuration is stored, excluding "heavy" fields:
      * the contents of filters, custom rules and the allowlist.
+     *
+     * @returns Configuration context.
      */
-    configuration: ConfigurationMV3Context | undefined;
+    // eslint-disable-next-line class-methods-use-this
+    public get configuration(): ConfigurationMV3Context | undefined {
+        return appContext.configuration;
+    }
+
+    /**
+     * Sets app configuration context.
+     *
+     * @param value Status value.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public set configuration(value: ConfigurationMV3Context) {
+        appContext.configuration = value;
+    }
 
     /**
      * Whether filtering is enabled or not.
@@ -397,7 +412,6 @@ export class TsWebExtension implements AppInterface<
         }
 
         await StealthService.setBlockChromeClientData(isBlockChromeClientData);
-
         this.configuration.settings.stealth.blockChromeClientData = isBlockChromeClientData;
     }
 
@@ -482,7 +496,7 @@ export class TsWebExtension implements AppInterface<
      */
     public getMessageHandler(): MessagesHandlerMV3 {
         // Keep app context when handle message.
-        const messagesApi = new MessagesApi(this);
+        const messagesApi = new MessagesApi(this, tabsApi, defaultFilteringLog);
         return messagesApi.handleMessage;
     }
 
@@ -637,13 +651,17 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * TODO implement this method later
-     * Sets the collect hit stats state.
-     * @param collect Collect hit stats state.
+     * Updates `collectStats` configuration value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isCollectStats `collectStats` config value.
      */
-    // eslint-disable-next-line class-methods-use-this,@typescript-eslint/no-unused-vars
-    public setCollectHitStats(collect: boolean): void {
-        logger.debug('[tswebextension.setCollectHitStats]: mv3 does not support setCollectHitStats yet');
+    public setCollectHitStats(isCollectStats: boolean): void {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        this.configuration.settings.collectStats = isCollectStats;
     }
 
     /**
