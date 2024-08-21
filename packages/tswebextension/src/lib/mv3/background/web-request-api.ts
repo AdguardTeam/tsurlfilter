@@ -311,6 +311,7 @@ export class WebRequestApi {
             const cssText = CosmeticApi.getCssText(cosmeticResult);
 
             requestContextStorage.update(requestId, {
+                cosmeticResult,
                 scriptText,
                 cssText,
             });
@@ -334,17 +335,6 @@ export class WebRequestApi {
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
         if (response?.cancel || response?.redirectUrl !== undefined) {
             tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
-
-            // TODO: Check, if we need collapse elements, we should uncomment this code.
-            // const mainFrameUrl = tabsApi.getTabMainFrame(tabId)?.url;
-            // hideRequestInitiatorElement(
-            //     tabId,
-            //     requestFrameId,
-            //     requestUrl,
-            //     mainFrameUrl || referrerUrl,
-            //     requestType,
-            //     thirdParty,
-            // );
         }
     }
 
@@ -468,13 +458,37 @@ export class WebRequestApi {
     /**
      * This is handler for the last event from the request lifecycle.
      *
-     * @param event On completed event.
-     * @param event.details Request details.
+     * @param event On completed occurred event.
+     * @param event.context On completed occurred event context.
      */
     private static onCompleted({
-        details,
+        context,
     }: RequestData<WebRequest.OnCompletedDetailsType>): void {
-        WebRequestApi.deleteRequestContext(details.requestId);
+        if (!context) {
+            return;
+        }
+
+        const {
+            requestType,
+            tabId,
+            requestUrl,
+            timestamp,
+            contentType,
+            cosmeticResult,
+        } = context;
+
+        if (cosmeticResult
+            && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
+            CosmeticApi.logScriptRules({
+                tabId,
+                cosmeticResult,
+                url: requestUrl,
+                contentType,
+                timestamp,
+            });
+        }
+
+        WebRequestApi.deleteRequestContext(context.requestId);
     }
 
     /**

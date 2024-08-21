@@ -78,11 +78,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns Css styles as string, or `undefined` if no styles found.
      */
     public static getCssText(cosmeticResult: CosmeticResult): string | undefined {
-        // FIXME this will be needed for css hits counter
-        // const { configuration } = appContext;
-        //
-        // const collectingCosmeticRulesHits = configuration?.settings.collectStats || false;
-        const collectingCosmeticRulesHits = false;
+        const { configuration } = appContext;
+
+        const collectingCosmeticRulesHits = configuration?.settings.collectStats || false;
 
         const { elementHiding, CSS } = cosmeticResult;
 
@@ -214,12 +212,8 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
-        const { isAppStarted } = appContext;
-
-        // FIXME uncomment for css hits stats
-        // const { configuration } = appContext;
-        // const areHitsStatsCollected = configuration?.settings.collectStats || false;
-        const areHitsStatsCollected = false;
+        const { isAppStarted, configuration } = appContext;
+        const areHitsStatsCollected = configuration?.settings.collectStats || false;
 
         data.isAppStarted = isAppStarted;
         data.areHitsStatsCollected = areHitsStatsCollected;
