@@ -9,7 +9,7 @@ export enum FilteringEventType {
     SendRequest = 'sendRequest',
     TabReload = 'tabReload',
     ApplyBasicRule = 'applyBasicRule',
-    ApplyCosmeticRule = 'applyCosmeticRule', // FIXME: (AG-33733)
+    ApplyCosmeticRule = 'applyCosmeticRule',
     ApplyCspRule = 'applyCspRule',
     ApplyPermissionsRule = 'applyPermissionsRule',
     ReceiveResponse = 'receiveResponse',
