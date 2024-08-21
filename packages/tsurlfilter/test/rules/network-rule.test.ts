@@ -1330,19 +1330,26 @@ describe('NetworkRule.match', () => {
         expect(rule.getRestrictedToDomains()).toHaveLength(1);
         expect(rule.getPermittedToDomains()).toHaveLength(1);
 
-        // Correctly matches domain that is specified in permitted domains list
+        // Correctly matches a domain specified in the permitted domains list
         rule = createNetworkRule('/ads^$to=evil.com', 0);
         request = new Request('https://evil.com/ads', 'https://example.org/', RequestType.Script);
         expect(rule.match(request)).toBeTruthy();
         request = new Request('https://good.com/ads', 'https://example.org/', RequestType.Script);
         expect(rule.match(request)).toBeFalsy();
 
-        // Correctly matches subdomain that is specified in permitted domains list
+        // Correctly matches a domain specified in the restricted domains list
+        rule = createNetworkRule('/ads^$to=~evil.com', 0);
+        request = new Request('https://evil.com/ads', 'https://example.org/', RequestType.Script);
+        expect(rule.match(request)).toBeFalsy();
+        request = new Request('https://good.com/ads', 'https://example.org/', RequestType.Script);
+        expect(rule.match(request)).toBeTruthy();
+
+        // Correctly matches a subdomain specified in the permitted domains list
         rule = createNetworkRule('/ads^$to=sub.evil.com', 0);
         request = new Request('https://sub.evil.com/ads', 'https://example.org/', RequestType.Image);
         expect(rule.match(request)).toBeTruthy();
 
-        // Inverted value excludes subdomain from matching
+        // The inverted value excludes a subdomain from matching
         rule = createNetworkRule('/ads^$to=evil.com|~sub.one.evil.com', 0);
 
         request = new Request('https://evil.com/ads', 'https://example.org/', RequestType.Script);
