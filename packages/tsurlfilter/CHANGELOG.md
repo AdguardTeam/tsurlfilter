@@ -37,10 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support conversion to DNR for `$permissions` modifier.
 - Support conversion to DNR for `$cookie` modifier.
 - `$url` modifier support for non-basic rules [#64].
-- Ability to allowlist scriptlets by name [#377].
-- New rule indexing algorithm. The storage index is now an integer representing
-  the rule position in the concatenated filter list text.
-  The list id is determined by the pre-stored filter list offset during the scan.
 - Allowlist rule creation utilities: `createAllowlistRuleNode` and `createAllowlistRuleList`.
 - `PreprocessFilterList` utility class to preprocess filter lists before scanning.
 - Source map and source map utilities.
@@ -96,38 +92,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `@adguard/scriptlets` to `v1.11.16`.
 
 [2.2.23]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.23
-
-## [2.2.22] - 2024-07-17
-
-### Fixed
-
-- listId -1 not found in the storage
-
-[2.2.22]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.22
-
-## [2.2.21] - 2024-07-12
-
-### Changed
-
-- Updated `@adguard/scriptlets` to `v1.11.6`.
-
-[2.2.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.21
-
-## [2.2.20] - 2024-07-01
-
-### Added
-
-- Ability to allowlist scriptlets by name [#377].
-- New rule indexing algorithm. The storage index is now an integer representing
-  the rule position in the concatenated filter list text.
-  The list id is determined by the pre-stored filter list offset during the scan.
-
-### Changed
-
-- Updated `@adguard/scriptlets` to `v1.11.1`.
-
-[2.2.20]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.20
-[#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 
 ## [2.2.22] - 2024-07-17
 

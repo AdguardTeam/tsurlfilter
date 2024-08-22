@@ -45,6 +45,7 @@ const getGetBlockingResponseParamsData = (
         rule: result.getBasicResult(),
         popupRule: result.getPopupRule(),
         referrerUrl: '',
+        requestId: '1',
         requestUrl,
         requestType,
         contentType,

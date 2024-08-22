@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import resolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
@@ -7,6 +9,8 @@ import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
+
+const COMPANIESDB_TRACKERS_FILE = 'src/lib/common/companies-db-service/trackers-min.js';
 
 const cache = false;
 
@@ -126,6 +130,17 @@ const backgroundMv2Config = {
         'nanoid',
         'lru_map',
         'lodash-es',
+        /**
+         * Define empty 'trackers-min' file as external
+         * separate module (which should be build separately @see {@link companiesDbTrackersMin})
+         * so it will be replaced with real data after the build.
+         */
+        fileURLToPath(
+            new URL(
+                COMPANIESDB_TRACKERS_FILE,
+                import.meta.url,
+            ),
+        ),
     ],
     plugins: [
         ...commonPlugins,
@@ -152,10 +167,34 @@ const backgroundMv3Config = {
         'deepmerge',
         'tldts',
         'webextension-polyfill',
+        /**
+         * Define empty 'trackers-min' file as external
+         * separate module (which should be build separately @see {@link companiesDbTrackersMin})
+         * so it will be replaced with real data after the build.
+         */
+        fileURLToPath(
+            new URL(
+                COMPANIESDB_TRACKERS_FILE,
+                import.meta.url,
+            ),
+        ),
     ],
     plugins: [
         ...commonPlugins,
         commonjs(),
+    ],
+};
+
+/**
+ * Separate config for companies-db trackers-min data.
+ */
+const companiesDbTrackersMin = {
+    input: COMPANIESDB_TRACKERS_FILE,
+    output: [
+        {
+            file: `${OUTPUT_PATH}/trackers-min.js`,
+            sourcemap: false,
+        },
     ],
 };
 
@@ -172,7 +211,13 @@ const cliConfig = {
     watch: {
         include: 'src/cli/**',
     },
-    external: ['path', 'fs-extra', 'commander'],
+    external: [
+        'path',
+        'fs',
+        'https',
+        'fs-extra',
+        'commander',
+    ],
     plugins: [
         ...commonPlugins,
         commonjs(),
@@ -260,6 +305,7 @@ const hideDocumentReferrerContentScriptConfig = {
 export default [
     backgroundMv2Config,
     backgroundMv3Config,
+    companiesDbTrackersMin,
     contentScriptConfig,
     cssHitsCounterConfig,
     contentScriptMv3Config,

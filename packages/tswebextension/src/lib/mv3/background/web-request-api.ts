@@ -18,6 +18,9 @@
  * based on the {@link MatchingResult} stored in {@link requestContextStorage}.
  * At {@link RequestEvents.onHeadersReceived}, the response headers are handled in the same way.
  *
+ * At {@link RequestEvents.onErrorOccurred}, the blocked request url will be matched by {@link companiesDbService}
+ * for collecting precise statistics of blocked requests.
+ *
  * The specified {@link RequestContext} will be removed from {@link requestContextStorage}
  * on {@link WebNavigation.onCommitted} after injection or {@link RequestEvents.onErrorOccurred} events.
  *
@@ -34,31 +37,31 @@
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │
  * Parses request headers and applies    │                             │ │
- * $cookie rules based on                │      onBeforeSendHeaders    ◄─┼┐
- * {@link MatchingResult}.               │                             │ ││
- *                                       └──────────────┬──────────────┘ ││
- *                                                      │                ││
- *                                       ┌──────────────▼──────────────┐ ││
- *                                       │                             │ ││
- *                                       │        onSendHeaders        │ ││
- *                                       │                             │ ││
- *                                       └──────────────┬──────────────┘ ││
- *                                                      │                ││
- *                                       ┌──────────────▼──────────────┐ ││
- * Parses response headers and applies   │                             │ ││
- * $cookie rules based on              ┌─┤      onHeadersReceived      │ ││
- * {@link MatchingResult}.             │ │                             │ ││
- *                                     │ └─────────────────────────────┘ ││
- *                                     │                                 ││
- *                                     │ ┌─────────────────────────────┐ ││
- *                                     │ │                             │ ││
- *                                     ├─►       onBeforeRedirect      ├─┴┤
- *                                     │ │                             │  │
- *                                     │ └─────────────────────────────┘  │
- *                                     │                                  │
- *                                     │ ┌─────────────────────────────┐  │
- *                                     │ │                             │  │
- *                                     ├─►        onAuthRequired       ├──┘
+ * $cookie rules based on                │      onBeforeSendHeaders    ◄─┼─┐
+ * {@link MatchingResult}.               │                             │ │ │
+ *                                       └──────────────┬──────────────┘ │ │
+ *                                                      │                │ │
+ *                                       ┌──────────────▼──────────────┐ │ │
+ *                                       │                             │ │ │
+ *                                       │        onSendHeaders        │ │ │
+ *                                       │                             │ │ │
+ *                                       └──────────────┬──────────────┘ │ │
+ *                                                      │                │ │
+ *                                       ┌──────────────▼──────────────┐ │ │
+ * Parses response headers and applies   │                             │ │ │
+ * $cookie rules based on              ┌─┤      onHeadersReceived      │ │ │
+ * {@link MatchingResult}.             │ │                             │ │ │
+ *                                     │ └─────────────────────────────┘ │ │
+ *                                     │                                 │ │
+ *                                     │ ┌─────────────────────────────┐ │ │
+ *                                     │ │                             │ │ │
+ *                                     ├─►       onBeforeRedirect      ├─┘ │
+ *                                     │ │                             │   │
+ *                                     │ └─────────────────────────────┘   │
+ *                                     │                                   │
+ *                                     │ ┌─────────────────────────────┐   │
+ *                                     │ │                             │   │
+ *                                     ├─►        onAuthRequired       ├───┘
  *                                     │ │                             │
  *                                     │ └─────────────────────────────┘
  *                                     │
@@ -75,10 +78,13 @@
  *                                       └─────────────────────────────┘.
  *
  *                                       ┌─────────────────────────────┐
- * Removes the request information       │                             │
- * from {@link requestContextStorage}.   │       onErrorOccurred       │
- *                                       │                             │
+ * Matches blocked request url           │                             │
+ * by {@link companiesDbService}         │                             │
+ * for collecting statistics.            │       onErrorOccurred       │
+ * Also removes the request information  │                             │
+ * from {@link requestContextStorage}.   │                             │
  *                                       └─────────────────────────────┘.
+ *
  *
  *  Web Navigation API Event Handling:
  *
@@ -148,6 +154,7 @@ import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
 import { RequestBlockingApi } from './request/request-blocking-api';
+import { companiesDbService } from '../../common/companies-db-service';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 
@@ -160,6 +167,13 @@ import { PermissionsPolicyService } from './services/permissions-policy-service'
  * cosmetic rules from content-script.
  */
 export class WebRequestApi {
+    /**
+     * Value of the parent frame id if no parent frame exists.
+     *
+     * @see {@link WebRequest.OnBeforeRequestDetailsType#parentFrameId}
+     */
+    private static readonly NO_PARENT_FRAME_ID = -1;
+
     /**
      * Adds listeners to web request events.
      */
@@ -322,6 +336,7 @@ export class WebRequestApi {
             rule: basicResult,
             popupRule: result.getPopupRule(),
             eventId,
+            requestId,
             requestUrl,
             referrerUrl,
             requestType,
@@ -443,7 +458,9 @@ export class WebRequestApi {
     }
 
     /**
-     * Event handler for onErrorOccurred event. It fires when an error occurs.
+     * Event handler for onErrorOccurred event. It fires when an error occurs, e.g. request is blocked.
+     * So if the request is blocked by DNR rule,
+     * we should log this event for collecting statistics due to {@link companiesDbService}.
      *
      * @param event On error occurred event.
      * @param event.details On error occurred event details.
@@ -451,7 +468,64 @@ export class WebRequestApi {
     private static onErrorOccurred({
         details,
     }: RequestData<WebRequest.OnErrorOccurredDetailsType>): void {
-        requestContextStorage.delete(details.requestId);
+        const {
+            tabId,
+            requestId,
+            url,
+            parentFrameId,
+            error,
+        } = details;
+
+        /**
+         * Error related to request blocking by DNR rule.
+         */
+        const CLIENT_BLOCKED_ERROR = 'net::ERR_BLOCKED_BY_CLIENT';
+
+        // filter out non-related errors, e.g. 'net::ERR_ABORTED'
+        if (error !== CLIENT_BLOCKED_ERROR) {
+            return;
+        }
+
+        const context = requestContextStorage.get(requestId);
+
+        if (!context) {
+            return;
+        }
+
+        const {
+            eventId,
+            referrerUrl,
+            contentType,
+        } = context;
+
+        // TODO: we consider that only we block requests,
+        // so we do not care (for now) if the request is blocked by other browser extension.
+        // it may be handled by checking the matchingResult in the context.
+
+        const companyCategoryName = companiesDbService.match(url);
+
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.ApplyBasicRule,
+            data: {
+                tabId,
+                eventId,
+                requestType: contentType,
+                frameUrl: referrerUrl,
+                requestId,
+                requestUrl: url,
+                companyCategoryName,
+                filterId: -1,
+                ruleIndex: -1,
+                isAllowlist: false,
+                isImportant: false,
+                isDocumentLevel: parentFrameId === WebRequestApi.NO_PARENT_FRAME_ID,
+                isCsp: false,
+                isCookie: false,
+                advancedModifier: null,
+            },
+        });
+
+        requestContextStorage.delete(requestId);
     }
 
     /**

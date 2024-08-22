@@ -101,10 +101,35 @@ export type TabReloadEvent = {
  * {@link ApplyBasicRuleEvent} Event data.
  */
 export type ApplyBasicRuleEventData = {
+    /**
+     * Tab id.
+     */
     tabId: number,
+
+    /**
+     * Request id.
+     */
+    requestId: string,
+
+    /**
+     * Request url.
+     */
     requestUrl: string,
+
+    /**
+     * Frame url.
+     */
     frameUrl: string,
+
+    /**
+     * Request type.
+     */
     requestType: ContentType,
+
+    /**
+     * Category name from companiesdb matched by the request.
+     */
+    companyCategoryName?: string,
 } & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
 
 /**

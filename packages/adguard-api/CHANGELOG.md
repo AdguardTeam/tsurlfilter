@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
 - Updated `@adguard/tswebextension` to `^2.0.0`.
+- `adguardApi.onRequestBlocking` event data now contains `requestId` property.
 - Filter lists are now stored in a pre-processed format, which makes the engine start more efficiently,
   since the engine does not need to convert or parse the rules.
 
