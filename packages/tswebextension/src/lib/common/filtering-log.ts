@@ -130,7 +130,10 @@ export type ApplyBasicRuleEventData = {
      * Category name from companiesdb matched by the request.
      */
     companyCategoryName?: string,
-} & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
+}
+& Partial<RuleInfo>
+& AdditionalNetworkRuleInfo
+& WithEventId;
 
 /**
  * Dispatched by WebRequestApi manifest v2 module on request block or allowlist rule matching in onBeforeRequest event

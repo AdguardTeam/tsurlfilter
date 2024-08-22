@@ -4,15 +4,18 @@ import { type ApplyBasicRuleEventData } from '../../../../../src/lib/common/filt
 
 type Fields = Pick<
     ApplyBasicRuleEventData,
-    | 'filterId'
-    | 'ruleIndex'
     | 'isAllowlist'
     | 'isImportant'
     | 'isDocumentLevel'
     | 'isCsp'
     | 'isCookie'
     | 'advancedModifier'
->;
+> & {
+    // filterId and ruleIndex can be null in ApplyBasicRuleEventData
+    // but here we assume that they are always present (for test purposes)
+    filterId: number;
+    ruleIndex: number;
+};
 
 /**
  * This helper function retrieves associated fields from network rules pertinent to network rule events.
