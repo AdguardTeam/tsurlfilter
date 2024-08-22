@@ -49,12 +49,12 @@ export type RequestBlockingEvent = {
     /**
      * Filtering rule index which has blocked this request.
      */
-    ruleIndex: number;
+    ruleIndex?: number;
 
     /**
      * Rule's filter identifier
      */
-    filterId: number;
+    filterId?: number;
 
     /**
      * Request mime type.
@@ -113,14 +113,19 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
             return;
         }
 
-        this.channel.dispatch({
+        const resData: RequestBlockingEvent = {
             tabId,
-            ruleIndex,
-            filterId,
             requestId,
             requestUrl,
             referrerUrl: frameUrl,
             requestType,
-        });
+        };
+
+        if (typeof filterId !== 'undefined' && typeof ruleIndex === 'undefined') {
+            resData.filterId = filterId;
+            resData.ruleIndex = ruleIndex;
+        }
+
+        this.channel.dispatch(resData);
     }
 }
