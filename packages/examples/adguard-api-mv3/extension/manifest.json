@@ -1,4 +1,18 @@
 {
+    "declarative_net_request": {
+        "rule_resources": [
+            {
+                "id": "ruleset_2",
+                "enabled": false,
+                "path": "filters/declarative/ruleset_2/ruleset_2.json"
+            },
+            {
+                "id": "ruleset_3",
+                "enabled": false,
+                "path": "filters/declarative/ruleset_3/ruleset_3.json"
+            }
+        ]
+    },
     "manifest_version": 3,
     "name": "Sample AdGuard MV3 API",
     "short_name": "Sample AdGuard MV3 API",
@@ -44,7 +58,7 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "/war/*"
+                "/adguard/*"
             ],
             "matches": [
                 "http://*/*",

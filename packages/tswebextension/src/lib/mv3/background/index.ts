@@ -42,6 +42,7 @@ export type {
 } from './configuration';
 export { CommonMessageType, ExtendedMV3MessageType } from './messages';
 export { RULE_SET_NAME_PREFIX } from './filters-api';
+export { companiesDbService } from '../../common/companies-db-service';
 export {
     getDomain,
     isHttpRequest,

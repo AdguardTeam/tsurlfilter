@@ -19,6 +19,11 @@ type GetDocumentBlockingResponseParams = {
     rule: NetworkRule,
     referrerUrl: string,
     requestUrl: string,
+
+    /**
+     * Request id.
+     */
+    requestId: string,
 };
 
 /**
@@ -77,6 +82,7 @@ export class DocumentBlockingService {
             eventId,
             rule,
             referrerUrl,
+            requestId,
             requestUrl,
         } = data;
 
@@ -94,6 +100,7 @@ export class DocumentBlockingService {
                 filterId: rule.getFilterListId(),
                 ruleIndex: rule.getIndex(),
                 requestUrl,
+                requestId,
                 frameUrl: referrerUrl,
                 requestType: ContentType.Document,
                 isAllowlist: rule.isAllowlist(),

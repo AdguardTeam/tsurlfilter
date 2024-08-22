@@ -19,6 +19,8 @@ declare global {
 }
 
 const tsWebExtension = new TsWebExtension('/war/redirects');
+await tsWebExtension.initStorage();
+
 tsWebExtension.onAssistantCreateRule.subscribe((rule) => {
     console.log(`assistant create rule ${rule}`);
 });

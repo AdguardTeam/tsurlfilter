@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## Unreleased
+
+### Changed
+
+- Filtering log `ApplyBasicRuleEvent` now contains `companyCategoryName` property
+  which represents a matched company from `AdguardTeam/companiesdb`'s `trackers.json` database in MV3.
+  It allows to determinate the tracker category for the blocked request.
+
 ## [2.1.0-alpha.3] - 2024-08-01
 
 ### Added

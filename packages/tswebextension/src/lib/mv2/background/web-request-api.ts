@@ -370,6 +370,7 @@ export class WebRequestApi {
             rule: basicResult,
             popupRule: result.getPopupRule(),
             eventId,
+            requestId,
             requestUrl,
             referrerUrl,
             requestType,
@@ -509,6 +510,7 @@ export class WebRequestApi {
             rule: headerResult,
             referrerUrl,
             requestUrl,
+            requestId,
             requestType,
             contentType,
         });

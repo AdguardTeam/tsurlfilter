@@ -36,6 +36,7 @@ describe('DocumentBlockingService', () => {
             rule: mockNetworkRule,
             referrerUrl: 'someReferrer',
             requestUrl: trustedUrl,
+            requestId: '123',
         });
 
         expect(result).toBeUndefined();
