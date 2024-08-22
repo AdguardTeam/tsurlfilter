@@ -49,6 +49,7 @@ Table of content:
         - [documentBlockingPageUrl](#documentblockingpageurl)
         - [assistantUrl](#assistanturl)
         - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
+        - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
         - [stealthConfig](#stealthconfig)
           - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
           - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
@@ -138,7 +139,7 @@ via built-in cli:
  tswebextension war [path]
 ```
 
-or intergrate loading in your build pipeline:
+or integrate loading in your build pipeline:
 
 ```ts
 import { copyWar, DEFAULT_WAR_PATH } from '@adguard/tswebextension/cli';
@@ -157,18 +158,17 @@ If path is not defined, the resources will be loaded to `build/war` relative to 
 The console interface provides useful tools for building extensions.
 
 ```
-Usage: tswebextension-utils [options] [command]
+Usage: tswebextension [options] [command]
 
 CLI to some development utils
 
 Options:
-  -V, --version   output the version number
-  -h, --help      display help for command
+  -V, --version     output the version number
+  -h, --help        display help for command
 
 Commands:
-  war [path]      Downloads web accessible resources for
-                  redirect rules
-  help [command]  display help for command
+  war [path]        Downloads web accessible resources for redirect rules
+  help [command]    display help for command
 ```
 
 ## API
@@ -813,8 +813,12 @@ Run build
 npx lerna run --scope=@adguard/tswebextension build
 ```
 
+> Note that during the build simplified [companiesdb] data — `trackers-min.js` — is to be updated.
+
 Lint source code
 
 ```
 npx lerna run --scope=@adguard/tswebextension lint
 ```
+
+[companiesdb]: https://github.com/AdguardTeam/companiesdb

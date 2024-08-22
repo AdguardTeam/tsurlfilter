@@ -26,18 +26,45 @@ import {
 } from '@adguard/tswebextension/mv3';
 
 export type RequestBlockingEvent = {
-    /** Tab identifier. */
+    /**
+     * Tab identifier.
+     */
     tabId: number;
-    /**  Blocked request URL. */
+
+    /**
+     * Blocked request id.
+     */
+    requestId: string;
+
+    /**
+     * Blocked request URL.
+     */
     requestUrl: string;
-    /**  Referrer URL. */
+
+    /**
+     * Referrer URL.
+     */
     referrerUrl: string;
-    /** Assumed Filtering rule, which has blocked this request. */
-    assumedRuleIndex: number;
-    /** Assumed rule's filter identifier. */
-    assumedFilterId: number;
-    /** Request mime type. */
+
+    /**
+     * Request mime type.
+     */
     requestType: ContentType;
+
+    /**
+     * Assumed Filtering rule, which has blocked this request. May not be provided if request is blocked by DNR rule.
+     */
+    assumedRuleIndex?: number;
+
+    /**
+     * Assumed rule's filter identifier. May not be provided if request is blocked by DNR rule.
+     */
+    assumedFilterId?: number;
+
+    /**
+     * Company category name for requests blocked by DNR rule. Provided if request is blocked by DNR rule.
+     */
+    companyCategoryName?: string;
 };
 
 export interface RequestBlockingLoggerInterface {
@@ -57,6 +84,7 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
      */
     constructor() {
         this.onBasicRuleApply = this.onBasicRuleApply.bind(this);
+
         defaultFilteringLog.addEventListener(FilteringEventType.ApplyBasicRule, this.onBasicRuleApply);
     }
 
@@ -85,16 +113,20 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
      * and dispatch new {@link RequestBlockingEvent}.
      *
      * @param event {@link ApplyBasicRuleEvent}.
+     *
+     * @throws An error if MV3-required property "companyCategoryName" is missing.
      */
     private onBasicRuleApply(event: ApplyBasicRuleEvent): void {
         const {
             tabId,
+            requestId,
             requestUrl,
             requestType,
             frameUrl,
             filterId,
             ruleIndex,
             isAllowlist,
+            companyCategoryName,
         } = event.data;
 
         // exclude allowlist rules
@@ -102,13 +134,24 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
             return;
         }
 
-        this.channel.dispatch({
+        const resData: RequestBlockingEvent = {
             tabId,
-            assumedRuleIndex: ruleIndex,
-            assumedFilterId: filterId,
+            requestId,
             requestUrl,
             referrerUrl: frameUrl,
             requestType,
-        });
+        };
+
+        // add optional fields only if they are provided
+        if (companyCategoryName) {
+            resData.companyCategoryName = companyCategoryName;
+        }
+
+        if (filterId > -1 && ruleIndex > -1) {
+            resData.assumedFilterId = filterId;
+            resData.assumedRuleIndex = ruleIndex;
+        }
+
+        this.channel.dispatch(resData);
     }
 }

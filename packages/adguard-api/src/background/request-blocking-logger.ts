@@ -17,26 +17,48 @@
  */
 
 import {
-    ApplyBasicRuleEvent,
+    type ApplyBasicRuleEvent,
     ContentType,
     defaultFilteringLog,
     EventChannel,
-    EventChannelListener,
+    type EventChannelListener,
     FilteringEventType,
 } from '@adguard/tswebextension';
 
 export type RequestBlockingEvent = {
-    // Tab identifier.
+    /**
+     * Tab identifier.
+     */
     tabId: number;
-    // Blocked request URL.
+
+    /**
+     * Blocked request id.
+     */
+    requestId: string;
+
+    /**
+     * Blocked request URL.
+     */
     requestUrl: string;
-    // Referrer URL.
+
+    /**
+     * Referrer URL.
+     */
     referrerUrl: string;
-    // Filtering rule index, which has blocked this request.
+
+    /**
+     * Filtering rule index which has blocked this request.
+     */
     ruleIndex: number;
-    // Rule's filter identifier.
+
+    /**
+     * Rule's filter identifier
+     */
     filterId: number;
-    // Request mime type.
+
+    /**
+     * Request mime type.
+     */
     requestType: ContentType;
 };
 
@@ -77,6 +99,7 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
     private onBasicRuleApply(event: ApplyBasicRuleEvent): void {
         const {
             tabId,
+            requestId,
             requestUrl,
             requestType,
             frameUrl,
@@ -94,6 +117,7 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
             tabId,
             ruleIndex,
             filterId,
+            requestId,
             requestUrl,
             referrerUrl: frameUrl,
             requestType,

@@ -394,20 +394,58 @@ export interface RequestBlockingLoggerInterface {
 
 ```typescript
 type RequestBlockingEvent = {
-    // Tab identifier.
+    /**
+     * Tab identifier.
+     */
     tabId: number;
-    // Blocked request URL.
+
+    /**
+     * Blocked request id.
+     */
+    requestId: string;
+
+    /**
+     * Blocked request URL.
+     */
     requestUrl: string;
-    // Referrer URL.
+
+    /**
+     * Referrer URL.
+     */
     referrerUrl: string;
-    // Assumed Filtering rule, which has blocked this request.
-    assumedRule: string;
-    // Assumed rule's filter identifier.
-    assumedFilterId: number;
-    // Request mime type.
+
+    /**
+     * Request mime type
+     */
     requestType: ContentType;
+
+    /**
+     * Assumed Filtering rule index, which has blocked this request. May not be provided if request is blocked by DNR rule.
+     */
+    assumedRuleIndex?: string;
+
+    /**
+     * Assumed rule's filter identifier. May not be provided if request is blocked by DNR rule.
+     */
+    assumedFilterId?: number;
+
+    /**
+     * Company category name for requests blocked by DNR rule. Provided only if request is blocked by DNR rule.
+     */
+    companyCategoryName?: string;
 };
 ```
+
+Learn more about `companyCategoryName` in the [list of company categories].
+
+> Note that few events can be fired for the same request, e.g., when a request is blocked by a DNR rule,
+> first event is fired during `onBeforeRequest` with `assumedRuleIndex` and `assumedFilterId` properties
+> but no `companyCategoryName` is provided,
+> and the second event is fired during `onErrorOccurred` with `companyCategoryName` property defined
+> but `assumedRuleIndex` and `assumedFilterId` are `-1`.
+> So you can handle such requests by the `requestId` property.
+
+[list of company categories]: https://github.com/AdguardTeam/companiesdb/blob/main/README.md#tracker-categories
 
 **Example:**
 
@@ -460,7 +498,7 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
          * filters identifiers from dnr-rulesets
          * @see https://filters.adtidy.org/extension/chromium/filters.json
          */
-        filters: [1, 2, 3, 4, 9, 14],
+        filters: [2, 3, 4],
         filteringEnabled: true,
         allowlist: ['www.example.com'],
         rules: ['example.org##h1'],

@@ -7,6 +7,7 @@ import {
 
 import { tabsApi } from '../../tabs/tabs-api';
 import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
+
 import { type RequestContext } from './request-context-storage';
 
 /**
@@ -14,7 +15,13 @@ import { type RequestContext } from './request-context-storage';
  */
 type RequestParams = Pick<
     RequestContext,
-    'tabId' | 'eventId' | 'referrerUrl' | 'requestUrl' | 'requestType' | 'contentType'
+    'tabId' |
+    'eventId' |
+    'referrerUrl' |
+    'requestId' |
+    'requestUrl' |
+    'requestType' |
+    'contentType'
 >;
 
 /**
@@ -160,6 +167,7 @@ export class RequestBlockingApi {
             tabId,
             eventId,
             referrerUrl,
+            requestId,
             requestUrl,
             requestType,
             contentType,
@@ -176,6 +184,7 @@ export class RequestBlockingApi {
                 eventId,
                 requestType: contentType,
                 frameUrl: referrerUrl,
+                requestId,
                 requestUrl,
                 filterId: appliedRule.getFilterListId(),
                 ruleIndex: appliedRule.getIndex(),
