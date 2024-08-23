@@ -23,24 +23,29 @@ export class RemoveHeadersService {
     }
 
     /**
-     * On before send headers handler.
-     * Removes request headers.
+     * Modifies headers by applying $removeheader rules.
      *
      * @param context Request context.
+     * @param isRequestHeaders Is headers are _request_ headers, i.e. `false`
+     * for _response_ headers.
+     * @param headersToModify Headers to modify.
+     *
      * @returns True if headers were modified.
      */
-    public onBeforeSendHeaders(context: RequestContext): boolean {
+    private modifyHeaders(
+        context: RequestContext,
+        isRequestHeaders: boolean,
+        headersToModify?: WebRequest.HttpHeaders,
+    ): boolean {
         const {
-            requestHeaders,
             matchingResult,
             tabId,
             requestUrl,
-            requestId,
             contentType,
             timestamp,
         } = context;
 
-        if (!requestHeaders || !matchingResult) {
+        if (!headersToModify || !matchingResult) {
             return false;
         }
 
@@ -56,9 +61,9 @@ export class RemoveHeadersService {
             if (rule.isAllowlist()) {
                 // Allowlist rules must be applicable by header name to be logged
                 isAppliedRule = RemoveHeadersService
-                    .isApplicableRemoveHeaderRule(requestHeaders, rule, true);
+                    .isApplicableRemoveHeaderRule(headersToModify, rule, isRequestHeaders);
             } else {
-                isAppliedRule = RemoveHeadersService.applyRule(requestHeaders, rule, true);
+                isAppliedRule = RemoveHeadersService.applyRule(headersToModify, rule, isRequestHeaders);
                 if (!isModified && isAppliedRule) {
                     isModified = true;
                 }
@@ -89,6 +94,21 @@ export class RemoveHeadersService {
                 });
             }
         });
+
+        return isModified;
+    }
+
+    /**
+     * On before send headers handler.
+     * Removes request headers.
+     *
+     * @param context Request context.
+     * @returns True if headers were modified.
+     */
+    public onBeforeSendHeaders(context: RequestContext): boolean {
+        const { requestHeaders, requestId } = context;
+
+        const isModified = this.modifyHeaders(context, true, requestHeaders);
 
         if (isModified) {
             requestContextStorage.update(requestId, { requestHeaders });
@@ -105,64 +125,9 @@ export class RemoveHeadersService {
      * @returns True if headers were modified.
      */
     public onHeadersReceived(context: RequestContext): boolean {
-        const {
-            responseHeaders,
-            matchingResult,
-            tabId,
-            requestUrl,
-            requestId,
-            contentType,
-            timestamp,
-        } = context;
+        const { responseHeaders, requestId } = context;
 
-        if (!responseHeaders || !matchingResult) {
-            return false;
-        }
-
-        const rules = matchingResult.getRemoveHeaderRules();
-        if (rules.length === 0) {
-            return false;
-        }
-
-        let isModified = false;
-
-        rules.forEach((rule) => {
-            let isAppliedRule = false;
-            if (rule.isAllowlist()) {
-                // Allowlist rules must be applicable by header name to be logged
-                isAppliedRule = RemoveHeadersService
-                    .isApplicableRemoveHeaderRule(responseHeaders, rule, false);
-            } else {
-                isAppliedRule = RemoveHeadersService.applyRule(responseHeaders, rule, false);
-                if (!isModified && isAppliedRule) {
-                    isModified = true;
-                }
-            }
-            if (isAppliedRule) {
-                this.filteringLog.publishEvent({
-                    type: FilteringEventType.RemoveHeader,
-                    data: {
-                        removeHeader: true,
-                        headerName: rule.getAdvancedModifierValue()!,
-                        eventId: nanoid(),
-                        tabId,
-                        requestUrl,
-                        frameUrl: requestUrl,
-                        frameDomain: getDomain(requestUrl) as string,
-                        requestType: contentType,
-                        timestamp,
-                        filterId: rule.getFilterListId(),
-                        ruleIndex: rule.getIndex(),
-                        isAllowlist: rule.isAllowlist(),
-                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
-                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
-                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
-                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
-                        advancedModifier: rule.getAdvancedModifierValue(),
-                    },
-                });
-            }
-        });
+        const isModified = this.modifyHeaders(context, false, responseHeaders);
 
         if (isModified) {
             requestContextStorage.update(requestId, { responseHeaders });
@@ -177,7 +142,9 @@ export class RemoveHeadersService {
      *
      * @param headers Headers.
      * @param rule Rule to apply if it has remove header modifier.
-     * @param isRequestHeaders Is request headers.
+     * @param isRequestHeaders Is headers are _request_ headers, i.e. `false`
+     * for _response_ headers.
+     *
      * @returns True if headers removed by rule.
      */
     private static applyRule(
@@ -198,7 +165,9 @@ export class RemoveHeadersService {
      *
      * @param headers   Headers.
      * @param rule  Rule with $removeheader modifier.
-     * @param isRequestHeaders Is request headers.
+     * @param isRequestHeaders Is headers are _request_ headers, i.e. `false`
+     * for _response_ headers.
+     *
      * @returns True if rule is applicable.
      */
     private static isApplicableRemoveHeaderRule(
@@ -218,7 +187,9 @@ export class RemoveHeadersService {
      * Returns header name if rule has remove header modifier and it is applicable.
      *
      * @param rule Rule with $removeheader modifier.
-     * @param isRequestHeaders Is request headers.
+     * @param isRequestHeaders Is headers are _request_ headers, i.e. `false`
+     * for _response_ headers.
+     *
      * @returns Header name or null if rule is not applicable.
      */
     private static getApplicableHeaderName(

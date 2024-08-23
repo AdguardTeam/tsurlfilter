@@ -40,7 +40,7 @@ export type {
     ConfigurationMV3 as Configuration,
     SettingsConfigMV3 as SettingsConfig,
 } from './configuration';
-export { CommonMessageType, ExtendedMV3MessageType } from './messages';
+export { MessageType } from '../../common/message-constants';
 export { RULE_SET_NAME_PREFIX } from './filters-api';
 export { companiesDbService } from '../../common/companies-db-service';
 export {
@@ -71,6 +71,8 @@ export {
     type CspReportBlockedEvent,
     type StealthAllowlistActionEvent,
     type ApplyPermissionsRuleEvent,
+    type DeclarativeRuleEvent,
+    type DeclarativeRuleInfo,
 } from '../../common/filtering-log';
 export { BACKGROUND_TAB_ID, LF } from '../../common/constants';
 export { ContentType } from '../../common/request-type';

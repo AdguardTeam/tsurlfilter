@@ -157,6 +157,7 @@ import { RequestBlockingApi } from './request/request-blocking-api';
 import { companiesDbService } from '../../common/companies-db-service';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
+import { declarativeFilteringLog } from './declarative-filtering-log';
 
 /**
  * API for applying rules from background service by handling
@@ -523,13 +524,13 @@ export class WebRequestApi {
             },
         });
 
-        requestContextStorage.delete(requestId);
+        WebRequestApi.deleteRequestContext(details.requestId);
     }
 
     /**
-     * Event handler for onErrorOccurred event. It fires when an error occurs.
+     * This is handler for the last event from the request lifecycle.
      *
-     * @param event On error occurred event.
+     * @param event On completed occurred event.
      * @param event.context On completed occurred event context.
      */
     private static onCompleted({
@@ -559,7 +560,26 @@ export class WebRequestApi {
             });
         }
 
-        requestContextStorage.delete(context.requestId);
+        WebRequestApi.deleteRequestContext(context.requestId);
+    }
+
+    /**
+     * Delete request context immediately or with timeout,
+     * if declarativeFilteringLog is listening.
+     *
+     * @param requestId Request id.
+     */
+    private static deleteRequestContext(requestId: string): void {
+        // If declarativeFilteringLog is listening, we should wait some time
+        // before deleting the request context to extract context event id to
+        // link request with matched declarative rule.
+        if (declarativeFilteringLog.isListening) {
+            setTimeout(() => {
+                requestContextStorage.delete(requestId);
+            }, FRAME_DELETION_TIMEOUT_MS);
+        } else {
+            requestContextStorage.delete(requestId);
+        }
     }
 
     /**
@@ -588,7 +608,7 @@ export class WebRequestApi {
          *
          * TODO: add the ability to prolong request and tab/frame contexts lives if it was not yet consumed
          * at webRequest or webNavigation events, i.e
-         *   - keep requestContext, if webRequest.onCommitted has not been fired,
+         *   - keep requestContext if webRequest.onCommitted has not been fired,
          *   - keep tab context if webNavigation.omCompleted has not been fired,
          * etc.
          */

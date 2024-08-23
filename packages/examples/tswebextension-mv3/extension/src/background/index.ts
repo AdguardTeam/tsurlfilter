@@ -1,10 +1,13 @@
 import {
     TsWebExtension,
     Configuration,
-    CommonMessageType,
+    MessageType,
+    MESSAGE_HANDLER_NAME,
+    defaultFilteringLog,
+    FilteringEventType,
 } from '@adguard/tswebextension/mv3';
+import { type FilteringLogEvent } from '@adguard/tswebextension';
 import { FilterListPreprocessor } from '@adguard/tsurlfilter';
-import { MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 import browser from 'webextension-polyfill';
 
 import { Message } from '../message';
@@ -35,7 +38,7 @@ interface IMessage {
 }
 
 interface IMessageInner {
-    type: CommonMessageType,
+    type: MessageType,
     handlerName: typeof MESSAGE_HANDLER_NAME,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload?: any,
@@ -119,20 +122,6 @@ const messageHandler = async (message: IMessage) => {
 
             break;
         }
-        case Message.StartLog: {
-            config.filteringLogEnabled = true;
-
-            await tsWebExtension.configure(config);
-
-            break;
-        }
-        case Message.StopLog: {
-            config.filteringLogEnabled = false;
-
-            await tsWebExtension.configure(config);
-
-            break;
-        }
         case Message.OpenAssistant: {
             const tabs = await browser.tabs.query({ active: true });
             if (tabs.length > 0 && tabs[0].id) {
@@ -164,9 +153,12 @@ const startIfNeed = async () => {
         }
     }
 
+    await tsWebExtension.initStorage();
+
     if (isStarted) {
         await tsWebExtension.start(config);
     }
+
 };
 
 const waitForInitAndClean = async () => {
@@ -222,11 +214,36 @@ const proxyHandler = async (
     }
 };
 
+/**
+ * Example of usage filtering log events.
+ */
+const startFilteringLog = async () => {
+    const logEvent = (event: FilteringLogEvent) => {
+        // Beautify declarative rule json.
+        if (event.type === FilteringEventType.MatchedDeclarativeRule) {
+            Object.assign(event.data.declarativeRuleInfo, {
+                declarativeRuleJson: JSON.parse(event.data.declarativeRuleInfo.declarativeRuleJson),
+            });
+        }
+
+        console.debug(`[${event.type}]: ${JSON.stringify(event.data, null, 2)}`);
+    };
+
+    defaultFilteringLog.addEventListener(FilteringEventType.SendRequest, logEvent);
+    defaultFilteringLog.addEventListener(FilteringEventType.ReceiveResponse, logEvent);
+    defaultFilteringLog.addEventListener(FilteringEventType.ApplyBasicRule, logEvent);
+    defaultFilteringLog.addEventListener(FilteringEventType.ApplyCosmeticRule, logEvent);
+    defaultFilteringLog.addEventListener(FilteringEventType.JsInject, logEvent);
+    defaultFilteringLog.addEventListener(FilteringEventType.MatchedDeclarativeRule, logEvent);
+};
+
 // TODO: Add same logic for update event
 browser.runtime.onInstalled.addListener(async () => {
     console.debug('[ON INSTALLED]: start');
 
     await initExtension('install');
+
+    await startFilteringLog();
 
     console.debug('[ON INSTALLED]: done');
 });

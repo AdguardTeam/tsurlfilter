@@ -17,7 +17,7 @@ import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import UserRulesApi, { type ConversionResult } from './user-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
-import { declarativeFilteringLog, type RecordFiltered } from './declarative-filtering-log';
+import { declarativeFilteringLog } from './declarative-filtering-log';
 import RuleSetsLoaderApi from './rule-sets-loader-api';
 import { Assistant } from './assistant';
 import {
@@ -55,7 +55,6 @@ export type {
     ConfigurationResult,
     ConversionResult,
     FailedEnableRuleSetsError,
-    RecordFiltered,
 };
 
 /**
@@ -156,6 +155,9 @@ export class TsWebExtension implements AppInterface<
             // Start handle request events.
             WebRequestApi.start();
 
+            // Start handle onRuleMatchedDebug event.
+            declarativeFilteringLog.start();
+
             // Add tabs listeners
             await tabsApi.start();
 
@@ -235,6 +237,9 @@ export class TsWebExtension implements AppInterface<
 
         // Stop handle request events.
         WebRequestApi.stop();
+
+        // Stop handle onRuleMatchedDebug event.
+        declarativeFilteringLog.stop();
 
         // Remove tabs listeners and clear context storage
         tabsApi.stop();
@@ -343,10 +348,7 @@ export class TsWebExtension implements AppInterface<
             ];
 
             // Update rulesets in declarative filtering log.
-            TsWebExtension.updateRuleSetsForFilteringLog(
-                ruleSets,
-                configuration.filteringLogEnabled,
-            );
+            TsWebExtension.updateRuleSetsForFilteringLog(ruleSets, configuration.declarativeLogEnabled);
 
             res.staticFilters = staticRuleSets;
         } else {
@@ -519,7 +521,7 @@ export class TsWebExtension implements AppInterface<
             settings,
             filtersPath,
             ruleSetsPath,
-            filteringLogEnabled,
+            declarativeLogEnabled,
         } = configuration;
 
         return {
@@ -527,7 +529,7 @@ export class TsWebExtension implements AppInterface<
             customFilters: customFilters.map(({ filterId }) => filterId),
             filtersPath,
             ruleSetsPath,
-            filteringLogEnabled,
+            declarativeLogEnabled,
             verbose,
             settings,
         };
@@ -608,20 +610,18 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Set provided list of rule sets to a filtering log and toggle it's status
-     * with the passed value.
+     * Set provided list of rule sets to a filtering log.
      *
      * @param allRuleSets List of {@link IRuleSet}.
-     * @param filteringLogEnabled Preferred status for filtering log.
+     * @param declarativeLogEnabled Should we log matched declarative rules.
      */
     private static updateRuleSetsForFilteringLog(
         allRuleSets: IRuleSet[],
-        filteringLogEnabled: boolean,
+        declarativeLogEnabled: boolean,
     ): void {
         declarativeFilteringLog.ruleSets = allRuleSets;
 
-        // Starts or stop declarative filtering log.
-        if (filteringLogEnabled) {
+        if (declarativeLogEnabled) {
             declarativeFilteringLog.start();
         } else {
             declarativeFilteringLog.stop();
@@ -629,7 +629,6 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * TODO: Check if this method is needed.
      * Initialize app persistent data.
      * This method called as soon as possible and allows access
      * to the actual context before the app is started.

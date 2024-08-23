@@ -26,7 +26,7 @@ Table of content:
         - [content](#content-1)
       - [filtersPath (MV3 only)](#filterspath-mv3-only)
       - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
-      - [filteringLogEnabled (MV3 only)](#filteringlogenabled-mv3-only)
+      - [declarativeLogEnabled (MV3 only)](#extended-filtering-log-enabled-mv3-only)
       - [allowlist](#allowlist)
       - [trustedDomains](#trusteddomains)
       - [userrules (MV2)](#userrules-mv2)
@@ -276,11 +276,11 @@ type: `string`
 
 Path to directory with converted rule sets.
 
-#### filteringLogEnabled (MV3 only)
+#### declarativeLogEnabled (MV3 only)
 
 type: `boolean`
 
-Enables filtering log if true.
+Enables matching declarative rules for filtering log.
 
 #### allowlist
 
