@@ -57,9 +57,9 @@ export interface ExpectationData {
 }
 
 /**
- * Interface for skipUntilEx result.
+ * Interface for skipUntilExt result.
  */
-export interface SkipUntilExResult {
+export interface SkipUntilExtResult {
     /**
      * Number of tokens skipped.
      */
@@ -318,7 +318,7 @@ export class CssTokenStream {
      * @returns An array containing the number of tokens skipped and the number of tokens skipped without leading and
      * trailing whitespace tokens.
      */
-    public skipUntilEx(type: TokenType, balance: number): SkipUntilExResult {
+    public skipUntilExt(type: TokenType, balance: number): SkipUntilExtResult {
         let i = this.index;
         let firstNonWsToken = -1; // -1 means no non-whitespace token found yet
         let lastNonWsToken = -1; // -1 means no non-whitespace token found yet

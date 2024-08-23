@@ -2,7 +2,8 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
 import { type WebRequest } from 'webextension-polyfill';
 
-import { findHeaderByName, removeHeader } from '../utils/headers';
+import { findHeaderByName, getHost, isThirdPartyRequest } from '../../../common/utils';
+import { removeHeader } from '../utils/headers';
 import {
     FilteringEventType,
     type FilteringLogInterface,
@@ -10,10 +11,8 @@ import {
 import type { StealthConfig } from '../../../common/configuration';
 import { StealthHelper } from '../../../common/stealth-helper';
 import { StealthActions } from '../../../common/stealth-actions';
-
 import type { RequestContext } from '../request';
 import type { AppContext } from '../context';
-import { getHost, isThirdPartyRequest } from '../../../common/utils/url';
 
 /**
  * Stealth service module.

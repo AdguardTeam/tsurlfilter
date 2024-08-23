@@ -5,9 +5,9 @@ import {
     MESSAGE_HANDLER_NAME,
     defaultFilteringLog,
     FilteringEventType,
+    type FilteringLogEvent,
+    FilterListPreprocessor,
 } from '@adguard/tswebextension/mv3';
-import { type FilteringLogEvent } from '@adguard/tswebextension';
-import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 
 import { Message } from '../message';

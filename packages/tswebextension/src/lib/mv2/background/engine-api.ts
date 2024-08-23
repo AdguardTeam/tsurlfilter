@@ -12,7 +12,6 @@ import {
     Request,
     CosmeticResult,
     type CosmeticOption,
-    type HTTPMethod,
     STEALTH_MODE_FILTER_ID,
 } from '@adguard/tsurlfilter';
 
@@ -24,17 +23,6 @@ import type { Allowlist } from './allowlist';
 import type { StealthApi } from './stealth-api';
 import type { ConfigurationMV2 } from './configuration';
 import type { AppContext } from './context';
-
-/**
- * Request Match Query.
- */
-export interface MatchQuery {
-    requestUrl: string;
-    frameUrl: string;
-    requestType: RequestType;
-    frameRule?: NetworkRule | null;
-    method?: HTTPMethod;
-}
 
 /**
  * TSUrlFilter Engine wrapper.

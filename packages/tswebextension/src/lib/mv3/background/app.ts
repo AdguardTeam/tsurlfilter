@@ -14,7 +14,7 @@ import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
-import UserRulesApi, { type ConversionResult } from './user-rules-api';
+import UserRulesApi, { USER_FILTER_ID, type ConversionResult } from './user-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
 import { declarativeFilteringLog } from './declarative-filtering-log';
@@ -240,6 +240,9 @@ export class TsWebExtension implements AppInterface<
 
         // Stop handle onRuleMatchedDebug event.
         declarativeFilteringLog.stop();
+
+        // Stop handle request events.
+        WebRequestApi.stop();
 
         // Remove tabs listeners and clear context storage
         tabsApi.stop();

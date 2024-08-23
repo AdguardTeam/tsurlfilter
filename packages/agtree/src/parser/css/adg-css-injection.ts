@@ -141,7 +141,7 @@ export class AdgCssInjectionParser extends ParserBase {
         // .selector { padding-top: 10px; padding-bottom: 10px; }
         //           ↑
         //           └ this one
-        const { skippedTrimmed: selectorTokensLength } = stream.skipUntilEx(
+        const { skippedTrimmed: selectorTokensLength } = stream.skipUntilExt(
             TokenType.OpenCurlyBracket,
             balanceShift + 1,
         );

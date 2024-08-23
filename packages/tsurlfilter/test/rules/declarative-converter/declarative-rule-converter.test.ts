@@ -1464,7 +1464,6 @@ describe('DeclarativeRuleConverter', () => {
                     }],
                 },
                 condition: {
-
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1779,7 +1778,6 @@ describe('DeclarativeRuleConverter', () => {
                     }],
                 },
                 condition: {
-
                     urlFilter: '||example.org^',
                     resourceTypes: allResourcesTypes,
                 },
@@ -1817,7 +1815,6 @@ describe('DeclarativeRuleConverter', () => {
                         'example.com',
                     ],
                     resourceTypes: allResourcesTypes,
-
                 },
             });
         });
