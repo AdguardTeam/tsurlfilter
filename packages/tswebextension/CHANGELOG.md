@@ -356,10 +356,6 @@ mode toggle.
 ### Changed
 
 - Updated `@adguard/extended-css` to `v2.0.56`.
-<<<<<<< HEAD
-
-=======
->>>>>>> master
 - Updated `@adguard/tsurlfilter` to `v2.2.8`.
 
 ### Fixed
