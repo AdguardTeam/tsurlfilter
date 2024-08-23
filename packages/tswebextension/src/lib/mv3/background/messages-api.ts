@@ -372,41 +372,4 @@ export class MessagesApi {
     public static async sendMessageToTab(tabId: number, message: unknown): Promise<void> {
         await browser.tabs.sendMessage(tabId, message);
     }
-
-    /**
-     * Calculates matching result based on provided urls.
-     *
-     * @param url Current URL of document.
-     * @param referrer The URL of the location that referred the user
-     * to the current page.
-     * @param sender An object containing information about the script context
-     * that sent a message or request.
-     *
-     * @returns Null or matched result from engine if request has been matched
-     * by some rule.
-     */
-    private static calculateMatchingResult(
-        url: string,
-        referrer: string,
-        sender: chrome.runtime.MessageSender,
-    ): MatchingResult | null {
-        let isSubDocument = false;
-
-        // When document url for iframe is about:blank then we use tab url
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1498
-        if (!isHttpOrWsRequest(url) && sender.frameId !== 0 && sender.tab?.url) {
-            isSubDocument = true;
-        }
-
-        // TODO: Extract from cache
-        return engineApi.matchRequest({
-            requestUrl: url,
-            frameUrl: referrer,
-            // Always RequestType.Document or RequestType.SubDocument,
-            // because in MV3 we request CSS for the already loaded page
-            // from content-script.
-            requestType: isSubDocument ? RequestType.SubDocument : RequestType.Document,
-            frameRule: engineApi.matchFrame(url),
-        });
-    }
 }

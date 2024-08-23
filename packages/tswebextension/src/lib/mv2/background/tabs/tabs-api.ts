@@ -390,34 +390,6 @@ export class TabsApi {
      * @param url Url.
      */
     public handleTabNavigation(tabId: number, url: string): void {
-        if (!isHttpRequest(url)) {
-            return;
-        }
-
-        const tabContext = this.context.get(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        if (!isHttpRequest(url)) {
-            return;
-        }
-
-        tabContext.updateMainFrameData(tabId, url);
-    }
-
-    /**
-     * Uses {@link browser.webNavigation.onBeforeNavigate} event data
-     * to update tab context data in conjunction with {@link handleTabUpdate}.
-     *
-     * Note: it is being specifically called at onBeforeNavigate
-     * to handle initial tab update before {@link browser.tab.onUpdate} and {@link handleTabUpdate}.
-     *
-     * @param tabId Tab ID.
-     * @param url Url.
-     */
-    public handleTabNavigation(tabId: number, url: string): void {
         const tabContext = this.context.get(tabId);
         if (!tabContext) {
             return;

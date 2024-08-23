@@ -3,19 +3,11 @@
  */
 
 import { CosmeticResult } from '@adguard/tsurlfilter';
-<<<<<<< HEAD
 
 import { createCosmeticRule } from '../../../helpers/rule-creator';
 import { type ContentScriptCosmeticData, CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { CosmeticController } from '../../../../src/lib/mv2/content-script/cosmetic-controller';
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
-=======
-import { type ContentScriptCosmeticData, CosmeticApi } from '@lib/mv2/background/cosmetic-api';
-import { CosmeticController } from '@lib/mv2/content-script/cosmetic-controller';
-
-import * as SendMessageModule from '@lib/common/content-script/send-app-message';
-import { createCosmeticRule } from '../../../helpers/rule-creator';
->>>>>>> master
 
 jest.mock('@lib/common/content-script/send-app-message', () => {
     return {

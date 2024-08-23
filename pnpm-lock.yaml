@@ -397,40 +397,6 @@ importers:
         specifier: ^4.6.2
         version: 4.16.2
 
-  packages/agtree/benchmark:
-    dependencies:
-      agtree-v1:
-        specifier: npm:@adguard/agtree@^1.1.7
-        version: /@adguard/agtree@1.1.8
-      benchmark:
-        specifier: ^2.1.4
-        version: 2.1.4
-      date-fns:
-        specifier: ^2.30.0
-        version: 2.30.0
-      markdown-table:
-        specifier: ^3.0.3
-        version: 3.0.3
-      node-fetch:
-        specifier: ^3.3.2
-        version: 3.3.2
-      os-name:
-        specifier: ^6.0.0
-        version: 6.0.0
-      tsurlfilter-v1:
-        specifier: npm:@adguard/tsurlfilter@^1.0.80
-        version: /@adguard/tsurlfilter@1.0.81
-      tsurlfilter-v2:
-        specifier: npm:@adguard/tsurlfilter@2.2.7
-        version: /@adguard/tsurlfilter@2.2.7
-    devDependencies:
-      '@types/benchmark':
-        specifier: ^2.1.5
-        version: 2.1.5
-      tsx:
-        specifier: ^4.6.2
-        version: 4.9.3
-
   packages/css-tokenizer:
     devDependencies:
       '@babel/core':
@@ -1415,19 +1381,6 @@ packages:
       clone-deep: 4.0.1
       json5: 2.2.3
       semver: 7.6.2
-      tldts: 5.7.112
-      xregexp: 5.1.1
-    dev: false
-
-  /@adguard/agtree@1.1.8:
-    resolution: {integrity: sha512-5k9bYA+JSfZgYTvwahkM8ihIf1fvP+RxA1dKLgkRIGa6ixOSWNKv/pN0Rpiy0DwZJbC9X/OeZrtdW66jASH/JA==}
-    engines: {node: '>=14'}
-    dependencies:
-      '@adguard/ecss-tree': 1.0.8
-      '@adguard/scriptlets': 1.11.16
-      clone-deep: 4.0.1
-      json5: 2.2.3
-      semver: 7.6.0
       tldts: 5.7.112
       xregexp: 5.1.1
     dev: false
@@ -7396,18 +7349,6 @@ packages:
       es-shim-unscopables: 1.0.2
     dev: true
 
-  /array.prototype.findlastindex@1.2.5:
-    resolution: {integrity: sha512-zfETvRFA8o7EiNn++N5f/kaCw221hrpGsDmcpndVupkPzEc1Wuf3VgC0qby1BbHs7f5DVYjgtEU2LLh5bqeGfQ==}
-    engines: {node: '>= 0.4'}
-    dependencies:
-      call-bind: 1.0.7
-      define-properties: 1.2.1
-      es-abstract: 1.23.2
-      es-errors: 1.3.0
-      es-object-atoms: 1.0.0
-      es-shim-unscopables: 1.0.2
-    dev: true
-
   /array.prototype.flat@1.3.2:
     resolution: {integrity: sha512-djYB+Zx2vLewY8RWlNCUdHjDXs2XOgm602S9E7P/UpHgfeHL00cRiIF+IN/G/aUJ7kGPb6yO/ErDI5V2s8iycA==}
     engines: {node: '>= 0.4'}
@@ -10921,7 +10862,7 @@ packages:
       cross-spawn: 7.0.3
       get-stream: 5.2.0
       human-signals: 1.1.1
-      is-stream: 2.0.0
+      is-stream: 2.0.1
       merge-stream: 2.0.0
       npm-run-path: 4.0.1
       onetime: 5.1.2
@@ -11455,7 +11396,7 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       at-least-node: 1.0.0
-      graceful-fs: 4.2.10
+      graceful-fs: 4.2.11
       jsonfile: 6.1.0
       universalify: 2.0.1
     dev: true
@@ -11941,10 +11882,6 @@ packages:
       p-cancelable: 1.1.0
       to-readable-stream: 1.0.0
       url-parse-lax: 3.0.0
-    dev: true
-
-  /graceful-fs@4.2.10:
-    resolution: {integrity: sha512-9ByhssR2fPVsNZj478qUUbKfmL0+t5BDVyjShtyZZLiK7ZDAArFFfopyOTj0M05wE2tJPisA4iTnnXl2YoPvOA==}
     dev: true
 
   /graceful-fs@4.2.11:
