@@ -147,7 +147,7 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
             resData.companyCategoryName = companyCategoryName;
         }
 
-        if (typeof filterId !== 'undefined' && typeof ruleIndex === 'undefined') {
+        if (filterId !== null && ruleIndex !== null) {
             resData.assumedFilterId = filterId;
             resData.assumedRuleIndex = ruleIndex;
         }
