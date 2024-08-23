@@ -1,4 +1,4 @@
-import { ExtendedMV3MessageType } from '@adguard/tswebextension/mv3';
+import { type MessageType } from '@adguard/tswebextension/mv3';
 import browser from 'webextension-polyfill';
 
 import { Message } from '../message';
@@ -14,7 +14,7 @@ export const sendMessage = async (
 };
 
 export const sendInnerMessage = (
-    type: ExtendedMV3MessageType,
+    type: MessageType,
     handlerName = 'tsWebExtension',
 ) => {
     const response = browser.runtime.sendMessage({ type, handlerName });

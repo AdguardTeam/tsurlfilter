@@ -51,13 +51,11 @@ export type RequestBlockingEvent = {
      */
     requestType: ContentType;
 
-    // FIXME: Check this field
     /**
      * Assumed Filtering rule, which has blocked this request. May not be provided if request is blocked by DNR rule.
      */
     assumedRuleIndex?: number;
 
-    // FIXME: Check this field
     /**
      * Assumed rule's filter identifier. May not be provided if request is blocked by DNR rule.
      */

@@ -15,6 +15,7 @@ import { FilterListPreprocessor } from '../src';
 import {
     getFilterBinaryName,
     getFilterConversionMapName,
+    getFilterName,
     getFilterSourceMapName,
     getIdFromFilterName,
 } from '../src/utils/resource-names';
@@ -248,6 +249,14 @@ export const convertFilters = async (
             fs.promises.writeFile(
                 path.join(filtersDir, getFilterBinaryName(filterId)),
                 Buffer.concat(content.filterList),
+            ),
+            // While preprocessing filter content, some rules can be transformed
+            // and this can lead to a situation where source map will contain
+            // incorrect offsets. That's why we save the preprocessed raw filter
+            // content.
+            fs.promises.writeFile(
+                path.join(filtersDir, getFilterName(filterId)),
+                content.rawFilterList,
             ),
         ]);
 

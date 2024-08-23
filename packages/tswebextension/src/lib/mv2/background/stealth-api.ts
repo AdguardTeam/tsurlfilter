@@ -74,6 +74,15 @@ export class StealthApi {
     }
 
     /**
+     * Checks if both stealth mode and filtering are enabled.
+     *
+     * @returns True if stealth mode and filtering are enabled.
+     */
+    private get isStealthAllowed():boolean {
+        return this.isStealthModeEnabled && this.isFilteringEnabled;
+    }
+
+    /**
      * Stealth API constructor.
      *
      * @param appContextInstance App context.
@@ -111,7 +120,7 @@ export class StealthApi {
      * @returns String rule list or null.
      */
     public getStealthModeRuleList(): IRuleList | null {
-        if (!this.stealthService || !this.isStealthModeEnabled) {
+        if (!this.isStealthAllowed) {
             return null;
         }
 
@@ -138,22 +147,13 @@ export class StealthApi {
             return false;
         }
 
-        if (!this.isStealthModeEnabled || !this.isFilteringEnabled) {
+        if (!this.isStealthAllowed) {
             return false;
         }
 
         const stealthActions = this.stealthService.processRequestHeaders(context);
 
         return stealthActions !== StealthActions.None;
-    }
-
-    /**
-     * Checks if both stealth mode and filtering are enabled.
-     *
-     * @returns True if stealth mode and filtering are enabled.
-     */
-    private isStealthAllowed():boolean {
-        return this.isStealthModeEnabled && this.isFilteringEnabled;
     }
 
     /**
@@ -168,7 +168,7 @@ export class StealthApi {
      * @returns Stealth script.
      */
     public getStealthScript(mainFrameRule: NetworkRule | null, matchingResult?: MatchingResult | null): string {
-        if (!this.isStealthModeEnabled || !this.isFilteringEnabled) {
+        if (!this.isStealthAllowed) {
             return '';
         }
 
@@ -202,7 +202,9 @@ export class StealthApi {
      * @returns Dom signal script.
      */
     public getSetDomSignalScript(): string {
-        return this.stealthService.getSetDomSignalScript();
+        return this.isStealthAllowed
+            ? this.stealthService.getSetDomSignalScript()
+            : '';
     }
 
     /**
@@ -211,7 +213,9 @@ export class StealthApi {
      * @returns Hide referrer script.
      */
     public getHideDocumentReferrerScript(): string {
-        return this.stealthService.getHideDocumentReferrerScript();
+        return this.isStealthAllowed
+            ? this.stealthService.getHideDocumentReferrerScript()
+            : '';
     }
 
     /**
@@ -222,12 +226,10 @@ export class StealthApi {
             return;
         }
 
-        const webRTCDisabled = this.configuration.blockWebRTC
-            && this.isStealthModeEnabled
-            && this.isFilteringEnabled;
+        const isWebRTCDisabled = this.configuration.blockWebRTC && this.isStealthAllowed;
 
         try {
-            if (webRTCDisabled) {
+            if (isWebRTCDisabled) {
                 await browser.privacy.network.webRTCIPHandlingPolicy.set({
                     value: 'disable_non_proxied_udp',
                     scope: 'regular',
@@ -244,7 +246,7 @@ export class StealthApi {
         // privacy.network.peerConnectionEnabled is currently only supported in Firefox
         if (typeof browser.privacy.network.peerConnectionEnabled === 'object') {
             try {
-                if (webRTCDisabled) {
+                if (isWebRTCDisabled) {
                     await browser.privacy.network.peerConnectionEnabled.set({
                         value: false,
                         scope: 'regular',

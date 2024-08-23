@@ -213,29 +213,38 @@ export class RequestContextStorage {
     }
 
     /**
-     * Removes request context from the map by tab id and frame id.
+     * Removes expired (executed more than {@link FRAME_DELETION_TIMEOUT_MS} ago)
+     * requests contexts from the map by tab id and frame id.
+     *
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
     public deleteByTabAndFrame(tabId: number, frameId: number): void {
         const tabAndFrameKey = RequestContextStorage.getTabAndFrameKey(tabId, frameId);
         const requestIds = this.tabAndFrameMap.get(tabAndFrameKey);
-        if (requestIds) {
-            const currentTime = Date.now();
-            const filteredRequestIds = requestIds.filter((requestId) => {
-                const requestContext = this.requestMap.get(requestId);
-                if (requestContext && currentTime - requestContext.timestamp > FRAME_DELETION_TIMEOUT_MS) {
-                    this.requestMap.delete(requestId);
-                    return false;
-                }
-                return requestContext !== undefined;
-            });
+        if (!requestIds) {
+            return;
+        }
 
-            if (filteredRequestIds.length > 0) {
-                this.tabAndFrameMap.set(tabAndFrameKey, filteredRequestIds);
-            } else {
-                this.tabAndFrameMap.delete(tabAndFrameKey);
+        const currentTime = Date.now();
+        const notExpiredRequestIds: string[] = [];
+        requestIds.forEach((requestId) => {
+            const requestContext = this.requestMap.get(requestId);
+
+            if (requestContext && currentTime - requestContext.timestamp > FRAME_DELETION_TIMEOUT_MS) {
+                this.requestMap.delete(requestId);
+                return;
             }
+
+            if (requestContext !== undefined) {
+                notExpiredRequestIds.push(requestId);
+            }
+        });
+
+        if (notExpiredRequestIds.length > 0) {
+            this.tabAndFrameMap.set(tabAndFrameKey, notExpiredRequestIds);
+        } else {
+            this.tabAndFrameMap.delete(tabAndFrameKey);
         }
     }
 

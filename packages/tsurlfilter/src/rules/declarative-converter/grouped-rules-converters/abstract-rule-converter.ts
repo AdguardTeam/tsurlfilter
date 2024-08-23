@@ -838,7 +838,9 @@ export abstract class DeclarativeRuleConverter {
      *
      * @param filterId An identifier for the filter.
      * @param rules Indexed rules.
-     * @param offsetId Offset for the IDs of the converted rules.
+     * @param offsetId Offset for the IDs of the converted rules. Used in cases
+     * of converting several filters into one ruleset to exclude the possibility
+     * of duplicate IDs.
      *
      * @returns Transformed declarative rules with their sources
      * and caught conversion errors.
@@ -855,6 +857,10 @@ export abstract class DeclarativeRuleConverter {
         };
 
         await Promise.all(rules.map(async ({ rule, index }: IndexedNetworkRuleWithHash) => {
+            // Here we use offset to generate unique IDs for each rule. Because
+            // sometimes we convert several filters into one ruleset, that's why
+            // we cannot just use the index on IndexedNetworkRuleWithHash - they
+            // can be the same for different filters.
             const id = offsetId + index;
             let converted: DeclarativeRule[] = [];
 

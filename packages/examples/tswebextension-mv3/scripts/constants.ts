@@ -1,4 +1,5 @@
 import { Configuration } from '@adguard/tswebextension/mv3';
+import { LogLevel } from '@adguard/logger';
 
 // TODO: can be used as common for examples/tswebextension-mv2 as well
 export const TESTCASES_BASE_URL = 'https://testcases.agrd.dev';
@@ -7,6 +8,7 @@ export const TESTCASES_DATA_PATH = '/data.json';
 
 export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     staticFiltersIds: [1, 2, 3, 4, 9, 14],
+    logLevel: LogLevel.Debug,
     customFilters: [],
     allowlist: [],
     userrules: {
@@ -16,10 +18,10 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
         conversionMap: {},
         trusted: true,
     },
-    verbose: false,
+    verbose: true,
     filtersPath: 'filters',
     ruleSetsPath: 'filters/declarative',
-    filteringLogEnabled: false,
+    declarativeLogEnabled: true,
     settings: {
         assistantUrl: 'assistant-inject.js',
         gpcScriptUrl: 'gpc.js',

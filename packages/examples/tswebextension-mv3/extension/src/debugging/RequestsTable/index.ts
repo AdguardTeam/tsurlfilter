@@ -1,1 +1,0 @@
-export { RequestsTable } from './RequestsTable';

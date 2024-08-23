@@ -1,3 +1,4 @@
+import { type SourceRuleAndFilterId } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type RuleInfo } from './content-script/rule-info';
 import type { ContentType } from './request-type';
 import { EventChannel, type EventChannelInterface } from './utils';
@@ -14,8 +15,8 @@ export enum FilteringEventType {
     ApplyPermissionsRule = 'applyPermissionsRule',
     ReceiveResponse = 'receiveResponse',
     Cookie = 'cookie',
-    RemoveHeader = 'removeHeader', // TODO: Add in MV3
-    RemoveParam = 'removeParam', // TODO: Add in MV3
+    RemoveHeader = 'removeHeader',
+    RemoveParam = 'removeParam',
     ReplaceRuleApply = 'replaceRuleApply',
     ContentFilteringStart = 'contentFilteringStart',
     ContentFilteringFinish = 'contentFilteringFinish',
@@ -23,7 +24,27 @@ export enum FilteringEventType {
     StealthAllowlistAction = 'stealthAllowlistAction', // TODO: Add in MV3
     JsInject = 'jsInject',
     CspReportBlocked = 'cspReportBlocked', // TODO: Add in MV3
+    /**
+     * Used only in unpacked MV3.
+     */
+    MatchedDeclarativeRule = 'matchedDeclarativeRule',
 }
+
+/**
+ * Advanced information about declarative network rule with source rule list and
+ * stringified JSON version of declarative network rule.
+ */
+export type DeclarativeRuleInfo = {
+    /**
+     * Source rule list and filter id. Sometimes one declarative rule can be
+     * generated from multiple source rules, that's why we use array here.
+     */
+    sourceRules: SourceRuleAndFilterId[],
+    /**
+     * DNR rule.
+     */
+    declarativeRuleJson: string,
+};
 
 /**
  * Additional network rule info.
@@ -253,6 +274,8 @@ export type RemoveHeaderEventData = {
 /**
  * Dispatched by RemoveHeadersService manifest v2 module on request header removing in onBeforeSendHeaders and
  * onHeadersReceived event handlers.
+ * Cannot be detected in MV3 because browser applies $removeheader
+ * (via DNR `modifyHeaders`) to request before passing it to extension.
  */
 export type RemoveHeaderEvent = {
     type: FilteringEventType.RemoveHeader;
@@ -275,6 +298,8 @@ export type RemoveParamEventData = {
 /**
  * Dispatched by ParamsService manifest v2 module on request param removing in WebRequestApi.onBeforeRequest event
  * handler.
+ * Cannot be detected in MV3 because browser applies $removeparam
+ * (via DNR `redirect`) to request before passing it to extension.
  */
 export type RemoveParamEvent = {
     type: FilteringEventType.RemoveParam;
@@ -410,6 +435,23 @@ export type CspReportBlockedEvent = {
 };
 
 /**
+ * {@link DeclarativeRuleEvent} Event data.
+ */
+export type DeclarativeRuleEventData = {
+    tabId: number;
+    declarativeRuleInfo: DeclarativeRuleInfo;
+} & WithEventId;
+
+/**
+ * Dispatched by manifest v3 chrome.declarativeNetRequest.onRuleMatchedDebug
+ * handler when matched declarative rule for request.
+ */
+export type DeclarativeRuleEvent = {
+    type: FilteringEventType.MatchedDeclarativeRule
+    data: DeclarativeRuleEventData;
+};
+
+/**
  * Filtering events union.
  *
  * Used for type extraction in generic {@link FilteringLog} methods and common {@link FilteringLog.onLogEvent} channel
@@ -432,7 +474,8 @@ export type FilteringLogEvent =
     | ApplyCosmeticRuleEvent
     | ReceiveResponseEvent
     | JsInjectEvent
-    | CspReportBlockedEvent;
+    | CspReportBlockedEvent
+    | DeclarativeRuleEvent;
 
 /**
  * Utility type for mapping {@link FilteringEventType} with specified {@link FilteringLogEvent}.
