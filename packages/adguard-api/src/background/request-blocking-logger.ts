@@ -121,7 +121,7 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
             requestType,
         };
 
-        if (typeof filterId !== 'undefined' && typeof ruleIndex === 'undefined') {
+        if (filterId !== null && ruleIndex !== null) {
             resData.filterId = filterId;
             resData.ruleIndex = ruleIndex;
         }

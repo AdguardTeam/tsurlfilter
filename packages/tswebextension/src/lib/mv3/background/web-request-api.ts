@@ -515,6 +515,8 @@ export class WebRequestApi {
                 requestId,
                 requestUrl: url,
                 companyCategoryName,
+                filterId: null,
+                ruleIndex: null,
                 isAllowlist: false,
                 isImportant: false,
                 isDocumentLevel: parentFrameId === WebRequestApi.NO_PARENT_FRAME_ID,
