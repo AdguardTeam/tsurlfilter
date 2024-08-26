@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   which represents a matched company from `AdguardTeam/companiesdb`'s `trackers.json` database in MV3.
   It allows to determinate the tracker category for the blocked request.
 
+### Fixed
+
+- Redirect rule blocks request in the Spotify player instead of redirecting [AdguardBrowserExtension#2913]
+
+[AdguardBrowserExtension#2913]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2913
+
 ## [2.0.0] - 2024-08-15
 
 ### Added
