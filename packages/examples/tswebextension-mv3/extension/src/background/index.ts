@@ -5,15 +5,15 @@ import {
     MESSAGE_HANDLER_NAME,
     defaultFilteringLog,
     FilteringEventType,
+    FilterListPreprocessor,
 } from '@adguard/tswebextension/mv3';
-import { type FilteringLogEvent } from '@adguard/tswebextension';
-import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 
 import { Message } from '../message';
 import { StorageKeys, storage } from './storage';
 import { loadDefaultConfig } from './loadDefaultConfig';
 import { EXTENSION_INITIALIZED_EVENT } from '../common/constants';
+import { type FilteringLogEvent } from '@adguard/tswebextension';
 
 declare global {
     interface Window {

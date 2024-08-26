@@ -9,7 +9,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [semver]: https://semver.org/spec/v2.0.0.html
 
 
-## 2.0.0-alpha.0 - 2024-07-29
+## [2.0.0] - 2024-08-15
 
 ### Added
 
@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Compatibility table API.
 - Compatibility table wiki, which is generated via the compatibility table API.
 - Protected Audience API directives to `$permissions` modifier validator.
+- Possibility to convert scriptlet rules to uBO syntax.
 - Performance benchmarking.
 
 ### Changed
@@ -43,6 +44,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Removed `Parameter` node from the AST and replaced it with `Value` node.
 - If a parameter is empty, it parsed as `null` instead of empty string.
 - `SimpleCommentParser` now has a separate class.
+- Logical operator types are now consistent, we only use the `OperatorValue` enum.
 - Reworked the compatibility table structure.
 - Library now use CJS.
 - `version` export renamed to `AGTREE_VERSION`.
@@ -59,6 +61,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - `css-tree` library. It is not needed anymore, because AGTree now uses `@adguard/css-tokenizer` package.
 - `##^`/`#@#^` and `##+`/`#@#+` from the cosmetic rule separator finder. Instead, `##`/`#@#` is used, and the `^`/`+` is
   checked in the body parser.
+
+[2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.0.0
 
 ## 1.1.8 - 2024-04-24
 

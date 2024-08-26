@@ -19,6 +19,7 @@ class Storage {
      * and we use it to store serialized filter lists.
      *
      * @param value Object to serialize.
+     *
      * @returns Serialized object.
      */
     private serialize = (value: unknown): unknown => {

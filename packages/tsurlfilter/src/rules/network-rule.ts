@@ -809,28 +809,30 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * Checks if request target matches with specified domains
+     * Checks if the request domain matches the specified conditions.
      *
-     * @param domain request's domain
-     * @return true if request domain matches with specified domains
+     * @param domain The request's domain.
+     * @return true if the request domain matches the permitted domains and does not match the restricted domains.
      */
     private matchToModifier(domain: string): boolean {
         if (!this.toModifier) {
             return true;
         }
         /**
-         * Request's domain must be either explicitly
-         * permitted and not be included in list of restricted domains
-         * for the rule to apply
+         * The request's domain must be either explicitly permitted or not be included
+         * in the list of restricted domains for the rule to apply.
          */
         const permittedDomains = this.getPermittedToDomains();
         const restrictedDomains = this.getRestrictedToDomains();
-        const isPermittedDomain = !!permittedDomains
-            && DomainModifier.isDomainOrSubdomainOfAny(domain, permittedDomains);
-        const isRestrictedDomain = !!restrictedDomains
-            && DomainModifier.isDomainOrSubdomainOfAny(domain, restrictedDomains);
 
-        return isPermittedDomain && !isRestrictedDomain;
+        let matches = false;
+        if (permittedDomains) {
+            matches = DomainModifier.isDomainOrSubdomainOfAny(domain, permittedDomains);
+        }
+        if (restrictedDomains) {
+            matches = !DomainModifier.isDomainOrSubdomainOfAny(domain, restrictedDomains);
+        }
+        return matches;
     }
 
     /**

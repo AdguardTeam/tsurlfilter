@@ -8,23 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## [3.0.0-beta.3] - 2024-07-30
+## [Unreleased]
 
 ### Fixed
 
-- `@adguard/agtree` dependency now used consistently in the project.
+- Negated domains in the $to modifier are not working as expected [AdguardBrowserExtension#2910]
 
-[3.0.0-beta.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0-beta.3
+[AdguardBrowserExtension#2910]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2910
 
-## [3.0.0-alpha.1] - 2024-07-17
-
-### Changed
-
-- Updated `@adguard/scriptlets` to `v1.11.6`.
-
-[3.0.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0-alpha.1
-
-## [3.0.0-alpha.0] - 2024-06-21
+## [3.0.0] - 2024-08-15
 
 ### Added
 
@@ -37,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support conversion to DNR for `$permissions` modifier.
 - Support conversion to DNR for `$cookie` modifier.
 - `$url` modifier support for non-basic rules [#64].
+- Ability to allowlist scriptlets by name [#377].
+- New rule indexing algorithm. The storage index is now an integer representing
+  the rule position in the concatenated filter list text.
+  The list id is determined by the pre-stored filter list offset during the scan.
 - Allowlist rule creation utilities: `createAllowlistRuleNode` and `createAllowlistRuleList`.
 - `PreprocessFilterList` utility class to preprocess filter lists before scanning.
 - Source map and source map utilities.
@@ -54,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed `IRuleList`s `retrieveRuleText` method to `retrieveRuleNode`.
 - `BufferRuleList` now expects an AGTree byte buffer in the constructor.
 - `ILineReader` changed to `IReader`.
+- `$header` modifier removed from supported modifiers list in the declarative converter.
+- Updated `@adguard/scriptlets` to `v1.11.6`.
 
 ### Fixed
 
@@ -70,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cosmetic rule parser.
 
 [3.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0-alpha.0
+[3.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0
 [#116]: https://github.com/AdguardTeam/tsurlfilter/issues/116
 [#110]: https://github.com/AdguardTeam/tsurlfilter/issues/110
 [#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
@@ -84,6 +83,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
 [AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
 [#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
+[#41]: https://github.com/AdguardTeam/tsurlfilter/issues/41
+[#63]: https://github.com/AdguardTeam/tsurlfilter/issues/63
+[#64]: https://github.com/AdguardTeam/tsurlfilter/issues/64
+[#66]: https://github.com/AdguardTeam/tsurlfilter/issues/66
+[#69]: https://github.com/AdguardTeam/tsurlfilter/issues/69
+[#85]: https://github.com/AdguardTeam/tsurlfilter/issues/85
+[AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
+[AdguardBrowserExtension#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
+[AdguardBrowserExtension#2481]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481
+[AdguardBrowserExtension#2690]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2690
 
 ## [2.2.23] - 2024-08-01
 

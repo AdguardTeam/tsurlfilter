@@ -21,12 +21,19 @@ export class OutputByteBuffer extends ByteBuffer {
     private offset: number;
 
     /**
-     * Size of the shared buffer for encoding strings.
+     * Size of the shared buffer for encoding strings in bytes.
+     * This is a divisor of ByteBuffer.CHUNK_SIZE and experience shows that this value works optimally.
+     * This is sufficient for most strings that occur in filter lists (we checked average string length in popular
+     * filter lists).
      */
     private static readonly ENCODER_BUFFER_SIZE = 8192;
 
     /**
-     * Threshold for using a shared buffer for encoding strings.
+     * Length threshold for using a shared buffer for encoding strings.
+     * This temp buffer is needed because we write the short strings in it
+     * (so there is no need to constantly allocate a new buffer).
+     * The reason for dividing ENCODER_BUFFER_SIZE by 4 is to ensure that the encoded string fits in the buffer,
+     * if we also take into account the worst possible case (each character is encoded with 4 bytes).
      */
     private static readonly SHORT_STRING_THRESHOLD = 2048; // 8192 / 4
 

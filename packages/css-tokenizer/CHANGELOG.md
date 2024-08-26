@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
-## [1.0.0-alpha.0] - 2024-07-29
+## [1.0.0] - 2024-08-15
 
 ### Added
 
@@ -27,7 +27,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 - Export for `TOKEN_NAMES`. Please use `getBaseTokenName` instead.
 
-[1.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/compare/css-tokenizer-v0.0.1...v1.0.0
+[1.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/css-tokenizer-v1.0.0
 
 ## [0.0.1] - 2023-10-30
 

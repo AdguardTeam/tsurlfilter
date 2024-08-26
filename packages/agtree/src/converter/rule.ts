@@ -56,4 +56,22 @@ export class RuleConverter extends RuleConverterBase {
                 throw new RuleConversionError('Unknown rule category');
         }
     }
+
+    /**
+     * Converts an adblock filtering rule to uBlock Origin format, if possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    // TODO: Add support for other rule types
+    public static convertToUbo(rule: AnyRule): NodeConversionResult<AnyRule> {
+        if (rule.category === RuleCategory.Cosmetic) {
+            return CosmeticRuleConverter.convertToUbo(rule);
+        }
+
+        return createConversionResult([rule], false);
+    }
 }

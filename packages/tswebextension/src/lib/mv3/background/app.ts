@@ -241,6 +241,9 @@ export class TsWebExtension implements AppInterface<
         // Stop handle onRuleMatchedDebug event.
         declarativeFilteringLog.stop();
 
+        // Stop handle request events.
+        WebRequestApi.stop();
+
         // Remove tabs listeners and clear context storage
         tabsApi.stop();
 

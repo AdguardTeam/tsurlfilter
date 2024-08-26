@@ -81,13 +81,10 @@ export class FilterScanner implements IFilterScanner {
         const buffer = new InputByteBuffer(filterList);
         const reader = new BufferReader(buffer);
 
-        while (true) {
-            const ruleBufferIndex = reader.getCurrentPos();
-            const ruleNode = reader.readNext();
-            if (ruleNode === null) {
-                break;
-            }
+        let ruleBufferIndex = reader.getCurrentPos();
+        let ruleNode = reader.readNext();
 
+        while (ruleNode) {
             let indexedNetworkRulesWithHash: IndexedNetworkRuleWithHash[] = [];
 
             try {
@@ -112,6 +109,9 @@ export class FilterScanner implements IFilterScanner {
                     result.errors.push(err);
                 }
                 continue;
+            } finally {
+                ruleBufferIndex = reader.getCurrentPos();
+                ruleNode = reader.readNext();
             }
 
             const filteredRules = filterFn

@@ -33,6 +33,11 @@ export class TabsApi {
     public onReplace = new EventChannel<TabContext>();
 
     /**
+     * Timeout for popup tabs in milliseconds. We consider a tab as a popup if it was created within this time period.
+     */
+    public static readonly POPUP_TAB_TIMEOUT_MS = 250;
+
+    /**
      * Tabs API constructor.
      *
      * @param documentApi Document API.
@@ -322,13 +327,10 @@ export class TabsApi {
     /**
      * Checks if tab is a new tab.
      *
-     * TODO: Change in AG-22715: if the lifetime of the tab is less than N
-     * seconds (for example 5 seconds), then it is a popup and we close it. If
-     * the opposite is true, then we block it with a stub.
-     *
      * @param tabId Tab ID.
      * @returns True if tab is a new tab.
      */
+    // TODO: Improve popup detection
     public isNewPopupTab(tabId: number): boolean {
         const tab = this.context.get(tabId);
 
@@ -336,11 +338,10 @@ export class TabsApi {
             return false;
         }
 
-        const url = tab.info?.url;
+        const createdAt = tab.createdAtMs;
+        const tabAgeMs = Date.now() - createdAt;
 
-        return url === undefined
-            || url === ''
-            || url === 'about:blank';
+        return tabAgeMs < TabsApi.POPUP_TAB_TIMEOUT_MS;
     }
 
     /**
@@ -389,12 +390,7 @@ export class TabsApi {
      * @param url Url.
      */
     public handleTabNavigation(tabId: number, url: string): void {
-        if (!isHttpRequest(url)) {
-            return;
-        }
-
         const tabContext = this.context.get(tabId);
-
         if (!tabContext) {
             return;
         }

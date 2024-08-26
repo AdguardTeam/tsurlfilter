@@ -114,4 +114,29 @@ export class CosmeticRuleConverter extends RuleConverterBase {
 
         return createNodeConversionResult([rule], false);
     }
+
+    /**
+     * Converts a cosmetic rule to uBlock Origin syntax, if possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    // TODO: Add support for other cosmetic rule types
+    public static convertToUbo(rule: AnyCosmeticRule): NodeConversionResult<AnyRule> {
+        // Convert cosmetic rule based on its type
+        if (rule.type === CosmeticRuleType.ScriptletInjectionRule) {
+            if (rule.syntax === AdblockSyntax.Adg && rule.modifiers?.children.length) {
+                // e.g. example.com##+js(set-constant.js, foo, bar):matches-path(/baz)
+                throw new RuleConversionError(
+                    'uBO scriptlet injection rules do not support cosmetic rule modifiers',
+                );
+            }
+            return ScriptletRuleConverter.convertToUbo(rule);
+        }
+
+        return createNodeConversionResult([rule], false);
+    }
 }

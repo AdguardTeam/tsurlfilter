@@ -131,30 +131,30 @@ export class RuleScanner {
      * input or an error. If there's a rule available, returns true.
      */
     public scan(): boolean {
-        while (true) {
-            const lineIndex = this.reader.getCurrentPos();
-            const line = this.readNext();
-            if (line === null) {
-                return false;
+        let lineIndex = this.reader.getCurrentPos();
+        let line = this.readNext();
+
+        while (line) {
+            const rule = RuleFactory.createRule(
+                line,
+                this.listId,
+                lineIndex,
+                this.ignoreNetwork,
+                this.ignoreCosmetic,
+                this.ignoreHost,
+            );
+
+            if (rule && !this.isIgnored(rule)) {
+                this.currentRule = rule;
+                this.currentRuleIndex = lineIndex;
+                return true;
             }
 
-            if (line) {
-                const rule = RuleFactory.createRule(
-                    line,
-                    this.listId,
-                    lineIndex,
-                    this.ignoreNetwork,
-                    this.ignoreCosmetic,
-                    this.ignoreHost,
-                );
-
-                if (rule && !this.isIgnored(rule)) {
-                    this.currentRule = rule;
-                    this.currentRuleIndex = lineIndex;
-                    return true;
-                }
-            }
+            lineIndex = this.reader.getCurrentPos();
+            line = this.readNext();
         }
+
+        return false;
     }
 
     /**

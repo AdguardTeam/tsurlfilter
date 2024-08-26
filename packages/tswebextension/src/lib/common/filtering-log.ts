@@ -3,6 +3,8 @@ import { type RuleInfo, type RuleInfoOptional } from './content-script/rule-info
 import type { ContentType } from './request-type';
 import { EventChannel, type EventChannelInterface } from './utils';
 
+// TODO: Add 'is' prefix to cssRule, scriptRule and contentRule properties.
+
 /**
  * Types of filtering events that can occur during request processing.
  */

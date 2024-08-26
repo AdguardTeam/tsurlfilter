@@ -299,15 +299,13 @@ describe('TabsApi', () => {
 
     describe('isNewPopupTab method', () => {
         const cases = [
-            { url: 'about:blank', expected: true },
-            { url: '', expected: true },
-            { url: undefined, expected: true },
-            { url: 'https://example.com', expected: false },
+            { url: 'https://example.com', createdAtMs: Date.now() - Math.round(TabsApi.POPUP_TAB_TIMEOUT_MS * 1.5), expected: false },
+            { url: 'https://example.com', createdAtMs: Date.now(), expected: true },
         ];
-        it.each(cases)('should return $expected if tab has url $url', ({ url, expected }) => {
+        it.each(cases)('should return $expected if tab has url $url', ({ url, createdAtMs, expected }) => {
             const tabId = 1;
 
-            const tabContext = { info: { url } } as TabContext;
+            const tabContext = { info: { url }, createdAtMs } as TabContext;
 
             tabsApi.context.set(tabId, tabContext);
 

@@ -12,29 +12,18 @@ import {
     Request,
     CosmeticResult,
     type CosmeticOption,
-    type HTTPMethod,
     STEALTH_MODE_FILTER_ID,
 } from '@adguard/tsurlfilter';
 
 import { type AnyRule } from '@adguard/agtree';
 import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { getHost, isHttpRequest } from '../../common/utils/url';
+import { type MatchQuery } from '../../common/interfaces';
 
 import type { Allowlist } from './allowlist';
 import type { StealthApi } from './stealth-api';
 import type { ConfigurationMV2 } from './configuration';
 import type { AppContext } from './context';
-
-/**
- * Request Match Query.
- */
-export interface MatchQuery {
-    requestUrl: string;
-    frameUrl: string;
-    requestType: RequestType;
-    frameRule?: NetworkRule | null;
-    method?: HTTPMethod;
-}
 
 /**
  * TSUrlFilter Engine wrapper.

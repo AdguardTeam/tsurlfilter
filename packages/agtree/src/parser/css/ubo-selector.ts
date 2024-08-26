@@ -262,7 +262,7 @@ const hasAnyUboModifier = (raw: string): boolean => {
  * A simple helper function to format a pseudo name for error messages.
  *
  * @param name Pseudo name.
- * @param wrapper Wrapper pseudo name (e.g. `not`) (optional, defaults to `undefined`).
+ * @param wrapper Wrapper pseudo name (eg. `not`) (optional, defaults to `undefined`).
  * @returns Formatted pseudo name.
  * @example
  * ```ts

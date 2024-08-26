@@ -7,7 +7,7 @@ import { rollup } from 'rollup';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { nodePlugins } from '../../rollup.config';
+import { getNodePlugins } from '../../rollup.config';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -22,7 +22,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const buildAgTreeForNode = async (): Promise<string> => {
     const bundle = await rollup({
         input: path.join(__dirname, '..', '..', 'src', 'index.ts'),
-        plugins: nodePlugins(true),
+        plugins: getNodePlugins(true),
     });
 
     const { output } = await bundle.generate({
