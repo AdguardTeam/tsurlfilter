@@ -63,6 +63,15 @@ describe('Scriptlet conversion', () => {
 
     describe('uBO to ADG', () => {
         test.each([
+            // empty scriptlet
+            {
+                actual: 'example.org#@#+js()',
+                expected: [
+                    'example.org#@%#//scriptlet()',
+                ],
+                shouldConvert: true,
+            },
+            // regular scriptlet
             {
                 actual: 'example.org##+js(aopr, foo)',
                 expected: [
@@ -101,6 +110,15 @@ describe('Scriptlet conversion', () => {
     // leave ADG rules as is
     describe('ADG to ADG', () => {
         test.each([
+            // empty exception scriptlet
+            {
+                actual: 'example.org#@%#//scriptlet()',
+                expected: [
+                    'example.org#@%#//scriptlet()',
+                ],
+                shouldConvert: false,
+            },
+            // regular scriptlet
             {
                 actual: 'example.org#%#//scriptlet(\'abort-on-property-read\', \'foo\')',
                 expected: [
@@ -128,13 +146,105 @@ describe('Scriptlet conversion', () => {
         });
     });
 
+    // Tests migrated from:
+    // https://github.com/AdguardTeam/Scriptlets/blob/d8d25ec625406faeaa5669627f143c7bad1a0328/tests/api/index.spec.js#L276-L374
     describe('convertToUbo', () => {
-        // TODO: We should implement this later
-        expect(() => ScriptletRuleConverter.convertToUbo(
-            RuleParser.parse('#%#//scriptlet(\'test\')') as ScriptletInjectionRule,
-        )).toThrowError(
-            'Not implemented',
-        );
+        test.each([
+            {
+                actual: 'example.org#@%#//scriptlet()',
+                expected: ['example.org#@#+js()'],
+                shouldConvert: true,
+            },
+            {
+                actual: "example.org#%#//scriptlet('prevent-setTimeout', '[native code]', '8000')",
+                expected: [
+                    'example.org##+js(no-setTimeout-if, [native code], 8000)',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: 'example.org#%#//scriptlet(\'set-constant\', \'config.ads.desktopAd\', \'\')',
+                expected: [
+                    'example.org##+js(set-constant, config.ads.desktopAd, \'\')',
+                ],
+                shouldConvert: true,
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: 'example.org#%#//scriptlet(\'remove-class\', \'promo\', \'a.class, div#id, div > #ad > .test\')',
+                expected: [
+                    'example.org##+js(remove-class, promo, a.class\\, div#id\\, div > #ad > .test)',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: 'example.org#@%#//scriptlet(\'prevent-setTimeout\', \'[native code]\', \'8000\')',
+                expected: ['example.org#@#+js(no-setTimeout-if, [native code], 8000)'],
+            },
+            {
+                actual: 'example.org#%#//scriptlet("ubo-abort-on-property-read.js", "alert")',
+                expected: ['example.org##+js(abort-on-property-read, alert)'],
+            },
+            {
+                actual: 'example.com#%#//scriptlet("abp-abort-current-inline-script", "console.log", "Hello")',
+                expected: ['example.com##+js(abort-current-script, console.log, Hello)'],
+            },
+            {
+                actual: 'example.com#%#//scriptlet(\'prevent-fetch\', \'*\')',
+                expected: ['example.com##+js(prevent-fetch, /^/)'],
+            },
+            {
+                actual: 'example.com#%#//scriptlet(\'close-window\')',
+                expected: ['example.com##+js(close-window)'],
+            },
+            {
+                actual: "example.com#%#//scriptlet('set-cookie', 'CookieConsent', 'true')",
+                expected: ['example.com##+js(set-cookie, CookieConsent, true)'],
+            },
+            {
+                actual: "example.com#%#//scriptlet('set-local-storage-item', 'gdpr_popup', 'true')",
+                expected: ['example.com##+js(set-local-storage-item, gdpr_popup, true)'],
+            },
+            {
+                actual: "example.com#%#//scriptlet('set-session-storage-item', 'acceptCookies', 'false')",
+                expected: ['example.com##+js(set-session-storage-item, acceptCookies, false)'],
+            },
+            {
+                // emptyArr as set-constant parameter
+                actual: "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyArr')",
+                expected: ['example.org##+js(set-constant, adUnits, [])'],
+            },
+            {
+                // emptyObj as set-constant parameter
+                actual: "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyObj')",
+                expected: ['example.org##+js(set-constant, adUnits, {})'],
+            },
+            {
+                // Escapes commas in params
+                actual: String.raw`example.com#%#//scriptlet('adjust-setInterval', ',dataType:_', '1000', '0.02')`,
+                expected: [String.raw`example.com##+js(adjust-setInterval, \,dataType:_, 1000, 0.02)`],
+            },
+            {
+                actual: "example.com#%#//scriptlet('spoof-css', '.advert', 'display', 'block')",
+                expected: ['example.com##+js(spoof-css, .advert, display, block)'],
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: "example.com#%#//scriptlet('spoof-css', '.adsbygoogle, #ads, .adTest', 'visibility', 'visible')",
+                expected: ['example.com##+js(spoof-css, .adsbygoogle\\, #ads\\, .adTest, visibility, visible)'],
+            },
+            {
+                actual: "example.com#%#//scriptlet('set-cookie-reload', 'consent', 'true')",
+                expected: ['example.com##+js(set-cookie-reload, consent, true)'],
+            },
+            // https://github.com/AdguardTeam/Scriptlets/issues/404
+            {
+                actual: "example.com#%#//scriptlet('set-local-storage-item', 'mode', '$remove$')",
+                expected: ['example.com##+js(set-local-storage-item, mode, $remove$)'],
+            },
+        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToUbo');
+        });
     });
 
     describe('convertToAbp', () => {

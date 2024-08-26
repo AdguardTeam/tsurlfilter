@@ -7,12 +7,45 @@ import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { QuoteType, QuoteUtils } from '../../utils/quotes';
 import { EMPTY } from '../../utils/constants';
-import { getScriptletName, setScriptletName, setScriptletQuoteType } from '../../ast-utils/scriptlets';
+import {
+    getScriptletName,
+    setScriptletName,
+    setScriptletQuoteType,
+    transformAllScriptletArguments,
+    transformNthScriptletArgument,
+} from '../../ast-utils/scriptlets';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode, cloneModifierListNode, cloneScriptletRuleNode } from '../../ast-utils/clone';
+import { GenericPlatform, scriptletsCompatibilityTable } from '../../compatibility-tables';
 
 const ABP_SCRIPTLET_PREFIX = 'abp-';
 const UBO_SCRIPTLET_PREFIX = 'ubo-';
+
+const UBO_SCRIPTLET_PREFIX_LENGTH = UBO_SCRIPTLET_PREFIX.length;
+
+const UBO_SCRIPTLET_JS_SUFFIX = '.js';
+const UBO_SCRIPTLET_JS_SUFFIX_LENGTH = UBO_SCRIPTLET_JS_SUFFIX.length;
+
+const COMMA_SEPARATOR = ',';
+
+const ADG_SET_CONSTANT_NAME = 'set-constant';
+const ADG_SET_CONSTANT_EMPTY_STRING = '';
+const ADG_SET_CONSTANT_EMPTY_ARRAY = 'emptyArr';
+const ADG_SET_CONSTANT_EMPTY_OBJECT = 'emptyObj';
+const UBO_SET_CONSTANT_EMPTY_STRING = '\'\'';
+const UBO_SET_CONSTANT_EMPTY_ARRAY = '[]';
+const UBO_SET_CONSTANT_EMPTY_OBJECT = '{}';
+
+const ADG_PREVENT_FETCH_NAME = 'prevent-fetch';
+const ADG_PREVENT_FETCH_EMPTY_STRING = '';
+const ADG_PREVENT_FETCH_WILDCARD = '*';
+const UBO_NO_FETCH_IF_WILDCARD = '/^/';
+
+const setConstantAdgToUboMap: Record<string, string> = {
+    [ADG_SET_CONSTANT_EMPTY_STRING]: UBO_SET_CONSTANT_EMPTY_STRING,
+    [ADG_SET_CONSTANT_EMPTY_ARRAY]: UBO_SET_CONSTANT_EMPTY_ARRAY,
+    [ADG_SET_CONSTANT_EMPTY_OBJECT]: UBO_SET_CONSTANT_EMPTY_OBJECT,
+};
 
 /**
  * Scriptlet injection rule converter class
@@ -44,37 +77,46 @@ export class ScriptletRuleConverter extends RuleConverterBase {
 
         const convertedScriptlets: ParameterList[] = [];
 
-        for (const scriptlet of rule.body.children) {
-            // Clone the node to avoid any side effects
-            const scriptletClone = cloneScriptletRuleNode(scriptlet);
+        // Special case: empty uBO exception scriptlet, e.g. `example.com#@#+js()`
+        if (
+            rule.syntax === AdblockSyntax.Ubo
+            && rule.body.children.length === 1
+            && rule.body.children[0].children.length === 0
+        ) {
+            convertedScriptlets.push(rule.body.children[0]);
+        } else {
+            for (const scriptlet of rule.body.children) {
+                // Clone the node to avoid any side effects
+                const scriptletClone = cloneScriptletRuleNode(scriptlet);
 
-            // Remove possible quotes just to make it easier to work with the scriptlet name
-            const scriptletName = QuoteUtils.setStringQuoteType(getScriptletName(scriptletClone), QuoteType.None);
+                // Remove possible quotes just to make it easier to work with the scriptlet name
+                const scriptletName = QuoteUtils.setStringQuoteType(getScriptletName(scriptletClone), QuoteType.None);
 
-            // Add prefix if it's not already there
-            let prefix: string;
+                // Add prefix if it's not already there
+                let prefix: string;
 
-            switch (rule.syntax) {
-                case AdblockSyntax.Abp:
-                    prefix = ABP_SCRIPTLET_PREFIX;
-                    break;
+                switch (rule.syntax) {
+                    case AdblockSyntax.Abp:
+                        prefix = ABP_SCRIPTLET_PREFIX;
+                        break;
 
-                case AdblockSyntax.Ubo:
-                    prefix = UBO_SCRIPTLET_PREFIX;
-                    break;
+                    case AdblockSyntax.Ubo:
+                        prefix = UBO_SCRIPTLET_PREFIX;
+                        break;
 
-                default:
-                    prefix = EMPTY;
+                    default:
+                        prefix = EMPTY;
+                }
+
+                if (!scriptletName.startsWith(prefix)) {
+                    setScriptletName(scriptletClone, `${prefix}${scriptletName}`);
+                }
+
+                // ADG scriptlet parameters should be quoted, and single quoted are preferred
+                setScriptletQuoteType(scriptletClone, QuoteType.Single);
+
+                convertedScriptlets.push(scriptletClone);
             }
-
-            if (!scriptletName.startsWith(prefix)) {
-                setScriptletName(scriptletClone, `${prefix}${scriptletName}`);
-            }
-
-            // ADG scriptlet parameters should be quoted, and single quoted are preferred
-            setScriptletQuoteType(scriptletClone, QuoteType.Single);
-
-            convertedScriptlets.push(scriptletClone);
         }
 
         return createNodeConversionResult(
@@ -83,6 +125,135 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                     category: rule.category,
                     type: rule.type,
                     syntax: AdblockSyntax.Adg,
+                    exception: rule.exception,
+                    domains: cloneDomainListNode(rule.domains),
+                    separator: {
+                        type: 'Value',
+                        value: convertedSeparator,
+                    },
+                    body: {
+                        type: rule.body.type,
+                        children: [scriptlet],
+                    },
+                };
+
+                if (rule.modifiers) {
+                    res.modifiers = cloneModifierListNode(rule.modifiers);
+                }
+
+                return res;
+            }),
+            true,
+        );
+    }
+
+    /**
+     * Converts a scriptlet injection rule to uBlock format, if possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws If the rule is invalid or cannot be converted
+     */
+    public static convertToUbo(rule: ScriptletInjectionRule): NodeConversionResult<ScriptletInjectionRule> {
+        // Ignore uBlock rules
+        if (rule.syntax === AdblockSyntax.Ubo) {
+            return createNodeConversionResult([rule], false);
+        }
+
+        const separator = rule.separator.value;
+        let convertedSeparator = separator;
+
+        convertedSeparator = rule.exception
+            ? CosmeticRuleSeparator.ElementHidingException
+            : CosmeticRuleSeparator.ElementHiding;
+
+        const convertedScriptlets: ParameterList[] = [];
+
+        // Special case: empty AdGuard exception scriptlet, e.g. `example.com#%#//scriptlet()`
+        if (
+            rule.syntax === AdblockSyntax.Adg
+            && rule.body.children.length === 1
+            && rule.body.children[0].children.length === 0
+        ) {
+            convertedScriptlets.push(rule.body.children[0]);
+        } else {
+            for (const scriptlet of rule.body.children) {
+                // Clone the node to avoid any side effects
+                const scriptletClone = cloneScriptletRuleNode(scriptlet);
+
+                // Remove possible quotes just to make it easier to work with the scriptlet name
+                const scriptletName = QuoteUtils.setStringQuoteType(getScriptletName(scriptletClone), QuoteType.None);
+
+                let uboScriptletName: string;
+
+                if (rule.syntax === AdblockSyntax.Adg && scriptletName.startsWith(UBO_SCRIPTLET_PREFIX)) {
+                    // Special case: AdGuard syntax 'preserves' the original scriptlet name,
+                    // so we need to convert it back by removing the uBO prefix
+                    uboScriptletName = scriptletName.slice(UBO_SCRIPTLET_PREFIX_LENGTH);
+                } else {
+                    // Otherwise, try to find the corresponding uBO scriptlet name, or use the original one if not found
+                    const uboScriptlet = scriptletsCompatibilityTable.getFirst(scriptletName, GenericPlatform.UboAny);
+                    uboScriptletName = uboScriptlet?.name ?? scriptletName;
+                }
+
+                // Remove the '.js' suffix if it's there - its presence is not mandatory
+                if (uboScriptletName.endsWith(UBO_SCRIPTLET_JS_SUFFIX)) {
+                    uboScriptletName = uboScriptletName.slice(0, -UBO_SCRIPTLET_JS_SUFFIX_LENGTH);
+                }
+
+                setScriptletName(scriptletClone, uboScriptletName);
+                setScriptletQuoteType(scriptletClone, QuoteType.None);
+
+                // Escape unescaped commas in parameters, because uBlock Origin uses them as separators.
+                // For example, the following AdGuard rule:
+                //
+                // example.com#%#//scriptlet('spoof-css', '.adsbygoogle, #ads', 'visibility', 'visible')
+                //
+                //      ↓↓ should be converted to ↓↓
+                //
+                // example.com##+js(spoof-css.js, .adsbygoogle\, #ads, visibility, visible)
+                //                  ------------  -------------------  ----------  -------
+                //                    arg 0              arg 1           arg 2      arg 3
+                //
+                // and we need to escape the comma in the second argument to prevent it from being treated
+                // as two separate arguments.
+                transformAllScriptletArguments(scriptletClone, (value) => {
+                    return QuoteUtils.escapeUnescapedOccurrences(value, COMMA_SEPARATOR);
+                });
+
+                // Some scriptlets have special values that need to be converted
+                switch (scriptletName) {
+                    case ADG_SET_CONSTANT_NAME:
+                        transformNthScriptletArgument(scriptletClone, 2, (value) => {
+                            return setConstantAdgToUboMap[value] ?? value;
+                        });
+                        break;
+
+                    case ADG_PREVENT_FETCH_NAME:
+                        transformNthScriptletArgument(scriptletClone, 1, (value) => {
+                            if (value === ADG_PREVENT_FETCH_EMPTY_STRING || value === ADG_PREVENT_FETCH_WILDCARD) {
+                                return UBO_NO_FETCH_IF_WILDCARD;
+                            }
+
+                            return value;
+                        });
+                        break;
+
+                    default:
+                }
+
+                convertedScriptlets.push(scriptletClone);
+            }
+        }
+
+        return createNodeConversionResult(
+            convertedScriptlets.map((scriptlet): ScriptletInjectionRule => {
+                const res: ScriptletInjectionRule = {
+                    category: rule.category,
+                    type: rule.type,
+                    syntax: AdblockSyntax.Ubo,
                     exception: rule.exception,
                     domains: cloneDomainListNode(rule.domains),
                     separator: {

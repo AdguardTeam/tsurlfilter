@@ -24,6 +24,7 @@
 Table of Contents:
 
 - [Introduction](#introduction)
+- [Browser compatibility](#browser-compatibility)
 - [Development \& Contribution](#development--contribution)
 - [Ideas \& Questions](#ideas--questions)
 - [License](#license)
@@ -46,6 +47,17 @@ AGTree supports all syntaxes currently in use:
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus][abp-url]
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/ab_logo.svg" alt="AdBlock logo" width="14px"> [AdBlock][ab-url]
 <!--markdownlint-enable MD013-->
+
+## Browser compatibility
+
+| Browser               | Version   |
+|-----------------------|:----------|
+| Chrome                | ✅ 80     |
+| Firefox               | ✅ 78     |
+| Edge                  | ✅ 80     |
+| Opera                 | ✅ 67     |
+| Safari                | ✅ 14     |
+| Internet Explorer     | ❌        |
 
 ## Development & Contribution
 

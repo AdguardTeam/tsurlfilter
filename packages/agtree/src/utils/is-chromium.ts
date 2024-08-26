@@ -5,8 +5,12 @@
  * @see {@link https://stackoverflow.com/a/62797156}
  */
 export const isChromium = (): boolean => {
-    return typeof window !== 'undefined' && (
-        Object.prototype.hasOwnProperty.call(window, 'chrome')
-        || (typeof window.navigator !== 'undefined' && /chrome/i.test(window.navigator.userAgent || ''))
-    );
+    return typeof window !== 'undefined'
+        && (
+            Object.prototype.hasOwnProperty.call(window, 'chrome')
+            || (
+                typeof window.navigator !== 'undefined'
+                && /chrome/i.test(window.navigator.userAgent)
+            )
+        );
 };

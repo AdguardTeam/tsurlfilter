@@ -1,7 +1,7 @@
-import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 import {
     type Configuration,
     type TsWebExtension,
+    FilterListPreprocessor,
 } from '@adguard/tswebextension/mv3';
 import { LogDetails } from './logger';
 

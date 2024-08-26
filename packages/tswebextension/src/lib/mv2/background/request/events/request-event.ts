@@ -9,6 +9,13 @@ export interface RequestData<Details> {
     context?: RequestContext;
 }
 
+/**
+ * Handler for the {@link RequestEvent} methods.
+ *
+ * @param details Details of the request.
+ *
+ * @returns Request data.
+ */
 export type DetailsHandler<Details> = (
     details: Details
 ) => RequestData<Details>;

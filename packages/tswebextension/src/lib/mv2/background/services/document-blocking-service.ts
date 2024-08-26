@@ -1,12 +1,11 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
 import { getHostname } from 'tldts';
-import type { NetworkRule } from '@adguard/tsurlfilter';
+import { NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { logger } from '../../../common/utils/logger';
 import { isChromium } from '../utils/browser-detector';
 import type { ConfigurationMV2 } from '../configuration';
-import { NetworkRuleOption } from '..';
 import type { TabsApi } from '../tabs/tabs-api';
 import { ContentType } from '../../../common/request-type';
 

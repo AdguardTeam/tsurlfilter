@@ -5,7 +5,7 @@
 import { type ParameterList } from '../parser/common';
 import { EMPTY } from '../utils/constants';
 import { type QuoteType, QuoteUtils } from '../utils/quotes';
-import { isNull } from '../utils/type-guards';
+import { isNull, isUndefined } from '../utils/type-guards';
 
 /**
  * Get name of the scriptlet from the scriptlet node
@@ -23,6 +23,39 @@ export function getScriptletName(scriptletNode: ParameterList): string {
 }
 
 /**
+ * Transform the nth argument of the scriptlet node
+ *
+ * @param scriptletNode Scriptlet node to transform argument of
+ * @param index Index of the argument to transform (index 0 is the scriptlet name)
+ * @param transform Function to transform the argument
+ */
+export function transformNthScriptletArgument(
+    scriptletNode: ParameterList,
+    index: number,
+    transform: (value: string) => string,
+): void {
+    const child = scriptletNode.children[index];
+    if (!isUndefined(child) && !isNull(child)) {
+        child.value = transform(child.value);
+    }
+}
+
+/**
+ * Transform all arguments of the scriptlet node
+ *
+ * @param scriptletNode Scriptlet node to transform arguments of
+ * @param transform Function to transform the arguments
+ */
+export function transformAllScriptletArguments(
+    scriptletNode: ParameterList,
+    transform: (value: string) => string,
+): void {
+    for (let i = 0; i < scriptletNode.children.length; i += 1) {
+        transformNthScriptletArgument(scriptletNode, i, transform);
+    }
+}
+
+/**
  * Set name of the scriptlet.
  * Modifies input `scriptletNode` if needed.
  *
@@ -30,10 +63,7 @@ export function getScriptletName(scriptletNode: ParameterList): string {
  * @param name Name to set
  */
 export function setScriptletName(scriptletNode: ParameterList, name: string): void {
-    if (scriptletNode.children.length > 0 && !isNull(scriptletNode.children[0])) {
-        // eslint-disable-next-line no-param-reassign
-        scriptletNode.children[0].value = name;
-    }
+    transformNthScriptletArgument(scriptletNode, 0, () => name);
 }
 
 /**
@@ -43,18 +73,5 @@ export function setScriptletName(scriptletNode: ParameterList, name: string): vo
  * @param quoteType Preferred quote type
  */
 export function setScriptletQuoteType(scriptletNode: ParameterList, quoteType: QuoteType): void {
-    if (scriptletNode.children.length > 0) {
-        for (let i = 0; i < scriptletNode.children.length; i += 1) {
-            const child = scriptletNode.children[i];
-            if (isNull(child)) {
-                continue;
-            }
-
-            // eslint-disable-next-line no-param-reassign
-            child.value = QuoteUtils.setStringQuoteType(
-                child.value,
-                quoteType,
-            );
-        }
-    }
+    transformAllScriptletArguments(scriptletNode, (value) => QuoteUtils.setStringQuoteType(value, quoteType));
 }
