@@ -8,12 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## [Unreleased]
+## [2.0.1] - 2024-08-27
 
 ### Fixed
 
-- Redirect rule blocks request in the Spotify player instead of redirecting [AdguardBrowserExtension#2913]
+- Redirect rule blocks request in the Spotify player instead of redirecting [AdguardBrowserExtension#2913].
 
+[2.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.1
 [AdguardBrowserExtension#2913]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2913
 
 ## [2.0.0] - 2024-08-15
