@@ -8,7 +8,7 @@ import {
 import { ALLOWLIST_FILTER_ID } from './constants';
 import { type Configuration } from './configuration';
 
-type AllowlistConfiguration = Pick<Configuration, 'allowlist' | 'settings'>;
+export type AllowlistConfiguration = Pick<Configuration, 'allowlist' | 'settings'>;
 
 /**
  * The allowlist is used to exclude certain websites from filtering.

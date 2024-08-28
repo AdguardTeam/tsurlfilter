@@ -104,3 +104,21 @@ export function isThirdPartyRequest(requestUrl: string, referrer: string): boole
 
     return tldResult.domain !== sourceTldResult.domain;
 }
+
+/**
+ * Extracts upper level domain from domain.
+ *
+ * @param domain Domain.
+ *
+ * @example getUpperLevelDomain('www.example.com') => 'example.com'
+ * @example getUpperLevelDomain('test.pages.dev') => 'pages.dev'
+ * @example getUpperLevelDomain('allowlist.test.pages.dev') => 'test.pages.dev'
+ *
+ * @returns Upper level domain.
+ */
+export function getUpperLevelDomain(domain: string): string {
+    const parts = domain.split('.');
+    parts.shift();
+
+    return parts.join('.');
+}

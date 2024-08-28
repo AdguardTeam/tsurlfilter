@@ -1,6 +1,6 @@
 import type { NetworkRule } from '@adguard/tsurlfilter';
 
-import { getDomain } from '../../common/utils/url';
+import { getDomain, getUpperLevelDomain } from '../../common/utils/url';
 import { allowlistApi, AllowlistApi } from './allowlist-api';
 import { engineApi } from './engine-api';
 
@@ -44,7 +44,9 @@ export class DocumentApi {
             return null;
         }
 
-        if (!allowlistApi.domains.includes(domain)) {
+        const upperDomain = getUpperLevelDomain(domain);
+
+        if (!allowlistApi.domains.includes(domain) && !allowlistApi.domains.includes(`*.${upperDomain}`)) {
             return AllowlistApi.createAllowlistRule(domain);
         }
 
