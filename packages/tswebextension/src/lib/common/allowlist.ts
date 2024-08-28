@@ -8,6 +8,9 @@ import {
 import { ALLOWLIST_FILTER_ID } from './constants';
 import { type Configuration } from './configuration';
 
+/**
+ * Configuration for the allowlist.
+ */
 export type AllowlistConfiguration = Pick<Configuration, 'allowlist' | 'settings'>;
 
 /**

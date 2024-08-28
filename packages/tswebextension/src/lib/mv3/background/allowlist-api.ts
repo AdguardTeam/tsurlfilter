@@ -19,14 +19,14 @@ export class AllowlistApi extends CommonAllowlist {
          * same as in DNR engine: requestDomains and excludedRequestDomains in
          * DNR will match all subdomains of the domain by default.
          */
-        const domainWithSubDomainsMask = configuration.allowlist.reduce<string[]>((out, domain) => {
-            out.push(domain);
+        const domainWithSubDomainsMask = configuration.allowlist.reduce<string[]>((acc, domain) => {
+            acc.push(domain);
 
             if (!domain.startsWith('*.')) {
-                out.push(`*.${domain}`);
+                acc.push(`*.${domain}`);
             }
 
-            return out;
+            return acc;
         }, []);
 
         super.configure({
