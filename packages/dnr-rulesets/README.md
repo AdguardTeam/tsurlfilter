@@ -2,7 +2,7 @@
 
 Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.
 
-The list of available filters can be found [here](https://filters.adtidy.org/extension/chromium/filters.json)
+The list of available filters can be found by `filters` in [the metadata](https://filters.adtidy.org/extension/chromium-mv3/filters.json).
 
 - [Dnr-rulesets](#dnr-rulesets)
   - [Basic usage](#basic-usage)
@@ -166,7 +166,7 @@ patcher.path(
 |       |ruleset_<id>.json // DNR ruleset converted from filter_<id>.txt
 |       |metadata.json // Ruleset metadata with source mapping
 |       |lazy_Metadata.json // Additional ruleset metadata for lazy loading
-| 
+|
 |filter_<id>.txt // Original filter rules with specified id
 ```
 
@@ -174,7 +174,7 @@ patcher.path(
 
 ### Injecting rulesets to the manifest object
 
-We also provide flexible API to apply rulesets to the manifest object. 
+We also provide flexible API to apply rulesets to the manifest object.
 It can be useful if you want to patch to the manifest while bundling.
 
 ```ts
