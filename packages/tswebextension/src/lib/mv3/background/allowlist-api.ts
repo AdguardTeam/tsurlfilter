@@ -1,4 +1,7 @@
+import { type IRuleList, createAllowlistRuleList } from '@adguard/tsurlfilter';
+
 import { Allowlist as CommonAllowlist } from '../../common/allowlist';
+import { ALLOWLIST_FILTER_ID } from '../../common/constants';
 
 /**
  * The allowlist is used to exclude certain websites from filtering.
@@ -35,6 +38,36 @@ export class AllowlistApi extends CommonAllowlist {
             .join('|');
 
         return allDomains.length > 0 ? `@@$document,to=${allDomains}` : '';
+    }
+
+    /**
+     * Returns a list of rules to be loaded into the engine based on allowlist
+     * state. For MV3 we add "*." for each domain to make matching algorithm
+     * same as in DNR: requestDomains and excludedRequestDomains in MV3 will
+     * match all subdomains of the domain.
+     *
+     * @returns List of allowlist rules or null.
+     */
+    public getAllowlistRules(): IRuleList | null {
+        if (!this.enabled || this.inverted) {
+            return null;
+        }
+
+        const domainWithSubDomainsMask = this.domains
+            .reduce<string[]>((out, domain) => {
+                out.push(domain);
+
+                if (!domain.startsWith('*.')) {
+                    out.push(`*.${domain}`);
+                }
+
+                return out;
+            }, []);
+
+        return createAllowlistRuleList(
+            ALLOWLIST_FILTER_ID,
+            domainWithSubDomainsMask,
+        );
     }
 }
 
