@@ -16,10 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   which represents a matched company from `AdguardTeam/companiesdb`'s `trackers.json` database in MV3.
   It allows to determinate the tracker category for the blocked request.
 
+## [2.0.1] - 2024-08-27
+
 ### Fixed
 
-- Redirect rule blocks request in the Spotify player instead of redirecting [AdguardBrowserExtension#2913]
+- Redirect rule blocks request in the Spotify player instead of redirecting [AdguardBrowserExtension#2913].
 
+[2.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.1
 [AdguardBrowserExtension#2913]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2913
 
 ## [2.0.0] - 2024-08-15
@@ -58,7 +61,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Detection of popup tabs [#2890].
 
 [2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0
-[2.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.0
 [#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
 [#2890]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2890
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
@@ -545,18 +547,6 @@ its setting [#2584].
 [#2497]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2497
 
 [0.3.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.21
-
-## Unreleased
-
-### Fixed
-- Applying $cookie rules on the content-script side.
-- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
-
-## Added
-- Support for `POST` requests to `$removeparam` modifier [#99](https://github.com/AdguardTeam/tsurlfilter/issues/99).
-- Support for `$cookie` modifier in MV3 via browser.cookies API and content-script.
-- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100](https://github.com/AdguardTeam/tsurlfilter/issues/100).
-
 
 ## [0.3.20] - 2023-09-19
 
