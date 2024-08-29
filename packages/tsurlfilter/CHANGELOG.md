@@ -8,12 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## [Unreleased]
+## [3.0.1] - 2024-08-27
 
 ### Fixed
 
-- Negated domains in the $to modifier are not working as expected [AdguardBrowserExtension#2910]
+- Negated domains in the $to modifier are not working as expected [AdguardBrowserExtension#2910].
 
+[3.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.1
 [AdguardBrowserExtension#2910]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2910
 
 ## [3.0.0] - 2024-08-15
