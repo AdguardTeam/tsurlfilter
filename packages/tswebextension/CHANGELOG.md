@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## [2.0.2] - 2024-08-29
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v3.0.2`.
+- Updated `@adguard/scriptlets` to `v1.11.27`.
+
+[2.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.2
+
+
 ## [2.0.1] - 2024-08-27
 
 ### Fixed
