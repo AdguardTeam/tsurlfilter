@@ -1,0 +1,97 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: TSWEBEXTENSIONUPDCOMPANIESDB
+  name: tswebextension - update companiesdb
+variables:
+  dockerContainer: adguard/node-ssh:18.19--0
+
+stages:
+  - Build:
+      manual: false
+      final: false
+      jobs:
+        - Build
+
+Build:
+  key: TSWEBEXTUPDCOMPANIESDB
+  docker:
+    image: "${bamboo.dockerContainer}"
+    volumes:
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            branch="${bamboo.planRepository.branchName}"
+
+            # TODO: remove when release/v3.1 is merged into master
+            # Throw error if current branch is not "release/v3.1",
+            if [ $branch != "release/v3.1" ]
+            then
+              echo "load companiesdb is not supported on branch ${branch}"
+              exit 1;
+            fi
+
+            # Install dependencies
+            pnpm install
+
+            # update companiesdb data
+            pnpm --filter @adguard/tswebextension update:companiesdb
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          commitMessage: 'skipci: update companiesdb data'
+          selectedRepository: defaultRepository
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -x
+            set -e
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -la
+
+            echo "Size before cleanup:" && du -h | tail -n 1
+
+            # Check if node_modules directory exists
+            if [ -d "node_modules" ]; then
+              pnpm clean
+            else
+              echo "node_modules directory does not exist, skipping pnpm clean"
+            fi
+
+            echo "Size after cleanup:" && du -h | tail -n 1
+  requirements:
+    - adg-docker: 'true'
+
+# run release build at 11:00 every Monday (after companiesdb update)
+triggers:
+  - cron:
+      expression: 0 0 11 ? * MON
+
+branches:
+  create: manually
+  delete: never
+  link-to-jira: 'true'
+
+labels: [ ]
+
+other:
+  concurrent-build-plugin: system-default
