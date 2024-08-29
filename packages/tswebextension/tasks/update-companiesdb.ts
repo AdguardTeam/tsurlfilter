@@ -8,7 +8,7 @@ const COMPANIES_DB_URL = 'https://raw.githubusercontent.com/AdguardTeam/companie
 /**
  * Destination directory for the output file.
  */
-const DEST_DIR = '../dist';
+const DEST_DIR = '../src/lib/common/companies-db-service';
 
 /**
  * Output file name.
