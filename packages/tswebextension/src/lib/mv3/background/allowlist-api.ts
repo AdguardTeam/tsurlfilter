@@ -1,4 +1,5 @@
 import { type AllowlistConfiguration, Allowlist as CommonAllowlist } from '../../common/allowlist';
+import { getUpperLevelDomain } from '../../common/utils/url';
 
 /**
  * The allowlist is used to exclude certain websites from filtering.
@@ -57,16 +58,22 @@ export class AllowlistApi extends CommonAllowlist {
      * @returns Combined rule in AG format.
      */
     public combineAllowListRulesForDNR(): string {
-        const allDomains = this.domains
-            // Filter subdomains mask, because they will be ignored by DNR
-            // (DNR will match all subdomains by default).
+        const allDomains = this.domains.map((domain) => {
+            // Map subdomain masks to upper domains records, because masks itself
+            // will be ignored by DNR. Transforming masks to upper domains will
+            // match all subdomains by default in DNR.
             // We added them for consistency between DNR engine and
             // our tsurlfilter (for cosmetic in MV3).
-            .filter((domain) => !domain.startsWith('*.'))
-            .map((domain) => (this.inverted ? `~${domain}` : domain))
-            .join('|');
+            const d = domain.startsWith('*.')
+                ? getUpperLevelDomain(domain)
+                : domain;
 
-        return allDomains.length > 0 ? `@@$document,to=${allDomains}` : '';
+            return this.inverted ? `~${d}` : d;
+        });
+
+        const concatenatedUniqueDomains = Array.from(new Set(allDomains)).join('|');
+
+        return allDomains.length > 0 ? `@@$document,to=${concatenatedUniqueDomains}` : '';
     }
 }
 
