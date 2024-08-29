@@ -128,9 +128,6 @@
 !include 'dnr-rulesets-permissions.yaml'
 
 ---
-!include 'examples-adguard-api-mv3-tests.yaml'
-
----
 !include 'dnr-rulesets-auto-build.yaml'
 
 ---
