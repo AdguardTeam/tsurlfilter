@@ -1,7 +1,4 @@
-import { type IRuleList, createAllowlistRuleList } from '@adguard/tsurlfilter';
-
-import { Allowlist as CommonAllowlist } from '../../common/allowlist';
-import { ALLOWLIST_FILTER_ID } from '../../common/constants';
+import { type AllowlistConfiguration, Allowlist as CommonAllowlist } from '../../common/allowlist';
 
 /**
  * The allowlist is used to exclude certain websites from filtering.
@@ -11,6 +8,33 @@ import { ALLOWLIST_FILTER_ID } from '../../common/constants';
  * sites added to this list.
  */
 export class AllowlistApi extends CommonAllowlist {
+    /**
+     * Configures allowlist state based on app configuration.
+     *
+     * @param configuration App configuration.
+     */
+    public configure(configuration: AllowlistConfiguration): void {
+        /**
+         * For MV3 we add "*." for each domain to make matching algorithm
+         * same as in DNR engine: requestDomains and excludedRequestDomains in
+         * DNR will match all subdomains of the domain by default.
+         */
+        const domainWithSubDomainsMask = configuration.allowlist.reduce<string[]>((acc, domain) => {
+            acc.push(domain);
+
+            if (!domain.startsWith('*.')) {
+                acc.push(`*.${domain}`);
+            }
+
+            return acc;
+        }, []);
+
+        super.configure({
+            ...configuration,
+            allowlist: domainWithSubDomainsMask,
+        });
+    }
+
     /**
      * Creates one allowlist rule for all allowlistRules. This one combined rule
      * will be passed to the DNR converter.
@@ -34,40 +58,15 @@ export class AllowlistApi extends CommonAllowlist {
      */
     public combineAllowListRulesForDNR(): string {
         const allDomains = this.domains
+            // Filter subdomains mask, because they will be ignored by DNR
+            // (DNR will match all subdomains by default).
+            // We added them for consistency between DNR engine and
+            // our tsurlfilter (for cosmetic in MV3).
+            .filter((domain) => !domain.startsWith('*.'))
             .map((domain) => (this.inverted ? `~${domain}` : domain))
             .join('|');
 
         return allDomains.length > 0 ? `@@$document,to=${allDomains}` : '';
-    }
-
-    /**
-     * Returns a list of rules to be loaded into the engine based on allowlist
-     * state. For MV3 we add "*." for each domain to make matching algorithm
-     * same as in DNR: requestDomains and excludedRequestDomains in MV3 will
-     * match all subdomains of the domain.
-     *
-     * @returns List of allowlist rules or null.
-     */
-    public getAllowlistRules(): IRuleList | null {
-        if (!this.enabled || this.inverted) {
-            return null;
-        }
-
-        const domainWithSubDomainsMask = this.domains
-            .reduce<string[]>((out, domain) => {
-                out.push(domain);
-
-                if (!domain.startsWith('*.')) {
-                    out.push(`*.${domain}`);
-                }
-
-                return out;
-            }, []);
-
-        return createAllowlistRuleList(
-            ALLOWLIST_FILTER_ID,
-            domainWithSubDomainsMask,
-        );
     }
 }
 

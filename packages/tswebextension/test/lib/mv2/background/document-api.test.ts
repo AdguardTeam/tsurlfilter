@@ -34,11 +34,18 @@ describe('Document Api', () => {
                 domains: ['example.com'],
             },
             {
-                title: 'should call engine.matchFrame, when API is not inverted',
+                title: 'should call engine.matchFrame, when API is enabled and not inverted',
                 enabled: true,
                 inverted: false,
                 url: 'https://example.com',
                 domains: ['example.com'],
+            },
+            {
+                title: 'should call engine.matchFrame, when API is enabled and not inverted',
+                enabled: true,
+                inverted: false,
+                url: 'https://test.example.com',
+                domains: ['*.example.com'],
             },
             {
                 title: 'should call engine.matchFrame, when domain is allowlisted and API is inverted',
@@ -46,6 +53,13 @@ describe('Document Api', () => {
                 inverted: true,
                 url: 'https://example.com',
                 domains: ['example.com'],
+            },
+            {
+                title: 'should call engine.matchFrame, when domain mask is allowlisted and API is inverted',
+                enabled: true,
+                inverted: true,
+                url: 'https://test.example.com',
+                domains: ['*.example.com'],
             },
             {
                 title: 'should return custom rule, when domain is not allowlisted and API is inverted',
