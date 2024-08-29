@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## [3.0.2] - 2024-08-29
+
+### Changed
+
+- Updated `@adguard/scriptlets` to `v1.11.27`.
+
+[3.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.2
+
+
 ## [3.0.1] - 2024-08-27
 
 ### Fixed
@@ -52,7 +61,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `BufferRuleList` now expects an AGTree byte buffer in the constructor.
 - `ILineReader` changed to `IReader`.
 - `$header` modifier removed from supported modifiers list in the declarative converter.
-- Updated `@adguard/scriptlets` to `v1.11.6`.
 
 ### Fixed
 
