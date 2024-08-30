@@ -3,6 +3,7 @@ import {
     type MatchingResult,
     type HTTPMethod,
     type CosmeticResult,
+    type ScriptletData,
     RequestType,
 } from '@adguard/tsurlfilter';
 
@@ -61,13 +62,19 @@ export type RequestContext = TabFrameRequestContext & {
 
     /**
      * Script text to be injected.
-     * It is precalculated onBeforeRequest and used later.
+     * It is precalculated on onBeforeRequest event and used later.
      */
     scriptText?: string,
 
     /**
+     * List of scriptlet data to be injected.
+     * It is precalculated on onBeforeRequest event and used later.
+     */
+    scriptletDataList?: ScriptletData[]
+
+    /**
      * CSS text to be injected.
-     * It is precalculated onBeforeRequest and used later.
+     * It is precalculated on onBeforeRequest event and used later.
      */
     cssText?: string,
 };
