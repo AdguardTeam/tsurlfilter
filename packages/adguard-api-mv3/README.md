@@ -565,7 +565,7 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
         adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
         adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
         await adguardApi.stop();
-        console.log('Adguard API has been disabled.');
+        console.log('Adguard API MV3 has been disabled.');
     }, 60 * 1000);
 })();
 ```
