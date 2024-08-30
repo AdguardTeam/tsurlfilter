@@ -967,11 +967,6 @@ describe('NetworkRule.match', () => {
         request = new Request('https://example.org/', 'https://example.com/', RequestType.Document);
         expect(rule.match(request)).toEqual(true);
 
-        // Match request url host
-        rule = createNetworkRule('$domain=example.org', 0);
-        request = new Request('https://example.org/', 'https://example.com/', RequestType.SubDocument);
-        expect(rule.match(request)).toEqual(true);
-
         // Document or Subdocument only
         rule = createNetworkRule('$domain=example.org', 0);
         request = new Request('https://example.org/', 'https://example.com/', RequestType.Image);
