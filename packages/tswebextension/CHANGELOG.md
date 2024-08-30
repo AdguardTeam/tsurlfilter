@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## Unreleased
+## [2.2.0-alpha.1] - 2024-08-30
 
 ### Changed
 
@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   It allows to determinate the tracker category for the blocked request.
 - Inject scriptlets separately to avoid csp issues in MV3.
 - Updated `@adguard/scriptlets` to `v1.11.27`.
+
+### Fixed
+
+ - Incorrect applying allowlist [#139].
+
+ [#139]: https://github.com/AdguardTeam/tsurlfilter/issues/139
 
 ## [2.0.1] - 2024-08-27
 
