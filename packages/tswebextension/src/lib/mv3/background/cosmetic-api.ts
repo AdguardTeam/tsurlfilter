@@ -1,6 +1,7 @@
 import {
     type CosmeticResult,
     type CosmeticRule,
+    type ScriptletData,
 } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
@@ -11,7 +12,12 @@ import { createFrameMatchQuery } from '../../common/utils/create-frame-match-que
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
-import { type ExecuteScriptParams, type InsertCSSParams, ScriptingApi } from './scripting-api';
+import {
+    type ExecuteScriptletParams,
+    type ExecuteScriptParams,
+    type InsertCSSParams,
+    ScriptingApi,
+} from './scripting-api';
 import { requestContextStorage } from './request/request-context-storage';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { getDomain } from '../../common/utils/url';
@@ -43,6 +49,35 @@ type ApplyCosmeticResultParams = {
 };
 
 /**
+ * Script text and scriptlets.
+ */
+type ScriptTextAndScriptlets = {
+    scriptText: string,
+    scriptletDataList: ScriptletData[]
+};
+
+/**
+ * Parameters for executing scriptlet data list.
+ */
+type ExecuteScriptletsParams = Omit<ExecuteScriptletParams, 'scriptletData'> & {
+    /**
+     * The scriptlet data to be executed.
+     */
+    scriptletDataList: ScriptletData[];
+};
+
+/**
+ * Parameters for executing a script with additional frame URL.
+ */
+export type ExecuteScriptParamsWithUrl = ExecuteScriptParams & {
+    /**
+     * The URL of the frame.
+     * Used to determine if a blob should be used for injection.
+     */
+    frameUrl: string;
+};
+
+/**
  * Information for logging js rules.
  */
 type LogJsRulesParams = {
@@ -65,11 +100,6 @@ export class CosmeticApi extends CosmeticApiCommon {
     private static readonly HIT_SEP = encodeURIComponent(';');
 
     private static readonly HIT_END = "' !important; }";
-
-    /**
-     * Flag to enable verbose logging.
-     */
-    public static verbose: boolean = false;
 
     /**
      * Retrieves CSS styles from the cosmetic result.
@@ -132,42 +162,13 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Builds scripts from cosmetic rules.
+     * Wraps the given JavaScript code in a self-invoking function for safe execution
+     * and appends a source URL comment for debugging purposes.
      *
-     * @param cosmeticResult Cosmetic result.
-     * @param frameUrl Frame url. Used for debug.
-     * @returns Script text or empty string if no script rules are passed.
+     * @param scriptText The JavaScript code to wrap.
+     * @returns The wrapped script code, or an empty string if the input is falsy.
      */
-    public static getScriptText(cosmeticResult: CosmeticResult, frameUrl: string): string {
-        const rules = cosmeticResult.getScriptRules();
-        if (rules.length === 0) {
-            return '';
-        }
-
-        let debug = false;
-        const { configuration } = appContext;
-        if (configuration) {
-            const { settings } = configuration;
-            if (settings) {
-                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
-                debug = settings.debugScriptlets;
-            }
-        }
-
-        const scriptParams = {
-            debug,
-            frameUrl,
-        };
-
-        const uniqueScripts = new Set();
-        for (let i = 0; i < rules.length; i += 1) {
-            const rule = rules[i];
-            uniqueScripts.add(rule.getScript(scriptParams));
-        }
-
-        const scriptText = [...uniqueScripts]
-            .join(';\n');
-
+    private static wrapScriptText(scriptText: string): string {
         if (!scriptText) {
             return '';
         }
@@ -184,6 +185,50 @@ export class CosmeticApi extends CosmeticApiCommon {
         })();
         //# sourceURL=ag-scripts.js
         `;
+    }
+
+    /**
+     * Generates script text and retrieves a list of scriptlet data from cosmetic rules.
+     *
+     * @param cosmeticResult Object containing cosmetic rules.
+     * @returns An object with:
+     * - `scriptText`: The aggregated script text, wrapped for safe execution.
+     * - `scriptletDataList`: An array of scriptlet data objects.
+     */
+    public static getScriptTextAndScriptlets(cosmeticResult: CosmeticResult): ScriptTextAndScriptlets {
+        const rules = cosmeticResult.getScriptRules();
+        if (rules.length === 0) {
+            return {
+                scriptText: '',
+                scriptletDataList: [],
+            };
+        }
+
+        const uniqueScripts = new Set();
+        const scriptletDataList = [];
+
+        for (let i = 0; i < rules.length; i += 1) {
+            const rule = rules[i];
+            if (!rule.isScriptlet) {
+                // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
+                //  are actually used in the rules. If not, avoid injecting them to reduce overhead.
+                uniqueScripts.add(rule.getScript());
+            } else {
+                const scriptletData = rule.getScriptletData();
+                if (scriptletData) {
+                    scriptletDataList.push(scriptletData);
+                }
+            }
+        }
+
+        const scriptText = [...uniqueScripts].join(';\n');
+
+        const wrappedScriptText = CosmeticApi.wrapScriptText(scriptText);
+
+        return {
+            scriptText: wrappedScriptText,
+            scriptletDataList,
+        };
     }
 
     /**
@@ -234,6 +279,57 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Injects scriptlet data list to the page by request id.
+     *
+     * @param requestId Request id.
+     */
+    public static async applyScriptletsByRequest(requestId: string): Promise<void> {
+        const requestContext = requestContextStorage.get(requestId);
+        const scriptletDataList = requestContext?.scriptletDataList;
+
+        if (!scriptletDataList) {
+            return;
+        }
+
+        try {
+            await Promise.all(scriptletDataList.map((scriptletData) => {
+                return ScriptingApi.executeScriptlet({
+                    tabId: requestContext.tabId,
+                    frameId: requestContext.frameId,
+                    scriptletData,
+                    domainName: getDomain(requestContext.requestUrl),
+                });
+            }));
+        } catch (e) {
+            logger.debug('[applyScriptletsByRequest] error occurred during injection', getErrorMessage(e));
+        }
+    }
+
+    /**
+     * Determines if a blob should be used for script injection based on the request url.
+     * This method is used in scenarios where inline scripts are blocked by a Content Security Policy (CSP),
+     * but blobs are allowed.
+     * A common example of this is on websites like Facebook.
+     *
+     * @param requestUrl The URL of the request.
+     * @returns True if a blob should be used for injection; otherwise, false.
+     */
+    private static shouldUseBlob(requestUrl: string): boolean {
+        const BLOB_INJECTION_URLS = new Set([
+            'facebook.com',
+            'fbsbx.com', // facebook.com iframe
+        ]);
+
+        const domain = getDomain(requestUrl);
+
+        if (!domain) {
+            return false;
+        }
+
+        return BLOB_INJECTION_URLS.has(domain);
+    }
+
+    /**
      * Injects js to specified frame based on provided data and injection FSM state.
      *
      * @param requestId Request id.
@@ -249,6 +345,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 tabId: requestContext.tabId,
                 frameId: requestContext.frameId,
                 scriptText: requestContext.scriptText,
+                useBlob: CosmeticApi.shouldUseBlob(requestContext.requestUrl),
             });
         } catch (e) {
             logger.debug('[applyJsByRequest] error occurred during injection', getErrorMessage(e));
@@ -273,9 +370,38 @@ export class CosmeticApi extends CosmeticApiCommon {
                 tabId,
                 frameId,
                 scriptText: requestContext.scriptText,
+                useBlob: CosmeticApi.shouldUseBlob(requestContext.requestUrl),
             });
         } catch (e) {
             logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+        }
+    }
+
+    /**
+     * Injects js to specified tab and frame.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     */
+    public static async applyScriptletsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+        const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
+        const scriptletDataList = requestContext?.scriptletDataList;
+
+        if (!scriptletDataList) {
+            return;
+        }
+
+        try {
+            await Promise.all(scriptletDataList.map((scriptletData) => {
+                return ScriptingApi.executeScriptlet({
+                    tabId,
+                    frameId,
+                    scriptletData,
+                    domainName: getDomain(requestContext.requestUrl),
+                });
+            }));
+        } catch (e) {
+            logger.debug('[applyScriptletsByTabAndFrame] error occurred during injection', getErrorMessage(e));
         }
     }
 
@@ -323,11 +449,42 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Wraps script execution with try-catch block.
      * @param params Parameters for executing a script.
      */
-    private static async executeScript(params: ExecuteScriptParams): Promise<void> {
+    private static async executeScript(params: ExecuteScriptParamsWithUrl): Promise<void> {
         try {
-            await ScriptingApi.executeScript(params);
+            await ScriptingApi.executeScript({
+                tabId: params.tabId,
+                frameId: params.frameId,
+                scriptText: params.scriptText,
+                useBlob: CosmeticApi.shouldUseBlob(params.frameUrl),
+            });
         } catch (e) {
             logger.debug('[executeScript] error occurred during injection', getErrorMessage(e));
+        }
+    }
+
+    /**
+     * Wraps script execution with try-catch block.
+     * @param params Parameters for executing a script.
+     */
+    private static async executeScriptlets(params: ExecuteScriptletsParams): Promise<void> {
+        const {
+            tabId,
+            frameId,
+            scriptletDataList,
+            domainName,
+        } = params;
+
+        try {
+            await Promise.all(scriptletDataList.map((scriptletData) => {
+                return ScriptingApi.executeScriptlet({
+                    tabId,
+                    frameId,
+                    scriptletData,
+                    domainName,
+                });
+            }));
+        } catch (e) {
+            logger.debug('[executeScriptlets] error occurred during injection', getErrorMessage(e));
         }
     }
 
@@ -338,7 +495,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param params.tabId Tab id.
      * @param params.frameId Frame id.
      * @param params.cosmeticResult Cosmetic result.
-     * @param params.frameUrl Frame url.
+     * @param params.frameUrl Frame URL.
      * @returns Promise that resolves when the cosmetic result is applied.
      */
     public static async applyCosmeticResult(
@@ -349,7 +506,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             frameUrl,
         }: ApplyCosmeticResultParams,
     ): Promise<void> {
-        const scriptText = CosmeticApi.getScriptText(cosmeticResult, frameUrl);
+        const { scriptText, scriptletDataList } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
         if (cssText) {
@@ -365,6 +522,16 @@ export class CosmeticApi extends CosmeticApiCommon {
                 tabId,
                 frameId,
                 scriptText,
+                frameUrl,
+            });
+        }
+
+        if (scriptletDataList.length > 0) {
+            CosmeticApi.executeScriptlets({
+                tabId,
+                frameId,
+                scriptletDataList,
+                domainName: getDomain(frameUrl),
             });
         }
     }

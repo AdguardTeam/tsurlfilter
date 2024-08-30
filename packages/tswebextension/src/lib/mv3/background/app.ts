@@ -34,7 +34,6 @@ import { allowlistApi } from './allowlist-api';
 import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
-import { CosmeticApi } from './cosmetic-api';
 import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 
 type ConfigurationResult = {
@@ -358,16 +357,14 @@ export class TsWebExtension implements AppInterface<
             await TsWebExtension.removeAllFilteringRules();
         }
 
+        this.configuration = TsWebExtension.createConfigurationContext(configuration);
+
         // Update previously opened tabs with new rules - find for each tab
         // new main frame rule.
         await tabsApi.updateCurrentTabsMainFrameRules();
 
         // Reload request events listeners.
         await WebRequestApi.flushMemoryCache();
-
-        CosmeticApi.verbose = this.configuration?.settings.debugScriptlets || false;
-
-        this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
         logger.debug('[tswebextension.configure]: end');
 
@@ -643,13 +640,16 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * TODO implement this method later
-     * Sets the debug filtering state.
+     * Sets the debug scriptlets state.
+     *
+     * @throws Error if {@link configuration} not set.
      * @param debug Debug filtering state.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars,class-methods-use-this
     public setDebugScriptlets(debug: boolean): void {
-        logger.debug('[tswebextension.setDebugScriptlets]: mv3 does not support setDebugScriptlets yet');
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+        this.configuration.settings.debugScriptlets = debug;
     }
 
     /**

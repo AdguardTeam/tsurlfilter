@@ -77,7 +77,7 @@ Table of content:
         - [getMessageHandler()](#getmessagehandler)
         - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
         - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
-        - [setDebugScriptlets() (MV2 only)](#setdebugscriptlets-mv2-only)
+        - [setDebugScriptlets()](#setdebugscriptlets)
         - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
         - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
         - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
@@ -577,7 +577,7 @@ Updates [collectStats](#collectstats) configuration value without re-initializat
 
 Throws error if [configuration](#configuration) is not set.
 
-##### setDebugScriptlets() (MV2 only)
+##### setDebugScriptlets()
 
 type: `(isDebugScriptlets: boolean) => void`
 

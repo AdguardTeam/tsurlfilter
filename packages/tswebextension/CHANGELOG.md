@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filtering log `ApplyBasicRuleEvent` now contains `companyCategoryName` property
   which represents a matched company from `AdguardTeam/companiesdb`'s `trackers.json` database in MV3.
   It allows to determinate the tracker category for the blocked request.
+- Inject scriptlets separately to avoid csp issues in MV3.
+- Updated `@adguard/scriptlets` to `v1.11.27`.
 
 ## [2.0.1] - 2024-08-27
 
