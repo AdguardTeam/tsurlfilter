@@ -6,6 +6,7 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { tabsApi } from '../../tabs/tabs-api';
+import { companiesDbService } from '../../../common/companies-db-service';
 import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
 
 import { type RequestContext } from './request-context-storage';
@@ -97,6 +98,11 @@ export class RequestBlockingApi {
             popupRule,
             requestType,
             tabId,
+            eventId,
+            requestId,
+            requestUrl,
+            contentType,
+            referrerUrl,
         } = data;
 
         if (!rule) {
@@ -114,6 +120,27 @@ export class RequestBlockingApi {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.ApplyBasicRule,
+                data: {
+                    tabId,
+                    eventId,
+                    requestType: contentType,
+                    frameUrl: referrerUrl,
+                    requestId,
+                    requestUrl,
+                    companyCategoryName: companiesDbService.match(requestUrl),
+                    filterId: rule.getFilterListId(),
+                    ruleIndex: rule.getIndex(),
+                    isAllowlist: rule.isAllowlist(),
+                    isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                    isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                    isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                    isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                    advancedModifier: rule.getAdvancedModifierValue(),
+                },
+            });
+
             // TODO: Check that redirected url exists in our resources as in mv2.
             return { redirectUrl: '' };
         }
