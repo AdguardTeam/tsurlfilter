@@ -21,7 +21,21 @@ npmjs:
         artifacts:
           - name: dnr-rulesets.tgz
     - script:
-      - echo 'Task run successfully!'
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            # Deploy to npm
+            export NPM_TOKEN=${bamboo.npmSecretToken}
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+            npm publish dnr-rulesets.tgz --access public
   requirements:
     - adg-docker: 'true'
   notifications:
