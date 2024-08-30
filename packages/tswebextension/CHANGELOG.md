@@ -10,11 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- `companyCategoryName` property in filtering log `ApplyBasicRuleEvent` for `$redirect` rules [#137].
+
+[#137]: https://github.com/AdguardTeam/tsurlfilter/issues/137
+
+## [2.2.0-alpha.1] - 2024-08-30
+
 ### Changed
 
 - Filtering log `ApplyBasicRuleEvent` now contains `companyCategoryName` property
   which represents a matched company from `AdguardTeam/companiesdb`'s `trackers.json` database in MV3.
   It allows to determinate the tracker category for the blocked request.
+
+[2.2.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.2.0-alpha.1
 
 ## [2.0.1] - 2024-08-27
 
@@ -58,11 +68,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$permissions` modifier service now correctly handles subdocuments and exceptions.
 - Applying `$cookie` rules on the content-script side.
 - `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
-- Detection of popup tabs [#2890].
+- Detection of popup tabs [AdguardBrowserExtension#2890].
 
 [2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0
 [#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
-[#2890]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2890
+[AdguardBrowserExtension#2890]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2890
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
 [AdguardBrowserExtension#2194]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2194
 [AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278

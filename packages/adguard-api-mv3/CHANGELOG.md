@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- `adguardApi.onRequestBlocking` event data now contains `companyCategoryName` property for `$redirect` rules [#137].
+
+[#137]: https://github.com/AdguardTeam/tsurlfilter/issues/137
+
+## 0.1.7 - 2024-08-30
+
 ### Changed
 
 - `adguardApi.onRequestBlocking` event data now contains `requestId` property
