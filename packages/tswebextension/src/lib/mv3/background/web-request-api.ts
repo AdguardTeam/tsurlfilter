@@ -321,12 +321,13 @@ export class WebRequestApi {
             // Save cosmeticResult for future return it from cache without recalculating.
             tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
 
-            const scriptText = CosmeticApi.getScriptText(cosmeticResult, requestUrl || referrerUrl);
+            const { scriptText, scriptletDataList } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
             const cssText = CosmeticApi.getCssText(cosmeticResult);
 
             requestContextStorage.update(requestId, {
                 cosmeticResult,
                 scriptText,
+                scriptletDataList,
                 cssText,
             });
         }
@@ -372,6 +373,7 @@ export class WebRequestApi {
         }
 
         CosmeticApi.applyJsByRequest(requestId);
+        CosmeticApi.applyScriptletsByRequest(requestId);
     }
 
     /**
@@ -630,6 +632,7 @@ export class WebRequestApi {
         Promise.all([
             CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+            CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
         ]).catch((e) => logger.error(e));
     }
 }
