@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## Unreleased
+
+### Added
+
+- `companyCategoryName` property in filtering log `ApplyBasicRuleEvent` for `$redirect` rules [#137].
+
+[#137]: https://github.com/AdguardTeam/tsurlfilter/issues/137
+
+
 ## [2.2.0-alpha.1] - 2024-08-30
 
 ### Changed
@@ -78,11 +87,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$permissions` modifier service now correctly handles subdocuments and exceptions.
 - Applying `$cookie` rules on the content-script side.
 - `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
-- Detection of popup tabs [#2890].
+- Detection of popup tabs [AdguardBrowserExtension#2890].
 
 [2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0
 [#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
-[#2890]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2890
+[AdguardBrowserExtension#2890]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2890
 [AdguardBrowserExtension#2080]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2080
 [AdguardBrowserExtension#2194]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2194
 [AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
