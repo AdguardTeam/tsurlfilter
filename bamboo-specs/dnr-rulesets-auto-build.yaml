@@ -43,8 +43,8 @@ Build:
             # TODO: replace "release/v3.1" to "master" branch after merge
             if [ $BRANCH != "release/v3.1" ]
             then
-              echo "deployment is not supported on branch ${BRANCH}"
-              exit 1;
+              echo "deployment is not supported on branch ${BRANCH}, skipping"
+              exit 0;
             fi
 
             # Set cache directory
