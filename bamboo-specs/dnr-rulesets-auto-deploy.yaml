@@ -23,6 +23,7 @@ npmjs:
       - echo 'Task run successfully!'
   requirements:
     - adg-docker: 'true'
+    - extension: 'true'
   notifications:
     - events:
         - deployment-started-and-finished

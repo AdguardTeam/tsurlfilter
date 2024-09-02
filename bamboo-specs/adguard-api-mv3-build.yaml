@@ -23,3 +23,6 @@ Build:
       pattern: extension.zip
       shared: true
       required: true
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
