@@ -18,7 +18,7 @@ npmjs:
   triggers:
     - build-success:
         # TODO: remove 'branch' after merge into master
-        branch: release/v3.1
+        branch: release-v3.1
   tasks:
     - checkout:
         force-clean-build: 'true'
