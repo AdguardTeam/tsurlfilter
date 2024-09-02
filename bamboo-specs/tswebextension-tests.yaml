@@ -75,11 +75,12 @@ Test:
               exit 0;
             fi
 
+            # Note: commented due to limited number of build agent
             # FIXME remove this line before merging to master
-            (cd packages/tswebextension && pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz)
+            # (cd packages/tswebextension && pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz)
 
             # FIXME remove this line before merging to master
-            (cd packages/tsurlfilter && pnpm pack && mv adguard-tsurlfilter-*.tgz tsurlfilter.tgz)
+            # (cd packages/tsurlfilter && pnpm pack && mv adguard-tsurlfilter-*.tgz tsurlfilter.tgz)
 
             # FIXME move this task to the separate plan
             pnpm --filter @adguard/tsurlfilter examples
