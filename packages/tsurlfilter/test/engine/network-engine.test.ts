@@ -217,18 +217,6 @@ describe('Test $domain modifier semantics', () => {
         );
     });
 
-    it('will match request url host - subdocument', () => {
-        const request = new Request('http://check.com/path', 'http://test.com/', RequestType.SubDocument);
-        const result = engine.match(request);
-
-        expect(result).toBeTruthy();
-        expect(
-            getRuleSourceIndex(result!.getIndex(), processed.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed.rawFilterList, rule),
-        );
-    });
-
     it('checks request type Document is required', () => {
         const request = new Request('http://check.com/path', 'http://test.com/', RequestType.Image);
         const result = engine.match(request);

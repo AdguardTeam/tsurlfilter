@@ -15,14 +15,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filtering log `ApplyBasicRuleEvent` now contains `companyCategoryName` property
   which represents a matched company from `AdguardTeam/companiesdb`'s `trackers.json` database in MV3.
   It allows to determinate the tracker category for the blocked request.
-- Inject scriptlets separately to avoid csp issues in MV3.
+- Inject scriptlets separately to avoid CSP issues in MV3.
 - Updated `@adguard/scriptlets` to `v1.11.27`.
 
 ### Fixed
 
- - Incorrect applying allowlist [#139].
+- Incorrect applying allowlist [#139].
 
- [#139]: https://github.com/AdguardTeam/tsurlfilter/issues/139
+[2.2.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.2.0-alpha.1
+[#139]: https://github.com/AdguardTeam/tsurlfilter/issues/139
+
+
+## [2.0.2] - 2024-08-29
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v3.0.2`.
+- Updated `@adguard/scriptlets` to `v1.11.27`.
+
+[2.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.2
+
 
 ## [2.0.1] - 2024-08-27
 

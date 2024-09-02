@@ -755,7 +755,7 @@ export class NetworkRule implements rule.IRule {
      * In some cases the $domain modifier can match not only the referrer domain, but also the target domain.
      * This happens when the following is true (1 AND ((2 AND 3) OR 4):
      *
-     * 1) The request has document type
+     * 1) The request has $document request type (not subdocument)
      * 2) The rule's pattern doesn't match any particular domain(s)
      * 3) The rule's pattern doesn't contain regular expressions
      * 4) The $domain modifier contains only excluded domains (e.g., $domain=~example.org|~example.com)
@@ -771,8 +771,7 @@ export class NetworkRule implements rule.IRule {
 
         const { domainModifier } = this;
 
-        const isDocumentType = request.requestType === RequestType.Document
-            || request.requestType === RequestType.SubDocument;
+        const isDocumentType = request.requestType === RequestType.Document;
 
         const hasOnlyExcludedDomains = !domainModifier.hasPermittedDomains()
             && domainModifier.hasRestrictedDomains();
