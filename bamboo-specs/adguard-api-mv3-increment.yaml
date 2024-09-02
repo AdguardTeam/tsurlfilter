@@ -11,3 +11,6 @@ Increment:
   tasks:
     - script:
       - echo 'Task run successfully!'
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'

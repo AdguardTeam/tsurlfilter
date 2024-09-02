@@ -80,6 +80,7 @@ Build:
             echo "Size after cleanup:" && du -h | tail -n 1
   requirements:
     - adg-docker: 'true'
+    - extension: 'true'
 
 branches:
   create: manually
