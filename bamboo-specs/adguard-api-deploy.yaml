@@ -36,6 +36,7 @@ npmjs:
             npm publish adguard-api.tgz --access public
   requirements:
     - adg-docker: 'true'
+    - extension: 'true'
   notifications:
     - events:
         - deployment-started-and-finished
