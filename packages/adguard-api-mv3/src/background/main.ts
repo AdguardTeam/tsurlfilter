@@ -32,7 +32,7 @@ import { RequestBlockingLogger } from './request-blocking-logger';
  * - content blocking via AdGuard Assistant UI, provided by {@link TsWebExtension}.
  */
 export class AdguardApi {
-    private static readonly WEB_ACCESSIBLE_RESOURCES_PATH = '/adguard';
+    private static readonly WEB_ACCESSIBLE_RESOURCES_PATH = '/adguard/redirects';
 
     private static readonly DECLARATIVE_RULES_PATH = '/declarative';
 
