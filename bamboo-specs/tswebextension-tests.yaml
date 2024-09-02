@@ -84,11 +84,12 @@ Test:
             # FIXME move this task to the separate plan
             pnpm --filter @adguard/tsurlfilter examples
     # FIXME remove this task
-    - any-task:
-        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
-        configuration:
-          commitMessage: 'skipci: Automatic update tsurlfilter and tswebextension tgz files and MV3 examples'
-          selectedRepository: defaultRepository
+    # Note: commented due to limited number of build agent
+    # - any-task:
+    #     plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+    #     configuration:
+    #       commitMessage: 'skipci: Automatic update tsurlfilter and tswebextension tgz files and MV3 examples'
+    #       selectedRepository: defaultRepository
   final-tasks:
     - script:
         interpreter: SHELL
