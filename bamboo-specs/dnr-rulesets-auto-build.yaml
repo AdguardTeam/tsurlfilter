@@ -108,7 +108,7 @@ Build:
 # runs plan every 3 hours
 triggers:
   - cron:
-      expression: 0 0 */3 * * *
+      expression: 0 0 */3 * * ?
 
 branches:
   create: manually
