@@ -17,7 +17,7 @@ npmjs:
   # run auto-deploy only after successful build
   triggers:
     - build-success:
-        # TODO: remove 'branch' after merge into master
+        # TODO: remove 'branch' after release/v3.1 is merged into master
         branch: release-v3.1
   tasks:
     - checkout:
