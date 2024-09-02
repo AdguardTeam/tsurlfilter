@@ -81,11 +81,6 @@ Build:
   requirements:
     - adg-docker: 'true'
 
-# run release build at 11:00 every Monday (after companiesdb update)
-triggers:
-  - cron:
-      expression: 0 0 11 ? * MON
-
 branches:
   create: manually
   delete: never
