@@ -3,7 +3,7 @@ version: 2
 deployment:
   name: DNR Rulesets - auto deploy
   source-plan: AJL-DNRRULESETSAUTOBUILD
-release-naming: ${bamboo.inject.version}
+release-naming: ${bamboo.buildNumber}
 environments:
   - npmjs
 
@@ -12,8 +12,7 @@ npmjs:
     image: adguard/node-ssh:18.19--0
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  triggers:
-    - build-success
+  triggers: [ ]
   tasks:
     - checkout:
         force-clean-build: 'true'
