@@ -10,7 +10,7 @@ import { isNull, isUndefined } from '../utils/type-guards';
 /**
  * Function to transform a parameter of the scriptlet node.
  *
- * @param param Parameter to transform (null if the parameter is not present).
+ * @param param Parameter to transform or null if the parameter is not present.
  *
  * @returns Transformed parameter or null if the parameter should be removed.
  */
