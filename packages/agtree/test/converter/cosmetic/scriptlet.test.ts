@@ -56,6 +56,14 @@ describe('Scriptlet conversion', () => {
                 ],
                 shouldConvert: true,
             },
+            // Escaped separator
+            // https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#h_01EXQ3RP7NBM57GBZE52QQ8T2N
+            {
+                actual: String.raw`example.net,example.com#$#log Hello\ no\ quotes`,
+                expected: [
+                    String.raw`example.net,example.com#%#//scriptlet('abp-log', 'Hello no quotes')`,
+                ],
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });
@@ -101,6 +109,35 @@ describe('Scriptlet conversion', () => {
                     'example.org#%#//scriptlet(\'ubo-abort-current-inline-script\', \'$\', \'popup\')',
                 ],
                 shouldConvert: true,
+            },
+            {
+                actual: 'example.com##+js(remove-class, blur, , stay)',
+                expected: [
+                    "example.com#%#//scriptlet('ubo-remove-class', 'blur', '', 'stay')",
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`example.com##+js(spoof-css, .adsbygoogle\, #ads\, .adTest, visibility, visible)`,
+                expected: [
+                    // eslint-disable-next-line max-len
+                    String.raw`example.com#%#//scriptlet('ubo-spoof-css', '.adsbygoogle, #ads, .adTest', 'visibility', 'visible')`,
+                ],
+            },
+            {
+                // specified selectors and applying for remove-attr/class
+                actual: 'memo-book.pl##+js(rc, .locked, body\\, html, stay)',
+                expected: [
+                    "memo-book.pl#%#//scriptlet('ubo-rc', '.locked', 'body, html', 'stay')",
+                ],
+            },
+            {
+                // specified selectors and applying for remove-attr/class - one backslash
+                // eslint-disable-next-line no-useless-escape
+                actual: 'memo-book.pl##+js(rc, .locked, body\, html, stay)',
+                expected: [
+                    "memo-book.pl#%#//scriptlet('ubo-rc', '.locked', 'body, html', 'stay')",
+                ],
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
@@ -241,6 +278,13 @@ describe('Scriptlet conversion', () => {
             {
                 actual: "example.com#%#//scriptlet('set-local-storage-item', 'mode', '$remove$')",
                 expected: ['example.com##+js(set-local-storage-item, mode, $remove$)'],
+            },
+
+            {
+                actual: String.raw`example.net,example.com#$#log Hello\ no\ quotes`,
+                expected: [
+                    String.raw`example.net,example.com##+js(log, Hello no quotes)`,
+                ],
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToUbo');
