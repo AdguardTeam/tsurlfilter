@@ -1,4 +1,0 @@
-#!/usr/bin/env node
-import { convertFilters } from './convertFilters';
-export declare const DEFAULT_DEST_RULE_SETS_DIR = "build/ruleSets";
-export { convertFilters };
