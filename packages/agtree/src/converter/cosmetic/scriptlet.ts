@@ -6,7 +6,7 @@ import { CosmeticRuleSeparator, type ParameterList, type ScriptletInjectionRule 
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { QuoteType, QuoteUtils } from '../../utils/quotes';
-import { EMPTY } from '../../utils/constants';
+import { EMPTY, SPACE } from '../../utils/constants';
 import {
     getScriptletName,
     setScriptletName,
@@ -17,6 +17,7 @@ import {
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode, cloneModifierListNode, cloneScriptletRuleNode } from '../../ast-utils/clone';
 import { GenericPlatform, scriptletsCompatibilityTable } from '../../compatibility-tables';
+import { isNull, isUndefined } from '../../utils/type-guards';
 
 const ABP_SCRIPTLET_PREFIX = 'abp-';
 const UBO_SCRIPTLET_PREFIX = 'ubo-';
@@ -46,6 +47,12 @@ const setConstantAdgToUboMap: Record<string, string> = {
     [ADG_SET_CONSTANT_EMPTY_ARRAY]: UBO_SET_CONSTANT_EMPTY_ARRAY,
     [ADG_SET_CONSTANT_EMPTY_OBJECT]: UBO_SET_CONSTANT_EMPTY_OBJECT,
 };
+
+const REMOVE_ATTR_CLASS_APPLYING = new Set<string>([
+    'asap',
+    'stay',
+    'complete',
+]);
 
 /**
  * Scriptlet injection rule converter class
@@ -110,6 +117,90 @@ export class ScriptletRuleConverter extends RuleConverterBase {
 
                 if (!scriptletName.startsWith(prefix)) {
                     setScriptletName(scriptletClone, `${prefix}${scriptletName}`);
+                }
+
+                // In uBO / ABP syntax, if a parameter contains the separator character, it should be escaped,
+                // but during the conversion, we need to unescape them, because AdGuard syntax uses quotes to
+                // distinguish between parameters.
+                let charToUnescape: string | undefined;
+
+                if (rule.syntax === AdblockSyntax.Ubo) {
+                    charToUnescape = COMMA_SEPARATOR;
+                } else if (rule.syntax === AdblockSyntax.Abp) {
+                    charToUnescape = SPACE;
+                }
+
+                if (!isUndefined(charToUnescape)) {
+                    transformAllScriptletArguments(scriptletClone, (value) => {
+                        if (!isNull(value)) {
+                            return QuoteUtils.unescapeSingleEscapedOccurrences(value, charToUnescape);
+                        }
+
+                        return value;
+                    });
+                }
+
+                // Some scriptlets have special values that need to be converted
+                switch (scriptletName) {
+                    case 'remove-class.js':
+                    case 'remove-class':
+                    case 'rc':
+                    case 'rc.js':
+                    case 'remove-attr.js':
+                    case 'remove-attr':
+                    case 'ra':
+                    case 'ra.js':
+                        if (scriptletClone.children.length > 2) {
+                            const selectors: string[] = [];
+
+                            let applying: string | null = null;
+                            let lastArg = scriptletClone.children.pop();
+
+                            // The very last argument might be the 'applying' parameter
+                            if (lastArg) {
+                                if (REMOVE_ATTR_CLASS_APPLYING.has(lastArg.value)) {
+                                    applying = lastArg.value;
+                                } else {
+                                    selectors.push(lastArg.value);
+                                }
+                            }
+
+                            while (scriptletClone.children.length > 2) {
+                                lastArg = scriptletClone.children.pop();
+
+                                if (lastArg) {
+                                    selectors.push(lastArg.value.trim());
+                                }
+                            }
+
+                            // Set last arg to be the combined selectors (in reverse order, because we popped them)
+                            if (selectors.length > 0) {
+                                scriptletClone.children.push({
+                                    type: 'Value',
+                                    value: selectors.reverse().join(', '),
+                                });
+                            }
+
+                            // Push back the 'applying' parameter if it was found previously
+                            if (!isNull(applying)) {
+                                // If we don't have any selectors,
+                                // we need to add an empty parameter before the 'applying' one
+                                if (selectors.length === 0) {
+                                    scriptletClone.children.push({
+                                        type: 'Value',
+                                        value: EMPTY,
+                                    });
+                                }
+
+                                scriptletClone.children.push({
+                                    type: 'Value',
+                                    value: applying,
+                                });
+                            }
+                        }
+                        break;
+
+                    default:
                 }
 
                 // ADG scriptlet parameters should be quoted, and single quoted are preferred
@@ -220,14 +311,33 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                 // and we need to escape the comma in the second argument to prevent it from being treated
                 // as two separate arguments.
                 transformAllScriptletArguments(scriptletClone, (value) => {
-                    return QuoteUtils.escapeUnescapedOccurrences(value, COMMA_SEPARATOR);
+                    if (!isNull(value)) {
+                        return QuoteUtils.escapeUnescapedOccurrences(value, COMMA_SEPARATOR);
+                    }
+
+                    return value;
                 });
+
+                // Unescape spaces in parameters, because uBlock Origin doesn't treat them as separators.
+                if (rule.syntax === AdblockSyntax.Abp) {
+                    transformAllScriptletArguments(scriptletClone, (value) => {
+                        if (!isNull(value)) {
+                            return QuoteUtils.unescapeSingleEscapedOccurrences(value, SPACE);
+                        }
+
+                        return value;
+                    });
+                }
 
                 // Some scriptlets have special values that need to be converted
                 switch (scriptletName) {
                     case ADG_SET_CONSTANT_NAME:
                         transformNthScriptletArgument(scriptletClone, 2, (value) => {
-                            return setConstantAdgToUboMap[value] ?? value;
+                            if (!isNull(value)) {
+                                return setConstantAdgToUboMap[value] ?? value;
+                            }
+
+                            return value;
                         });
                         break;
 
