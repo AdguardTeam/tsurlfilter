@@ -23,6 +23,8 @@ ubo_any:
   name: remove-class.js
   aliases:
     - rc.js
+    - rc
+    - remove-class
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-classjs-
   parameters:
     - name: classes

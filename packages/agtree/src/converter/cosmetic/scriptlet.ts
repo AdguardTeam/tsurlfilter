@@ -42,6 +42,9 @@ const ADG_PREVENT_FETCH_EMPTY_STRING = '';
 const ADG_PREVENT_FETCH_WILDCARD = '*';
 const UBO_NO_FETCH_IF_WILDCARD = '/^/';
 
+const UBO_REMOVE_CLASS_NAME = 'remove-class.js';
+const UBO_REMOVE_ATTR_NAME = 'remove-attr.js';
+
 const setConstantAdgToUboMap: Record<string, string> = {
     [ADG_SET_CONSTANT_EMPTY_STRING]: UBO_SET_CONSTANT_EMPTY_STRING,
     [ADG_SET_CONSTANT_EMPTY_ARRAY]: UBO_SET_CONSTANT_EMPTY_ARRAY,
@@ -136,67 +139,68 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                     });
                 }
 
-                // Some scriptlets have special values that need to be converted
-                switch (scriptletName) {
-                    case 'remove-class.js':
-                    case 'remove-class':
-                    case 'rc':
-                    case 'rc.js':
-                    case 'remove-attr.js':
-                    case 'remove-attr':
-                    case 'ra':
-                    case 'ra.js':
-                        if (scriptletClone.children.length > 2) {
-                            const selectors: string[] = [];
+                if (rule.syntax === AdblockSyntax.Ubo) {
+                    const scriptletData = scriptletsCompatibilityTable.getFirst(
+                        scriptletName,
+                        GenericPlatform.UboAny,
+                    );
 
-                            let applying: string | null = null;
-                            let lastArg = scriptletClone.children.pop();
+                    // Some scriptlets have special values that need to be converted
+                    if (
+                        scriptletData
+                        && (
+                            scriptletData.name === UBO_REMOVE_CLASS_NAME
+                            || scriptletData.name === UBO_REMOVE_ATTR_NAME
+                        )
+                        && scriptletClone.children.length > 2
+                    ) {
+                        const selectors: string[] = [];
 
-                            // The very last argument might be the 'applying' parameter
-                            if (lastArg) {
-                                if (REMOVE_ATTR_CLASS_APPLYING.has(lastArg.value)) {
-                                    applying = lastArg.value;
-                                } else {
-                                    selectors.push(lastArg.value);
-                                }
-                            }
+                        let applying: string | null = null;
+                        let lastArg = scriptletClone.children.pop();
 
-                            while (scriptletClone.children.length > 2) {
-                                lastArg = scriptletClone.children.pop();
-
-                                if (lastArg) {
-                                    selectors.push(lastArg.value.trim());
-                                }
-                            }
-
-                            // Set last arg to be the combined selectors (in reverse order, because we popped them)
-                            if (selectors.length > 0) {
-                                scriptletClone.children.push({
-                                    type: 'Value',
-                                    value: selectors.reverse().join(', '),
-                                });
-                            }
-
-                            // Push back the 'applying' parameter if it was found previously
-                            if (!isNull(applying)) {
-                                // If we don't have any selectors,
-                                // we need to add an empty parameter before the 'applying' one
-                                if (selectors.length === 0) {
-                                    scriptletClone.children.push({
-                                        type: 'Value',
-                                        value: EMPTY,
-                                    });
-                                }
-
-                                scriptletClone.children.push({
-                                    type: 'Value',
-                                    value: applying,
-                                });
+                        // The very last argument might be the 'applying' parameter
+                        if (lastArg) {
+                            if (REMOVE_ATTR_CLASS_APPLYING.has(lastArg.value)) {
+                                applying = lastArg.value;
+                            } else {
+                                selectors.push(lastArg.value);
                             }
                         }
-                        break;
 
-                    default:
+                        while (scriptletClone.children.length > 2) {
+                            lastArg = scriptletClone.children.pop();
+
+                            if (lastArg) {
+                                selectors.push(lastArg.value.trim());
+                            }
+                        }
+
+                        // Set last arg to be the combined selectors (in reverse order, because we popped them)
+                        if (selectors.length > 0) {
+                            scriptletClone.children.push({
+                                type: 'Value',
+                                value: selectors.reverse().join(', '),
+                            });
+                        }
+
+                        // Push back the 'applying' parameter if it was found previously
+                        if (!isNull(applying)) {
+                            // If we don't have any selectors,
+                            // we need to add an empty parameter before the 'applying' one
+                            if (selectors.length === 0) {
+                                scriptletClone.children.push({
+                                    type: 'Value',
+                                    value: EMPTY,
+                                });
+                            }
+
+                            scriptletClone.children.push({
+                                type: 'Value',
+                                value: applying,
+                            });
+                        }
+                    }
                 }
 
                 // ADG scriptlet parameters should be quoted, and single quoted are preferred
