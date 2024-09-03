@@ -1,5 +1,5 @@
 export const rawCompaniesDb = {
-	"timeUpdated": "2024-09-02T10:04:17.423Z",
+	"timeUpdated": "2024-08-22T00:10:31.272Z",
 	"categories": {
 		"0": "audio_video_player",
 		"1": "comments",

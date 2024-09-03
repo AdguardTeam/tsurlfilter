@@ -1,3 +1,0 @@
-test/fixtures_reference/crlf.ftl eol=crlf
-test/fixtures_reference/cr.ftl eol=cr
-test/fixtures_structure/crlf.ftl eol=crlf

@@ -1,9 +1,0 @@
-/**
- * Splits options string into array of modifier=value pairs
- *
- * @param string - string to split
- * @param unescape - if true, remove escape characters from string
- * @return array of string parts
- * @throws on invalid special modifier value
- */
-export declare function parseOptionsString(string: string, unescape?: boolean): string[];
