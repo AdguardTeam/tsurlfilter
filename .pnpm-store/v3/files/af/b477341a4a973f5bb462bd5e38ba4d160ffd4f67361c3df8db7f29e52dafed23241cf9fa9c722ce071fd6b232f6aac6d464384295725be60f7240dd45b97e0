@@ -1,0 +1,34 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const nx_json_1 = require("../../generators/utils/nx-json");
+const path_1 = require("path");
+const json_1 = require("../../generators/utils/json");
+const format_changed_files_with_prettier_if_available_1 = require("../../generators/internal-utils/format-changed-files-with-prettier-if-available");
+const retrieve_workspace_files_1 = require("../../project-graph/utils/retrieve-workspace-files");
+const internal_api_1 = require("../../project-graph/plugins/internal-api");
+async function default_1(tree) {
+    const nxJson = (0, nx_json_1.readNxJson)(tree);
+    const [plugins, cleanup] = await (0, internal_api_1.loadNxPlugins)(nxJson?.plugins ?? [], tree.root);
+    const projectFiles = (0, retrieve_workspace_files_1.retrieveProjectConfigurationPaths)(tree.root, plugins);
+    const projectJsons = projectFiles.filter((f) => f.endsWith('project.json'));
+    for (let f of projectJsons) {
+        const projectJson = (0, json_1.readJson)(tree, f);
+        if (!projectJson.name) {
+            projectJson.name = toProjectName((0, path_1.dirname)(f), nxJson);
+            (0, json_1.writeJson)(tree, f, projectJson);
+        }
+    }
+    await (0, format_changed_files_with_prettier_if_available_1.formatChangedFilesWithPrettierIfAvailable)(tree);
+    cleanup();
+}
+exports.default = default_1;
+function toProjectName(directory, nxJson) {
+    let { appsDir, libsDir } = nxJson?.workspaceLayout || {};
+    appsDir ??= 'apps';
+    libsDir ??= 'libs';
+    const parts = directory.split(/[\/\\]/g);
+    if ([appsDir, libsDir].includes(parts[0])) {
+        parts.splice(0, 1);
+    }
+    return parts.join('-').toLowerCase();
+}

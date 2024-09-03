@@ -1,0 +1,52 @@
+{
+  "name": "@stylistic/eslint-plugin-plus",
+  "version": "2.6.1",
+  "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/eslint-stylistic/eslint-stylistic#readme",
+  "repository": {
+    "directory": "packages/eslint-plugin-plus",
+    "type": "git",
+    "url": "git+https://github.com/eslint-stylistic/eslint-stylistic.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eslint-stylistic/eslint-stylistic/issues"
+  },
+  "exports": {
+    ".": {
+      "types": "./dts/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./define-config-support": {
+      "types": "./dts/define-config-support.d.ts"
+    },
+    "./rule-options": {
+      "types": "./dts/rule-options.d.ts"
+    },
+    "./rules/indent-binary-ops": "./dist/indent-binary-ops.js",
+    "./rules/type-generic-spacing": "./dist/type-generic-spacing.js",
+    "./rules/type-named-tuple-spacing": "./dist/type-named-tuple-spacing.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dts/index.d.ts",
+  "files": [
+    "dist",
+    "dts",
+    "rules/**/*.d.ts"
+  ],
+  "peerDependencies": {
+    "eslint": "*"
+  },
+  "dependencies": {
+    "@types/eslint": "^9.6.0",
+    "@typescript-eslint/utils": "^8.0.0"
+  },
+  "devDependencies": {
+    "@typescript-eslint/rule-tester": "^8.0.0"
+  },
+  "scripts": {
+    "build": "rimraf dist && rollup --config=rollup.config.mts --configPlugin=rollup-plugin-esbuild",
+    "dev": "rollup --config=rollup.config.mts --configPlugin=rollup-plugin-esbuild --watch"
+  }
+}

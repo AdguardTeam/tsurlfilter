@@ -1,0 +1,16 @@
+# Installation
+> `npm install --save @types/sinon-chrome`
+
+# Summary
+This package contains type definitions for Sinon-Chrome (https://github.com/vitalets/sinon-chrome).
+
+# Details
+Files were exported from https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/sinon-chrome.
+
+### Additional Details
+ * Last updated: Tue, 06 Jul 2021 16:34:53 GMT
+ * Dependencies: [@types/sinon](https://npmjs.com/package/@types/sinon), [@types/chrome](https://npmjs.com/package/@types/chrome)
+ * Global values: `SinonChrome`
+
+# Credits
+These definitions were written by [Tim Perry](https://github.com/pimterry), [CRIMX](https://github.com/crimx), and [kobanyan](https://github.com/kobanyan).

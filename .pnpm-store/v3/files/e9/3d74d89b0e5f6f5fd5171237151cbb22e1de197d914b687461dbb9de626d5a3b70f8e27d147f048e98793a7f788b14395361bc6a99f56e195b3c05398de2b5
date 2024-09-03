@@ -1,0 +1,26 @@
+import { IRule } from '../rules/rule';
+/**
+ * Rule list's cache
+ */
+export declare class ListCache {
+    /**
+     * Cache with the rules which were retrieved.
+     */
+    private readonly cache;
+    /**
+     * Constructor
+     */
+    constructor();
+    /**
+     * @param key
+     * @return rule for specified key
+     */
+    get(key: number): IRule | undefined;
+    /**
+     * Sets rule for specified key
+     *
+     * @param key
+     * @param rule
+     */
+    set(key: number, rule: IRule): void;
+}

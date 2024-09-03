@@ -1,0 +1,11 @@
+/**
+ * Converts filters with textual rules from the provided path to declarative
+ * rule sets and saves them with counters, source map and list of source filter
+ * identifiers on the specified path.
+ *
+ * @param filtersDir Path fo source filters.
+ * @param resourcesDir Path to web accessible resources.
+ * @param destRuleSetsDir Destination path for declarative rule sets.
+ * @param debug Print debug information about conversion.
+ */
+export declare const convertFilters: (filtersDir: string, resourcesDir: string, destRuleSetsDir: string, debug: boolean) => Promise<void>;

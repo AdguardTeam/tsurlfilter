@@ -1,0 +1,25 @@
+{
+  "name": "ip-bigint",
+  "version": "7.3.0",
+  "description": "Convert IPv4 and IPv6 addresses to native BigInt and vice-versa",
+  "author": "silverwind <me@silverwind.io>",
+  "repository": "silverwind/ip-bigint",
+  "license": "BSD-2-Clause",
+  "type": "module",
+  "exports": "./index.js",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=16"
+  },
+  "files": [
+    "./index.js"
+  ],
+  "devDependencies": {
+    "eslint": "8.45.0",
+    "eslint-config-silverwind": "74.0.0",
+    "updates": "14.3.4",
+    "versions": "11.0.1",
+    "vitest": "0.33.0",
+    "vitest-config-silverwind": "2.1.0"
+  }
+}

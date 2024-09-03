@@ -1,0 +1,36 @@
+import { IAdvancedModifier } from './advanced-modifier';
+/**
+ * Redirect modifier class
+ */
+export declare class RedirectModifier implements IAdvancedModifier {
+    /**
+     * Value
+     */
+    private readonly redirectTitle;
+    /**
+     * Is redirecting only blocked requests
+     * See $redirect-rule options
+     */
+    readonly isRedirectingOnlyBlocked: boolean;
+    /**
+     * Constructor
+     *
+     * @param value
+     * @param ruleText
+     * @param isAllowlist
+     * @param isRedirectingOnlyBlocked is redirect-rule modifier
+     */
+    constructor(value: string, ruleText: string, isAllowlist: boolean, isRedirectingOnlyBlocked?: boolean);
+    /**
+     * Redirect title
+     */
+    getValue(): string;
+    /**
+     * Validates redirect rule
+     *
+     * @param ruleText
+     * @param redirectTitle
+     * @param isAllowlist
+     */
+    private static validate;
+}

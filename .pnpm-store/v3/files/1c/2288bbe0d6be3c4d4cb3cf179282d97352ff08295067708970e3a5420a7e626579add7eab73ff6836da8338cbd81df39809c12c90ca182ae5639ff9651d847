@@ -1,0 +1,1039 @@
+/**
+ * @file Describes types from declarativeNetRequest,
+ * since @types/chrome does not contain actual information.
+ *
+ * Updated 07/09/2022.
+ */
+import { z as zod } from 'zod';
+import { HTTPMethod } from '../../modifiers/method-modifier';
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-DomainType
+ */
+export declare enum DomainType {
+    FirstParty = "firstParty",
+    ThirdParty = "thirdParty"
+}
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ResourceType
+ */
+export declare enum ResourceType {
+    MainFrame = "main_frame",
+    SubFrame = "sub_frame",
+    Stylesheet = "stylesheet",
+    Script = "script",
+    Image = "image",
+    Font = "font",
+    Object = "object",
+    XmlHttpRequest = "xmlhttprequest",
+    Ping = "ping",
+    Media = "media",
+    WebSocket = "websocket",
+    Other = "other"
+}
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryKeyValue
+ */
+declare const QueryKeyValueValidator: zod.ZodObject<{
+    key: zod.ZodString;
+    replaceOnly: zod.ZodOptional<zod.ZodBoolean>;
+    value: zod.ZodString;
+}, "strict", zod.ZodTypeAny, {
+    replaceOnly?: boolean | undefined;
+    key: string;
+    value: string;
+}, {
+    replaceOnly?: boolean | undefined;
+    key: string;
+    value: string;
+}>;
+export declare type QueryKeyValue = zod.infer<typeof QueryKeyValueValidator>;
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-QueryTransform
+ */
+declare const QueryTransformValidator: zod.ZodObject<{
+    addOrReplaceParams: zod.ZodOptional<zod.ZodArray<zod.ZodObject<{
+        key: zod.ZodString;
+        replaceOnly: zod.ZodOptional<zod.ZodBoolean>;
+        value: zod.ZodString;
+    }, "strict", zod.ZodTypeAny, {
+        replaceOnly?: boolean | undefined;
+        key: string;
+        value: string;
+    }, {
+        replaceOnly?: boolean | undefined;
+        key: string;
+        value: string;
+    }>, "many">>;
+    removeParams: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+}, "strict", zod.ZodTypeAny, {
+    addOrReplaceParams?: {
+        replaceOnly?: boolean | undefined;
+        key: string;
+        value: string;
+    }[] | undefined;
+    removeParams?: string[] | undefined;
+}, {
+    addOrReplaceParams?: {
+        replaceOnly?: boolean | undefined;
+        key: string;
+        value: string;
+    }[] | undefined;
+    removeParams?: string[] | undefined;
+}>;
+export declare type QueryTransform = zod.infer<typeof QueryTransformValidator>;
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-URLTransform
+ */
+declare const URLTransformValidator: zod.ZodObject<{
+    fragment: zod.ZodOptional<zod.ZodString>;
+    host: zod.ZodOptional<zod.ZodString>;
+    password: zod.ZodOptional<zod.ZodString>;
+    path: zod.ZodOptional<zod.ZodString>;
+    port: zod.ZodOptional<zod.ZodString>;
+    query: zod.ZodOptional<zod.ZodString>;
+    queryTransform: zod.ZodOptional<zod.ZodObject<{
+        addOrReplaceParams: zod.ZodOptional<zod.ZodArray<zod.ZodObject<{
+            key: zod.ZodString;
+            replaceOnly: zod.ZodOptional<zod.ZodBoolean>;
+            value: zod.ZodString;
+        }, "strict", zod.ZodTypeAny, {
+            replaceOnly?: boolean | undefined;
+            key: string;
+            value: string;
+        }, {
+            replaceOnly?: boolean | undefined;
+            key: string;
+            value: string;
+        }>, "many">>;
+        removeParams: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+    }, "strict", zod.ZodTypeAny, {
+        addOrReplaceParams?: {
+            replaceOnly?: boolean | undefined;
+            key: string;
+            value: string;
+        }[] | undefined;
+        removeParams?: string[] | undefined;
+    }, {
+        addOrReplaceParams?: {
+            replaceOnly?: boolean | undefined;
+            key: string;
+            value: string;
+        }[] | undefined;
+        removeParams?: string[] | undefined;
+    }>>;
+    scheme: zod.ZodOptional<zod.ZodString>;
+    username: zod.ZodOptional<zod.ZodString>;
+}, "strict", zod.ZodTypeAny, {
+    port?: string | undefined;
+    password?: string | undefined;
+    path?: string | undefined;
+    host?: string | undefined;
+    fragment?: string | undefined;
+    query?: string | undefined;
+    queryTransform?: {
+        addOrReplaceParams?: {
+            replaceOnly?: boolean | undefined;
+            key: string;
+            value: string;
+        }[] | undefined;
+        removeParams?: string[] | undefined;
+    } | undefined;
+    scheme?: string | undefined;
+    username?: string | undefined;
+}, {
+    port?: string | undefined;
+    password?: string | undefined;
+    path?: string | undefined;
+    host?: string | undefined;
+    fragment?: string | undefined;
+    query?: string | undefined;
+    queryTransform?: {
+        addOrReplaceParams?: {
+            replaceOnly?: boolean | undefined;
+            key: string;
+            value: string;
+        }[] | undefined;
+        removeParams?: string[] | undefined;
+    } | undefined;
+    scheme?: string | undefined;
+    username?: string | undefined;
+}>;
+export declare type URLTransform = zod.infer<typeof URLTransformValidator>;
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-Redirect
+ */
+declare const RedirectValidator: zod.ZodObject<{
+    extensionPath: zod.ZodOptional<zod.ZodString>;
+    regexSubstitution: zod.ZodOptional<zod.ZodString>;
+    transform: zod.ZodOptional<zod.ZodObject<{
+        fragment: zod.ZodOptional<zod.ZodString>;
+        host: zod.ZodOptional<zod.ZodString>;
+        password: zod.ZodOptional<zod.ZodString>;
+        path: zod.ZodOptional<zod.ZodString>;
+        port: zod.ZodOptional<zod.ZodString>;
+        query: zod.ZodOptional<zod.ZodString>;
+        queryTransform: zod.ZodOptional<zod.ZodObject<{
+            addOrReplaceParams: zod.ZodOptional<zod.ZodArray<zod.ZodObject<{
+                key: zod.ZodString;
+                replaceOnly: zod.ZodOptional<zod.ZodBoolean>;
+                value: zod.ZodString;
+            }, "strict", zod.ZodTypeAny, {
+                replaceOnly?: boolean | undefined;
+                key: string;
+                value: string;
+            }, {
+                replaceOnly?: boolean | undefined;
+                key: string;
+                value: string;
+            }>, "many">>;
+            removeParams: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+        }, "strict", zod.ZodTypeAny, {
+            addOrReplaceParams?: {
+                replaceOnly?: boolean | undefined;
+                key: string;
+                value: string;
+            }[] | undefined;
+            removeParams?: string[] | undefined;
+        }, {
+            addOrReplaceParams?: {
+                replaceOnly?: boolean | undefined;
+                key: string;
+                value: string;
+            }[] | undefined;
+            removeParams?: string[] | undefined;
+        }>>;
+        scheme: zod.ZodOptional<zod.ZodString>;
+        username: zod.ZodOptional<zod.ZodString>;
+    }, "strict", zod.ZodTypeAny, {
+        port?: string | undefined;
+        password?: string | undefined;
+        path?: string | undefined;
+        host?: string | undefined;
+        fragment?: string | undefined;
+        query?: string | undefined;
+        queryTransform?: {
+            addOrReplaceParams?: {
+                replaceOnly?: boolean | undefined;
+                key: string;
+                value: string;
+            }[] | undefined;
+            removeParams?: string[] | undefined;
+        } | undefined;
+        scheme?: string | undefined;
+        username?: string | undefined;
+    }, {
+        port?: string | undefined;
+        password?: string | undefined;
+        path?: string | undefined;
+        host?: string | undefined;
+        fragment?: string | undefined;
+        query?: string | undefined;
+        queryTransform?: {
+            addOrReplaceParams?: {
+                replaceOnly?: boolean | undefined;
+                key: string;
+                value: string;
+            }[] | undefined;
+            removeParams?: string[] | undefined;
+        } | undefined;
+        scheme?: string | undefined;
+        username?: string | undefined;
+    }>>;
+    url: zod.ZodOptional<zod.ZodString>;
+}, "strict", zod.ZodTypeAny, {
+    url?: string | undefined;
+    transform?: {
+        port?: string | undefined;
+        password?: string | undefined;
+        path?: string | undefined;
+        host?: string | undefined;
+        fragment?: string | undefined;
+        query?: string | undefined;
+        queryTransform?: {
+            addOrReplaceParams?: {
+                replaceOnly?: boolean | undefined;
+                key: string;
+                value: string;
+            }[] | undefined;
+            removeParams?: string[] | undefined;
+        } | undefined;
+        scheme?: string | undefined;
+        username?: string | undefined;
+    } | undefined;
+    extensionPath?: string | undefined;
+    regexSubstitution?: string | undefined;
+}, {
+    url?: string | undefined;
+    transform?: {
+        port?: string | undefined;
+        password?: string | undefined;
+        path?: string | undefined;
+        host?: string | undefined;
+        fragment?: string | undefined;
+        query?: string | undefined;
+        queryTransform?: {
+            addOrReplaceParams?: {
+                replaceOnly?: boolean | undefined;
+                key: string;
+                value: string;
+            }[] | undefined;
+            removeParams?: string[] | undefined;
+        } | undefined;
+        scheme?: string | undefined;
+        username?: string | undefined;
+    } | undefined;
+    extensionPath?: string | undefined;
+    regexSubstitution?: string | undefined;
+}>;
+export declare type Redirect = zod.infer<typeof RedirectValidator>;
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-HeaderOperation
+ */
+export declare enum HeaderOperation {
+    Append = "append",
+    Set = "set",
+    Remove = "remove"
+}
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-ModifyHeaderInfo
+ */
+declare const ModifyHeaderInfoValidator: zod.ZodObject<{
+    header: zod.ZodString;
+    operation: zod.ZodNativeEnum<typeof HeaderOperation>;
+    value: zod.ZodOptional<zod.ZodString>;
+}, "strict", zod.ZodTypeAny, {
+    value?: string | undefined;
+    header: string;
+    operation: HeaderOperation;
+}, {
+    value?: string | undefined;
+    header: string;
+    operation: HeaderOperation;
+}>;
+export declare type ModifyHeaderInfo = zod.infer<typeof ModifyHeaderInfoValidator>;
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleActionType
+ */
+export declare enum RuleActionType {
+    BLOCK = "block",
+    REDIRECT = "redirect",
+    ALLOW = "allow",
+    UPGRADE_SCHEME = "upgradeScheme",
+    MODIFY_HEADERS = "modifyHeaders",
+    /**
+     * For allowAllRequests rules {@link RuleCondition.resourceTypes} may only
+     * include the 'sub_frame' and 'main_frame' resource types.
+     */
+    ALLOW_ALL_REQUESTS = "allowAllRequests"
+}
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleAction
+ */
+declare const RuleActionValidator: zod.ZodObject<{
+    redirect: zod.ZodOptional<zod.ZodObject<{
+        extensionPath: zod.ZodOptional<zod.ZodString>;
+        regexSubstitution: zod.ZodOptional<zod.ZodString>;
+        transform: zod.ZodOptional<zod.ZodObject<{
+            fragment: zod.ZodOptional<zod.ZodString>;
+            host: zod.ZodOptional<zod.ZodString>;
+            password: zod.ZodOptional<zod.ZodString>;
+            path: zod.ZodOptional<zod.ZodString>;
+            port: zod.ZodOptional<zod.ZodString>;
+            query: zod.ZodOptional<zod.ZodString>;
+            queryTransform: zod.ZodOptional<zod.ZodObject<{
+                addOrReplaceParams: zod.ZodOptional<zod.ZodArray<zod.ZodObject<{
+                    key: zod.ZodString;
+                    replaceOnly: zod.ZodOptional<zod.ZodBoolean>;
+                    value: zod.ZodString;
+                }, "strict", zod.ZodTypeAny, {
+                    replaceOnly?: boolean | undefined;
+                    key: string;
+                    value: string;
+                }, {
+                    replaceOnly?: boolean | undefined;
+                    key: string;
+                    value: string;
+                }>, "many">>;
+                removeParams: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+            }, "strict", zod.ZodTypeAny, {
+                addOrReplaceParams?: {
+                    replaceOnly?: boolean | undefined;
+                    key: string;
+                    value: string;
+                }[] | undefined;
+                removeParams?: string[] | undefined;
+            }, {
+                addOrReplaceParams?: {
+                    replaceOnly?: boolean | undefined;
+                    key: string;
+                    value: string;
+                }[] | undefined;
+                removeParams?: string[] | undefined;
+            }>>;
+            scheme: zod.ZodOptional<zod.ZodString>;
+            username: zod.ZodOptional<zod.ZodString>;
+        }, "strict", zod.ZodTypeAny, {
+            port?: string | undefined;
+            password?: string | undefined;
+            path?: string | undefined;
+            host?: string | undefined;
+            fragment?: string | undefined;
+            query?: string | undefined;
+            queryTransform?: {
+                addOrReplaceParams?: {
+                    replaceOnly?: boolean | undefined;
+                    key: string;
+                    value: string;
+                }[] | undefined;
+                removeParams?: string[] | undefined;
+            } | undefined;
+            scheme?: string | undefined;
+            username?: string | undefined;
+        }, {
+            port?: string | undefined;
+            password?: string | undefined;
+            path?: string | undefined;
+            host?: string | undefined;
+            fragment?: string | undefined;
+            query?: string | undefined;
+            queryTransform?: {
+                addOrReplaceParams?: {
+                    replaceOnly?: boolean | undefined;
+                    key: string;
+                    value: string;
+                }[] | undefined;
+                removeParams?: string[] | undefined;
+            } | undefined;
+            scheme?: string | undefined;
+            username?: string | undefined;
+        }>>;
+        url: zod.ZodOptional<zod.ZodString>;
+    }, "strict", zod.ZodTypeAny, {
+        url?: string | undefined;
+        transform?: {
+            port?: string | undefined;
+            password?: string | undefined;
+            path?: string | undefined;
+            host?: string | undefined;
+            fragment?: string | undefined;
+            query?: string | undefined;
+            queryTransform?: {
+                addOrReplaceParams?: {
+                    replaceOnly?: boolean | undefined;
+                    key: string;
+                    value: string;
+                }[] | undefined;
+                removeParams?: string[] | undefined;
+            } | undefined;
+            scheme?: string | undefined;
+            username?: string | undefined;
+        } | undefined;
+        extensionPath?: string | undefined;
+        regexSubstitution?: string | undefined;
+    }, {
+        url?: string | undefined;
+        transform?: {
+            port?: string | undefined;
+            password?: string | undefined;
+            path?: string | undefined;
+            host?: string | undefined;
+            fragment?: string | undefined;
+            query?: string | undefined;
+            queryTransform?: {
+                addOrReplaceParams?: {
+                    replaceOnly?: boolean | undefined;
+                    key: string;
+                    value: string;
+                }[] | undefined;
+                removeParams?: string[] | undefined;
+            } | undefined;
+            scheme?: string | undefined;
+            username?: string | undefined;
+        } | undefined;
+        extensionPath?: string | undefined;
+        regexSubstitution?: string | undefined;
+    }>>;
+    requestHeaders: zod.ZodOptional<zod.ZodArray<zod.ZodObject<{
+        header: zod.ZodString;
+        operation: zod.ZodNativeEnum<typeof HeaderOperation>;
+        value: zod.ZodOptional<zod.ZodString>;
+    }, "strict", zod.ZodTypeAny, {
+        value?: string | undefined;
+        header: string;
+        operation: HeaderOperation;
+    }, {
+        value?: string | undefined;
+        header: string;
+        operation: HeaderOperation;
+    }>, "many">>;
+    responseHeaders: zod.ZodOptional<zod.ZodArray<zod.ZodObject<{
+        header: zod.ZodString;
+        operation: zod.ZodNativeEnum<typeof HeaderOperation>;
+        value: zod.ZodOptional<zod.ZodString>;
+    }, "strict", zod.ZodTypeAny, {
+        value?: string | undefined;
+        header: string;
+        operation: HeaderOperation;
+    }, {
+        value?: string | undefined;
+        header: string;
+        operation: HeaderOperation;
+    }>, "many">>;
+    type: zod.ZodNativeEnum<typeof RuleActionType>;
+}, "strict", zod.ZodTypeAny, {
+    redirect?: {
+        url?: string | undefined;
+        transform?: {
+            port?: string | undefined;
+            password?: string | undefined;
+            path?: string | undefined;
+            host?: string | undefined;
+            fragment?: string | undefined;
+            query?: string | undefined;
+            queryTransform?: {
+                addOrReplaceParams?: {
+                    replaceOnly?: boolean | undefined;
+                    key: string;
+                    value: string;
+                }[] | undefined;
+                removeParams?: string[] | undefined;
+            } | undefined;
+            scheme?: string | undefined;
+            username?: string | undefined;
+        } | undefined;
+        extensionPath?: string | undefined;
+        regexSubstitution?: string | undefined;
+    } | undefined;
+    requestHeaders?: {
+        value?: string | undefined;
+        header: string;
+        operation: HeaderOperation;
+    }[] | undefined;
+    responseHeaders?: {
+        value?: string | undefined;
+        header: string;
+        operation: HeaderOperation;
+    }[] | undefined;
+    type: RuleActionType;
+}, {
+    redirect?: {
+        url?: string | undefined;
+        transform?: {
+            port?: string | undefined;
+            password?: string | undefined;
+            path?: string | undefined;
+            host?: string | undefined;
+            fragment?: string | undefined;
+            query?: string | undefined;
+            queryTransform?: {
+                addOrReplaceParams?: {
+                    replaceOnly?: boolean | undefined;
+                    key: string;
+                    value: string;
+                }[] | undefined;
+                removeParams?: string[] | undefined;
+            } | undefined;
+            scheme?: string | undefined;
+            username?: string | undefined;
+        } | undefined;
+        extensionPath?: string | undefined;
+        regexSubstitution?: string | undefined;
+    } | undefined;
+    requestHeaders?: {
+        value?: string | undefined;
+        header: string;
+        operation: HeaderOperation;
+    }[] | undefined;
+    responseHeaders?: {
+        value?: string | undefined;
+        header: string;
+        operation: HeaderOperation;
+    }[] | undefined;
+    type: RuleActionType;
+}>;
+export declare type RuleAction = zod.infer<typeof RuleActionValidator>;
+export declare type RuleActionHeaders = Pick<RuleAction, 'requestHeaders' | 'responseHeaders'>;
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RequestMethod
+ */
+export declare enum RequestMethod {
+    Connect = "connect",
+    Delete = "delete",
+    Get = "get",
+    Head = "head",
+    Options = "options",
+    Patch = "patch",
+    Post = "post",
+    Put = "put"
+}
+/**
+ * tsurlfilter {@link HTTPMethod} without {@link HTTPMethod.TRACE}
+ * because it is not supported by {@link RequestMethod}.
+ */
+export declare type SupportedHttpMethod = Exclude<HTTPMethod, HTTPMethod.TRACE>;
+/**
+ * Map {@link HTTPMethod} to declarative {@link RequestMethod}.
+ */
+export declare const DECLARATIVE_REQUEST_METHOD_MAP: Record<SupportedHttpMethod, RequestMethod>;
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleCondition
+ */
+declare const RuleConditionValidator: zod.ZodObject<{
+    domainType: zod.ZodOptional<zod.ZodNativeEnum<typeof DomainType>>;
+    excludedInitiatorDomains: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+    excludedRequestDomains: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+    excludedRequestMethods: zod.ZodOptional<zod.ZodArray<zod.ZodNativeEnum<typeof RequestMethod>, "many">>;
+    excludedResourceTypes: zod.ZodOptional<zod.ZodArray<zod.ZodNativeEnum<typeof ResourceType>, "many">>;
+    excludedTabIds: zod.ZodOptional<zod.ZodArray<zod.ZodNumber, "many">>;
+    initiatorDomains: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+    isUrlFilterCaseSensitive: zod.ZodOptional<zod.ZodBoolean>;
+    regexFilter: zod.ZodOptional<zod.ZodString>;
+    requestDomains: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+    requestMethods: zod.ZodOptional<zod.ZodArray<zod.ZodNativeEnum<typeof RequestMethod>, "many">>;
+    /**
+     * If none of the `excludedResourceTypes` and `resourceTypes` are specified,
+     * all resource types except "main_frame" will be matched.
+     */
+    resourceTypes: zod.ZodOptional<zod.ZodArray<zod.ZodNativeEnum<typeof ResourceType>, "many">>;
+    tabIds: zod.ZodOptional<zod.ZodArray<zod.ZodNumber, "many">>;
+    urlFilter: zod.ZodOptional<zod.ZodString>;
+}, "strict", zod.ZodTypeAny, {
+    domainType?: DomainType | undefined;
+    excludedInitiatorDomains?: string[] | undefined;
+    excludedRequestDomains?: string[] | undefined;
+    excludedRequestMethods?: RequestMethod[] | undefined;
+    excludedResourceTypes?: ResourceType[] | undefined;
+    excludedTabIds?: number[] | undefined;
+    initiatorDomains?: string[] | undefined;
+    isUrlFilterCaseSensitive?: boolean | undefined;
+    regexFilter?: string | undefined;
+    requestDomains?: string[] | undefined;
+    requestMethods?: RequestMethod[] | undefined;
+    resourceTypes?: ResourceType[] | undefined;
+    tabIds?: number[] | undefined;
+    urlFilter?: string | undefined;
+}, {
+    domainType?: DomainType | undefined;
+    excludedInitiatorDomains?: string[] | undefined;
+    excludedRequestDomains?: string[] | undefined;
+    excludedRequestMethods?: RequestMethod[] | undefined;
+    excludedResourceTypes?: ResourceType[] | undefined;
+    excludedTabIds?: number[] | undefined;
+    initiatorDomains?: string[] | undefined;
+    isUrlFilterCaseSensitive?: boolean | undefined;
+    regexFilter?: string | undefined;
+    requestDomains?: string[] | undefined;
+    requestMethods?: RequestMethod[] | undefined;
+    resourceTypes?: ResourceType[] | undefined;
+    tabIds?: number[] | undefined;
+    urlFilter?: string | undefined;
+}>;
+export declare type RuleCondition = zod.infer<typeof RuleConditionValidator>;
+/**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-Rule
+ */
+export declare const DeclarativeRuleValidator: zod.ZodObject<{
+    action: zod.ZodObject<{
+        redirect: zod.ZodOptional<zod.ZodObject<{
+            extensionPath: zod.ZodOptional<zod.ZodString>;
+            regexSubstitution: zod.ZodOptional<zod.ZodString>;
+            transform: zod.ZodOptional<zod.ZodObject<{
+                fragment: zod.ZodOptional<zod.ZodString>;
+                host: zod.ZodOptional<zod.ZodString>;
+                password: zod.ZodOptional<zod.ZodString>;
+                path: zod.ZodOptional<zod.ZodString>;
+                port: zod.ZodOptional<zod.ZodString>;
+                query: zod.ZodOptional<zod.ZodString>;
+                queryTransform: zod.ZodOptional<zod.ZodObject<{
+                    addOrReplaceParams: zod.ZodOptional<zod.ZodArray<zod.ZodObject<{
+                        key: zod.ZodString;
+                        replaceOnly: zod.ZodOptional<zod.ZodBoolean>;
+                        value: zod.ZodString;
+                    }, "strict", zod.ZodTypeAny, {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }, {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }>, "many">>;
+                    removeParams: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+                }, "strict", zod.ZodTypeAny, {
+                    addOrReplaceParams?: {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }[] | undefined;
+                    removeParams?: string[] | undefined;
+                }, {
+                    addOrReplaceParams?: {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }[] | undefined;
+                    removeParams?: string[] | undefined;
+                }>>;
+                scheme: zod.ZodOptional<zod.ZodString>;
+                username: zod.ZodOptional<zod.ZodString>;
+            }, "strict", zod.ZodTypeAny, {
+                port?: string | undefined;
+                password?: string | undefined;
+                path?: string | undefined;
+                host?: string | undefined;
+                fragment?: string | undefined;
+                query?: string | undefined;
+                queryTransform?: {
+                    addOrReplaceParams?: {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }[] | undefined;
+                    removeParams?: string[] | undefined;
+                } | undefined;
+                scheme?: string | undefined;
+                username?: string | undefined;
+            }, {
+                port?: string | undefined;
+                password?: string | undefined;
+                path?: string | undefined;
+                host?: string | undefined;
+                fragment?: string | undefined;
+                query?: string | undefined;
+                queryTransform?: {
+                    addOrReplaceParams?: {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }[] | undefined;
+                    removeParams?: string[] | undefined;
+                } | undefined;
+                scheme?: string | undefined;
+                username?: string | undefined;
+            }>>;
+            url: zod.ZodOptional<zod.ZodString>;
+        }, "strict", zod.ZodTypeAny, {
+            url?: string | undefined;
+            transform?: {
+                port?: string | undefined;
+                password?: string | undefined;
+                path?: string | undefined;
+                host?: string | undefined;
+                fragment?: string | undefined;
+                query?: string | undefined;
+                queryTransform?: {
+                    addOrReplaceParams?: {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }[] | undefined;
+                    removeParams?: string[] | undefined;
+                } | undefined;
+                scheme?: string | undefined;
+                username?: string | undefined;
+            } | undefined;
+            extensionPath?: string | undefined;
+            regexSubstitution?: string | undefined;
+        }, {
+            url?: string | undefined;
+            transform?: {
+                port?: string | undefined;
+                password?: string | undefined;
+                path?: string | undefined;
+                host?: string | undefined;
+                fragment?: string | undefined;
+                query?: string | undefined;
+                queryTransform?: {
+                    addOrReplaceParams?: {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }[] | undefined;
+                    removeParams?: string[] | undefined;
+                } | undefined;
+                scheme?: string | undefined;
+                username?: string | undefined;
+            } | undefined;
+            extensionPath?: string | undefined;
+            regexSubstitution?: string | undefined;
+        }>>;
+        requestHeaders: zod.ZodOptional<zod.ZodArray<zod.ZodObject<{
+            header: zod.ZodString;
+            operation: zod.ZodNativeEnum<typeof HeaderOperation>;
+            value: zod.ZodOptional<zod.ZodString>;
+        }, "strict", zod.ZodTypeAny, {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }, {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }>, "many">>;
+        responseHeaders: zod.ZodOptional<zod.ZodArray<zod.ZodObject<{
+            header: zod.ZodString;
+            operation: zod.ZodNativeEnum<typeof HeaderOperation>;
+            value: zod.ZodOptional<zod.ZodString>;
+        }, "strict", zod.ZodTypeAny, {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }, {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }>, "many">>;
+        type: zod.ZodNativeEnum<typeof RuleActionType>;
+    }, "strict", zod.ZodTypeAny, {
+        redirect?: {
+            url?: string | undefined;
+            transform?: {
+                port?: string | undefined;
+                password?: string | undefined;
+                path?: string | undefined;
+                host?: string | undefined;
+                fragment?: string | undefined;
+                query?: string | undefined;
+                queryTransform?: {
+                    addOrReplaceParams?: {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }[] | undefined;
+                    removeParams?: string[] | undefined;
+                } | undefined;
+                scheme?: string | undefined;
+                username?: string | undefined;
+            } | undefined;
+            extensionPath?: string | undefined;
+            regexSubstitution?: string | undefined;
+        } | undefined;
+        requestHeaders?: {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }[] | undefined;
+        responseHeaders?: {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }[] | undefined;
+        type: RuleActionType;
+    }, {
+        redirect?: {
+            url?: string | undefined;
+            transform?: {
+                port?: string | undefined;
+                password?: string | undefined;
+                path?: string | undefined;
+                host?: string | undefined;
+                fragment?: string | undefined;
+                query?: string | undefined;
+                queryTransform?: {
+                    addOrReplaceParams?: {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }[] | undefined;
+                    removeParams?: string[] | undefined;
+                } | undefined;
+                scheme?: string | undefined;
+                username?: string | undefined;
+            } | undefined;
+            extensionPath?: string | undefined;
+            regexSubstitution?: string | undefined;
+        } | undefined;
+        requestHeaders?: {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }[] | undefined;
+        responseHeaders?: {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }[] | undefined;
+        type: RuleActionType;
+    }>;
+    condition: zod.ZodObject<{
+        domainType: zod.ZodOptional<zod.ZodNativeEnum<typeof DomainType>>;
+        excludedInitiatorDomains: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+        excludedRequestDomains: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+        excludedRequestMethods: zod.ZodOptional<zod.ZodArray<zod.ZodNativeEnum<typeof RequestMethod>, "many">>;
+        excludedResourceTypes: zod.ZodOptional<zod.ZodArray<zod.ZodNativeEnum<typeof ResourceType>, "many">>;
+        excludedTabIds: zod.ZodOptional<zod.ZodArray<zod.ZodNumber, "many">>;
+        initiatorDomains: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+        isUrlFilterCaseSensitive: zod.ZodOptional<zod.ZodBoolean>;
+        regexFilter: zod.ZodOptional<zod.ZodString>;
+        requestDomains: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
+        requestMethods: zod.ZodOptional<zod.ZodArray<zod.ZodNativeEnum<typeof RequestMethod>, "many">>;
+        /**
+         * If none of the `excludedResourceTypes` and `resourceTypes` are specified,
+         * all resource types except "main_frame" will be matched.
+         */
+        resourceTypes: zod.ZodOptional<zod.ZodArray<zod.ZodNativeEnum<typeof ResourceType>, "many">>;
+        tabIds: zod.ZodOptional<zod.ZodArray<zod.ZodNumber, "many">>;
+        urlFilter: zod.ZodOptional<zod.ZodString>;
+    }, "strict", zod.ZodTypeAny, {
+        domainType?: DomainType | undefined;
+        excludedInitiatorDomains?: string[] | undefined;
+        excludedRequestDomains?: string[] | undefined;
+        excludedRequestMethods?: RequestMethod[] | undefined;
+        excludedResourceTypes?: ResourceType[] | undefined;
+        excludedTabIds?: number[] | undefined;
+        initiatorDomains?: string[] | undefined;
+        isUrlFilterCaseSensitive?: boolean | undefined;
+        regexFilter?: string | undefined;
+        requestDomains?: string[] | undefined;
+        requestMethods?: RequestMethod[] | undefined;
+        resourceTypes?: ResourceType[] | undefined;
+        tabIds?: number[] | undefined;
+        urlFilter?: string | undefined;
+    }, {
+        domainType?: DomainType | undefined;
+        excludedInitiatorDomains?: string[] | undefined;
+        excludedRequestDomains?: string[] | undefined;
+        excludedRequestMethods?: RequestMethod[] | undefined;
+        excludedResourceTypes?: ResourceType[] | undefined;
+        excludedTabIds?: number[] | undefined;
+        initiatorDomains?: string[] | undefined;
+        isUrlFilterCaseSensitive?: boolean | undefined;
+        regexFilter?: string | undefined;
+        requestDomains?: string[] | undefined;
+        requestMethods?: RequestMethod[] | undefined;
+        resourceTypes?: ResourceType[] | undefined;
+        tabIds?: number[] | undefined;
+        urlFilter?: string | undefined;
+    }>;
+    id: zod.ZodNumber;
+    priority: zod.ZodOptional<zod.ZodNumber>;
+}, "strict", zod.ZodTypeAny, {
+    priority?: number | undefined;
+    id: number;
+    action: {
+        redirect?: {
+            url?: string | undefined;
+            transform?: {
+                port?: string | undefined;
+                password?: string | undefined;
+                path?: string | undefined;
+                host?: string | undefined;
+                fragment?: string | undefined;
+                query?: string | undefined;
+                queryTransform?: {
+                    addOrReplaceParams?: {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }[] | undefined;
+                    removeParams?: string[] | undefined;
+                } | undefined;
+                scheme?: string | undefined;
+                username?: string | undefined;
+            } | undefined;
+            extensionPath?: string | undefined;
+            regexSubstitution?: string | undefined;
+        } | undefined;
+        requestHeaders?: {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }[] | undefined;
+        responseHeaders?: {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }[] | undefined;
+        type: RuleActionType;
+    };
+    condition: {
+        domainType?: DomainType | undefined;
+        excludedInitiatorDomains?: string[] | undefined;
+        excludedRequestDomains?: string[] | undefined;
+        excludedRequestMethods?: RequestMethod[] | undefined;
+        excludedResourceTypes?: ResourceType[] | undefined;
+        excludedTabIds?: number[] | undefined;
+        initiatorDomains?: string[] | undefined;
+        isUrlFilterCaseSensitive?: boolean | undefined;
+        regexFilter?: string | undefined;
+        requestDomains?: string[] | undefined;
+        requestMethods?: RequestMethod[] | undefined;
+        resourceTypes?: ResourceType[] | undefined;
+        tabIds?: number[] | undefined;
+        urlFilter?: string | undefined;
+    };
+}, {
+    priority?: number | undefined;
+    id: number;
+    action: {
+        redirect?: {
+            url?: string | undefined;
+            transform?: {
+                port?: string | undefined;
+                password?: string | undefined;
+                path?: string | undefined;
+                host?: string | undefined;
+                fragment?: string | undefined;
+                query?: string | undefined;
+                queryTransform?: {
+                    addOrReplaceParams?: {
+                        replaceOnly?: boolean | undefined;
+                        key: string;
+                        value: string;
+                    }[] | undefined;
+                    removeParams?: string[] | undefined;
+                } | undefined;
+                scheme?: string | undefined;
+                username?: string | undefined;
+            } | undefined;
+            extensionPath?: string | undefined;
+            regexSubstitution?: string | undefined;
+        } | undefined;
+        requestHeaders?: {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }[] | undefined;
+        responseHeaders?: {
+            value?: string | undefined;
+            header: string;
+            operation: HeaderOperation;
+        }[] | undefined;
+        type: RuleActionType;
+    };
+    condition: {
+        domainType?: DomainType | undefined;
+        excludedInitiatorDomains?: string[] | undefined;
+        excludedRequestDomains?: string[] | undefined;
+        excludedRequestMethods?: RequestMethod[] | undefined;
+        excludedResourceTypes?: ResourceType[] | undefined;
+        excludedTabIds?: number[] | undefined;
+        initiatorDomains?: string[] | undefined;
+        isUrlFilterCaseSensitive?: boolean | undefined;
+        regexFilter?: string | undefined;
+        requestDomains?: string[] | undefined;
+        requestMethods?: RequestMethod[] | undefined;
+        resourceTypes?: ResourceType[] | undefined;
+        tabIds?: number[] | undefined;
+        urlFilter?: string | undefined;
+    };
+}>;
+export declare type DeclarativeRule = zod.infer<typeof DeclarativeRuleValidator>;
+/**
+ * Map request types to declarative types.
+ */
+export declare const DECLARATIVE_RESOURCE_TYPES_MAP: {
+    main_frame: 1;
+    sub_frame: 2;
+    stylesheet: 8;
+    script: 4;
+    image: 32;
+    font: 256;
+    object: 16;
+    xmlhttprequest: 64;
+    ping: 1024;
+    media: 128;
+    websocket: 512;
+    other: 4096;
+};
+export {};

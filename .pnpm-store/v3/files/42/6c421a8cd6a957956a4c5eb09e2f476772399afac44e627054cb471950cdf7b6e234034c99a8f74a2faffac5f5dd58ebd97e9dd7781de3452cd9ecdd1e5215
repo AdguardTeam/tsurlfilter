@@ -1,0 +1,166 @@
+/**
+ * This file is part of AdGuard Browser Extension (https://github.com/AdguardTeam/AdguardBrowserExtension).
+ *
+ * AdGuard Browser Extension is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * AdGuard Browser Extension is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with AdGuard Browser Extension.  If not, see <http://www.gnu.org/licenses/>.
+ */
+/**
+ * The utility tool resolves preprocessor directives in filter content.
+ *
+ * Directives syntax:
+ * - `!#if`, `!#endif` — filters maintainers can use these conditions to supply different rules
+ *   depending on the ad blocker type.
+ * - `condition` — just like in some popular programming languages, pre-processor conditions are based on constants
+ *   declared by ad blockers. Ad blocker authors define on their own what exact constants do they declare.
+ * - `!#include` — this directive allows to include contents of a specified file into the filter.
+ *
+ * Condition constants should be declared in FilterCompilerConditionsConstants.
+ *
+ * More details:
+ * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/917.
+ */
+/**
+ * An interface representing a file download wrapper with methods to retrieve
+ * local and external files.
+ *
+ * @interface IFileDownloader
+ */
+interface IFileDownloader {
+    getLocalFile: (url: string, filterUrlOrigin: string) => Promise<string>;
+    getExternalFile: (url: string) => Promise<string>;
+}
+/**
+ * These options were added separately to the download method to support backward compatibility.
+ */
+interface LegacyDownloadOptions {
+    validateChecksum?: boolean;
+    validateChecksumStrict?: boolean;
+}
+/**
+ * Options interface for the downloadWithRaw method.
+ */
+interface DownloadWithRawOptions {
+    /**
+     * A boolean flag that, when set to true, indicates that the filter
+     * should be downloaded entirely from the server without applying differential patches. By default, false.
+     */
+    force?: boolean;
+    /**
+     * Filter before conditions and includes resolved, like it was downloaded from the server.
+     * By default, undefined.
+     */
+    rawFilter?: string;
+    /**
+     * Compiler options to be applied while downloading the filter.
+     * By default, undefined.
+     */
+    definedExpressions?: DefinedExpressions;
+    /**
+     * A boolean option for controlling the verbosity of logs. If true, it will log more detailed information during the
+     * download process.
+     * It is disabled (set to false) by default, but could be useful for troubleshooting and debugging.
+     */
+    verbose?: boolean;
+    /**
+     * Option to run validation of checksum of the downloaded filter. If checksum was not found in the file, it will
+     * not throw error unless validateChecksumStrict is set to true.
+     */
+    validateChecksum?: boolean;
+    /**
+     * Whether checksum validation should throw error or no if checksum was not found in the file.
+     * If it is true, it will throw error if checksum was not found in the file.
+     */
+    validateChecksumStrict?: boolean;
+}
+/**
+ * This method downloads filter rules from a specified URL and applies the defined expressions to resolve conditions.
+ */
+interface DownloadInterface {
+    (
+    /**
+     * The absolute URL from which the filter is to be downloaded.
+     */
+    url: string, 
+    /**
+     * An object containing defined expressions for condition resolution.
+     */
+    definedExpressions?: DefinedExpressions, 
+    /**
+     * The options/configuration to be applied while downloading the filter.
+     */
+    options?: LegacyDownloadOptions): Promise<string[]>;
+}
+/**
+ * Downloads filter rules from a specified URL, and returns both the processed filter and raw filter.
+ * The raw filter, which is the filter before any conditions are applied or inclusions resolved,
+ * is kept for future use, particularly for patch application.
+ * If needed, the filter is also patched with any available patches.
+ */
+interface DownloadWithRawInterface {
+    (
+    /**
+     * The absolute URL from which the filter is to be downloaded.
+     */
+    url: string, 
+    /**
+     * The options/configuration to be applied while downloading the filter.
+     * This is required.
+     */
+    options: DownloadWithRawOptions): Promise<DownloadResult>;
+}
+/**
+ * An interface representing defined expressions for condition resolution.
+ *
+ * @interface DefinedExpressions
+ */
+interface DefinedExpressions {
+    adguard?: boolean;
+    adguard_ext_chromium?: boolean;
+    adguard_ext_firefox?: boolean;
+    adguard_ext_edge?: boolean;
+    adguard_ext_safari?: boolean;
+    adguard_ext_opera?: boolean;
+    adguard_ext_android_cb?: boolean;
+}
+export interface DownloadResult {
+    /**
+     * Might be the same as raw filter if no conditions or includes were resolved.
+     */
+    filter: string[];
+    /**
+     * The raw filter, which is the filter before any conditions are applied or inclusions resolved.
+     */
+    rawFilter: string;
+    /**
+     * Flag to indicate if the patch update failed.
+     *
+     * @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2717}
+     */
+    isPatchUpdateFailed?: boolean;
+}
+/**
+ * An interface representing a Filters Downloader, which provides methods to compile, download,
+ * resolve conditions, resolve includes, and get the filter URL origin.
+ *
+ * @interface IFiltersDownloader
+ */
+interface IFiltersDownloader {
+    compile: (rules: string[], filterOrigin?: string, expressions?: DefinedExpressions) => Promise<string[]>;
+    download: DownloadInterface;
+    downloadWithRaw: DownloadWithRawInterface;
+    resolveConditions: (rules: string[], expressions?: DefinedExpressions) => string[];
+    resolveIncludes: (rules: string[], filterOrigin?: string, expressions?: DefinedExpressions) => Promise<string[]>;
+    getFilterUrlOrigin: (url: string, filterUrlOrigin?: string) => string;
+}
+declare const FiltersDownloaderCreator: (FileDownloadWrapper: IFileDownloader) => IFiltersDownloader;
+export { IFiltersDownloader, DefinedExpressions, FiltersDownloaderCreator, };

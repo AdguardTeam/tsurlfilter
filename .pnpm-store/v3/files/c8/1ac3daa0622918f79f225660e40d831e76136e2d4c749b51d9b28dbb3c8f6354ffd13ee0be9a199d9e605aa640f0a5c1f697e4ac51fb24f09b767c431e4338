@@ -1,0 +1,61 @@
+---
+version: 2
+plan:
+  project-key: ADGEXT
+  key: LEGASSINCRSPECS
+  name: legacy assistant - increment version
+variables:
+  dockerNode: adguard/node-ssh:16.17--1
+
+stages:
+  - Increment:
+      manual: false
+      final: false
+      jobs:
+        - Increment
+Increment:
+  key: INCR
+  other:
+    clean-working-dir: true
+  docker:
+    image: ${bamboo.dockerNode}
+    volumes:
+      ${system.YARN_DIR}: "${bamboo.cacheYarn}"
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            #!/bin/bash
+            set -e -f -u -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            # Explicitly checkout the revision that we need.
+            git checkout "${bamboo.repository.revision.number}"
+
+            # do not increment for dist deploy after release build
+            if ! [[ `git log -1 --pretty=%s` =~ "deploy: update dist" ]];then
+              git checkout master
+              ls -alt
+              yarn increment
+            fi
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          commitMessage: 'skipci: Automatic increment build number'
+          selectedRepository: defaultRepository
+  requirements:
+    - adg-docker: 'true'
+
+branches:
+  create: manually
+  delete: never
+  link-to-jira: true
+notifications: []
+labels: []
+other:
+  concurrent-build-plugin: system-default

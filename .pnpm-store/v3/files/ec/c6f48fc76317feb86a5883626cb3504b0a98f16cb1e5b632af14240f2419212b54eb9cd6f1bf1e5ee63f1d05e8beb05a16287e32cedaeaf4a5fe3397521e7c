@@ -1,0 +1,63 @@
+import * as rule from './rule';
+/**
+ * Implements a host rule.
+ *
+ * HostRule is a structure for simple host-level rules (i.e. /etc/hosts syntax).
+ * http://man7.org/linux/man-pages/man5/hosts.5.html
+ * It also supports "just domain" syntax. In this case, the IP will be set to 0.0.0.0.
+ *
+ * Rules syntax looks like this:
+ * ```
+ * IP_address canonical_hostname [aliases...]
+ * ```
+ *
+ * Examples:
+ * * `192.168.1.13 bar.mydomain.org bar` -- ipv4
+ * * `ff02::1 ip6-allnodes` -- ipv6
+ * * `::1 localhost ip6-localhost ip6-loopback` -- ipv6 aliases
+ * * `example.org` -- "just domain" syntax
+ */
+export declare class HostRule implements rule.IRule {
+    private readonly ruleText;
+    private readonly filterListId;
+    private readonly hostnames;
+    private readonly ip;
+    private readonly invalid;
+    /**
+     * Constructor
+     *
+     * Parses the rule and creates a new HostRule instance
+     *
+     * @param ruleText - original rule text.
+     * @param filterListId - ID of the filter list this rule belongs to.
+     *
+     * @throws error if it fails to parse the rule.
+     */
+    constructor(ruleText: string, filterListId: number);
+    /**
+     * Match returns true if this rule can be used on the specified hostname.
+     *
+     * @param hostname - hostname to check
+     */
+    match(hostname: string): boolean;
+    /**
+     * Returns list id
+     */
+    getFilterListId(): number;
+    /**
+     * Return rule text
+     */
+    getText(): string;
+    /**
+     * Returns ip address
+     */
+    getIp(): string;
+    /**
+     * Returns hostnames
+     */
+    getHostnames(): string[];
+    /**
+     * Is invalid rule
+     */
+    isInvalid(): boolean;
+}

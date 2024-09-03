@@ -1,0 +1,105 @@
+import { WebRequest } from 'webextension-polyfill';
+import { NetworkRule } from '../rules/network-rule';
+import { FilteringLog } from '../filtering-log';
+import OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType;
+import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
+import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
+import OnCompletedDetailsType = WebRequest.OnCompletedDetailsType;
+import OnErrorOccurredDetailsType = WebRequest.OnErrorOccurredDetailsType;
+/**
+ * Cookie filtering
+ *
+ * The following public methods should be set as suitable webrequest events listeners,
+ * check sample extension in this repo for an example
+ *
+ * Logic introduction:
+ *
+ * onBeforeRequest:
+ * - get $cookie rules for current url
+ *
+ * onBeforeSendHeaders:
+ * - get all cookies for request url
+ * - store cookies (first-party)
+ *
+ * onHeadersReceived:
+ * - parse set-cookie header, only to detect if the cookie in header will be set from third-party request
+ * - save third-party flag for this cookie cookie.thirdParty=request.thirdParty
+ * - apply rules via removing them from headers and removing them with browser.cookies api
+ * TODO Rewrite/split method for extensions on MV3, because we wont have possibility to remove rules via headers
+ *
+ * onCompleted/onErrorOccurred:
+ * - delete request context from the storage
+ *
+ * onCompleted
+ * - apply rules via content script
+ * In content-scripts (check /src/content-script/cookie-controller.ts):
+ * - get matching cookie rules
+ * - apply
+ */
+export declare class CookieFiltering {
+    private filteringLog;
+    private browserCookieApi;
+    private requestContextStorage;
+    /**
+     * Constructor
+     *
+     * @param filteringLog
+     */
+    constructor(filteringLog: FilteringLog);
+    /**
+     * Finds rules for request and saves it to context storage
+     * @param details
+     * @param rules
+     */
+    onBeforeRequest(details: OnBeforeRequestDetailsType, rules: NetworkRule[]): void;
+    /**
+     * Parses cookies from headers
+     * @param details
+     */
+    onBeforeSendHeaders(details: OnBeforeSendHeadersDetailsType): void;
+    /**
+     * Applies cookies to headers
+     * @param details
+     * @private
+     */
+    private applyRulesToCookieHeaders;
+    /**
+     * Parses set-cookie header
+     * looks up third-party cookies
+     * This callback won't work for mv3 extensions
+     * TODO separate or rewrite to mv2 and mv3 methods
+     *
+     * @param details
+     */
+    onHeadersReceived(details: OnHeadersReceivedDetailsType): boolean;
+    onCompleted(details: OnCompletedDetailsType): void;
+    onErrorOccurred(details: OnErrorOccurredDetailsType): void;
+    /**
+     * Looks up blocking rules for content-script
+     *
+     * @param requestId
+     */
+    getBlockingRules(requestId: string): NetworkRule[];
+    /**
+     * Applies rules
+     * @param requestId
+     */
+    private applyRules;
+    /**
+     * Applies rules to cookie
+     *
+     * @param cookie
+     * @param cookieRules
+     * @param tabId
+     */
+    private applyRulesToCookie;
+    /**
+     * Modifies instance of BrowserCookie with provided rules
+     *
+     * @param cookie Cookie modify
+     * @param rules Cookie matching rules
+     * @return applied rules
+     *
+     */
+    private static applyRuleToBrowserCookie;
+}

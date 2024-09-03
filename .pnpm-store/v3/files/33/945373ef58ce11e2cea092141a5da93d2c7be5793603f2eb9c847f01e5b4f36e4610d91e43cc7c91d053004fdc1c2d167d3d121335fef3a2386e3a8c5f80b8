@@ -1,0 +1,71 @@
+/**
+ * Prefix tree implementation
+ */
+export declare class TrieNode {
+    /**
+     * This node's children could be
+     * - undefined in case of no children
+     * - an instance of TrieNode in case of lonely child
+     * - a map where key is a character code and value is it's trie node.
+    */
+    private children;
+    /**
+     * Character code of this TrieNode.
+     */
+    private code;
+    /**
+     * Data, attached to this trie node. When trie traversal is being done,
+     * data from all trie nodes is collected.
+     */
+    private data;
+    /**
+     * Creates an instance of a TrieNode with the specified char code.
+     *
+     * @param code
+     */
+    constructor(code: number);
+    /**
+     * Attaches data to this TrieNode.
+     *
+     * @param data
+     */
+    attach(data: number): void;
+    /**
+     * Adds the specified string to the Trie and attaches data to it.
+     *
+     * @param str string to add.
+     * @param data data to attach to the leaf node.
+     */
+    add(str: string, data: number): void;
+    /**
+     * Traverses this TrieNode and it's children using the specified search string.
+     * This method collects all the data that's attached on the way and returns as
+     * a result.
+     *
+     * @param str string to check.
+     * @param start index in str where to start traversing from.
+     */
+    traverse(str: string, start: number): number[];
+    /**
+     * Traverses this TrieNode and it's children using the specified search string and all substrings.
+     *
+     * @param str string to check
+     * @param len max length to check
+     */
+    traverseAll(str: string, len: number): number[];
+    /**
+     * Returns a child node with the specified character code or
+     * undefined if not found.
+     *
+     * @param code character code
+     * @returns child node or undefined.
+     */
+    private getChild;
+    /**
+     * Adds a new child node with the specified character code.
+     *
+     * @param code character code.
+     * @returns the newly created TrieNode.
+     */
+    private addChild;
+}

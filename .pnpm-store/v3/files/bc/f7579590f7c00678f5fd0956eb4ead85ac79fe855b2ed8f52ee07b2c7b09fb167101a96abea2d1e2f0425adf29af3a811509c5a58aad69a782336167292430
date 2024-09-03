@@ -1,0 +1,48 @@
+import { ErrorStatusCodes } from './../common/constants';
+import { IAdvancedModifier } from './advanced-modifier';
+/**
+ * Query parameters filtering modifier class
+ * Works with '$removeparam' modifier
+ */
+export declare class RemoveParamModifier implements IAdvancedModifier {
+    /**
+     * Value
+     */
+    private readonly value;
+    /**
+     * Value list
+     */
+    private readonly valueList;
+    /**
+     * RegExp to apply
+     */
+    private readonly valueRegExp;
+    /**
+     * MV3 error code
+     */
+    private readonly errorMv3;
+    /**
+     * Constructor
+     *
+     * @param value
+     */
+    constructor(value: string);
+    /**
+     * Modifier value
+     */
+    getValue(): string;
+    /**
+     * Modifier value list
+     */
+    getValueList(): string[];
+    /**
+     * MV3 error code
+     */
+    getErrorMv3(): ErrorStatusCodes | undefined;
+    /**
+     * Removes query parameters from url
+     *
+     * @param url
+     */
+    removeParameters(url: string): string;
+}

@@ -1,0 +1,41 @@
+{
+    "name": "csslex",
+    "version": "1.0.4",
+    "homepage": "https://github.com/keithamus/csslex",
+    "repository": "keithamus/csslex",
+    "license": "MIT",
+    "type": "module",
+    "exports": {
+        ".": "./mod.min.js"
+    },
+    "module": "./mod.min.js",
+    "types": "mod.d.ts",
+    "files": [
+        "./mod.min.js",
+        "./mod.d.ts",
+        "./mod.ts",
+        "./mod.js"
+    ],
+    "scripts": {
+        "build": "tsc && npm run min",
+        "min": "swc mod.ts -o mod.min.js && wc -c mod.min.js && gzip -9 < mod.min.js | wc -c",
+        "pretest": "npm run build",
+        "test": "wtr"
+    },
+    "devDependencies": {
+        "@csstools/css-tokenizer": "^2.1.1",
+        "@open-wc/testing": "^3.2.0",
+        "@rmenke/css-tokenizer-tests": "^1.1.2",
+        "@swc/cli": "^0.1.62",
+        "@swc/core": "^1.3.64",
+        "@web/dev-server-esbuild": "^0.4.1",
+        "@web/test-runner": "^0.16.1",
+        "@web/test-runner-playwright": "^0.10.1",
+        "benchmark": "^2.1.4",
+        "css-tree": "^2.3.1",
+        "open-props": "^1.5.9",
+        "postcss-parser-tests": "^8.6.0",
+        "typescript": "^5.1.3",
+        "wpt-runner": "^5.0.0"
+    }
+}

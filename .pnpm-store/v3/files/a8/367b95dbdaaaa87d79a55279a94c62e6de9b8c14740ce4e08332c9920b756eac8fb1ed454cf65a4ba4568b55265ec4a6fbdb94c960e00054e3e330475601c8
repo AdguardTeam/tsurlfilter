@@ -1,0 +1,34 @@
+import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
+export declare enum RulesGroup {
+    Regular = 0,
+    RemoveParam = 1,
+    RemoveHeader = 2,
+    Csp = 3,
+    BadFilter = 4
+}
+export declare type GroupedRules = {
+    [key in RulesGroup]: IndexedNetworkRuleWithHash[];
+};
+/**
+ * Contains logic on how to divide the rules into certain groups.
+ *
+ * @see {@link RulesGroup}
+ */
+export declare class DeclarativeRulesGrouper {
+    /**
+     * Returns group of the indexed rule.
+     *
+     * @param indexedNetworkRuleWithHash Indexed network rule with hash.
+     *
+     * @returns Group of the indexed rule.
+     */
+    private static getRuleGroup;
+    /**
+     * Splits the list of indexed rules into an index with groups.
+     *
+     * @param rules List of indexed rules.
+     *
+     * @returns Index with grouped, indexed rules.
+     */
+    static splitRulesByGroups(rules: IndexedNetworkRuleWithHash[]): GroupedRules;
+}

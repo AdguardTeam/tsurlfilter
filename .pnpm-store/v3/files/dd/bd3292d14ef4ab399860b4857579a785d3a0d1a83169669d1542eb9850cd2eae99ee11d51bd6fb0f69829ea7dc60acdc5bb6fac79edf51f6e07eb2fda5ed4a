@@ -1,0 +1,72 @@
+import { IAdvancedModifier } from './advanced-modifier';
+/**
+ * Cookie modifier class
+ *
+ * Learn more about it here:
+ * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/961
+ */
+export declare class CookieModifier implements IAdvancedModifier {
+    /**
+     * Cookie name maxAge
+     */
+    private static MAX_AGE;
+    /**
+     * Cookie name sameSite
+     */
+    private static SAME_SITE;
+    /**
+     * Option value
+     */
+    private readonly optionValue;
+    /**
+     * Regexp value
+     */
+    private readonly regex;
+    /**
+     * Cookie name
+     */
+    private readonly cookieName;
+    /**
+     * Cookie sameSite value
+     */
+    private readonly sameSite;
+    /**
+     * Cookie maxAge value
+     */
+    private readonly maxAge;
+    /**
+     * Constructor
+     *
+     * @param value
+     */
+    constructor(value: string);
+    /**
+     * Modifier value
+     */
+    getValue(): string;
+    /**
+     * First cookie name
+     */
+    getCookieName(): string | null;
+    /**
+     * Max age cookie value
+     */
+    getMaxAge(): number | null;
+    /**
+     * Same site cookie value
+     */
+    getSameSite(): string | null;
+    /**
+     * Checks if cookie with the specified name matches this option
+     *
+     * @param {string} name Cookie name
+     * @return {boolean} true if it does
+     */
+    matches(name: string | null): boolean;
+    /**
+     * Checks if cookie rule has an empty $cookie option
+     *
+     * @return {boolean} True if $cookie option is empty
+     */
+    isEmpty(): boolean;
+}

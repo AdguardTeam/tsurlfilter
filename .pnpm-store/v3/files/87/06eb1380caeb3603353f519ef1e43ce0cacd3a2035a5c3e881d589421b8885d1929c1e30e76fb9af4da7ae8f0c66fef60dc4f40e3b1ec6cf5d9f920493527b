@@ -1,0 +1,86 @@
+import { r as removeHeader } from './headers-89035da7.js';
+
+/**
+ * Headers filtering service module
+ */
+var HeadersService = /** @class */ (function () {
+    /**
+     * Constructor
+     *
+     * @param filteringLog
+     */
+    function HeadersService(filteringLog) {
+        this.filteringLog = filteringLog;
+    }
+    /**
+     * On before send headers handler.
+     * Removes request headers.
+     *
+     * @param details
+     * @param rules
+     * @return if headers modified
+     */
+    HeadersService.prototype.onBeforeSendHeaders = function (details, rules) {
+        var _this = this;
+        if (!details.requestHeaders) {
+            return false;
+        }
+        if (rules.length === 0) {
+            return false;
+        }
+        var result = false;
+        rules.forEach(function (rule) {
+            if (HeadersService.applyRule(details.requestHeaders, rule, true)) {
+                result = true;
+                _this.filteringLog.addRemoveHeaderEvent(details.tabId, details.url, rule.getAdvancedModifierValue(), rule);
+            }
+        });
+        return result;
+    };
+    /**
+     * On headers received handler.
+     * Remove response headers.
+     *
+     * @param details
+     * @param rules
+     * @return if headers modified
+     */
+    HeadersService.prototype.onHeadersReceived = function (details, rules) {
+        var _this = this;
+        if (!details.responseHeaders) {
+            return false;
+        }
+        if (rules.length === 0) {
+            return false;
+        }
+        var result = false;
+        rules.forEach(function (rule) {
+            if (HeadersService.applyRule(details.responseHeaders, rule, false)) {
+                result = true;
+                _this.filteringLog.addRemoveHeaderEvent(details.tabId, details.url, rule.getAdvancedModifierValue(), rule);
+            }
+        });
+        return result;
+    };
+    /**
+     * Applies rule to headers
+     *
+     * @param headers
+     * @param rule
+     * @param isRequestHeaders
+     */
+    HeadersService.applyRule = function (headers, rule, isRequestHeaders) {
+        var modifier = rule.getAdvancedModifier();
+        if (!modifier) {
+            return false;
+        }
+        var headerName = modifier.getApplicableHeaderName(isRequestHeaders);
+        if (!headerName) {
+            return false;
+        }
+        return removeHeader(headers, headerName);
+    };
+    return HeadersService;
+}());
+
+export { HeadersService };

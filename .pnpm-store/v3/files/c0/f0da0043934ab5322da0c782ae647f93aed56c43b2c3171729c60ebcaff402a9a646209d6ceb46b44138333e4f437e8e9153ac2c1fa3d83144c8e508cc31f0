@@ -1,0 +1,19 @@
+/**
+ * Removes query params from url by regexp
+ *
+ * @param url
+ * @param regExp
+ * @param invert remove every parameter in url except the ones matched regexp
+ */
+export declare function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert?: boolean): string;
+/**
+ * Check if the string could be a domain name
+ *
+ * @param text
+ */
+export declare const isDomainName: (text: string) => boolean;
+/**
+ * Extract relative part from hierarchical structured URL
+ * @param url
+ */
+export declare const getRelativeUrl: (url: string) => string | null;

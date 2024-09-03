@@ -1,0 +1,1809 @@
+import { N as NetworkRuleOption, c as commonjsGlobal, e as __awaiter, f as __generator, l as logger } from './network-rule-ab8c23a3.js';
+import { p as parse } from './url-94de2ee3.js';
+import { f as findHeaderByName } from './headers-89035da7.js';
+import './simple-regex-ea3ddcd2.js';
+import './network-rule-options.js';
+import './request-type.js';
+
+/**
+ * Cookie rules manager class
+ */
+var CookieRulesFinder = /** @class */ (function () {
+    function CookieRulesFinder() {
+    }
+    /**
+     * Filters blocking rules
+     * Used in content scripts
+     *
+     * @param url
+     * @param rules
+     */
+    CookieRulesFinder.getBlockingRules = function (url, rules) {
+        return rules.filter(function (rule) { return !CookieRulesFinder.isModifyingRule(rule); });
+    };
+    /**
+     * Finds a rule that doesn't modify cookie: i.e. this rule cancels cookie or it's a allowlist rule.
+     *
+     * @param cookieName Cookie name
+     * @param rules Matching rules
+     * @param isThirdPartyCookie
+     * @return Found rule or null
+     */
+    CookieRulesFinder.lookupNotModifyingRule = function (cookieName, rules, isThirdPartyCookie) {
+        var blockingRules = [];
+        var allowlistRules = [];
+        for (var i = 0; i < rules.length; i += 1) {
+            var rule = rules[i];
+            if (!CookieRulesFinder.matchThirdParty(rule, isThirdPartyCookie)) {
+                continue;
+            }
+            var cookieModifier = rule.getAdvancedModifier();
+            if (cookieModifier.matches(cookieName) && !CookieRulesFinder.isModifyingRule(rule)) {
+                if (rule.isAllowlist()) {
+                    allowlistRules.push(rule);
+                }
+                else {
+                    blockingRules.push(rule);
+                }
+            }
+        }
+        if (allowlistRules.length > 0) {
+            return allowlistRules[0];
+        }
+        if (blockingRules.length > 0) {
+            return blockingRules[0];
+        }
+        return null;
+    };
+    /**
+     * Finds rules that modify cookie
+     *
+     * @param cookieName Cookie name
+     * @param rules Matching rules
+     * @param isThirdPartyCookie
+     * @return Modifying rules
+     */
+    CookieRulesFinder.lookupModifyingRules = function (cookieName, rules, isThirdPartyCookie) {
+        var result = [];
+        var allowlistRules = [];
+        if (rules && rules.length > 0) {
+            for (var i = 0; i < rules.length; i += 1) {
+                var rule = rules[i];
+                if (!CookieRulesFinder.matchThirdParty(rule, isThirdPartyCookie)) {
+                    continue;
+                }
+                var cookieModifier = rule.getAdvancedModifier();
+                if (!cookieModifier.matches(cookieName)) {
+                    continue;
+                }
+                if (!rule.isAllowlist() && !CookieRulesFinder.isModifyingRule(rule)) {
+                    return [];
+                }
+                if (rule.isAllowlist()) {
+                    allowlistRules.push(rule);
+                }
+                else {
+                    result.push(rule);
+                }
+            }
+        }
+        if (allowlistRules.length > 0) {
+            return allowlistRules;
+        }
+        return result;
+    };
+    /**
+     * Checks if rule and third party flag matches
+     *
+     * @param rule
+     * @param isThirdParty
+     */
+    CookieRulesFinder.matchThirdParty = function (rule, isThirdParty) {
+        if (!rule.isOptionEnabled(NetworkRuleOption.ThirdParty)) {
+            return true;
+        }
+        return isThirdParty === rule.isOptionEnabled(NetworkRuleOption.ThirdParty);
+    };
+    /**
+     * Checks if $cookie rule is modifying
+     *
+     * @param rule $cookie rule
+     * @return result
+     */
+    CookieRulesFinder.isModifyingRule = function (rule) {
+        var cookieModifier = rule.getAdvancedModifier();
+        return cookieModifier.getSameSite() !== null
+            || (cookieModifier.getMaxAge() !== null && cookieModifier.getMaxAge() > 0);
+    };
+    return CookieRulesFinder;
+}());
+
+/**
+ * Synthetic Cookie-like object parsed from headers
+ */
+var ParsedCookie = /** @class */ (function () {
+    /**
+     * Constructor
+     *
+     * @param name
+     * @param value
+     * @param url
+     */
+    function ParsedCookie(name, value, url) {
+        /**
+         * Cookie's third-party status.
+         */
+        this.thirdParty = false;
+        this.name = name;
+        this.value = value;
+        this.url = url;
+        var tldResult = parse(url);
+        this.domain = tldResult.domain;
+    }
+    return ParsedCookie;
+}());
+
+/**
+ * Cookie Utils
+ */
+var CookieUtils = /** @class */ (function () {
+    function CookieUtils() {
+    }
+    /**
+     * Parses set-cookie header from http response header
+     * @param header
+     * @param url
+     */
+    CookieUtils.parseSetCookieHeader = function (header, url) {
+        if (!header.name || header.name.toLowerCase() !== 'set-cookie') {
+            return null;
+        }
+        if (!header.value) {
+            return null;
+        }
+        return CookieUtils.parseSetCookie(header.value, url);
+    };
+    /**
+     * Parses set-cookie headers for cookie objects
+     *
+     * @param responseHeaders
+     * @param url
+     * @returns array of parsed cookies
+     */
+    CookieUtils.parseSetCookieHeaders = function (responseHeaders, url) {
+        var result = [];
+        var iResponseHeaders = responseHeaders.length;
+        while (iResponseHeaders > 0) {
+            iResponseHeaders -= 1;
+            var header = responseHeaders[iResponseHeaders];
+            var setCookie = CookieUtils.parseSetCookieHeader(header, url);
+            if (setCookie) {
+                result.push(setCookie);
+            }
+        }
+        return result;
+    };
+    /**
+     * Parse an HTTP Cookie header string and return an object with all cookie name-value pairs.
+     *
+     * @param cookieValue HTTP Cookie value
+     * @param url
+     * @returns Array of cookie name-value pairs
+     */
+    CookieUtils.parseCookies = function (cookieValue, url) {
+        var cookies = [];
+        // Split Cookie values
+        var pairs = cookieValue.split(/; */);
+        for (var i = 0; i < pairs.length; i += 1) {
+            var pair = pairs[i];
+            var eqIdx = pair.indexOf('=');
+            // skip things that don't look like key=value
+            if (eqIdx < 0) {
+                continue;
+            }
+            var key = pair.substr(0, eqIdx).trim();
+            var value = pair.substr(eqIdx + 1, pair.length).trim();
+            var parsedCookie = new ParsedCookie(key, value, url);
+            /**
+             * Not obviously there are few special name prefixes
+             * https://developer.cdn.mozilla.net/pt-BR/docs/Web/HTTP/Headers/Set-Cookie
+             */
+            if (key.startsWith('__Secure-') || key.startsWith('__Host-')) {
+                parsedCookie.secure = true;
+            }
+            cookies.push(parsedCookie);
+        }
+        return cookies;
+    };
+    /**
+     * Parses "Set-Cookie" header value and returns a cookie object with its properties
+     *
+     * @param setCookieValue "Set-Cookie" header value to parse
+     * @param url
+     * @returns cookie object or null if it failed to parse the value
+     */
+    CookieUtils.parseSetCookie = function (setCookieValue, url) {
+        var parts = setCookieValue.split(';').filter(function (s) { return !!s; });
+        var nameValuePart = parts.shift();
+        if (!nameValuePart) {
+            return null;
+        }
+        var nameValue = nameValuePart.split('=');
+        var name = nameValue.shift();
+        // everything after the first =, joined by a "=" if there was more than one part
+        var value = nameValue.join('=');
+        var cookie = new ParsedCookie(name, value, url);
+        parts.forEach(function (part) {
+            var sides = part.split('=');
+            var key = sides
+                .shift()
+                .trimStart()
+                .toLowerCase();
+            var optionValue = sides.join('=');
+            if (key === 'expires') {
+                cookie.expires = new Date(optionValue);
+            }
+            else if (key === 'max-age') {
+                cookie.maxAge = parseInt(optionValue, 10);
+            }
+            else if (key === 'secure') {
+                cookie.secure = true;
+            }
+            else if (key === 'httponly') {
+                cookie.httpOnly = true;
+            }
+            else if (key === 'samesite') {
+                cookie.sameSite = optionValue;
+            }
+            else if (key === 'path') {
+                cookie.path = optionValue;
+            }
+        });
+        return cookie;
+    };
+    /**
+     * Updates cookie maxAge value
+     *
+     * @param cookie Cookie to modify
+     * @param maxAge
+     * @return if cookie was modified
+     */
+    CookieUtils.updateCookieMaxAge = function (cookie, maxAge) {
+        var currentTimeSec = Date.now() / 1000;
+        var cookieExpiresTimeSec = null;
+        if (cookie.maxAge) {
+            cookieExpiresTimeSec = currentTimeSec + cookie.maxAge;
+        }
+        else if (cookie.expires) {
+            cookieExpiresTimeSec = cookie.expires.getTime() / 1000;
+        }
+        var newCookieExpiresTimeSec = currentTimeSec + maxAge;
+        if (cookieExpiresTimeSec === null || cookieExpiresTimeSec > newCookieExpiresTimeSec) {
+            // eslint-disable-next-line no-param-reassign
+            cookie.expires = new Date(newCookieExpiresTimeSec * 1000);
+            // eslint-disable-next-line no-param-reassign
+            cookie.maxAge = maxAge;
+            return true;
+        }
+        return false;
+    };
+    /**
+     * Serializes cookie data into a string suitable for Set-Cookie header.
+     *
+     * @param cookie A cookie object
+     * @return Set-Cookie string or null if it failed to serialize object
+     * @throws {TypeError} Thrown in case of invalid input data
+     * @public
+     */
+    CookieUtils.serializeCookie = function (cookie) {
+        if (!cookie) {
+            throw new TypeError('empty cookie data');
+        }
+        // 1. Validate fields
+        if (!CookieUtils.FIELD_CONTENT_REGEX.test(cookie.name)) {
+            throw new TypeError("Cookie name is invalid: ".concat(cookie.name));
+        }
+        if (cookie.value && !CookieUtils.FIELD_CONTENT_REGEX.test(cookie.value)) {
+            throw new TypeError("Cookie value is invalid: ".concat(cookie.value));
+        }
+        if (cookie.domain && !CookieUtils.FIELD_CONTENT_REGEX.test(cookie.domain)) {
+            throw new TypeError("Cookie domain is invalid: ".concat(cookie.domain));
+        }
+        if (cookie.path && !CookieUtils.FIELD_CONTENT_REGEX.test(cookie.path)) {
+            throw new TypeError("Cookie path is invalid: ".concat(cookie.path));
+        }
+        if (cookie.expires && typeof cookie.expires.toUTCString !== 'function') {
+            throw new TypeError("Cookie expires is invalid: ".concat(cookie.expires));
+        }
+        // 2. Build Set-Cookie header value
+        var setCookieValue = cookie.name + '=' + cookie.value;
+        if (typeof cookie.maxAge === 'number' && !Number.isNaN(cookie.maxAge)) {
+            setCookieValue += '; Max-Age=' + Math.floor(cookie.maxAge);
+        }
+        if (cookie.domain) {
+            setCookieValue += '; Domain=' + cookie.domain;
+        }
+        if (cookie.path) {
+            setCookieValue += '; Path=' + cookie.path;
+        }
+        if (cookie.expires) {
+            setCookieValue += '; Expires=' + cookie.expires.toUTCString();
+        }
+        if (cookie.httpOnly) {
+            setCookieValue += '; HttpOnly';
+        }
+        if (cookie.secure) {
+            setCookieValue += '; Secure';
+        }
+        if (cookie.sameSite) {
+            var sameSite = cookie.sameSite.toLowerCase();
+            switch (sameSite) {
+                case 'lax':
+                    setCookieValue += '; SameSite=Lax';
+                    break;
+                case 'strict':
+                    setCookieValue += '; SameSite=Strict';
+                    break;
+                case 'none':
+                    setCookieValue += '; SameSite=None';
+                    break;
+                default:
+                    throw new TypeError("Cookie sameSite is invalid: ".concat(cookie.sameSite));
+            }
+        }
+        // Don't affected. Let it be here just in case
+        // https://bugs.chromium.org/p/chromium/issues/detail?id=232693
+        if (cookie.priority) {
+            setCookieValue += "; Priority=".concat(cookie.priority);
+        }
+        return setCookieValue;
+    };
+    /**
+     * RegExp to match field-content in RFC 7230 sec 3.2
+     *
+     * field-content = field-vchar [ 1*( SP / HTAB ) field-vchar ]
+     * field-vchar   = VCHAR / obs-text
+     * obs-text      = %x80-FF
+     */
+    // eslint-disable-next-line no-control-regex
+    CookieUtils.FIELD_CONTENT_REGEX = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
+    return CookieUtils;
+}());
+
+var browserPolyfill = {exports: {}};
+
+(function (module, exports) {
+(function (global, factory) {
+  {
+    factory(module);
+  }
+})(typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : commonjsGlobal, function (module) {
+  if (typeof browser === "undefined" || Object.getPrototypeOf(browser) !== Object.prototype) {
+    const CHROME_SEND_MESSAGE_CALLBACK_NO_RESPONSE_MESSAGE = "The message port closed before a response was received.";
+    const SEND_RESPONSE_DEPRECATION_WARNING = "Returning a Promise is the preferred way to send a reply from an onMessage/onMessageExternal listener, as the sendResponse will be removed from the specs (See https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage)";
+    const wrapAPIs = extensionAPIs => {
+      const apiMetadata = {
+        "alarms": {
+          "clear": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "clearAll": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "get": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "getAll": {
+            "minArgs": 0,
+            "maxArgs": 0
+          }
+        },
+        "bookmarks": {
+          "create": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "get": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getChildren": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getRecent": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getSubTree": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getTree": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "move": {
+            "minArgs": 2,
+            "maxArgs": 2
+          },
+          "remove": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removeTree": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "search": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "update": {
+            "minArgs": 2,
+            "maxArgs": 2
+          }
+        },
+        "browserAction": {
+          "disable": {
+            "minArgs": 0,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          },
+          "enable": {
+            "minArgs": 0,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          },
+          "getBadgeBackgroundColor": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getBadgeText": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getPopup": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getTitle": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "openPopup": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "setBadgeBackgroundColor": {
+            "minArgs": 1,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          },
+          "setBadgeText": {
+            "minArgs": 1,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          },
+          "setIcon": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "setPopup": {
+            "minArgs": 1,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          },
+          "setTitle": {
+            "minArgs": 1,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          }
+        },
+        "browsingData": {
+          "remove": {
+            "minArgs": 2,
+            "maxArgs": 2
+          },
+          "removeCache": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removeCookies": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removeDownloads": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removeFormData": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removeHistory": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removeLocalStorage": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removePasswords": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removePluginData": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "settings": {
+            "minArgs": 0,
+            "maxArgs": 0
+          }
+        },
+        "commands": {
+          "getAll": {
+            "minArgs": 0,
+            "maxArgs": 0
+          }
+        },
+        "contextMenus": {
+          "remove": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removeAll": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "update": {
+            "minArgs": 2,
+            "maxArgs": 2
+          }
+        },
+        "cookies": {
+          "get": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getAll": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getAllCookieStores": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "remove": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "set": {
+            "minArgs": 1,
+            "maxArgs": 1
+          }
+        },
+        "devtools": {
+          "inspectedWindow": {
+            "eval": {
+              "minArgs": 1,
+              "maxArgs": 2,
+              "singleCallbackArg": false
+            }
+          },
+          "panels": {
+            "create": {
+              "minArgs": 3,
+              "maxArgs": 3,
+              "singleCallbackArg": true
+            },
+            "elements": {
+              "createSidebarPane": {
+                "minArgs": 1,
+                "maxArgs": 1
+              }
+            }
+          }
+        },
+        "downloads": {
+          "cancel": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "download": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "erase": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getFileIcon": {
+            "minArgs": 1,
+            "maxArgs": 2
+          },
+          "open": {
+            "minArgs": 1,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          },
+          "pause": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removeFile": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "resume": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "search": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "show": {
+            "minArgs": 1,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          }
+        },
+        "extension": {
+          "isAllowedFileSchemeAccess": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "isAllowedIncognitoAccess": {
+            "minArgs": 0,
+            "maxArgs": 0
+          }
+        },
+        "history": {
+          "addUrl": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "deleteAll": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "deleteRange": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "deleteUrl": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getVisits": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "search": {
+            "minArgs": 1,
+            "maxArgs": 1
+          }
+        },
+        "i18n": {
+          "detectLanguage": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getAcceptLanguages": {
+            "minArgs": 0,
+            "maxArgs": 0
+          }
+        },
+        "identity": {
+          "launchWebAuthFlow": {
+            "minArgs": 1,
+            "maxArgs": 1
+          }
+        },
+        "idle": {
+          "queryState": {
+            "minArgs": 1,
+            "maxArgs": 1
+          }
+        },
+        "management": {
+          "get": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getAll": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "getSelf": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "setEnabled": {
+            "minArgs": 2,
+            "maxArgs": 2
+          },
+          "uninstallSelf": {
+            "minArgs": 0,
+            "maxArgs": 1
+          }
+        },
+        "notifications": {
+          "clear": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "create": {
+            "minArgs": 1,
+            "maxArgs": 2
+          },
+          "getAll": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "getPermissionLevel": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "update": {
+            "minArgs": 2,
+            "maxArgs": 2
+          }
+        },
+        "pageAction": {
+          "getPopup": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getTitle": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "hide": {
+            "minArgs": 1,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          },
+          "setIcon": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "setPopup": {
+            "minArgs": 1,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          },
+          "setTitle": {
+            "minArgs": 1,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          },
+          "show": {
+            "minArgs": 1,
+            "maxArgs": 1,
+            "fallbackToNoCallback": true
+          }
+        },
+        "permissions": {
+          "contains": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getAll": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "remove": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "request": {
+            "minArgs": 1,
+            "maxArgs": 1
+          }
+        },
+        "runtime": {
+          "getBackgroundPage": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "getPlatformInfo": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "openOptionsPage": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "requestUpdateCheck": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "sendMessage": {
+            "minArgs": 1,
+            "maxArgs": 3
+          },
+          "sendNativeMessage": {
+            "minArgs": 2,
+            "maxArgs": 2
+          },
+          "setUninstallURL": {
+            "minArgs": 1,
+            "maxArgs": 1
+          }
+        },
+        "sessions": {
+          "getDevices": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "getRecentlyClosed": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "restore": {
+            "minArgs": 0,
+            "maxArgs": 1
+          }
+        },
+        "storage": {
+          "local": {
+            "clear": {
+              "minArgs": 0,
+              "maxArgs": 0
+            },
+            "get": {
+              "minArgs": 0,
+              "maxArgs": 1
+            },
+            "getBytesInUse": {
+              "minArgs": 0,
+              "maxArgs": 1
+            },
+            "remove": {
+              "minArgs": 1,
+              "maxArgs": 1
+            },
+            "set": {
+              "minArgs": 1,
+              "maxArgs": 1
+            }
+          },
+          "managed": {
+            "get": {
+              "minArgs": 0,
+              "maxArgs": 1
+            },
+            "getBytesInUse": {
+              "minArgs": 0,
+              "maxArgs": 1
+            }
+          },
+          "sync": {
+            "clear": {
+              "minArgs": 0,
+              "maxArgs": 0
+            },
+            "get": {
+              "minArgs": 0,
+              "maxArgs": 1
+            },
+            "getBytesInUse": {
+              "minArgs": 0,
+              "maxArgs": 1
+            },
+            "remove": {
+              "minArgs": 1,
+              "maxArgs": 1
+            },
+            "set": {
+              "minArgs": 1,
+              "maxArgs": 1
+            }
+          }
+        },
+        "tabs": {
+          "captureVisibleTab": {
+            "minArgs": 0,
+            "maxArgs": 2
+          },
+          "create": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "detectLanguage": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "discard": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "duplicate": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "executeScript": {
+            "minArgs": 1,
+            "maxArgs": 2
+          },
+          "get": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getCurrent": {
+            "minArgs": 0,
+            "maxArgs": 0
+          },
+          "getZoom": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "getZoomSettings": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "goBack": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "goForward": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "highlight": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "insertCSS": {
+            "minArgs": 1,
+            "maxArgs": 2
+          },
+          "move": {
+            "minArgs": 2,
+            "maxArgs": 2
+          },
+          "query": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "reload": {
+            "minArgs": 0,
+            "maxArgs": 2
+          },
+          "remove": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "removeCSS": {
+            "minArgs": 1,
+            "maxArgs": 2
+          },
+          "sendMessage": {
+            "minArgs": 2,
+            "maxArgs": 3
+          },
+          "setZoom": {
+            "minArgs": 1,
+            "maxArgs": 2
+          },
+          "setZoomSettings": {
+            "minArgs": 1,
+            "maxArgs": 2
+          },
+          "update": {
+            "minArgs": 1,
+            "maxArgs": 2
+          }
+        },
+        "topSites": {
+          "get": {
+            "minArgs": 0,
+            "maxArgs": 0
+          }
+        },
+        "webNavigation": {
+          "getAllFrames": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "getFrame": {
+            "minArgs": 1,
+            "maxArgs": 1
+          }
+        },
+        "webRequest": {
+          "handlerBehaviorChanged": {
+            "minArgs": 0,
+            "maxArgs": 0
+          }
+        },
+        "windows": {
+          "create": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "get": {
+            "minArgs": 1,
+            "maxArgs": 2
+          },
+          "getAll": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "getCurrent": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "getLastFocused": {
+            "minArgs": 0,
+            "maxArgs": 1
+          },
+          "remove": {
+            "minArgs": 1,
+            "maxArgs": 1
+          },
+          "update": {
+            "minArgs": 2,
+            "maxArgs": 2
+          }
+        }
+      };
+      if (Object.keys(apiMetadata).length === 0) {
+        throw new Error("api-metadata.json has not been included in browser-polyfill");
+      }
+      class DefaultWeakMap extends WeakMap {
+        constructor(createItem, items = undefined) {
+          super(items);
+          this.createItem = createItem;
+        }
+        get(key) {
+          if (!this.has(key)) {
+            this.set(key, this.createItem(key));
+          }
+          return super.get(key);
+        }
+      }
+      const isThenable = value => {
+        return value && typeof value === "object" && typeof value.then === "function";
+      };
+      const makeCallback = (promise, metadata) => {
+        return (...callbackArgs) => {
+          if (extensionAPIs.runtime.lastError) {
+            promise.reject(new Error(extensionAPIs.runtime.lastError.message));
+          } else if (metadata.singleCallbackArg || callbackArgs.length <= 1 && metadata.singleCallbackArg !== false) {
+            promise.resolve(callbackArgs[0]);
+          } else {
+            promise.resolve(callbackArgs);
+          }
+        };
+      };
+      const pluralizeArguments = numArgs => numArgs == 1 ? "argument" : "arguments";
+      const wrapAsyncFunction = (name, metadata) => {
+        return function asyncFunctionWrapper(target, ...args) {
+          if (args.length < metadata.minArgs) {
+            throw new Error(`Expected at least ${metadata.minArgs} ${pluralizeArguments(metadata.minArgs)} for ${name}(), got ${args.length}`);
+          }
+          if (args.length > metadata.maxArgs) {
+            throw new Error(`Expected at most ${metadata.maxArgs} ${pluralizeArguments(metadata.maxArgs)} for ${name}(), got ${args.length}`);
+          }
+          return new Promise((resolve, reject) => {
+            if (metadata.fallbackToNoCallback) {
+              try {
+                target[name](...args, makeCallback({
+                  resolve,
+                  reject
+                }, metadata));
+              } catch (cbError) {
+                console.warn(`${name} API method doesn't seem to support the callback parameter, ` + "falling back to call it without a callback: ", cbError);
+                target[name](...args);
+                metadata.fallbackToNoCallback = false;
+                metadata.noCallback = true;
+                resolve();
+              }
+            } else if (metadata.noCallback) {
+              target[name](...args);
+              resolve();
+            } else {
+              target[name](...args, makeCallback({
+                resolve,
+                reject
+              }, metadata));
+            }
+          });
+        };
+      };
+      const wrapMethod = (target, method, wrapper) => {
+        return new Proxy(method, {
+          apply(targetMethod, thisObj, args) {
+            return wrapper.call(thisObj, target, ...args);
+          }
+        });
+      };
+      let hasOwnProperty = Function.call.bind(Object.prototype.hasOwnProperty);
+      const wrapObject = (target, wrappers = {}, metadata = {}) => {
+        let cache = Object.create(null);
+        let handlers = {
+          has(proxyTarget, prop) {
+            return prop in target || prop in cache;
+          },
+          get(proxyTarget, prop, receiver) {
+            if (prop in cache) {
+              return cache[prop];
+            }
+            if (!(prop in target)) {
+              return undefined;
+            }
+            let value = target[prop];
+            if (typeof value === "function") {
+              if (typeof wrappers[prop] === "function") {
+                value = wrapMethod(target, target[prop], wrappers[prop]);
+              } else if (hasOwnProperty(metadata, prop)) {
+                let wrapper = wrapAsyncFunction(prop, metadata[prop]);
+                value = wrapMethod(target, target[prop], wrapper);
+              } else {
+                value = value.bind(target);
+              }
+            } else if (typeof value === "object" && value !== null && (hasOwnProperty(wrappers, prop) || hasOwnProperty(metadata, prop))) {
+              value = wrapObject(value, wrappers[prop], metadata[prop]);
+            } else if (hasOwnProperty(metadata, "*")) {
+              value = wrapObject(value, wrappers[prop], metadata["*"]);
+            } else {
+              Object.defineProperty(cache, prop, {
+                configurable: true,
+                enumerable: true,
+                get() {
+                  return target[prop];
+                },
+                set(value) {
+                  target[prop] = value;
+                }
+              });
+              return value;
+            }
+            cache[prop] = value;
+            return value;
+          },
+          set(proxyTarget, prop, value, receiver) {
+            if (prop in cache) {
+              cache[prop] = value;
+            } else {
+              target[prop] = value;
+            }
+            return true;
+          },
+          defineProperty(proxyTarget, prop, desc) {
+            return Reflect.defineProperty(cache, prop, desc);
+          },
+          deleteProperty(proxyTarget, prop) {
+            return Reflect.deleteProperty(cache, prop);
+          }
+        };
+        let proxyTarget = Object.create(target);
+        return new Proxy(proxyTarget, handlers);
+      };
+      const wrapEvent = wrapperMap => ({
+        addListener(target, listener, ...args) {
+          target.addListener(wrapperMap.get(listener), ...args);
+        },
+        hasListener(target, listener) {
+          return target.hasListener(wrapperMap.get(listener));
+        },
+        removeListener(target, listener) {
+          target.removeListener(wrapperMap.get(listener));
+        }
+      });
+      const onRequestFinishedWrappers = new DefaultWeakMap(listener => {
+        if (typeof listener !== "function") {
+          return listener;
+        }
+        return function onRequestFinished(req) {
+          const wrappedReq = wrapObject(req, {}
+          , {
+            getContent: {
+              minArgs: 0,
+              maxArgs: 0
+            }
+          });
+          listener(wrappedReq);
+        };
+      });
+      let loggedSendResponseDeprecationWarning = false;
+      const onMessageWrappers = new DefaultWeakMap(listener => {
+        if (typeof listener !== "function") {
+          return listener;
+        }
+        return function onMessage(message, sender, sendResponse) {
+          let didCallSendResponse = false;
+          let wrappedSendResponse;
+          let sendResponsePromise = new Promise(resolve => {
+            wrappedSendResponse = function (response) {
+              if (!loggedSendResponseDeprecationWarning) {
+                console.warn(SEND_RESPONSE_DEPRECATION_WARNING, new Error().stack);
+                loggedSendResponseDeprecationWarning = true;
+              }
+              didCallSendResponse = true;
+              resolve(response);
+            };
+          });
+          let result;
+          try {
+            result = listener(message, sender, wrappedSendResponse);
+          } catch (err) {
+            result = Promise.reject(err);
+          }
+          const isResultThenable = result !== true && isThenable(result);
+          if (result !== true && !isResultThenable && !didCallSendResponse) {
+            return false;
+          }
+          const sendPromisedResult = promise => {
+            promise.then(msg => {
+              sendResponse(msg);
+            }, error => {
+              let message;
+              if (error && (error instanceof Error || typeof error.message === "string")) {
+                message = error.message;
+              } else {
+                message = "An unexpected error occurred";
+              }
+              sendResponse({
+                __mozWebExtensionPolyfillReject__: true,
+                message
+              });
+            }).catch(err => {
+              console.error("Failed to send onMessage rejected reply", err);
+            });
+          };
+          if (isResultThenable) {
+            sendPromisedResult(result);
+          } else {
+            sendPromisedResult(sendResponsePromise);
+          }
+          return true;
+        };
+      });
+      const wrappedSendMessageCallback = ({
+        reject,
+        resolve
+      }, reply) => {
+        if (extensionAPIs.runtime.lastError) {
+          if (extensionAPIs.runtime.lastError.message === CHROME_SEND_MESSAGE_CALLBACK_NO_RESPONSE_MESSAGE) {
+            resolve();
+          } else {
+            reject(new Error(extensionAPIs.runtime.lastError.message));
+          }
+        } else if (reply && reply.__mozWebExtensionPolyfillReject__) {
+          reject(new Error(reply.message));
+        } else {
+          resolve(reply);
+        }
+      };
+      const wrappedSendMessage = (name, metadata, apiNamespaceObj, ...args) => {
+        if (args.length < metadata.minArgs) {
+          throw new Error(`Expected at least ${metadata.minArgs} ${pluralizeArguments(metadata.minArgs)} for ${name}(), got ${args.length}`);
+        }
+        if (args.length > metadata.maxArgs) {
+          throw new Error(`Expected at most ${metadata.maxArgs} ${pluralizeArguments(metadata.maxArgs)} for ${name}(), got ${args.length}`);
+        }
+        return new Promise((resolve, reject) => {
+          const wrappedCb = wrappedSendMessageCallback.bind(null, {
+            resolve,
+            reject
+          });
+          args.push(wrappedCb);
+          apiNamespaceObj.sendMessage(...args);
+        });
+      };
+      const staticWrappers = {
+        devtools: {
+          network: {
+            onRequestFinished: wrapEvent(onRequestFinishedWrappers)
+          }
+        },
+        runtime: {
+          onMessage: wrapEvent(onMessageWrappers),
+          onMessageExternal: wrapEvent(onMessageWrappers),
+          sendMessage: wrappedSendMessage.bind(null, "sendMessage", {
+            minArgs: 1,
+            maxArgs: 3
+          })
+        },
+        tabs: {
+          sendMessage: wrappedSendMessage.bind(null, "sendMessage", {
+            minArgs: 2,
+            maxArgs: 3
+          })
+        }
+      };
+      const settingMetadata = {
+        clear: {
+          minArgs: 1,
+          maxArgs: 1
+        },
+        get: {
+          minArgs: 1,
+          maxArgs: 1
+        },
+        set: {
+          minArgs: 1,
+          maxArgs: 1
+        }
+      };
+      apiMetadata.privacy = {
+        network: {
+          "*": settingMetadata
+        },
+        services: {
+          "*": settingMetadata
+        },
+        websites: {
+          "*": settingMetadata
+        }
+      };
+      return wrapObject(extensionAPIs, staticWrappers, apiMetadata);
+    };
+    if (typeof chrome != "object" || !chrome || !chrome.runtime || !chrome.runtime.id) {
+      throw new Error("This script should only be loaded in a browser extension.");
+    }
+    module.exports = wrapAPIs(chrome);
+  } else {
+    module.exports = browser;
+  }
+});
+
+}(browserPolyfill));
+var browser$1 = browserPolyfill.exports;
+
+/**
+ * Cookie api implementation
+ */
+var BrowserCookieApi = /** @class */ (function () {
+    function BrowserCookieApi() {
+    }
+    /**
+     * Removes cookie
+     *
+     * @param name
+     * @param url
+     */
+    BrowserCookieApi.prototype.removeCookie = function (name, url) {
+        return __awaiter(this, void 0, void 0, function () {
+            var e_1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, browser$1.cookies.remove({ name: name, url: url })];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/, true];
+                    case 2:
+                        e_1 = _a.sent();
+                        logger.error(e_1.message);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/, false];
+                }
+            });
+        });
+    };
+    /**
+     * Updates cookie
+     *
+     * @param cookie Cookie for update
+     */
+    BrowserCookieApi.prototype.modifyCookie = function (cookie) {
+        return __awaiter(this, void 0, void 0, function () {
+            var update, e_2;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        update = BrowserCookieApi.convertToSetDetailsType(cookie);
+                        return [4 /*yield*/, browser$1.cookies.set(update)];
+                    case 1:
+                        _a.sent();
+                        return [2 /*return*/, true];
+                    case 2:
+                        e_2 = _a.sent();
+                        logger.error(e_2.message);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/, false];
+                }
+            });
+        });
+    };
+    BrowserCookieApi.convertToSetDetailsType = function (cookie) {
+        return {
+            /**
+             * The request-URI to associate with the setting of the cookie.
+             * This value can affect the default domain and path values of the created cookie.
+             * If host permissions for this URL are not specified in the manifest file, the API call will fail.
+             */
+            url: cookie.url,
+            /**
+             * The name of the cookie. Empty by default if omitted.
+             * Optional.
+             */
+            name: cookie.name,
+            /**
+             * The value of the cookie. Empty by default if omitted.
+             * Optional.
+             */
+            value: cookie.value,
+            /**
+             * The domain of the cookie. If omitted, the cookie becomes a host-only cookie.
+             * Optional.
+             */
+            domain: cookie.domain,
+            /**
+             * Whether the cookie should be marked as Secure. Defaults to false.
+             * Optional.
+             */
+            secure: cookie.secure,
+            /**
+             * Whether the cookie should be marked as HttpOnly. Defaults to false.
+             * Optional.
+             */
+            httpOnly: cookie.httpOnly,
+            /**
+             * The cookie's same-site status.
+             * Optional.
+             */
+            sameSite: BrowserCookieApi.getSameSiteStatus(cookie.sameSite),
+            /**
+             * The expiration date of the cookie as the number of seconds since the UNIX epoch.
+             * If omitted, the cookie becomes a session cookie.
+             * Optional.
+             */
+            expirationDate: cookie.expires ? cookie.expires.getTime() : undefined,
+        };
+    };
+    /**
+     * Returns same-site type
+     *
+     * @param sameSite
+     */
+    BrowserCookieApi.getSameSiteStatus = function (sameSite) {
+        if (sameSite) {
+            if (sameSite.toLowerCase() === 'lax') {
+                return 'lax';
+            }
+            if (sameSite.toLowerCase() === 'strict') {
+                return 'strict';
+            }
+        }
+        return undefined;
+    };
+    return BrowserCookieApi;
+}());
+
+/**
+ * Cookie filtering
+ *
+ * The following public methods should be set as suitable webrequest events listeners,
+ * check sample extension in this repo for an example
+ *
+ * Logic introduction:
+ *
+ * onBeforeRequest:
+ * - get $cookie rules for current url
+ *
+ * onBeforeSendHeaders:
+ * - get all cookies for request url
+ * - store cookies (first-party)
+ *
+ * onHeadersReceived:
+ * - parse set-cookie header, only to detect if the cookie in header will be set from third-party request
+ * - save third-party flag for this cookie cookie.thirdParty=request.thirdParty
+ * - apply rules via removing them from headers and removing them with browser.cookies api
+ * TODO Rewrite/split method for extensions on MV3, because we wont have possibility to remove rules via headers
+ *
+ * onCompleted/onErrorOccurred:
+ * - delete request context from the storage
+ *
+ * onCompleted
+ * - apply rules via content script
+ * In content-scripts (check /src/content-script/cookie-controller.ts):
+ * - get matching cookie rules
+ * - apply
+ */
+var CookieFiltering = /** @class */ (function () {
+    /**
+     * Constructor
+     *
+     * @param filteringLog
+     */
+    function CookieFiltering(filteringLog) {
+        this.browserCookieApi = new BrowserCookieApi();
+        this.requestContextStorage = new Map();
+        this.filteringLog = filteringLog;
+    }
+    /**
+     * Finds rules for request and saves it to context storage
+     * @param details
+     * @param rules
+     */
+    CookieFiltering.prototype.onBeforeRequest = function (details, rules) {
+        this.requestContextStorage.set(details.requestId, {
+            rules: rules,
+            cookies: [],
+            url: details.url,
+            tabId: details.tabId,
+        });
+    };
+    /**
+     * Parses cookies from headers
+     * @param details
+     */
+    CookieFiltering.prototype.onBeforeSendHeaders = function (details) {
+        if (!details.requestHeaders) {
+            return;
+        }
+        var context = this.requestContextStorage.get(details.requestId);
+        if (!context) {
+            return;
+        }
+        var cookieHeader = findHeaderByName(details.requestHeaders, 'Cookie');
+        if (!cookieHeader || !cookieHeader.value) {
+            return;
+        }
+        var cookies = CookieUtils.parseCookies(cookieHeader.value, context.url);
+        if (cookies.length === 0) {
+            return;
+        }
+        context.cookies = cookies;
+    };
+    /**
+     * Applies cookies to headers
+     * @param details
+     * @private
+     */
+    CookieFiltering.prototype.applyRulesToCookieHeaders = function (details) {
+        var _this = this;
+        var headersModified = false;
+        if (!details.responseHeaders) {
+            return headersModified;
+        }
+        var context = this.requestContextStorage.get(details.requestId);
+        if (!context) {
+            return headersModified;
+        }
+        var _loop_1 = function (i) {
+            var header = details.responseHeaders[i];
+            var cookie = CookieUtils.parseSetCookieHeader(header, details.url);
+            if (!cookie) {
+                return "continue";
+            }
+            var bRule = CookieRulesFinder.lookupNotModifyingRule(cookie.name, context.rules, details.thirdParty);
+            if (bRule) {
+                if (!bRule.isAllowlist()) {
+                    details.responseHeaders.splice(i, 1);
+                    headersModified = true;
+                }
+                this_1.filteringLog.addCookieEvent({
+                    tabId: context.tabId,
+                    cookieName: cookie.name,
+                    cookieValue: cookie.value,
+                    cookieDomain: cookie.domain,
+                    cookieRule: bRule,
+                    isModifyingCookieRule: false,
+                    thirdParty: details.thirdParty,
+                    timestamp: Date.now(),
+                });
+            }
+            var mRules = CookieRulesFinder.lookupModifyingRules(cookie.name, context.rules, details.thirdParty);
+            if (mRules.length > 0) {
+                var appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
+                if (appliedRules.length > 0) {
+                    headersModified = true;
+                    details.responseHeaders[i] = { name: 'set-cookie', value: CookieUtils.serializeCookie(cookie) };
+                    appliedRules.forEach(function (r) {
+                        _this.filteringLog.addCookieEvent({
+                            tabId: details.tabId,
+                            cookieName: cookie.name,
+                            cookieValue: cookie.value,
+                            cookieDomain: cookie.domain,
+                            cookieRule: r,
+                            isModifyingCookieRule: true,
+                            thirdParty: details.thirdParty,
+                            timestamp: Date.now(),
+                        });
+                    });
+                }
+            }
+        };
+        var this_1 = this;
+        for (var i = details.responseHeaders.length - 1; i >= 0; i -= 1) {
+            _loop_1(i);
+        }
+        return headersModified;
+    };
+    /**
+     * Parses set-cookie header
+     * looks up third-party cookies
+     * This callback won't work for mv3 extensions
+     * TODO separate or rewrite to mv2 and mv3 methods
+     *
+     * @param details
+     */
+    CookieFiltering.prototype.onHeadersReceived = function (details) {
+        var _a;
+        var context = this.requestContextStorage.get(details.requestId);
+        if (!context) {
+            return false;
+        }
+        if (details.responseHeaders) {
+            var cookies = CookieUtils.parseSetCookieHeaders(details.responseHeaders, context.url);
+            var newCookies = cookies.filter(function (c) { return !context.cookies.includes(c); });
+            for (var _i = 0, newCookies_1 = newCookies; _i < newCookies_1.length; _i++) {
+                var cookie = newCookies_1[_i];
+                cookie.thirdParty = details.thirdParty;
+            }
+            (_a = context.cookies).push.apply(_a, newCookies);
+        }
+        // remove cookie headers
+        // this method won't work in the extension build with manifest v3
+        var headersModified = this.applyRulesToCookieHeaders(details);
+        // removes cookies with browser.cookie api
+        this.applyRules(details.requestId)
+            .catch(function (e) {
+            logger.error(e.message);
+        });
+        return headersModified;
+    };
+    CookieFiltering.prototype.onCompleted = function (details) {
+        this.requestContextStorage.delete(details.requestId);
+    };
+    CookieFiltering.prototype.onErrorOccurred = function (details) {
+        this.requestContextStorage.delete(details.requestId);
+    };
+    /**
+     * Looks up blocking rules for content-script
+     *
+     * @param requestId
+     */
+    CookieFiltering.prototype.getBlockingRules = function (requestId) {
+        var context = this.requestContextStorage.get(requestId);
+        if (!context) {
+            return [];
+        }
+        return CookieRulesFinder.getBlockingRules(context.url, context.rules);
+    };
+    /**
+     * Applies rules
+     * @param requestId
+     */
+    CookieFiltering.prototype.applyRules = function (requestId) {
+        return __awaiter(this, void 0, void 0, function () {
+            var context, _a, rules, cookies, promises;
+            var _this = this;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        context = this.requestContextStorage.get(requestId);
+                        _a = context, rules = _a.rules, cookies = _a.cookies;
+                        if (!rules || !cookies) {
+                            return [2 /*return*/];
+                        }
+                        promises = cookies.map(function (cookie) {
+                            return _this.applyRulesToCookie(cookie, rules, context.tabId);
+                        });
+                        return [4 /*yield*/, Promise.all(promises)];
+                    case 1:
+                        _b.sent();
+                        return [2 /*return*/];
+                }
+            });
+        });
+    };
+    /**
+     * Applies rules to cookie
+     *
+     * @param cookie
+     * @param cookieRules
+     * @param tabId
+     */
+    /* istanbul ignore next */
+    CookieFiltering.prototype.applyRulesToCookie = function (cookie, cookieRules, tabId) {
+        return __awaiter(this, void 0, void 0, function () {
+            var cookieName, isThirdPartyCookie, bRule, _a, mRules, appliedRules;
+            var _this = this;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        cookieName = cookie.name;
+                        isThirdPartyCookie = cookie.thirdParty;
+                        bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
+                        if (!bRule) return [3 /*break*/, 3];
+                        _a = bRule.isAllowlist();
+                        if (_a) return [3 /*break*/, 2];
+                        return [4 /*yield*/, this.browserCookieApi.removeCookie(cookie.name, cookie.url)];
+                    case 1:
+                        _a = (_b.sent());
+                        _b.label = 2;
+                    case 2:
+                        if (_a) {
+                            this.filteringLog.addCookieEvent({
+                                tabId: tabId,
+                                cookieName: cookie.name,
+                                cookieValue: cookie.value,
+                                cookieDomain: cookie.domain,
+                                cookieRule: bRule,
+                                isModifyingCookieRule: false,
+                                thirdParty: isThirdPartyCookie,
+                                timestamp: Date.now(),
+                            });
+                        }
+                        return [2 /*return*/];
+                    case 3:
+                        mRules = CookieRulesFinder.lookupModifyingRules(cookieName, cookieRules, isThirdPartyCookie);
+                        if (!(mRules.length > 0)) return [3 /*break*/, 5];
+                        appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookie, mRules);
+                        if (!(appliedRules.length > 0)) return [3 /*break*/, 5];
+                        return [4 /*yield*/, this.browserCookieApi.modifyCookie(cookie)];
+                    case 4:
+                        if (_b.sent()) {
+                            appliedRules.forEach(function (r) {
+                                _this.filteringLog.addCookieEvent({
+                                    tabId: tabId,
+                                    cookieName: cookie.name,
+                                    cookieValue: cookie.value,
+                                    cookieDomain: cookie.domain,
+                                    cookieRule: r,
+                                    isModifyingCookieRule: true,
+                                    thirdParty: isThirdPartyCookie,
+                                    timestamp: Date.now(),
+                                });
+                            });
+                        }
+                        _b.label = 5;
+                    case 5: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    /**
+     * Modifies instance of BrowserCookie with provided rules
+     *
+     * @param cookie Cookie modify
+     * @param rules Cookie matching rules
+     * @return applied rules
+     *
+     */
+    CookieFiltering.applyRuleToBrowserCookie = function (cookie, rules) {
+        var appliedRules = [];
+        for (var i = 0; i < rules.length; i += 1) {
+            var rule = rules[i];
+            if (rule.isAllowlist()) {
+                appliedRules.push(rule);
+                continue;
+            }
+            var cookieModifier = rule.getAdvancedModifier();
+            var modified = false;
+            var sameSite = cookieModifier.getSameSite();
+            if (sameSite && cookie.sameSite !== sameSite) {
+                // eslint-disable-next-line no-param-reassign
+                cookie.sameSite = sameSite;
+                modified = true;
+            }
+            var maxAge = cookieModifier.getMaxAge();
+            if (maxAge) {
+                if (CookieUtils.updateCookieMaxAge(cookie, maxAge)) {
+                    modified = true;
+                }
+            }
+            if (modified) {
+                appliedRules.push(rule);
+            }
+        }
+        return appliedRules;
+    };
+    return CookieFiltering;
+}());
+
+export { CookieFiltering };

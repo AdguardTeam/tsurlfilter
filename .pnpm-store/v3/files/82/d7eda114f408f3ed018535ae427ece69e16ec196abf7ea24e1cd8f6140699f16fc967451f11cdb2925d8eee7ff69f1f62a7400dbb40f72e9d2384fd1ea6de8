@@ -1,0 +1,148 @@
+/**
+ * Class with static helper methods for working with basic filtering rules patterns.
+ * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
+ */
+export declare class SimpleRegex {
+    /**
+     * Matching the beginning of an address. With this character you don't
+     * have to specify a particular protocol and subdomain in address mask.
+     * It means, || stands for http://*., https://*., ws://*., wss://*. at once.
+     */
+    static readonly MASK_START_URL: string;
+    /**
+     * REGEX_START_URL corresponds to MASK_START_URL
+     */
+    static readonly REGEX_START_URL: string;
+    /**
+     * A pointer to the beginning or the end of address. The value depends on the
+     * character placement in the mask. For example, a rule swf| corresponds
+     * to http://example.com/annoyingflash.swf , but not to http://example.com/swf/index.html.
+     * |http://example.org corresponds to http://example.org,
+     * but not to http://domain.com?url=http://example.org.
+     */
+    static readonly MASK_PIPE: string;
+    /**
+     * REGEX_END_STRING corresponds to MASK_PIPE if it is in the end of a pattern.
+     */
+    static readonly REGEX_END_STRING: string;
+    /**
+     * REGEX_START_STRING corresponds to MASK_PIPE if it is in the beginning of a pattern.
+     */
+    static readonly REGEX_START_STRING: string;
+    /**
+     * Separator character mark. Separator character is any character,
+     * but a letter, a digit, or one of the following: _ - .
+     */
+    static readonly MASK_SEPARATOR: string;
+    /**
+     * REGEX_SEPARATOR corresponds to MASK_SEPARATOR
+     */
+    static readonly REGEX_SEPARATOR: string;
+    /**
+     * This is a wildcard character. It is used to represent "any set of characters".
+     * This can also be an empty string or a string of any length.
+     */
+    static readonly MASK_ANY_CHARACTER: string;
+    /**
+     * Path separator
+     */
+    static readonly MASK_BACKSLASH: string;
+    /**
+     * REGEX_ANY_CHARACTER corresponds to MASK_ANY_CHARACTER.
+     */
+    static readonly REGEX_ANY_CHARACTER: string;
+    /**
+     * Enclose regex in two backslashes to mark a regex rule:
+     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#regular-expressions-support
+     */
+    static readonly MASK_REGEX_RULE: string;
+    /**
+     *  Regex for matching special characters in modifier regex pattern
+     */
+    static readonly reModifierPatternSpecialCharacters: RegExp;
+    /**
+      *  Regex for matching escaped special characters in modifier regex pattern
+      */
+    static readonly reModifierPatternEscapedSpecialCharacters: RegExp;
+    /**
+     * If string starts with exclamation mark "!" we consider it as comment
+     */
+    static readonly MASK_COMMENT = "!";
+    /**
+     * Min length of rule shortcut
+     * This value has been picked as a result of performance experiments
+     */
+    static readonly MIN_SHORTCUT_LENGTH = 3;
+    /**
+     * Min length of generic rule shortcut
+     */
+    static readonly MIN_GENERIC_RULE_LENGTH = 4;
+    /** Regex with basic matching pattern special characters */
+    private static readonly rePatternSpecialCharacters;
+    /**
+     * Extracts the shortcut from the rule's pattern.
+     * Shortcut is the longest substring of the pattern that does not contain
+     * any special characters.
+     *
+     * Please note, that the shortcut is always lower-case!
+     *
+     * @param pattern - network rule's pattern.
+     * @returns the shortcut or the empty string if we could not extract any.
+     */
+    static extractShortcut(pattern: string): string;
+    /**
+     * Searches for the longest substring of the pattern that
+     * does not contain any special characters: *,^,|.
+     *
+     * @param pattern - network rule's pattern.
+     * @returns the shortcut or the empty string
+     */
+    private static extractBasicShortcut;
+    /**
+     * Searches for a shortcut inside of a regexp pattern.
+     * Shortcut in this case is a longest string with no REGEX special characters.
+     * Also, we discard complicated regexps right away.
+     *
+     * @param pattern - network rule's pattern (regexp).
+     * @returns the shortcut or the empty string
+     */
+    private static extractRegexpShortcut;
+    /**
+     * patternToRegexp is a helper method for creating regular expressions from the simple
+     * wildcard-based syntax which is used in basic filters:
+     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
+     *
+     * @param pattern - basic rule pattern
+     * @returns regular expression
+     */
+    static patternToRegexp(pattern: string): string;
+    /**
+     * Creates RegExp object from string in '/reg_exp/gi' format
+     *
+     * @param str
+     */
+    static patternFromString(str: string): RegExp;
+    /**
+     * Escapes characters with special meaning inside a regular expression.
+     *
+     * @param str
+     * @param searchPattern - Pattern for detecting special characters. Optional.
+     */
+    static escapeRegexSpecials(str: string, searchPattern?: string | RegExp): string;
+    /**
+     * Unescapes characters with special meaning inside a regular expression.
+     *
+     * @param str
+     * @param searchPattern - Pattern for detecting special characters. Optional.
+     */
+    static unescapeRegexSpecials(str: string, searchPattern?: string | RegExp): string;
+    /**
+     * Check if pattern is Regex
+     */
+    static isRegexPattern(str: string): boolean;
+    /**
+     * Unescapes special characters in a string
+     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#using_special_characters_in_strings
+     */
+    static unescapeSpecials(str: string): string;
+}

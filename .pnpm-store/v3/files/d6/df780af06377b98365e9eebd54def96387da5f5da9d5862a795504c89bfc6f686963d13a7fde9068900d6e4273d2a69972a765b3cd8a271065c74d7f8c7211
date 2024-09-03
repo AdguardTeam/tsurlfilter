@@ -1,0 +1,46 @@
+import { RuleStorage } from '../filterlist/rule-storage';
+import { DnsResult } from './dns-result';
+/**
+ * DNSEngine combines host rules and network rules and is supposed to quickly find
+ * matching rules for hostnames.
+ * First, it looks over network rules and returns first rule found.
+ * Then, if nothing found, it looks up the host rules.
+ */
+export declare class DnsEngine {
+    /**
+     * Count of rules added to the engine
+     */
+    rulesCount: number;
+    /**
+     * Storage
+     */
+    private ruleStorage;
+    /**
+     * Lookup table. Key is the hostname hash.
+     */
+    private readonly lookupTable;
+    /**
+     * Network engine instance
+     */
+    private readonly networkEngine;
+    /**
+     * Builds an instance of dns engine
+     *
+     * @param storage
+     */
+    constructor(storage: RuleStorage);
+    /**
+     * Match searches over all filtering and host rules loaded to the engine
+     *
+     * @param hostname to check
+     * @return dns result object
+     */
+    match(hostname: string): DnsResult;
+    /**
+     * Adds rule to engine
+     *
+     * @param rule
+     * @param storageIdx
+     */
+    private addRule;
+}

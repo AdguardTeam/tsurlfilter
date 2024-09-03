@@ -1,0 +1,377 @@
+/**
+ * @file Describes how to convert one {@link NetworkRule} into one or many
+ * {@link DeclarativeRule|declarative rules}.
+ *
+ *      Heir classes                                        DeclarativeRuleConverter
+ *
+ *                            │                                         │
+ *    *override layer*        │              *protected layer*          │              *private layer*
+ *                            │                                         │
+ *                            │                                         │
+ * Subclasses should define   │    Converts a set of indexed rules      │
+ * the logic in this method.  │    into declarative rules while         │
+ *                            │    handling errors.                     │
+ *  ┌─────────────────────┐   │   ┌───────────────────────────┐         │
+ *  │                     │   │   │                           │         │
+ *  │  abstract convert() ├───┼──►│  protected convertRules() │         │
+ *  │                     │   │   │                           │         │
+ *  └─────────────────────┘   │   └─────────────┬─────────────┘         │
+ *                            │                 │                       │
+ *                            │                 │                       │
+ *                            │   ┌─────────────▼─────────────┐         │
+ *                            │   │                           │         │
+ *                            │   │  protected convertRule()  ├─────────┼───────────────────────┐
+ *                            │   │                           │         │                       │
+ *                            │   └───────────────────────────┘         │                       │
+ *                            │   Transforms a single Network Rule      │     ┌─────────────────▼────────────────────┐
+ *                            │   into one or several                   │     │                                      │
+ *                            │   declarative rules.                    │  ┌──┤ static checkNetworkRuleConvertible() │
+ *                            │                                         │  │  │                                      │
+ *                            │                                         │  │  └──────────────────────────────────────┘
+ *                            │                                         │  │  Checks if network rule conversion
+ *                            │                                         │  │  is supported and if it is needed at all.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌──────────────────────────┐
+ *                            │                                         │  └──►                          │
+ *                            │                                         │     │   private getAction()    │
+ *                            │                                         │  ┌──┤                          │
+ *                            │                                         │  │  └──────────────────────────┘
+ *                            │                                         │  │  Generates the action section
+ *                            │                                         │  │  of a declarative rule.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌────────────────────────────────────┐
+ *                            │                                         │  └──►                                    │
+ *                            │                                         │     │     private getRedirectAction()    │
+ *                            │                                         │     │  static getModifyHeadersAction()   │
+ *                            │                                         │     │ static getAddingCspHeadersAction() │
+ *                            │                                         │  ┌──┤                                    │
+ *                            │                                         │  │  └────────────────────────────────────┘
+ *                            │                                         │  │  Modifier-specific methods. A distinct
+ *                            │                                         │  │  section will be created for each modifier.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌─────────────────────────┐
+ *                            │                                         │  └──►                         │
+ *                            │                                         │     │  static getCondition()  │
+ *                            │                                         │  ┌──┤                         │
+ *                            │                                         │  │  └─────────────────────────┘
+ *                            │                                         │  │  Generates the condition section
+ *                            │                                         │  │  of a declarative rule.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌────────────────────────┐
+ *                            │                                         │  └──►                        │
+ *                            │                                         │     │  static getPriority()  │
+ *                            │                                         │  ┌──┤                        │
+ *                            │                                         │  │  └────────────────────────┘
+ *                            │                                         │  │  Generates the priority of
+ *                            │                                         │  │  a declarative rule.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌───────────────────────────────────────┐
+ *                            │                                         │  └──►                                       │
+ *                            │                                         │     │static checkDeclarativeRuleApplicable()│
+ *                            │                                         │  ┌──┤                                       │
+ *                            │                                         │  │  └───────────────────────────────────────┘
+ *                            │                                         │  │  After conversion, checks if the generated
+ *                            │                                         │  │  declarative rule contains any unsupported
+ *                            │                                         │  │  values.
+ *                            │                                         │  │
+ *                            │                                         │  │  ┌─────────────────────────────────────┐
+ *                            │                                         │  └──►                                     │
+ *                            │                                         │     │ static catchErrorDuringConversion() │
+ *                            │               ┌─────────────────────────┼─────┤                                     │
+ *                            │               │                         │     └─────────────────────────────────────┘
+ *                            │   ┌───────────▼────────────────────┐    │     Handles errors during conversion.
+ *                            │   │                                │    │
+ *                            │   │ protected groupConvertedRules()│    │
+ *                            │   │                                │    │
+ *                            │   └────────────────────────────────┘    │
+ *                            │                                         │
+ *                            │   Groups converted declarative rules    │
+ *                            │   using the provided grouper-functions. │
+ *                            │                                         │
+ *                            │   This method is optional and is not    │
+ *                            │   used by all derived classes.          │
+ *                            │                                         │
+ */
+import { NetworkRule } from '../../network-rule';
+import { DeclarativeRule } from '../declarative-rule';
+import { ConvertedRules } from '../converted-result';
+import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
+/**
+ * Contains the generic logic for converting a {@link NetworkRule}
+ * into a {@link DeclarativeRule}.
+ *
+ * Descendant classes must override the {@link convert} method,
+ * where some logic must be defined for each rule type.
+ *
+ * Also descendant classes can use {@link convertRules}, {@link convertRule} and
+ * {@link groupConvertedRules} methods, which contains the general logic of
+ * transformation and grouping of rules.
+ */
+export declare abstract class DeclarativeRuleConverter {
+    /**
+     * String path to web accessible resources,
+     * relative to the extension root dir.
+     * Should start with leading slash '/'.
+     */
+    protected webAccessibleResourcesPath?: string;
+    /**
+     * Creates an instance of DeclarativeRuleConverter.
+     *
+     * @param webAccessibleResourcesPath Path to web accessible resources.
+     */
+    constructor(webAccessibleResourcesPath?: string);
+    /**
+     * Gets resource type matching request type.
+     *
+     * @param requestTypes Request type.
+     *
+     * @returns List of resource types.
+     */
+    private static getResourceTypes;
+    /**
+     * Converts list of tsurlfilter {@link HTTPMethod|methods} to declarative
+     * supported http {@link RequestMethod|methods} via excluding 'trace' method.
+     *
+     * @param methods List of {@link HTTPMethod|methods}.
+     *
+     * @returns List of {@link RequestMethod|methods}.
+     */
+    private static mapHttpMethodToDeclarativeHttpMethod;
+    /**
+     * Checks if the string contains only ASCII characters.
+     *
+     * @param str String to test.
+     *
+     * @returns True if string contains only ASCII characters.
+     */
+    private static isASCII;
+    /**
+     * Converts to punycode if string contains non ASCII characters.
+     *
+     * @param str String to convert.
+     *
+     * @returns A transformed string containing only ASCII characters or
+     * the original string.
+     */
+    private static prepareASCII;
+    /**
+     * Converts a list of strings into strings containing only ASCII characters.
+     *
+     * @param strings List of strings.
+     *
+     * @returns List of string containing only ASCII characters.
+     */
+    private static toASCII;
+    /**
+     * Checks if network rule can be converted to {@link RuleActionType.ALLOW_ALL_REQUESTS}.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Is rule compatible with {@link RuleActionType.ALLOW_ALL_REQUESTS}.
+     */
+    private static isCompatibleWithAllowAllRequests;
+    /**
+     * Rule priority.
+     *
+     * @see {@link NetworkRule.getPriorityWeight}
+     * @see {@link NetworkRule.priorityWeight}
+     * @see {@link NetworkRule.calculatePriorityWeight}
+     * @see {@link https://adguard.com/kb/en/general/ad-filtering/create-own-filters/#rule-priorities}
+     *
+     * @param rule Network rule.
+     *
+     * @returns Priority of the rule or null.
+     */
+    private static getPriority;
+    /**
+     * Rule redirect action.
+     *
+     * @param rule Network rule.
+     *
+     * @throws Error {@link ResourcesPathError} when a network rule has
+     * a $redirect modifier and no path to web-accessible resources
+     * is specified.
+     *
+     * @returns Redirect, which describes where and how the request
+     * should be redirected.
+     */
+    private getRedirectAction;
+    /**
+     * Returns rule modify headers action.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Modify headers action, which describes which headers should
+     * be changed: added, set or deleted.
+     */
+    private static getModifyHeadersAction;
+    /**
+     * Returns rule modify headers action with adding CSP headers to response.
+     *
+     * @param rule Network rule.
+     *
+     * @returns Add headers action, which describes which headers should be added.
+     */
+    private static getAddingCspHeadersAction;
+    /**
+     * Rule action.
+     *
+     * @param rule Network rule.
+     *
+     * @throws Error {@link ResourcesPathError} when specified an empty
+     * path to the web accessible resources.
+     *
+     * @returns The action of a rule that describes what should be done
+     * with the request.
+     */
+    private getAction;
+    /**
+     * Rule condition.
+     *
+     * @param rule Network rule.
+     *
+     * @returns A rule condition that describes to which request the declarative
+     * rule should be applied.
+     */
+    private static getCondition;
+    /**
+     * Converts the network rule into an array of declarative rules.
+     *
+     * Method to use only in class heirs.
+     *
+     * @protected
+     *
+     * @param rule Network rule.
+     * @param id Rule identifier.
+     *
+     * @throws An {@link UnsupportedModifierError} if the network rule
+     * contains an unsupported modifier
+     * OR a {@link TooComplexRegexpError} if regexp is too complex
+     * OR an {@link EmptyResourcesError} if there is empty resources in the rule
+     * OR an {@link UnsupportedRegexpError} if regexp is not supported in
+     * the RE2 syntax.
+     * OR a {@link ResourcesPathError} when specified an empty
+     * path to the web accessible resources.
+     *
+     * @returns A list of declarative rules.
+     */
+    protected convertRule(rule: NetworkRule, id: number): DeclarativeRule[];
+    /**
+     * TODO: Move this method to separate static class, because it accumulates
+     * a lot of logic tied to different types of rules and the method gets
+     * really puffy.
+     *
+     * Checks if a network rule can be converted to a declarative format or not.
+     * We skip the following modifiers:
+     *
+     * All specific exceptions:
+     * $genericblock;
+     * $jsinject;
+     * $urlblock;
+     * $content;
+     * $extension;
+     * $stealth;
+     *
+     * Following specific exceptions are not require conversion, but they
+     * are used in the {@link MatchingResult.getCosmeticOption}:
+     * $elemhide
+     * $generichide;
+     * $specifichide;
+     *
+     * Other:
+     * $popup;
+     * $csp;
+     * $replace;
+     * $cookie;
+     * $redirect - if the rule is a allowlist;
+     * $removeparam - if it contains a negation, or regexp,
+     * or the rule is a allowlist;
+     * $removeheader - if it contains a title from a prohibited list
+     * (see {@link RemoveHeaderModifier.FORBIDDEN_HEADERS});
+     * $jsonprune;
+     * $method - if the modifier contains 'trace' method,
+     * $hls.
+     *
+     * @param rule - Network rule.
+     *
+     * @throws Error with type {@link UnsupportedModifierError} if the rule is not
+     * convertible.
+     *
+     * @returns Boolean flag - `false` if the rule does not require conversion
+     * and `true` if the rule is convertible.
+     */
+    private static checkNetworkRuleConvertible;
+    /**
+     * Checks if the converted declarative rule passes the regexp validation
+     * (too complex regexps are not allowed also back reference,
+     * possessive and negative lookahead are not supported)
+     * and if it contains resource types.
+     *
+     * @param networkRule Network rule.
+     * @param declarativeRule Declarative rule.
+     *
+     * @returns Error {@link TooComplexRegexpError} if regexp is too complex
+     * OR Error {@link EmptyResourcesError} if there is empty resources
+     * in the rule
+     * OR Error {@link UnsupportedRegexpError} if regexp is not supported
+     * in the RE2 syntax @see https://github.com/google/re2/wiki/Syntax
+     * OR null.
+     */
+    private static checkDeclarativeRuleApplicable;
+    /**
+     * Checks the captured conversion error, if it is one of the expected
+     * conversion errors - returns it, otherwise adds information about
+     * the original rule, packages it into a new error and returns it.
+     *
+     * @param rule An error was caught while converting this rule.
+     * @param index Index of {@link IndexedNetworkRuleWithHash}.
+     * @param id Identifier of the desired declarative rule.
+     * @param e Captured error.
+     *
+     * @returns Initial error or new packaged error.
+     */
+    private static catchErrorDuringConversion;
+    /**
+     * Converts the provided set of indexed rules into declarative rules,
+     * collecting source rule identifiers for declarative rules
+     * and catching conversion errors.
+     *
+     * @param filterId An identifier for the filter.
+     * @param rules Indexed rules.
+     * @param offsetId Offset for the IDs of the converted rules.
+     *
+     * @returns Transformed declarative rules with their sources
+     * and caught conversion errors.
+     */
+    protected convertRules(filterId: number, rules: IndexedNetworkRuleWithHash[], offsetId: number): ConvertedRules;
+    /**
+     * This function groups similar rules among those already converted into
+     * declarative rules. If a similar rule is found, it combines the two
+     * declarative rules into one.
+     *
+     * @param converted An instance of {@link ConvertedRules} that includes
+     * converted declarative rules, recorded errors, and a hash mapping
+     * declarative rule IDs to corresponding source test rule IDs.
+     * @param createRuleTemplate A function that stores the template of
+     * a declarative rule. This template is used to compare different
+     * declarative rules.
+     * @param combineRulePair A function that attempts to find a similar
+     * declarative rule by comparing rule templates. If a match is found,
+     * it merges the two declarative rules into one and returns combined rule.
+     *
+     * @returns Object with grouped similar declarative rules.
+     */
+    protected groupConvertedRules(converted: ConvertedRules, createRuleTemplate: (rule: DeclarativeRule) => string, combineRulePair: (sourceRule: DeclarativeRule, ruleToMerge: DeclarativeRule) => DeclarativeRule): ConvertedRules;
+    /**
+     * Converts provided bunch of indexed rules to declarative rules
+     * via generating source map for it and catching errors of conversations.
+     *
+     * @param filterId Filter id.
+     * @param rules Indexed network rules with hashes.
+     * @param offsetId Offset for the IDs of the converted rules.
+     *
+     * @returns Object of {@link ConvertedRules} which containing declarative
+     * rules, source rule identifiers, errors and counter of regexp rules.
+     */
+    abstract convert(filterId: number, rules: IndexedNetworkRuleWithHash[], offsetId: number): ConvertedRules;
+}

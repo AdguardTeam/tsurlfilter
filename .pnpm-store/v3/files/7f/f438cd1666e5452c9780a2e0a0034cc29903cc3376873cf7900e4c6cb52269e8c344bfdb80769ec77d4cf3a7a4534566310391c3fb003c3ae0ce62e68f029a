@@ -1,0 +1,139 @@
+import { NetworkRule } from '../rules/network-rule';
+import { CosmeticOption } from './cosmetic-option';
+/**
+ * MatchingResult contains all the rules matching a web request, and provides methods
+ * that define how a web request should be processed
+ */
+export declare class MatchingResult {
+    /**
+     * BasicRule - a rule matching the request.
+     * It could lead to one of the following:
+     * block the request
+     * unblock the request (a regular allowlist rule or a document-level allowlist rule)
+     * modify the way cosmetic rules work for this request
+     * modify the response (see $redirect rules)
+     */
+    readonly basicRule: NetworkRule | null;
+    /**
+     * DocumentRule - a rule matching the request's referrer and having on of the following modifiers:
+     * $document -- this one basically disables everything
+     * $urlblock -- disables network-level rules (not cosmetic)
+     * $genericblock -- disables generic network-level rules
+
+     * Other document-level modifiers like $jsinject or $content will be ignored here as they don't do anything
+     */
+    documentRule: NetworkRule | null;
+    /**
+     * CspRules - a set of rules modifying the response's content-security-policy
+     * See $csp modifier
+     */
+    readonly cspRules: NetworkRule[] | null;
+    /**
+     * CookieRules - a set of rules modifying the request's and response's cookies
+     * See $cookie modifier
+     */
+    readonly cookieRules: NetworkRule[] | null;
+    /**
+     * ReplaceRules - a set of rules modifying the response's content
+     * See $replace modifier
+     */
+    readonly replaceRules: NetworkRule[] | null;
+    /**
+     * Redirect rules - a set of rules redirecting request
+     * See $redirect and $redirect-rule modifiers
+     */
+    readonly redirectRules: NetworkRule[] | null;
+    /**
+     * RemoveParam rules - a set of rules modifying url query parameters
+     * See $removeparam modifier
+     */
+    readonly removeParamRules: NetworkRule[] | null;
+    /**
+     * RemoveHeader rules - a set of rules modifying headers
+     * See $removeheader modifier
+     */
+    readonly removeHeaderRules: NetworkRule[] | null;
+    /**
+     * StealthRule - this is a allowlist rule that negates stealth mode features
+     * Note that the stealth rule can be be received from both rules and sourceRules
+     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#stealth-modifier
+     */
+    stealthRule: NetworkRule | null;
+    /**
+     * Creates an instance of the MatchingResult struct and fills it with the rules.
+     *
+     * @param rules A list of network rules that match the request.
+     * @param sourceRule A rule that matches the document that is a source
+     * of the request, i.e. document-level exclusions.
+     */
+    constructor(rules: NetworkRule[], sourceRule: NetworkRule | null);
+    /**
+     * GetBasicResult returns a rule that should be applied to the web request.
+     * Possible outcomes are:
+     * returns nil -- allow the request.
+     * returns an allowlist rule -- allow the request.
+     * returns a blocking rule -- block the request.
+     * returns a redirect rule -- redirect the request.
+     *
+     * @return {NetworkRule | null} basic result rule
+     */
+    getBasicResult(): NetworkRule | null;
+    /**
+     * Returns a bit-flag with the list of cosmetic options
+     *
+     * @return {CosmeticOption} mask
+     */
+    getCosmeticOption(): CosmeticOption;
+    /**
+     * Return an array of replace rules
+     */
+    getReplaceRules(): NetworkRule[];
+    /**
+     * Filters array of rules according to allowlist rules contained.
+     * Empty advanced modifier allowlists everything.
+     *
+     * @param rules
+     * @param allowlistPredicate allowlist criteria
+     * This function result will be called for testing if rule `x` allowlists rule `r`
+     */
+    private static filterAdvancedModifierRules;
+    /**
+     * Returns an array of csp rules
+     */
+    getCspRules(): NetworkRule[];
+    /**
+     * Returns a redirect rule or null if redirect rules are empty.
+     * $redirect-rule is only returned if there's a blocking rule also matching
+     * this request.
+     */
+    private getRedirectRule;
+    /**
+     * Returns an array of cookie rules
+     */
+    getCookieRules(): NetworkRule[];
+    /**
+     * Returns an array of removeparam rules
+     */
+    getRemoveParamRules(): NetworkRule[];
+    /**
+     * Returns an array of removeheader rules
+     */
+    getRemoveHeaderRules(): NetworkRule[];
+    /**
+     * Decides which rule should be put into the given map.
+     * Compares priorities of the two given rules with the equal CSP directive and the rule that may already in the map.
+     *
+     * @param rule CSP rule (not null)
+     * @param allowlistRule CSP allowlist rule (may be null)
+     * @param map Rules mapped by csp directive
+     */
+    private static putWithPriority;
+    /**
+     * Looks if there are any matching $badfilter rules and removes
+     * matching bad filters from the array (see the $badfilter description for more info)
+     *
+     * @param rules to filter
+     * @return filtered rules
+     */
+    static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[];
+}

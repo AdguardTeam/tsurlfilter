@@ -1,0 +1,32 @@
+/**
+ * RequestType is the request types enumeration
+ */
+var RequestType;
+(function (RequestType) {
+    /** main frame */
+    RequestType[RequestType["Document"] = 1] = "Document";
+    /** (iframe) $subdocument */
+    RequestType[RequestType["Subdocument"] = 2] = "Subdocument";
+    /** (javascript, etc) $script */
+    RequestType[RequestType["Script"] = 4] = "Script";
+    /** (css) $stylesheet */
+    RequestType[RequestType["Stylesheet"] = 8] = "Stylesheet";
+    /** (flash, etc) $object */
+    RequestType[RequestType["Object"] = 16] = "Object";
+    /** (any image) $image */
+    RequestType[RequestType["Image"] = 32] = "Image";
+    /** (ajax/fetch) $xmlhttprequest */
+    RequestType[RequestType["XmlHttpRequest"] = 64] = "XmlHttpRequest";
+    /** (video/music) $media */
+    RequestType[RequestType["Media"] = 128] = "Media";
+    /** (any custom font) $font */
+    RequestType[RequestType["Font"] = 256] = "Font";
+    /** (a websocket connection) $websocket */
+    RequestType[RequestType["Websocket"] = 512] = "Websocket";
+    /** (navigator.sendBeacon()) $ping */
+    RequestType[RequestType["Ping"] = 1024] = "Ping";
+    /** any other request type */
+    RequestType[RequestType["Other"] = 2048] = "Other";
+})(RequestType || (RequestType = {}));
+
+export { RequestType };

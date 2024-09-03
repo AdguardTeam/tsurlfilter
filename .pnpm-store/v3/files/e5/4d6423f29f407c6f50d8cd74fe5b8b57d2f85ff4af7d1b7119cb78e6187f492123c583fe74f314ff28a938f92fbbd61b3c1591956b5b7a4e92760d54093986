@@ -1,0 +1,163 @@
+/**
+ * Rule converter class
+ */
+export declare class RuleConverter {
+    private static CSS_RULE_REPLACE_PATTERN;
+    private static SCRIPT_HAS_TEXT_REGEX;
+    private static SCRIPT_HAS_TEXT_REGEX_SHORT;
+    private static TAG_CONTENT_VALUE_REGEX;
+    private static ATTRIBUTE_REGEX;
+    private static CSS_COMBINATORS_REGEX;
+    private static SCRIPT_HAS_TEXT_REPLACEMENT;
+    private static UBO_RESPONSE_HEADER;
+    private static UBO_RESPONSE_HEADER_REGEX;
+    private static UBO_RESPONSE_HEADER_EXCEPTION_REGEX;
+    private static UBO_RESPONSE_HEADER_REPLACEMENT;
+    private static UBO_MATCHES_PATH;
+    private static UBO_REVERSED_MATCHES_PATH;
+    /**
+     * Rule masks
+     */
+    private static MASK_ELEMENT_HIDING;
+    private static UBO_HTML_RULE_MASK;
+    private static MASK_ELEMENT_HIDING_EXCEPTION;
+    private static MASK_CSS;
+    private static MASK_CSS_EXCEPTION;
+    private static MASK_CSS_EXTENDED_CSS_RULE;
+    private static MASK_CSS_EXCEPTION_EXTENDED_CSS_RULE;
+    private static MASK_CSS_INJECT_EXTENDED_CSS_RULE;
+    private static MASK_CSS_EXCEPTION_INJECT_EXTENDED_CSS_RULE;
+    private static REMOVE_RULE_PATTERN;
+    private static REMOVE_RULE_REPLACER;
+    /**
+     * Special characters
+     */
+    private static REGEXP_DELIMITER;
+    private static ESCAPING_SLASH;
+    /**
+     * Converts rules text
+     *
+     * @param rulesText
+     */
+    static convertRules(rulesText: string): string;
+    /**
+     * Splits the given rule text into domain and options parts using the options delimiter ($).
+     * Returns the domain part and an array of options, or null if no options are present.
+     *
+     * @param ruleText - The rule text to be split.
+     * @returns [domain, options] or [domain, null] if no options are present.
+     */
+    private static splitIntoDomainAndOptions;
+    /**
+     * TODO for more efficient conversion build AST. And then use the modified AST for creating a
+     *  rule object.
+     * Convert external scriptlet rule to AdGuard scriptlet syntax
+     *
+     * @param rawRule
+     */
+    static convertRule(rawRule: string): string[];
+    /**
+     * Validates AdGuard syntax scriptlet rule.
+     *
+     * @param ruleText AdGuard scriptlet rule.
+     */
+    private static isValidScriptletRule;
+    /**
+     * Converts UBO Script rule
+     *
+     * @param {string} ruleText rule text
+     * @returns {string} converted rule
+     */
+    private static convertScriptHasTextToScriptTagContent;
+    /**
+     * Converts UBO and ABP redirect rules to AdGuard redirect rules
+     * @param rule
+     * @return {string} convertedRule
+     */
+    private static convertUboAndAbpRedirectsToAdg;
+    /**
+     * These option shortcuts will be converted to a more wordy AdGuard options.
+     * @private
+     */
+    private static OPTIONS_CONVERSION_MAP;
+    /**
+     * Converts the rule options according to the conversion map and handles special cases.
+     * @param domainPart - The domain part of the rule.
+     * @param optionsParts - The options part of the rule as an array of strings.
+     * @private
+     */
+    private static convertOptions;
+    /**
+     * Converts ubo syntax comments (rules starting with #)
+     * Note: It's not possible to detect 100% cause rules starting with ## are valid elemhide rules
+     *
+     * @param rule
+     * @return {string}
+     */
+    private static convertUboComments;
+    /**
+     * Executes rule css conversion
+     *
+     * @param rule
+     * @param parts
+     * @param ruleMark
+     */
+    private static executeConversion;
+    /**
+     * Adds colon to the pseudo elements written with one colon (:before, :after);
+     * e.g.
+     *  "hotline.ua##.reset-scroll:before" -> "hotline.ua##.reset-scroll::before"
+     * @param rule
+     * @private
+     */
+    private static convertPseudoElements;
+    /**
+     * Converts CSS injection
+     * example.com##h1:style(background-color: blue !important)
+     * into
+     * example.com#$#h1 { background-color: blue !important }
+     * <p>
+     * OR (for exceptions):
+     * example.com#@#h1:style(background-color: blue !important)
+     * into
+     * example.com#@$#h1 { background-color: blue !important }
+     *
+     * @param {string} rule
+     * @return {string} convertedRule
+     */
+    private static convertCssInjection;
+    /**
+     * Converts ':remove()' rule to AdGuard extended css rule
+     * example.com###banner:remove() -> example.com#$?##banner { remove: true; }
+     * @param {string} rule
+     * @return {string} rule or converted rule
+     */
+    private static convertRemoveRule;
+    /**
+     * Converts '^responseheader()' rule to AdGuard's $removeheader modifier
+     * "ya.ru##^responseheader(header-name)" -> "||ya.ru^$removeheader=header-name"
+     *
+     * @param {string} ruleText
+     * @return {string} ruleText or converted rule
+     */
+    private static convertUboResponseHeaderRule;
+    /**
+     * Converts cosmetic 'matches-path()' rule to AdGuard's $path modifier
+     * "ya.ru##:matches-path(/page) p" -> "[$path=/page]ya.ru##p"
+     *
+     * @param {string} ruleText
+     * @return {string} ruleText or converted rule
+     */
+    private static convertUboMatchesPathRule;
+    /**
+     * Options aliases, used to convert non-AdGuard options to AdGuard options
+     */
+    private static OPTIONS_ALIASES;
+    /**
+     * Substitutes option aliases in the provided options array with their corresponding aliases.
+     *
+     * @param optionsParts - An array of options to replace aliases in.
+     * @returns - An array of options with aliases replaced.
+     */
+    private static replaceOptions;
+}

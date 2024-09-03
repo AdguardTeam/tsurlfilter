@@ -1,0 +1,33 @@
+{
+  "name": "ip6addr",
+  "version": "0.2.5",
+  "description": "IPv6/IPv4 address parsing and manipulation",
+  "keywords": [
+    "ip",
+    "ipv4",
+    "ipv6",
+    "cidr",
+    "subnet"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joyent/node-ip6addr.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joyent/node-ip6addr/issues"
+  },
+  "main": "ip6addr.js",
+  "dependencies": {
+    "assert-plus": "^1.0.0",
+    "jsprim": "^2.0.2"
+  },
+  "devDependencies": {
+    "istanbul": "^0.3.6",
+    "tape": "^3.5.0"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/istanbul cover --print none test/runall.js"
+  },
+  "author": "Joyent (joyent.com)",
+  "license": "MPL-2.0"
+}

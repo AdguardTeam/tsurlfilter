@@ -1,0 +1,115 @@
+import { StreamFilter } from './stream-filter';
+import { RequestContext } from './request-context';
+import { NetworkRule } from '../rules/network-rule';
+import { CosmeticRule } from '../rules/cosmetic-rule';
+/**
+ * Content Filter class
+ *
+ * Encapsulates response data filter logic
+ * https://mail.mozilla.org/pipermail/dev-addons/2017-April/002729.html
+ */
+export declare class ContentFilter {
+    /**
+     * Contains collection of accepted content types
+     */
+    private static supportedContentTypes;
+    /**
+     * Contains collection of accepted request types for replace rules
+     */
+    private static replaceRulesRequestTypes;
+    /**
+     * Contains collection of accepted request types for html rules
+     */
+    private static htmlRulesRequestTypes;
+    /**
+     * Web request filter
+     */
+    filter: StreamFilter;
+    /**
+     * Request context
+     */
+    context: RequestContext;
+    /**
+     * Request charset
+     */
+    charset: string | undefined;
+    /**
+     * Content
+     */
+    content: string;
+    /**
+     * Decoder instance
+     */
+    decoder: TextDecoder | undefined;
+    /**
+     * Encoder instance
+     */
+    encoder: TextEncoder | undefined;
+    /**
+     * Replace rules for request
+     */
+    replaceRules: NetworkRule[];
+    /**
+     * Html rules for request
+     */
+    htmlRules: CosmeticRule[];
+    /**
+     * Result callback
+     */
+    onContentCallback: (content: string, context: RequestContext) => void;
+    /**
+     * Constructor
+     *
+     * @param filter implementation
+     * @param context request context
+     * @param htmlRules
+     * @param replaceRules
+     * @param onContentCallback
+     */
+    constructor(filter: StreamFilter, context: RequestContext, htmlRules: CosmeticRule[], replaceRules: NetworkRule[], onContentCallback: (data: string, context: RequestContext) => void);
+    /**
+     * Initializes encoders
+     */
+    private initEncoders;
+    /**
+     * Initializes inner filter
+     */
+    private initFilter;
+    /**
+     * Writes data to stream
+     *
+     * @param content
+     */
+    write(content: string): void;
+    /**
+     * Sets charset
+     *
+     * @param charset
+     */
+    setCharset(charset: string | null): void;
+    /**
+     * Disconnects filter from stream
+     *
+     * @param data
+     */
+    private disconnect;
+    /**
+     * Parses charset from html
+     */
+    private static parseHtmlCharset;
+    /**
+     * Parses charset from css
+     */
+    private static parseCssCharset;
+    /**
+     * Checks if $replace rule should be applied to this request
+     *
+     * @returns {boolean}
+     */
+    private static shouldApplyReplaceRule;
+    /**
+     * Checks if content filtration rules should by applied to this request
+     * @param requestType Request type
+     */
+    private static shouldApplyHtmlRules;
+}

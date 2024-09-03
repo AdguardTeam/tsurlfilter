@@ -1,0 +1,30 @@
+import { IAdvancedModifier } from './advanced-modifier';
+export declare const CSP_HEADER_NAME = "Content-Security-Policy";
+/**
+ * Csp modifier class
+ */
+export declare class CspModifier implements IAdvancedModifier {
+    /**
+     * Csp directive
+     */
+    private readonly cspDirective;
+    /**
+     * Is allowlist rule
+     */
+    private readonly isAllowlist;
+    /**
+     * Constructor
+     *
+     * @param value
+     * @param isAllowlist
+     */
+    constructor(value: string, isAllowlist: boolean);
+    /**
+     * Csp directive
+     */
+    getValue(): string;
+    /**
+     * Validates CSP rule
+     */
+    private validateCspDirective;
+}
