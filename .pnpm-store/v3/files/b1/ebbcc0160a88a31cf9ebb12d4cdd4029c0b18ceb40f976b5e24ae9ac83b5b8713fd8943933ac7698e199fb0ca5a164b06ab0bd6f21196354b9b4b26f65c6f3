@@ -1,0 +1,26 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getNamedInputs = void 0;
+const path_1 = require("path");
+const fs_1 = require("fs");
+const nx_1 = require("../../nx");
+const { readJsonFile } = (0, nx_1.requireNx)();
+/**
+ * Get the named inputs available for a directory
+ */
+function getNamedInputs(directory, context) {
+    const projectJsonPath = (0, path_1.join)(directory, 'project.json');
+    const projectJson = (0, fs_1.existsSync)(projectJsonPath)
+        ? readJsonFile(projectJsonPath)
+        : null;
+    const packageJsonPath = (0, path_1.join)(directory, 'package.json');
+    const packageJson = (0, fs_1.existsSync)(packageJsonPath)
+        ? readJsonFile(packageJsonPath)
+        : null;
+    return {
+        ...context.nxJsonConfiguration.namedInputs,
+        ...packageJson?.nx?.namedInputs,
+        ...projectJson?.namedInputs,
+    };
+}
+exports.getNamedInputs = getNamedInputs;

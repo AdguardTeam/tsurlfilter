@@ -1,0 +1,77 @@
+import { RuleStorage } from '../../filterlist/rule-storage';
+import { CosmeticRule } from '../../rules/cosmetic-rule';
+import { CosmeticResult } from './cosmetic-result';
+import { CosmeticOption } from '../cosmetic-option';
+import { Request } from '../../request';
+/**
+ * CosmeticEngine combines all the cosmetic rules and allows to quickly
+ * find all rules matching this or that hostname
+ * It is primarily used by the {@see Engine}
+ */
+export declare class CosmeticEngine {
+    /**
+     * Rules storage
+     */
+    private ruleStorage;
+    /**
+     * Count of rules added to the engine
+     */
+    rulesCount: number;
+    /**
+     * Lookup table for elemhide rules
+     */
+    private elementHidingLookupTable;
+    /**
+     * Lookup table for css rules
+     */
+    private cssLookupTable;
+    /**
+     * Lookup table for js and scriptlets rules
+     */
+    private jsLookupTable;
+    /**
+     * Lookup table for html filtering rules
+     */
+    private htmlLookupTable;
+    /**
+     * Builds instance of cosmetic engine
+     *
+     * @param ruleStorage
+     * @param skipStorageScan create an instance without storage scanning
+     */
+    constructor(ruleStorage: RuleStorage, skipStorageScan?: boolean);
+    /**
+     * Adds rules into appropriate tables
+     * @param rule
+     * @param storageIdx
+     */
+    addRule(rule: CosmeticRule, storageIdx: number): void;
+    /**
+     * Checks if bitwise mask matches option
+     * @param option
+     * @param targetOption
+     */
+    static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean;
+    /**
+     * Prepares cosmetic result by request
+     *
+     * @param request - request to match
+     * @param option mask of enabled cosmetic types
+     * @return CosmeticResult
+     */
+    match(request: Request, option: CosmeticOption): CosmeticResult;
+    /**
+     * Selects generic rules and appends rules content to cosmetic result
+     * @param cosmeticResult
+     * @param lookupTable
+     * @param request
+     */
+    private static appendGenericRules;
+    /**
+     * Selects specific rules and appends rules content to cosmetic result
+     * @param cosmeticResult
+     * @param lookupTable
+     * @param request
+     */
+    private static appendSpecificRules;
+}

@@ -1,0 +1,1 @@
+export { S as SimpleRegex } from './simple-regex-ea3ddcd2.js';

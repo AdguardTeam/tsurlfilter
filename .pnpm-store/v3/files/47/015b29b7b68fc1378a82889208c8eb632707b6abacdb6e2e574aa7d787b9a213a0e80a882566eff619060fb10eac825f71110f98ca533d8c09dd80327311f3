@@ -1,0 +1,32 @@
+{
+    "name": "@types/decompress",
+    "version": "4.2.7",
+    "description": "TypeScript definitions for decompress",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/decompress",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "York Yao",
+            "githubUsername": "plantain-00",
+            "url": "https://github.com/plantain-00"
+        },
+        {
+            "name": "Jesse Bethke",
+            "githubUsername": "jbethke",
+            "url": "https://github.com/jbethke"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/decompress"
+    },
+    "scripts": {},
+    "dependencies": {
+        "@types/node": "*"
+    },
+    "typesPublisherContentHash": "6a7ac79f8c077c7a69191bcb9cdb742924ecffdd236cc0b049255c768e5b17d3",
+    "typeScriptVersion": "4.5"
+}

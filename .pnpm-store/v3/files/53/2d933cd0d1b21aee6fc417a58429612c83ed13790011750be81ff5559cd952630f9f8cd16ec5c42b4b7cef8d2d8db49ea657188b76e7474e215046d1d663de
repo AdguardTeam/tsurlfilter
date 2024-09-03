@@ -1,0 +1,35 @@
+{
+    "name": "@types/sprintf-js",
+    "version": "1.1.4",
+    "description": "TypeScript definitions for sprintf-js",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/sprintf-js",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Jason Swearingen",
+            "githubUsername": "jasonswearingen",
+            "url": "https://github.com/jasonswearingen"
+        },
+        {
+            "name": "BendingBender",
+            "githubUsername": "BendingBender",
+            "url": "https://github.com/BendingBender"
+        },
+        {
+            "name": "Caner Dagli",
+            "githubUsername": "cdagli",
+            "url": "https://github.com/cdagli"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/sprintf-js"
+    },
+    "scripts": {},
+    "dependencies": {},
+    "typesPublisherContentHash": "8b30b8f932448ea7b96339f10b91405cfcbd31ef84bbf4ccf72348d7054d754e",
+    "typeScriptVersion": "4.5"
+}

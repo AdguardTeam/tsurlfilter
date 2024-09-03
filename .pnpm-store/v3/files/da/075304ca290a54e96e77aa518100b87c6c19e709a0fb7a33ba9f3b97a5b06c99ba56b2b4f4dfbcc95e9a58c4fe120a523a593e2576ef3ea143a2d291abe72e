@@ -1,0 +1,132 @@
+{
+  "name": "web-ext",
+  "version": "6.8.0",
+  "description": "A command line tool to help build, run, and test web extensions",
+  "main": "dist/web-ext.js",
+  "exports": {
+    "import": "./index.mjs",
+    "require": "./dist/web-ext.js"
+  },
+  "files": [
+    "CODE_OF_CONDUCT.md",
+    "README.md",
+    "dist/*.js",
+    "src/**",
+    "index.mjs"
+  ],
+  "engines": {
+    "node": ">=12.0.0",
+    "npm": ">=6.9.0"
+  },
+  "engine-strict": true,
+  "bin": {
+    "web-ext": "bin/web-ext"
+  },
+  "scripts": {
+    "build": "node scripts/build",
+    "start": "node scripts/develop",
+    "test": "node scripts/test",
+    "test-coverage": "node scripts/test --coverage",
+    "test-functional": "node scripts/test-functional",
+    "audit-deps": "node ./scripts/audit-deps",
+    "changelog": "npx conventional-changelog-cli -p angular -u",
+    "changelog-lint": "commitlint --from master",
+    "changelog-lint-from-stdin": "commitlint",
+    "github-pr-title-lint": "node ./scripts/github-pr-title-lint",
+    "gen-contributing-toc": "npx doctoc CONTRIBUTING.md"
+  },
+  "homepage": "https://github.com/mozilla/web-ext",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/web-ext.git"
+  },
+  "bugs": {
+    "url": "http://github.com/mozilla/web-ext/issues"
+  },
+  "keywords": [
+    "web",
+    "extensions",
+    "web extensions",
+    "browser extensions",
+    "firefox",
+    "mozilla",
+    "add-ons",
+    "google",
+    "chrome",
+    "opera"
+  ],
+  "dependencies": {
+    "@babel/runtime": "7.13.9",
+    "@devicefarmer/adbkit": "2.11.3",
+    "addons-linter": "4.14.0",
+    "bunyan": "1.8.15",
+    "camelcase": "6.2.0",
+    "chrome-launcher": "0.15.0",
+    "debounce": "1.2.0",
+    "decamelize": "5.0.0",
+    "es6-error": "4.1.1",
+    "firefox-profile": "4.2.2",
+    "fs-extra": "9.1.0",
+    "fx-runner": "1.2.0",
+    "import-fresh": "3.3.0",
+    "mkdirp": "1.0.4",
+    "multimatch": "5.0.0",
+    "mz": "2.7.0",
+    "node-notifier": "9.0.0",
+    "open": "7.4.2",
+    "parse-json": "5.2.0",
+    "promise-toolbox": "0.20.0",
+    "sign-addon": "3.11.0",
+    "source-map-support": "0.5.20",
+    "strip-bom": "4.0.0",
+    "strip-json-comments": "3.1.1",
+    "tmp": "0.2.1",
+    "update-notifier": "5.1.0",
+    "watchpack": "2.1.1",
+    "ws": "7.4.6",
+    "yargs": "16.2.0",
+    "zip-dir": "2.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "7.13.8",
+    "@babel/plugin-proposal-class-properties": "7.13.0",
+    "@babel/plugin-transform-runtime": "7.13.9",
+    "@babel/preset-env": "7.13.9",
+    "@babel/preset-flow": "7.12.13",
+    "@babel/register": "7.13.8",
+    "@commitlint/cli": "13.2.1",
+    "@commitlint/config-conventional": "13.2.0",
+    "babel-eslint": "10.1.0",
+    "babel-loader": "8.2.2",
+    "babel-plugin-istanbul": "6.1.1",
+    "chai": "4.3.4",
+    "chai-as-promised": "7.1.1",
+    "copy-dir": "1.3.0",
+    "cross-env": "7.0.3",
+    "deepcopy": "2.1.0",
+    "eslint": "7.32.0",
+    "eslint-plugin-async-await": "0.0.0",
+    "eslint-plugin-flowtype": "8.0.3",
+    "eslint-plugin-import": "2.23.4",
+    "flow-bin": "0.165.1",
+    "git-rev-sync": "3.0.2",
+    "html-entities": "2.1.1",
+    "mocha": "9.2.0",
+    "nyc": "15.1.0",
+    "prettyjson": "1.2.1",
+    "shelljs": "0.8.5",
+    "sinon": "12.0.1",
+    "webpack": "5.24.2",
+    "webpack-node-externals": "2.5.2",
+    "yauzl": "2.10.0"
+  },
+  "author": "Kumar McMillan",
+  "license": "MPL-2.0",
+  "nyc": {
+    "include": "src/**/*.js",
+    "reporter": [
+      "lcov",
+      "text"
+    ]
+  }
+}

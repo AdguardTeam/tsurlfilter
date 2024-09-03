@@ -1,0 +1,67 @@
+/**
+ * Compatibility types are used to configure engine for better support of different libraries
+ * For example:
+ *  extension doesn't support $app modifier. So if we set in configuration CompatibilityTypes.Extension,
+ *  engine would ignore rules with $app modifier
+ */
+export declare enum CompatibilityTypes {
+    Extension = 1,
+    CoreLibs = 2,
+    Dns = 4
+}
+/**
+ * Configuration interface
+ */
+export interface IConfiguration {
+    /**
+     * {'extension'|'corelibs'} engine application type
+     */
+    engine: string | null;
+    /**
+     * {string} version
+     */
+    version: string | null;
+    /**
+     * {boolean} verbose flag
+     */
+    verbose: boolean;
+    /**
+     * Compatibility type
+     */
+    compatibility: CompatibilityTypes | null;
+}
+/**
+ * Application configuration class
+ */
+declare class Configuration implements IConfiguration {
+    private defaultConfig;
+    /**
+     * {'extension'|'corelibs'} engine application type
+     */
+    engine: string | null;
+    /**
+     * {string} version
+     */
+    version: string | null;
+    /**
+     * {boolean} verbose flag
+     */
+    verbose: boolean;
+    /**
+     * compatibility flag
+     */
+    compatibility: CompatibilityTypes | null;
+    constructor(inputConfig?: Partial<IConfiguration>);
+}
+declare type Partial<T> = {
+    [P in keyof T]?: T[P];
+};
+export declare let config: Configuration;
+/**
+ * Checks config is compatible with input level
+ * @param compatibilityLevel
+ * @private
+ */
+export declare function isCompatibleWith(compatibilityLevel: CompatibilityTypes): boolean;
+export declare const setConfiguration: (outerConfig: Partial<IConfiguration>) => void;
+export {};

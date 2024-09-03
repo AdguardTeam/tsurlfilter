@@ -1,0 +1,64 @@
+import { CosmeticRuleModifiers } from './cosmetic-rule-modifiers';
+export type CosmeticRuleModifiersCollection = {
+    [P in CosmeticRuleModifiers]?: string;
+};
+/**
+ * Helper class for parsing text of cosmetic rules
+ * used by CosmeticRule and [Filter compiler](https://github.com/AdguardTeam/FiltersCompiler)
+ *
+ *
+ * The cosmetic rule contains of the following parts:
+ *
+ * `pattern##content`
+ *
+ * `pattern` contains the list of the rule modifiers and domains.
+ *
+ * `##` is a marker (might be a different marker depending on the rule type).
+ * You can find the list of markers in the CosmeticRuleMarker enumeration.
+ *
+ * `content` might be a CSS selector, a scriptlet or something else, depending on the rule type.
+ */
+export declare class CosmeticRuleParser {
+    /**
+     * Parse the rule's pattern, cosmetic marker and the content parts from the rule text.
+     * If the content is empty, throws a SyntaxError.
+     *
+     * @param ruleText
+     * @returns Object with pattern, marker and content text parts
+     */
+    static parseRuleTextByMarker(ruleText: string): {
+        pattern?: string;
+        marker: string;
+        content: string;
+    };
+    /**
+     * Extracts the rule modifiers and domains from the rule pattern.
+     * @param rulePattern
+     * @returns Object with modifiers and domains text parts
+     */
+    static parseRulePatternText(rulePattern: string): {
+        domainsText?: string;
+        modifiersText?: string;
+    };
+    /**
+     * Parses the list of modifiers. Parsing is done in the same way as it's done in the NetworkRule, i.e.
+     * we have a comma-separated list of modifier-value pairs.
+     * If we encounter an invalid modifier, this method throws a SyntaxError.
+     *
+     * @param modifiersText - list of modifiers splited by comma
+     * @returns - modifiers collection object
+     */
+    static parseRuleModifiers(modifiersText: string | undefined): CosmeticRuleModifiersCollection | null;
+    /**
+     * Parses the rule pattern and extracts the permitted/restricted domains and the unescaped path modifier value,
+     * If domains are declared through $domain modifier and pattern domain list, this method throws a SyntaxError.
+     * @param rulePattern - rule pattern text
+     *
+     * @returns Object with permitted/restricted domains list and the path modifier string value
+     */
+    static parseRulePattern(rulePattern: string): {
+        path?: string;
+        permittedDomains?: string[];
+        restrictedDomains?: string[];
+    };
+}

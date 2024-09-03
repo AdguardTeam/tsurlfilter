@@ -1,0 +1,285 @@
+import { z as zod } from 'zod';
+import type { NetworkRule } from '../network-rule';
+import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
+import { DeclarativeRule } from './declarative-rule';
+import { IFilter } from './filter';
+import { ISourceMap, SourceRuleIdxAndFilterId } from './source-map';
+import { IRulesHashMap } from './rules-hash-map';
+/**
+ * The OriginalSource contains the text of the original rule and the filter
+ * identifier of that rule.
+ */
+export declare type SourceRuleAndFilterId = {
+    sourceRule: string;
+    filterId: number;
+};
+/**
+ * Describes object of ruleset id with list of ids of declarative rules. Needs
+ * to disable declarative rules from static ruleset by applying $badfilter rules
+ * from dynamic rulesets.
+ */
+export declare type UpdateStaticRulesOptions = {
+    rulesetId: string;
+    disableRuleIds: number[];
+};
+/**
+ * Keeps converted declarative rules and source map for it.
+ */
+export interface IRuleSet {
+    /**
+     * Number of converted declarative rules.
+     *
+     * @returns Number of converted declarative rules.
+     */
+    getRulesCount(): number;
+    /**
+     * Number of converted declarative regexp rules.
+     *
+     * @returns Number of converted declarative regexp rules.
+     */
+    getRegexpRulesCount(): number;
+    /**
+     * Returns rule set id.
+     *
+     * @returns Rule set id.
+     */
+    getId(): string;
+    /**
+     * Returns a list of pairs of source text rules and their filter identifiers
+     * for a given declarative rule identifier.
+     *
+     * @param declarativeRuleId {@link DeclarativeRule|declarative rule} Id.
+     *
+     * @returns Promise with list of source rules.
+     *
+     * @throws Error {@link UnavailableRuleSetSourceError} if rule set source
+     * is not available.
+     */
+    getRulesById(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]>;
+    /**
+     * Returns list of network rules with `$badfilter` option.
+     *
+     * @returns List of network rules with `$badfilter` option.
+     */
+    getBadFilterRules(): IndexedNetworkRuleWithHash[];
+    /**
+     * Returns dictionary with hashes of all ruleset's source rules.
+     *
+     * @returns Dictionary with hashes of all ruleset's source rules.
+     */
+    getRulesHashMap(): IRulesHashMap;
+    /**
+     * For provided source returns list of ids of converted declarative rule.
+     *
+     * @param source Source rule index and filter id.
+     *
+     * @returns List of ids of converted declarative rule.
+     */
+    getDeclarativeRulesIdsBySourceRuleIndex(source: SourceRuleIdxAndFilterId): Promise<number[]>;
+    /**
+     * Returns list of ruleset's declarative rules.
+     *
+     * @returns List of ruleset's declarative rules.
+     */
+    getDeclarativeRules(): Promise<DeclarativeRule[]>;
+    /**
+     * Serializes rule set to primitives values with lazy load.
+     *
+     * @returns Serialized rule set.
+     *
+     * @throws Error {@link UnavailableRuleSetSourceError} if rule set source
+     * is not available.
+     */
+    serialize(): Promise<SerializedRuleSet>;
+}
+/**
+ * Rule set content's provider for lazy load data.
+ */
+export declare type RuleSetContentProvider = {
+    loadSourceMap: () => Promise<ISourceMap>;
+    loadFilterList: () => Promise<IFilter[]>;
+    loadDeclarativeRules: () => Promise<DeclarativeRule[]>;
+};
+declare const serializedRuleSetDataValidator: zod.ZodObject<{
+    regexpRulesCount: zod.ZodNumber;
+    rulesCount: zod.ZodNumber;
+    ruleSetHashMapRaw: zod.ZodString;
+    badFilterRulesRaw: zod.ZodArray<zod.ZodString, "many">;
+}, "strict", zod.ZodTypeAny, {
+    regexpRulesCount: number;
+    rulesCount: number;
+    ruleSetHashMapRaw: string;
+    badFilterRulesRaw: string[];
+}, {
+    regexpRulesCount: number;
+    rulesCount: number;
+    ruleSetHashMapRaw: string;
+    badFilterRulesRaw: string[];
+}>;
+declare type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
+/**
+ * A serialized rule set with primitive values separated into two parts: one is
+ * needed for instant creating ruleset, while the other is needed only when
+ * declarative filtering log is enabled - to find and display source rules from
+ * raw filters.
+ */
+export declare type SerializedRuleSet = {
+    id: string;
+    /**
+     * Metadata needed for instant creating ruleset.
+     */
+    data: string;
+    /**
+     * Metadata needed for lazy load some data to ruleset to find and show
+     * source rules when declarative filtering log is enabled.
+     */
+    lazyData: string;
+};
+/**
+ * A deserialized rule set with loaded data and provider for lazy loading data.
+ */
+export declare type DeserializedRuleSet = {
+    id: string;
+    /**
+     * Metadata needed for instant creating ruleset.
+     */
+    data: SerializedRuleSetData;
+    /**
+     * Metadata needed for lazy load some data to ruleset to find and show
+     * source rules when declarative filtering log is enabled.
+     */
+    ruleSetContentProvider: RuleSetContentProvider;
+};
+/**
+ * Keeps converted declarative rules, counters of rules and source map for them.
+ */
+export declare class RuleSet implements IRuleSet {
+    /**
+     * Id of rule set.
+     */
+    private readonly id;
+    /**
+     * Array of converted declarative rules.
+     */
+    private declarativeRules;
+    /**
+     * Number of converted declarative rules.
+     * This is needed for the lazy version of the rule set,
+     * when content not loaded.
+     */
+    private readonly rulesCount;
+    /**
+     * Converted declarative regexp rules.
+     */
+    private readonly regexpRulesCount;
+    /**
+     * Source map for declarative rules.
+     */
+    private sourceMap;
+    /**
+     * Dictionary which helps to fast find rule by its hash.
+     */
+    private rulesHashMap;
+    /**
+     * List of network rules with $badfilter option.
+     */
+    private badFilterRules;
+    /**
+     * Keeps array of source filter lists
+     * TODO: ? May it leads to memory leaks,
+     * because one FilterList with its content
+     * can be in the several RuleSet's at the same time ?
+     */
+    private filterList;
+    /**
+     * The content provider of a rule set, is needed for lazy initialization.
+     * If request the source rules from rule set, the content provider will be
+     * called to load the source map, filter list and declarative rules list.
+     */
+    private readonly ruleSetContentProvider;
+    /**
+     * Whether the content is loaded or not.
+     */
+    private initialized;
+    /**
+     * Constructor of RuleSet.
+     *
+     * @param id Id of rule set.
+     * @param rulesCount Number of rules.
+     * @param regexpRulesCount Number of regexp rules.
+     * @param ruleSetContentProvider Rule set content provider.
+     * @param badFilterRules List of rules with $badfilter modifier.
+     * @param rulesHashMap Dictionary with hashes for all source rules.
+     */
+    constructor(id: string, rulesCount: number, regexpRulesCount: number, ruleSetContentProvider: RuleSetContentProvider, badFilterRules: IndexedNetworkRuleWithHash[], rulesHashMap: IRulesHashMap);
+    /** @inheritdoc */
+    getRulesCount(): number;
+    /** @inheritdoc */
+    getRegexpRulesCount(): number;
+    /** @inheritdoc */
+    getId(): string;
+    /**
+     * Returns a list of pairs of source text rules and their filter identifiers
+     * for a given declarative rule identifier.
+     *
+     * @param declarativeRuleId {@link DeclarativeRule|declarative rule} Id.
+     *
+     * @throws An error when filter is not found or filter content is unavailable.
+     *
+     * @returns Promise with list of source rules.
+     */
+    private findSourceRules;
+    /**
+     * Run inner lazy deserialization from rule set content provider to load
+     * data which is not needed on the creation of rule set:
+     * the source map, filter list and declarative rules list.
+     */
+    private loadContent;
+    /** @inheritdoc */
+    getRulesById(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]>;
+    /** @inheritdoc */
+    getBadFilterRules(): IndexedNetworkRuleWithHash[];
+    /** @inheritdoc */
+    getRulesHashMap(): IRulesHashMap;
+    /** @inheritdoc */
+    getDeclarativeRulesIdsBySourceRuleIndex(source: SourceRuleIdxAndFilterId): Promise<number[]>;
+    /** @inheritdoc */
+    getDeclarativeRules(): Promise<DeclarativeRule[]>;
+    /**
+     * For provided source rule and filter id return network rule.
+     * This method is needed for checking the applicability of $badfilter after
+     * a fast-check of rules by comparing only hashes. Afterward, we should
+     * build the 'full' Network rule from provided source, not just the hash,
+     * to determine the applicability of $badfilter.
+     *
+     * @param source Source rule and filter id.
+     *
+     * @returns List of {@link NetworkRule | network rules}.
+     */
+    static getNetworkRuleBySourceRule(source: SourceRuleAndFilterId): NetworkRule[];
+    /**
+     * Deserializes rule set to primitives values with lazy load.
+     *
+     * @param id Id of rule set.
+     * @param rawData An item of {@link SerializedRuleSetData} for instant
+     * creating ruleset. It contains counters for regular declarative and regexp
+     * declarative rules, a map of hashes for all rules, and a list of rules
+     * with the `$badfilter` modifier.
+     * @param loadLazyData An item of {@link SerializedRuleSetLazyData} for lazy
+     * loading ruleset data to find and display source rules when declarative
+     * filtering log is enabled. It includes a map of sources for all rules,
+     * a list of declarative rules, and a list of source filter IDs.
+     * @param loadDeclarativeRules Loader for ruleset's declarative rules from
+     * raw file as a string.
+     * @param filterList List of {@link IFilter}.
+     *
+     * @returns Deserialized rule set.
+     *
+     * @throws Error {@link UnavailableRuleSetSourceError} if rule set source
+     * is not available.
+     */
+    static deserialize(id: string, rawData: string, loadLazyData: () => Promise<string>, loadDeclarativeRules: () => Promise<string>, filterList: IFilter[]): Promise<DeserializedRuleSet>;
+    /** @inheritdoc */
+    serialize(): Promise<SerializedRuleSet>;
+}
+export {};

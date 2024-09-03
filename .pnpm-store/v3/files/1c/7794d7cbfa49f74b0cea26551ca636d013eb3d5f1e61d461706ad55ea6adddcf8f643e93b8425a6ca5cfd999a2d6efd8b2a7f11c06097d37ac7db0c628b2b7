@@ -1,0 +1,118 @@
+import { RequestType } from './request-type';
+/**
+ * Request represents a web request with all it's necessary properties
+ */
+export declare class Request {
+    /**
+     * Max url length for matching
+     * Some urls are really long and slow down matching, so we cut them to this length.
+     */
+    static readonly MAX_URL_MATCH_LENGTH = 2000;
+    /**
+     * Request type
+     */
+    readonly requestType: RequestType;
+    /**
+     * True if request is third-party.
+     * Third-party basically means that Domain != SourceDomain.
+     * It can be null in the case when there is no sourceUrl at all.
+     */
+    readonly thirdParty: boolean | null;
+    /**
+     * Original request URL.
+     */
+    readonly url: string;
+    /**
+     * Request identifier
+     */
+    requestId: number | undefined;
+    /**
+     * Status code
+     */
+    statusCode: number | undefined;
+    /**
+     * Method name
+     */
+    method: string | undefined;
+    /**
+     * Request tab identifier
+     */
+    tabId: number | undefined;
+    /**
+     * The same request URL, but in lower case and shortened.
+     * It is necessary to use lower-cased URL in several places,
+     * that's why we keep it in the object.
+     */
+    readonly urlLowercase: string;
+    /**
+     * Request's hostname
+     */
+    readonly hostname: string;
+    /**
+     * Request's domain (eTLD+1)
+     */
+    readonly domain: string;
+    /**
+     * Source URL. Can be empty.
+     */
+    readonly sourceUrl: string | null;
+    /**
+     * Source hostname. Can be empty.
+     */
+    readonly sourceHostname: string | null;
+    /**
+     * Source domain (eTLD+1). Can be empty.
+     */
+    readonly sourceDomain: string | null;
+    /**
+     * the request is for a given Hostname, and not for a URL, and we don't really know what protocol it is.
+     * This can be true for DNS requests, or for HTTP CONNECT, or SNI matching.
+     */
+    isHostnameRequest: boolean;
+    /**
+     * List of subdomains parsed from hostname
+     */
+    subdomains: string[];
+    /**
+     * List of source subdomains parsed from source hostname
+     */
+    sourceSubdomains: string[];
+    /**
+     * List of client tags
+     */
+    clientTags: string[] | undefined;
+    /**
+     * DNS type
+     */
+    dnsType: string | undefined;
+    /**
+     * Client name
+     */
+    clientName: string | undefined;
+    /**
+     * Client IP
+     */
+    clientIP: string | undefined;
+    /**
+    * Splits subdomains and returns all subdomains (including the hostname itself)
+    *
+    * @param tldResult
+    * @returns array of subdomains
+    */
+    private getSubdomains;
+    /**
+     * Creates an instance of a Request
+     *
+     * @param url - request URL
+     * @param sourceUrl - source URL
+     * @param requestType - request type
+     *
+     * @throws
+     */
+    constructor(url: string, sourceUrl: string | null, requestType: RequestType);
+    /**
+     * We cut the url in performance purposes
+     * @param url
+     */
+    private static compactUrl;
+}

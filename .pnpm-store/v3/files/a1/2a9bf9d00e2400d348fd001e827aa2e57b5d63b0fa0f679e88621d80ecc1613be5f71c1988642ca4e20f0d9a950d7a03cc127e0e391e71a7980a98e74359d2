@@ -1,0 +1,49 @@
+{
+  "name": "@devicefarmer/adbkit-logcat",
+  "version": "1.1.0",
+  "description": "A Node.js interface for working with Android's logcat output.",
+  "keywords": [
+    "adb",
+    "adbkit",
+    "logcat"
+  ],
+  "bugs": {
+    "url": "https://github.com/openstf/adbkit-logcat/issues"
+  },
+  "license": "Apache-2.0",
+  "author": {
+    "name": "The OpenSTF Project",
+    "email": "contact@openstf.io",
+    "url": "https://openstf.io"
+  },
+  "main": "./index",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openstf/adbkit-logcat.git"
+  },
+  "scripts": {
+    "postpublish": "grunt clean",
+    "prepublish": "grunt coffee",
+    "test": "grunt test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "coffee-script": "^1.10.0",
+    "grunt": "^1.0.1",
+    "grunt-cli": "^1.2.0",
+    "grunt-coffeelint": "0.0.16",
+    "grunt-contrib-clean": "^1.0.0",
+    "grunt-contrib-coffee": "^1.0.0",
+    "grunt-contrib-watch": "^1.0.0",
+    "grunt-exec": "^1.0.0",
+    "grunt-jsonlint": "^1.1.0",
+    "grunt-notify": "^0.4.5",
+    "mocha": "^3.0.2",
+    "sinon": "^1.17.5",
+    "sinon-chai": "^2.8.0"
+  },
+  "engines": {
+    "node": ">= 0.10.4"
+  }
+}

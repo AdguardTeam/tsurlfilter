@@ -1,0 +1,39 @@
+import { IAdvancedModifier } from './advanced-modifier';
+/**
+ * Query parameters filtering modifier class
+ * Works with '$removeparam' modifier
+ */
+export declare class RemoveParamModifier implements IAdvancedModifier {
+    /**
+     * Value
+     */
+    private readonly value;
+    /**
+     * Is modifier valid for MV3 or not
+     */
+    private readonly mv3Valid;
+    /**
+     * RegExp to apply
+     */
+    private readonly valueRegExp;
+    /**
+     * Constructor
+     *
+     * @param value
+     */
+    constructor(value: string);
+    /**
+     * Modifier value
+     */
+    getValue(): string;
+    /**
+     * Is modifier valid for MV3 or not
+     */
+    getMV3Validity(): boolean;
+    /**
+     * Removes query parameters from url
+     *
+     * @param url
+     */
+    removeParameters(url: string): string;
+}

@@ -1,0 +1,38 @@
+/**
+ * Finds header object by header name (case insensitive)
+ *
+ * @param headers Headers collection
+ * @param headerName Header name
+ * @returns header value
+ */
+function findHeaderByName(headers, headerName) {
+    for (var i = 0; i < headers.length; i += 1) {
+        var header = headers[i];
+        if (header.name.toLowerCase() === headerName.toLowerCase()) {
+            return header;
+        }
+    }
+    return null;
+}
+/**
+ * Removes header from headers by name
+ *
+ * @param {Array} headers
+ * @param {String} headerName
+ * @return {boolean} True if header were removed
+ */
+function removeHeader(headers, headerName) {
+    var removed = false;
+    if (headers) {
+        for (var i = headers.length - 1; i >= 0; i -= 1) {
+            var header = headers[i];
+            if (header.name.toLowerCase() === headerName.toLowerCase()) {
+                headers.splice(i, 1);
+                removed = true;
+            }
+        }
+    }
+    return removed;
+}
+
+export { findHeaderByName as f, removeHeader as r };

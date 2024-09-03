@@ -1,0 +1,40 @@
+import { IRule } from './rule';
+/**
+ * Rule builder class
+ */
+export declare class RuleFactory {
+    /**
+     * Creates rule of suitable class from text string
+     * It returns null if the line is empty or if it is a comment
+     *
+     * @param text rule string
+     * @param filterListId list id
+     * @param ignoreNetwork do not create network rules
+     * @param ignoreCosmetic do not create cosmetic rules
+     * @param ignoreHost do not create host rules
+     * @return IRule object or null
+     */
+    static createRule(text: string, filterListId: number, ignoreNetwork?: boolean, ignoreCosmetic?: boolean, ignoreHost?: boolean): IRule | null;
+    /**
+     * Creates host rule from text
+     *
+     * @param ruleText
+     * @param filterListId
+     */
+    private static createHostRule;
+    /**
+     * Checks if rule is short
+     */
+    static isShort(rule: string): boolean;
+    /**
+     * Checks if the rule is cosmetic or not.
+     * @param ruleText - rule text to check.
+     */
+    static isCosmetic(ruleText: string): boolean;
+    /**
+     * If text is comment
+     *
+     * @param text
+     */
+    static isComment(text: string): boolean;
+}

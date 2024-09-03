@@ -1,0 +1,58 @@
+import { SourceRuleIdxAndFilterId } from './source-map';
+declare type RuleHash = number;
+/**
+ * Contains a hash of the rule and the 'coordinates' of this rule: the source
+ * filter ID and the rule index within this filter.
+ */
+declare type HashWithSource = {
+    hash: RuleHash;
+    source: SourceRuleIdxAndFilterId;
+};
+export interface IRulesHashMap {
+    /**
+     * Tries to find rules with same hash and if found - returns theirs sources:
+     * filter id and rule id.
+     *
+     * @param hash Number hash to search rules with same hash.
+     *
+     * @returns List of sources (filter id and rule id) of rules with same hash as
+     * provided in parameter or empty array.
+     */
+    findRules(hash: number): SourceRuleIdxAndFilterId[];
+    /**
+     * Serializes map of rules hashes to JSON string.
+     *
+     * @todo (TODO:) Can use protocol VLQ.
+     *
+     * @returns JSON string.
+     */
+    serialize(): string;
+}
+/**
+ * Contains a dictionary where the key is the hash of the rule and the value is
+ * a list of sources for the rule. Storing this dictionary is necessary for fast
+ * rule matching, which can be negated by $badfilter.
+ */
+export declare class RulesHashMap implements IRulesHashMap {
+    private map;
+    /**
+     * Creates new {@link RulesHashMap}.
+     *
+     * @param listOfRulesWithHash List of rules hashes and rules sources:
+     * filter id with rule index.
+     */
+    constructor(listOfRulesWithHash: HashWithSource[]);
+    /** @inheritdoc */
+    findRules(hash: number): SourceRuleIdxAndFilterId[];
+    /**
+     * Deserializes dictionary from raw string.
+     *
+     * @param rawString The original dictionary that was serialized into a string.
+     *
+     * @returns Deserialized dictionary.
+     */
+    static deserializeSources(rawString: string): HashWithSource[];
+    /** @inheritdoc */
+    serialize(): string;
+}
+export {};

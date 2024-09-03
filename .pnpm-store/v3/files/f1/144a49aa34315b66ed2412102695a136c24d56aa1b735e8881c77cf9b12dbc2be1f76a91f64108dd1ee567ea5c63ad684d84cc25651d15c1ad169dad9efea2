@@ -1,0 +1,94 @@
+import { Request } from '../request';
+/**
+ * Rule pattern class
+ *
+ * This class parses rule pattern text to simple fields.
+ */
+export declare class Pattern {
+    /**
+     * Original pattern text
+     */
+    readonly pattern: string;
+    /**
+     * Shortcut string
+     */
+    readonly shortcut: string;
+    /**
+     * If this pattern already prepared indicator
+     */
+    private prepared;
+    /**
+     * Parsed hostname
+     */
+    private hostname;
+    /**
+     * Parsed regular expression
+     */
+    private regex;
+    /**
+     * Invalid regex flag
+     */
+    private regexInvalid;
+    /**
+     * Domain specific pattern flag
+     */
+    private patternDomainSpecific;
+    /**
+     * If true, pattern and shortcut are the same.
+     * In this case, we don't actually need to use `matchPattern`
+     * if shortcut was already matched.
+     */
+    private patternShortcut;
+    /**
+     * If pattern is match-case regex
+     */
+    private readonly matchcase;
+    /**
+     * Constructor
+     * @param pattern
+     * @param matchcase
+     */
+    constructor(pattern: string, matchcase?: boolean);
+    /**
+     * Checks if this rule pattern matches the specified request.
+     *
+     * @param request - request to check
+     * @param shortcutMatched if true, it means that the request already matches
+     * this pattern's shortcut and we don't need to match it again.
+     * @returns true if pattern matches
+     */
+    matchPattern(request: Request, shortcutMatched: boolean): boolean;
+    /**
+     * Checks if this rule pattern matches the specified relative path string.
+     * This method is used in cosmetic rules to implement the $path modifier matching logic.
+     *
+     * @param path - path to check
+     * @returns true if pattern matches
+     */
+    matchPathPattern(path: string): boolean;
+    /**
+     * matchShortcut simply checks if shortcut is a substring of the URL.
+     * @param request - request to check.
+     */
+    private matchShortcut;
+    /**
+     * Prepares this pattern
+     */
+    private prepare;
+    /**
+     * Compiles this pattern regex
+     */
+    private compileRegex;
+    /**
+     * Checks if we should match hostnames and not the URL
+     * this is important for the cases when we use urlfilter for DNS-level blocking
+     * Note, that even though we may work on a DNS-level, we should still sometimes match full URL instead
+     *
+     * @param request
+     */
+    private shouldMatchHostname;
+    /**
+     * In case pattern starts with the following it targets some specific domain
+     */
+    isPatternDomainSpecific(): boolean;
+}

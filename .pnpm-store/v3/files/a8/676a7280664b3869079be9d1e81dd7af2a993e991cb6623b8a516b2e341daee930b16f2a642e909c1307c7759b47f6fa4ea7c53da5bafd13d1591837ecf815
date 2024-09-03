@@ -1,0 +1,70 @@
+---
+version: 2
+plan:
+  project-key: ADGEXT
+  key: LEGASSTESTSPECS
+  name: legacy assistant - test
+variables:
+  dockerPuppeteer: adguard/puppeteer-runner:8.0--1
+
+stages:
+  - Test:
+      manual: 'false'
+      final: 'false'
+      jobs:
+        - Test
+
+Test:
+  key: TEST
+  other:
+    clean-working-dir: true
+  docker:
+    image: ${bamboo.dockerPuppeteer}
+    volumes:
+      ${system.YARN_DIR}: "${bamboo.cacheYarn}"
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -x
+            set -e
+            ls -alt
+
+            export PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+            yarn install ${bamboo.varsYarn}
+            yarn dev
+            yarn test
+            rm -rf node_modules
+  artifacts:
+    - name: assistant.meta.js
+      location: build/dev
+      pattern: assistant.meta.js
+      shared: true
+      required: true
+    - name: assistant.js
+      location: build/dev
+      pattern: assistant.js
+      shared: true
+      required: true
+    - name: assistant.user.js
+      location: build/dev
+      pattern: assistant.user.js
+      shared: true
+      required: true
+  requirements:
+    - adg-docker: 'true'
+
+branches:
+  create: for-pull-request
+  delete:
+    after-deleted-days: '1'
+    after-inactive-days: '5'
+  link-to-jira: 'true'
+
+notifications: []
+labels: []
+other:
+  concurrent-build-plugin: system-default

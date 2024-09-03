@@ -1,0 +1,23 @@
+interface ValidationResult {
+    valid: boolean;
+    error: string | null;
+}
+/**
+ * Module, which can be used to validate filter rules in other libraries
+ */
+export declare class RuleValidator {
+    /**
+     * Creates validation result
+     * @param valid
+     * @param error
+     * @private
+     */
+    private static createValidationResult;
+    private static validateRegexp;
+    /**
+     * Validates raw rule string
+     * @param rawRule
+     */
+    static validate(rawRule: string): ValidationResult;
+}
+export {};

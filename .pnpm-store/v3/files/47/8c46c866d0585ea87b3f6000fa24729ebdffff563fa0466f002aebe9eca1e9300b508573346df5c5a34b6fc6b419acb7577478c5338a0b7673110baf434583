@@ -1,0 +1,12 @@
+export declare enum CosmeticRuleModifiers {
+    PATH = "path",
+    DOMAIN = "domain"
+}
+export declare const CosmeticRuleModifiersSyntax: {
+    readonly OPEN_BRACKET: "[";
+    readonly CLOSE_BRACKET: "]";
+    readonly SPECIAL_SYMBOL: "$";
+    readonly DELIMITER: ",";
+    readonly ASSIGNER: "=";
+    readonly ESCAPE_CHARACTER: "\\";
+};

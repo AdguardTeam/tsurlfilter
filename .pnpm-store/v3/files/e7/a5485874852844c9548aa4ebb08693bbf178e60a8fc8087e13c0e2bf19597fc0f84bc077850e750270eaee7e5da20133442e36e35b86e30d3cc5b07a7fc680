@@ -1,0 +1,78 @@
+{
+  "name": "@stylistic/eslint-plugin-ts",
+  "version": "2.6.1",
+  "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/eslint-stylistic/eslint-stylistic#readme",
+  "repository": {
+    "directory": "packages/eslint-plugin-ts",
+    "type": "git",
+    "url": "git+https://github.com/eslint-stylistic/eslint-stylistic.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eslint-stylistic/eslint-stylistic/issues"
+  },
+  "exports": {
+    ".": {
+      "types": "./dts/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./define-config-support": {
+      "types": "./dts/define-config-support.d.ts"
+    },
+    "./rule-options": {
+      "types": "./dts/rule-options.d.ts"
+    },
+    "./rules/block-spacing": "./dist/block-spacing.js",
+    "./rules/brace-style": "./dist/brace-style.js",
+    "./rules/comma-dangle": "./dist/comma-dangle.js",
+    "./rules/comma-spacing": "./dist/comma-spacing.js",
+    "./rules/func-call-spacing": "./dist/func-call-spacing.js",
+    "./rules/function-call-spacing": "./dist/function-call-spacing.js",
+    "./rules/indent": "./dist/indent.js",
+    "./rules/key-spacing": "./dist/key-spacing.js",
+    "./rules/keyword-spacing": "./dist/keyword-spacing.js",
+    "./rules/lines-around-comment": "./dist/lines-around-comment.js",
+    "./rules/lines-between-class-members": "./dist/lines-between-class-members.js",
+    "./rules/member-delimiter-style": "./dist/member-delimiter-style.js",
+    "./rules/no-extra-parens": "./dist/no-extra-parens.js",
+    "./rules/no-extra-semi": "./dist/no-extra-semi.js",
+    "./rules/object-curly-newline": "./dist/object-curly-newline.js",
+    "./rules/object-curly-spacing": "./dist/object-curly-spacing.js",
+    "./rules/object-property-newline": "./dist/object-property-newline.js",
+    "./rules/padding-line-between-statements": "./dist/padding-line-between-statements.js",
+    "./rules/quote-props": "./dist/quote-props.js",
+    "./rules/quotes": "./dist/quotes.js",
+    "./rules/semi": "./dist/semi.js",
+    "./rules/space-before-blocks": "./dist/space-before-blocks.js",
+    "./rules/space-before-function-paren": "./dist/space-before-function-paren.js",
+    "./rules/space-infix-ops": "./dist/space-infix-ops.js",
+    "./rules/type-annotation-spacing": "./dist/type-annotation-spacing.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dts/index.d.ts",
+  "files": [
+    "dist",
+    "dts",
+    "rules/**/*.d.ts"
+  ],
+  "engines": {
+    "node": "^18.18.0 || ^20.9.0 || >=21.1.0"
+  },
+  "peerDependencies": {
+    "eslint": ">=8.40.0"
+  },
+  "dependencies": {
+    "@types/eslint": "^9.6.0",
+    "@typescript-eslint/utils": "^8.0.0",
+    "@stylistic/eslint-plugin-js": "2.6.1"
+  },
+  "devDependencies": {
+    "@typescript-eslint/rule-tester": "^8.0.0"
+  },
+  "scripts": {
+    "build": "rimraf dist && rollup --config=rollup.config.mts --configPlugin=rollup-plugin-esbuild",
+    "dev": "rollup --config=rollup.config.mts --configPlugin=rollup-plugin-esbuild --watch"
+  }
+}

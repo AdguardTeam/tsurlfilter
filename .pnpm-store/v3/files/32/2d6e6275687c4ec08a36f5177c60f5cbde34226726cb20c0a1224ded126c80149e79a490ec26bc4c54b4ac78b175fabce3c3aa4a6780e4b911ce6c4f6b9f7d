@@ -1,0 +1,30 @@
+{
+  "name": "addons-moz-compare",
+  "version": "1.2.0",
+  "description": "JS implementation to compare add-on versions.",
+  "main": "src/index.js",
+  "author": "Mozilla Add-ons Team",
+  "license": "MPL-2.0",
+  "scripts": {
+    "prettier": "prettier --write '**'",
+    "prettier-ci": "prettier -c '**'",
+    "prettier-dev": "pretty-quick --branch main",
+    "test": "jest",
+    "test-ci": "jest"
+  },
+  "devDependencies": {
+    "geckodriver": "^1.22.3",
+    "jest": "^26.6.3",
+    "prettier": "^2.2.1",
+    "pretty-quick": "^3.1.0",
+    "selenium-webdriver": "^4.0.0-beta.3"
+  },
+  "homepage": "https://github.com/mozilla/addons-moz-compare",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/addons-moz-compare.git"
+  },
+  "bugs": {
+    "url": "http://github.com/mozilla/addons-moz-compare/issues"
+  }
+}

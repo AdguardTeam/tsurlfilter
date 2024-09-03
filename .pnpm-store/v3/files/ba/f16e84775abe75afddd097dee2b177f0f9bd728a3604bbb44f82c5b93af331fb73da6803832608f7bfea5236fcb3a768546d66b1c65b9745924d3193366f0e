@@ -1,0 +1,58 @@
+import { CosmeticRule } from '../../rules/cosmetic-rule';
+import { RuleStorage } from '../../filterlist/rule-storage';
+import { Request } from '../../request';
+/**
+ * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
+ * It is primarily used by the {@see CosmeticEngine}.
+ */
+export declare class CosmeticLookupTable {
+    /**
+     * Map with rules indices grouped by the permitted domains names
+     */
+    private byHostname;
+    /**
+     * Collection of domain specific rules, those could not be grouped by domain name
+     * For instance, wildcard domain rules.
+     */
+    wildcardRules: CosmeticRule[];
+    /**
+     * Collection of generic rules.
+     * Generic means that the rule is not limited to particular websites and works (almost) everywhere.
+     */
+    genericRules: CosmeticRule[];
+    /**
+     * Map with allowlist rules indices. Key is the rule content.
+     * More information about allowlist here:
+     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions
+     */
+    private allowlist;
+    /**
+     * Storage for the filtering rules
+     */
+    private readonly ruleStorage;
+    /**
+     * Creates a new instance
+     *
+     * @param storage rules storage. We store "rule indexes" in the lookup table which
+     * can be used to retrieve the full rules from the storage.
+     */
+    constructor(storage: RuleStorage);
+    /**
+     * Adds rule to the appropriate collection
+     * @param rule
+     * @param storageIdx
+     */
+    addRule(rule: CosmeticRule, storageIdx: number): void;
+    /**
+     * Finds rules by hostname
+     * @param request
+     * @param subdomains
+     */
+    findByHostname(request: Request): CosmeticRule[];
+    /**
+     * Checks if the rule is disabled on the specified hostname.
+     * @param request
+     * @param rule
+     */
+    isAllowlisted(request: Request, rule: CosmeticRule): boolean;
+}

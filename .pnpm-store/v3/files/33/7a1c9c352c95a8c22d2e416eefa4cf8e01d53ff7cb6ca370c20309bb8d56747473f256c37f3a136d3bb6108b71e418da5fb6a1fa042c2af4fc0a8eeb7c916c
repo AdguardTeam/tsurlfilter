@@ -1,0 +1,21 @@
+/**
+ * Scanner types enum
+ */
+export declare enum ScannerType {
+    /**
+     * Scanning for network rules
+     */
+    NetworkRules = 0,
+    /**
+     * Scanning for cosmetic rules
+     */
+    CosmeticRules = 2,
+    /**
+     * Scanning for host rules
+     */
+    HostRules = 4,
+    /**
+     * All
+     */
+    All = 6
+}

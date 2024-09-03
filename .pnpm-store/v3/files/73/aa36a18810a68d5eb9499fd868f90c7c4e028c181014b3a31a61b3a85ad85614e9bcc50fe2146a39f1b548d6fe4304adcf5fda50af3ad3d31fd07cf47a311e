@@ -1,0 +1,35 @@
+{
+  "name": "cidr-tools",
+  "version": "6.4.2",
+  "author": "silverwind <me@silverwind.io>",
+  "description": "Tools to work with IPv4 and IPv6 CIDR",
+  "repository": "silverwind/cidr-tools",
+  "license": "BSD-2-Clause",
+  "type": "module",
+  "exports": "./index.js",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=16"
+  },
+  "files": [
+    "./index.js",
+    "./index.d.ts"
+  ],
+  "dependencies": {
+    "cidr-regex": "4.0.3",
+    "ip-bigint": "7.3.0",
+    "ip-regex": "5.0.0",
+    "string-natural-compare": "3.0.1"
+  },
+  "devDependencies": {
+    "eslint": "8.49.0",
+    "eslint-config-silverwind": "74.1.4",
+    "tsd": "0.29.0",
+    "updates": "15.0.2",
+    "versions": "11.1.0",
+    "vitest": "0.34.4",
+    "vitest-config-silverwind": "3.0.0"
+  }
+}

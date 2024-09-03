@@ -1,0 +1,28 @@
+{
+    "name": "@types/rollup-plugin-node-globals",
+    "version": "1.4.1",
+    "description": "TypeScript definitions for rollup-plugin-node-globals",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/rollup-plugin-node-globals",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Hugo Alliaume",
+            "url": "https://github.com/kocal",
+            "githubUsername": "kocal"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/rollup-plugin-node-globals"
+    },
+    "scripts": {},
+    "dependencies": {
+        "@types/node": "*",
+        "rollup": "^0.63.4"
+    },
+    "typesPublisherContentHash": "49b48794fa8a82937aafb72fa8216127e08a8f917dcbd9af558f8e98c6c0d285",
+    "typeScriptVersion": "3.6"
+}

@@ -1,0 +1,43 @@
+import { WebRequest } from 'webextension-polyfill';
+import { FilteringLog } from '../filtering-log';
+import { NetworkRule } from '../rules/network-rule';
+import OnBeforeSendHeadersDetailsType = WebRequest.OnBeforeSendHeadersDetailsType;
+import OnHeadersReceivedDetailsType = WebRequest.OnHeadersReceivedDetailsType;
+/**
+ * Headers filtering service module
+ */
+export declare class HeadersService {
+    private filteringLog;
+    /**
+     * Constructor
+     *
+     * @param filteringLog
+     */
+    constructor(filteringLog: FilteringLog);
+    /**
+     * On before send headers handler.
+     * Removes request headers.
+     *
+     * @param details
+     * @param rules
+     * @return if headers modified
+     */
+    onBeforeSendHeaders(details: OnBeforeSendHeadersDetailsType, rules: NetworkRule[]): boolean;
+    /**
+     * On headers received handler.
+     * Remove response headers.
+     *
+     * @param details
+     * @param rules
+     * @return if headers modified
+     */
+    onHeadersReceived(details: OnHeadersReceivedDetailsType, rules: NetworkRule[]): boolean;
+    /**
+     * Applies rule to headers
+     *
+     * @param headers
+     * @param rule
+     * @param isRequestHeaders
+     */
+    private static applyRule;
+}

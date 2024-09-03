@@ -1,0 +1,36 @@
+/**
+ * RequestType is the request types enumeration.
+ * Important: the enumeration is marked as const to avoid side effects when
+ * importing it into an extension.
+ */
+export declare const RequestType: {
+    /** No value is set. Syntax sugar to simplify code. */
+    readonly NotSet: 0;
+    /** main frame */
+    readonly Document: 1;
+    /** (iframe) $subdocument */
+    readonly SubDocument: 2;
+    /** (javascript, etc) $script */
+    readonly Script: 4;
+    /** (css) $stylesheet */
+    readonly Stylesheet: 8;
+    /** (flash, etc) $object */
+    readonly Object: 16;
+    /** (any image) $image */
+    readonly Image: 32;
+    /** (ajax/fetch) $xmlhttprequest */
+    readonly XmlHttpRequest: 64;
+    /** (video/music) $media */
+    readonly Media: 128;
+    /** (any custom font) $font */
+    readonly Font: 256;
+    /** (a websocket connection) $websocket */
+    readonly WebSocket: 512;
+    /** (navigator.sendBeacon()) $ping */
+    readonly Ping: 1024;
+    /** csp_report */
+    readonly CspReport: 2048;
+    /** any other request type */
+    readonly Other: 4096;
+};
+export declare type RequestType = typeof RequestType[keyof typeof RequestType];
