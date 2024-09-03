@@ -14,11 +14,7 @@ npmjs:
     image: adguard/node-ssh:18.19--0
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  # run auto-deploy only after successful build
-  triggers:
-    - build-success:
-        # TODO: remove 'branch' after release/v3.1 is merged into master
-        branch: release-v3.1
+  triggers: [ ]
   tasks:
     - checkout:
         force-clean-build: 'true'
