@@ -4,7 +4,10 @@ deployment:
   name: DNR Rulesets - auto deploy
   source-plan: AJL-DNRRULESETSAUTOBUILD
 
-release-naming: ${bamboo.buildNumber}
+release-naming:
+  next-version-name: ${bamboo.inject.version}
+  # TODO: remove the following line after release/v3.1 is merged into master
+  applies-to-branches: true
 
 environments:
   - npmjs
