@@ -102,13 +102,20 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                 // Add prefix if it's not already there
                 let prefix: string;
 
+                // In uBO / ABP syntax, if a parameter contains the separator character, it should be escaped,
+                // but during the conversion, we need to unescape them, because AdGuard syntax uses quotes to
+                // distinguish between parameters.
+                let charToUnescape: string | undefined;
+
                 switch (rule.syntax) {
                     case AdblockSyntax.Abp:
                         prefix = ABP_SCRIPTLET_PREFIX;
+                        charToUnescape = SPACE;
                         break;
 
                     case AdblockSyntax.Ubo:
                         prefix = UBO_SCRIPTLET_PREFIX;
+                        charToUnescape = COMMA_SEPARATOR;
                         break;
 
                     default:
@@ -117,17 +124,6 @@ export class ScriptletRuleConverter extends RuleConverterBase {
 
                 if (!scriptletName.startsWith(prefix)) {
                     setScriptletName(scriptletClone, `${prefix}${scriptletName}`);
-                }
-
-                // In uBO / ABP syntax, if a parameter contains the separator character, it should be escaped,
-                // but during the conversion, we need to unescape them, because AdGuard syntax uses quotes to
-                // distinguish between parameters.
-                let charToUnescape: string | undefined;
-
-                if (rule.syntax === AdblockSyntax.Ubo) {
-                    charToUnescape = COMMA_SEPARATOR;
-                } else if (rule.syntax === AdblockSyntax.Abp) {
-                    charToUnescape = SPACE;
                 }
 
                 if (!isUndefined(charToUnescape)) {
