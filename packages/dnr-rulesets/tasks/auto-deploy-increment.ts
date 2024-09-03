@@ -5,9 +5,11 @@ import packageJson from '../package.json';
 const { version } = packageJson;
 
 /**
- * Delimiter between version from package.json and deployment date and time.
+ * Delimiter for build version that respects semver spec.
+ *
+ * @see https://semver.org/
  */
-const BUILD_DELIMITER = '--';
+const SEMVER_BUILD_DELIMITER = '+';
 
 /**
  * Utility for number formatting.
@@ -48,13 +50,13 @@ function getDeploymentDateString(): string {
 function updateDeployDate(version: string): string {
     const deploymentDateString = getDeploymentDateString();
 
-    const delimiterIndex = version.indexOf(BUILD_DELIMITER);
+    const delimiterIndex = version.indexOf(SEMVER_BUILD_DELIMITER);
 
     if (delimiterIndex > -1) {
         version = version.slice(0, delimiterIndex);
     }
 
-    return `${version}${BUILD_DELIMITER}${deploymentDateString}`;
+    return `${version}${SEMVER_BUILD_DELIMITER}${deploymentDateString}`;
 }
 
 packageJson.version = updateDeployDate(version);
