@@ -18,6 +18,7 @@ import {
     SPACE,
     UBO_HTML_MASK,
     UBO_SCRIPTLET_MASK,
+    UBO_SCRIPTLET_MASK_LEGACY,
 } from '../../utils/constants';
 import {
     type AnyCosmeticRule,
@@ -560,7 +561,7 @@ export class CosmeticRuleParser extends ParserBase {
         };
 
         const parseUboScriptletInjection = (): Pick<ScriptletInjectionRule, RestProps> | null => {
-            if (!rawBody.startsWith(UBO_SCRIPTLET_MASK)) {
+            if (!rawBody.startsWith(UBO_SCRIPTLET_MASK) && !rawBody.startsWith(UBO_SCRIPTLET_MASK_LEGACY)) {
                 return null;
             }
 

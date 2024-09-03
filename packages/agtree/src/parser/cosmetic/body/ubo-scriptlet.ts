@@ -10,6 +10,7 @@ import {
     OPEN_PARENTHESIS,
     SPACE,
     UBO_SCRIPTLET_MASK,
+    UBO_SCRIPTLET_MASK_LEGACY,
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
@@ -182,8 +183,16 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
         // Skip leading spaces
         offset = StringUtils.skipWS(raw, offset);
 
+        let scriptletMaskLength = 0;
+
+        if (raw.startsWith(UBO_SCRIPTLET_MASK, offset)) {
+            scriptletMaskLength = UBO_SCRIPTLET_MASK.length;
+        } else if (raw.startsWith(UBO_SCRIPTLET_MASK_LEGACY, offset)) {
+            scriptletMaskLength = UBO_SCRIPTLET_MASK_LEGACY.length;
+        }
+
         // Scriptlet call should start with "+js"
-        if (!raw.startsWith(UBO_SCRIPTLET_MASK, offset)) {
+        if (!scriptletMaskLength) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.NO_SCRIPTLET_MASK,
                 baseOffset + offset,
@@ -191,7 +200,7 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
             );
         }
 
-        offset += UBO_SCRIPTLET_MASK.length;
+        offset += scriptletMaskLength;
 
         // Whitespace is not allowed after the mask
         if (raw[offset] === SPACE) {
@@ -275,6 +284,7 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
             throw new Error(this.ERROR_MESSAGES.NO_MULTIPLE_SCRIPTLET_CALLS);
         }
 
+        // During generation, we only support the modern scriptlet mask
         result.push(UBO_SCRIPTLET_MASK);
         result.push(OPEN_PARENTHESIS);
 
