@@ -4,9 +4,12 @@ adg_os_any|adg_ext_any:
   name: googlesyndication-adsbygoogle
   aliases:
     - ubo-googlesyndication_adsbygoogle.js
+    - ubo-googlesyndication.com/adsbygoogle.js
     - googlesyndication_adsbygoogle.js
   description: Mocks Google AdSense API.
 
 ubo_any:
   name: googlesyndication_adsbygoogle.js
+  aliases:
+    - googlesyndication.com/adsbygoogle.js
   description: Mocks Google AdSense API.
