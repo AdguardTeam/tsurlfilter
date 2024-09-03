@@ -33,7 +33,9 @@ const redirectNameNormalizer = (name: string): string => {
     }
 
     // Remove :[integer] priority suffix from the name, if present
-    // See https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
+    // See:
+    // - https://github.com/AdguardTeam/tsurlfilter/issues/59
+    // - https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
     const colonIndex = name.lastIndexOf(COLON);
 
     if (colonIndex !== -1 && /^\d+$/.test(name.slice(colonIndex + 1))) {
