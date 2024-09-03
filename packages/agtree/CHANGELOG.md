@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
+## [2.0.1] - 2024-09-??
+
+### Added
+
+- Support for uBO's legacy `script:inject` mask.
+- Support for uBO's redirect priority in the compatibility table name normalization.
+
+### Fixed
+
+- Conversion for uBO's `rc` and `ra` scriptlets.
+- Converter now unescape scriptlet separators from the previous rule, if needed (e.g. it unescape commas when converting
+  from uBO to AG syntax).
 
 ## [2.0.0] - 2024-08-15
 
