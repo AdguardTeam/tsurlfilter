@@ -136,11 +136,17 @@
  *                                       │                             │
  *                                       └─────────────────────────────┘.
  */
-import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
+import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
 
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
+import { HTTPMethod } from '@adguard/tsurlfilter';
+import {
+    getDomain,
+    isExtensionUrl,
+    isHttpOrWsRequest,
+    isHttpRequest,
+} from '../../common/utils/url';
 import { RequestEvents } from './request/events/request-events';
 import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
@@ -620,12 +626,80 @@ export class WebRequestApi {
     }
 
     /**
+     * Applies cosmetic rules to a frame when a service worker prevents the `onBeforeRequest` event
+     * from attributing the request. Called during the `onCommitted` event if no request context exists.
+     *
+     * Determines if the frame is the main document or a sub-frame, retrieves frame rules and URLs,
+     * and applies cosmetic results if a match is found.
+     *
+     * @param details Details of the webNavigation onCommitted event.
+     */
+    private static handleServiceWorkerFrameCosmetics(details: browser.WebNavigation.OnCommittedDetailsType): void {
+        const { tabId, frameId, url } = details;
+
+        if (!isHttpRequest(url)) {
+            return;
+        }
+
+        const mainFrameRule = tabsApi.getTabFrameRule(tabId);
+
+        const requestType = frameId === MAIN_FRAME_ID
+            ? RequestType.Document
+            : RequestType.SubDocument;
+
+        /**
+         * For the main frame, frame URL is empty.
+         */
+        let mainFrameUrl = '';
+
+        /**
+         * If this is not the main frame, we need to get the URL of the main frame.
+         */
+        if (requestType !== RequestType.Document) {
+            const mainFrame = tabsApi.getTabFrame(tabId, MAIN_FRAME_ID);
+            mainFrameUrl = mainFrame?.url || '';
+        }
+
+        const result = engineApi.matchRequest({
+            requestUrl: url,
+            frameUrl: mainFrameUrl,
+            requestType,
+            frameRule: mainFrameRule,
+            method: HTTPMethod.GET,
+        });
+
+        if (!result) {
+            return;
+        }
+
+        const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
+
+        CosmeticApi.applyCosmeticResult({
+            tabId,
+            frameId,
+            cosmeticResult,
+            frameUrl: mainFrameUrl,
+        });
+    }
+
+    /**
      * On WebNavigation.onCommitted event we will try to inject scripts into tab.
      *
      * @param details Navigation event details.
      */
     private static onCommitted(details: browser.WebNavigation.OnCommittedDetailsType): void {
         const { tabId, frameId } = details;
+
+        const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
+
+        /**
+         * In the case when page has service worker, onBeforeRequest can't be attributed with the frame.
+         * That is why it was decided to calculate and inject it onCommited event if there is no request context.
+         */
+        if (!requestContext) {
+            WebRequestApi.handleServiceWorkerFrameCosmetics(details);
+            return;
+        }
 
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
