@@ -12,7 +12,7 @@ import { isNull, isUndefined } from '../utils/type-guards';
  *
  * @param param Parameter to transform (null if the parameter is not present).
  *
- * @returns Transformed parameter (null if the parameter should be removed).
+ * @returns Transformed parameter or null if the parameter should be removed.
  */
 type ParamTransformer = (param: string | null) => string | null;
 
