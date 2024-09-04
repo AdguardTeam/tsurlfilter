@@ -288,6 +288,21 @@ describe('NetworkRuleConverter', () => {
                     '||example.com/resource$script,redirect=noopjs',
                 ],
             },
+
+            // remove suffix from noop.js
+            // https://github.com/AdguardTeam/tsurlfilter/issues/59#issuecomment-1673064170
+            {
+                actual: '||cdn.cookielaw.org^$important,redirect=noop.js:99,script,domain=open.spotify.com',
+                expected: [
+                    '||cdn.cookielaw.org^$important,redirect=noopjs,script,domain=open.spotify.com',
+                ],
+            },
+            {
+                actual: '||cdn.cookielaw.org^$important,redirect=noop.js:100,script,domain=open.spotify.com',
+                expected: [
+                    '||cdn.cookielaw.org^$important,redirect=noopjs,script,domain=open.spotify.com',
+                ],
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(NetworkRuleConverter, 'convertToAdg');
         });

@@ -6,6 +6,29 @@ import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error'
 describe('UboScriptletInjectionBodyParser', () => {
     describe('UboScriptletInjectionBodyParser.parse - valid cases', () => {
         test.each<{ actual: string; expected: NodeExpectFn<ScriptletInjectionRuleBody> }>([
+            // legacy syntax
+            {
+                actual: String.raw`script:inject(foo)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`foo`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`foo`),
+                                        value: String.raw`foo`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
             // escaped chars
             {
                 actual: String.raw`+js('a\'b')`,
