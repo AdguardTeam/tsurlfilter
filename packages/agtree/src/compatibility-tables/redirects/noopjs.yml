@@ -10,6 +10,8 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: noop.js
   description: Redirects to an empty JavaScript file.
+  resource_types:
+    - script
 
 abp_any:
   name: blank-js
