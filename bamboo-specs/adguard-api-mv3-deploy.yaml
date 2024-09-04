@@ -39,7 +39,8 @@ npmjs: &npmjs
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish adguard-api-mv3.tgz $bamboo_publishArgs
   requirements:
-    - adg-docker: true
+    - adg-docker: 'true'
+    - extension: 'true'
   notifications:
     - events:
         - deployment-started-and-finished

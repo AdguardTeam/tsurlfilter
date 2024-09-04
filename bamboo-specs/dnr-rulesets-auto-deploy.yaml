@@ -3,7 +3,12 @@ version: 2
 deployment:
   name: DNR Rulesets - auto deploy
   source-plan: AJL-DNRRULESETSAUTOBUILD
-release-naming: ${bamboo.buildNumber}
+
+release-naming:
+  next-version-name: ${bamboo.inject.version}
+  # TODO: remove the following line after release/v3.1 is merged into master
+  applies-to-branches: true
+
 environments:
   - npmjs
 
@@ -12,7 +17,11 @@ npmjs:
     image: adguard/node-ssh:18.19--0
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  triggers: [ ]
+  # run auto-deploy only after successful build
+  triggers:
+    - build-success:
+        # TODO: remove 'branch' after release/v3.1 is merged into master
+        branch: release-v3.1
   tasks:
     - checkout:
         force-clean-build: 'true'
@@ -20,9 +29,24 @@ npmjs:
         artifacts:
           - name: dnr-rulesets.tgz
     - script:
-      - echo 'Task run successfully!'
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            # Deploy to npm
+            export NPM_TOKEN=${bamboo.npmSecretToken}
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+            npm publish dnr-rulesets.tgz --access public
   requirements:
     - adg-docker: 'true'
+    - extension: 'true'
   notifications:
     - events:
         - deployment-started-and-finished
