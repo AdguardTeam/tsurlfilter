@@ -34,7 +34,7 @@ import { allowlistApi } from './allowlist-api';
 import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
-import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -311,9 +311,7 @@ export class TsWebExtension implements AppInterface<
 
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
-                {
-                    getContent: () => Promise.resolve(configuration.userrules),
-                },
+                { getContent: () => Promise.resolve(configuration.userrules) },
                 true,
             );
 
@@ -324,10 +322,17 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
+            const quickFixesFilter = new Filter(
+                QUICK_FIXES_FILTER_ID,
+                { getContent: () => Promise.resolve(configuration.quickFixesRules) },
+                true,
+            );
+
             // Convert custom filters and user rules into one rule set and apply it
             res.dynamicRules = await UserRulesApi.updateDynamicFiltering(
                 userRulesFilter,
                 allowlistFilter,
+                quickFixesFilter,
                 customFilters,
                 staticRuleSets,
                 this.webAccessibleResourcesPath,

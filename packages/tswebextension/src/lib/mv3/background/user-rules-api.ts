@@ -46,6 +46,7 @@ export default class UserRulesApi {
      *
      * @param userRules Filter with user rules.
      * @param allowlistRules Filter with allowlist rules.
+     * @param quickFixesFilter Filter with hotfix rules.
      * @param customFilters List of custom filters.
      * @param staticRuleSets List of enabled static rule sets to apply
      * $badfilter rules from dynamic rules to static.
@@ -62,11 +63,13 @@ export default class UserRulesApi {
     public static async updateDynamicFiltering(
         userRules: IFilter,
         allowlistRules: IFilter,
+        quickFixesFilter: IFilter,
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
+            quickFixesFilter,
             allowlistRules,
             userRules,
             ...customFilters,

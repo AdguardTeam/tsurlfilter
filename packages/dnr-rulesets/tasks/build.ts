@@ -12,6 +12,7 @@ import {
     FILTERS_METADATA_FILE_NAME,
     FILTERS_METADATA_I18N_FILE_NAME,
     FILTERS_URL,
+    QUICK_FIXES_FILTER_ID,
     RESOURCES_DIR,
 } from './constants';
 import { getI18nMetadata, getMetadata, type Metadata } from './metadata';
@@ -80,7 +81,16 @@ const startDownload = async (): Promise<void> => {
     );
 
     const filters = await getUrlsOfFiltersResources(metadata);
-    await Promise.all(filters.map(filter => downloadFilter(filter, FILTERS_DIR)));
+    await Promise.all(filters.map((filter) => {
+        // We exclude this filter from downloading and conversion,
+        // because it should be loaded from the server on the client and applied
+        // dynamically.
+        if (filter.id === QUICK_FIXES_FILTER_ID) {
+            return Promise.resolve();
+        }
+
+        return downloadFilter(filter, FILTERS_DIR);
+    }));
 };
 
 /**
