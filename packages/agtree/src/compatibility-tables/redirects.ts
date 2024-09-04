@@ -8,6 +8,9 @@ import { redirectsCompatibilityTableData } from './compatibility-table-data';
 import { type CompatibilityTable } from './types';
 import { deepFreeze } from '../utils/deep-freeze';
 import { COLON } from '../utils/constants';
+import { type GenericPlatform, type SpecificPlatform } from './platforms';
+import { RESOURCE_TYPE_MODIFIER_MAP } from './utils/resource-types-helpers';
+import { modifiersCompatibilityTable } from './modifiers';
 
 /**
  * Prefix for resource redirection names.
@@ -56,6 +59,58 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
      */
     constructor(data: CompatibilityTable<RedirectDataSchema>) {
         super(data, redirectNameNormalizer);
+    }
+
+    /**
+     * Gets the resource type modifiers for the redirect based on the `resourceTypes` field.
+     *
+     * @param data Redirect data.
+     * @param platform Platform to get the modifiers for.
+     * @returns Set of resource type modifiers.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public getResourceTypeModifiersByData(
+        data: RedirectDataSchema,
+        platform: SpecificPlatform | GenericPlatform,
+    ): Set<string> {
+        const modifierNames = new Set<string>();
+
+        if (!data.resourceTypes) {
+            return modifierNames;
+        }
+
+        for (const resourceType of data.resourceTypes) {
+            const modifierName = RESOURCE_TYPE_MODIFIER_MAP.get(resourceType);
+
+            if (!modifierName) {
+                continue;
+            }
+
+            const modifierData = modifiersCompatibilityTable.getFirst(modifierName, platform);
+
+            if (modifierData) {
+                modifierNames.add(modifierData.name);
+            }
+        }
+
+        return modifierNames;
+    }
+
+    /**
+     * Gets the resource type modifiers for the redirect based on the `resourceTypes` field.
+     *
+     * @param name Redirect name.
+     * @param platform Platform to get the modifiers for.
+     * @returns Set of resource type modifiers or an empty set if the redirect is not found.
+     */
+    public getResourceTypeModifiers(name: string, platform: SpecificPlatform | GenericPlatform): Set<string> {
+        const resourceData = this.getFirst(name, platform);
+
+        if (!resourceData) {
+            return new Set();
+        }
+
+        return this.getResourceTypeModifiersByData(resourceData, platform);
     }
 }
 
