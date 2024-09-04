@@ -18,6 +18,13 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
         conversionMap: {},
         trusted: true,
     },
+    quickFixesRules: {
+        filterList: [],
+        sourceMap: {},
+        rawFilterList: '',
+        conversionMap: {},
+        trusted: true,
+    },
     verbose: true,
     filtersPath: 'filters',
     ruleSetsPath: 'filters/declarative',

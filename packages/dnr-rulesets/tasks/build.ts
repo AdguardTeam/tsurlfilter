@@ -28,6 +28,7 @@ type FilterDTO = {
 
 /**
  * Gets {@link FilterDTO} array from filter metadata.
+ * AdGuard Quick Fixes filter is excluded from downloading and conversion.
  *
  * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`
  * @returns Array of filter data.
@@ -35,11 +36,16 @@ type FilterDTO = {
 const getUrlsOfFiltersResources = async (
     metadata: Metadata,
 ): Promise<FilterDTO[]> => {
-    return metadata.filters.map(({ filterId }) => ({
-        id: filterId,
-        url: `${FILTERS_URL}/${filterId}.txt`,
-        file: `filter_${filterId}.txt`,
-    }));
+    return metadata.filters
+        // We exclude this filter from downloading and conversion,
+        // because it should be loaded from the server on the client and applied
+        // dynamically.
+        .filter(({ filterId }) => filterId !== QUICK_FIXES_FILTER_ID)
+        .map(({ filterId }) => ({
+            id: filterId,
+            url: `${FILTERS_URL}/${filterId}.txt`,
+            file: `filter_${filterId}.txt`,
+        }));
 };
 
 /**
@@ -81,16 +87,7 @@ const startDownload = async (): Promise<void> => {
     );
 
     const filters = await getUrlsOfFiltersResources(metadata);
-    await Promise.all(filters.map((filter) => {
-        // We exclude this filter from downloading and conversion,
-        // because it should be loaded from the server on the client and applied
-        // dynamically.
-        if (filter.id === QUICK_FIXES_FILTER_ID) {
-            return Promise.resolve();
-        }
-
-        return downloadFilter(filter, FILTERS_DIR);
-    }));
+    await Promise.all(filters.map(filter => downloadFilter(filter, FILTERS_DIR)));
 };
 
 /**

@@ -1,4 +1,4 @@
-const FILTERS_SERVER_URL = 'https://filters.adtidy.org/extension/chromium-mv3';
+const FILTERS_SERVER_URL = 'http://127.0.0.1:8080/platforms/extension/chromium-mv3/';
 
 export const BASE_DIR = './dist';
 export const COMMON_FILTERS_DIR = `${BASE_DIR}/filters`;

@@ -34,6 +34,7 @@ async function updateReadme(metadata: Metadata): Promise<void> {
             desc += `${filter.description}\n\n`;
             desc += `* Filter ID: **${filter.filterId}**\n`;
             if (filter.filterId === QUICK_FIXES_FILTER_ID) {
+                desc += `\n`;
                 continue;
             }
             desc += `* Path: \`<filters-directory>/declarative/ruleset_${filter.filterId}/ruleset_${filter.filterId}.json\`\n\n`;
