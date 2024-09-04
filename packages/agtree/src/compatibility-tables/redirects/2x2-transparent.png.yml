@@ -11,6 +11,8 @@ ubo_any:
   name: 2x2.png
   description: Redirects to a 2x2 transparent PNG.
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#available-empty-redirect-resources
+  resource_types:
+    - image
 
 abp_any:
   name: 2x2-transparent-png

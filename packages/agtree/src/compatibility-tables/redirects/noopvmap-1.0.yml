@@ -9,3 +9,5 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: noop-vmap1.0.xml
   description: Redirects to an empty VMAP 1.0 XML file.
+  resource_types:
+    - media

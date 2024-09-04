@@ -10,6 +10,8 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: noop-0.1s.mp3
   description: Redirects to an empty MP3 file with a duration of 0.1 seconds.
+  resource_types:
+    - media
 
 abp_any:
   name: blank-mp3

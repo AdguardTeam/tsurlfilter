@@ -10,6 +10,8 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: noop.html
   description: Redirects to an empty HTML file.
+  resource_types:
+    - sub_frame
 
 abp_any:
   name: blank-html
