@@ -72,6 +72,10 @@ export class RuleConverter extends RuleConverterBase {
             return CosmeticRuleConverter.convertToUbo(rule);
         }
 
+        if (rule.category === RuleCategory.Network) {
+            return NetworkRuleConverter.convertToUbo(rule);
+        }
+
         return createConversionResult([rule], false);
     }
 }
