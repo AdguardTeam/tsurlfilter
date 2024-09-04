@@ -38,6 +38,7 @@ npmjs:
             npm publish logger.tgz --access public
   requirements:
     - adg-docker: 'true'
+    - extension: 'true'
   notifications:
     - events:
         - deployment-started-and-finished

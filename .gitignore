@@ -5,6 +5,7 @@ node_modules
 .awcache
 .rpt2_cache
 .nx
+.pnpm-store
 
 # IDEA files
 .idea
