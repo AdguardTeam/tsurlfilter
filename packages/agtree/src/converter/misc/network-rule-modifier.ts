@@ -326,6 +326,8 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
 
                 const convertedRedirectResourceName = convertedRedirectResourceData?.name ?? redirectResourceName;
 
+                // uBlock requires the $redirect modifier to have a resource type
+                // https://github.com/AdguardTeam/Scriptlets/issues/101
                 if (convertedRedirectResourceData?.resourceTypes?.length) {
                     // Convert the resource types to uBO modifiers
                     const uboResourceTypeModifiers = redirectsCompatibilityTable.getResourceTypeModifiersByData(
