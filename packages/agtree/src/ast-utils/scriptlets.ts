@@ -8,6 +8,15 @@ import { type QuoteType, QuoteUtils } from '../utils/quotes';
 import { isNull, isUndefined } from '../utils/type-guards';
 
 /**
+ * Function to transform a parameter of the scriptlet node.
+ *
+ * @param param Parameter to transform or null if the parameter is not present.
+ *
+ * @returns Transformed parameter or null if the parameter should be removed.
+ */
+type ParamTransformer = (param: string | null) => string | null;
+
+/**
  * Get name of the scriptlet from the scriptlet node
  *
  * @param scriptletNode Scriptlet node to get name of
@@ -32,11 +41,30 @@ export function getScriptletName(scriptletNode: ParameterList): string {
 export function transformNthScriptletArgument(
     scriptletNode: ParameterList,
     index: number,
-    transform: (value: string) => string,
+    transform: ParamTransformer,
 ): void {
     const child = scriptletNode.children[index];
-    if (!isUndefined(child) && !isNull(child)) {
-        child.value = transform(child.value);
+
+    if (!isUndefined(child)) {
+        const transformed = transform(child?.value ?? null);
+
+        if (isNull(transformed)) {
+            // eslint-disable-next-line no-param-reassign
+            scriptletNode.children[index] = null;
+            return;
+        }
+
+        if (isNull(child)) {
+            // eslint-disable-next-line no-param-reassign
+            scriptletNode.children[index] = {
+                type: 'Value',
+                value: transformed,
+            };
+
+            return;
+        }
+
+        child.value = transformed;
     }
 }
 
@@ -48,7 +76,7 @@ export function transformNthScriptletArgument(
  */
 export function transformAllScriptletArguments(
     scriptletNode: ParameterList,
-    transform: (value: string) => string,
+    transform: ParamTransformer,
 ): void {
     for (let i = 0; i < scriptletNode.children.length; i += 1) {
         transformNthScriptletArgument(scriptletNode, i, transform);
@@ -73,5 +101,7 @@ export function setScriptletName(scriptletNode: ParameterList, name: string): vo
  * @param quoteType Preferred quote type
  */
 export function setScriptletQuoteType(scriptletNode: ParameterList, quoteType: QuoteType): void {
-    transformAllScriptletArguments(scriptletNode, (value) => QuoteUtils.setStringQuoteType(value, quoteType));
+    // null is a special value that means "no value", but we can't change its quote type,
+    // so we need to convert it to empty string
+    transformAllScriptletArguments(scriptletNode, (value) => QuoteUtils.setStringQuoteType(value ?? EMPTY, quoteType));
 }

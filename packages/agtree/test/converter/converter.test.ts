@@ -549,16 +549,17 @@ describe('Converter integration tests', () => {
                     expected: ['example.org#@%#//scriptlet(\'ubo-setTimeout-defuser.js\', \'[native code]\', \'8000\')'],
                 },
 
-                // TODO: Add support for `script:inject` syntax in AGTree
-                // {
-                //     actual: 'example.org#@#script:inject(abort-on-property-read.js, some.prop)',
-                //     expected: ['example.org#@%#//scriptlet(\'ubo-abort-on-property-read.js\', \'some.prop\')'],
-                // },
+                {
+                    actual: 'example.org#@#script:inject(abort-on-property-read.js, some.prop)',
+                    expected: ['example.org#@%#//scriptlet(\'ubo-abort-on-property-read.js\', \'some.prop\')'],
+                },
 
                 {
-                    actual: 'example.org##+js(ra.js, href, a#promo\\, div > .promo\\, a[href*="target"])',
-                    // eslint-disable-next-line max-len
-                    expected: ['example.org#%#//scriptlet(\'ubo-ra.js\', \'href\', \'a#promo\\, div > .promo\\, a[href*="target"]\')'],
+                    actual: String.raw`example.org##+js(ra.js, href, a#promo\, div > .promo\, a[href*="target"])`,
+                    expected: [
+                        // eslint-disable-next-line max-len
+                        String.raw`example.org#%#//scriptlet('ubo-ra.js', 'href', 'a#promo, div > .promo, a[href*="target"]')`,
+                    ],
                 },
 
                 // should convert ABP snippet injection rules

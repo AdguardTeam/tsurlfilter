@@ -23,6 +23,8 @@ ubo_any:
   name: remove-attr.js
   aliases:
     - ra.js
+    - ra
+    - remove-attr
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#remove-attrjs-
   parameters:
     - name: attrs
