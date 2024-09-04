@@ -344,6 +344,7 @@ describe('NetworkRuleConverter', () => {
     });
 
     describe('convertToUbo', () => {
+        // Based on https://github.com/AdguardTeam/Scriptlets/blob/673d48442bb43c7e32caeaeee13a33f94985a9a2/tests/api/index.spec.js#L685-L781
         test.each([
             {
                 actual: '||example.com^$script,redirect=noopjs:99',
