@@ -55,7 +55,7 @@ Ensure that the following software is installed on your computer:
 - [pnpm][pnpm] for package management
 - [Git][git] for version control
 
-> [!NOTE]  
+> [!NOTE]
 > For development, our team uses macOS and Linux. It may be possible that some commands not work on Windows,
 > so if you are using Windows, we recommend using WSL or a virtual machine.
 
@@ -68,10 +68,10 @@ Ensure that the following software is installed on your computer:
 
 Install dependencies with pnpm: `pnpm install`.
 
-> [!NOTE]  
+> [!NOTE]
 > pnpm currently doesn't support installing per package dev dependencies (see https://github.com/pnpm/pnpm/issues/6300).
 
-> [!NOTE]  
+> [!NOTE]
 > If you want to use another linked packages in monorepo workspace, link it in root folder.
 
 This repository uses pnpm workspaces and [Lerna][lerna] to manage multiple packages in a single repository.
