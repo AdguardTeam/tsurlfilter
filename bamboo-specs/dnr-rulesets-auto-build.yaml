@@ -13,7 +13,6 @@ stages:
       final: false
       jobs:
         - Build
-        - Cleanup
 
 Build:
   key: BUILD
