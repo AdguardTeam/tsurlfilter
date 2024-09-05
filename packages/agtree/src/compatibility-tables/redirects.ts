@@ -89,13 +89,13 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
         }
 
         for (const resourceType of redirectData.resourceTypes) {
-            try {
-                const modifierName = getResourceTypeModifier(resourceType, platform);
+            const modifierName = getResourceTypeModifier(resourceType, platform);
 
-                modifierNames.add(modifierName);
-            } catch (e) {
-                // Ignore errors, should not happen during normal operation
+            if (isNull(modifierName)) {
+                continue;
             }
+
+            modifierNames.add(modifierName);
         }
 
         return modifierNames;
