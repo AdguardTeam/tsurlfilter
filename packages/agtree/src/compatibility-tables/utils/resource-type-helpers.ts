@@ -29,25 +29,23 @@ const RESOURCE_TYPE_MODIFIER_MAP: Readonly<Record<ResourceType, string>> = Objec
  * @param resourceType Resource type to get the modifier name for.
  * @param platform Platform to get the modifier for.
  *
- * @returns A string containing the adblock modifier name for the given resource type.
- *
- * @throws Error if the resource type is not found in the map or if the modifier data is not found.
+ * @returns A string containing the adblock modifier name for the given resource type
+ * or `null` if the modifier could not be found.
  */
 export const getResourceTypeModifier = (
     resourceType: ResourceType,
     platform: SpecificPlatform | GenericPlatform,
-): string => {
+): string | null => {
     const modifierName = RESOURCE_TYPE_MODIFIER_MAP[resourceType];
 
     if (!modifierName) {
-        // Should not happen during normal operation
-        throw new Error(`No modifier found for resource type: ${resourceType}`);
+        return null;
     }
 
     const modifierData = modifiersCompatibilityTable.getFirst(modifierName, platform);
 
     if (isNull(modifierData)) {
-        throw new Error(`No modifier data found for modifier: ${modifierName}`);
+        return null;
     }
 
     return modifierData.name;
