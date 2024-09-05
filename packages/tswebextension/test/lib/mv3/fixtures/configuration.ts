@@ -3,11 +3,11 @@ import { LF } from '../../../../src/lib/common/constants';
 import { type ConfigurationMV3 } from '../../../../src/lib/mv3/background/configuration';
 
 const preprocessedUserRules = FilterListPreprocessor.preprocess(
-    ['||example.org^', 'example.com##h1'].join(LF),
+    ['||example.org^', 'example.com##h1', 'baddomain.org$document'].join(LF),
 );
 
 const preprocessedQuickFixes = FilterListPreprocessor.preprocess(
-    ['@@example.com##h1'].join(LF),
+    ['@@baddomain.org$document'].join(LF),
 );
 
 export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
