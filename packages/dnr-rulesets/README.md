@@ -232,6 +232,7 @@ Filter for all known mobile ad networks. Useful for mobile devices.
 Filter to quickly resolve content filtering issues on popular websites without updating the extension.
 
 * Filter ID: **24**
+
 ### Privacy
 
 #### AdGuard Tracking Protection filter
