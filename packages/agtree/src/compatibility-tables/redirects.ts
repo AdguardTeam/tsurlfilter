@@ -62,7 +62,8 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
     }
 
     /**
-     * Gets the resource type modifiers for the redirect based on the `resourceTypes` field.
+     * Gets the resource type adblock modifiers for the redirect for the given platform
+     * based on the `resourceTypes` field.
      *
      * @param redirect Redirect name or redirect data.
      * @param platform Platform to get the modifiers for.
