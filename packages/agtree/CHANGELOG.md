@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 - Support for uBO's legacy `script:inject` mask.
 - Support for uBO's redirect priority in the compatibility table name normalization.
+- `resource_types` field to the redirects compatibility table.
+- Support for converting network rules to uBO syntax.
 
 ### Fixed
 
