@@ -89,6 +89,14 @@ Build:
 
             ls -la
 
+            # TODO: remove the checking after release/v3.1 is merged into master
+            BRANCH="${bamboo.planRepository.branchName}"
+            if [ $BRANCH != "release/v3.1" ]
+            then
+              echo "nothing to clean on branch ${BRANCH}, skipping"
+              exit 0;
+            fi
+
             echo "Size before cleanup:" && du -h | tail -n 1
 
             pnpm --filter @adguard/dnr-rulesets clear
