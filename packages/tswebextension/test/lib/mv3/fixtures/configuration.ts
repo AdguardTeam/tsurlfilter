@@ -6,6 +6,10 @@ const preprocessedUserRules = FilterListPreprocessor.preprocess(
     ['||example.org^', 'example.com##h1'].join(LF),
 );
 
+const preprocessedQuickFixes = FilterListPreprocessor.preprocess(
+    ['@@example.com##h1'].join(LF),
+);
+
 export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     staticFiltersIds: [1, 2],
     customFilters: [],
@@ -13,10 +17,11 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     ruleSetsPath: '',
     allowlist: ['example.com'],
     userrules: {
-        filterList: preprocessedUserRules.filterList,
-        sourceMap: preprocessedUserRules.sourceMap,
-        conversionMap: preprocessedUserRules.conversionMap,
-        rawFilterList: preprocessedUserRules.rawFilterList,
+        ...preprocessedUserRules,
+        trusted: true,
+    },
+    quickFixesRules: {
+        ...preprocessedQuickFixes,
         trusted: true,
     },
     verbose: false,
