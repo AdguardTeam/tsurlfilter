@@ -281,6 +281,7 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
      * If the node was not converted, the result will contain the original node with the same object reference
      * @throws If the conversion is not possible
      */
+    // TODO: Optimize
     public static convertToUbo(modifierList: ModifierList, isException = false): ConversionResult<ModifierList> {
         const conversionMap = new MultiValueMap<number, Modifier>();
         const resourceTypeModifiersToAdd = new Set<string>();
@@ -339,22 +340,27 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                     // If any of resource type is already present, we don't need to add other resource types,
                     // otherwise, add all resource types
                     // TODO: Optimize this logic
-                    if (
-                        convertedRedirectResourceName !== UBO_NOOP_TEXT_RESOURCE
-                        || !modifierList.children.some((modifier) => {
-                            const name = modifier.name.value;
-                            if (!isValidResourceType(name)) {
-                                return false;
-                            }
 
-                            const convertedModifierData = modifiersCompatibilityTable.getFirst(
-                                name,
-                                GenericPlatform.UboAny,
-                            );
+                    // Check if the current resource is the noop text resource
+                    const isNoopTextResource = convertedRedirectResourceName === UBO_NOOP_TEXT_RESOURCE;
 
-                            return uboResourceTypeModifiers.has(convertedModifierData?.name ?? name);
-                        })
-                    ) {
+                    // Determine if there are any valid resource types already present
+                    const hasValidResourceType = modifierList.children.some((modifier) => {
+                        const name = modifier.name.value;
+                        if (!isValidResourceType(name)) {
+                            return false;
+                        }
+
+                        const convertedModifierData = modifiersCompatibilityTable.getFirst(
+                            name,
+                            GenericPlatform.UboAny,
+                        );
+
+                        return uboResourceTypeModifiers.has(convertedModifierData?.name ?? name);
+                    });
+
+                    // If it's not the noop text resource or if no valid resource types are present
+                    if (!isNoopTextResource || !hasValidResourceType) {
                         uboResourceTypeModifiers.forEach((resourceType) => {
                             resourceTypeModifiersToAdd.add(resourceType);
                         });
