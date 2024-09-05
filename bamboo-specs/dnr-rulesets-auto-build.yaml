@@ -59,7 +59,7 @@ Build:
             # Set date to package version
             npx lerna run increment:autodeploy --scope @adguard/dnr-rulesets
     - inject-variables:
-        file: ./packages/dnr-rulesets/dist/build.txt
+        file: packages/dnr-rulesets/dist/build.txt
         scope: RESULT
         namespace: inject
     - any-task:
