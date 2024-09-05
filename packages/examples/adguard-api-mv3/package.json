@@ -1,6 +1,6 @@
 {
     "name": "adguard-api-mv3-example",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "description": "Sample extension based on @adguard/api-mv3",
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0",

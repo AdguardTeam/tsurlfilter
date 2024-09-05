@@ -19,6 +19,8 @@ import {
     adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
     let configuration: Configuration = {
+        // Note: this list should not contain filter 24, because it has not
+        // included in dnr-rulesets, only in the metadata.
         filters: [
             2,
             3,
