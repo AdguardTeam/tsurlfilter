@@ -58,15 +58,11 @@ Build:
 
             # Set date to package version
             npx lerna run increment:autodeploy --scope @adguard/dnr-rulesets
-
-            # Build dnr rulesets
-            npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
-
-            # Move to package folder
-            cd packages/dnr-rulesets
-
-            # Create artifacts
-            pnpm pack && mv adguard-dnr-rulesets-*.tgz dnr-rulesets.tgz
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          commitMessage: 'skipci: Automatic increment build number during auto build'
+          selectedRepository: defaultRepository
     - inject-variables:
         file: ./packages/dnr-rulesets/dist/build.txt
         scope: RESULT
@@ -76,6 +72,19 @@ Build:
         configuration:
           selectedRepository: defaultRepository
           tagName: dnr-rulesets-v${bamboo.inject.version}
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            # Build dnr rulesets after incremented version is committed
+            # since updated tgz file should not be committed
+            npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
+
+            # Move to package folder
+            cd packages/dnr-rulesets
+
+            # Create artifacts
+            pnpm pack && mv adguard-dnr-rulesets-*.tgz dnr-rulesets.tgz
   final-tasks:
     - script:
         interpreter: SHELL
@@ -135,3 +144,20 @@ labels: []
 
 other:
   concurrent-build-plugin: system-default
+
+# TODO: remove the branch-overrides after release/v3.1 is merged into master
+branch-overrides:
+  -
+    ^(release-v3\.1.+|(?!release-v3\.1).*)$:
+      # for branches other than 'release-v3.1' no build should be run
+      stages:
+        - Build:
+            - SkipBuild
+      SkipBuild:
+        key: SKIPBUILD
+        tasks:
+          - script:
+            - echo 'No build for this branch, skipping'
+        requirements:
+          - adg-docker: 'true'
+          - extension: 'true'
