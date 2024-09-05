@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Path to web accessible resources changed from `/adguard/redirects` to
-  `/war/redirects` for correct work of `@adguard/dnr-rulesets`.
+  `/web-accessible-resources/redirects` for correct work of `@adguard/dnr-rulesets`.
 
 ### Added
 

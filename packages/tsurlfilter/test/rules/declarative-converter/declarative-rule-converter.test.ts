@@ -589,7 +589,7 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('converts $redirect rules', async () => {
-        const resourcesPath = '/war/redirects';
+        const resourcesPath = '/web-accessible-resources/redirects';
         const filterId = 0;
 
         const filter = await createScannedFilter(
@@ -624,7 +624,7 @@ describe('DeclarativeRuleConverter', () => {
     });
 
     it('ignores rules with $redirect-rule modifier', async () => {
-        const resourcesPath = '/war/redirects';
+        const resourcesPath = '/web-accessible-resources/redirects';
         const filterId = 0;
 
         const filter = await createScannedFilter(

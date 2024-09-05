@@ -80,7 +80,7 @@ requests to a local "resource" using the `$redirect` rule modifier. You can use
 
 ### Required declarativeNetRequest API assets
 
-**IMPORTANT: To correct work of `$redirect` path should be `/war/redirects`.**
+**IMPORTANT: To correct work of `$redirect` path should be `/web-accessible-resources/redirects`.**
 </br>
 If you are using `@adguard/dnr-rulesets` package, path to web accessible resources is
 built-in into converted rules with `$redirect` modifier and packed inside rulesets.
