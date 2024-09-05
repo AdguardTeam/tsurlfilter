@@ -11,7 +11,7 @@ import { MultiValueMap } from '../../utils/multi-value-map';
 import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result';
 import { cloneModifierListNode } from '../../ast-utils/clone';
 import { GenericPlatform, modifiersCompatibilityTable, redirectsCompatibilityTable } from '../../compatibility-tables';
-import { isValidResourceType } from '../../compatibility-tables/utils/resource-types-helpers';
+import { isValidResourceType } from '../../compatibility-tables/utils/resource-type-helpers';
 import { isUndefined } from '../../utils/type-guards';
 
 /**
@@ -330,7 +330,7 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                 // https://github.com/AdguardTeam/Scriptlets/issues/101
                 if (convertedRedirectResourceData?.resourceTypes?.length) {
                     // Convert the resource types to uBO modifiers
-                    const uboResourceTypeModifiers = redirectsCompatibilityTable.getResourceTypeModifiersByData(
+                    const uboResourceTypeModifiers = redirectsCompatibilityTable.getResourceTypeModifiers(
                         convertedRedirectResourceData,
                         GenericPlatform.UboAny,
                     );
