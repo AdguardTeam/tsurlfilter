@@ -196,7 +196,7 @@ parseRawPlatforms('adg_os_windows|ubo_ext_chrome');
 
 | Method name | Description |
 | --- | --- |
-| `public getResourceTypeModifiers(redirect: string \| RedirectDataSchema platform: SpecificPlatform \| GenericPlatform)` | Get all supported resource type modifiers for a specific redirect. |
+| `getResourceTypeModifiers(redirect: string \| RedirectDataSchema platform: SpecificPlatform \| GenericPlatform)` | Get all supported resource type modifiers for a specific redirect. |
 
 <!-- markdownlint-enable MD013 -->
 
