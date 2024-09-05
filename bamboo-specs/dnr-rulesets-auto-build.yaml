@@ -13,6 +13,7 @@ stages:
       final: false
       jobs:
         - Build
+        - Cleanup
 
 Build:
   key: BUILD
@@ -86,6 +87,10 @@ Build:
             # Create artifacts
             pnpm pack && mv adguard-dnr-rulesets-*.tgz dnr-rulesets.tgz
   final-tasks:
+    - artifact-download:
+        artifacts:
+          - name: dnr-rulesets.tgz
+            destination: packages/dnr-rulesets/
     - script:
         interpreter: SHELL
         scripts:
