@@ -18,3 +18,10 @@ export {
     getPlatformId,
     getSpecificPlatformName,
 } from './utils/platform-helpers';
+export {
+    ResourceType,
+} from './schemas/resource-type';
+export {
+    getResourceTypeModifier,
+    isValidResourceType,
+} from './utils/resource-type-helpers';
