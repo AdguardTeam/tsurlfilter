@@ -1,3 +1,4 @@
+import { isNull } from '../../utils/type-guards';
 import { modifiersCompatibilityTable } from '../modifiers';
 import { type GenericPlatform, type SpecificPlatform } from '../platforms';
 import { ResourceType } from '../schemas/resource-type';
@@ -39,12 +40,13 @@ export const getResourceTypeModifier = (
     const modifierName = RESOURCE_TYPE_MODIFIER_MAP[resourceType];
 
     if (!modifierName) {
+        // Should not happen during normal operation
         throw new Error(`No modifier found for resource type: ${resourceType}`);
     }
 
     const modifierData = modifiersCompatibilityTable.getFirst(modifierName, platform);
 
-    if (!modifierData) {
+    if (isNull(modifierData)) {
         throw new Error(`No modifier data found for modifier: ${modifierName}`);
     }
 
