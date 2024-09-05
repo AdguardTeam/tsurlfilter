@@ -83,8 +83,12 @@ Build:
             # Move to package folder
             cd packages/dnr-rulesets
 
+            ls -la
+
             # Create artifacts
             pnpm pack && mv adguard-dnr-rulesets-*.tgz dnr-rulesets.tgz
+
+            ls -la
   final-tasks:
     - script:
         interpreter: SHELL
