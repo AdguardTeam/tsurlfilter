@@ -58,6 +58,16 @@ Build:
 
             # Set date to package version
             npx lerna run increment:autodeploy --scope @adguard/dnr-rulesets
+
+            # Build dnr rulesets
+            # since updated tgz file should not be committed
+            npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
+
+            # Move to package folder
+            cd packages/dnr-rulesets
+
+            # Create artifacts
+            pnpm pack && mv adguard-dnr-rulesets-*.tgz dnr-rulesets.tgz
     - inject-variables:
         file: packages/dnr-rulesets/dist/build.txt
         scope: RESULT
@@ -72,23 +82,6 @@ Build:
         configuration:
           selectedRepository: defaultRepository
           tagName: dnr-rulesets-v${bamboo.inject.version}
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            # Build dnr rulesets after incremented version is committed
-            # since updated tgz file should not be committed
-            npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
-
-            # Move to package folder
-            cd packages/dnr-rulesets
-
-            ls -la
-
-            # Create artifacts
-            pnpm pack && mv adguard-dnr-rulesets-*.tgz dnr-rulesets.tgz
-
-            ls -la
   final-tasks:
     - script:
         interpreter: SHELL
