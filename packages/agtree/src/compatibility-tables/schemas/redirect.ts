@@ -6,7 +6,7 @@ import zod from 'zod';
 
 import { zodToCamelCase } from '../utils/zod-camelcase';
 import { baseCompatibilityDataSchema, baseRefineLogic, booleanSchema } from './base';
-import { resourceTypeSchema } from './resource-types';
+import { resourceTypeSchema } from './resource-type';
 
 /**
  * Zod schema for redirect data.
