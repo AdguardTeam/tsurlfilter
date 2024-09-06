@@ -10,7 +10,9 @@ import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { MultiValueMap } from '../../utils/multi-value-map';
 import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result';
 import { cloneModifierListNode } from '../../ast-utils/clone';
-import { GenericPlatform, redirectsCompatibilityTable } from '../../compatibility-tables';
+import { GenericPlatform, modifiersCompatibilityTable, redirectsCompatibilityTable } from '../../compatibility-tables';
+import { isValidResourceType } from '../../compatibility-tables/utils/resource-type-helpers';
+import { isUndefined } from '../../utils/type-guards';
 
 /**
  * Modifier conversion interface.
@@ -70,6 +72,11 @@ const REDIRECT_MODIFIER = 'redirect';
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#redirect-rule-modifier}
  */
 const REDIRECT_RULE_MODIFIER = 'redirect-rule';
+
+/**
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Resources-Library#empty-redirect-resources}
+ */
+const UBO_NOOP_TEXT_RESOURCE = 'noop.txt';
 
 /**
  * Redirect-related modifiers.
@@ -257,6 +264,176 @@ export class NetworkRuleModifierListConverter extends ConverterBase {
                         && m.value?.value === modifierNode.value?.value,
                 ) === index,
             );
+
+            return createConversionResult(modifierListClone, true);
+        }
+
+        return createConversionResult(modifierList, false);
+    }
+
+    /**
+     * Converts a network rule modifier list to uBlock format, if possible.
+     *
+     * @param modifierList Network rule modifier list node to convert
+     * @param isException If `true`, the rule is an exception rule
+     * @returns An object which follows the {@link ConversionResult} interface. Its `result` property contains
+     * the converted node, and its `isConverted` flag indicates whether the original node was converted.
+     * If the node was not converted, the result will contain the original node with the same object reference
+     * @throws If the conversion is not possible
+     */
+    // TODO: Optimize
+    public static convertToUbo(modifierList: ModifierList, isException = false): ConversionResult<ModifierList> {
+        const conversionMap = new MultiValueMap<number, Modifier>();
+        const resourceTypeModifiersToAdd = new Set<string>();
+
+        modifierList.children.forEach((modifierNode, index) => {
+            const originalModifierName = modifierNode.name.value;
+            const modifierData = modifiersCompatibilityTable.getFirst(originalModifierName, GenericPlatform.UboAny);
+
+            // Handle special case: resource redirection modifiers
+            if (REDIRECT_MODIFIERS.has(originalModifierName)) {
+                // Redirect modifiers cannot be negated
+                if (modifierNode.exception === true) {
+                    throw new RuleConversionError(
+                        `Modifier '${modifierNode.name.value}' cannot be negated`,
+                    );
+                }
+
+                // Convert the redirect resource name to uBO format
+                const redirectResourceName = modifierNode.value?.value;
+
+                // Special case: for exception rules, $redirect without value is allowed,
+                // and in this case it means an exception for all redirects
+                if (!redirectResourceName && !isException) {
+                    throw new RuleConversionError(
+                        `No redirect resource specified for '${modifierNode.name.value}' modifier`,
+                    );
+                }
+
+                if (!redirectResourceName) {
+                    // Jump to the next modifier if the redirect resource is not specified
+                    return;
+                }
+
+                // Leave $redirect and $redirect-rule modifiers as is, but convert $rewrite to $redirect
+                const modifierName = modifierNode.name.value === ABP_REWRITE_MODIFIER
+                    ? REDIRECT_MODIFIER
+                    : modifierNode.name.value;
+
+                const convertedRedirectResourceData = redirectsCompatibilityTable.getFirst(
+                    redirectResourceName,
+                    GenericPlatform.UboAny,
+                );
+
+                const convertedRedirectResourceName = convertedRedirectResourceData?.name ?? redirectResourceName;
+
+                // uBlock requires the $redirect modifier to have a resource type
+                // https://github.com/AdguardTeam/Scriptlets/issues/101
+                if (convertedRedirectResourceData?.resourceTypes?.length) {
+                    // Convert the resource types to uBO modifiers
+                    const uboResourceTypeModifiers = redirectsCompatibilityTable.getResourceTypeModifiers(
+                        convertedRedirectResourceData,
+                        GenericPlatform.UboAny,
+                    );
+
+                    // Special case: noop text resource
+                    // If any of resource type is already present, we don't need to add other resource types,
+                    // otherwise, add all resource types
+                    // TODO: Optimize this logic
+
+                    // Check if the current resource is the noop text resource
+                    const isNoopTextResource = convertedRedirectResourceName === UBO_NOOP_TEXT_RESOURCE;
+
+                    // Determine if there are any valid resource types already present
+                    const hasValidResourceType = modifierList.children.some((modifier) => {
+                        const name = modifier.name.value;
+                        if (!isValidResourceType(name)) {
+                            return false;
+                        }
+
+                        const convertedModifierData = modifiersCompatibilityTable.getFirst(
+                            name,
+                            GenericPlatform.UboAny,
+                        );
+
+                        return uboResourceTypeModifiers.has(convertedModifierData?.name ?? name);
+                    });
+
+                    // If it's not the noop text resource or if no valid resource types are present
+                    if (!isNoopTextResource || !hasValidResourceType) {
+                        uboResourceTypeModifiers.forEach((resourceType) => {
+                            resourceTypeModifiersToAdd.add(resourceType);
+                        });
+                    }
+                }
+
+                // Check if the modifier name or the redirect resource name is different from the original modifier.
+                // If so, add the converted modifier to the list
+                if (
+                    modifierName !== originalModifierName
+                    || (
+                        !isUndefined(convertedRedirectResourceName)
+                        && convertedRedirectResourceName !== redirectResourceName
+                    )
+                ) {
+                    conversionMap.add(
+                        index,
+                        createModifierNode(
+                            modifierName,
+                            // If the redirect resource name is unknown, fall back to the original one
+                            // Later, the validator will throw an error if the resource name is invalid
+                            convertedRedirectResourceName || redirectResourceName,
+                            modifierNode.exception,
+                        ),
+                    );
+                }
+
+                return;
+            }
+
+            // Generic modifier conversion
+            if (modifierData && modifierData.name !== originalModifierName) {
+                conversionMap.add(
+                    index,
+                    createModifierNode(modifierData.name, modifierNode.value?.value, modifierNode.exception),
+                );
+            }
+        });
+
+        // Prepare the result if there are any converted modifiers or $csp modifiers
+        if (conversionMap.size || resourceTypeModifiersToAdd.size) {
+            const modifierListClone = cloneModifierListNode(modifierList);
+
+            // Replace the original modifiers with the converted ones
+            // One modifier may be replaced with multiple modifiers, so we need to flatten the array
+            modifierListClone.children = modifierListClone.children.map((modifierNode, index) => {
+                const conversionRecord = conversionMap.get(index);
+
+                if (conversionRecord) {
+                    return conversionRecord;
+                }
+
+                return modifierNode;
+            }).flat();
+
+            // Before returning the result, remove duplicated modifiers
+            modifierListClone.children = modifierListClone.children.filter(
+                (modifierNode, index, self) => self.findIndex(
+                    (m) => m.name.value === modifierNode.name.value
+                        && m.exception === modifierNode.exception
+                        && m.value?.value === modifierNode.value?.value,
+                ) === index,
+            );
+
+            if (resourceTypeModifiersToAdd.size) {
+                const modifierNameSet = new Set(modifierList.children.map((m) => m.name.value));
+
+                resourceTypeModifiersToAdd.forEach((resourceType) => {
+                    if (!modifierNameSet.has(resourceType)) {
+                        modifierListClone.children.push(createModifierNode(resourceType));
+                    }
+                });
+            }
 
             return createConversionResult(modifierListClone, true);
         }

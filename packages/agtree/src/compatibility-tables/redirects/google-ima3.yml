@@ -10,3 +10,5 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: google-ima.js
   description: Mocks the IMA SDK of Google.
+  resource_types:
+    - script

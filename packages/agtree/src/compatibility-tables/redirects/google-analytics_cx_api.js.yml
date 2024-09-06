@@ -1,3 +1,6 @@
 # TODO: add description and documentation reference
 ubo_any:
   name: google-analytics_cx_api.js
+  resource_types:
+    - script
+

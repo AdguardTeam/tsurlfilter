@@ -10,6 +10,14 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: noop.txt
   description: Redirects to an empty text file.
+  resource_types:
+    - image
+    - media
+    - sub_frame
+    - stylesheet
+    - script
+    - xmlhttprequest
+    - other
 
 abp_any:
   name: blank-text
