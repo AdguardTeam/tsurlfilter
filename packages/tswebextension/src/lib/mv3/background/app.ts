@@ -346,6 +346,7 @@ export class TsWebExtension implements AppInterface<
                     ...customFilters,
                 ],
                 userrules: configuration.userrules,
+                quickFixesRules: configuration.quickFixesRules,
             });
             await engineApi.waitingForEngine;
 
