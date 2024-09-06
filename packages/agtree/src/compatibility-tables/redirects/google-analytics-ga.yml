@@ -10,3 +10,5 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: google-analytics_ga.js
   description: Mocks old Google Analytics API.
+  resource_types:
+    - script

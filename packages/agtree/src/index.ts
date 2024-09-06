@@ -149,6 +149,9 @@ export {
     isGenericPlatform,
     getPlatformId,
     getSpecificPlatformName,
+    ResourceType,
+    getResourceTypeModifier,
+    isValidResourceType,
 } from './compatibility-tables';
 
 export { defaultParserOptions, type ParserOptions } from './parser/options';
