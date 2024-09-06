@@ -47,7 +47,7 @@ export class PositionProvider {
         this.lineStartOffsets = [0];
 
         let currentLine = 0;
-        for (let i = 0; i < sourceCode.length; i += 1) {
+        for (let i = 0; i <= sourceCode.length; i += 1) {
             this.offsetToLine[i] = currentLine;
 
             // Handle different types of line breaks: LF, FF, and CR
@@ -72,7 +72,7 @@ export class PositionProvider {
      * @returns A Position object containing the 1-based line and column number, or null if the offset is out of range.
      */
     convertOffsetToPosition(offset: number): Position | null {
-        if (offset < 0 || offset >= this.offsetToLine.length) {
+        if (offset < 0 || offset > this.offsetToLine.length) {
             return null;
         }
 
