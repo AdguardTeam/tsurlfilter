@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
+## [2.0.2] - 2024-09-06
+
+### Fixed
+
+- Handling last position in `PositionProvider`.
+
+[2.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.0.2
+
 ## [2.0.1] - 2024-09-06
 
 ### Added
