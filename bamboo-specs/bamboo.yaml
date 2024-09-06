@@ -14,9 +14,6 @@
 !include 'tsurlfilter-permissions.yaml'
 
 ---
-!include 'tswebextension-tests.yaml'
-
----
 !include 'tswebextension-build.yaml'
 
 ---
@@ -44,9 +41,6 @@
 !include 'adguard-api-permissions.yaml'
 
 ---
-!include 'agtree-test.yaml'
-
----
 !include 'agtree-increment.yaml'
 
 ---
@@ -57,9 +51,6 @@
 
 ---
 !include 'agtree-permissions.yaml'
-
----
-!include 'css-tokenizer-test.yaml'
 
 ---
 !include 'css-tokenizer-increment.yaml'
@@ -84,18 +75,6 @@
 
 ---
 !include 'logger-permissions.yaml'
-
----
-!include 'logger-test.yaml'
-
----
-!include 'examples-adguard-api-tests.yaml'
-
----
-!include 'examples-tswebextension-mv2-tests.yaml'
-
----
-!include 'examples-tswebextension-mv3-tests.yaml'
 
 ---
 !include 'adguard-api-mv3-build.yaml'
@@ -129,6 +108,3 @@
 
 ---
 !include 'dnr-rulesets-auto-deploy-permissions.yaml'
-
----
-!include 'examples-adguard-api-mv3-tests.yaml'
