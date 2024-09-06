@@ -11,7 +11,8 @@
     "run:ff": "node -r @swc-node/register ./scripts/launchFirefoxExtension.ts",
     "test": "node -r @swc-node/register ./scripts/browser-test/index.ts",
     "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts' && tsc --noEmit",
-    "tswebextension": "tswebextension"
+    "tswebextension": "tswebextension",
+    "clean": "rimraf build"
   },
   "dependencies": {
     "@adguard/tswebextension": "workspace:^",
@@ -42,6 +43,7 @@
     "html-webpack-plugin": "^5.5.0",
     "jsdom": "^18.1.1",
     "playwright": "^1.19.0-alpha-jan-19-2022",
+    "rimraf": "^6.0.1",
     "style-loader": "^3.3.1",
     "swc-loader": "^0.2.3",
     "typescript": "^5.4.4",
