@@ -12,7 +12,8 @@
     "build:precompile-rules": "node -r @swc-node/register ./scripts/precompile-rules.ts",
     "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts' && tsc --noEmit",
     "tswebextension": "tswebextension",
-    "test": "rimraf tmp && cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 node -r @swc-node/register ./scripts/browser-test/index.ts"
+    "test": "rimraf tmp && cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 node -r @swc-node/register ./scripts/browser-test/index.ts",
+    "clean": "rimraf build && rimraf extension/filters"
   },
   "dependencies": {
     "@adguard/tswebextension": "workspace:^",
@@ -42,7 +43,7 @@
     "fs-extra": "^10.1.0",
     "html-webpack-plugin": "^5.5.0",
     "playwright": "^1.27.1",
-    "rimraf": "^3.0.2",
+    "rimraf": "^6.0.1",
     "style-loader": "^3.3.1",
     "swc-loader": "^0.2.3",
     "typescript": "5.4.3",

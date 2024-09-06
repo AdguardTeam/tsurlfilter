@@ -23,48 +23,49 @@ Test:
   tasks:
     - checkout:
         force-clean-build: 'true'
+    # Each script is separate because, otherwise, Bamboo does not fail in the case of an error.
     - script:
         interpreter: SHELL
         scripts:
-          - |-
-            set -e
-            set -x
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -alt
-
-            # Set cache directory
-            pnpm config set store-dir ${bamboo.cachePnpm}
-
-            branch="${bamboo_planRepository_branchName}"
-            target_branch="${bamboo_repository_pr_targetBranch:-master}"
-
-            is_root_affected() {
-              git diff --name-only "${target_branch}"...HEAD | grep -v '^packages/' > /dev/null
-            }
-
-            is_project_affected() {
-              local project_name="$1"
-              pnpm list --filter "...[${target_branch}]" --depth=-1 | grep -q "${project_name}"
-            }
-
-            if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/tsurlfilter"; then
-              echo "No changes in project, skipping tests"
-              exit 0;
-            fi
-
-            # Install dependencies
-            pnpm install
-
-            # Build dependencies, then the package itself
-            pnpm --filter "@adguard/tsurlfilter..." --depth=-1 build
-
-            pnpm --filter @adguard/tsurlfilter lint
-
-            # IMPORTANT: run tests after the build because smoke tests requires tsurlfilter to have built dist dir
-            pnpm --filter @adguard/tsurlfilter test:prod
+          - bamboo-specs/scripts/setup-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/agtree-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/css-tokenizer-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/examples-adguard-api-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/logger-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/tsurlfilter-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/tswebextension-tests.sh
+  artifacts:
+    - name: examples-adguard-api-extension.zip
+      location: packages/examples/adguard-api/build
+      pattern: extension.zip
+      shared: false
+      required: false
   final-tasks:
     - script:
         interpreter: SHELL
@@ -80,8 +81,14 @@ Test:
 
             echo "Size before cleanup:" && du -h | tail -n 1
 
+            du -h . | sort -hr | head -n 30
+
             # Check if node_modules directory exists
             if [ -d "node_modules" ]; then
+              # to run clean commands in the packages
+              pnpm -r clean
+
+              # to remove node_modules
               pnpm clean
             else
               echo "node_modules directory does not exist, skipping pnpm clean"
