@@ -1,6 +1,6 @@
 {
     "name": "@adguard/agtree",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Universal adblock filter list parser.",
     "keywords": [
         "adblock",

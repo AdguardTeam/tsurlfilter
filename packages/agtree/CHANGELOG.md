@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
-## Unreleased
+## [2.0.1] - 2024-09-06
 
 ### Added
 
@@ -22,6 +22,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Conversion for uBO's `rc` and `ra` scriptlets.
 - Converter now unescape scriptlet separators from the previous rule, if needed (e.g. it unescape commas when converting
   from uBO to AG syntax).
+
+[2.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.0.1
 
 ## [2.0.0] - 2024-08-15
 
