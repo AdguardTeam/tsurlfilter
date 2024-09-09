@@ -8,11 +8,9 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import externals from 'rollup-plugin-node-externals';
 import dtsPlugin from 'rollup-plugin-dts';
-import nodePolyfills from 'rollup-plugin-polyfill-node';
 import alias from '@rollup/plugin-alias';
 import { getBabelOutputPlugin } from '@rollup/plugin-babel';
 import json from '@rollup/plugin-json';
-import terser from '@rollup/plugin-terser';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
 import { type Plugin } from 'rollup';
@@ -64,7 +62,7 @@ const typeScriptPlugin = typescript({
 });
 
 // Common plugins for all types of builds
-const commonPlugins = [
+export const commonPlugins = [
     alias({
         entries: [
             // replace dynamic compatibility table data builder with the pre-built data file
@@ -118,55 +116,6 @@ export const getNodePlugins = (esm = false): Plugin[] => [
         ],
         allowAllFormats: true,
         compact: false,
-    }),
-];
-
-// Plugins for browser builds
-export const browserPlugins = [
-    ...commonPlugins,
-    nodePolyfills(),
-    // The build of CSSTree is a bit complicated (patches, require "emulation", etc.),
-    // so here we only specify the pre-built version by an alias
-    alias({
-        entries: [
-            {
-                find: '@adguard/ecss-tree',
-                replacement: path.resolve(
-                    'node_modules/@adguard/ecss-tree/dist/ecsstree.umd.min.js',
-                ),
-            },
-        ],
-    }),
-    // Provide better browser compatibility with Babel
-    getBabelOutputPlugin({
-        presets: [
-            [
-                '@babel/preset-env',
-                {
-                    targets: {
-                        browsers: [
-                            'chrome >= 80',
-                            'firefox >= 78',
-                            'edge >= 80',
-                            'opera >= 67',
-                            'safari >= 14',
-                        ],
-                    },
-                },
-            ],
-        ],
-        allowAllFormats: true,
-        compact: false,
-    }),
-    // Minify the output with Terser
-    terser({
-        output: {
-            // Keep the banner in the minified output
-            preamble: banner,
-        },
-        compress: {
-            passes: 3,
-        },
     }),
 ];
 
