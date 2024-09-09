@@ -22,7 +22,6 @@
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme",
     "main": "dist/agtree.cjs",
     "module": "dist/agtree.esm.js",
-    "browser": "dist/agtree.umd.min.js",
     "types": "dist/agtree.d.ts",
     "exports": {
         ".": {

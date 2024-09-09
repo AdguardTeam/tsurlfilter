@@ -28,7 +28,7 @@ export const isNull = (value: unknown): value is null => {
  * @returns `true` if the value is a number, `false` otherwise.
  */
 export const isNumber = (value: unknown): value is number => {
-    return typeof value === 'number';
+    return typeof value === 'number' && !Number.isNaN(value);
 };
 
 /**
@@ -39,7 +39,7 @@ export const isNumber = (value: unknown): value is number => {
  * @returns `true` if the value is an integer, `false` otherwise.
  */
 export const isInteger = (value: unknown): value is number => {
-    return isNumber(value) && Number.isInteger(value);
+    return Number.isInteger(value);
 };
 
 /**
