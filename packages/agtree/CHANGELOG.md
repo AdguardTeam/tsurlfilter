@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
-## [2.0.2] - 2024-09-09
+## [2.0.2] - 2024-09-10
 
 ### Fixed
 
