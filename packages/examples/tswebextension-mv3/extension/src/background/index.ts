@@ -21,7 +21,7 @@ declare global {
     }
 }
 
-const tsWebExtension = new TsWebExtension('/war/redirects');
+const tsWebExtension = new TsWebExtension('/web-accessible-resources/redirects');
 await tsWebExtension.initStorage();
 
 tsWebExtension.onAssistantCreateRule.subscribe((rule) => {

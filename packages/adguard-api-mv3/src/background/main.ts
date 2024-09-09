@@ -32,7 +32,7 @@ import { RequestBlockingLogger } from './request-blocking-logger';
  * - content blocking via AdGuard Assistant UI, provided by {@link TsWebExtension}.
  */
 export class AdguardApi {
-    private static readonly WEB_ACCESSIBLE_RESOURCES_PATH = '/adguard/redirects';
+    private static readonly WEB_ACCESSIBLE_RESOURCES_PATH = '/web-accessible-resources/redirects';
 
     private static readonly DECLARATIVE_RULES_PATH = '/declarative';
 
@@ -169,15 +169,16 @@ export class AdguardApi {
         };
 
         if (this.configuration.rules) {
-            // TODO: Change the interface later
-            const convertedUserRules = FilterListPreprocessor.preprocess(this.configuration.rules.join(LF));
-
-            userrules.sourceMap = convertedUserRules.sourceMap;
-            userrules.filterList = convertedUserRules.filterList;
-            userrules.conversionMap = convertedUserRules.conversionMap;
-            userrules.rawFilterList = convertedUserRules.rawFilterList;
-            userrules.trusted = true;
+            Object.assign(userrules, FilterListPreprocessor.preprocess(this.configuration.rules.join(LF)));
         }
+
+        const quickFixesRules: TsWebExtensionConfiguration['quickFixesRules'] = {
+            filterList: [],
+            sourceMap: {},
+            rawFilterList: '',
+            conversionMap: {},
+            trusted: true,
+        };
 
         return {
             filtersPath: this.configuration.assetsPath,
@@ -188,8 +189,8 @@ export class AdguardApi {
             staticFiltersIds: this.configuration.filters,
             allowlist,
             userrules,
+            quickFixesRules,
             settings: {
-                documentBlockingPageUrl: 'whatever',
                 assistantUrl: 'adguard-assistant.js',
                 // Related stealth option is disabled
                 gpcScriptUrl: 'whatever',

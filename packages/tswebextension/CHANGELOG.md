@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Added new field to MV3 config: `quickFixesRules` which will be applied to
+  the dynamic rules.
+
 ### Added
 
 - `companyCategoryName` property in filtering log `ApplyBasicRuleEvent` for `$redirect` rules [#137].

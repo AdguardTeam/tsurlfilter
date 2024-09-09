@@ -13,11 +13,11 @@ import { getErrorMessage } from '../../common/error';
 export type { ConversionResult };
 
 /**
- * UserRulesApi knows how to handle dynamic rules: apply a list of custom
- * filters along with user rules and disable all dynamic rules
- * when the filtration is stopped.
+ * DynamicRulesApi knows how to handle dynamic rules: apply a list of custom
+ * filters along with user rules, allowlist and quick fixes rules and disable
+ * all dynamic rules when the filtration is stopped.
  */
-export default class UserRulesApi {
+export default class DynamicRulesApi {
     /**
      * The maximum number of regular expression rules that an extension can add.
      * This limit is evaluated separately for the set of session rules,
@@ -44,8 +44,15 @@ export default class UserRulesApi {
      * Converts custom filters and user rules on the fly into a single merged
      * rule set and applies it via the declarativeNetRequest API.
      *
-     * @param userRules Filter with user rules.
+     * Filters will combine into one in following order:
+     * - quickFixesFilter - they are most important and should be applied first,
+     * - allowlistRules,
+     * - userRules,
+     * - customFilters.
+     *
+     * @param quickFixesFilter Filter with hotfix rules.
      * @param allowlistRules Filter with allowlist rules.
+     * @param userRules Filter with user rules.
      * @param customFilters List of custom filters.
      * @param staticRuleSets List of enabled static rule sets to apply
      * $badfilter rules from dynamic rules to static.
@@ -60,13 +67,15 @@ export default class UserRulesApi {
      * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}
      */
     public static async updateDynamicFiltering(
-        userRules: IFilter,
+        quickFixesFilter: IFilter,
         allowlistRules: IFilter,
+        userRules: IFilter,
         customFilters: IFilter[],
         staticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
+            quickFixesFilter,
             allowlistRules,
             userRules,
             ...customFilters,
@@ -80,8 +89,8 @@ export default class UserRulesApi {
             staticRuleSets,
             {
                 resourcesPath,
-                maxNumberOfRules: UserRulesApi.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
-                maxNumberOfRegexpRules: UserRulesApi.MAX_NUMBER_OF_REGEX_RULES,
+                maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
+                maxNumberOfRegexpRules: DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
             },
         );
         const { ruleSet, declarativeRulesToCancel } = conversionResult;
