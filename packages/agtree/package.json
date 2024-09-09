@@ -20,18 +20,15 @@
         "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
     },
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme",
-    "main": "dist/agtree.cjs",
-    "module": "dist/agtree.esm.js",
+    "main": "dist/agtree.js",
+    "module": "dist/agtree.mjs",
     "types": "dist/agtree.d.ts",
     "exports": {
         ".": {
             "types": "./dist/agtree.d.ts",
-            "import": "./dist/agtree.esm.js",
-            "require": "./dist/agtree.cjs"
-        },
-        "./es": "./dist/agtree.esm.js",
-        "./iife": "./dist/agtree.iife.min.js",
-        "./umd": "./dist/agtree.umd.min.js"
+            "import": "./dist/agtree.mjs",
+            "require": "./dist/agtree.js"
+        }
     },
     "files": [
         "dist"
