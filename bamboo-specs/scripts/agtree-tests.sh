@@ -23,4 +23,7 @@ pnpm --filter @adguard/agtree lint
 # Run tests with Jest
 pnpm --filter @adguard/agtree test
 
+# Run smoke tests
+pnpm --filter @adguard/agtree test:smoke
+
 echo "@adguard/agtree tests completed"
