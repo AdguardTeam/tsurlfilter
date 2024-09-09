@@ -25,7 +25,8 @@
     ],
     "exclude": [
         "./node_modules",
-        "./dist"
+        "./dist",
+        "./test/smoke/typescript"
     ],
     "ts-node": {
         "swc": true,

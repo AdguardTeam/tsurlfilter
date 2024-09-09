@@ -51,7 +51,8 @@
         "lint:md": "markdownlint .",
         "lint:ts": "eslint . --cache --ext .ts",
         "precommit": "pnpm check-types && pnpm lint && pnpm test",
-        "test": "jest --runInBand"
+        "test": "jest --runInBand",
+        "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/cjs && pnpm test) && (cd test/smoke/typescript && pnpm test)"
     },
     "devDependencies": {
         "@babel/core": "^7.22.5",
