@@ -80,6 +80,17 @@ requests to a local "resource" using the `$redirect` rule modifier. You can use
 
 ### Required declarativeNetRequest API assets
 
+**IMPORTANT: To correct work of `$redirect` path should be `/web-accessible-resources/redirects`.**
+<br>
+If you are using `@adguard/dnr-rulesets` package, path to web accessible resources is
+built-in into converted rules with `$redirect` modifier and packed inside rulesets.
+
+**IMPORTANT**: AdGuard Quick Fixes filter with id 24 filter's source and converted
+ruleset **excluded** from the build of `@adguard/dnr-rulesets`, but left in metadata.
+<br>
+Because it should used via periodically updating from the remote in the runtime
+and passed as part of dynamic rules - `Configuration.rules`.
+
 AdGuard API MV3 requires prebuilt DNR rule sets to be able to filter web requests. You can use
 [@adguard/dnr-rulesets CLI](../dnr-rulesets/README.md) to download it. We also provide a extension example with scripts for loading DNR rulesets and patching manifest in the [examples/adguard-api-mv3](../examples/adguard-api-mv3/) directory.
 

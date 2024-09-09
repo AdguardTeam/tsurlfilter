@@ -14,7 +14,7 @@ import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
-import UserRulesApi, { type ConversionResult } from './user-rules-api';
+import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
 import { declarativeFilteringLog } from './declarative-filtering-log';
@@ -34,7 +34,7 @@ import { allowlistApi } from './allowlist-api';
 import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
-import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -214,7 +214,7 @@ export class TsWebExtension implements AppInterface<
      * Removes all static and dynamic DNR rules and stops tsurlfilter engine.
      */
     private static async removeAllFilteringRules(): Promise<void> {
-        await UserRulesApi.removeAllRules();
+        await DynamicRulesApi.removeAllRules();
 
         const disableFiltersIds = await FiltersApi.getEnabledRuleSets();
         await FiltersApi.updateFiltering(disableFiltersIds);
@@ -311,9 +311,7 @@ export class TsWebExtension implements AppInterface<
 
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
-                {
-                    getContent: () => Promise.resolve(configuration.userrules),
-                },
+                { getContent: () => Promise.resolve(configuration.userrules) },
                 true,
             );
 
@@ -324,10 +322,18 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
-            // Convert custom filters and user rules into one rule set and apply it
-            res.dynamicRules = await UserRulesApi.updateDynamicFiltering(
-                userRulesFilter,
+            const quickFixesFilter = new Filter(
+                QUICK_FIXES_FILTER_ID,
+                { getContent: () => Promise.resolve(configuration.quickFixesRules) },
+                true,
+            );
+
+            // Convert quick fixes rules, allowlist, custom filters and user
+            // rules into one rule set and apply it.
+            res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
+                quickFixesFilter,
                 allowlistFilter,
+                userRulesFilter,
                 customFilters,
                 staticRuleSets,
                 this.webAccessibleResourcesPath,
@@ -340,6 +346,7 @@ export class TsWebExtension implements AppInterface<
                     ...customFilters,
                 ],
                 userrules: configuration.userrules,
+                quickFixesRules: configuration.quickFixesRules,
             });
             await engineApi.waitingForEngine;
 

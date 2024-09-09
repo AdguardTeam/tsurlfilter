@@ -25,11 +25,11 @@ import { type ConfigurationMV3 } from './configuration';
 import { allowlistApi } from './allowlist-api';
 import { DocumentApi } from './document-api';
 import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
-import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 
-type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'verbose'> & {
+type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'quickFixesRules' | 'verbose'> & {
     filters: IFilter[],
 };
 
@@ -71,10 +71,15 @@ export class EngineApi {
      * wrapped in filters or custom rules.
      *
      * @param config {@link EngineConfig} Which contains filters (static and
-     * custom), custom rules and the verbose flag.
+     * custom), custom rules, quick fixes rules and the verbose flag.
      */
     async startEngine(config: EngineConfig): Promise<void> {
-        const { filters, userrules, verbose } = config;
+        const {
+            filters,
+            userrules,
+            quickFixesRules,
+            verbose,
+        } = config;
 
         const lists: IRuleList[] = [];
 
@@ -111,6 +116,20 @@ export class EngineApi {
                     false,
                     false,
                     userrules.sourceMap,
+                ),
+            );
+        }
+
+        if (quickFixesRules.filterList.length > 0) {
+            // Note: rules are already converted at the extension side
+            lists.push(
+                new BufferRuleList(
+                    QUICK_FIXES_FILTER_ID,
+                    quickFixesRules.filterList,
+                    false,
+                    false,
+                    false,
+                    quickFixesRules.sourceMap,
                 ),
             );
         }

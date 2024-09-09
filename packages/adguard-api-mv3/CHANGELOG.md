@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Path to web accessible resources changed from `/adguard/redirects` to
+  `/web-accessible-resources/redirects` for correct work of `@adguard/dnr-rulesets`.
+
 ### Added
 
 - `adguardApi.onRequestBlocking` event data now contains `companyCategoryName` property for `$redirect` rules [#137].

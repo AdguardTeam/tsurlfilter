@@ -225,6 +225,14 @@ Filter for all known mobile ad networks. Useful for mobile devices.
 * Filter ID: **11**
 * Path: `<filters-directory>/declarative/ruleset_11/ruleset_11.json`
 
+#### AdGuard Quick Fixes filter
+
+**IMPORTANT:** This filter is not convertible (excluded from build), but it is still included in the metadata. It should be downloaded from the server on the client and applied dynamically. 
+
+Filter to quickly resolve content filtering issues on popular websites without updating the extension.
+
+* Filter ID: **24**
+
 ### Privacy
 
 #### AdGuard Tracking Protection filter

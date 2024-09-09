@@ -4,7 +4,7 @@ export const BUILD_PATH = path.join(__dirname, '../build/extension');
 
 export const BUILD_ZIP_FILE_NAME = 'extension.zip';
 
-export const WEB_ACCESSIBLE_RESOURCES_PATH = path.join(__dirname, '../build/extension/adguard');
+export const WEB_ACCESSIBLE_RESOURCES_PATH = path.join(__dirname, '../build/extension/war');
 
 export const BACKGROUND_PATH = path.join(__dirname, '../extension/pages/background');
 
