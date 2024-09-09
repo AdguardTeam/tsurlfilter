@@ -16,7 +16,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Removed
 
-- `browser` field from `package.json`.
+- Browser-specific builds. If you need to use AGTree in browser environment, you can use jsDelivr's automatic builds
+  or bundlers like Webpack / Rollup / ESBuild without any issues, AGTree does not have any non-browser-compatible code.
 
 [2.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.0.2
 
