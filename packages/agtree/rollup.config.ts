@@ -175,7 +175,7 @@ const cjs = {
     input: path.join(ROOT_DIR, 'src', 'index.ts'),
     output: [
         {
-            file: path.join(distDir, `${BASE_FILE_NAME}.cjs`),
+            file: path.join(distDir, `${BASE_FILE_NAME}.js`),
             format: 'cjs',
             exports: 'auto',
             sourcemap: false,
@@ -190,43 +190,13 @@ const esm = {
     input: path.join(ROOT_DIR, 'src', 'index.ts'),
     output: [
         {
-            file: path.join(distDir, `${BASE_FILE_NAME}.esm.js`),
+            file: path.join(distDir, `${BASE_FILE_NAME}.mjs`),
             format: 'esm',
             sourcemap: false,
             banner,
         },
     ],
     plugins: getNodePlugins(),
-};
-
-// Browser-friendly UMD build configuration
-const umd = {
-    input: path.join(ROOT_DIR, 'src', 'index.ts'),
-    output: [
-        {
-            file: path.join(distDir, `${BASE_FILE_NAME}.umd.min.js`),
-            name: BASE_NAME,
-            format: 'umd',
-            sourcemap: false,
-            banner,
-        },
-    ],
-    plugins: browserPlugins,
-};
-
-// Browser-friendly IIFE build configuration
-const iife = {
-    input: path.join(ROOT_DIR, 'src', 'index.ts'),
-    output: [
-        {
-            file: path.join(distDir, `${BASE_FILE_NAME}.iife.min.js`),
-            name: BASE_NAME,
-            format: 'iife',
-            sourcemap: false,
-            banner,
-        },
-    ],
-    plugins: browserPlugins,
 };
 
 // Merge .d.ts files (requires `tsc` to be run first,
@@ -247,4 +217,4 @@ const dts = {
 };
 
 // Export build configs for Rollup
-export default [cjs, esm, umd, iife, dts];
+export default [cjs, esm, dts];
