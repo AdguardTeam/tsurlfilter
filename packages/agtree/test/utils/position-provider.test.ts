@@ -37,12 +37,22 @@ describe('PositionProvider', () => {
             }
         });
 
+        test('should work for input.length', () => {
+            const fixture = fixtureMatrix.map((line) => line.join(EMPTY)).join(LF);
+            const provider = new PositionProvider(fixture);
+
+            expect(provider.convertOffsetToPosition(fixture.length)).toEqual({
+                line: fixtureMatrix.length,
+                column: fixtureMatrix[fixtureMatrix.length - 1].length + 1,
+            });
+        });
+
         test('should return null for invalid offsets', () => {
             const fixture = fixtureMatrix.map((line) => line.join(EMPTY)).join(LF);
             const provider = new PositionProvider(fixture);
 
             expect(provider.convertOffsetToPosition(-1)).toBeNull();
-            expect(provider.convertOffsetToPosition(fixture.length)).toBeNull();
+            expect(provider.convertOffsetToPosition(fixture.length + 1)).toBeNull();
         });
     });
 });

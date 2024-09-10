@@ -8,4 +8,4 @@ node_modules
 .eslintcache
 
 # Release file for npm.
-agtree.tgz
+*.tgz
