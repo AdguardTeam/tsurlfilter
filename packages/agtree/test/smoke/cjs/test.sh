@@ -3,7 +3,7 @@
 set -e  # Exit on error
 
 # pack @adguard/agtree
-curr_path="tests/smoke/cjs"
+curr_path="test/smoke/cjs"
 agtree="agtree.tgz"
 nm_path="node_modules"
 

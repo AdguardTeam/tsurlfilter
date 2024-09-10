@@ -2,7 +2,7 @@
 
 set -e  # Exit on error
 
-curr_path="tests/smoke/typescript"
+curr_path="test/smoke/typescript"
 agtree="agtree.tgz"
 nm_path="node_modules"
 
