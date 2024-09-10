@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
+## [2.0.2] - 2024-09-10
+
+### Fixed
+
+- Handling last position in `PositionProvider`.
+
+### Removed
+
+- Browser-specific builds. If you need to use AGTree in browser environment, you can use jsDelivr's automatic builds
+  or bundlers like Webpack / Rollup / ESBuild without any issues, AGTree does not have any non-browser-compatible code.
+
+[2.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.0.2
+
 ## [2.0.1] - 2024-09-06
 
 ### Added

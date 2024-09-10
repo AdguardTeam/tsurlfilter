@@ -5,7 +5,7 @@
  */
 import { rollup } from 'rollup';
 
-import { browserPlugins } from '../../rollup.config';
+import { commonPlugins } from '../../rollup.config';
 
 /**
  * Create an IIFE bundle for the browser environment.
@@ -20,7 +20,7 @@ import { browserPlugins } from '../../rollup.config';
 export const buildIife = async (input: string, name: string): Promise<string> => {
     const bundle = await rollup({
         input,
-        plugins: browserPlugins,
+        plugins: commonPlugins,
     });
 
     const { output } = await bundle.generate({
