@@ -324,6 +324,77 @@ describe('AdgScriptletInjectionBodyParser', () => {
                     );
                 },
             },
+            {
+                actual: String.raw`//scriptlet('foo', "bar")`,
+                //                                    ~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_INCONSISTENT_QUOTES,
+                        ...context.toTuple(context.getRangeFor(String.raw`"bar")`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', "bar", 'baz')`,
+                //                                    ~~~~~~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_INCONSISTENT_QUOTES,
+                        ...context.toTuple(context.getRangeFor(String.raw`"bar", 'baz')`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', 'bar', "baz")`,
+                //                                           ~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_INCONSISTENT_QUOTES,
+                        ...context.toTuple(context.getRangeFor(String.raw`"baz")`)),
+                    );
+                },
+            },
+
+            {
+                actual: String.raw`//scriptlet('foo' 'bar')`,
+                //                                   ~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_COMMA, "'"),
+                        ...context.toTuple(context.getRangeFor(String.raw`'bar')`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', 'bar''baz')`,
+                //                                         ~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_COMMA, "'"),
+                        ...context.toTuple(context.getRangeFor(String.raw`'baz')`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet(foo)`,
+                //                             ~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, "f"),
+                        ...context.toTuple(context.getRangeFor(String.raw`foo)`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', bar, 'baz')`,
+                //                                    ~~~~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, "b"),
+                        ...context.toTuple(context.getRangeFor(String.raw`bar, 'baz')`)),
+                    );
+                },
+            },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
             const fn = jest.fn(() => AdgScriptletInjectionBodyParser.parse(actual));
 
