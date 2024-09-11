@@ -2,12 +2,17 @@
  * @file AdGuard scriptlet injection body parser
  */
 
+import { sprintf } from 'sprintf-js';
+
 import {
     ADG_SCRIPTLET_MASK,
     CLOSE_PARENTHESIS,
+    COMMA,
+    DOUBLE_QUOTE,
     EMPTY,
     ESCAPE_CHARACTER,
     OPEN_PARENTHESIS,
+    SINGLE_QUOTE,
     SPACE,
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
@@ -22,7 +27,8 @@ import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
 import { ValueParser } from '../../misc/value';
 import { type ParameterList, type ScriptletInjectionRuleBody } from '../../common';
 import { isNull } from '../../../utils/type-guards';
-import { sprintf } from 'sprintf-js';
+
+type SingleOrDoubleQuote = typeof SINGLE_QUOTE | typeof DOUBLE_QUOTE;
 
 /**
  * `AdgScriptletInjectionBodyParser` is responsible for parsing the body of an AdGuard-style scriptlet rule.
@@ -189,7 +195,7 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
         // Skip space, if any
         offset = StringUtils.skipWS(raw, offset + 1);
 
-        let detectedQuote: "'" | '"' | null = null;
+        let detectedQuote: SingleOrDoubleQuote | null = null;
 
         const parameterList: ParameterList = {
             type: 'ParameterList',
@@ -207,7 +213,7 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
 
             // Expect comma if not first parameter
             if (parameterList.children.length > 0) {
-                if (raw[offset] !== ',') {
+                if (raw[offset] !== COMMA) {
                     throw new AdblockSyntaxError(
                         sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_COMMA, raw[offset]),
                         baseOffset + offset,
@@ -222,9 +228,9 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
             }
 
             // Next character should be a quote
-            if (raw[offset] === "'" || raw[offset] === '"') {
+            if (raw[offset] === SINGLE_QUOTE || raw[offset] === DOUBLE_QUOTE) {
                 if (isNull(detectedQuote)) {
-                    detectedQuote = raw[offset] as "'" | '"';
+                    detectedQuote = raw[offset] as SingleOrDoubleQuote;
                 } else if (detectedQuote !== raw[offset]) {
                     throw new AdblockSyntaxError(
                         AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_INCONSISTENT_QUOTES,
