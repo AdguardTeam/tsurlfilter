@@ -395,6 +395,26 @@ describe('AdgScriptletInjectionBodyParser', () => {
                     );
                 },
             },
+            {
+                actual: String.raw`//scriptlet('foo)`,
+                //                             ~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_UNCLOSED_PARAMETER,
+                        ...context.toTuple(context.getRangeFor(String.raw`'foo)`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', 'bar   )`,
+                //                                    ~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_UNCLOSED_PARAMETER,
+                        ...context.toTuple(context.getRangeFor(String.raw`'bar   )`)),
+                    );
+                },
+            },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
             const fn = jest.fn(() => AdgScriptletInjectionBodyParser.parse(actual));
 
