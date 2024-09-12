@@ -1,5 +1,8 @@
 import { DeclarativeFilterConverter } from '../../../src/rules/declarative-converter/filter-converter';
-import { TooManyRulesError } from '../../../src/rules/declarative-converter/errors/limitation-errors';
+import {
+    MaxScannedRulesError,
+    TooManyRulesError,
+} from '../../../src/rules/declarative-converter/errors/limitation-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
     ResourcesPathError,
@@ -699,6 +702,37 @@ describe('DeclarativeConverter', () => {
             expect(errors).toHaveLength(1);
             expect(errors[0]).toBeInstanceOf(EmptyDomainsError);
         });
+    });
+
+    it('not scan rules which overflow maxNumberOfRules', async () => {
+        // Create rule with badfilter to ensure that scanner will increment
+        // the number of scanned rules when it finds a canceled rule via badfilter.
+        const staticFilterWithBadFilterRule = createFilter([
+            '||example.com^$document,badfilter',
+        ]);
+        const { ruleSet: staticRuleSet } = await converter.convertStaticRuleSet(staticFilterWithBadFilterRule);
+        // Combine network rules with cosmetic. Scanner should scan only network
+        // rules, because cosmetic rules are not convertible to DNR.
+        const rules = [
+            'example.com##h1',
+            '00kpqkfeek5mdv0cfanrmxocxeboxhas.oodwkuwccnccqeni',
+            'example.org##h2',
+            '||example.com^$document',
+            'nmo41ycihw65yvn1wtkt62ty5sx3g8l4.qxgnckpddaslcwir',
+            '||example.org^$document',
+        ];
+        const filter = createFilter(rules);
+        const maxNumberOfRules = 2;
+        const result = await converter.convertDynamicRuleSets(
+            [filter],
+            [staticRuleSet],
+            { maxNumberOfRules },
+        );
+
+        const lineIndex = rules.slice(0, rules.length - 1).join('\n').length + 1;
+        const msg = `Maximum number of scanned network rules reached at line index ${lineIndex}.`;
+        expect(result.errors).toHaveLength(1);
+        expect(result.errors[0]).toEqual(new MaxScannedRulesError(msg, lineIndex));
     });
 
     describe('test some edge cases', () => {

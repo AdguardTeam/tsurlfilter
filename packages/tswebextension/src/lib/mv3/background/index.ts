@@ -10,6 +10,7 @@ export {
     NegativeNumberOfRegexpRulesError,
     ResourcesPathError,
     type LimitationError,
+    MaxScannedRulesError,
     TooManyRegexpRulesError,
     TooManyRulesError,
     UnavailableFilterSourceError,
