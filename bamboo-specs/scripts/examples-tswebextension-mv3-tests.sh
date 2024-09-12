@@ -1,3 +1,9 @@
+set -e
+set -x
+
+# Fix mixed logs
+exec 2>&1
+
 echo "tswebextension-mv3 tests starting"
 
 # import helper functions and some common variables
