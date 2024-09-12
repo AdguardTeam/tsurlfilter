@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Redirect rule blocks request in the Spotify player instead of redirecting [AdguardBrowserExtension#2913].
+- Redirect rule causes a CSP error instead of redirecting [AdguardBrowserExtension#2913].
 
 [2.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.1
 [AdguardBrowserExtension#2913]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2913
