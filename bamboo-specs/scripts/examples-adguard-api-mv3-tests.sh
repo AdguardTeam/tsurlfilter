@@ -1,3 +1,9 @@
+set -e
+set -x
+
+# Fix mixed logs
+exec 2>&1
+
 echo "adguard-api-mv3-example tests starting"
 
 # import helper functions and some common variables
