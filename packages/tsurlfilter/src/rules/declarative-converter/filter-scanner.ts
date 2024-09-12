@@ -130,7 +130,8 @@ export class FilterScanner implements IFilterScanner {
 
             if (maxNumberOfScannedNetworkRules !== undefined
                 && curNumberOfScannedNetworkRules >= maxNumberOfScannedNetworkRules) {
-                const lineIndex = getRuleSourceIndex(ruleBufferIndex, this.filter.sourceMap);
+                const lastScannedRule = indexedNetworkRulesWithHash[indexedNetworkRulesWithHash.length - 1];
+                const lineIndex = getRuleSourceIndex(lastScannedRule.index, this.filter.sourceMap);
                 // This error needed for future improvements, for example
                 // to show in the UI which rules were skipped.
                 const err = new MaxScannedRulesError(
