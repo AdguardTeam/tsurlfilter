@@ -21,6 +21,6 @@ pnpm --filter @adguard/tswebextension lint
 pnpm --filter @adguard/tswebextension test:prod
 
 # FIXME d.seregin move this task to the separate plan
-#pnpm --filter @adguard/tsurlfilter examples
+#pnpm --filter @adguard/tsurlfilter docs:mv3
 
 echo "@adguard/tswebextension tests completed"

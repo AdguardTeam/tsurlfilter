@@ -299,7 +299,11 @@ export class DeclarativeFilterConverter implements IFilterConverter {
 
         // Note: if we drop some rules because of applying $badfilter - we
         // cannot show info about it to user.
-        const scanned = await NetworkRulesScanner.scanRules(filterList, skipNegatedRulesFn);
+        const scanned = await NetworkRulesScanner.scanRules(
+            filterList,
+            skipNegatedRulesFn,
+            options?.maxNumberOfRules,
+        );
 
         const convertedRules = await DeclarativeRulesConverter.convert(
             scanned.filters,
