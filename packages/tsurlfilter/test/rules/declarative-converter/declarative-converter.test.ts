@@ -715,11 +715,11 @@ describe('DeclarativeConverter', () => {
         // rules, because cosmetic rules are not convertible to DNR.
         const rules = [
             'example.com##h1',
-            '00kpqkfeek5mdv0cfanrmxocxeboxhas.oodwkuwccnccqeni',
+            '00kpqkfeek5mdv0cfanrmxocxeboxhas.oodwkuwccnccqeni', // First scanned rule.
             'example.org##h2',
-            '||example.com^$document',
-            'nmo41ycihw65yvn1wtkt62ty5sx3g8l4.qxgnckpddaslcwir',
-            '||example.org^$document',
+            '||example.com^$document', // Will be ignored negated by $badfilter rule.
+            'nmo41ycihw65yvn1wtkt62ty5sx3g8l4.qxgnckpddaslcwir', // Second scanned rule.
+            '||example.org^$document', // Will be skipped.
         ];
         const filter = createFilter(rules);
         const maxNumberOfRules = 2;
