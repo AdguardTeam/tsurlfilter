@@ -302,7 +302,11 @@ export class DeclarativeFilterConverter implements IFilterConverter {
         const scanned = await NetworkRulesScanner.scanRules(
             filterList,
             skipNegatedRulesFn,
-            options?.maxNumberOfRules,
+            // We increase the limit by 10% to scan more rules in case of some
+            // network rules will be combined into one declarative rule. It is
+            // safe, because we have double check for maxNumberOfRules on the
+            // converted DNR rules.
+            options?.maxNumberOfRules ? Math.ceil(options.maxNumberOfRules * 1.1) : undefined,
         );
 
         const convertedRules = await DeclarativeRulesConverter.convert(
