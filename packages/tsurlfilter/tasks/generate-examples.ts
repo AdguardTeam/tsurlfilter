@@ -71,6 +71,7 @@ const convertTxtToRules = async (
     const filter = new Filter(
         0,
         { getContent: async () => Promise.resolve(FilterListPreprocessor.preprocess(rules.join('\n'))) },
+        true,
     );
 
     try {

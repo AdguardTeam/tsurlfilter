@@ -178,6 +178,15 @@ export class DeclarativeFilterConverter implements IFilterConverter {
     public static readonly COMBINED_RULESET_ID = '_dynamic';
 
     /**
+     * Number of scanned rules can be limited via converter options. In this
+     * case we increase the limit by 10% to scan more rules in case of some
+     * network rules will be combined into one declarative rule. It is safe,
+     * because we have double check for maxNumberOfRules on the converted DNR
+     * rules.
+     */
+    private static readonly SCANNED_NETWORK_RULES_MULTIPLICATOR = 1.1;
+
+    /**
      * Checks that provided converter options are correct.
      *
      * @param options Contains path to web accessible resources,
@@ -299,7 +308,17 @@ export class DeclarativeFilterConverter implements IFilterConverter {
 
         // Note: if we drop some rules because of applying $badfilter - we
         // cannot show info about it to user.
-        const scanned = await NetworkRulesScanner.scanRules(filterList, skipNegatedRulesFn);
+        const scanned = await NetworkRulesScanner.scanRules(
+            filterList,
+            skipNegatedRulesFn,
+            // We increase the limit by 10% to scan more rules in case of some
+            // network rules will be combined into one declarative rule. It is
+            // safe, because we have double check for maxNumberOfRules on the
+            // converted DNR rules.
+            options?.maxNumberOfRules
+                ? Math.ceil(options.maxNumberOfRules * DeclarativeFilterConverter.SCANNED_NETWORK_RULES_MULTIPLICATOR)
+                : undefined,
+        );
 
         const convertedRules = await DeclarativeRulesConverter.convert(
             scanned.filters,
