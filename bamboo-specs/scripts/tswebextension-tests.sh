@@ -26,7 +26,7 @@ pnpm --filter @adguard/tswebextension lint
 # IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
 pnpm --filter @adguard/tswebextension test:prod
 
-# FIXME d.seregin move this task to the separate plan
+# FIXME d.seregin move this task to the separate plan after merge release/v3.1 to master
 #pnpm --filter @adguard/tsurlfilter docs:mv3
 
 echo "@adguard/tswebextension tests completed"

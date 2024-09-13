@@ -60,6 +60,17 @@ Test:
         interpreter: SHELL
         scripts:
           - bamboo-specs/scripts/tswebextension-tests.sh
+    # FIXME remove this script before merge release/v3.1 to master
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/tsurlfilter-tswebextension-builds.sh
+    # FIXME remove this task before merge release/v3.1 to master
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          commitMessage: 'skipci: Automatic update tsurlfilter and tswebextension tgz files and MV3 docs'
+          selectedRepository: defaultRepository
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
