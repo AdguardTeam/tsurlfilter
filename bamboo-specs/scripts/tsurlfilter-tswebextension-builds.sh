@@ -9,6 +9,14 @@ exec 2>&1
 
 echo "@adguard/tswebextension and @adguard/tsurlfilter builds starting"
 
+# import helper functions and some common variables
+. ./bamboo-specs/scripts/helpers.sh
+
+if [ "$branch" != "release/v3.1" ]; then
+  echo "Skip builds in not release/v3.1 branch"
+  exit 0;
+fi
+
 # Install dependencies
 pnpm install
 
