@@ -60,6 +60,7 @@ Test:
         interpreter: SHELL
         scripts:
           - bamboo-specs/scripts/tswebextension-tests.sh
+    # FIXME remove this script before merge release/v3.1 to master
     - script:
         interpreter: SHELL
         scripts:
