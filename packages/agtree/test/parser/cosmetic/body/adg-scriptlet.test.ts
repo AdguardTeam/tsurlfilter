@@ -1,8 +1,9 @@
+import { sprintf } from 'sprintf-js';
+
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { type ScriptletInjectionRuleBody } from '../../../../src/parser/common';
 import { AdgScriptletInjectionBodyParser } from '../../../../src/parser/cosmetic/body/adg-scriptlet';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
-import { sprintf } from 'sprintf-js';
 
 describe('AdgScriptletInjectionBodyParser', () => {
     describe('AdgScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -380,7 +381,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
                 //                             ~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, "f"),
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, 'f'),
                         ...context.toTuple(context.getRangeFor(String.raw`foo)`)),
                     );
                 },
@@ -390,7 +391,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
                 //                                    ~~~~~~~~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, "b"),
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, 'b'),
                         ...context.toTuple(context.getRangeFor(String.raw`bar, 'baz')`)),
                     );
                 },

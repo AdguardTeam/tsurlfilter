@@ -501,6 +501,7 @@ describe('HintCommentRuleParser', () => {
                             null,
                             null,
                             null,
+                            null,
                         ],
                     },
                 },
@@ -736,13 +737,14 @@ describe('HintCommentRuleParser', () => {
         };
 
         // TODO: Refactor to test.each
+        // FIXME
         expect(parseAndGenerate('!+ NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+ NOT_OPTIMIZED()')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+    NOT_OPTIMIZED   ')).toEqual('!+ NOT_OPTIMIZED');
 
-        expect(parseAndGenerate('!+ PLATFORM(,,windows,,)')).toEqual('!+ PLATFORM(, , windows, ,)');
-        expect(parseAndGenerate('!+ PLATFORM(,,,)')).toEqual('!+ PLATFORM(, , ,)');
+        expect(parseAndGenerate('!+ PLATFORM(,,windows,,)')).toEqual('!+ PLATFORM(, , windows, , )');
+        expect(parseAndGenerate('!+ PLATFORM(,,,)')).toEqual('!+ PLATFORM(, , , )');
 
         expect(parseAndGenerate('!+ NOT_OPTIMIZED PLATFORM(windows)')).toEqual('!+ NOT_OPTIMIZED PLATFORM(windows)');
 

@@ -29,6 +29,26 @@ describe('UboScriptletInjectionBodyParser', () => {
                     };
                 },
             },
+            {
+                actual: String.raw`+js()`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [],
+                    };
+                },
+            },
+            {
+                actual: String.raw`+js( )`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [],
+                    };
+                },
+            },
             // escaped chars
             {
                 actual: String.raw`+js('a\'b')`,
@@ -423,6 +443,502 @@ describe('UboScriptletInjectionBodyParser', () => {
                     };
                 },
             },
+
+            {
+                actual: String.raw`+js(a,b)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`a,b`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`a`),
+                                        value: String.raw`a`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`b`),
+                                        value: String.raw`b`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+            {
+                actual: String.raw`+js(a, b)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`a, b`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`a`),
+                                        value: String.raw`a`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`b`),
+                                        value: String.raw`b`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+            {
+                actual: String.raw`+js( a , b )`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw` a , b `),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`a`),
+                                        value: String.raw`a`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`b`),
+                                        value: String.raw`b`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+
+            {
+                actual: String.raw`+js(a,,c)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`a,,c`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`a`),
+                                        value: String.raw`a`,
+                                    },
+                                    null,
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`c`),
+                                        value: String.raw`c`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+
+            {
+                actual: String.raw`+js(a, ,c)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`a, ,c`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`a`),
+                                        value: String.raw`a`,
+                                    },
+                                    null,
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`c`),
+                                        value: String.raw`c`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+            {
+                actual: String.raw`+js( a ,  , c )`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw` a ,  , c `),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`a`),
+                                        value: String.raw`a`,
+                                    },
+                                    null,
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`c`),
+                                        value: String.raw`c`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+            {
+                actual: String.raw`+js(a,)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`a,`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`a`),
+                                        value: String.raw`a`,
+                                    },
+                                    null,
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+            {
+                actual: String.raw`+js(a ,)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`a ,`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`a`),
+                                        value: String.raw`a`,
+                                    },
+                                    null,
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+            {
+                actual: String.raw`+js(a, )`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`a, `),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`a`),
+                                        value: String.raw`a`,
+                                    },
+                                    null,
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+            {
+                actual: String.raw`+js(a , )`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`a , `),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`a`),
+                                        value: String.raw`a`,
+                                    },
+                                    null,
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+
+            // Commas are allowed in quoted arguments
+            {
+                actual: String.raw`+js(trusted-set-cookie, cookies, '{"foo":1,"bar":0}')`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`trusted-set-cookie, cookies, '{"foo":1,"bar":0}'`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`trusted-set-cookie`),
+                                        value: String.raw`trusted-set-cookie`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`cookies`),
+                                        value: String.raw`cookies`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'{"foo":1,"bar":0}'`),
+                                        value: String.raw`'{"foo":1,"bar":0}'`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+
+            // Commas should be escaped in regexps, otherwise they are treated as separators
+            {
+                actual: String.raw`+js(foo, /a,b/, bar)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`foo, /a,b/, bar`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`foo`),
+                                        value: String.raw`foo`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`/a`),
+                                        value: String.raw`/a`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`b/`),
+                                        value: String.raw`b/`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`bar`),
+                                        value: String.raw`bar`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+            {
+                actual: String.raw`+js(foo, /a\,b/, bar)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`foo, /a\,b/, bar`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`foo`),
+                                        value: String.raw`foo`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`/a\,b/`),
+                                        value: String.raw`/a\,b/`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`bar`),
+                                        value: String.raw`bar`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+
+            // should handle other quotes in quoted arguments
+            {
+                actual: String.raw`+js(foo, 'a"b"c', bar)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`foo, 'a"b"c', bar`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`foo`),
+                                        value: String.raw`foo`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'a"b"c'`),
+                                        value: String.raw`'a"b"c'`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`bar`),
+                                        value: String.raw`bar`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+            {
+                actual: String.raw`+js(foo, 'a\'b\'c', bar)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`foo, 'a\'b\'c', bar`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`foo`),
+                                        value: String.raw`foo`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'a\'b\'c'`),
+                                        value: String.raw`'a\'b\'c'`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`bar`),
+                                        value: String.raw`bar`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+
+            // should handle if an argument opens with a quote, but doesn't closed properly
+            // in this case, we should avoid parsing second argument as `'bar, '`, since the second quote
+            // is not followed by a comma
+            {
+                actual: String.raw`+js(foo, 'bar, 'baz)`,
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor(String.raw`foo, 'bar, 'baz`),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`foo`),
+                                        value: String.raw`foo`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'bar`),
+                                        value: String.raw`'bar`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`'baz`),
+                                        value: String.raw`'baz`,
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
+
+            // should handle backtick quote
+            {
+                actual: '+js(foo, `bar`)',
+                expected: (context: NodeExpectContext): ScriptletInjectionRuleBody => {
+                    return {
+                        type: 'ScriptletInjectionRuleBody',
+                        ...context.getFullRange(),
+                        children: [
+                            {
+                                type: 'ParameterList',
+                                ...context.getRangeFor('foo, `bar`'),
+                                children: [
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor(String.raw`foo`),
+                                        value: String.raw`foo`,
+                                    },
+                                    {
+                                        type: 'Value',
+                                        ...context.getRangeFor('`bar`'),
+                                        value: '`bar`',
+                                    },
+                                ],
+                            },
+                        ],
+                    };
+                },
+            },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             // eslint-disable-next-line max-len
             expect(UboScriptletInjectionBodyParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
@@ -536,6 +1052,15 @@ describe('UboScriptletInjectionBodyParser', () => {
     describe('UboScriptletInjectionBodyParser.generate', () => {
         test.each<{ actual: string; expected: string }>([
             {
+                actual: String.raw`+js()`,
+                expected: String.raw`+js()`,
+            },
+            {
+                actual: String.raw`+js( )`,
+                expected: String.raw`+js()`,
+            },
+
+            {
                 actual: String.raw`+js('a\'b')`,
                 expected: String.raw`+js('a\'b')`,
             },
@@ -593,6 +1118,34 @@ describe('UboScriptletInjectionBodyParser', () => {
             {
                 actual: String.raw`+js("scriptlet0", "arg0", "arg1")`,
                 expected: String.raw`+js("scriptlet0", "arg0", "arg1")`,
+            },
+            {
+                actual: String.raw`+js(a)`,
+                expected: String.raw`+js(a)`,
+            },
+            {
+                actual: String.raw`+js(a,)`,
+                expected: String.raw`+js(a, )`,
+            },
+            {
+                actual: String.raw`+js(a,b)`,
+                expected: String.raw`+js(a, b)`,
+            },
+            {
+                actual: String.raw`+js(trusted-set-cookie, cookies, '{"foo":1,"bar":0}')`,
+                expected: String.raw`+js(trusted-set-cookie, cookies, '{"foo":1,"bar":0}')`,
+            },
+            {
+                actual: String.raw`+js(foo, 'a\'b\'c', bar)`,
+                expected: String.raw`+js(foo, 'a\'b\'c', bar)`,
+            },
+            {
+                actual: String.raw`+js(foo, 'bar, 'baz)`,
+                expected: String.raw`+js(foo, 'bar, 'baz)`,
+            },
+            {
+                actual: '+js(foo, `bar`)',
+                expected: '+js(foo, `bar`)',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = UboScriptletInjectionBodyParser.parse(actual);

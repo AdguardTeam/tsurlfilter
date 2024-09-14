@@ -238,16 +238,30 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
             );
         }
 
+        const result: ScriptletInjectionRuleBody = {
+            type: 'ScriptletInjectionRuleBody',
+            children: [],
+        };
+
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
+        }
+
+        // Special case: empty scriptlet call, like +js(), +js( ), etc.
+        if (StringUtils.skipWS(raw, openingParenthesesIndex + 1) === closingParenthesesIndex) {
+            return result;
+        }
+
         // Parse parameter list
-        const params = ParameterListParser.parse(
+        const params = ParameterListParser.parseUbo(
             raw.slice(openingParenthesesIndex + 1, closingParenthesesIndex),
             options,
             baseOffset + openingParenthesesIndex + 1,
             COMMA,
         );
 
-        // Allow empty scriptlet call: +js()
-        // but not allow parameters without scriptlet: +js(, arg0, arg1)
+        // Do not allow parameters without scriptlet: +js(, arg0, arg1)
         if (params.children.length > 0 && params.children[0] === null) {
             throw new AdblockSyntaxError(
                 this.ERROR_MESSAGES.NO_SCRIPTLET_NAME,
@@ -256,17 +270,7 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
             );
         }
 
-        const result: ScriptletInjectionRuleBody = {
-            type: 'ScriptletInjectionRuleBody',
-            children: [
-                params,
-            ],
-        };
-
-        if (options.isLocIncluded) {
-            result.start = baseOffset;
-            result.end = baseOffset + raw.length;
-        }
+        result.children.push(params);
 
         return result;
     }
@@ -289,7 +293,8 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
         result.push(OPEN_PARENTHESIS);
 
         if (node.children.length > 0) {
-            result.push(ParameterListParser.generate(node.children[0]));
+            const [parameterListNode] = node.children;
+            result.push(ParameterListParser.generate(parameterListNode));
         }
 
         result.push(CLOSE_PARENTHESIS);
