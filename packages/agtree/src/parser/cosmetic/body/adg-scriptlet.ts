@@ -195,6 +195,21 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
         // Skip space, if any
         offset = StringUtils.skipWS(raw, offset + 1);
 
+        const result: ScriptletInjectionRuleBody = {
+            type: 'ScriptletInjectionRuleBody',
+            children: [],
+        };
+
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = baseOffset + raw.length;
+        }
+
+        // Special case: empty scriptlet call, like `//scriptlet()`, `//scriptlet( )` etc.
+        if (StringUtils.skipWS(raw, openingParenthesesIndex + 1) === closingParenthesesIndex) {
+            return result;
+        }
+
         let detectedQuote: SingleOrDoubleQuote | null = null;
 
         const parameterList: ParameterList = {
@@ -221,6 +236,7 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
                     );
                 }
 
+                // Eat the comma
                 offset += 1;
 
                 // Skip whitespace
@@ -270,17 +286,7 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
             }
         }
 
-        const result: ScriptletInjectionRuleBody = {
-            type: 'ScriptletInjectionRuleBody',
-            children: [
-                parameterList,
-            ],
-        };
-
-        if (options.isLocIncluded) {
-            result.start = baseOffset;
-            result.end = baseOffset + raw.length;
-        }
+        result.children.push(parameterList);
 
         return result;
     }
