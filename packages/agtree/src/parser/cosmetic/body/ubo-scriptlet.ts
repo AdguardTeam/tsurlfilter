@@ -22,6 +22,7 @@ import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
 import { deserializeScriptletBody, serializeScriptletBody } from './scriptlet-serialization-helper';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
+import { UboParameterListParser } from '../../misc/ubo-parameter-list';
 
 /**
  * `UboScriptletInjectionBodyParser` is responsible for parsing the body of a uBlock-style scriptlet rule.
@@ -254,7 +255,7 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
         }
 
         // Parse parameter list
-        const params = ParameterListParser.parseUbo(
+        const params = UboParameterListParser.parse(
             raw.slice(openingParenthesesIndex + 1, closingParenthesesIndex),
             options,
             baseOffset + openingParenthesesIndex + 1,
