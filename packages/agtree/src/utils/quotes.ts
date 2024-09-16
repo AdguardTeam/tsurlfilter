@@ -84,8 +84,8 @@ export class QuoteUtils {
         for (let i = 0; i < string.length; i += 1) {
             if (
                 string[i] === char
-            && string[i - 1] === ESCAPE_CHARACTER
-            && (i === 1 || string[i - 2] !== ESCAPE_CHARACTER)
+                && string[i - 1] === ESCAPE_CHARACTER
+                && (i === 1 || string[i - 2] !== ESCAPE_CHARACTER)
             ) {
                 result = result.slice(0, -1);
             }
@@ -182,6 +182,23 @@ export class QuoteUtils {
                             QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), SINGLE_QUOTE),
                             DOUBLE_QUOTE,
                         ) + DOUBLE_QUOTE;
+                }
+
+                return string;
+
+            case QuoteType.Backtick:
+                if (actualQuoteType === QuoteType.None) {
+                    // eslint-disable-next-line max-len
+                    return BACKTICK_QUOTE + QuoteUtils.escapeUnescapedOccurrences(string, BACKTICK_QUOTE) + BACKTICK_QUOTE;
+                }
+
+                if (actualQuoteType !== QuoteType.Backtick) {
+                // eslint-disable-next-line max-len
+                    return BACKTICK_QUOTE
+                        + QuoteUtils.escapeUnescapedOccurrences(
+                            QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), SINGLE_QUOTE),
+                            BACKTICK_QUOTE,
+                        ) + BACKTICK_QUOTE;
                 }
 
                 return string;
