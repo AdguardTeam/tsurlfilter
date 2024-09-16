@@ -44,6 +44,7 @@ export class UboParameterListParser extends ParameterListParser {
         }
 
         let offset = 0;
+        // TODO: Eliminate the need for extraNull
         let extraNull = false;
 
         while (offset < length) {
