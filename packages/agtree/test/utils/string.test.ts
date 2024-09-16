@@ -10,6 +10,14 @@ describe('String utils', () => {
         expect(StringUtils.findNextUnescapedCharacter(SPACE, ',')).toEqual(-1);
     });
 
+    test('findNextUnescapedCharacterBackwards', () => {
+        expect(StringUtils.findNextUnescapedCharacterBackwards(String.raw`a\a\aa`, 'a')).toEqual(5);
+        expect(StringUtils.findNextUnescapedCharacterBackwards(String.raw`a\a\aa`, 'a', 4)).toEqual(0);
+
+        expect(StringUtils.findNextUnescapedCharacterBackwards(EMPTY, 'a')).toEqual(-1);
+        expect(StringUtils.findNextUnescapedCharacterBackwards(SPACE, 'a')).toEqual(-1);
+    });
+
     test('findLastUnescapedCharacter', () => {
         expect(StringUtils.findLastUnescapedCharacter('aaa\\a\\aa', 'a')).toEqual(7);
         expect(StringUtils.findLastUnescapedCharacter(EMPTY, 'a')).toEqual(-1);
