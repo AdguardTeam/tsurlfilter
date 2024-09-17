@@ -8,6 +8,8 @@ import { type Plugin } from 'rollup';
  * @param names The names of the plugins to extract.
  *
  * @returns The extracted plugins.
+ *
+ * @throws If a plugin with the given name is not found.
  */
 export const extractRollupPlugins = (plugins: Plugin[], names: string[]): Plugin[] => {
     const extractedPlugins: Plugin[] = [];
@@ -15,9 +17,11 @@ export const extractRollupPlugins = (plugins: Plugin[], names: string[]): Plugin
     for (const name of names) {
         const plugin = plugins.find((p) => p.name === name);
 
-        if (plugin) {
-            extractedPlugins.push(plugin);
+        if (!plugin) {
+            throw new Error(`Plugin "${name}" not found`);
         }
+
+        extractedPlugins.push(plugin);
     }
 
     return extractedPlugins;
