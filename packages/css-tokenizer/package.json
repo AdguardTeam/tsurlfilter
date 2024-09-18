@@ -1,6 +1,6 @@
 {
   "name": "@adguard/css-tokenizer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CSS / Extended CSS tokenizer",
   "keywords": [
     "css",
@@ -18,30 +18,24 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer#readme",
   "main": "dist/csstokenizer.js",
-  "module": "dist/csstokenizer.esm.mjs",
-  "browser": "dist/csstokenizer.umd.min.js",
+  "module": "dist/csstokenizer.mjs",
   "types": "dist/csstokenizer.d.ts",
   "exports": {
     ".": {
       "types": "./dist/csstokenizer.d.ts",
-      "import": "./dist/csstokenizer.esm.mjs",
+      "import": "./dist/csstokenizer.mjs",
       "require": "./dist/csstokenizer.js"
-    },
-    "./es": "./dist/csstokenizer.esm.mjs",
-    "./iife": "./dist/csstokenizer.iife.min.js",
-    "./umd": "./dist/csstokenizer.umd.min.js"
+    }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "pnpm clean && pnpm build-types && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && pnpm clean-types",
+    "build": "pnpm clean && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/types",
     "build-txt": "pnpm ts-node scripts/build-txt.ts",
-    "build-types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
     "benchmark": "pnpm build && node -r esbuild-register benchmark/index.ts",
     "check-types": "tsc --noEmit",
     "clean": "rimraf dist",
-    "clean-types": "rimraf dist/types",
     "coverage": "jest --coverage",
     "increment": "pnpm version patch --no-git-tag-version",
     "lint": "pnpm lint:ts && pnpm lint:md",
@@ -50,12 +44,9 @@
     "test": "jest --runInBand"
   },
   "devDependencies": {
-    "@babel/core": "^7.22.8",
-    "@babel/preset-env": "^7.22.7",
     "@csstools/css-tokenizer": "^2.2.1",
     "@csstools/tokenizer": "^3.1.0",
     "@rollup/plugin-alias": "^5.0.0",
-    "@rollup/plugin-babel": "^6.0.3",
     "@rollup/plugin-commonjs": "^25.0.4",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.2.1",
@@ -94,7 +85,6 @@
     "rollup": "^3.29.4",
     "rollup-plugin-dts": "^6.0.2",
     "rollup-plugin-node-externals": "^6.1.1",
-    "rollup-plugin-polyfill-node": "^0.12.0",
     "terser": "^5.21.0",
     "ts-node": "^10.9.1",
     "typescript": "^5.1.6"

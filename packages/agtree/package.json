@@ -37,14 +37,12 @@
         "node": ">=17"
     },
     "scripts": {
-        "build": "pnpm clean && pnpm build-types && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && pnpm clean-types",
+        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && rimraf dist/types",
         "build-txt": "tsx scripts/build-txt.ts",
-        "build-types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
         "build-compatibility-tables": "tsx scripts/build-compatibility-tables.ts",
         "build-compatibility-tables-wiki": "tsx scripts/build-compatibility-tables-wiki.ts",
         "check-types": "tsc --noEmit",
         "clean": "rimraf dist",
-        "clean-types": "rimraf dist/types",
         "coverage": "jest --runInBand --coverage",
         "increment": "pnpm version patch --no-git-tag-version",
         "lint": "pnpm check-types && pnpm lint:ts && pnpm lint:md",
@@ -55,13 +53,11 @@
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/cjs && pnpm test) && (cd test/smoke/typescript && pnpm test)"
     },
     "devDependencies": {
-        "@babel/core": "^7.22.5",
-        "@babel/preset-env": "^7.22.5",
         "@rollup/plugin-alias": "^5.0.0",
-        "@rollup/plugin-babel": "^6.0.3",
         "@rollup/plugin-commonjs": "^25.0.2",
         "@rollup/plugin-json": "^6.0.0",
         "@rollup/plugin-node-resolve": "^15.1.0",
+        "@rollup/plugin-swc": "^0.4.0",
         "@rollup/plugin-typescript": "^11.1.2",
         "@swc/core": "^1.7.24",
         "@swc/helpers": "^0.5.3",

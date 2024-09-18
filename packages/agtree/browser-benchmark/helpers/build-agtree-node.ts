@@ -5,12 +5,11 @@
  */
 import { rollup } from 'rollup';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import nodeResolve from '@rollup/plugin-node-resolve';
+import swc from '@rollup/plugin-swc';
 
-import { getNodePlugins } from '../../rollup.config';
-
-// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { commonPlugins } from '../../rollup.config';
+import { extractRollupPlugins } from './extract-rollup-plugins';
 
 /**
  * Create an AGTree bundle for Node.js environment.
@@ -21,8 +20,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  */
 export const buildAgTreeForNode = async (): Promise<string> => {
     const bundle = await rollup({
-        input: path.join(__dirname, '..', '..', 'src', 'index.ts'),
-        plugins: getNodePlugins(true),
+        input: path.join(__dirname, '../../src/index.ts'),
+        plugins: [
+            ...extractRollupPlugins(commonPlugins, ['json', 'alias', 'commonjs', 'node-externals']),
+
+            nodeResolve({
+                extensions: ['.js', '.ts'],
+            }),
+
+            swc(),
+        ],
     });
 
     const { output } = await bundle.generate({
