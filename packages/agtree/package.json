@@ -1,13 +1,19 @@
 {
     "name": "@adguard/agtree",
     "version": "2.1.0",
-    "description": "Universal adblock filter list parser.",
+    "description": "Tool set for working with adblock filter lists",
     "keywords": [
         "adblock",
         "filter",
         "list",
+        "rule",
         "parser",
-        "ast"
+        "ast",
+        "converter",
+        "validator",
+        "generator",
+        "serialize",
+        "deserialize"
     ],
     "author": "Adguard Software Ltd.",
     "license": "MIT",
@@ -34,7 +40,7 @@
         "dist"
     ],
     "engines": {
-        "node": ">=17"
+        "node": ">=18"
     },
     "scripts": {
         "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && rimraf dist/types",
