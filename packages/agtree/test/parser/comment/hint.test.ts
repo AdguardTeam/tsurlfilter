@@ -737,7 +737,6 @@ describe('HintCommentRuleParser', () => {
         };
 
         // TODO: Refactor to test.each
-        // FIXME
         expect(parseAndGenerate('!+ NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+NOT_OPTIMIZED')).toEqual('!+ NOT_OPTIMIZED');
         expect(parseAndGenerate('!+ NOT_OPTIMIZED()')).toEqual('!+ NOT_OPTIMIZED');
