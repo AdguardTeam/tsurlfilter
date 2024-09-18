@@ -575,9 +575,9 @@ export class CosmeticRule implements rule.IRule {
         // but at this point we need to store them in order to avoid double parsing
         if (node.type === CosmeticRuleType.ScriptletInjectionRule) {
             // Transform complex node into a simple array of strings
-            const params = node.body.children[0].children.map(
+            const params = node.body.children[0]?.children.map(
                 (param) => (param === null ? EMPTY_STRING : QuoteUtils.removeQuotesAndUnescape(param.value)),
-            );
+            ) ?? [];
 
             this.scriptletParams = new ScriptletParams(params[0] ?? '', params.slice(1));
         } else {
