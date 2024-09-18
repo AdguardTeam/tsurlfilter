@@ -3,6 +3,7 @@
  */
 
 import {
+    BACKTICK_QUOTE,
     COMMA,
     DOUBLE_QUOTE,
     EMPTY,
@@ -10,6 +11,15 @@ import {
     SINGLE_QUOTE,
     SPACE,
 } from './constants';
+
+/**
+ * Set of all possible quote characters supported by the library
+ */
+export const QUOTE_SET = new Set([
+    SINGLE_QUOTE,
+    DOUBLE_QUOTE,
+    BACKTICK_QUOTE,
+]);
 
 /**
  * Possible quote types for scriptlet parameters
@@ -29,6 +39,11 @@ export enum QuoteType {
      * Double quotes (`"`)
      */
     Double = 'double',
+
+    /**
+     * Backtick quotes (`` ` ``)
+     */
+    Backtick = 'backtick',
 }
 
 /**
@@ -69,8 +84,8 @@ export class QuoteUtils {
         for (let i = 0; i < string.length; i += 1) {
             if (
                 string[i] === char
-            && string[i - 1] === ESCAPE_CHARACTER
-            && (i === 1 || string[i - 2] !== ESCAPE_CHARACTER)
+                && string[i - 1] === ESCAPE_CHARACTER
+                && (i === 1 || string[i - 2] !== ESCAPE_CHARACTER)
             ) {
                 result = result.slice(0, -1);
             }
@@ -97,6 +112,10 @@ export class QuoteUtils {
             if (string.startsWith(DOUBLE_QUOTE) && string.endsWith(DOUBLE_QUOTE)) {
                 return QuoteType.Double;
             }
+
+            if (string.startsWith(BACKTICK_QUOTE) && string.endsWith(BACKTICK_QUOTE)) {
+                return QuoteType.Backtick;
+            }
         }
 
         return QuoteType.None;
@@ -122,6 +141,10 @@ export class QuoteUtils {
                     return QuoteUtils.escapeUnescapedOccurrences(string.slice(1, -1), DOUBLE_QUOTE);
                 }
 
+                if (actualQuoteType === QuoteType.Backtick) {
+                    return QuoteUtils.escapeUnescapedOccurrences(string.slice(1, -1), BACKTICK_QUOTE);
+                }
+
                 return string;
 
             case QuoteType.Single:
@@ -133,6 +156,14 @@ export class QuoteUtils {
                     return SINGLE_QUOTE
                         + QuoteUtils.escapeUnescapedOccurrences(
                             QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), DOUBLE_QUOTE),
+                            SINGLE_QUOTE,
+                        ) + SINGLE_QUOTE;
+                }
+
+                if (actualQuoteType === QuoteType.Backtick) {
+                    return SINGLE_QUOTE
+                        + QuoteUtils.escapeUnescapedOccurrences(
+                            QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), BACKTICK_QUOTE),
                             SINGLE_QUOTE,
                         ) + SINGLE_QUOTE;
                 }
@@ -155,6 +186,23 @@ export class QuoteUtils {
 
                 return string;
 
+            case QuoteType.Backtick:
+                if (actualQuoteType === QuoteType.None) {
+                    // eslint-disable-next-line max-len
+                    return BACKTICK_QUOTE + QuoteUtils.escapeUnescapedOccurrences(string, BACKTICK_QUOTE) + BACKTICK_QUOTE;
+                }
+
+                if (actualQuoteType !== QuoteType.Backtick) {
+                // eslint-disable-next-line max-len
+                    return BACKTICK_QUOTE
+                        + QuoteUtils.escapeUnescapedOccurrences(
+                            QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), SINGLE_QUOTE),
+                            BACKTICK_QUOTE,
+                        ) + BACKTICK_QUOTE;
+                }
+
+                return string;
+
             default:
                 return string;
         }
@@ -170,7 +218,7 @@ export class QuoteUtils {
         if (
             // We should check for string length to avoid false positives
             string.length > 1
-            && (string[0] === SINGLE_QUOTE || string[0] === DOUBLE_QUOTE)
+            && (string[0] === SINGLE_QUOTE || string[0] === DOUBLE_QUOTE || string[0] === BACKTICK_QUOTE)
             && string[0] === string[string.length - 1]
         ) {
             return string.slice(1, -1);
@@ -190,7 +238,7 @@ export class QuoteUtils {
         if (
             // We should check for string length to avoid false positives
             string.length > 1
-            && (string[0] === SINGLE_QUOTE || string[0] === DOUBLE_QUOTE)
+            && (string[0] === SINGLE_QUOTE || string[0] === DOUBLE_QUOTE || string[0] === BACKTICK_QUOTE)
             && string[0] === string[string.length - 1]
         ) {
             return QuoteUtils.unescapeSingleEscapedOccurrences(string.slice(1, -1), string[0]);
