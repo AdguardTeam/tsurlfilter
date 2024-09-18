@@ -53,6 +53,30 @@ export class StringUtils {
     }
 
     /**
+     * Finds the first occurrence in backward direction of a character that isn't preceded by an escape character.
+     *
+     * @param pattern - Source pattern
+     * @param searchedCharacter - Searched character
+     * @param start - Start index
+     * @param escapeCharacter - Escape character, \ by default
+     * @returns Index or -1 if the character not found
+     */
+    public static findNextUnescapedCharacterBackwards(
+        pattern: string,
+        searchedCharacter: string,
+        start = pattern.length - 1,
+        escapeCharacter: string = ESCAPE_CHARACTER,
+    ): number {
+        for (let i = start; i >= 0; i -= 1) {
+            // The searched character cannot be preceded by an escape
+            if (pattern[i] === searchedCharacter && pattern[i - 1] !== escapeCharacter) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
      * Finds the last occurrence of a character that:
      * - isn't preceded by an escape character
      *
