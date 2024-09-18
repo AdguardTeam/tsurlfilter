@@ -1,4 +1,10 @@
-source ./setup-tests.sh
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status
+set -e
+
+# Print commands and their arguments as they are executed
+set -x
 
 echo "tswebextension-mv3 tests starting"
 
