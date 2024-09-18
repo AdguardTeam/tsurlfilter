@@ -81,7 +81,7 @@ export const commonPlugins = [
         compilerOptions: {
             incremental: true,
             declaration: true,
-            declarationDir: path.join(ROOT_DIR, 'dist/dts'),
+            declarationDir: path.join(ROOT_DIR, 'dist/types'),
         },
         include: [path.join(ROOT_DIR, './src/**/*.ts')],
         exclude: [path.join(ROOT_DIR, './node_modules'), path.join(ROOT_DIR, './test')],
@@ -110,9 +110,9 @@ const node = {
 };
 
 // Merge .d.ts files (requires `tsc` to be run first,
-// because it merges .d.ts files from `dist/dts` directory)
+// because it merges .d.ts files from `dist/types` directory)
 const dts = {
-    input: path.join(ROOT_DIR, 'dist/dts/src/index.d.ts'),
+    input: path.join(ROOT_DIR, 'dist/types/src/index.d.ts'),
     output: [
         {
             file: path.join(distDir, `${BASE_FILE_NAME}.d.ts`),

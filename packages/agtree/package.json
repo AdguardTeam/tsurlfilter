@@ -37,7 +37,7 @@
         "node": ">=17"
     },
     "scripts": {
-        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && rimraf dist/dts",
+        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && rimraf dist/types",
         "build-txt": "tsx scripts/build-txt.ts",
         "build-compatibility-tables": "tsx scripts/build-compatibility-tables.ts",
         "build-compatibility-tables-wiki": "tsx scripts/build-compatibility-tables-wiki.ts",
