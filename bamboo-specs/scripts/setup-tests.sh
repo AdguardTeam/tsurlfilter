@@ -1,6 +1,3 @@
-set -e
-set -x
-
 # Fix mixed logs
 exec 2>&1
 
