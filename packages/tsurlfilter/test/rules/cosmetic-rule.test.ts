@@ -898,8 +898,15 @@ describe('Javascript rules', () => {
     });
 
     it('invalidate scriptlet rule with missed arg quote', () => {
-        const jsRuleContent = "//scriptlet('foo', arg')";
-        const jsRule = `example.org#%#${jsRuleContent}`;
+        let jsRuleContent = "//scriptlet('foo', arg')";
+        let jsRule = `example.org#%#${jsRuleContent}`;
+
+        expect(() => {
+            createCosmeticRule(jsRule, 0);
+        }).toThrow(new SyntaxError("Invalid ADG scriptlet call, expected quote, got 'a'"));
+
+        jsRuleContent = "//scriptlet('foo', 'arg')";
+        jsRule = `example.org#%#${jsRuleContent}`;
 
         expect(() => {
             createCosmeticRule(jsRule, 0);
