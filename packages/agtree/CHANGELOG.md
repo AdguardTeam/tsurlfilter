@@ -8,6 +8,19 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
+## [2.1.0] - 2024-09-18
+
+### Added
+
+- `UboParameterListParser` to parse uBO parameter lists, like scriptlet parameters.
+
+### Changed
+
+- Scriptlet injection parser now requires quotes for AdGuard scriptlets and uses `UboParameterListParser` for uBO
+  scriptlets to provide more consistent parsing.
+
+[2.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.1.0
+
 ## [2.0.2] - 2024-09-10
 
 ### Fixed

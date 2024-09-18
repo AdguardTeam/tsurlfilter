@@ -1,3 +1,5 @@
+import { sprintf } from 'sprintf-js';
+
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { type ScriptletInjectionRuleBody } from '../../../../src/parser/common';
 import { AdgScriptletInjectionBodyParser } from '../../../../src/parser/cosmetic/body/adg-scriptlet';
@@ -308,8 +310,8 @@ describe('AdgScriptletInjectionBodyParser', () => {
                 //                            ~~~~~~~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_SCRIPTLET_NAME,
-                        ...context.toTuple(context.getRangeFor(String.raw`(, 'arg0')`)),
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, ','),
+                        ...context.toTuple(context.getRangeFor(String.raw`, 'arg0')`)),
                     );
                 },
             },
@@ -318,8 +320,99 @@ describe('AdgScriptletInjectionBodyParser', () => {
                 //                            ~~~~~~~~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_SCRIPTLET_NAME,
-                        ...context.toTuple(context.getRangeFor(String.raw`( , 'arg0')`)),
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, ','),
+                        ...context.toTuple(context.getRangeFor(String.raw`, 'arg0')`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', "bar")`,
+                //                                    ~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_INCONSISTENT_QUOTES,
+                        ...context.toTuple(context.getRangeFor(String.raw`"bar")`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', "bar", 'baz')`,
+                //                                    ~~~~~~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_INCONSISTENT_QUOTES,
+                        ...context.toTuple(context.getRangeFor(String.raw`"bar", 'baz')`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', 'bar', "baz")`,
+                //                                           ~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_INCONSISTENT_QUOTES,
+                        ...context.toTuple(context.getRangeFor(String.raw`"baz")`)),
+                    );
+                },
+            },
+
+            {
+                actual: String.raw`//scriptlet('foo' 'bar')`,
+                //                                   ~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_COMMA, "'"),
+                        ...context.toTuple(context.getRangeFor(String.raw`'bar')`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', 'bar''baz')`,
+                //                                         ~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_COMMA, "'"),
+                        ...context.toTuple(context.getRangeFor(String.raw`'baz')`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet(foo)`,
+                //                             ~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, 'f'),
+                        ...context.toTuple(context.getRangeFor(String.raw`foo)`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', bar, 'baz')`,
+                //                                    ~~~~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        sprintf(AdgScriptletInjectionBodyParser.ERROR_MESSAGES.EXPECTED_QUOTE, 'b'),
+                        ...context.toTuple(context.getRangeFor(String.raw`bar, 'baz')`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo)`,
+                //                             ~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_UNCLOSED_PARAMETER,
+                        ...context.toTuple(context.getRangeFor(String.raw`'foo)`)),
+                    );
+                },
+            },
+            {
+                actual: String.raw`//scriptlet('foo', 'bar   )`,
+                //                                    ~~~~~~~~
+                expected: (context: NodeExpectContext): AdblockSyntaxError => {
+                    return new AdblockSyntaxError(
+                        AdgScriptletInjectionBodyParser.ERROR_MESSAGES.NO_UNCLOSED_PARAMETER,
+                        ...context.toTuple(context.getRangeFor(String.raw`'bar   )`)),
                     );
                 },
             },
