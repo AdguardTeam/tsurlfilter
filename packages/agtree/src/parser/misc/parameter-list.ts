@@ -69,11 +69,10 @@ export class ParameterListParser extends ParserBase {
             // Parameter may only contain whitespace
             // In this case, we reached the end of the parameter list
             if (raw[offset] === separator || offset === length) {
-                // note: this is needed to keep the parameter count, like:
-                // +js(,foo) - in this case, the first parameter is empty
+                // Add a null for empty parameter
                 params.children.push(null);
 
-                // skip separator
+                // Skip separator
                 offset += 1;
             } else {
                 // Get parameter start position
@@ -99,6 +98,11 @@ export class ParameterListParser extends ParserBase {
                 // Set offset to the next separator position + 1
                 offset = nextSeparator !== -1 ? nextSeparator + 1 : length;
             }
+        }
+
+        // If the last character was a separator, add an additional null parameter
+        if (raw[length - 1] === separator) {
+            params.children.push(null);
         }
 
         return params;
@@ -128,11 +132,6 @@ export class ParameterListParser extends ParserBase {
         // join parameters with separator
         // if the separator is a space, join with a single space
         const result = collection.join(separator === SPACE ? separator : `${separator}${SPACE}`);
-
-        // if the last parameter is empty, add an extra separator to the end
-        if (params.children.length > 0 && params.children[params.children.length - 1] === null) {
-            return `${result}${separator}`;
-        }
 
         return result;
     }
