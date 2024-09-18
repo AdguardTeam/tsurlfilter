@@ -1,3 +1,5 @@
+source ./setup-tests.sh
+
 echo "tswebextension-mv3 tests starting"
 
 # import helper functions and some common variables
