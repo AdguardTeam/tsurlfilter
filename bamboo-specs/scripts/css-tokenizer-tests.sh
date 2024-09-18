@@ -1,3 +1,5 @@
+source ./setup-tests.sh
+
 echo "@adguard/css-tokenizer tests starting"
 
 # import helper functions and some common variables
