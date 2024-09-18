@@ -31,7 +31,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "pnpm clean && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/dts",
+    "build": "pnpm clean && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/types",
     "build-txt": "pnpm ts-node scripts/build-txt.ts",
     "benchmark": "pnpm build && node -r esbuild-register benchmark/index.ts",
     "check-types": "tsc --noEmit",
