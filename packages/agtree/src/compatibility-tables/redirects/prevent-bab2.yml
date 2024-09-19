@@ -9,3 +9,5 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: nobab2.js
   description: Prevents BlockAdblock script from detecting an ad blocker.
+  resource_types:
+    - script

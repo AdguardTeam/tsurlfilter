@@ -15,6 +15,8 @@ Table of contents:
             - [Available compatibility table instances](#available-compatibility-table-instances)
             - [Platform flags](#platform-flags)
             - [Platform expressions parser](#platform-expressions-parser)
+        - [Specific API](#specific-api)
+            - [Redirects compatibility table](#redirects-compatibility-table)
         - [Examples](#examples)
             - [Check if a modifier is supported by any adblocker](#check-if-a-modifier-is-supported-by-any-adblocker)
             - [Check if a modifier is supported by a specific / generic platform](#check-if-a-modifier-is-supported-by-a-specific--generic-platform)
@@ -163,9 +165,9 @@ All of them provides the following methods for their respective compatibility da
 | `getRow(name: string): T[]` | Returns all compatibility data records for the specified name. |
 | `getRowsByProduct(): RowsByProduct<T>` | Returns all compatibility data records grouped by product. |
 
-All methods based on the name of the entity and the platform.
-
 <!-- markdownlint-enable MD013 -->
+
+All methods based on the name of the entity and the platform.
 
 #### Platform flags
 
@@ -185,6 +187,18 @@ import { parseRawPlatforms } from '@adguard/agtree';
 
 parseRawPlatforms('adg_os_windows|ubo_ext_chrome');
 ```
+
+### Specific API
+
+#### Redirects compatibility table
+
+<!-- markdownlint-disable MD013 -->
+
+| Method name | Description |
+| --- | --- |
+| `getResourceTypeModifiers(redirect: string \| RedirectDataSchema platform: SpecificPlatform \| GenericPlatform)` | Get all supported resource type modifiers for a specific redirect. |
+
+<!-- markdownlint-enable MD013 -->
 
 ### Examples
 

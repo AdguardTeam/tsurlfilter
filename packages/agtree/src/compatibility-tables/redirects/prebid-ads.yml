@@ -9,3 +9,5 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: prebid-ads.js
   description: Mocks prebid-ads.js script.
+  resource_types:
+    - script

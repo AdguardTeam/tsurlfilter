@@ -8,14 +8,10 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import externals from 'rollup-plugin-node-externals';
 import dtsPlugin from 'rollup-plugin-dts';
-import nodePolyfills from 'rollup-plugin-polyfill-node';
 import alias from '@rollup/plugin-alias';
-import { getBabelOutputPlugin } from '@rollup/plugin-babel';
 import json from '@rollup/plugin-json';
-import terser from '@rollup/plugin-terser';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
-import { type Plugin } from 'rollup';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -54,185 +50,69 @@ const banner = `/*
  * ${pkg.homepage}
  */`;
 
-// Pre-configured TypeScript plugin
-const typeScriptPlugin = typescript({
-    tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
-    compilerOptions: {
-        // Don't emit declarations, we will do it in a separate command
-        declaration: false,
-    },
-});
-
 // Common plugins for all types of builds
-const commonPlugins = [
+export const commonPlugins = [
+    json({ preferConst: true }),
     alias({
         entries: [
-            // replace dynamic compatibility table data builder with the pre-built data file
+            // Replace dynamic compatibility table data builder with the pre-built data file
             {
                 find: './compatibility-table-data',
-                replacement: path.resolve(ROOT_DIR, 'dist', 'compatibility-tables.json'),
+                replacement: path.resolve(ROOT_DIR, 'dist/compatibility-tables.json'),
+            },
+            // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
+            // We need this because we import functions from the "semver" package directly,
+            // otherwise it will cause a "circular dependency" warning during the build.
+            // See https://github.com/npm/node-semver/issues/381
+            // Rollup detects "semver" as an external dependency, so it doesn't add the ".js"
+            // extension by default, and we need to do it manually here, otherwise the ESM
+            // build will fail with "Cannot find module" error.
+            {
+                find: /semver\/(.*)(?<!\.js)$/,
+                replacement: 'semver/$1.js',
             },
         ],
     }),
-    json({ preferConst: true }),
     commonjs({ sourceMap: false }),
     resolve({ preferBuiltins: false }),
-    typeScriptPlugin,
-];
-
-/**
- * Plugins for Node.js builds.
- *
- * @param esm Whether to build an ESM module.
- *
- * @returns List of Rollup plugins.
- */
-export const getNodePlugins = (esm = false): Plugin[] => [
-    ...commonPlugins,
-    alias({
-        // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
-        // We need this because we import functions from the "semver" package directly,
-        // otherwise it will cause a "circular dependency" warning during the build.
-        // See https://github.com/npm/node-semver/issues/381
-        // Rollup detects "semver" as an external dependency, so it doesn't add the ".js"
-        // extension by default, and we need to do it manually here, otherwise the ESM
-        // build will fail with "Cannot find module" error.
-        entries: [
-            { find: /^semver\/(.*)(?<!\.js)$/, replacement: 'semver/$1.js' },
-        ],
-    }),
     externals(),
-    // Provide better browser compatibility with Babel
-    getBabelOutputPlugin({
-        presets: [
-            [
-                '@babel/preset-env',
-                {
-                    modules: esm ? false : 'auto',
-                    // at least Node.js 17
-                    targets: {
-                        node: '17',
-                    },
-                },
-            ],
-        ],
-        allowAllFormats: true,
-        compact: false,
+    typescript({
+        tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+        compilerOptions: {
+            incremental: true,
+            declaration: true,
+            declarationDir: path.join(ROOT_DIR, 'dist/types'),
+        },
+        include: [path.join(ROOT_DIR, './src/**/*.ts')],
+        exclude: [path.join(ROOT_DIR, './node_modules'), path.join(ROOT_DIR, './test')],
+        outputToFilesystem: true,
     }),
 ];
 
-// Plugins for browser builds
-export const browserPlugins = [
-    ...commonPlugins,
-    nodePolyfills(),
-    // The build of CSSTree is a bit complicated (patches, require "emulation", etc.),
-    // so here we only specify the pre-built version by an alias
-    alias({
-        entries: [
-            {
-                find: '@adguard/ecss-tree',
-                replacement: path.resolve(
-                    'node_modules/@adguard/ecss-tree/dist/ecsstree.umd.min.js',
-                ),
-            },
-        ],
-    }),
-    // Provide better browser compatibility with Babel
-    getBabelOutputPlugin({
-        presets: [
-            [
-                '@babel/preset-env',
-                {
-                    targets: {
-                        browsers: [
-                            'chrome >= 80',
-                            'firefox >= 78',
-                            'edge >= 80',
-                            'opera >= 67',
-                            'safari >= 14',
-                        ],
-                    },
-                },
-            ],
-        ],
-        allowAllFormats: true,
-        compact: false,
-    }),
-    // Minify the output with Terser
-    terser({
-        output: {
-            // Keep the banner in the minified output
-            preamble: banner,
-        },
-        compress: {
-            passes: 3,
-        },
-    }),
-];
-
-// CommonJS build configuration
-const cjs = {
-    input: path.join(ROOT_DIR, 'src', 'index.ts'),
+const node = {
+    input: path.join(ROOT_DIR, 'src/index.ts'),
     output: [
         {
-            file: path.join(distDir, `${BASE_FILE_NAME}.cjs`),
+            file: path.join(distDir, `${BASE_FILE_NAME}.js`),
             format: 'cjs',
             exports: 'auto',
             sourcemap: false,
             banner,
         },
-    ],
-    plugins: getNodePlugins(),
-};
-
-// ECMAScript build configuration
-const esm = {
-    input: path.join(ROOT_DIR, 'src', 'index.ts'),
-    output: [
         {
-            file: path.join(distDir, `${BASE_FILE_NAME}.esm.js`),
+            file: path.join(distDir, `${BASE_FILE_NAME}.mjs`),
             format: 'esm',
             sourcemap: false,
             banner,
         },
     ],
-    plugins: getNodePlugins(),
-};
-
-// Browser-friendly UMD build configuration
-const umd = {
-    input: path.join(ROOT_DIR, 'src', 'index.ts'),
-    output: [
-        {
-            file: path.join(distDir, `${BASE_FILE_NAME}.umd.min.js`),
-            name: BASE_NAME,
-            format: 'umd',
-            sourcemap: false,
-            banner,
-        },
-    ],
-    plugins: browserPlugins,
-};
-
-// Browser-friendly IIFE build configuration
-const iife = {
-    input: path.join(ROOT_DIR, 'src', 'index.ts'),
-    output: [
-        {
-            file: path.join(distDir, `${BASE_FILE_NAME}.iife.min.js`),
-            name: BASE_NAME,
-            format: 'iife',
-            sourcemap: false,
-            banner,
-        },
-    ],
-    plugins: browserPlugins,
+    plugins: commonPlugins,
 };
 
 // Merge .d.ts files (requires `tsc` to be run first,
 // because it merges .d.ts files from `dist/types` directory)
 const dts = {
-    input: path.join(ROOT_DIR, 'dist', 'types', 'src', 'index.d.ts'),
+    input: path.join(ROOT_DIR, 'dist/types/src/index.d.ts'),
     output: [
         {
             file: path.join(distDir, `${BASE_FILE_NAME}.d.ts`),
@@ -247,4 +127,4 @@ const dts = {
 };
 
 // Export build configs for Rollup
-export default [cjs, esm, umd, iife, dts];
+export default [node, dts];

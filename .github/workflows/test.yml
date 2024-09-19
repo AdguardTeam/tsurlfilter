@@ -49,6 +49,7 @@ jobs:
           npx lerna run --scope @adguard/agtree lint
           npx lerna run --scope @adguard/agtree test
           npx lerna run --scope @adguard/agtree build
+          npx lerna run --scope @adguard/agtree test:smoke
 
           # tsurlfilter
           npx lerna run --scope @adguard/tsurlfilter lint

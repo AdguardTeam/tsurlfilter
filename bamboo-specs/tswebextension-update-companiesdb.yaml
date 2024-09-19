@@ -42,7 +42,9 @@ Build:
             if [ $branch != "release/v3.1" ]
             then
               echo "load companiesdb is not supported on branch ${branch}"
-              exit 1;
+              # TODO: remove following logging and change exit to '1' after release/v3.1 is merged into master
+              echo "skipping..."
+              exit 0;
             fi
 
             # Install dependencies

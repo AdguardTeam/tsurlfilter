@@ -9,3 +9,5 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: scorecardresearch_beacon.js
   description: Mocks Scorecard Research API.
+  resource_types:
+    - script

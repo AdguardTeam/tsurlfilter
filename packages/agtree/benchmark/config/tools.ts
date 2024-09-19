@@ -7,7 +7,7 @@ import * as TsUrlFilterV2 from 'tsurlfilter-v2';
 import * as AGTreeV1 from 'agtree-v1';
 
 // eslint-disable-next-line import/no-relative-packages, import/extensions
-import * as AGTreeV2 from '../../dist/agtree.cjs';
+import * as AGTreeV2 from '../../dist/agtree.js';
 import { type ToolConfigs } from '../common/interfaces';
 import { RE_NL_SPLIT } from '../common/constants';
 

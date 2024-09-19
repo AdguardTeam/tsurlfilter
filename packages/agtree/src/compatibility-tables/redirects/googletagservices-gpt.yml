@@ -10,3 +10,5 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: googletagservices_gpt.js
   description: Mocks Google Publisher Tag API.
+  resource_types:
+    - script

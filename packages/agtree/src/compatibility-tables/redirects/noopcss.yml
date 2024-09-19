@@ -10,6 +10,8 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: noop.css
   description: Redirects to an empty CSS file.
+  resource_types:
+    - stylesheet
 
 abp_any:
   name: blank-css

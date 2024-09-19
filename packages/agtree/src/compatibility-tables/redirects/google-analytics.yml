@@ -13,3 +13,5 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: google-analytics_analytics.js
   description: Mocks Google's Analytics and Tag Manager APIs.
+  resource_types:
+    - script

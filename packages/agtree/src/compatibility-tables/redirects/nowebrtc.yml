@@ -11,3 +11,5 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: nowebrtc.js
   description: Disables WebRTC by overriding `RTCPeerConnection`.
+  resource_types:
+    - other

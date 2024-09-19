@@ -9,3 +9,6 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: fingerprint3.js
   description: Mocks FingerprintJS v3.
+  resource_types:
+    - script
+

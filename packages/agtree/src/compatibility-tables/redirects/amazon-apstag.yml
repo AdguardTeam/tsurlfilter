@@ -11,3 +11,5 @@ ubo_any:
   name: amazon_apstag.js
   description: Mocks Amazon's apstag.js
   docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#amazon_apstagjs-
+  resource_types:
+    - script

@@ -13,3 +13,5 @@ ubo_any:
   aliases:
     - googlesyndication.com/adsbygoogle.js
   description: Mocks Google AdSense API.
+  resource_types:
+    - script
