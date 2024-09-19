@@ -7,6 +7,9 @@
 #  -x: Print each command to the terminal as it is executed, which is useful for debugging.
 set -ex
 
+# Redirect stderr (2) to stdout (1) to capture all output in a single log
+exec 2>&1
+
 echo "adguard-api-example tests starting"
 
 # import helper functions and some common variables
