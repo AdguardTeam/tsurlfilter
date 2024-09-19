@@ -57,12 +57,15 @@ export class PositionProvider {
                     ? i + 2
                     : i + 1;
 
-                if (sourceCode[i] === CR) {
+                if (sourceCode[i] === CR && sourceCode[i + 1] === LF) {
                     // Skip the '\n' in a '\r\n' sequence
                     i += 1;
                 }
             }
         }
+
+        // Handle the case where the last offset is at the end of the source code
+        this.offsetToLine[sourceCode.length] = currentLine;
     }
 
     /**
@@ -72,7 +75,7 @@ export class PositionProvider {
      * @returns A Position object containing the 1-based line and column number, or null if the offset is out of range.
      */
     convertOffsetToPosition(offset: number): Position | null {
-        if (offset < 0 || offset >= this.offsetToLine.length) {
+        if (offset < 0 || offset > this.offsetToLine.length - 1) {
             return null;
         }
 

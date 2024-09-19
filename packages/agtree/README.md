@@ -6,13 +6,13 @@
         <img alt="AGTree" src="https://cdn.adtidy.org/website/github.com/AGTree/agtree_lightmode.svg" width="350px" />
     </picture>
 </p>
-<h3 align="center">Universal adblock filter list parser</h3>
+<h3 align="center">Tool set for working with adblock filter lists</h3>
 <p align="center">Supported syntaxes:</p>
 <p align="center">
     <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px" alt="AdGuard logo" /> <a href="https://adguard.com">AdGuard</a>
     | <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" width="14px" alt="uBlock Origin logo" /> <a href="https://github.com/gorhill/uBlock">uBlock Origin</a>
-    | <img src="https://cdn.adguard.com/website/github.com/AGLint/ab_logo.svg" width="14px" alt="AdBlock logo" /><a href="https://getadblock.com">AdBlock</a>
-    | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px" alt="Adblock Plus logo" /><a href="https://adblockplus.org">Adblock Plus</a>
+    | <img src="https://cdn.adguard.com/website/github.com/AGLint/ab_logo.svg" width="14px" alt="AdBlock logo" /> <a href="https://getadblock.com">AdBlock</a>
+    | <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" width="14px" alt="Adblock Plus logo" /> <a href="https://adblockplus.org">Adblock Plus</a>
 </p>
 <p align="center">
     <a href="https://www.npmjs.com/package/@adguard/agtree"><img src="https://img.shields.io/npm/v/@adguard/agtree" alt="NPM version" /></a>
@@ -21,43 +21,29 @@
 </p>
 <!-- markdownlint-restore -->
 
-Table of Contents:
+## What is AGTree?
 
-- [Introduction](#introduction)
-- [Browser compatibility](#browser-compatibility)
-- [Development \& Contribution](#development--contribution)
-- [Ideas \& Questions](#ideas--questions)
-- [License](#license)
-- [References](#references)
+AGTree is a tool set for working with adblock filter lists. It contains the following modules:
 
-## Introduction
-
-AGTree is a universal tool for working with adblock filter lists. It contains the following modules:
-
-- [Adblock rule converter][converter-url]
 - [Adblock rule parser][parser-url]
+- [Adblock rule converter][converter-url]
 - [Adblock rule validator][validator-url]
 - [Compatibility tables][compatibility-tables-url]
 
-AGTree supports all syntaxes currently in use:
+## Installation
 
-<!--markdownlint-disable MD013-->
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" alt="AdGuard logo" width="14px"> [AdGuard][adg-url]
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/ubo_logo.svg" alt="uBlock Origin logo" width="14px"> [uBlock Origin][ubo-url]
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/abp_logo.svg" alt="Adblock Plus logo" width="14px"> [Adblock Plus][abp-url]
-- <img src="https://cdn.adguard.com/website/github.com/AGLint/ab_logo.svg" alt="AdBlock logo" width="14px"> [AdBlock][ab-url]
-<!--markdownlint-enable MD013-->
+You can install the library using
 
-## Browser compatibility
+- [Yarn][yarn-pkg-manager-url]: `yarn add @adguard/agtree`
+- [NPM][npm-pkg-manager-url]: `npm install @adguard/agtree`
+- [PNPM][pnpm-pkg-manager-url]: `pnpm add @adguard/agtree`
 
-| Browser               | Version   |
-|-----------------------|:----------|
-| Chrome                | ✅ 80     |
-| Firefox               | ✅ 78     |
-| Edge                  | ✅ 80     |
-| Opera                 | ✅ 67     |
-| Safari                | ✅ 14     |
-| Internet Explorer     | ❌        |
+> [!IMPORTANT]
+> AGTree requires Node.js version 18 or higher.
+
+[yarn-pkg-manager-url]: https://yarnpkg.com/en/docs/install
+[npm-pkg-manager-url]: https://www.npmjs.com/get-npm
+[pnpm-pkg-manager-url]: https://pnpm.io/
 
 ## Development & Contribution
 
@@ -94,16 +80,13 @@ resources, please let us know.
 - <img src="https://cdn.adguard.com/website/github.com/AGLint/adg_logo.svg" width="14px" alt="AdGuard logo"> [AdGuard's compatibility table][adg-compatibility-table]
 <!--markdownlint-enable MD013-->
 
-[ab-url]: https://getadblock.com
 [abp-ext-css]: https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide-emulation
 [abp-filters]: https://help.eyeo.com/adblockplus/how-to-write-filters
 [abp-snippets]: https://help.eyeo.com/adblockplus/snippet-filters-tutorial#snippets-ref
-[abp-url]: https://adblockplus.org
 [adg-compatibility-table]: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/compatibility-table.md
 [adg-ext-css]: https://github.com/AdguardTeam/ExtendedCss/blob/master/README.md
 [adg-filters]: https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters
 [adg-scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#scriptlets
-[adg-url]: https://adguard.com
 [compatibility-tables-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/compatibility-tables
 [contributing-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/CONTRIBUTING.md
 [converter-url]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree/src/converter
@@ -116,4 +99,3 @@ resources, please let us know.
 [ubo-filters]: https://github.com/gorhill/uBlock/wiki/Static-filter-syntax
 [ubo-procedural]: https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters
 [ubo-scriptlets]: https://github.com/gorhill/uBlock/wiki/Resources-Library#available-general-purpose-scriptlets
-[ubo-url]: https://github.com/gorhill/uBlock

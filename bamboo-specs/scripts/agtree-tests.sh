@@ -1,8 +1,11 @@
-set -e
-set -x
+#!/bin/bash
 
-# Fix mixed logs
-exec 2>&1
+# 'set' should be added to the beginning of each script to ensure that it runs with the correct options.
+# Please do not move it to some common file, like `setup-tests.sh`, because sourcing A script from B script
+# cannot change the options of B script.
+#  -e: Exit immediately if any command exits with a non-zero status (i.e., if a command fails).
+#  -x: Print each command to the terminal as it is executed, which is useful for debugging.
+set -ex
 
 echo "@adguard/agtree tests starting"
 
@@ -28,5 +31,8 @@ pnpm --filter @adguard/agtree lint
 
 # Run tests with Jest
 pnpm --filter @adguard/agtree test
+
+# Run smoke tests
+pnpm --filter @adguard/agtree test:smoke
 
 echo "@adguard/agtree tests completed"

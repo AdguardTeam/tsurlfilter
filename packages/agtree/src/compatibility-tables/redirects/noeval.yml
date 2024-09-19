@@ -14,3 +14,5 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: noeval.js
   description: Prevents page to use eval.
+  resource_types:
+    - script

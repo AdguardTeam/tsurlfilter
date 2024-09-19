@@ -10,6 +10,8 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: noop-1s.mp4
   description: Redirects to an empty MP4 file with a duration of 1 second.
+  resource_types:
+    - media
 
 abp_any:
   name: blank-mp4

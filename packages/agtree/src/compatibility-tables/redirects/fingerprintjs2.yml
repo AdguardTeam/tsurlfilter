@@ -9,3 +9,6 @@ adg_os_any|adg_ext_any:
 ubo_any:
   name: fingerprint2.js
   description: Mocks FingerprintJS2 script.
+  resource_types:
+    - script
+

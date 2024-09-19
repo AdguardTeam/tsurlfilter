@@ -8,6 +8,9 @@ import { redirectsCompatibilityTableData } from './compatibility-table-data';
 import { type CompatibilityTable } from './types';
 import { deepFreeze } from '../utils/deep-freeze';
 import { COLON } from '../utils/constants';
+import { type GenericPlatform, type SpecificPlatform } from './platforms';
+import { getResourceTypeModifier } from './utils/resource-type-helpers';
+import { isNull, isString, isUndefined } from '../utils/type-guards';
 
 /**
  * Prefix for resource redirection names.
@@ -56,6 +59,46 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
      */
     constructor(data: CompatibilityTable<RedirectDataSchema>) {
         super(data, redirectNameNormalizer);
+    }
+
+    /**
+     * Gets the resource type adblock modifiers for the redirect for the given platform
+     * based on the `resourceTypes` field.
+     *
+     * @param redirect Redirect name or redirect data.
+     * @param platform Platform to get the modifiers for.
+     *
+     * @returns Set of resource type modifiers or an empty set if the redirect is not found or has no resource types.
+     */
+    public getResourceTypeModifiers(
+        redirect: string | RedirectDataSchema,
+        platform: SpecificPlatform | GenericPlatform,
+    ): Set<string> {
+        let redirectData: RedirectDataSchema | null = null;
+
+        if (isString(redirect)) {
+            redirectData = this.getFirst(redirect, platform);
+        } else {
+            redirectData = redirect;
+        }
+
+        const modifierNames = new Set<string>();
+
+        if (isNull(redirectData) || isUndefined(redirectData.resourceTypes)) {
+            return modifierNames;
+        }
+
+        for (const resourceType of redirectData.resourceTypes) {
+            const modifierName = getResourceTypeModifier(resourceType, platform);
+
+            if (isNull(modifierName)) {
+                continue;
+            }
+
+            modifierNames.add(modifierName);
+        }
+
+        return modifierNames;
     }
 }
 

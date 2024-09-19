@@ -1,13 +1,19 @@
 {
     "name": "@adguard/agtree",
-    "version": "2.0.0",
-    "description": "Universal adblock filter list parser.",
+    "version": "2.1.0",
+    "description": "Tool set for working with adblock filter lists",
     "keywords": [
         "adblock",
         "filter",
         "list",
+        "rule",
         "parser",
-        "ast"
+        "ast",
+        "converter",
+        "validator",
+        "generator",
+        "serialize",
+        "deserialize"
     ],
     "author": "Adguard Software Ltd.",
     "license": "MIT",
@@ -20,54 +26,46 @@
         "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
     },
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme",
-    "main": "dist/agtree.cjs",
-    "module": "dist/agtree.esm.js",
-    "browser": "dist/agtree.umd.min.js",
+    "main": "dist/agtree.js",
+    "module": "dist/agtree.mjs",
     "types": "dist/agtree.d.ts",
     "exports": {
         ".": {
             "types": "./dist/agtree.d.ts",
-            "import": "./dist/agtree.esm.js",
-            "require": "./dist/agtree.cjs"
-        },
-        "./es": "./dist/agtree.esm.js",
-        "./iife": "./dist/agtree.iife.min.js",
-        "./umd": "./dist/agtree.umd.min.js"
+            "import": "./dist/agtree.mjs",
+            "require": "./dist/agtree.js"
+        }
     },
     "files": [
         "dist"
     ],
     "engines": {
-        "node": ">=17"
+        "node": ">=18"
     },
     "scripts": {
-        "build": "pnpm clean && pnpm build-types && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && pnpm clean-types",
+        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && rimraf dist/types",
         "build-txt": "tsx scripts/build-txt.ts",
-        "build-types": "tsc --declaration --emitDeclarationOnly --outdir dist/types",
         "build-compatibility-tables": "tsx scripts/build-compatibility-tables.ts",
         "build-compatibility-tables-wiki": "tsx scripts/build-compatibility-tables-wiki.ts",
         "check-types": "tsc --noEmit",
         "clean": "rimraf dist",
-        "clean-types": "rimraf dist/types",
         "coverage": "jest --runInBand --coverage",
         "increment": "pnpm version patch --no-git-tag-version",
         "lint": "pnpm check-types && pnpm lint:ts && pnpm lint:md",
         "lint:md": "markdownlint .",
         "lint:ts": "eslint . --cache --ext .ts",
         "precommit": "pnpm check-types && pnpm lint && pnpm test",
-        "test": "jest --runInBand"
+        "test": "jest --runInBand",
+        "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/cjs && pnpm test) && (cd test/smoke/typescript && pnpm test)"
     },
     "devDependencies": {
-        "@babel/core": "^7.22.5",
-        "@babel/preset-env": "^7.22.5",
         "@rollup/plugin-alias": "^5.0.0",
-        "@rollup/plugin-babel": "^6.0.3",
         "@rollup/plugin-commonjs": "^25.0.2",
         "@rollup/plugin-json": "^6.0.0",
         "@rollup/plugin-node-resolve": "^15.1.0",
-        "@rollup/plugin-terser": "^0.4.3",
+        "@rollup/plugin-swc": "^0.4.0",
         "@rollup/plugin-typescript": "^11.1.2",
-        "@swc/core": "^1.3.100",
+        "@swc/core": "^1.7.24",
         "@swc/helpers": "^0.5.3",
         "@swc/jest": "^0.2.29",
         "@types/benchmark": "^2.1.5",
@@ -108,7 +106,6 @@
         "rollup": "^3.25.3",
         "rollup-plugin-dts": "^5.3.0",
         "rollup-plugin-node-externals": "^6.1.1",
-        "rollup-plugin-polyfill-node": "^0.12.0",
         "systeminformation": "^5.22.0",
         "ts-node": "^10.9.2",
         "tsx": "^4.7.3",
