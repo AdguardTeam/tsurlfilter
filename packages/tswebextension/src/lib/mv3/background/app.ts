@@ -230,15 +230,15 @@ export class TsWebExtension implements AppInterface<
      * Stops service, disables all user rules and filters.
      */
     public async stop(): Promise<void> {
-        await TsWebExtension.removeAllFilteringRules();
-
+        // Stop handle onRuleMatchedDebug event.
+        // It should be stopped before removing rules,
+        // otherwise, it may try to log applying of removed rules. AG-36068.
         declarativeFilteringLog.stop();
+
+        await TsWebExtension.removeAllFilteringRules();
 
         // Stop handle request events.
         WebRequestApi.stop();
-
-        // Stop handle onRuleMatchedDebug event.
-        declarativeFilteringLog.stop();
 
         // Stop handle request events.
         WebRequestApi.stop();
