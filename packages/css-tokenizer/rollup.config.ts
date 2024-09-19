@@ -61,7 +61,7 @@ const commonPlugins = [
         },
         include: ['./src/**/*.ts'],
         exclude: ['./node_modules', './test'],
-        outputToFilesystem: true,
+        outputToFilesystem: false,
     }),
 ];
 

@@ -21,7 +21,6 @@ import {
     REGEX_MARKER,
     SLASH,
 } from './constants';
-import { StringUtils } from './string';
 
 // Special RegExp constants
 export const REGEX_START = CARET; // '^'
@@ -70,8 +69,11 @@ export const SPECIAL_REGEX_SYMBOLS = new Set([
  */
 export class RegExpUtils {
     /**
-     * Checks whether a string is a RegExp pattern.
+     * Checks whether a string possibly is a RegExp pattern.
      * Flags are not supported.
+     *
+     * Note: it does not perform a full validation of the pattern,
+     * it just checks if the string starts and ends with a slash.
      *
      * @param pattern - Pattern to check
      * @returns `true` if the string is a RegExp pattern, `false` otherwise
@@ -80,12 +82,10 @@ export class RegExpUtils {
         const trimmedPattern = pattern.trim();
 
         // Avoid false positives
-        if (trimmedPattern.length > REGEX_MARKER.length * 2 && trimmedPattern.startsWith(REGEX_MARKER)) {
-            const last = StringUtils.findNextUnescapedCharacter(trimmedPattern, REGEX_MARKER, REGEX_MARKER.length);
-            return last === trimmedPattern.length - 1;
-        }
-
-        return false;
+        return trimmedPattern.length > REGEX_MARKER.length * 2
+            && trimmedPattern.startsWith(REGEX_MARKER)
+            && trimmedPattern.endsWith(REGEX_MARKER)
+            && trimmedPattern[REGEX_MARKER.length - 2] !== ESCAPE_CHARACTER;
     }
 
     /**

@@ -1,6 +1,6 @@
 {
   "name": "@adguard/css-tokenizer",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "CSS / Extended CSS tokenizer",
   "keywords": [
     "css",
@@ -28,7 +28,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist/csstokenizer.d.ts",
+    "dist/csstokenizer.js",
+    "dist/csstokenizer.mjs"
   ],
   "scripts": {
     "build": "pnpm clean && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/types",
@@ -41,7 +43,8 @@
     "lint": "pnpm lint:ts && pnpm lint:md",
     "lint:md": "markdownlint .",
     "lint:ts": "eslint . --cache --ext .ts",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/cjs && pnpm test) && (cd test/smoke/typescript && pnpm test)"
   },
   "devDependencies": {
     "@csstools/css-tokenizer": "^2.2.1",

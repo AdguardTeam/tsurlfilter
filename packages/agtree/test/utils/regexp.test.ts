@@ -47,6 +47,18 @@ describe('RegExpUtils', () => {
                 actual: '/^regex$/',
                 expected: true,
             },
+            {
+                actual: '/ex[[ampl[[e.com///.*/banner/',
+                expected: true,
+            },
+            {
+                actual: String.raw`/^htt[[[ps?:\/\/.*(example1|example2)\.(com|org)\//`,
+                expected: true,
+            },
+            {
+                actual: String.raw`/\.example\.com/.*[a-zA-Z0-9]({4}/`,
+                expected: true,
+            },
         ])('isRegexPattern should return \'$expected\' for \'$actual\'', ({ actual, expected }) => {
             expect(RegExpUtils.isRegexPattern(actual)).toBe(expected);
         });

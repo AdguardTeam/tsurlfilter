@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## [3.0.3] - 2024-09-19
+
+### Changed
+
+- Updated `@adguard/agtree` to `v2.1.1`.
+- Updated `@adguard/css-tokenizer` to `v1.1.1`.
+
+[3.0.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.3
+[AdguardBrowserExtension#2912]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2912
+
 ## [3.1.0-alpha.3] - 2024-08-30
 
 ### Changed
@@ -15,7 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `@adguard/scriptlets` to `v1.11.27`.
 
 [3.1.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.3
-
 
 ## [3.0.2] - 2024-08-29
 

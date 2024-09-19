@@ -1,0 +1,90 @@
+name: Create GitHub Release
+
+on:
+  push:
+    tags:
+      - 'adguard-api-v*'
+      - 'agtree-v*'
+      - 'css-tokenizer-v*'
+      - 'logger-v*'
+      - 'tsurlfilter-v*'
+      - 'tswebextension-v*'
+
+# Workflow need write access to the repository to create a release
+permissions:
+    contents: write
+
+jobs:
+  create_release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = process.env.GITHUB_REF.replace('refs/tags/', '');
+
+            const [packageName, packageVersion] = tag.split('-v');
+
+            const changelogUrl = `https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/${packageName}/CHANGELOG.md`;
+
+            const nameMap = {
+              'adguard-api': 'AdGuard API',
+              'agtree': 'AGTree',
+              'css-tokenizer': 'CSS Tokenizer',
+              'logger': 'Logger',
+              'tsurlfilter': 'TSUrlFilter',
+              'tswebextension': 'TSWebExtension'
+            };
+
+            const displayName = nameMap[packageName] || packageName;
+
+            const releaseName = `${displayName} v${packageVersion}`;
+
+            const releaseBody = [
+              `We are happy to announce the release of ${releaseName}!`,
+              '',
+              `Please see the [CHANGELOG](${changelogUrl}) for more information.`,
+            ].join('\n');
+
+            core.exportVariable('TAG_NAME', tag);
+            core.exportVariable('RELEASE_NAME', releaseName);
+            core.exportVariable('RELEASE_BODY', releaseBody);
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ env.RELEASE_NAME }}
+          tag_name: ${{ env.TAG_NAME }}
+          body: ${{ env.RELEASE_BODY }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify:
+    name: Send Slack notification
+    needs: create_release
+    # Note: 'always()' is needed to run the notify job even if the test job was failed
+    if:
+      ${{
+        always() &&
+        github.repository == 'AdguardTeam/tsurlfilter' &&
+        github.event_name == 'push'
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ needs.create_release.result }}
+          fields: workflow, repo, message, commit, author, eventName, ref, job
+          job_name: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
