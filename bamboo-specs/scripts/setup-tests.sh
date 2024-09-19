@@ -1,4 +1,4 @@
-# Fix mixed logs
+# Redirect stderr (2) to stdout (1) to capture all output in a single log
 exec 2>&1
 
 ls -alt
