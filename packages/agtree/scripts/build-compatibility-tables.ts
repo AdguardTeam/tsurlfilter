@@ -11,7 +11,7 @@ import path from 'path';
 import * as data from '../src/compatibility-tables/compatibility-table-data';
 
 const DIST_FOLDER_NAME = 'dist';
-const OUTPUT_FILE_NAME = 'compatibility-tables.json';
+const OUTPUT_FILE_NAME = 'compatibility-table-data.json';
 
 /**
  * Main function.

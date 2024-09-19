@@ -1,6 +1,6 @@
 {
     "name": "@adguard/agtree",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "description": "Tool set for working with adblock filter lists",
     "keywords": [
         "adblock",
@@ -37,13 +37,16 @@
         }
     },
     "files": [
-        "dist"
+        "dist/agtree.d.ts",
+        "dist/agtree.js",
+        "dist/agtree.mjs",
+        "dist/compatibility-table-data.js"
     ],
     "engines": {
         "node": ">=18"
     },
     "scripts": {
-        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && rimraf dist/types",
+        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && rimraf dist/types && rimraf dist/compatibility-table-data.json",
         "build-txt": "tsx scripts/build-txt.ts",
         "build-compatibility-tables": "tsx scripts/build-compatibility-tables.ts",
         "build-compatibility-tables-wiki": "tsx scripts/build-compatibility-tables-wiki.ts",
@@ -63,6 +66,7 @@
         "@rollup/plugin-commonjs": "^25.0.2",
         "@rollup/plugin-json": "^6.0.0",
         "@rollup/plugin-node-resolve": "^15.1.0",
+        "@rollup/plugin-replace": "^5.0.7",
         "@rollup/plugin-swc": "^0.4.0",
         "@rollup/plugin-typescript": "^11.1.2",
         "@swc/core": "^1.7.24",

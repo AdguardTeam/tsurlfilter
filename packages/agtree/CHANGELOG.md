@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
+## [2.1.1] - 2024-09-19
+
+### Fixed
+
+- Optimized build size.
+
+[2.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.1.1
+
 ## [2.1.0] - 2024-09-18
 
 ### Added
