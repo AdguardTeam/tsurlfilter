@@ -757,5 +757,47 @@ describe('DeclarativeConverter', () => {
             expect(errors).toHaveLength(1);
             expect(declarativeRules).toHaveLength(0);
         });
+
+        // In old logic we used last rule id from previous filter to calculate
+        // the id of the first rule in the next filter (last used plus one).
+        // But in some cases it could lead to the same id for different rules,
+        // for example when we have grouping rules in the first filter and
+        // last converted rule will have not the highest id.
+        it('while convert dynamic rules each rule should have unique id', async () => {
+            const filter1 = createFilter([
+                'example.com', // id = 5
+                '||test.com$removeparam=p1', // id = 27
+                '||test.com$removeparam=p2', // id = 70
+                'example.org', // id = 113
+            ], 1);
+            // Length of first rule should be equal to = last rule id from filter1 - second last rule id + bytes needed
+            // to serialize the rule node (which brings some extra offset, depends on the rule).
+            const filter2 = createFilter([
+                'm7sk4ubcalu89gp1q1elsulnhslt2vykalsdjfcvkldfncchfcvcc.zsxnbcfidxyhcwhc',
+                'bad.rule',
+            ], 2);
+
+            const { ruleSet } = await converter.convertDynamicRuleSets([
+                filter1, filter2,
+            ], []);
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+
+            // 5 is because of 2 removeparam rules are converted into 1 declarative rule.
+            expect(declarativeRules).toHaveLength(5);
+
+            // Function to bring more human readable error message.
+            const checkForUniqueRule = (rules: typeof declarativeRules) => {
+                rules.forEach((rule, index) => {
+                    for (let i = 0; i < rules.length; i += 1) {
+                        if (rule.id === rules[i].id && i !== index) {
+                            // eslint-disable-next-line max-len
+                            throw new Error(`Rules have the same id: ${JSON.stringify(rule, null, 2)}, ${JSON.stringify(rules[i], null, 2)}`);
+                        }
+                    }
+                });
+            };
+
+            expect(() => checkForUniqueRule(declarativeRules)).not.toThrow();
+        });
     });
 });
