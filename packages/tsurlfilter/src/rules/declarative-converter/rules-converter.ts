@@ -158,9 +158,9 @@ export class DeclarativeRulesConverter {
         };
 
         for (const [filterId, groupedRules] of filters) {
-            const lastUsedId = converted.declarativeRules.length > 0
-                ? converted.declarativeRules[converted.declarativeRules.length - 1].id + 1
-                : DeclarativeRulesConverter.START_DECLARATIVE_RULE_ID;
+            const highestUsedId = converted.declarativeRules.reduce((currentMax, rule) => {
+                return Math.max(currentMax, rule.id);
+            }, DeclarativeRulesConverter.START_DECLARATIVE_RULE_ID);
 
             const {
                 sourceMapValues,
@@ -170,7 +170,7 @@ export class DeclarativeRulesConverter {
             } = await this.convertRules(
                 filterId,
                 groupedRules,
-                lastUsedId,
+                highestUsedId,
                 options,
             );
 
@@ -184,6 +184,10 @@ export class DeclarativeRulesConverter {
             options?.maxNumberOfRules,
             options?.maxNumberOfRegexpRules,
         );
+
+        if (!this.checkRulesHaveUniqueIds(converted.declarativeRules)) {
+            throw new Error('Declarative rules have non-unique identifiers.');
+        }
 
         return converted;
     }
@@ -233,6 +237,21 @@ export class DeclarativeRulesConverter {
         }));
 
         return converted;
+    }
+
+    /**
+     * Checks that declarative rules have unique identifiers.
+     *
+     * @param rules List of declarative rules.
+     *
+     * @returns True if all rules have unique identifiers, otherwise false.
+     */
+    private static checkRulesHaveUniqueIds(rules: DeclarativeRule[]): boolean {
+        const ids = rules.map(({ id }) => id);
+
+        const uniqueIds = new Set(ids);
+
+        return uniqueIds.size === rules.length;
     }
 
     /**

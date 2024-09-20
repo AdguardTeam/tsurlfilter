@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## [3.1.0-alpha.4] - 2024-09-20
+
+### Fixed
+
+- In some cases dynamic rules can have not unique IDs [AdguardBrowserExtension#2953].
+
+[3.1.0-alpha.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.4
+[AdguardBrowserExtension#2953]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2953
+
 ## [3.0.3] - 2024-09-19
 
 ### Changed
