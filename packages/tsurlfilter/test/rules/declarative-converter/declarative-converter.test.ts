@@ -770,7 +770,8 @@ describe('DeclarativeConverter', () => {
                 '||test.com$removeparam=p2', // id = 70
                 'example.org', // id = 113
             ], 1);
-            // Length of first rule should be equal to = last rule id from filter1 - second last rule id + some offset.
+            // Length of first rule should be equal to = last rule id from filter1 - second last rule id + bytes needed
+            // to serialize the rule node (which brings some extra offset, depends on the rule).
             const filter2 = createFilter([
                 'm7sk4ubcalu89gp1q1elsulnhslt2vykalsdjfcvkldfncchfcvcc.zsxnbcfidxyhcwhc',
                 'bad.rule',
@@ -781,6 +782,7 @@ describe('DeclarativeConverter', () => {
             ], []);
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
+            // 5 is because of 2 removeparam rules are converted into 1 declarative rule.
             expect(declarativeRules).toHaveLength(5);
 
             // Function to bring more human readable error message.
