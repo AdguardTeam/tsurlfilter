@@ -74,7 +74,7 @@ Build:
             echo "Size before cleanup:" && du -h | tail -n 1
 
             pnpm clean
-  
+
             echo "Size after cleanup:" && du -h | tail -n 1
   # Store the logger package tarball as an artifact
   artifacts:

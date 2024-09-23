@@ -91,6 +91,12 @@ export class Logger {
      */
     constructor(writer: Writer = console) {
         this.writer = writer;
+
+        // bing the logging methods to avoid losing context
+        this.debug = this.debug.bind(this);
+        this.info = this.info.bind(this);
+        this.warn = this.warn.bind(this);
+        this.error = this.error.bind(this);
     }
 
     /**
