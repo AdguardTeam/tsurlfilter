@@ -26,6 +26,9 @@ pnpm install
 # build with dependencies, lerna is used for builds caching
 npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
+# build with dependencies, lerna is used for builds caching
+npx lerna run build --scope @adguard/tswebextension --include-dependencies
+
 # IMPORTANT: run lint after the build because linting requires types to be generated
 pnpm --filter @adguard/tswebextension lint
 
