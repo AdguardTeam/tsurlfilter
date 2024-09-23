@@ -6,15 +6,15 @@ plan:
   name: tsurlfilter - tests
 variables:
   dockerContainer: adguard/node-ssh:18.19--0
+docker:
+  image: "${bamboo.dockerContainer}"
+  volumes:
+    ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
 
 stages:
   - Tests:
       manual: false
       final: false
-      docker:
-        image: "${bamboo.dockerContainer}"
-        volumes:
-          ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
       # Jobs will run in parallel to reduce the total plan time
       jobs:
         - AGTree tests
@@ -26,19 +26,11 @@ stages:
         - TsUrlFilter tests
         - TsWebExtension tests
   - Update docs:
-      docker:
-        image: "${bamboo.dockerContainer}"
-        volumes:
-          ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
       manual: false
       final: false
       jobs:
         - Update docs
   - Clean:
-      docker:
-        image: "${bamboo.dockerContainer}"
-        volumes:
-          ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
       manual: false
       final: true
       jobs:
