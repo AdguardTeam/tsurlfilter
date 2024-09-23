@@ -1,3 +1,9 @@
 /node_modules
 /build
 /tmp
+
+# Optional eslint cache
+.eslintcache
+
+# TypeScript cache
+*.tsbuildinfo

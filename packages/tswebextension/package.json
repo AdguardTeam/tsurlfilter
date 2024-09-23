@@ -61,9 +61,8 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension#readme",
   "scripts": {
-    "lint": "eslint . && pnpm lint:tsc",
+    "lint": "eslint --cache . && pnpm lint:tsc",
     "lint:tsc": "tsc --noEmit",
-    "check-types": "pnpm lint:tsc",
     "prebuild": "rimraf dist",
     "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
     "postbuild": "node tasks/build-txt",

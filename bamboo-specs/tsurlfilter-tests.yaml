@@ -39,6 +39,22 @@ Test:
     - script:
         interpreter: SHELL
         scripts:
+          - bamboo-specs/scripts/logger-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/tsurlfilter-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/tswebextension-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/adguard-api-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
           - bamboo-specs/scripts/examples-adguard-api-tests.sh
     - script:
         interpreter: SHELL
@@ -51,15 +67,12 @@ Test:
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/logger-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/tsurlfilter-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/tswebextension-tests.sh
+          - bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          commitMessage: 'skipci: Automatic update tsurlfilter MV3 docs'
+          selectedRepository: defaultRepository
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build

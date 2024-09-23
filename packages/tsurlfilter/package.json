@@ -63,14 +63,14 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#readme",
   "scripts": {
-    "lint": "eslint 'src/**/*.ts' 'cli/**/*.ts' 'test/**/*.ts' && pnpm lint:tsc",
+    "lint": "eslint --cache . && pnpm lint:tsc",
     "lint:tsc": "tsc --noEmit -p test/tsconfig.tests.json",
-    "check-types": "pnpm lint:tsc",
     "prebuild": "rimraf dist && pnpm build:types",
     "build": "pnpm prebuild && rollup -c rollup.config.ts && pnpm postbuild",
     "postbuild": "node tasks/build-txt",
     "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
     "docs": "typedoc src --out docs",
+    "docs:mv3": "node -r esbuild-register tasks/generate-examples",
     "start": "rollup -c rollup.config.ts -w",
     "test": "jest --coverage",
     "test:light": "jest --testPathIgnorePatterns=benchmark",
@@ -81,8 +81,7 @@
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged",
     "prepublishOnly": "pnpm build",
-    "increment": "pnpm version patch --no-git-tag-version",
-    "examples": "node -r esbuild-register tasks/generate-examples"
+    "increment": "pnpm version patch --no-git-tag-version"
   },
   "lint-staged": {
     "{src,test}/**/*.ts": [

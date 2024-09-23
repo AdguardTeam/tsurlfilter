@@ -23,6 +23,9 @@ fi
 # Install dependencies
 pnpm install
 
+# Test build
+npx lerna run build --scope @adguard/css-tokenizer --include-dependencies
+
 # Check TypeScript types with TSC
 pnpm --filter @adguard/css-tokenizer check-types
 

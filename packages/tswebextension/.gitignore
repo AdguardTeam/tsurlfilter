@@ -9,3 +9,12 @@ test/resources/requests.json
 dist
 docs
 yarn-error.log
+
+# Optional eslint cache
+.eslintcache
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Rollup cache
+.rollup.cache

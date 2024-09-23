@@ -10,7 +10,7 @@
     "build:ff": "BROWSER=firefox node -r @swc-node/register ./scripts/build/index.ts",
     "run:ff": "node -r @swc-node/register ./scripts/launchFirefoxExtension.ts",
     "test": "node -r @swc-node/register ./scripts/browser-test/index.ts",
-    "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts' && tsc --noEmit",
+    "lint": "eslint --cache 'extension/**/*.ts' 'scripts/**/*.ts' && tsc --noEmit",
     "tswebextension": "tswebextension",
     "clean": "rimraf build"
   },
