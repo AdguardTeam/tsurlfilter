@@ -12,6 +12,7 @@ echo "@adguard/tswebextension and @adguard/tsurlfilter builds starting"
 # import helper functions and some common variables
 . ./bamboo-specs/scripts/helpers.sh
 
+# FIXME: Remove after merge to master
 if [ "$branch" != "release/v3.1" ]; then
   echo "Skip builds in not release/v3.1 branch"
   exit 0;
