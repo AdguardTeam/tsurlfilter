@@ -8,19 +8,13 @@ variables:
   dockerContainer: adguard/node-ssh:18.19--0
 
 stages:
-  - Update docs:
-      manual: false
-      final: false
-      jobs:
-        - Update docs
-  - Checkout:
-      manual: false
-      final: false
-      jobs:
-        - Checkout
   - Tests:
       manual: false
       final: false
+      docker:
+        image: "${bamboo.dockerContainer}"
+        volumes:
+          ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
       # Jobs will run in parallel to reduce the total plan time
       jobs:
         - AGTree tests
@@ -31,20 +25,164 @@ stages:
         - Logger tests
         - TsUrlFilter tests
         - TsWebExtension tests
+  - Update docs:
+      docker:
+        image: "${bamboo.dockerContainer}"
+        volumes:
+          ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+      manual: false
+      final: false
+      jobs:
+        - Update docs
   - Clean:
+      docker:
+        image: "${bamboo.dockerContainer}"
+        volumes:
+          ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
       manual: false
       final: true
       jobs:
         - Clean
 
+AGTree tests:
+  key: AGTREETESTS
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/setup-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/agtree-tests.sh
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+
+CSS Tokenizer tests:
+  key: CSSTOKENIZERTETS
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/setup-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/css-tokenizer-tests.sh
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+
+Example AdGuard API tests:
+  key: EXAMPLESADGUARDAPITESTS
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/setup-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/examples-adguard-api-tests.sh
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+
+Example TsWebExtension MV2 tests:
+  key: EXAMPLESTSWEBEXTENSIONMV2TESTS
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/setup-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+
+Example TsWebExtension MV3 tests:
+  key: EXAMPLESTSWEBEXTENSIONMV3TESTS
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/setup-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+
+Logger tests:
+  key: LOGGERTESTS
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/setup-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/logger-tests.sh
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+
+TsUrlFilter tests:
+  key: TSURLFILTERTESTS
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/setup-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/tsurlfilter-tests.sh
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+
+TsWebExtension tests:
+  key: TSWEBEXTENSIONTESTS
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/setup-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/tswebextension-tests.sh
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+
 Update docs:
   key: DOCS
-  docker:
-    image: "${bamboo.dockerContainer}"
-    volumes:
-      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
-    # TODO: Find a way to no fetch all tags.
     - checkout:
         force-clean-build: true
     - script:
@@ -63,136 +201,6 @@ Update docs:
   requirements:
     - adg-docker: 'true'
     - extension: 'true'
-
-Checkout:
-  key: CHECKOUT
-  tasks:
-    - checkout:
-        force-clean-build: 'true'
-  requirements:
-    - adg-docker: 'true'
-    - extension: 'true'
-
-AGTree tests:
-  key: AGTREETESTS
-  tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/setup-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/agtree-tests.sh
-  requirements:
-    - adg-docker: 'true'
-    - extension: 'true'
-
-CSS Tokenizer tests:
-  key: CSSTOKENIZERTETS
-  tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/setup-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/css-tokenizer-tests.sh
-  requirements:
-    - adg-docker: 'true'
-    - extension: 'true'
-
-Example AdGuard API tests:
-  key: EXAMPLESADGUARDAPITESTS
-  tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/setup-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/examples-adguard-api-tests.sh
-  requirements:
-    - adg-docker: 'true'
-    - extension: 'true'
-
-Example TsWebExtension MV2 tests:
-  key: EXAMPLESTSWEBEXTENSIONMV2TESTS
-  tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/setup-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh
-  requirements:
-    - adg-docker: 'true'
-    - extension: 'true'
-
-Example TsWebExtension MV3 tests:
-  key: EXAMPLESTSWEBEXTENSIONMV3TESTS
-  tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/setup-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh
-  requirements:
-    - adg-docker: 'true'
-    - extension: 'true'
-
-Logger tests:
-  key: LOGGERTESTS
-  tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/setup-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/logger-tests.sh
-  requirements:
-    - adg-docker: 'true'
-    - extension: 'true'
-
-TsUrlFilter tests:
-  key: TSURLFILTERTESTS
-  tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/setup-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/tsurlfilter-tests.sh
-  requirements:
-    - adg-docker: 'true'
-    - extension: 'true'
-
-TsWebExtension tests:
-  key: TSWEBEXTENSIONTESTS
-  tasks:
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/setup-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
-          - bamboo-specs/scripts/tswebextension-tests.sh
-  requirements:
-    - adg-docker: 'true'
-    - extension: 'true'
-
 
 Clean:
   key: CLEAN
