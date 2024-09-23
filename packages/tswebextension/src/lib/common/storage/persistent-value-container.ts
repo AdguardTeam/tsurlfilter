@@ -75,7 +75,8 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
                 [this.#key]: value,
             });
 
-            this.#value = storageData[this.#key];
+            // Since Value is unknown, we need to cast it to the correct type.
+            this.#value = storageData[this.#key] as Value;
         }
 
         this.#isInitialized = true;

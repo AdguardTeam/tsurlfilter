@@ -132,13 +132,9 @@ export default class DynamicRulesApi {
             const rulesetId = r.getId();
 
             // Get list of current disabled rules ids.
-            // FIXME figure out how to implement since it is not available in webextension polyfill
-            // @ts-ignore
-            const enableRuleIds: number[] = await browser.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
+            const enableRuleIds = await browser.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
 
             // And enable all of them.
-            // FIXME later
-            // @ts-ignore
             return browser.declarativeNetRequest.updateStaticRules({
                 rulesetId,
                 enableRuleIds,
@@ -167,9 +163,7 @@ export default class DynamicRulesApi {
             disableRuleIds: ruleIdsToDisable,
         }) => {
             // Get list of current disabled rules ids.
-            // FIXME later
-            // @ts-ignore
-            const disabledRuleIds: number[] = await browser.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
+            const disabledRuleIds = await browser.declarativeNetRequest.getDisabledRuleIds({ rulesetId });
 
             // Collect rules which should be enabled.
             const enableRuleIds = disabledRuleIds.filter((id) => !ruleIdsToDisable.includes(id));
@@ -177,8 +171,6 @@ export default class DynamicRulesApi {
             // Filter only that rules which are not disabled already.
             const disableRuleIds = ruleIdsToDisable.filter((id) => !disabledRuleIds.includes(id));
 
-            // FIXME later
-            // @ts-ignore
             return browser.declarativeNetRequest.updateStaticRules({
                 rulesetId,
                 enableRuleIds,

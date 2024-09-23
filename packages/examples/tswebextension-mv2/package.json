@@ -29,7 +29,7 @@
     "@types/chrome": "^0.0.263",
     "@types/react": "^17.0.80",
     "@types/react-dom": "^17.0.25",
-    "@types/webextension-polyfill": "^0.10.7",
+    "@types/webextension-polyfill": "^0.12.0",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
     "@typescript-eslint/parser": "^7.5.0",
     "axios": "^0.24.0",
