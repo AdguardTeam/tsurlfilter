@@ -73,7 +73,7 @@ export interface Writer {
      * @param args
      */
     error: (...args: any[]) => void;
-    // We do not print error, since in the extensions warn is counted as error.
+    // We do not use 'warn' channel, since in the extensions warn is counted as error.
     // warn: (...args: any[]) => void;
 }
 
@@ -91,10 +91,17 @@ export class Logger {
      */
     constructor(writer: Writer = console) {
         this.writer = writer;
+
+        // bing the logging methods to avoid losing context
+        this.debug = this.debug.bind(this);
+        this.info = this.info.bind(this);
+        this.warn = this.warn.bind(this);
+        this.error = this.error.bind(this);
     }
 
     /**
      * Print debug messages. Usually used for technical information.
+     * Will be printed in 'log' channel.
      *
      * @param args Printed arguments.
      */
@@ -113,6 +120,8 @@ export class Logger {
 
     /**
      * Print warn messages.
+     * NOTE: We do not use 'warn' channel, since in the extensions warn is
+     * counted as error. Instead of this we use 'info' channel.
      *
      * @param args Printed arguments.
      */
