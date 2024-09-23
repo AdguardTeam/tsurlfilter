@@ -4,6 +4,13 @@ import browser from 'webextension-polyfill';
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { logger } from '../../common/utils/logger';
+import { type Message } from '../../common/message';
+
+// Simple type guard for message object with 'type' field.
+// Added to no bring here huge zod library.
+const hasTypeField = (message: unknown): message is Pick<Message, 'type'> => {
+    return typeof message === 'object' && message !== null && 'type' in message;
+};
 
 /**
  * Initializes assistant object.
@@ -16,7 +23,11 @@ export const initAssistant = (): void => {
 
     let assistant: Assistant;
 
-    browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    browser.runtime.onMessage.addListener((message, sender, sendResponse): undefined => {
+        if (!hasTypeField(message)) {
+            return;
+        }
+
         switch (message.type) {
             case MessageType.InitAssistant: {
                 if (typeof assistant === 'undefined') {
@@ -34,24 +45,18 @@ export const initAssistant = (): void => {
                         logger.debug(`[tswebextension.initAssistant]: rule '${ruleText}' has not been applied.`);
                     }
                 });
-                // FIXME types later
-                // @ts-ignore
                 sendResponse(true);
                 break;
             }
             case MessageType.CloseAssistant: {
                 if (assistant) {
                     assistant.close();
-                    // FIXME types later
-                    // @ts-ignore
                     sendResponse(true);
                 }
                 break;
             }
             default: {
                 logger.debug(`[tswebextension.initAssistant]: not found handler for message type '${message.type}'`);
-                // FIXME types later
-                // @ts-ignore
                 sendResponse(false);
             }
         }
