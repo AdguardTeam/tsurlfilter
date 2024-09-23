@@ -1,6 +1,7 @@
 import browser from 'sinon-chrome';
 import { CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
+import { ContentType } from '../../../../src/lib/common/request-type';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { TabsCosmeticInjector } from '../../../../src/lib/mv3/tabs/tabs-cosmetic-injector';
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
@@ -18,6 +19,7 @@ describe('TabsCosmeticInjector', () => {
         jest.spyOn(CosmeticApi, 'applyCosmeticResult');
         jest.spyOn(ScriptingApi, 'executeScript');
         jest.spyOn(ScriptingApi, 'insertCSS');
+        jest.spyOn(CosmeticApi, 'logScriptRules');
     });
 
     afterEach(() => {
@@ -70,15 +72,14 @@ describe('TabsCosmeticInjector', () => {
                 frameId,
             }));
 
-            // FIXME: Uncomment tests when logging will be returned
-            // const expectedLogParams = {
-            //     url,
-            //     tabId,
-            //     cosmeticResult,
-            //     timestamp,
-            //     contentType: ContentType.Document,
-            // };
-            // expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
+            const expectedLogParams = {
+                url,
+                tabId,
+                cosmeticResult,
+                timestamp,
+                contentType: ContentType.Document,
+            };
+            expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 
         it('should not apply cosmetic rules for non-browser tabs', async () => {
@@ -92,8 +93,7 @@ describe('TabsCosmeticInjector', () => {
             expect(ScriptingApi.executeScript).not.toBeCalled();
             expect(ScriptingApi.insertCSS).not.toBeCalled();
 
-            // FIXME: Uncomment tests when logging will be returned
-            // expect(CosmeticApi.logScriptRules).not.toBeCalled();
+            expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
 
         it('should not apply cosmetic rules for frames without src', async () => {
@@ -110,8 +110,7 @@ describe('TabsCosmeticInjector', () => {
             expect(ScriptingApi.executeScript).not.toBeCalled();
             expect(ScriptingApi.insertCSS).not.toBeCalled();
 
-            // FIXME: Uncomment tests when logging will be returned
-            // expect(CosmeticApi.logScriptRules).not.toBeCalled();
+            expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
     });
 });

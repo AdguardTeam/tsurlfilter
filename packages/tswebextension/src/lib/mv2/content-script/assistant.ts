@@ -1,7 +1,14 @@
 import browser from 'webextension-polyfill';
 // Import directly from files to avoid side effects of tree shaking.
 // If import from '../../common', entire tsurlfilter will be in the package.
+import { type Message } from '../../common/message';
 import { MessageType, sendAppMessage } from '../../common/content-script';
+
+// Simple type guard for message object with 'type' field.
+// Added to no bring here huge zod library.
+const hasTypeField = (message: unknown): message is Pick<Message, 'type'> => {
+    return typeof message === 'object' && message !== null && 'type' in message;
+};
 
 /**
  * Initializes assistant object and create messages listener for assistant.
@@ -12,6 +19,10 @@ export const initAssistant = (): void => {
     }
 
     browser.runtime.onMessage.addListener(async (message) => {
+        if (!hasTypeField(message)) {
+            return;
+        }
+
         switch (message.type) {
             case MessageType.InitAssistant: {
                 // If there is no assistant on the window after execute
