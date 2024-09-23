@@ -15,7 +15,8 @@
         "forceConsistentCasingInFileNames": true,
         "strict": true,
         "skipLibCheck": true,
-        "rootDir": "./"
+        "rootDir": "./",
+        "incremental": true
     },
     "include": [
         "./src"

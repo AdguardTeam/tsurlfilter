@@ -13,3 +13,12 @@ compiled
 docs
 dist-extension
 yarn-error.log
+
+# Optional eslint cache
+.eslintcache
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Rollup cache
+.rollup.cache

@@ -6,7 +6,7 @@
     "license": "GPL-3.0",
     "scripts": {
         "build": "rimraf build && node -r @swc-node/register ./scripts/build/index.ts",
-        "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'"
+        "lint": "eslint --cache 'extension/**/*.ts' 'scripts/**/*.ts'"
     },
     "dependencies": {
         "@adguard/api": "workspace:^",

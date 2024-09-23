@@ -4,8 +4,8 @@
         "baseUrl": ".",
     },
     "include": [
-        "src/**/*.ts",
-        "tasks/**/*.ts",
+        "src/",
+        "tasks/",
         "constants.ts",
         "rollup.config.ts",
         ".eslintrc.js"

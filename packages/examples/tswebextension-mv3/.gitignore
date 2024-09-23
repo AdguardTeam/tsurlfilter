@@ -2,3 +2,9 @@
 /build
 /extension/filters
 /scripts/tmp
+
+# Optional eslint cache
+.eslintcache
+
+# TypeScript cache
+*.tsbuildinfo

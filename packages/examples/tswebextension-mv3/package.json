@@ -10,7 +10,7 @@
     "build:tsurl": "cd ../../tsurlfilter && pnpm build",
     "build:tsweb": "cd ../../tswebextension && pnpm build",
     "build:precompile-rules": "node -r @swc-node/register ./scripts/precompile-rules.ts",
-    "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts' && tsc --noEmit",
+    "lint": "eslint --cache 'extension/**/*.ts' 'scripts/**/*.ts' && tsc --noEmit",
     "tswebextension": "tswebextension",
     "test": "rimraf tmp && cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 node -r @swc-node/register ./scripts/browser-test/index.ts",
     "clean": "rimraf build && rimraf extension/filters"

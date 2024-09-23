@@ -2,3 +2,5 @@ node_modules
 .swc
 .eslintcache
 dist
+# Optional eslint cache
+.eslintcache

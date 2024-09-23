@@ -10,24 +10,23 @@ set -ex
 # Redirect stderr (2) to stdout (1) to capture all output in a single log
 exec 2>&1
 
-echo "@adguard/tswebextension tests starting"
+echo "adguard-api tests starting"
 
 # import helper functions and some common variables
 . ./bamboo-specs/scripts/helpers.sh
 
-if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/tswebextension"; then
-  echo "No changes in project @adguard/tswebextension, skipping tests"
+if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "adguard-api"; then
+  echo "No changes in adguard-api, skipping tests"
   exit 0;
 fi
 
 # Install dependencies
 pnpm install
 
-# build with dependencies, lerna is used for builds caching
-npx lerna run build --scope @adguard/tswebextension --include-dependencies
+# Build
+npx lerna run build --scope adguard-api --include-dependencies
 
-# IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
-# Note: test:prod includes linting.
-pnpm --filter @adguard/tswebextension test:prod
+# Lint
+pnpm --filter adguard-api lint
 
-echo "@adguard/tswebextension tests completed"
+echo "adguard-api tests completed"
