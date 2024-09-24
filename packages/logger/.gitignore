@@ -9,6 +9,3 @@ node_modules
 
 # Release file for npm
 *.tgz
-
-# TypeScript cache
-*.tsbuildinfo
