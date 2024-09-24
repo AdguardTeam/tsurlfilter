@@ -32,6 +32,14 @@ Test:
         interpreter: SHELL
         scripts:
           - bamboo-specs/scripts/tswebextension-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/tswebextension-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/tswebextension-tests.sh
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
