@@ -26,10 +26,4 @@ pnpm install
 # build with dependencies, lerna is used for builds caching
 npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
-# build with dependencies, lerna is used for builds caching
-npx lerna run build --scope @adguard/tswebextension --include-dependencies
-
-# build with dependencies, lerna is used for builds caching
-npx lerna run build --scope @adguard/tswebextension --include-dependencies
-
 echo "@adguard/tswebextension tests completed"
