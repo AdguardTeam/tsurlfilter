@@ -24,6 +24,8 @@ fi
 pnpm install
 
 # Build dependencies before running tests
-npx lerna run build,check-types,lint,test,test:smoke --scope @adguard/agtree --include-dependencies
+npx lerna run build,check-types,lint,test --scope @adguard/agtree --include-dependencies
+
+npx lerna run test:smoke --scope @adguard/agtree --include-dependencies
 
 echo "@adguard/agtree tests completed"
