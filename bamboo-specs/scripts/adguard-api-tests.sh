@@ -10,13 +10,13 @@ set -ex
 # Redirect stderr (2) to stdout (1) to capture all output in a single log
 exec 2>&1
 
-echo "@adguard/adguard-api tests starting"
+echo "@adguard/api tests starting"
 
 # import helper functions and some common variables
 . ./bamboo-specs/scripts/helpers.sh
 
-if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/adguard-api"; then
-  echo "No changes in @adguard/adguard-api, skipping tests"
+if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/api"; then
+  echo "No changes in @adguard/api, skipping tests"
   exit 0;
 fi
 
@@ -24,9 +24,9 @@ fi
 pnpm install
 
 # Build
-npx lerna run build --scope @adguard/adguard-api --include-dependencies
+npx lerna run build --scope @adguard/api --include-dependencies
 
 # Lint
-pnpm --filter @adguard/adguard-api lint
+pnpm --filter @adguard/api lint
 
-echo "@adguard/adguard-api tests completed"
+echo "@adguard/api tests completed"
