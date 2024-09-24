@@ -24,10 +24,8 @@ fi
 pnpm install
 
 # First build since we need dependencies
-npx lerna run build --scope tswebextension-mv3 --include-dependencies
+npx lerna run build, lint --scope tswebextension-mv3 --include-dependencies
 
-# Lint
-pnpm --filter tswebextension-mv3 lint
 
 # TODO
 ## Test

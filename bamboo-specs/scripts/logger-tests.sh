@@ -24,15 +24,6 @@ fi
 pnpm install
 
 # Build the package
-npx lerna run build --scope @adguard/logger --include-dependencies
-
-# Lint code
-pnpm --filter @adguard/logger lint
-
-# Run tests
-pnpm --filter @adguard/logger test
-
-# Run smoke tests
-pnpm --filter @adguard/logger test:smoke
+npx lerna run build,lint,test,test:smoke --scope @adguard/logger --include-dependencies
 
 echo "@adguard/logger tests completed"

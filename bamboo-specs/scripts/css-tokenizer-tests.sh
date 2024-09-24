@@ -23,13 +23,7 @@ fi
 # Install dependencies
 pnpm install
 
-# Check TypeScript types with TSC
-pnpm --filter @adguard/css-tokenizer check-types
-
-# ESLint & Markdownlint
-pnpm --filter @adguard/css-tokenizer lint
-
-# Run tests with Jest
-pnpm --filter @adguard/css-tokenizer test
+# Build dependencies before running tests
+npx lerna run build,check-types,lint,test --scope @adguard/css-tokenizer --include-dependencies
 
 echo "@adguard/css-tokenizer tests completed"

@@ -24,18 +24,6 @@ fi
 pnpm install
 
 # Build dependencies before running tests
-npx lerna run build --scope @adguard/agtree --include-dependencies
-
-# Check TypeScript types with TSC
-pnpm --filter @adguard/agtree check-types
-
-# Check code with ESLint
-pnpm --filter @adguard/agtree lint
-
-# Run tests with Jest
-pnpm --filter @adguard/agtree test
-
-# Run smoke tests
-pnpm --filter @adguard/agtree test:smoke
+npx lerna run build,check-types,lint,test,test:smoke --scope @adguard/agtree --include-dependencies
 
 echo "@adguard/agtree tests completed"
