@@ -31,11 +31,31 @@ Test:
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/tswebextension-tests.sh
+          - bamboo-specs/scripts/agtree-tests.sh
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/tswebextension-tests.sh
+          - bamboo-specs/scripts/css-tokenizer-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/examples-adguard-api-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/logger-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
+          - bamboo-specs/scripts/tsurlfilter-tests.sh
     - script:
         interpreter: SHELL
         scripts:
