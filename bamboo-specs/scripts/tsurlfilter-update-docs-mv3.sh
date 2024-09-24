@@ -17,8 +17,6 @@ pnpm install
 
 # Build with dependencies, lerna is used for builds caching, becuase
 # we specified dependencies with workspace links.
-npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
-
-pnpm --filter @adguard/tsurlfilter docs:mv3
+npx lerna run build, docs:mv3 --scope @adguard/tsurlfilter --include-dependencies
 
 echo "@adguard/tsurlfilter docs mv3 updated"

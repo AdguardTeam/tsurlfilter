@@ -24,11 +24,6 @@ fi
 pnpm install
 
 # Build dependencies, then the package itself
-npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
-
-pnpm --filter @adguard/tsurlfilter lint
-
-# IMPORTANT: run tests after the build because smoke tests requires tsurlfilter to have built dist dir
-pnpm --filter @adguard/tsurlfilter test:prod
+npx lerna run build,lint,test:prod --scope @adguard/tsurlfilter --include-dependencies
 
 echo "@adguard/tsurlfilter tests completed"

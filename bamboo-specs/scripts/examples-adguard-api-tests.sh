@@ -24,9 +24,6 @@ fi
 pnpm install
 
 # Build
-npx lerna run build --scope adguard-api-example --include-dependencies
-
-# Lint
-pnpm --filter adguard-api-example lint
+npx lerna run build,lint --scope adguard-api-example --include-dependencies
 
 echo "adguard-api-example tests completed"
