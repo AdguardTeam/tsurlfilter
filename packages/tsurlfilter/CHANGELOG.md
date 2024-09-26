@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## Unreleased
+
+### Fixed
+
+- Scriptlets exclusion matching is not working properly for rules with arguments [AdguardBrowserExtension#2947].
+
+[AdguardBrowserExtension#2947]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2947
+
 ## [3.0.4] - 2024-09-19
 
 ### Changed
