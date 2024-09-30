@@ -15,3 +15,5 @@ export const WILDCARD = '*';
 export const LF = '\n';
 export const CR = '\r';
 export const FF = '\f';
+
+export const TAB = '\t';
