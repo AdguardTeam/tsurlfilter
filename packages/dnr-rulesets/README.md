@@ -483,6 +483,13 @@ Additional filter list for websites in Polish.
 * Filter ID: **216**
 * Path: `<filters-directory>/declarative/ruleset_216/ruleset_216.json`
 
+#### Polish GDPR-Cookies Filters
+
+Polish filter list for cookies blocking.
+
+* Filter ID: **217**
+* Path: `<filters-directory>/declarative/ruleset_217/ruleset_217.json`
+
 #### Estonian List
 
 Filter for ad blocking on Estonian sites.
