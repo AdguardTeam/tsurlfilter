@@ -3,6 +3,8 @@ import { RuleParser } from '@adguard/agtree';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
+import { EMPTY_STRING, TAB } from '../../common/constants';
+import { uint8ArrayToBase64 } from '../../utils/misc';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
@@ -10,6 +12,7 @@ import { type IFilter } from './filter';
 import { UnavailableRuleSetSourceError } from './errors/unavailable-sources-errors/unavailable-rule-set-source-error';
 import { type ISourceMap, SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
 import { type IRulesHashMap } from './rules-hash-map';
+import { createMetadataRule } from './metadata-rule';
 
 /**
  * The OriginalSource contains the text of the original rule and the filter
@@ -109,6 +112,15 @@ export interface IRuleSet {
      * is not available.
      */
     serialize(): Promise<SerializedRuleSet>;
+
+    /**
+     * Serializes rule set to a single file.
+     *
+     * @returns Serialized rule set.
+     *
+     * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
+     */
+    serializeCompact(): Promise<string>;
 }
 
 /**
@@ -125,7 +137,7 @@ const serializedRuleSetLazyDataValidator = zod.strictObject({
     filterIds: zod.number().array(),
 });
 
-type SerializedRuleSetLazyData = zod.infer<typeof serializedRuleSetLazyDataValidator>;
+export type SerializedRuleSetLazyData = zod.infer<typeof serializedRuleSetLazyDataValidator>;
 
 const serializedRuleSetDataValidator = zod.strictObject({
     regexpRulesCount: zod.number(),
@@ -134,7 +146,7 @@ const serializedRuleSetDataValidator = zod.strictObject({
     badFilterRulesRaw: zod.string().array(),
 });
 
-type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
+export type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
 
 /**
  * A serialized rule set with primitive values separated into two parts: one is
@@ -518,6 +530,33 @@ export class RuleSet implements IRuleSet {
         return deserialized;
     }
 
+    /**
+     * Helper method to get serialized rule set data.
+     *
+     * @returns Serialized rule set data.
+     */
+    private getSerializedRuleSetData(): SerializedRuleSetData {
+        return {
+            regexpRulesCount: this.regexpRulesCount,
+            rulesCount: this.rulesCount,
+            ruleSetHashMapRaw: this.rulesHashMap.serialize(),
+            // TODO: Remove .getText() completely
+            badFilterRulesRaw: this.badFilterRules.map((r) => r.rule.getText()) || [],
+        };
+    }
+
+    /**
+     * Helper method to get serialized rule set lazy data.
+     *
+     * @returns Serialized rule set lazy data.
+     */
+    private getSerializedRuleSetLazyData(): SerializedRuleSetLazyData {
+        return {
+            sourceMapRaw: this.sourceMap?.serialize() || EMPTY_STRING,
+            filterIds: Array.from(this.filterList.keys()),
+        };
+    }
+
     /** @inheritdoc */
     public async serialize(): Promise<SerializedRuleSet> {
         try {
@@ -528,25 +567,39 @@ export class RuleSet implements IRuleSet {
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
 
-        const data: SerializedRuleSetData = {
-            regexpRulesCount: this.regexpRulesCount,
-            rulesCount: this.rulesCount,
-            ruleSetHashMapRaw: this.rulesHashMap.serialize(),
-            // TODO: Remove .getText() completely
-            badFilterRulesRaw: this.badFilterRules.map((r) => r.rule.getText()) || [],
-        };
-
-        const lazyData: SerializedRuleSetLazyData = {
-            sourceMapRaw: this.sourceMap?.serialize() || '',
-            filterIds: Array.from(this.filterList.keys()),
-        };
-
         const serialized: SerializedRuleSet = {
             id: this.id,
-            data: JSON.stringify(data),
-            lazyData: JSON.stringify(lazyData),
+            data: JSON.stringify(this.getSerializedRuleSetData()),
+            lazyData: JSON.stringify(this.getSerializedRuleSetLazyData()),
         };
 
         return serialized;
+    }
+
+    /**
+     * Serializes rule set to a single file.
+     *
+     * @returns Serialized rule set.
+     *
+     * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
+     */
+    public async serializeCompact(): Promise<string> {
+        const [filter] = await this.ruleSetContentProvider.loadFilterList();
+        const content = await filter.getContent();
+
+        const metadataRule = createMetadataRule({
+            metadata: this.getSerializedRuleSetData(),
+            lazyMetadata: this.getSerializedRuleSetLazyData(),
+            sourceMap: content.sourceMap,
+            conversionMap: content.conversionMap,
+            filterList: content.filterList.map(uint8ArrayToBase64),
+        });
+
+        const declarativeRules = await this.getDeclarativeRules();
+
+        // Put metadata rule at the beginning of the rule set
+        declarativeRules.unshift(metadataRule);
+
+        return JSON.stringify(declarativeRules, null, TAB);
     }
 }
