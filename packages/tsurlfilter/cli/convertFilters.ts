@@ -197,5 +197,3 @@ export const convertFilters = async (
         console.log('===============================================');
     }
 };
-
-convertFilters(`${__dirname}/filters`, `${__dirname}/resources`, `${__dirname}/rule-sets`);
