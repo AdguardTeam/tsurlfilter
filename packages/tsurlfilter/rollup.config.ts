@@ -1,12 +1,14 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
-import camelCase from 'lodash/camelCase';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
 import terser from '@rollup/plugin-terser';
 import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
+import lodash from 'lodash';
+
+const { camelCase } = lodash;
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
@@ -55,6 +57,7 @@ const commonExternal = [
     'is-cidr',
     'cidr-tools',
     'zod',
+    'zod-validation-error',
     'commander',
 ];
 
