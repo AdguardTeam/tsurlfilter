@@ -11,7 +11,7 @@ import { z } from 'zod';
 import {
     type DeclarativeRule,
     DeclarativeRuleValidator,
-    type ResourceType,
+    ResourceType,
     RuleActionType,
 } from './declarative-rule';
 import { metadataRuleContentValidator, type MetadataRuleContent } from './metadata-rule-content';
@@ -58,8 +58,7 @@ const createDummyRule = (id = 1): DeclarativeRule => ({
     },
     condition: {
         urlFilter: DUMMY_RULE_URL,
-        // TODO: Remove type casting when ResourceTypes starts supporting CSP_REPORT
-        resourceTypes: ['csp_report' as ResourceType],
+        resourceTypes: [ResourceType.XmlHttpRequest],
     },
 });
 
