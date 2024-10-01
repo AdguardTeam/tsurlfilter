@@ -7,6 +7,7 @@ export * from './declarative-rule';
 export * from './constants/filenames';
 export * from './rules-hash-map';
 export * from './network-indexed-rule-with-hash';
+export * from './metadata-rule-extractor';
 export * from './errors/conversion-errors';
 export * from './errors/converter-options-errors';
 export * from './errors/limitation-errors';
