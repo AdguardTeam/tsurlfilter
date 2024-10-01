@@ -9,7 +9,7 @@ export const enum StorageKeys {
 class Storage {
     private storage;
 
-    constructor(storage: browser.Storage.LocalStorageArea) {
+    constructor(storage: browser.Storage.StorageArea) {
         this.storage = storage;
     }
 
@@ -64,7 +64,7 @@ class Storage {
 
     get = <T>(key: string): Promise<T | undefined> => {
         return new Promise((resolve, reject) => {
-            this.storage.get([key]).then((result: { [x: string]: T }) => {
+            this.storage.get([key]).then((result: Record<string, unknown>) => {
                 if (chrome.runtime.lastError) {
                     reject(chrome.runtime.lastError);
                 }

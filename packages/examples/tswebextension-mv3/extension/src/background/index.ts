@@ -250,13 +250,14 @@ browser.runtime.onInstalled.addListener(async () => {
 
 browser.runtime.onMessage
     .addListener((
-        message: IMessage | IMessageInner,
+        message: unknown,
         sender: browser.Runtime.MessageSender,
         sendResponse,
     ) => {
-        console.debug('browser.runtime.onMessage: ', message);
+        const typedMessage = message as IMessage | IMessageInner;
+        console.debug('browser.runtime.onMessage: ', typedMessage);
 
-        proxyHandler(message, sender).then(sendResponse);
+        proxyHandler(typedMessage, sender).then(sendResponse);
 
         return true;
     });
