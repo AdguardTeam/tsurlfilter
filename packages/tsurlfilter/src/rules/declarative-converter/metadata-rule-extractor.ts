@@ -1,11 +1,10 @@
+import JSONParse from 'jsonparse';
+
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../utils/logger';
 
 import { type DeclarativeRuleWithMetadata, metadataRuleValidator } from './metadata-rule';
 import { type MetadataRuleContent } from './metadata-rule-content';
-
-// Note: We import in this way due to the lack of type definitions for this package.
-const JSONParse = require('jsonparse');
 
 /**
  * Extracts the metadata rule from the ruleset file at the given URL.
