@@ -1,26 +1,40 @@
-import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
+import {
+    extractMetadataContent, Filter, type IFilter,
+} from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
 import {
-    filterListConversionMapValidator,
-    filterListSourceMapValidator,
     type PreprocessedFilterList,
-    getFilterBinaryName,
-    getFilterConversionMapName,
     getFilterName,
-    getFilterSourceMapName,
 } from '@adguard/tsurlfilter';
 import { ByteBuffer } from '@adguard/agtree';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import { type ConfigurationMV3 } from './configuration';
-import { loadExtensionBinaryResource, loadExtensionTextResource } from '../utils/resource-loader';
 
 export const RULE_SET_NAME_PREFIX = 'ruleset_';
 
 export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[],
 };
+
+// FIXME: Remove
+/**
+ * Converts base64 to Uint8Array.
+ *
+ * @param base64 Base64 string to convert.
+ *
+ * @returns Uint8Array.
+ */
+export function base64ToUint8Array(base64: string): Uint8Array {
+    const binary = Buffer.from(base64, 'base64').toString('binary');
+    const len = binary.length;
+    const uint8Array = new Uint8Array(len);
+    for (let i = 0; i < len; i += 1) {
+        uint8Array[i] = binary.charCodeAt(i);
+    }
+    return uint8Array;
+}
 
 /**
  * FiltersApi knows how to enable or disable static rule sets (which were built
@@ -105,18 +119,16 @@ export default class FiltersApi {
      * @returns Promise resolved file content as a list of strings.
      */
     private static async loadFilterContent(id: number, filtersPath: string): Promise<PreprocessedFilterList> {
-        const rawFilterPath = `${filtersPath}/${getFilterName(id)}`;
-        const binaryFilterPath = `${filtersPath}/${getFilterBinaryName(id)}`;
-        const conversionMapPath = `${filtersPath}/${getFilterConversionMapName(id)}`;
-        const sourceMapPath = `${filtersPath}/${getFilterSourceMapName(id)}`;
+        const ruleSetPath = `${filtersPath}/${getFilterName(id)}`;
+        const ruleSetContent = await extractMetadataContent(ruleSetPath);
 
-        const [rawFilterList, filterList, conversionMap, sourceMap] = await Promise.all([
-            // TODO (David): store raw filter list in byte-encoded form
-            loadExtensionTextResource(rawFilterPath),
-            loadExtensionBinaryResource(binaryFilterPath).then(this.loadChunksFromArrayBuffer),
-            loadExtensionTextResource(conversionMapPath).then(JSON.parse).then(filterListConversionMapValidator.parse),
-            loadExtensionTextResource(sourceMapPath).then(JSON.parse).then(filterListSourceMapValidator.parse),
-        ]);
+        const {
+            rawFilterList,
+            conversionMap,
+            sourceMap,
+        } = ruleSetContent;
+
+        const filterList = ruleSetContent.filterList.map(base64ToUint8Array);
 
         return {
             rawFilterList,
