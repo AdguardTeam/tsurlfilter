@@ -39,7 +39,7 @@ export const metadataRuleValidator = DeclarativeRuleValidator.extend({
 /**
  * Declarative rule extended with metadata.
  */
-type DeclarativeRuleWithMetadata = z.infer<typeof metadataRuleValidator>;
+export type DeclarativeRuleWithMetadata = z.infer<typeof metadataRuleValidator>;
 
 /**
  * Creates a dummy declarative rule with a given ID.

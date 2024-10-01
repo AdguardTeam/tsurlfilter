@@ -1,3 +1,6 @@
+import { ZodError } from 'zod';
+import { fromZodError } from 'zod-validation-error';
+
 type ErrorWithMessage = {
     message: string
 };
@@ -6,7 +9,6 @@ type ErrorWithMessage = {
  * Checks if error has message.
  *
  * @param error Error object.
- * @returns If param is error.
  */
 function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
     return (
@@ -21,7 +23,6 @@ function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
  * Converts error to the error with message.
  *
  * @param maybeError Possible error.
- * @returns Error with message.
  */
 function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
     if (isErrorWithMessage(maybeError)) {
@@ -45,5 +46,10 @@ function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
  * @returns Message of the error.
  */
 export function getErrorMessage(error: unknown): string {
+    // Special case: pretty print Zod errors
+    if (error instanceof ZodError) {
+        return fromZodError(error).toString();
+    }
+
     return toErrorWithMessage(error).message;
 }
