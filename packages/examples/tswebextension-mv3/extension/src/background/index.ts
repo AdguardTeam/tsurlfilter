@@ -250,6 +250,7 @@ browser.runtime.onInstalled.addListener(async () => {
 
 browser.runtime.onMessage
     .addListener((
+        // FIXME: Double check message type
         message: unknown,
         sender: browser.Runtime.MessageSender,
         sendResponse,
