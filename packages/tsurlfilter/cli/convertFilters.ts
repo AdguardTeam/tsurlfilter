@@ -11,12 +11,40 @@ import {
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
 import { FilterListPreprocessor } from '../src';
 import { getIdFromFilterName } from '../src/utils/resource-names';
+import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
+import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
     }
 };
+
+/**
+ * Default options used by convert filters
+ */
+const CONVERT_FILTER_DEFAULT_OPTIONS = {
+    debug: false,
+    prettifyJson: true,
+};
+
+/**
+ * Options for the convert filters function
+ */
+interface ConvertFiltersOptions {
+    /**
+     * If true, additional information is printed during conversion.
+     * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.debug}
+     */
+    debug?: boolean;
+
+    /**
+     * Defines whether to prettify the rulesets JSON or not.
+     * Not prettifying can save on JSON size.
+     * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson}
+     */
+    prettifyJson?: boolean;
+}
 
 /**
  * Converts filters with textual rules from the provided path to declarative
@@ -26,14 +54,18 @@ const ensureDirSync = (dirPath: string) => {
  * @param filtersDir Path fo source filters.
  * @param resourcesDir Path to web accessible resources.
  * @param destRuleSetsDir Destination path for declarative rule sets.
- * @param debug Print debug information about conversion.
+ * @param options Options for convert filters {@link ConvertFiltersOptions}.
  */
 export const convertFilters = async (
     filtersDir: string,
     resourcesDir: string,
     destRuleSetsDir: string,
-    debug: boolean,
+    options: ConvertFiltersOptions = {},
 ): Promise<void> => {
+    const {
+        debug = CONVERT_FILTER_DEFAULT_OPTIONS.debug,
+    } = options;
+
     const filtersPath = path.resolve(process.cwd(), filtersDir);
     const resourcesPath = path.resolve(process.cwd(), resourcesDir);
     const destRuleSetsPath = path.resolve(process.cwd(), destRuleSetsDir);
@@ -64,10 +96,12 @@ export const convertFilters = async (
 
             console.info(`Preparing filter #${filterId} to convert`);
 
-            return new Filter(filterId, {
-                getContent: async () => FilterListPreprocessor.preprocess(data),
-                // FIXME: trusted arg
-            }, false);
+            return new Filter(
+                filterId,
+                { getContent: async () => FilterListPreprocessor.preprocess(data) },
+                // we consider that all preinstalled filters are trusted
+                true,
+            );
         })
         .filter((filter): filter is Filter => filter !== null);
 
@@ -76,16 +110,17 @@ export const convertFilters = async (
     let limitations: ConversionResult['limitations'] = [];
 
     const converter = new DeclarativeFilterConverter();
+    re2Validator.setValidator(regexValidatorNode);
+
+    setConfiguration({
+        engine: 'extension',
+        version: '3',
+        verbose: true,
+        compatibility: CompatibilityTypes.Extension,
+    });
 
     for (let i = 0; i < filters.length; i += 1) {
         const filter = filters[i];
-
-        setConfiguration({
-            engine: 'extension',
-            version: '3',
-            verbose: true,
-            compatibility: CompatibilityTypes.Extension,
-        });
 
         // eslint-disable-next-line no-await-in-loop
         const converted = await converter.convertStaticRuleSet(
@@ -162,3 +197,5 @@ export const convertFilters = async (
         console.log('===============================================');
     }
 };
+
+convertFilters(`${__dirname}/filters`, `${__dirname}/resources`, `${__dirname}/rule-sets`);
