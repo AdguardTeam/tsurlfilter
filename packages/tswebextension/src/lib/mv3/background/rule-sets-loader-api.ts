@@ -3,10 +3,11 @@ import {
     type IFilter,
     type IRuleSet,
     RuleSet,
-    METADATA_FILENAME,
-    LAZY_METADATA_FILENAME,
     IndexedNetworkRuleWithHash,
     RulesHashMap,
+    extractMetadataContent,
+    DeclarativeRuleValidator,
+    SourceMap,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
@@ -48,31 +49,48 @@ export default class RuleSetsLoaderApi {
             return file.text();
         };
 
-        const rawData = await loadFileText(
-            browser.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${METADATA_FILENAME}`),
-        );
-        const loadLazyData = (): Promise<string> => loadFileText(
-            browser.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${LAZY_METADATA_FILENAME}`),
-        );
+        const ruleSetPath = `${this.ruleSetsPath}/${ruleSetId}/${ruleSetId}.json`;
+
         const loadDeclarativeRules = (): Promise<string> => loadFileText(
-            browser.runtime.getURL(`${this.ruleSetsPath}/${ruleSetId}/${ruleSetId}.json`),
+            browser.runtime.getURL(ruleSetPath),
         );
 
+        const metadataContent = await extractMetadataContent(ruleSetPath);
+
         const {
-            data: {
-                regexpRulesCount,
-                rulesCount,
-                ruleSetHashMapRaw,
-                badFilterRulesRaw,
+            regexpRulesCount,
+            rulesCount,
+            ruleSetHashMapRaw,
+            badFilterRulesRaw,
+        } = metadataContent.metadata;
+
+        const ruleSetContentProvider = {
+            // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+            loadSourceMap: async () => {
+                const { sourceMapRaw } = metadataContent.lazyMetadata;
+                const sources = SourceMap.deserializeSources(sourceMapRaw);
+
+                return new SourceMap(sources);
             },
-            ruleSetContentProvider,
-        } = await RuleSet.deserialize(
-            ruleSetId,
-            rawData,
-            loadLazyData,
-            loadDeclarativeRules,
-            filterList,
-        );
+            // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+            loadFilterList: async () => {
+                const { filterIds } = metadataContent.lazyMetadata;
+
+                return filterList.filter((filter) => filterIds.includes(filter.getId()));
+            },
+            // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+            loadDeclarativeRules: async () => {
+                const rawFileContent = await loadDeclarativeRules();
+
+                const objectFromString = JSON.parse(rawFileContent);
+
+                const declarativeRules = DeclarativeRuleValidator
+                    .array()
+                    .parse(objectFromString);
+
+                return declarativeRules;
+            },
+        };
 
         const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
         const ruleSetHashMap = new RulesHashMap(sources);
