@@ -1,4 +1,8 @@
 /**
+ * @file Various type guards.
+ */
+
+/**
  * Checks whether the given value is undefined.
  *
  * @param value Value to check.
