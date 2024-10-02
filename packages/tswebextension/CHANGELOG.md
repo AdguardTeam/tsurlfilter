@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added new field to MV3 config: `quickFixesRules` which will be applied to
   the dynamic rules.
+- Updated `@adguard/tsurlfilter` to `v3.1.0-alpha.5`.
+- Updated `@adguard/scriptlets` to `v1.12.1`.
 
 ### Added
 
