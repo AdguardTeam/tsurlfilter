@@ -18,7 +18,7 @@ export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[],
 };
 
-// FIXME: Remove
+// TODO: Remove this after we added a logic that creates byte buffers to IDB after extension updates
 /**
  * Converts base64 to Uint8Array.
  *
@@ -27,10 +27,11 @@ export type UpdateStaticFiltersResult = {
  * @returns Uint8Array.
  */
 export function base64ToUint8Array(base64: string): Uint8Array {
-    const binary = Buffer.from(base64, 'base64').toString('binary');
-    const len = binary.length;
-    const uint8Array = new Uint8Array(len);
-    for (let i = 0; i < len; i += 1) {
+    const binary = typeof window !== 'undefined'
+        ? window.atob(base64)
+        : Buffer.from(base64, 'base64').toString('binary');
+    const uint8Array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
         uint8Array[i] = binary.charCodeAt(i);
     }
     return uint8Array;
@@ -119,6 +120,8 @@ export default class FiltersApi {
      * @returns Promise resolved file content as a list of strings.
      */
     private static async loadFilterContent(id: number, filtersPath: string): Promise<PreprocessedFilterList> {
+        // TODO: Add a logic that creates byte buffers to IDB after extension updates
+        // to avoid reading files every time
         const ruleSetPath = `${filtersPath}/${getFilterName(id)}`;
         const ruleSetContent = await extractMetadataContent(ruleSetPath);
 
