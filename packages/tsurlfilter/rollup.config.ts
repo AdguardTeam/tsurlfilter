@@ -59,7 +59,6 @@ const commonExternal = [
     'zod',
     'zod-validation-error',
     'commander',
-    'jsonparse',
 ];
 
 const esmConfig = {

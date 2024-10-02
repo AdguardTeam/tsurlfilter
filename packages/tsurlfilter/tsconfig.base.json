@@ -10,9 +10,6 @@
     "emitDecoratorMetadata": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "paths": {
-      "jsonparse": ["./types/jsonparse.d.ts"],
-    },
     "typeRoots": [
       "./types",
       "node_modules/@types",

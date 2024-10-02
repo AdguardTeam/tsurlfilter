@@ -22,7 +22,6 @@ module.exports = {
         'coverage',
         'build-txt.js',
         '.eslintrc.js',
-        'types/jsonparse.d.ts',
     ],
     rules: {
         indent: 'off',

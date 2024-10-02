@@ -5,7 +5,6 @@ import browser from 'webextension-polyfill';
 
 import {
     type PreprocessedFilterList,
-    getFilterName,
 } from '@adguard/tsurlfilter';
 import { ByteBuffer } from '@adguard/agtree';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
@@ -27,9 +26,7 @@ export type UpdateStaticFiltersResult = {
  * @returns Uint8Array.
  */
 export function base64ToUint8Array(base64: string): Uint8Array {
-    const binary = typeof window !== 'undefined'
-        ? window.atob(base64)
-        : Buffer.from(base64, 'base64').toString('binary');
+    const binary = atob(base64);
     const uint8Array = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i += 1) {
         uint8Array[i] = binary.charCodeAt(i);
@@ -122,7 +119,7 @@ export default class FiltersApi {
     private static async loadFilterContent(id: number, filtersPath: string): Promise<PreprocessedFilterList> {
         // TODO: Add a logic that creates byte buffers to IDB after extension updates
         // to avoid reading files every time
-        const ruleSetPath = `${filtersPath}/${getFilterName(id)}`;
+        const ruleSetPath = `${filtersPath}/declarative/ruleset_${id}/ruleset_${id}.json`;
         const ruleSetContent = await extractMetadataContent(ruleSetPath);
 
         const {
