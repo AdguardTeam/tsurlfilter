@@ -237,6 +237,30 @@ const startFilteringLog = async () => {
     defaultFilteringLog.addEventListener(FilteringEventType.MatchedDeclarativeRule, logEvent);
 };
 
+/**
+ * Checks if `message` is of type `IMessage`.
+ *
+ * @param message Message to check.
+ * @returns True if `message` has defined `type` property so it can be considered as `IMessage`,
+ * false otherwise.
+ */
+const isMessage = (message: unknown): message is IMessage => {
+    return (message as IMessage).type !== undefined;
+};
+
+/**
+ * Checks if `message` is of type `IMessageInner`.
+ *
+ * @param message Message to check.
+ * @returns True if `message` has defined properties `handlerName` and `type`
+ * so it can be considered as `IMessageInner`,
+ * false otherwise.
+ */
+const isMessageInner = (message: unknown): message is IMessageInner => {
+    return (message as IMessageInner).handlerName !== undefined
+        || (message as IMessageInner).type !== undefined;
+};
+
 // TODO: Add same logic for update event
 browser.runtime.onInstalled.addListener(async () => {
     console.debug('[ON INSTALLED]: start');
@@ -250,15 +274,17 @@ browser.runtime.onInstalled.addListener(async () => {
 
 browser.runtime.onMessage
     .addListener((
-        // FIXME: Double check message type
         message: unknown,
         sender: browser.Runtime.MessageSender,
         sendResponse,
     ) => {
-        const typedMessage = message as IMessage | IMessageInner;
-        console.debug('browser.runtime.onMessage: ', typedMessage);
+        console.debug('browser.runtime.onMessage: ', message);
 
-        proxyHandler(typedMessage, sender).then(sendResponse);
+        if (isMessageInner(message) || isMessage(message)) {
+            proxyHandler(message, sender).then(sendResponse);
+        } else {
+            console.error('Received message with invalid type:', message);
+        }
 
         return true;
     });

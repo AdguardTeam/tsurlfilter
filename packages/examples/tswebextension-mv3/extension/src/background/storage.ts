@@ -9,7 +9,6 @@ export const enum StorageKeys {
 class Storage {
     private storage;
 
-    // FIXME: Double check storage type
     constructor(storage: browser.Storage.StorageArea) {
         this.storage = storage;
     }
@@ -65,7 +64,6 @@ class Storage {
 
     get = <T>(key: string): Promise<T | undefined> => {
         return new Promise((resolve, reject) => {
-            // FIXME: Double check result type
             this.storage.get([key]).then((result: Record<string, unknown>) => {
                 if (chrome.runtime.lastError) {
                     reject(chrome.runtime.lastError);
