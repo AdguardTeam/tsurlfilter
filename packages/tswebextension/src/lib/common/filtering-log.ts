@@ -153,6 +153,15 @@ export type ApplyBasicRuleEventData = {
      * Category name from companiesdb matched by the request.
      */
     companyCategoryName?: string,
+
+    /**
+     * Flag indicating that the request is assuredly blocked.
+     *
+     * Needed for MV3 when some requests should not be logged as blocked
+     * because they are wrongly detected as blocked,
+     * i.e. truly blocked requests in MV3 are logged during onErrorOccurred event.
+     */
+    isAssuredlyBlocked?: boolean,
 }
 & RuleInfoOptional
 & AdditionalNetworkRuleInfo

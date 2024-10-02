@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## Unreleased
+## [2.3.0-alpha.1] - 2024-10-02
 
 ### Changed
 
@@ -18,8 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `companyCategoryName` property in filtering log `ApplyBasicRuleEvent` for `$redirect` rules [#137].
+- `isAssuredlyBlocked` property in filtering log `ApplyBasicRuleEvent` for definitely blocked requests im MV3.
 
 [#137]: https://github.com/AdguardTeam/tsurlfilter/issues/137
+[2.3.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.3.0-alpha.1
 
 
 ## [2.2.0-alpha.1] - 2024-08-30

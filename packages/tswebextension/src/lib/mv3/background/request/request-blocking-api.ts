@@ -138,6 +138,7 @@ export class RequestBlockingApi {
                     isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
                     isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
                     advancedModifier: rule.getAdvancedModifierValue(),
+                    isAssuredlyBlocked: true,
                 },
             });
 

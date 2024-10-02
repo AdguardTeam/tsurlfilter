@@ -531,6 +531,7 @@ export class WebRequestApi {
                 isCsp: false,
                 isCookie: false,
                 advancedModifier: null,
+                isAssuredlyBlocked: true,
             },
         });
 

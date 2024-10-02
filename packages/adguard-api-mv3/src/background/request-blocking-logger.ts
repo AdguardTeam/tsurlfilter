@@ -113,8 +113,6 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
      * and dispatch new {@link RequestBlockingEvent}.
      *
      * @param event {@link ApplyBasicRuleEvent}.
-     *
-     * @throws An error if MV3-required property "companyCategoryName" is missing.
      */
     private onBasicRuleApply(event: ApplyBasicRuleEvent): void {
         const {
@@ -127,10 +125,16 @@ export class RequestBlockingLogger implements RequestBlockingLoggerInterface {
             ruleIndex,
             isAllowlist,
             companyCategoryName,
+            isAssuredlyBlocked,
         } = event.data;
 
         // exclude allowlist rules
         if (isAllowlist) {
+            return;
+        }
+
+        // exclude events that are not marked as definitely blocked
+        if (!isAssuredlyBlocked) {
             return;
         }
 
