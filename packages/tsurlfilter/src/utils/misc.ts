@@ -6,6 +6,11 @@
 import { EMPTY_STRING } from '../common/constants';
 
 /**
+ * A flag indicating whether the code is running in a browser.
+ */
+const isBrowser = typeof window !== 'undefined';
+
+/**
  * Converts Uint8Array to base64.
  *
  * @param uint8Array Uint8Array to convert.
@@ -13,11 +18,8 @@ import { EMPTY_STRING } from '../common/constants';
  * @returns Base64 string.
  */
 export function uint8ArrayToBase64(uint8Array: Uint8Array): string {
-    let binary = EMPTY_STRING;
-    uint8Array.forEach((byte) => {
-        binary += String.fromCharCode(byte);
-    });
-    return Buffer.from(binary, 'binary').toString('base64');
+    const binary = Array.from(uint8Array, (byte) => String.fromCharCode(byte)).join(EMPTY_STRING);
+    return isBrowser ? window.btoa(binary) : Buffer.from(binary, 'binary').toString('base64');
 }
 
 /**
@@ -28,10 +30,9 @@ export function uint8ArrayToBase64(uint8Array: Uint8Array): string {
  * @returns Uint8Array.
  */
 export function base64ToUint8Array(base64: string): Uint8Array {
-    const binary = Buffer.from(base64, 'base64').toString('binary');
-    const len = binary.length;
-    const uint8Array = new Uint8Array(len);
-    for (let i = 0; i < len; i += 1) {
+    const binary = isBrowser ? window.atob(base64) : Buffer.from(base64, 'base64').toString('binary');
+    const uint8Array = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i += 1) {
         uint8Array[i] = binary.charCodeAt(i);
     }
     return uint8Array;
