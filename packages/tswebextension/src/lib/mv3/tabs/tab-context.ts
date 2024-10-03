@@ -63,6 +63,14 @@ export class TabContext {
     public mainFrameRule: NetworkRule | null = null;
 
     /**
+     * // TODO remove
+     * @deprecated
+     * This field is used in the extension, and mv2 version uses it
+     * But it is not used anymore in mv3, so it is deprecated here
+     */
+    public isSyntheticTab = false;
+
+    /**
      * Timestamp of the assistant initialization.
      *
      * Needed to avoid cosmetic rules injection into the assistant frame.
