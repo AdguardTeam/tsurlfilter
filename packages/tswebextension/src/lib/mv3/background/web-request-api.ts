@@ -564,15 +564,19 @@ export class WebRequestApi {
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
-            if (frameContext?.cosmeticResult) {
-                CosmeticApi.logScriptRules({
-                    tabId,
-                    cosmeticResult: frameContext?.cosmeticResult,
-                    url: requestUrl,
-                    contentType,
-                    timestamp,
-                });
+            if (!frameContext?.cosmeticResult) {
+                // eslint-disable-next-line max-len
+                logger.debug(`[RequestEvents.onCompleted]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                return;
             }
+
+            CosmeticApi.logScriptRules({
+                tabId,
+                cosmeticResult: frameContext.cosmeticResult,
+                url: requestUrl,
+                contentType,
+                timestamp,
+            });
         }
 
         WebRequestApi.deleteRequestContext(context.requestId);
