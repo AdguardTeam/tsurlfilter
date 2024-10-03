@@ -12,13 +12,7 @@ import { createFrameMatchQuery } from '../../common/utils/create-frame-match-que
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
-import {
-    type ExecuteScriptletParams,
-    type ExecuteScriptParams,
-    type InsertCSSParams,
-    ScriptingApi,
-} from './scripting-api';
-import { requestContextStorage } from './request/request-context-storage';
+import { ScriptingApi } from './scripting-api';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { getDomain } from '../../common/utils/url';
 import { type ContentType } from '../../common/request-type';
@@ -41,40 +35,12 @@ export type ContentScriptCosmeticData = {
     extCssRules: string[] | null,
 };
 
-type ApplyCosmeticResultParams = {
-    tabId: number,
-    frameId: number,
-    cosmeticResult: CosmeticResult,
-    frameUrl: string,
-};
-
 /**
  * Script text and scriptlets.
  */
 type ScriptTextAndScriptlets = {
     scriptText: string,
     scriptletDataList: ScriptletData[]
-};
-
-/**
- * Parameters for executing scriptlet data list.
- */
-type ExecuteScriptletsParams = Omit<ExecuteScriptletParams, 'scriptletData'> & {
-    /**
-     * The scriptlet data to be executed.
-     */
-    scriptletDataList: ScriptletData[];
-};
-
-/**
- * Parameters for executing a script with additional frame URL.
- */
-export type ExecuteScriptParamsWithUrl = ExecuteScriptParams & {
-    /**
-     * The URL of the frame.
-     * Used to determine if a blob should be used for injection.
-     */
-    frameUrl: string;
 };
 
 /**
@@ -279,33 +245,6 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Injects scriptlet data list to the page by request id.
-     *
-     * @param requestId Request id.
-     */
-    public static async applyScriptletsByRequest(requestId: string): Promise<void> {
-        const requestContext = requestContextStorage.get(requestId);
-        const scriptletDataList = requestContext?.scriptletDataList;
-
-        if (!scriptletDataList) {
-            return;
-        }
-
-        try {
-            await Promise.all(scriptletDataList.map((scriptletData) => {
-                return ScriptingApi.executeScriptlet({
-                    tabId: requestContext.tabId,
-                    frameId: requestContext.frameId,
-                    scriptletData,
-                    domainName: getDomain(requestContext.requestUrl),
-                });
-            }));
-        } catch (e) {
-            logger.debug('[applyScriptletsByRequest] error occurred during injection', getErrorMessage(e));
-        }
-    }
-
-    /**
      * Determines if a blob should be used for script injection based on the request url.
      * This method is used in scenarios where inline scripts are blocked by a Content Security Policy (CSP),
      * but blobs are allowed.
@@ -330,38 +269,17 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Injects js to specified frame based on provided data and injection FSM state.
-     *
-     * @param requestId Request id.
-     */
-    public static async applyJsByRequest(requestId: string): Promise<void> {
-        const requestContext = requestContextStorage.get(requestId);
-        if (!requestContext?.scriptText) {
-            return;
-        }
-
-        try {
-            await ScriptingApi.executeScript({
-                tabId: requestContext.tabId,
-                frameId: requestContext.frameId,
-                scriptText: requestContext.scriptText,
-                useBlob: CosmeticApi.shouldUseBlob(requestContext.requestUrl),
-            });
-        } catch (e) {
-            logger.debug('[applyJsByRequest] error occurred during injection', getErrorMessage(e));
-        }
-    }
-
-    /**
      * Injects js to specified tab and frame.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
     public static async applyJsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
-        const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        if (!requestContext?.scriptText) {
+        const scriptText = frameContext?.preparedCosmeticResult?.scriptText;
+
+        if (!scriptText) {
             return;
         }
 
@@ -369,8 +287,8 @@ export class CosmeticApi extends CosmeticApiCommon {
             await ScriptingApi.executeScript({
                 tabId,
                 frameId,
-                scriptText: requestContext.scriptText,
-                useBlob: CosmeticApi.shouldUseBlob(requestContext.requestUrl),
+                scriptText,
+                useBlob: CosmeticApi.shouldUseBlob(frameContext.url),
             });
         } catch (e) {
             logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
@@ -384,8 +302,13 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameId Frame id.
      */
     public static async applyScriptletsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
-        const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
-        const scriptletDataList = requestContext?.scriptletDataList;
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+        if (!frameContext) {
+            return;
+        }
+
+        const scriptletDataList = frameContext.preparedCosmeticResult?.scriptletDataList;
 
         if (!scriptletDataList) {
             return;
@@ -397,7 +320,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                     tabId,
                     frameId,
                     scriptletData,
-                    domainName: getDomain(requestContext.requestUrl),
+                    domainName: getDomain(frameContext.url),
                 });
             }));
         } catch (e) {
@@ -412,14 +335,16 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameId Frame id.
      */
     public static async applyCssByTabAndFrame(tabId: number, frameId: number): Promise<void> {
-        const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
-        if (!requestContext?.cssText) {
+        const requestContext = tabsApi.getFrameContext(tabId, frameId);
+
+        const cssText = requestContext?.preparedCosmeticResult?.cssText;
+        if (!cssText) {
             return;
         }
 
         try {
             await ScriptingApi.insertCSS({
-                cssText: requestContext.cssText,
+                cssText,
                 tabId,
                 frameId,
             });
@@ -430,109 +355,6 @@ export class CosmeticApi extends CosmeticApiCommon {
                 'with request context:',
                 requestContext,
             );
-        }
-    }
-
-    /**
-     * Wraps CSS injection with try-catch block.
-     * @param params Parameters for applying CSS rules.
-     */
-    private static async insertCSS(params: InsertCSSParams): Promise<void> {
-        try {
-            await ScriptingApi.insertCSS(params);
-        } catch (e) {
-            logger.debug('[insertCSS] error occurred during injection', getErrorMessage(e));
-        }
-    }
-
-    /**
-     * Wraps script execution with try-catch block.
-     * @param params Parameters for executing a script.
-     */
-    private static async executeScript(params: ExecuteScriptParamsWithUrl): Promise<void> {
-        try {
-            await ScriptingApi.executeScript({
-                tabId: params.tabId,
-                frameId: params.frameId,
-                scriptText: params.scriptText,
-                useBlob: CosmeticApi.shouldUseBlob(params.frameUrl),
-            });
-        } catch (e) {
-            logger.debug('[executeScript] error occurred during injection', getErrorMessage(e));
-        }
-    }
-
-    /**
-     * Wraps script execution with try-catch block.
-     * @param params Parameters for executing a script.
-     */
-    private static async executeScriptlets(params: ExecuteScriptletsParams): Promise<void> {
-        const {
-            tabId,
-            frameId,
-            scriptletDataList,
-            domainName,
-        } = params;
-
-        try {
-            await Promise.all(scriptletDataList.map((scriptletData) => {
-                return ScriptingApi.executeScriptlet({
-                    tabId,
-                    frameId,
-                    scriptletData,
-                    domainName,
-                });
-            }));
-        } catch (e) {
-            logger.debug('[executeScriptlets] error occurred during injection', getErrorMessage(e));
-        }
-    }
-
-    /**
-     * Injects a cosmetic result to the frame by tab id and frame id.
-     *
-     * @param params Parameters for applying a cosmetic result.
-     * @param params.tabId Tab id.
-     * @param params.frameId Frame id.
-     * @param params.cosmeticResult Cosmetic result.
-     * @param params.frameUrl Frame URL.
-     * @returns Promise that resolves when the cosmetic result is applied.
-     */
-    public static async applyCosmeticResult(
-        {
-            tabId,
-            frameId,
-            cosmeticResult,
-            frameUrl,
-        }: ApplyCosmeticResultParams,
-    ): Promise<void> {
-        const { scriptText, scriptletDataList } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
-        const cssText = CosmeticApi.getCssText(cosmeticResult);
-
-        if (cssText) {
-            CosmeticApi.insertCSS({
-                tabId,
-                frameId,
-                cssText,
-            });
-        }
-
-        if (scriptText) {
-            CosmeticApi.executeScript({
-                tabId,
-                frameId,
-                scriptText,
-                frameUrl,
-            });
-        }
-
-        if (scriptletDataList.length > 0) {
-            CosmeticApi.executeScriptlets({
-                tabId,
-                frameId,
-                scriptletDataList,
-                domainName: getDomain(frameUrl),
-            });
         }
     }
 

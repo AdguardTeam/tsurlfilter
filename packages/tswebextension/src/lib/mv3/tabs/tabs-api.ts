@@ -1,5 +1,5 @@
 import browser, { type Tabs } from 'webextension-polyfill';
-import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
+import type { NetworkRule } from '@adguard/tsurlfilter';
 
 import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 import { EventChannel } from '../../common/utils/channels';
@@ -7,6 +7,7 @@ import { type FrameRequestContext, TabContext } from './tab-context';
 import { type Frame } from './frame';
 import { DocumentApi } from '../background/document-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
+import { logger } from '../../common';
 
 /**
  * Request context data related to the tab's frame.
@@ -42,10 +43,6 @@ export class TabsApi {
         this.handleTabDelete = this.handleTabDelete.bind(this);
         this.handleTabReplace = this.handleTabReplace.bind(this);
         this.onWindowFocusChanged = this.onWindowFocusChanged.bind(this);
-
-        this.handleFrameRequest = this.handleFrameRequest.bind(this);
-        this.handleFrameCosmeticResult = this.handleFrameCosmeticResult.bind(this);
-        this.handleFrameMatchingResult = this.handleFrameMatchingResult.bind(this);
 
         this.getTabContext = this.getTabContext.bind(this);
         this.getTabFrameRule = this.getTabFrameRule.bind(this);
@@ -150,18 +147,16 @@ export class TabsApi {
             return;
         }
 
-        tabContext.updateTabInfo(changeInfo, tabInfo);
+        tabContext.updateTabInfo(tabInfo);
         this.onUpdate.dispatch(tabContext);
     }
 
     /**
      * Dispatches tab on activated event.
-     *
-     * @param info Tab activated info.
-     * @param info.tabId Tab ID.
+     * @param tab Tab info.
      */
-    private handleTabActivate({ tabId }: Tabs.OnActivatedActiveInfoType): void {
-        const tabContext = this.context.get(tabId);
+    private handleTabActivate(tab: Tabs.OnActivatedActiveInfoType): void {
+        const tabContext = this.context.get(tab.tabId);
 
         if (!tabContext) {
             return;
@@ -189,31 +184,6 @@ export class TabsApi {
         this.context.delete(removedTabId);
         this.context.set(addedTabId, tabContext);
         this.onReplace.dispatch(tabContext);
-    }
-
-    /**
-     * Uses {@link browser.webNavigation.onBeforeNavigate} event data
-     * to update tab context data in conjunction with {@link handleTabUpdate}.
-     *
-     * Note: it is being specifically called at onBeforeNavigate
-     * to handle initial tab update before {@link browser.tab.onUpdate} and {@link handleTabUpdate}.
-     *
-     * @param tabId Tab ID.
-     * @param url Url.
-     */
-    public handleTabNavigation(tabId: number, url: string): void {
-        // Skip updates for non-http requests.
-        if (!isHttpRequest(url)) {
-            return;
-        }
-
-        const tabContext = this.context.get(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        tabContext.updateMainFrameData(tabId, url);
     }
 
     /**
@@ -399,65 +369,6 @@ export class TabsApi {
     }
 
     /**
-     * Records request context to the tab context.
-     *
-     * @param requestContext Tab's frame's request context.
-     */
-    public handleFrameRequest(requestContext: TabFrameRequestContext): void {
-        const { tabId } = requestContext;
-
-        const tabContext = this.context.get(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        tabContext.handleFrameRequest(requestContext);
-    }
-
-    /**
-     * Records frame cosmetic result to the tab context.
-     *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     * @param cosmeticResult Frame {@link CosmeticResult}.
-     */
-    public handleFrameCosmeticResult(
-        tabId: number,
-        frameId: number,
-        cosmeticResult: CosmeticResult,
-    ): void {
-        const tabContext = this.context.get(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        tabContext.handleFrameCosmeticResult(frameId, cosmeticResult);
-    }
-
-    /**
-     * Records frame matching result to the tab context.
-     *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     * @param matchingResult Frame {@link MatchingResult}.
-     */
-    public handleFrameMatchingResult(
-        tabId: number,
-        frameId: number,
-        matchingResult: MatchingResult,
-    ): void {
-        const tabContext = this.context.get(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        tabContext.handleFrameMatchingResult(frameId, matchingResult);
-    }
-
-    /**
      * Checks whether the tab with the specified ID is open in incognito mode
      * or not.
      *
@@ -476,19 +387,104 @@ export class TabsApi {
     }
 
     /**
-     * Returns current active tab.
+     * Updates the frame context with additional data.
      *
-     * @returns Current active tab.
+     * @param tabId The ID of the tab.
+     * @param frameId The ID of the frame.
+     * @param partialFrameContext The details to be added to the frame context.
+     *
+     * @throws Error if the tab context or frame context is not found, as this should not occur at this point.
      */
-    static getActiveTab = async (): Promise<browser.Tabs.Tab> => {
-        const tabs = await browser.tabs.query({
-            active: true,
-            currentWindow: true,
-        });
+    public updateFrameContext(tabId: number, frameId: number, partialFrameContext: Partial<Frame>): void {
+        const tabContext = this.getTabContext(tabId);
+        if (!tabContext) {
+            logger.debug('At this point tab context should already exist');
+            return;
+        }
 
-        const [tab] = tabs;
-        return tab;
-    };
+        const frameContext = tabContext?.getFrameContext(frameId);
+
+        if (!frameContext) {
+            logger.debug('At this point frame context should already exist');
+            return;
+        }
+
+        Object.assign(frameContext, partialFrameContext);
+        if (frameContext.documentId) {
+            tabContext.setDocumentId(frameContext.documentId, frameId);
+        }
+    }
+
+    /**
+     * Sets frame context.
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     * @param frameContext Frame context.
+     *
+     * @throws Error if the tab context is not found, as this should not occur at this point.
+     */
+    public setFrameContext(tabId: number, frameId: number, frameContext: Frame): void {
+        const tabContext = this.getTabContext(tabId);
+        if (!tabContext) {
+            logger.debug('At this point tab context should already exist');
+            return;
+        }
+        tabContext.setFrameContext(frameId, frameContext);
+    }
+
+    /**
+     * Returns frame context by tabId and frameId.
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     * @returns Frame context.
+     */
+    public getFrameContext(tabId: number, frameId: number): Frame | undefined {
+        const tabContext = this.getTabContext(tabId);
+        const frameContext = tabContext?.getFrameContext(frameId);
+        return frameContext;
+    }
+
+    /**
+     * Returns frame context by documentId.
+     * @param tabId Tab ID.
+     * @param documentId Unique identifier assigned to the frame on onCommited event.
+     *
+     * @returns Frame context.
+     */
+    public getByDocumentId(tabId: number, documentId: string): Frame | undefined {
+        const tabContext = this.getTabContext(tabId);
+        return tabContext?.getFrameContextByDocumentId(documentId);
+    }
+
+    /**
+     * Deletes the frame context.
+     * Also clears frames older than the specified maxFrameAgeMs.
+     *
+     * @param tabId The ID of the tab.
+     * @param frameId The ID of the frame.
+     * @param maxFrameAgeMs The maximum allowed age for frames, in milliseconds.
+     */
+    public deleteFrameContext(tabId: number, frameId: number, maxFrameAgeMs: number): void {
+        const tabContext = this.getTabContext(tabId);
+        if (!tabContext) {
+            return;
+        }
+
+        tabContext.deleteFrameContext(frameId, maxFrameAgeMs);
+        tabContext.clearStaleFrames(maxFrameAgeMs);
+    }
+
+    /**
+     * Resets blocked requests count for the tab.
+     * @param tabId Tab ID.
+     */
+    public resetBlockedRequestsCount(tabId: number): void {
+        const tabContext = this.getTabContext(tabId);
+        if (!tabContext) {
+            return;
+        }
+        tabContext.resetBlockedRequestsCount();
+    }
 }
 
 export const tabsApi = new TabsApi();

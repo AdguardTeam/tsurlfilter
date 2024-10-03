@@ -1,4 +1,4 @@
-import browser from 'sinon-chrome';
+import chrome from 'sinon-chrome';
 import { CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
 import { ContentType } from '../../../../src/lib/common/request-type';
@@ -16,10 +16,13 @@ describe('TabsCosmeticInjector', () => {
     });
 
     beforeEach(() => {
-        jest.spyOn(CosmeticApi, 'applyCosmeticResult');
-        jest.spyOn(ScriptingApi, 'executeScript');
-        jest.spyOn(ScriptingApi, 'insertCSS');
+        jest.spyOn(CosmeticApi, 'applyCssByTabAndFrame');
+        jest.spyOn(CosmeticApi, 'applyJsByTabAndFrame');
+        jest.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
         jest.spyOn(CosmeticApi, 'logScriptRules');
+        jest.spyOn(ScriptingApi, 'insertCSS');
+        jest.spyOn(ScriptingApi, 'executeScript');
+        jest.spyOn(ScriptingApi, 'executeScriptlet');
     });
 
     afterEach(() => {
@@ -33,12 +36,12 @@ describe('TabsCosmeticInjector', () => {
             const url = 'https://example.com';
             const timestamp = 123;
 
-            browser.tabs.query.resolves([{
+            chrome.tabs.query.resolves([{
                 id: tabId,
                 url,
             }]);
 
-            browser.webNavigation.getAllFrames.resolves([{ frameId, url }]);
+            chrome.webNavigation.getAllFrames.resolves([{ frameId, url }]);
 
             const matchingResult = {} as MatchingResult;
             matchingResult.getCosmeticOption = jest.fn();
@@ -57,20 +60,11 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCosmeticResult).toHaveBeenCalledWith(expect.objectContaining({
-                tabId,
-                frameId,
-            }));
+            expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
 
-            expect(ScriptingApi.executeScript).toHaveBeenCalledWith(expect.objectContaining({
-                tabId,
-                frameId,
-            }));
+            expect(CosmeticApi.applyJsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
 
-            expect(ScriptingApi.insertCSS).toHaveBeenCalledWith(expect.objectContaining({
-                tabId,
-                frameId,
-            }));
+            expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
 
             const expectedLogParams = {
                 url,
@@ -85,30 +79,33 @@ describe('TabsCosmeticInjector', () => {
         it('should not apply cosmetic rules for non-browser tabs', async () => {
             const tabId = -1;
 
-            browser.tabs.query.resolves([{ id: tabId }]);
+            chrome.tabs.query.resolves([{ id: tabId }]);
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCosmeticResult).not.toBeCalled();
-            expect(ScriptingApi.executeScript).not.toBeCalled();
-            expect(ScriptingApi.insertCSS).not.toBeCalled();
+            expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
+            expect(CosmeticApi.applyJsByTabAndFrame).not.toBeCalled();
+            expect(CosmeticApi.applyScriptletsByTabAndFrame).not.toBeCalled();
 
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
 
-        it('should not apply cosmetic rules for frames without src', async () => {
+        it('should not apply cosmetic rules for main frames with blank urls', async () => {
             const tabId = 1;
             const frameId = 1;
             const frameUrl = 'about:blank';
 
-            browser.tabs.query.resolves([{ id: tabId }]);
-            browser.webNavigation.getAllFrames.resolves([{ frameId, url: frameUrl }]);
+            chrome.tabs.query.resolves([{ id: tabId }]);
+            chrome.webNavigation.getAllFrames.resolves([{ frameId, url: frameUrl }]);
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCosmeticResult).not.toBeCalled();
-            expect(ScriptingApi.executeScript).not.toBeCalled();
+            expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyJsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
             expect(ScriptingApi.insertCSS).not.toBeCalled();
+            expect(ScriptingApi.executeScript).not.toBeCalled();
+            expect(ScriptingApi.executeScriptlet).not.toBeCalled();
 
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });

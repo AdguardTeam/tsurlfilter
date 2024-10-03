@@ -2,6 +2,7 @@ import browser from 'sinon-chrome';
 import { TextEncoder, TextDecoder } from 'util';
 
 global.chrome = {
+    ...browser,
     // @ts-ignore
     scripting: {
         insertCSS: jest.fn(),
