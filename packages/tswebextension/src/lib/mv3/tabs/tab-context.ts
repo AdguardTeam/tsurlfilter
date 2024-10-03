@@ -1,8 +1,9 @@
 import browser from 'webextension-polyfill';
-import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
+import { type RequestType } from '@adguard/tsurlfilter/es/request-type';
+import type { NetworkRule } from '@adguard/tsurlfilter';
 import type { Tabs } from 'webextension-polyfill';
 
+import { identity } from 'lodash-es';
 import { Frame } from './frame';
 import {
     type FilteringLog,
@@ -11,6 +12,7 @@ import {
 import { isHttpOrWsRequest } from '../../common/utils/url';
 import { DocumentApi } from '../background/document-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
+import { Frames } from './frames';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.
@@ -42,7 +44,13 @@ export class TabContext {
      * Storage is cleared on tab reload.
      * Do not use it as a data source out of request or navigation processing.
      */
-    public frames = new Map<number, Frame>();
+    public frames = new Frames();
+
+    /**
+     * Document IDs map.
+     * Used to get frame context by document ID.
+     */
+    public documentIdsMap = new Map<string, number>();
 
     /**
      * Blocked request count.
@@ -53,16 +61,6 @@ export class TabContext {
      * Document level rule, applied to the tab.
      */
     public mainFrameRule: NetworkRule | null = null;
-
-    /**
-     * We mark these tabs as synthetic because they may not actually exist.
-     */
-    public isSyntheticTab = true;
-
-    /**
-     * Is document page request handled by memory cache or sw.
-     */
-    public isDocumentRequestCached = false;
 
     /**
      * Timestamp of the assistant initialization.
@@ -89,49 +87,17 @@ export class TabContext {
     /**
      * Updates tab info.
      *
-     * @param changeInfo Tab change info.
      * @param tabInfo Tab info.
      */
-    public updateTabInfo(changeInfo: Tabs.OnUpdatedChangeInfoType, tabInfo: TabInfo): void {
+    public updateTabInfo(tabInfo: TabInfo): void {
         this.info = tabInfo;
-
-        // If the tab was updated it means that it wasn't used to send requests in the background.
-        this.isSyntheticTab = false;
-
-        // Update main frame data when we navigate to another page with document request caching enabled.
-        if (changeInfo.url) {
-            // Get current main frame.
-            const frame = this.frames.get(MAIN_FRAME_ID);
-
-            // If main frame url is the same as request url, do nothing.
-            if (frame?.url === changeInfo.url) {
-                return;
-            }
-
-            // If the main frame doesn't exist or its URL is different from the request URL,
-            // it means that the document request hasn't been processed by the WebRequestApi yet.
-            // In this case, we mark the tab as using the cache and update its context using the tabsApi.
-            this.isDocumentRequestCached = true;
-
-            // Update main frame data.
-            this.handleMainFrameRequest(changeInfo.url);
-        }
-
-        // When the cached page is reloaded, we need to manually update
-        // the main frame rule for correct document-level rule processing.
-        if (!changeInfo.url
-            && changeInfo.status === 'loading'
-            && this.isDocumentRequestCached
-            && this.info.url) {
-            this.handleMainFrameRequest(this.info.url);
-        }
     }
 
     /**
      * Updates main frame data.
      *
      * Note: this method will be called on tab reload before the first {@link browser.tabs.onUpdated} event
-     * and {@link handleTabUpdate} and {@link updateTabInfo} calls.
+     * and {@link handleTabUpdate} calls.
      *
      * @param tabId Tab ID.
      * @param url Url.
@@ -139,24 +105,6 @@ export class TabContext {
     public updateMainFrameData(tabId: number, url: string): void {
         this.info.url = url;
         this.info.id = tabId;
-
-        // Get current main frame.
-        const frame = this.frames.get(MAIN_FRAME_ID);
-
-        // If main frame url is the same as request url, do nothing.
-        if (frame?.url === url) {
-            return;
-        }
-
-        /**
-         * If the main frame doesn't exist or its URL is different from the request URL,
-         * we mark the tab as using the cache and update its context using the tabsApi,
-         * as it means that the document request hasn't been processed by the WebRequestApi yet.
-         */
-        this.isDocumentRequestCached = true;
-
-        // Update main frame data.
-        this.handleMainFrameRequest(url);
     }
 
     /**
@@ -167,89 +115,9 @@ export class TabContext {
     }
 
     /**
-     * Handles document or subdocument request and stores data in specified frame context.
-     * If the request is a document request, will also match the main frame rule
-     * and store it in the {@link mainFrameRule} property.
-     * This method is called before filtering processing in WebRequest onBeforeRequest handler.
-     * MatchingResult is handled in {@link handleFrameMatchingResult}.
-     *
-     * CosmeticResult is handled in {@link handleFrameCosmeticResult}.
-     *
-     * @param requestContext Request context data.
+     * Resets blocked requests count.
      */
-    public handleFrameRequest(requestContext: FrameRequestContext): void {
-        // This method is called in the WebRequest onBeforeRequest handler.
-        // It means that the request is being processed.
-        this.isDocumentRequestCached = false;
-
-        const {
-            frameId,
-            requestId,
-            requestUrl,
-            requestType,
-        } = requestContext;
-
-        if (requestType === RequestType.Document) {
-            this.handleMainFrameRequest(requestUrl, requestId);
-        } else {
-            this.frames.set(frameId, new Frame(requestUrl, requestId));
-        }
-    }
-
-    /**
-     * Handles request {@link MatchingResult} from WebRequest onBeforeRequest handler
-     * and stores it in specified frame context.
-     *
-     * @param frameId Frame id.
-     * @param matchingResult Matching result.
-     */
-    public handleFrameMatchingResult(frameId: number, matchingResult: MatchingResult | null): void {
-        const frame = this.frames.get(frameId);
-
-        if (frame) {
-            frame.matchingResult = matchingResult;
-        }
-    }
-
-    /**
-     * Handles frame {@link CosmeticResult} from WebRequest onBeforeRequest handler
-     * and stores it in specified frame context.
-     *
-     * @param frameId Frame id.
-     * @param cosmeticResult Cosmetic result.
-     */
-    public handleFrameCosmeticResult(frameId: number, cosmeticResult: CosmeticResult): void {
-        const frame = this.frames.get(frameId);
-
-        if (frame) {
-            frame.cosmeticResult = cosmeticResult;
-        }
-    }
-
-    /**
-     * Handles document request and updates main frame context.
-     *
-     * Also matches document level rule and store it {@link mainFrameRule}.
-     *
-     * MatchingResult handles in {@link handleFrameMatchingResult}.
-     * CosmeticResult handles in {@link handleFrameCosmeticResult}.
-     *
-     * @param requestUrl Request url.
-     * @param requestId Request id.
-     */
-    private handleMainFrameRequest(
-        requestUrl: string,
-        requestId?: string,
-    ): void {
-        // Clear frames data on tab reload.
-        this.frames.clear();
-
-        // Set new main frame data.
-        this.frames.set(MAIN_FRAME_ID, new Frame(requestUrl, requestId));
-
-        // Calculate new main frame rule.
-        this.mainFrameRule = DocumentApi.matchFrame(requestUrl);
-        // Reset tab blocked count.
+    public resetBlockedRequestsCount(): void {
         this.blockedRequestCount = 0;
     }
 
@@ -272,7 +140,13 @@ export class TabContext {
         if (url && isHttpOrWsRequest(url)) {
             tabContext.mainFrameRule = DocumentApi.matchFrame(url);
 
-            tabContext.frames.set(MAIN_FRAME_ID, new Frame(url));
+            tabContext.frames.set(MAIN_FRAME_ID, new Frame({
+                tabId: tab.id,
+                frameId: MAIN_FRAME_ID,
+                url,
+                // timestamp is 0, so that it will be recalculated in the next event
+                timeStamp: 0,
+            }));
         }
 
         return tabContext;
@@ -289,5 +163,112 @@ export class TabContext {
      */
     public static isBrowserTab(tab: Tabs.Tab): tab is TabInfo {
         return typeof tab.id === 'number' && tab.id !== browser.tabs.TAB_ID_NONE;
+    }
+
+    /**
+     * Get frame context.
+     * @param frameId Frame id.
+     * @returns Frame context.
+     */
+    getFrameContext(frameId: number): Frame | undefined {
+        return this.frames.get(frameId);
+    }
+
+    /**
+     * Set frame context.
+     * @param frameId Frame id.
+     * @param frameContext Frame context.
+     */
+    setFrameContext(frameId: number, frameContext: Frame): void {
+        this.frames.set(frameId, frameContext);
+    }
+
+    /**
+     * Set document id.
+     * @param documentId Unique identifier of the frame.
+     * @param frameId Frame id.
+     */
+    setDocumentId(documentId: string, frameId: number): void {
+        this.documentIdsMap.set(documentId, frameId);
+    }
+
+    /**
+     * Get frame context by document id.
+     * @param documentId Unique identifier of the frame.
+     * @returns Frame context.
+     */
+    getFrameContextByDocumentId(documentId: string): Frame | undefined {
+        const frameId = this.documentIdsMap.get(documentId);
+
+        // frameId might be 0, do not use falsy check
+        if (frameId !== undefined) {
+            return this.frames.get(frameId);
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Deletes the frame context.
+     * @param frameId The ID of the frame to delete.
+     * @param maxFrameAgeMs The maximum allowed frame age in milliseconds.
+     */
+    deleteFrameContext(frameId: number, maxFrameAgeMs: number): void {
+        // The main frame should only be deleted when the tab is closed,
+        // as it may be needed for sub frames created during the page's lifetime
+        // or for retrieving the main frame rule.
+        if (frameId === MAIN_FRAME_ID) {
+            return;
+        }
+
+        const frame = this.frames.get(frameId);
+        if (!frame) {
+            return;
+        }
+
+        // Do not delete frames that are not stale, as they may still be needed.
+        if (frame.timeStamp && frame.timeStamp > Date.now() - maxFrameAgeMs) {
+            return;
+        }
+
+        // Clear the document ID map if the frame has a document ID.
+        if (frame.documentId) {
+            this.documentIdsMap.delete(frame.documentId);
+        }
+
+        this.frames.delete(frameId);
+    }
+
+    /**
+     * Since document frames are not removed, but rather updated, document IDs can become stale.
+     * This method clears stale document IDs.
+     */
+    clearStaleDocumentIds(): void {
+        const documentIdsLeft = this.frames.values()
+            .map((frame) => frame.documentId)
+            .filter(identity);
+
+        const documentIdsLeftSet = new Set(documentIdsLeft);
+
+        const documentIds = [...this.documentIdsMap.keys()];
+
+        for (const documentId of documentIds) {
+            if (!documentIdsLeftSet.has(documentId)) {
+                this.documentIdsMap.delete(documentId);
+            }
+        }
+    }
+
+    /**
+     * Clears stale frames.
+     * @param maxFrameAgeMs The maximum allowed frame age in milliseconds.
+     */
+    clearStaleFrames(maxFrameAgeMs: number): void {
+        const values = this.frames.values();
+        for (const value of values) {
+            this.deleteFrameContext(value.frameId, maxFrameAgeMs);
+        }
+
+        this.clearStaleDocumentIds();
     }
 }

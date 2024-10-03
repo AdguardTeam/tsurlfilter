@@ -210,11 +210,6 @@ export class RequestEvents {
             tabId,
         };
 
-        if (isDocumentRequest || requestType === RequestType.SubDocument) {
-            // Saves the current tab url to retrieve it correctly below.
-            tabsApi.handleFrameRequest(tabFrameRequestContext);
-        }
-
         const referrerUrl = originUrl
             || initiator
             // Comparison of the requested url with the tab frame url in case of

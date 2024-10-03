@@ -7,12 +7,13 @@
  *
  * Event data is aggregated into two contexts: {@link RequestContext},
  * which contains data about the specified request
- * and {@link TabContext} which contains data about the specified tab.
+ * and {@link TabContext} which contains data about the specified tab and frames inside it.
  *
  * Applying {@link NetworkRule} from the background page:
  *
- * The cssText and scriptText for specified request are calculated and stored in context storages,
- * at the time {@link RequestEvents.onBeforeRequest} is processed.
+ * The cssText, scriptText, scriptletDataList for specified frame are calculated and stored in tab context storage,
+ * at the time {@link RequestEvents.onBeforeRequest} or {@link WebNavigation.onBeforeNavigate} is processed.
+ * In the most cases the onBeforeNavigate event is processed before onBeforeRequest.
  *
  * At {@link RequestEvents.onBeforeSendHeaders}, the request headers will be parsed to apply $cookie rules
  * based on the {@link MatchingResult} stored in {@link requestContextStorage}.
@@ -21,7 +22,7 @@
  * At {@link RequestEvents.onErrorOccurred}, the blocked request url will be matched by {@link companiesDbService}
  * for collecting precise statistics of blocked requests.
  *
- * The specified {@link RequestContext} will be removed from {@link requestContextStorage}
+ * The specified {@link RequestContext} or frame context {@link Frame} will be removed from the storage
  * on {@link WebNavigation.onCommitted} after injection or {@link RequestEvents.onErrorOccurred} events.
  *
  *
@@ -97,7 +98,7 @@
  *                                       ┌──────────────▼──────────────┐
  * Update main frame data with           │                             │
  * {@link updateMainFrameData}           │       onBeforeNavigate      │
- *                                       │                             │
+ * and matches CosmeticResult            │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
@@ -138,14 +139,11 @@
  */
 import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
 
-import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-
-import { HTTPMethod } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter';
 import {
     getDomain,
     isExtensionUrl,
     isHttpOrWsRequest,
-    isHttpRequest,
 } from '../../common/utils/url';
 import { RequestEvents } from './request/events/request-events';
 import { type RequestData } from './request/events/request-event';
@@ -156,7 +154,7 @@ import { requestContextStorage } from './request/request-context-storage';
 import { DocumentApi } from './document-api';
 import { CosmeticApi } from './cosmetic-api';
 import { getErrorMessage } from '../../common/error';
-import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
+import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
 import { RequestBlockingApi } from './request/request-blocking-api';
@@ -164,6 +162,7 @@ import { companiesDbService } from '../../common/companies-db-service';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { declarativeFilteringLog } from './declarative-filtering-log';
+import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 
 /**
  * API for applying rules from background service by handling
@@ -194,8 +193,10 @@ export class WebRequestApi {
         RequestEvents.onCompleted.addListener(WebRequestApi.onCompleted);
 
         // browser.webNavigation Events
-        browser.webNavigation.onBeforeNavigate.addListener(WebRequestApi.onBeforeNavigate);
-        browser.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
+        // 'chrome' is used here because MV3 is mainly for Chrome,
+        // and it provides better types compared to 'browser' from webextension-polyfill.
+        chrome.webNavigation.onBeforeNavigate.addListener(WebRequestApi.onBeforeNavigate);
+        chrome.webNavigation.onCommitted.addListener(WebRequestApi.onCommitted);
         browser.webNavigation.onErrorOccurred.addListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onCompleted.addListener(WebRequestApi.deleteFrameContext);
     }
@@ -206,14 +207,15 @@ export class WebRequestApi {
     public static stop(): void {
         // browser.webRequest Events
         RequestEvents.onBeforeRequest.removeListener(WebRequestApi.onBeforeRequest);
+        RequestEvents.onResponseStarted.removeListener(WebRequestApi.onResponseStarted);
         RequestEvents.onBeforeSendHeaders.removeListener(WebRequestApi.onBeforeSendHeaders);
         RequestEvents.onHeadersReceived.removeListener(WebRequestApi.onHeadersReceived);
         RequestEvents.onErrorOccurred.removeListener(WebRequestApi.onErrorOccurred);
         RequestEvents.onCompleted.removeListener(WebRequestApi.onCompleted);
 
         // browser.webNavigation Events
-        browser.webNavigation.onBeforeNavigate.removeListener(WebRequestApi.onBeforeNavigate);
-        browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
+        chrome.webNavigation.onBeforeNavigate.removeListener(WebRequestApi.onBeforeNavigate);
+        chrome.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
         browser.webNavigation.onErrorOccurred.removeListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onCompleted.removeListener(WebRequestApi.deleteFrameContext);
     }
@@ -293,7 +295,7 @@ export class WebRequestApi {
             },
         });
 
-        let frameRule = null;
+        let frameRule;
         if (requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(referrerUrl);
         } else {
@@ -318,23 +320,11 @@ export class WebRequestApi {
         });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
-            tabsApi.handleFrameMatchingResult(tabId, frameId, result);
-
-            const cosmeticOption = result.getCosmeticOption();
-
-            const cosmeticResult = engineApi.getCosmeticResult(requestUrl, cosmeticOption);
-
-            // Save cosmeticResult for future return it from cache without recalculating.
-            tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
-
-            const { scriptText, scriptletDataList } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
-            const cssText = CosmeticApi.getCssText(cosmeticResult);
-
-            requestContextStorage.update(requestId, {
-                cosmeticResult,
-                scriptText,
-                scriptletDataList,
-                cssText,
+            CosmeticFrameProcessor.precalculateCosmetics({
+                tabId,
+                frameId,
+                url: requestUrl,
+                timeStamp: timestamp,
             });
         }
 
@@ -371,15 +361,15 @@ export class WebRequestApi {
             return;
         }
 
-        const { requestId, requestType } = context;
+        const { requestType, tabId, frameId } = context;
 
         if (requestType !== RequestType.Document
             && requestType !== RequestType.SubDocument) {
             return;
         }
 
-        CosmeticApi.applyJsByRequest(requestId);
-        CosmeticApi.applyScriptletsByRequest(requestId);
+        CosmeticApi.applyJsByTabAndFrame(tabId, frameId);
+        CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
     }
 
     /**
@@ -458,12 +448,24 @@ export class WebRequestApi {
      *
      * @param details Event details.
      */
-    private static onBeforeNavigate(details: WebNavigation.OnBeforeNavigateDetailsType): void {
-        const { frameId, tabId, url } = details;
+    private static async onBeforeNavigate(
+        details: chrome.webNavigation.WebNavigationParentedCallbackDetails,
+    ): Promise<void> {
+        const {
+            tabId,
+            frameId,
+            url,
+            parentDocumentId,
+            timeStamp,
+        } = details;
 
-        if (frameId === MAIN_FRAME_ID) {
-            tabsApi.handleTabNavigation(tabId, url);
-        }
+        CosmeticFrameProcessor.precalculateCosmetics({
+            tabId,
+            frameId,
+            url,
+            timeStamp,
+            parentDocumentId,
+        });
     }
 
     /**
@@ -539,10 +541,10 @@ export class WebRequestApi {
     }
 
     /**
-     * This is handler for the last event from the request lifecycle.
+     * Handler for the last event in the request lifecycle.
      *
-     * @param event On completed occurred event.
-     * @param event.context On completed occurred event context.
+     * @param event The event that occurred upon completion of the request.
+     * @param event.context The context of the completed event.
      */
     private static onCompleted({
         context,
@@ -552,38 +554,40 @@ export class WebRequestApi {
         }
 
         const {
-            requestType,
             tabId,
+            frameId,
             requestUrl,
-            timestamp,
+            requestType,
             contentType,
-            cosmeticResult,
+            timestamp,
         } = context;
 
-        if (cosmeticResult
-            && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
-            CosmeticApi.logScriptRules({
-                tabId,
-                cosmeticResult,
-                url: requestUrl,
-                contentType,
-                timestamp,
-            });
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            const frameContext = tabsApi.getFrameContext(tabId, frameId);
+            if (frameContext?.cosmeticResult) {
+                CosmeticApi.logScriptRules({
+                    tabId,
+                    cosmeticResult: frameContext?.cosmeticResult,
+                    url: requestUrl,
+                    contentType,
+                    timestamp,
+                });
+            }
         }
 
         WebRequestApi.deleteRequestContext(context.requestId);
     }
 
     /**
-     * Delete request context immediately or with timeout,
-     * if declarativeFilteringLog is listening.
+     * Deletes the request context immediately or after a timeout,
+     * depending on whether declarativeFilteringLog is listening.
      *
-     * @param requestId Request id.
+     * @param requestId The ID of the request.
      */
     private static deleteRequestContext(requestId: string): void {
-        // If declarativeFilteringLog is listening, we should wait some time
-        // before deleting the request context to extract context event id to
-        // link request with matched declarative rule.
+        // If declarativeFilteringLog is listening, wait for a specified timeout
+        // before deleting the request context to extract the context event ID,
+        // allowing the request to be linked with the matched declarative rule.
         if (declarativeFilteringLog.isListening) {
             setTimeout(() => {
                 requestContextStorage.delete(requestId);
@@ -603,84 +607,8 @@ export class WebRequestApi {
         const { tabId, frameId } = details;
 
         setTimeout(() => {
-            requestContextStorage.deleteByTabAndFrame(tabId, frameId);
+            tabsApi.deleteFrameContext(tabId, frameId, FRAME_DELETION_TIMEOUT_MS);
         }, FRAME_DELETION_TIMEOUT_MS);
-
-        const tabContext = tabsApi.getTabContext(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        /**
-         * On creation of an empty iframe with subsequent url assignment,
-         * WebNavigation.onCompleted of the frame could fire before WebRequest.onCommitted,
-         * removing the frame context with it's matching and cosmetic results before it could be applied.
-         *
-         * TODO: add the ability to prolong request and tab/frame contexts lives if it was not yet consumed
-         * at webRequest or webNavigation events, i.e
-         *   - keep requestContext if webRequest.onCommitted has not been fired,
-         *   - keep tab context if webNavigation.omCompleted has not been fired,
-         * etc.
-         */
-        setTimeout(() => tabContext.frames.delete(frameId), FRAME_DELETION_TIMEOUT_MS);
-    }
-
-    /**
-     * Applies cosmetic rules to a frame when a service worker prevents the `onBeforeRequest` event
-     * from attributing the request. Called during the `onCommitted` event if no request context exists.
-     *
-     * Determines if the frame is the main document or a sub-frame, retrieves frame rules and URLs,
-     * and applies cosmetic results if a match is found.
-     *
-     * @param details Details of the webNavigation onCommitted event.
-     */
-    private static handleServiceWorkerFrameCosmetics(details: browser.WebNavigation.OnCommittedDetailsType): void {
-        const { tabId, frameId, url } = details;
-
-        if (!isHttpRequest(url)) {
-            return;
-        }
-
-        const mainFrameRule = tabsApi.getTabFrameRule(tabId);
-
-        const requestType = frameId === MAIN_FRAME_ID
-            ? RequestType.Document
-            : RequestType.SubDocument;
-
-        /**
-         * For the main frame, frame URL is empty.
-         */
-        let mainFrameUrl = '';
-
-        /**
-         * If this is not the main frame, we need to get the URL of the main frame.
-         */
-        if (requestType !== RequestType.Document) {
-            const mainFrame = tabsApi.getTabFrame(tabId, MAIN_FRAME_ID);
-            mainFrameUrl = mainFrame?.url || '';
-        }
-
-        const result = engineApi.matchRequest({
-            requestUrl: url,
-            frameUrl: mainFrameUrl,
-            requestType,
-            frameRule: mainFrameRule,
-            method: HTTPMethod.GET,
-        });
-
-        if (!result) {
-            return;
-        }
-
-        const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
-
-        CosmeticApi.applyCosmeticResult({
-            tabId,
-            frameId,
-            cosmeticResult,
-            frameUrl: mainFrameUrl,
-        });
     }
 
     /**
@@ -688,19 +616,11 @@ export class WebRequestApi {
      *
      * @param details Navigation event details.
      */
-    private static onCommitted(details: browser.WebNavigation.OnCommittedDetailsType): void {
-        const { tabId, frameId } = details;
+    private static onCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails): void {
+        const { tabId, frameId, documentId } = details;
 
-        const requestContext = requestContextStorage.getByTabAndFrame(tabId, frameId);
-
-        /**
-         * In the case when page has service worker, onBeforeRequest can't be attributed with the frame.
-         * That is why it was decided to calculate and inject it onCommited event if there is no request context.
-         */
-        if (!requestContext) {
-            WebRequestApi.handleServiceWorkerFrameCosmetics(details);
-            return;
-        }
+        // This is necessary mainly to update documentId
+        tabsApi.updateFrameContext(tabId, frameId, { documentId });
 
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.

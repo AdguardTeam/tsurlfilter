@@ -1,15 +1,13 @@
 import browser, { type Tabs } from 'webextension-polyfill';
-import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { Frame } from './frame';
 import { TabContext } from './tab-context';
 import { tabsApi } from './tabs-api';
 import { logger } from '../../common/utils/logger';
-import { isHttpOrWsRequest } from '../../common/utils/url';
-import { engineApi } from '../background/engine-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { CosmeticApi } from '../background/cosmetic-api';
-import { ContentType } from '../../common/request-type';
+import { CosmeticFrameProcessor } from '../background/cosmetic-frame-processor';
+import { ContentType } from '../../common';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -47,60 +45,62 @@ export class TabsCosmeticInjector {
 
         const tabContext = new TabContext(tab);
         const tabId = tab.id;
-
         tabsApi.context.set(tabId, tabContext);
-
         tabsApi.updateTabMainFrameRule(tabId);
 
-        const frames = await browser.webNavigation.getAllFrames({ tabId });
+        const frames = await chrome.webNavigation.getAllFrames({ tabId });
 
         if (!frames) {
             return;
         }
 
-        frames.forEach(({ frameId, url: frameUrl }) => {
-            const frame = new Frame(frameUrl);
+        const currentTime = Date.now();
 
-            tabContext.frames.set(frameId, frame);
+        frames.forEach((frameDetails) => {
+            const {
+                url,
+                frameId,
+                parentDocumentId,
+                documentId,
+            } = frameDetails;
 
-            if (!isHttpOrWsRequest(frameUrl)) {
-                return;
-            }
-
-            const isDocumentFrame = frameId === MAIN_FRAME_ID;
-
-            frame.matchingResult = engineApi.matchRequest({
-                requestUrl: frameUrl,
-                frameUrl,
-                requestType: isDocumentFrame ? RequestType.Document : RequestType.SubDocument,
-                frameRule: tabContext.mainFrameRule,
-            });
-
-            if (!frame.matchingResult) {
-                return;
-            }
-
-            const cosmeticOption = frame.matchingResult.getCosmeticOption();
-
-            const cosmeticResult = engineApi.getCosmeticResult(frameUrl, cosmeticOption);
-            frame.cosmeticResult = cosmeticResult;
-
-            CosmeticApi.applyCosmeticResult({
+            tabsApi.setFrameContext(tabId, frameId, new Frame({
                 tabId,
                 frameId,
-                cosmeticResult,
-                frameUrl,
+                url,
+                timeStamp: currentTime,
+                parentDocumentId,
+                documentId,
+            }));
+
+            CosmeticFrameProcessor.handleFrame({
+                tabId,
+                frameId,
+                url,
+                timeStamp: currentTime,
+                parentDocumentId,
+                documentId,
             });
 
-            CosmeticApi.logScriptRules({
-                url: frameUrl,
-                tabId,
-                cosmeticResult,
-                timestamp: Date.now(),
-                contentType: isDocumentFrame
-                    ? ContentType.Document
-                    : ContentType.Subdocument,
-            });
+            // Note: this is an async function, but we will not await it because
+            // events do not support async listeners.
+            Promise.all([
+                CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
+                CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+                CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
+            ]).catch((e) => logger.error(e));
+
+            const frameContext = tabsApi.getFrameContext(tabId, frameId);
+            if (frameContext?.cosmeticResult) {
+                const isMainFrame = frameId === MAIN_FRAME_ID;
+                CosmeticApi.logScriptRules({
+                    url,
+                    tabId,
+                    cosmeticResult: frameContext.cosmeticResult,
+                    timestamp: currentTime,
+                    contentType: isMainFrame ? ContentType.Document : ContentType.Subdocument,
+                });
+            }
         });
     }
 }
