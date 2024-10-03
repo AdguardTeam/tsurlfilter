@@ -45,7 +45,7 @@ export class Frames {
 
     /**
      * Returns all frames.
-     * @returns array of frames.
+     * @returns Array of frames.
      */
     public values(): Frame[] {
         return [...this.framesMap.values()];
