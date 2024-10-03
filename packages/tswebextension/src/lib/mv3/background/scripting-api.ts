@@ -264,7 +264,7 @@ export class ScriptingApi {
                 const scriptTag = document.createElement('script');
 
                 scriptTag.setAttribute('type', 'text/javascript');
-                scriptTag.appendChild(document.createTextNode(scriptText));
+                scriptTag.textContent = scriptText;
 
                 const parent = document.head || document.documentElement;
                 if (parent) {
