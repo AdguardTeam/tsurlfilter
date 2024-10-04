@@ -453,7 +453,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         for (const scriptRule of scriptRules) {
             if (scriptRule.isGeneric()) {
-                return;
+                continue;
             }
 
             const ruleType = scriptRule.getType();

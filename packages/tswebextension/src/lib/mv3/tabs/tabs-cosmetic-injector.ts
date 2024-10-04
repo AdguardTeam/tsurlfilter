@@ -91,16 +91,20 @@ export class TabsCosmeticInjector {
             ]).catch((e) => logger.error(e));
 
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
-            if (frameContext?.cosmeticResult) {
-                const isMainFrame = frameId === MAIN_FRAME_ID;
-                CosmeticApi.logScriptRules({
-                    url,
-                    tabId,
-                    cosmeticResult: frameContext.cosmeticResult,
-                    timestamp: currentTime,
-                    contentType: isMainFrame ? ContentType.Document : ContentType.Subdocument,
-                });
+            if (!frameContext?.cosmeticResult) {
+                // eslint-disable-next-line max-len
+                logger.debug(`[tswebextension.processOpenTab]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                return;
             }
+
+            const isMainFrame = frameId === MAIN_FRAME_ID;
+            CosmeticApi.logScriptRules({
+                url,
+                tabId,
+                cosmeticResult: frameContext.cosmeticResult,
+                timestamp: currentTime,
+                contentType: isMainFrame ? ContentType.Document : ContentType.Subdocument,
+            });
         });
     }
 }
