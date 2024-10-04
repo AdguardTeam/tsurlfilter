@@ -9,6 +9,7 @@ type ErrorWithMessage = {
  * Checks if error has message.
  *
  * @param error Error object.
+ * @returns If param is error.
  */
 function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
     return (
