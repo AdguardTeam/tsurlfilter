@@ -96,6 +96,7 @@
     "@adguard/agtree": "workspace:^",
     "@adguard/css-tokenizer": "workspace:^",
     "@adguard/scriptlets": "^1.12.1",
+    "@mischnic/json-sourcemap": "^0.1.1",
     "cidr-tools": "^6.4.1",
     "commander": "9.4.1",
     "is-cidr": "4.0.2",

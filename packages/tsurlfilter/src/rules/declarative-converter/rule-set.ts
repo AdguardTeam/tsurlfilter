@@ -1,4 +1,5 @@
 import { RuleParser } from '@adguard/agtree';
+import jsonSourceMap from '@mischnic/json-sourcemap';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
@@ -19,6 +20,7 @@ import {
     type SerializedRuleSetLazyData,
     serializedRuleSetLazyDataValidator,
 } from './rule-set-interfaces';
+import { type ByteRange, type ByteRangeMap } from './byte-range-map';
 
 /**
  * The OriginalSource contains the text of the original rule and the filter
@@ -122,11 +124,13 @@ export interface IRuleSet {
     /**
      * Serializes rule set to a single file.
      *
+     * @param prettyPrint Whether to pretty print the output.
+     *
      * @returns Serialized rule set.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
-    serializeCompact(): Promise<string>;
+    serializeCompact(prettyPrint?: boolean): Promise<{ result: string, byteRangeMap: ByteRangeMap }>;
 }
 
 /**
@@ -586,16 +590,20 @@ export class RuleSet implements IRuleSet {
     /**
      * Serializes rule set to a single file.
      *
+     * @param prettyPrint Whether to pretty print the output.
+     *
      * @returns Serialized rule set.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
-    public async serializeCompact(): Promise<string> {
+    public async serializeCompact(prettyPrint = true): Promise<{ result: string, byteRangeMap: ByteRangeMap }> {
         const [filter] = await this.ruleSetContentProvider.loadFilterList();
         const content = await filter.getContent();
 
+        const metadata = this.getSerializedRuleSetData();
+
         const metadataRule = createMetadataRule({
-            metadata: this.getSerializedRuleSetData(),
+            metadata,
             lazyMetadata: this.getSerializedRuleSetLazyData(),
             sourceMap: content.sourceMap,
             conversionMap: content.conversionMap,
@@ -603,12 +611,53 @@ export class RuleSet implements IRuleSet {
             rawFilterList: content.rawFilterList,
         });
 
+        const metadataRuleStringified = JSON.stringify([metadataRule], null, prettyPrint ? TAB : undefined);
+        const metadataRuleSourceMap = jsonSourceMap.parse(metadataRuleStringified);
+
+        const encoder = new TextEncoder();
+
+        const getByteRangeFor = (pointerName: string): ByteRange => {
+            const pointer = metadataRuleSourceMap.pointers[pointerName];
+            if (!pointer) {
+                throw new Error(`Cannot find pointer name ${pointerName}`);
+            }
+
+            const valueStart = pointer.value.pos;
+            const valueEnd = pointer.valueEnd.pos;
+
+            // Encode source before the data to get the correct start offset
+            // Note: this is needed because binary data can be longer than the string representation
+            const encoded = encoder.encode(metadataRuleStringified.slice(0, valueStart));
+
+            const startByteOffset = encoded.length;
+
+            // Now encode the data itself to get the correct end offset
+            const data = metadataRuleStringified.slice(valueStart, valueEnd);
+            const dataEncoded = encoder.encode(data);
+
+            const endByteOffset = startByteOffset + dataEncoded.length;
+
+            return { start: startByteOffset, end: endByteOffset };
+        };
+
+        const byteRangeMap: ByteRangeMap = {
+            // Metadata used by declarative converter
+            declarative_metadata: getByteRangeFor('/0/metadata/metadata'),
+            declarative_lazy_metadata: getByteRangeFor('/0/metadata/lazyMetadata'),
+            declarative_source_map: getByteRangeFor('/0/metadata/lazyMetadata/sourceMapRaw'),
+
+            // Metadata used by preprocessed filter list
+            preprocessed_filter_list_raw: getByteRangeFor('/0/metadata/rawFilterList'),
+            preprocessed_filter_list_conversion_map: getByteRangeFor('/0/metadata/conversionMap'),
+            preprocessed_filter_list_binary: getByteRangeFor('/0/metadata/filterList'),
+            preprocessed_filter_list_source_map: getByteRangeFor('/0/metadata/sourceMap'),
+        };
+
         const declarativeRules = await this.getDeclarativeRules();
 
-        // Put metadata rule at the beginning of the rule set
-        declarativeRules.unshift(metadataRule);
+        const result = JSON.stringify(declarativeRules, null, prettyPrint ? TAB : undefined);
 
-        return JSON.stringify(declarativeRules, null, TAB);
+        return { result, byteRangeMap };
     }
 
     /**
