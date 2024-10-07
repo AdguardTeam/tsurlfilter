@@ -2745,17 +2745,7 @@ example 1
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
+        "sub_frame"
       ]
     },
     "priority": 1
@@ -2782,17 +2772,7 @@ example 2
       "urlFilter": "||example.org/page/*",
       "resourceTypes": [
         "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
+        "sub_frame"
       ]
     },
     "priority": 100001
@@ -2819,17 +2799,7 @@ example 3
       "urlFilter": "||example.org/page/*",
       "resourceTypes": [
         "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
+        "sub_frame"
       ]
     },
     "priority": 100001
@@ -2866,17 +2836,7 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
       ],
       "resourceTypes": [
         "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
+        "sub_frame"
       ]
     },
     "priority": 151
@@ -2911,17 +2871,7 @@ example 5
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
+        "sub_frame"
       ]
     },
     "priority": 1
@@ -3627,17 +3577,7 @@ skip rules with a negation, or regexp or the rule is a allowlist
       "urlFilter": "||example.org^",
       "resourceTypes": [
         "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
+        "sub_frame"
       ]
     },
     "priority": 1
@@ -3684,17 +3624,7 @@ $removeparam=utm_source
     "condition": {
       "resourceTypes": [
         "main_frame",
-        "sub_frame",
-        "stylesheet",
-        "script",
-        "image",
-        "font",
-        "object",
-        "xmlhttprequest",
-        "ping",
-        "media",
-        "websocket",
-        "other"
+        "sub_frame"
       ]
     },
     "priority": 1
