@@ -646,39 +646,49 @@ export abstract class DeclarativeRuleConverter {
             }
         }
 
-        /**
-         * Here we need to set 'main_frame' to apply to document requests
-         * as well (because by default it applies to all requests except
-         * document).
-         * And if we specify 'main_frame', then we also need to specify all
-         * other types, so that it works not only for document requests, but
-         * also for all other types of requests.
-         */
-        const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
-            || rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
-            || rule.isOptionEnabled(NetworkRuleOption.Csp)
-            || rule.isOptionEnabled(NetworkRuleOption.Permissions)
-            || rule.isOptionEnabled(NetworkRuleOption.Cookie)
-            || rule.isOptionEnabled(NetworkRuleOption.To)
-            || rule.isOptionEnabled(NetworkRuleOption.Method);
-
         const emptyResourceTypes = !condition.resourceTypes && !condition.excludedResourceTypes;
 
-        if (shouldMatchAllResourcesTypes && emptyResourceTypes) {
-            condition.resourceTypes = [
-                ResourceType.MainFrame,
-                ResourceType.SubFrame,
-                ResourceType.Stylesheet,
-                ResourceType.Script,
-                ResourceType.Image,
-                ResourceType.Font,
-                ResourceType.Object,
-                ResourceType.XmlHttpRequest,
-                ResourceType.Ping,
-                ResourceType.Media,
-                ResourceType.WebSocket,
-                ResourceType.Other,
-            ];
+        if (emptyResourceTypes) {
+            /**
+             * Here we need to set 'main_frame' to apply to document requests
+             * as well (because by default it applies to all requests except
+             * document).
+             * And if we specify 'main_frame', then we also need to specify all
+             * other types, so that it works not only for document requests, but
+             * also for all other types of requests.
+             */
+            const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
+                || rule.isOptionEnabled(NetworkRuleOption.Csp)
+                || rule.isOptionEnabled(NetworkRuleOption.Cookie)
+                || rule.isOptionEnabled(NetworkRuleOption.To)
+                || rule.isOptionEnabled(NetworkRuleOption.Method);
+
+            /**
+             * $permissions and $removeparam modifiers must be applied only
+             * to `document` content-type ('main_frame' and 'sub_frame')
+             * if they don't have resource types.
+             */
+            const shouldMatchOnlyDocument = rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
+                || rule.isOptionEnabled(NetworkRuleOption.Permissions);
+
+            if (shouldMatchAllResourcesTypes) {
+                condition.resourceTypes = [
+                    ResourceType.MainFrame,
+                    ResourceType.SubFrame,
+                    ResourceType.Stylesheet,
+                    ResourceType.Script,
+                    ResourceType.Image,
+                    ResourceType.Font,
+                    ResourceType.Object,
+                    ResourceType.XmlHttpRequest,
+                    ResourceType.Ping,
+                    ResourceType.Media,
+                    ResourceType.WebSocket,
+                    ResourceType.Other,
+                ];
+            } else if (shouldMatchOnlyDocument) {
+                condition.resourceTypes = [ResourceType.MainFrame, ResourceType.SubFrame];
+            }
         }
 
         return condition;
