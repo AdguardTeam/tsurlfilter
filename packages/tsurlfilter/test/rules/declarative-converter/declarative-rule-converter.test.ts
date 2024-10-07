@@ -13,6 +13,7 @@ import { createNetworkRule } from '../../helpers/rule-creator';
 import { createScannedFilter } from './helpers';
 
 const allResourcesTypes = Object.values(ResourceType);
+const documentResourceTypes = [ResourceType.MainFrame, ResourceType.SubFrame];
 
 describe('DeclarativeRuleConverter', () => {
     beforeAll(() => {
@@ -709,15 +710,12 @@ describe('DeclarativeRuleConverter', () => {
     describe('check $removeparam', () => {
         it('converts $removeparam rules', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||example.com$removeparam=param'],
-            );
+            const rule = '||example.com$removeparam=param';
+            const filter = await createScannedFilter(filterId, [rule]);
 
-            const {
-                declarativeRules: [declarativeRule],
-            } = await DeclarativeRulesConverter.convert([filter]);
-            expect(declarativeRule).toEqual({
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
                 priority: 1,
                 action: {
@@ -731,37 +729,20 @@ describe('DeclarativeRuleConverter', () => {
                     },
                 },
                 condition: {
-
                     urlFilter: '||example.com',
-                    resourceTypes: [
-                        'main_frame',
-                        'sub_frame',
-                        'stylesheet',
-                        'script',
-                        'image',
-                        'font',
-                        'object',
-                        'xmlhttprequest',
-                        'ping',
-                        'media',
-                        'websocket',
-                        'other',
-                    ],
+                    resourceTypes: documentResourceTypes,
                 },
             });
         });
 
         it('converts $removeparam rule without parameters', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||example.com$removeparam'],
-            );
+            const rule = '||example.com$removeparam';
+            const filter = await createScannedFilter(filterId, [rule]);
 
-            const {
-                declarativeRules: [declarativeRule],
-            } = await DeclarativeRulesConverter.convert([filter]);
-            expect(declarativeRule).toEqual({
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
                 priority: 1,
                 action: {
@@ -773,41 +754,24 @@ describe('DeclarativeRuleConverter', () => {
                     },
                 },
                 condition: {
-
                     urlFilter: '||example.com',
-                    resourceTypes: [
-                        'main_frame',
-                        'sub_frame',
-                        'stylesheet',
-                        'script',
-                        'image',
-                        'font',
-                        'object',
-                        'xmlhttprequest',
-                        'ping',
-                        'media',
-                        'websocket',
-                        'other',
-                    ],
+                    resourceTypes: documentResourceTypes,
                 },
             });
         });
 
         it('combine several $removeparam rule', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                [
-                    '||testcases.adguard.com$xmlhttprequest,removeparam=p1case1',
-                    '||testcases.adguard.com$xmlhttprequest,removeparam=p2case1',
-                    '||testcases.adguard.com$xmlhttprequest,removeparam=P3Case1',
-                    '$xmlhttprequest,removeparam=p1case2',
-                ],
-            );
+            const rules = [
+                '||testcases.adguard.com$xmlhttprequest,removeparam=p1case1',
+                '||testcases.adguard.com$xmlhttprequest,removeparam=p2case1',
+                '||testcases.adguard.com$xmlhttprequest,removeparam=P3Case1',
+                '$xmlhttprequest,removeparam=p1case2',
+            ];
+            const filter = await createScannedFilter(filterId, rules);
 
-            const { declarativeRules } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(2);
             expect(declarativeRules[0]).toStrictEqual({
                 id: expect.any(Number),
                 priority: 101,
@@ -827,8 +791,7 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     urlFilter: '||testcases.adguard.com',
-                    resourceTypes: ['xmlhttprequest'],
-
+                    resourceTypes: [ResourceType.XmlHttpRequest],
                 },
             });
             expect(declarativeRules[1]).toStrictEqual({
@@ -845,23 +808,19 @@ describe('DeclarativeRuleConverter', () => {
                     },
                 },
                 condition: {
-                    resourceTypes: ['xmlhttprequest'],
-
+                    resourceTypes: [ResourceType.XmlHttpRequest],
                 },
             });
         });
 
         it('converts $removeparam resource type xmlhttprequest', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||testcases.adguard.com$xmlhttprequest,removeparam=p2case2'],
-            );
+            const rule = '||testcases.adguard.com$xmlhttprequest,removeparam=p2case2';
+            const filter = await createScannedFilter(filterId, [rule]);
 
-            const {
-                declarativeRules: [declarativeRule],
-            } = await DeclarativeRulesConverter.convert([filter]);
-            expect(declarativeRule).toEqual({
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
                 priority: 101,
                 action: {
@@ -875,9 +834,35 @@ describe('DeclarativeRuleConverter', () => {
                     },
                 },
                 condition: {
-
-                    resourceTypes: ['xmlhttprequest'],
+                    resourceTypes: [ResourceType.XmlHttpRequest],
                     urlFilter: '||testcases.adguard.com',
+                },
+            });
+        });
+
+        it('should match only specified content-type modifier', async () => {
+            const filterId = 0;
+            const rule = '||example.com^$removeparam=id,script';
+            const filter = await createScannedFilter(filterId, [rule]);
+
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toEqual({
+                id: expect.any(Number),
+                priority: 101,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        transform: {
+                            queryTransform: {
+                                removeParams: ['id'],
+                            },
+                        },
+                    },
+                },
+                condition: {
+                    urlFilter: '||example.com^',
+                    resourceTypes: [ResourceType.Script],
                 },
             });
         });
@@ -1755,16 +1740,10 @@ describe('DeclarativeRuleConverter', () => {
     describe('check $permissions', () => {
         it('converts $permissions rule', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                ['||example.org^$permissions=autoplay=()'],
-            );
+            const rule = '||example.org^$permissions=autoplay=()';
+            const filter = await createScannedFilter(filterId, [rule]);
 
-            const {
-                declarativeRules,
-            } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toEqual({
                 id: expect.any(Number),
@@ -1779,23 +1758,17 @@ describe('DeclarativeRuleConverter', () => {
                 },
                 condition: {
                     urlFilter: '||example.org^',
-                    resourceTypes: allResourcesTypes,
+                    resourceTypes: documentResourceTypes,
                 },
             });
         });
 
         it('converts several $permissions directives', async () => {
             const filterId = 0;
-            const filter = await createScannedFilter(
-                filterId,
-                [
-                    '$domain=example.org|example.com,permissions=storage-access=()\\, сamera=()',
-                ],
-            );
+            const rule = '$domain=example.org|example.com,permissions=storage-access=()\\, сamera=()';
+            const filter = await createScannedFilter(filterId, [rule]);
 
-            const { declarativeRules } = await DeclarativeRulesConverter.convert(
-                [filter],
-            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
             expect(declarativeRules).toHaveLength(1);
             expect(declarativeRules[0]).toStrictEqual({
                 id: expect.any(Number),
@@ -1814,7 +1787,32 @@ describe('DeclarativeRuleConverter', () => {
                         'example.org',
                         'example.com',
                     ],
-                    resourceTypes: allResourcesTypes,
+                    resourceTypes: documentResourceTypes,
+                },
+            });
+        });
+
+        it('should match only specified content-type modifier', async () => {
+            const filterId = 0;
+            const rule = '||example.com^$permissions=identity-credentials-get=(),script';
+            const filter = await createScannedFilter(filterId, [rule]);
+
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toEqual({
+                id: expect.any(Number),
+                priority: 101,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [{
+                        header: PERMISSIONS_POLICY_HEADER_NAME,
+                        operation: 'append',
+                        value: 'identity-credentials-get=()',
+                    }],
+                },
+                condition: {
+                    urlFilter: '||example.com^',
+                    resourceTypes: [ResourceType.Script],
                 },
             });
         });

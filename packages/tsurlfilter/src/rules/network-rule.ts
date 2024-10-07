@@ -712,7 +712,10 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (this.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+        if (
+            this.isOptionEnabled(NetworkRuleOption.RemoveParam)
+            || this.isOptionEnabled(NetworkRuleOption.Permissions)
+        ) {
             if (!this.matchRequestTypeExplicit(request.requestType)) {
                 return false;
             }
@@ -924,7 +927,7 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * In case of $removeparam modifier,
+     * In case of $removeparam, $permissions modifier,
      * we only allow it to target other content types if the rule has an explicit content-type modifier.
      */
     private matchRequestTypeExplicit(requestType: RequestType): boolean {
