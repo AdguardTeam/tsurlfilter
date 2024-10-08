@@ -144,18 +144,18 @@ export class CosmeticLookupTable {
     }
 
     /**
-     * Checks if a scriptlet is allowlisted for a request. It looks up the scriptlet by name in the
-     * allowlistScriptlets map and evaluates two conditions:
+     * Checks if a scriptlet is allowlisted for a request. It looks up the scriptlet
+     * by content in the allowlist map and evaluates two conditions:
      * 1. If there's a generic allowlist rule applicable to all sites.
      * 2. If there's a specific allowlist rule that matches the request.
      *
-     * @param name Name of the scriptlet. Empty string '' searches for scriptlets allowlisted globally.
+     * @param content Content of the scriptlet. Empty string '' searches for scriptlets allowlisted globally.
      * @param request Request details to match against allowlist rules.
      * @returns True if allowlisted by a matching rule or a generic rule. False otherwise.
      */
-    isScriptletAllowlistedByName = (name: string, request: Request) => {
-        // check for rules with names
-        const allowlistScriptletRulesIndexes = this.allowlist.get(name);
+    isScriptletAllowlisted = (content: string, request: Request) => {
+        // check for rules with that content
+        const allowlistScriptletRulesIndexes = this.allowlist.get(content);
         if (allowlistScriptletRulesIndexes) {
             const rules = allowlistScriptletRulesIndexes
                 .map((i) => {
@@ -188,12 +188,23 @@ export class CosmeticLookupTable {
             // Empty string '' is a special case for scriptlet when the allowlist scriptlet has no name
             // e.g. #@%#//scriptlet(); example.org#@%#//scriptlet();
             const EMPTY_SCRIPTLET_NAME = '';
-            if (this.isScriptletAllowlistedByName(EMPTY_SCRIPTLET_NAME, request)) {
+            if (this.isScriptletAllowlisted(EMPTY_SCRIPTLET_NAME, request)) {
                 return true;
             }
 
+            // If scriptlet allowlisted by name
+            // e.g. #@%#//scriptlet('set-cookie'); example.org#@%#//scriptlet('set-cookie');
             if (rule.scriptletParams.name !== undefined
-                && this.isScriptletAllowlistedByName(rule.scriptletParams.name, request)) {
+                && this.isScriptletAllowlisted(rule.scriptletParams.name, request)) {
+                return true;
+            }
+
+            // If scriptlet allowlisted with args, using normalized scriptlet content for better matching
+            // on different quote types (see https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2947)
+            // e.g. #@%#//scriptlet("set-cookie", "arg1"); example.org#@%#//scriptlet('set-cookie', 'arg1');
+            if (rule.scriptletParams.name !== undefined
+                && rule.scriptletParams.args.length > 0
+                && this.isScriptletAllowlisted(rule.scriptletParams.toString(), request)) {
                 return true;
             }
         }

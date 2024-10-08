@@ -405,12 +405,21 @@ describe('Test cosmetic engine - JS rules', () => {
         });
 
         it('checks scriptlet exception even if content has different quotes', () => {
-            const jsRule = String.raw`testcases.adguard.com,surge.sh#%#//scriptlet('abort-on-property-read', 'I10\'C')`;
-            // eslint-disable-next-line max-len
-            const jsExceptionRule = String.raw`testcases.adguard.com,surge.sh#@%#//scriptlet("abort-on-property-read", "I10'C")`;
+            const domains = 'testcases.adguard.com,surge.sh';
+            const singleQuote1 = String.raw`//scriptlet('abort-on-property-read', 'I10\'C')`;
+            const doubleQuote1 = String.raw`//scriptlet("abort-on-property-read", "I10'C")`;
+            const singleQuote2 = String.raw`//scriptlet('set-cookie', 'I10\'C')`;
+            const doubleQuote2 = String.raw`//scriptlet("set-cookie", "I10'C")`;
+
             const rulesLocal = [
-                jsRule,
-                jsExceptionRule,
+                // single quote rule
+                `${domains}#%#${singleQuote1}`,
+                // double quote exception
+                `${domains}#@%#${doubleQuote1}`,
+                // double quote rule
+                `${domains}#%#${doubleQuote2}`,
+                // single quote exception
+                `${domains}#@%#${singleQuote2}`,
             ];
             const processedLocal = FilterListPreprocessor.preprocess(rulesLocal.join('\n'));
             const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, processedLocal));

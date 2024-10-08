@@ -13,3 +13,6 @@ node_modules
 # VS code settings and workspace project
 .vscode
 tsurlfilter.code-workspace
+
+# PNPM cache folder
+.pnpm-store
