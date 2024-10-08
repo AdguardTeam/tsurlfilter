@@ -221,4 +221,8 @@ export const convertFilters = async (
         `${byteRangeMapsRulesetDir}/${byteRangeMapsRulesetBaseName}.json`,
         serializeJson([dummyDnrRule], prettifyJson),
     );
+
+    console.log('===============================================');
+    console.info(`Byte range maps collection was saved to ${byteRangeMapsRulesetDir}`);
+    console.log('===============================================');
 };
