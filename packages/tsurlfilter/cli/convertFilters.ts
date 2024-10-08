@@ -18,6 +18,7 @@ import {
     BYTE_RANGE_MAP_RULE_SET_ID,
     type ByteRangeMapCollection,
 } from '../src/rules/declarative-converter/byte-range-map';
+import { serializeJson } from '../src/utils/misc';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
@@ -218,10 +219,6 @@ export const convertFilters = async (
 
     await fs.promises.writeFile(
         `${byteRangeMapsRulesetDir}/${byteRangeMapsRulesetBaseName}.json`,
-        JSON.stringify(
-            [dummyDnrRule],
-            null,
-            prettifyJson ? 4 : undefined,
-        ),
+        serializeJson([dummyDnrRule], prettifyJson),
     );
 };

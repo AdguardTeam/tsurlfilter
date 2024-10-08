@@ -4,7 +4,7 @@ import jsonSourceMap from '@mischnic/json-sourcemap';
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
 import { EMPTY_STRING, TAB } from '../../common/constants';
-import { base64ToUint8Array, uint8ArrayToBase64 } from '../../utils/misc';
+import { base64ToUint8Array, serializeJson, uint8ArrayToBase64 } from '../../utils/misc';
 import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
@@ -653,7 +653,7 @@ export class RuleSet implements IRuleSet {
 
         const declarativeRules = await this.getDeclarativeRules();
 
-        const result = JSON.stringify(declarativeRules, null, prettyPrint ? TAB : undefined);
+        const result = serializeJson(declarativeRules, prettyPrint);
 
         return { result, byteRangeMap };
     }
