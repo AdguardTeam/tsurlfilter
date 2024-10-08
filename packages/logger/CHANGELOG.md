@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - New logging level `LogLevel.Trace` which works as debug but prints with call stack trace.
 
+[1.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/logger-v1.1.0
+
 ## [1.0.2] - 2024-09-23
 
 ### Fixed
