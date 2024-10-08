@@ -1,17 +1,14 @@
-import {
-    extractMetadataContent, Filter, type IFilter,
-} from '@adguard/tsurlfilter/es/declarative-converter';
+import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
 import {
     type PreprocessedFilterList,
 } from '@adguard/tsurlfilter';
-import { ByteBuffer } from '@adguard/agtree';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import { type ConfigurationMV3 } from './configuration';
-
-export const RULE_SET_NAME_PREFIX = 'ruleset_';
+import { RULE_SET_NAME_PREFIX } from './constants';
+import type RuleSetsLoaderApi from './rule-sets-loader-api';
 
 export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[],
@@ -89,46 +86,32 @@ export default class FiltersApi {
     }
 
     /**
-     * Helper method to load chunks from ArrayBuffer.
-     *
-     * @param arrayBuffer ArrayBuffer to load chunks from.
-     *
-     * @returns List of Uint8Array chunks.
-     */
-    private static async loadChunksFromArrayBuffer(arrayBuffer: ArrayBuffer): Promise<Uint8Array[]> {
-        // we can assume that the arrayBuffer.byteLength is divisible by ByteBuffer.CHUNK_SIZE
-        const chunkSize = ByteBuffer.CHUNK_SIZE;
-        const totalChunks = arrayBuffer.byteLength / chunkSize;
-
-        return Array.from({ length: totalChunks }, (_, i) => {
-            const start = i * chunkSize;
-            const end = Math.min(start + chunkSize, arrayBuffer.byteLength);
-            return new Uint8Array(arrayBuffer.slice(start, end));
-        });
-    }
-
-    /**
      * Loads filters content from provided filtersPath (which has been extracted
      * from field 'filtersPath' of the {@link Configuration}).
      *
      * @param id Filter id.
-     * @param filtersPath Path to filters directory.
+     * @param ruleSetsLoaderApi RuleSetsLoaderApi instance.
      *
      * @returns Promise resolved file content as a list of strings.
      */
-    private static async loadFilterContent(id: number, filtersPath: string): Promise<PreprocessedFilterList> {
+    private static async loadFilterContent(
+        id: number,
+        ruleSetsLoaderApi: RuleSetsLoaderApi,
+    ): Promise<PreprocessedFilterList> {
         // TODO: Add a logic that creates byte buffers to IDB after extension updates
-        // to avoid reading files every time
-        const ruleSetPath = `${filtersPath}/declarative/ruleset_${id}/ruleset_${id}.json`;
-        const ruleSetContent = await extractMetadataContent(ruleSetPath);
+        const ruleSetId = `${RULE_SET_NAME_PREFIX}${id}`;
 
-        const {
-            rawFilterList,
-            conversionMap,
-            sourceMap,
-        } = ruleSetContent;
+        // Trigger all async requests concurrently
+        const [rawFilterList, conversionMap, sourceMap, filterListBase64] = await Promise.all([
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, 'preprocessed_filter_list_raw').then(JSON.parse),
+            // eslint-disable-next-line max-len
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, 'preprocessed_filter_list_conversion_map').then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, 'preprocessed_filter_list_source_map').then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, 'preprocessed_filter_list_binary').then(JSON.parse),
+        ]);
 
-        const filterList = ruleSetContent.filterList.map(base64ToUint8Array);
+        // Convert the base64 encoded filter list to Uint8Array
+        const filterList = filterListBase64.map(base64ToUint8Array);
 
         return {
             rawFilterList,
@@ -143,16 +126,18 @@ export default class FiltersApi {
      *
      * @param filtersIds List of filters ids.
      * @param filtersPath Path to filters directory.
+     * @param ruleSetsLoaderApi RuleSetsLoaderApi instance.
      *
      * @returns List of {@link IFilter} with a lazy content loading feature.
      */
     static createStaticFilters(
         filtersIds: ConfigurationMV3['staticFiltersIds'],
         filtersPath: string,
+        ruleSetsLoaderApi: RuleSetsLoaderApi,
     ): IFilter[] {
         return filtersIds.map((filterId) => new Filter(
             filterId,
-            { getContent: () => this.loadFilterContent(filterId, filtersPath) },
+            { getContent: () => this.loadFilterContent(filterId, ruleSetsLoaderApi) },
             /**
              * Static filters are trusted.
              */

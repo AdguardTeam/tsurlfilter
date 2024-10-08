@@ -12,6 +12,10 @@ import {
     type ByteRange,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
+import { RULE_SET_NAME_PREFIX } from './constants';
+
+const JSON_ELEMENT_SEPARATOR = ',';
+const JSON_ARRAY_OPENING_BRACKET = '[';
 
 /**
  * RuleSetsLoaderApi can create {@link IRuleSet} from the provided rule set ID
@@ -23,8 +27,16 @@ export default class RuleSetsLoaderApi {
      */
     private ruleSetsPath: string;
 
+    /**
+     * Flag that indicates whether the rule sets loader is initialized.
+     */
     private isInitialized: boolean;
 
+    /**
+     * Byte range maps collection.
+     * This collection is used to fetch certain parts of the rule set files instead of the whole files
+     * and makes possible to use less memory.
+     */
     private byteRangeMapsCollection: ByteRangeMapCollection;
 
     /**
@@ -41,7 +53,7 @@ export default class RuleSetsLoaderApi {
     /**
      * Helper method to get the path to the rule set file.
      *
-     * @param ruleSetId Rule set id.
+     * @param ruleSetId Rule set id. Should be prefixed, e.g. with `ruleset_`.
      *
      * @returns Path to the rule set file.
      *
@@ -60,7 +72,11 @@ export default class RuleSetsLoaderApi {
      * @throws Error if the byte range maps collection file is not found or its content is invalid.
      */
     public async initialize(): Promise<void> {
-        const byteRangeMapsRulesetBaseName = `ruleset_${BYTE_RANGE_MAP_RULE_SET_ID}`;
+        if (this.isInitialized) {
+            return;
+        }
+
+        const byteRangeMapsRulesetBaseName = `${RULE_SET_NAME_PREFIX}${BYTE_RANGE_MAP_RULE_SET_ID}`;
 
         this.byteRangeMapsCollection = await fetchAndDeserializeByteRangeMaps(
             browser.runtime.getURL(
@@ -127,13 +143,44 @@ export default class RuleSetsLoaderApi {
             },
         );
 
-        // We actually use a JSON source map, so metadata rule followed by a comma
-        if (textAfterMetadata.startsWith(',')) {
-            // Fix JSON syntax by adding the missing opening bracket and removing the comma
-            return `[${textAfterMetadata.slice(1)}`;
+        // We just skip the first element from an array, e.g.
+        // `[metadata_rule, rule1, rule2, ..., ruleN]` -> `, rule1, rule2, ..., ruleN]`
+        // but to make it a valid JSON we need to add the missing opening bracket and remove the comma
+        if (textAfterMetadata.startsWith(JSON_ELEMENT_SEPARATOR)) {
+            return `${JSON_ARRAY_OPENING_BRACKET}${textAfterMetadata.slice(1)}`;
         }
 
         return textAfterMetadata;
+    }
+
+    /**
+     * Fetches the content of the specified category from the rule set file.
+     *
+     * @param rulesetId Rule set id.
+     * @param category Category name, can be:
+     * - `full` to get the full byte range of the rule set file,
+     * - `declarative_metadata`
+     * - `declarative_lazy_metadata`
+     * - `declarative_source_map`
+     * - `preprocessed_filter_list_source_map`
+     * - `preprocessed_filter_list_conversion_map`
+     * - `preprocessed_filter_list_binary`
+     * - `preprocessed_filter_list_raw`.
+     *
+     * @returns Promise resolved file content as a string.
+     *
+     * @throws Error if the byte range map for the specified rule set is not found
+     * or the byte range for the specified category is not found.
+     */
+    public async getRawCategoryContent(rulesetId: string, category: string): Promise<string> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        const ruleSetPath = this.getRuleSetPath(rulesetId);
+        const range = this.getByteRange(rulesetId, category);
+
+        return fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath), range);
     }
 
     /**
@@ -144,6 +191,8 @@ export default class RuleSetsLoaderApi {
      * @param filterList List of all available {@link IFilter|filters}.
      *
      * @returns New {@link IRuleSet}.
+     *
+     * @throws If it need to call initialize, but its failing.
      */
     public async createRuleSet(
         ruleSetId: string,
@@ -201,59 +250,5 @@ export default class RuleSetsLoaderApi {
             badFilterRules,
             ruleSetHashMap,
         );
-
-        // const metadataContent = await extractMetadataContent(ruleSetPath);
-
-        // const {
-        //     regexpRulesCount,
-        //     rulesCount,
-        //     ruleSetHashMapRaw,
-        //     badFilterRulesRaw,
-        // } = metadataContent.metadata;
-
-        // const ruleSetContentProvider = {
-        //     // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        //     loadSourceMap: async () => {
-        //         const { sourceMapRaw } = metadataContent.lazyMetadata;
-        //         const sources = SourceMap.deserializeSources(sourceMapRaw);
-
-        //         return new SourceMap(sources);
-        //     },
-        //     // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        //     loadFilterList: async () => {
-        //         const { filterIds } = metadataContent.lazyMetadata;
-
-        //         return filterList.filter((filter) => filterIds.includes(filter.getId()));
-        //     },
-        //     // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-        //     loadDeclarativeRules: async () => {
-        //         const rawFileContent = await loadDeclarativeRules();
-
-        //         const objectFromString = JSON.parse(rawFileContent);
-
-        //         const declarativeRules = DeclarativeRuleValidator
-        //             .array()
-        //             .parse(objectFromString);
-
-        //         return declarativeRules;
-        //     },
-        // };
-
-        // const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
-        // const ruleSetHashMap = new RulesHashMap(sources);
-        // // We don't need filter id and line index because this
-        // // indexedRulesWithHash will be used only for matching $badfilter rules.
-        // const badFilterRules = badFilterRulesRaw
-        //     .map((rawString) => IndexedNetworkRuleWithHash.createFromNode(0, 0, RuleParser.parse(rawString)))
-        //     .flat();
-
-        // return new RuleSet(
-        //     ruleSetId,
-        //     rulesCount,
-        //     regexpRulesCount,
-        //     ruleSetContentProvider,
-        //     badFilterRules,
-        //     ruleSetHashMap,
-        // );
     }
 }

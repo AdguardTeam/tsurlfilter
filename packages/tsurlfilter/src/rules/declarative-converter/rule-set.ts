@@ -4,8 +4,7 @@ import { jsonpos } from 'jsonpos';
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
 import { EMPTY_STRING } from '../../common/constants';
-import { base64ToUint8Array, serializeJson, uint8ArrayToBase64 } from '../../utils/misc';
-import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
+import { serializeJson, uint8ArrayToBase64 } from '../../utils/misc';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
@@ -13,7 +12,7 @@ import { type IFilter } from './filter';
 import { UnavailableRuleSetSourceError } from './errors/unavailable-sources-errors/unavailable-rule-set-source-error';
 import { type ISourceMap, SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
 import { type IRulesHashMap } from './rules-hash-map';
-import { createMetadataRule, metadataRuleValidator } from './metadata-rule';
+import { createMetadataRule } from './metadata-rule';
 import {
     type SerializedRuleSetData,
     serializedRuleSetDataValidator,
@@ -588,7 +587,9 @@ export class RuleSet implements IRuleSet {
     }
 
     /**
-     * Serializes rule set to a single file.
+     * Serializes rule set to a single file and produces a byte range map
+     * which can be used to extract specific parts of the file without
+     * loading the whole file into memory.
      *
      * @param prettyPrint Whether to pretty print the output.
      *
@@ -613,6 +614,7 @@ export class RuleSet implements IRuleSet {
 
         const metadataRuleStringified = serializeJson([metadataRule], prettyPrint);
 
+        // Shared encoder for all byte range calculations
         const encoder = new TextEncoder();
 
         const getByteRangeFor = (pointerPath: string): ByteRange => {
@@ -665,58 +667,5 @@ export class RuleSet implements IRuleSet {
         byteRangeMap.full = { start: 0, end: length };
 
         return { result, byteRangeMap };
-    }
-
-    /**
-     * Deserializes rule set from a single file.
-     *
-     * @param id Rule set id.
-     * @param rawContent Raw content of the rule set.
-     * @param filterList List of filters.
-     */
-    public static async deserializeCompact(
-        id: string,
-        rawContent: string,
-        filterList: IFilter[],
-    ): Promise<DeserializedRuleSet & PreprocessedFilterList> {
-        const objectFromString = JSON.parse(rawContent);
-        const possibleMetadataRule = objectFromString.shift();
-        const metadataRule = metadataRuleValidator.parse(possibleMetadataRule);
-
-        const { metadata } = metadataRule;
-
-        const deserializedRuleSet: DeserializedRuleSet = {
-            id,
-            data: metadata.metadata,
-            ruleSetContentProvider: {
-                loadSourceMap: async () => {
-                    const { sourceMapRaw } = metadata.lazyMetadata;
-                    const sources = SourceMap.deserializeSources(sourceMapRaw);
-
-                    return new SourceMap(sources);
-                },
-                loadFilterList: async () => {
-                    const { filterIds } = metadata.lazyMetadata;
-
-                    return filterList.filter((filter) => filterIds.includes(filter.getId()));
-                },
-                loadDeclarativeRules: async () => {
-                    const declarativeRules = DeclarativeRuleValidator
-                        .array()
-                        .parse(objectFromString);
-
-                    return declarativeRules;
-                },
-            },
-        };
-
-        const deserializedFilterList: PreprocessedFilterList = {
-            sourceMap: metadata.sourceMap,
-            conversionMap: metadata.conversionMap,
-            filterList: metadata.filterList.map(base64ToUint8Array),
-            rawFilterList: metadata.rawFilterList,
-        };
-
-        return Object.assign(deserializedRuleSet, deserializedFilterList);
     }
 }

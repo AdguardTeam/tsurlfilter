@@ -556,6 +556,7 @@ export class TsWebExtension implements AppInterface<
         const staticFilters = FiltersApi.createStaticFilters(
             parsedConfiguration.staticFiltersIds,
             parsedConfiguration.filtersPath,
+            new RuleSetsLoaderApi(parsedConfiguration.ruleSetsPath),
         );
         const customFilters = FiltersApi.createCustomFilters(
             parsedConfiguration.customFilters,

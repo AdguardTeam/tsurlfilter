@@ -42,7 +42,7 @@ export type {
     SettingsConfigMV3 as SettingsConfig,
 } from './configuration';
 export { MessageType } from '../../common/message-constants';
-export { RULE_SET_NAME_PREFIX } from './filters-api';
+export { RULE_SET_NAME_PREFIX } from './constants';
 export { companiesDbService } from '../../common/companies-db-service';
 export {
     getDomain,
