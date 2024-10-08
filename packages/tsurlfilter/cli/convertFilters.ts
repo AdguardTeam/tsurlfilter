@@ -197,7 +197,7 @@ export const convertFilters = async (
         ensureDirSync(ruleSetDir);
 
         // eslint-disable-next-line no-await-in-loop
-        const { result, byteRangeMap } = await ruleSet.serializeCompact();
+        const { result, byteRangeMap } = await ruleSet.serializeCompact(prettifyJson);
         // eslint-disable-next-line no-await-in-loop
         await fs.promises.writeFile(`${ruleSetDir}/${id}.json`, result);
 
