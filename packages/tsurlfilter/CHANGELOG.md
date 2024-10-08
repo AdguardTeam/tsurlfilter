@@ -24,6 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [3.1.0-alpha.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.5
 
+## [3.0.5] - 2024-09-26
+
+### Fixed
+
+- Scriptlets exclusion matching is not working properly for rules with arguments [AdguardBrowserExtension#2947].
+
+[3.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.5
+[AdguardBrowserExtension#2947]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2947
+
 ## [3.1.0-alpha.4] - 2024-09-20
 
 ### Fixed
