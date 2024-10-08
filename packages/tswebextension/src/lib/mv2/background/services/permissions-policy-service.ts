@@ -5,6 +5,7 @@ import {
     PERMISSIONS_POLICY_HEADER_NAME,
     RequestType,
 } from '@adguard/tsurlfilter';
+import { nanoid } from 'nanoid';
 import { requestContextStorage, type RequestContextStorage, type RequestContext } from '../request';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { ContentType } from '../../../common/request-type';
@@ -104,7 +105,7 @@ export class PermissionsPolicyService {
                     type: FilteringEventType.ApplyPermissionsRule,
                     data: {
                         tabId,
-                        eventId: requestId,
+                        eventId: nanoid(),
                         requestUrl,
                         frameUrl: referrerUrl,
                         frameDomain: getDomain(referrerUrl),
