@@ -11,6 +11,7 @@ module.exports = {
         'import',
         'import-newlines',
         '@typescript-eslint',
+        'jsdoc',
     ],
     extends: [
         'airbnb-base',
