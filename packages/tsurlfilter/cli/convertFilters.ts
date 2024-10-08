@@ -14,7 +14,10 @@ import { getIdFromFilterName } from '../src/utils/resource-names';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 import { createDummyRule } from '../src/rules/declarative-converter/metadata-rule';
-import { type ByteRangeMapCollection } from '../src/rules/declarative-converter/byte-range-map';
+import {
+    BYTE_RANGE_MAP_RULE_SET_ID,
+    type ByteRangeMapCollection,
+} from '../src/rules/declarative-converter/byte-range-map';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
@@ -206,14 +209,17 @@ export const convertFilters = async (
         console.log('===============================================');
     }
 
-    const byteRangeMapsRulesetDir = `${destRuleSetsPath}/ruleset_0`;
+    const byteRangeMapsRulesetBaseName = `ruleset_${BYTE_RANGE_MAP_RULE_SET_ID}`;
+    const byteRangeMapsRulesetDir = `${destRuleSetsPath}/${byteRangeMapsRulesetBaseName}`;
     ensureDirSync(byteRangeMapsRulesetDir);
+
     const dummyDnrRule = createDummyRule();
+    Object.assign(dummyDnrRule, { byteRangeMapsCollection });
 
     await fs.promises.writeFile(
-        `${byteRangeMapsRulesetDir}/ruleset_0.json`,
+        `${byteRangeMapsRulesetDir}/${byteRangeMapsRulesetBaseName}.json`,
         JSON.stringify(
-            Object.assign(dummyDnrRule, { byteRangeMapsCollection }),
+            [dummyDnrRule],
             null,
             prettifyJson ? 4 : undefined,
         ),

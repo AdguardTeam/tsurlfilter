@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { fetchExtensionResourceText } from '../../utils/resource-fetch';
 import { isNonEmptyArray } from '../../utils/guards';
 
+export const BYTE_RANGE_MAP_RULE_SET_ID = 0;
+
 /**
  * Byte range validator.
  */
