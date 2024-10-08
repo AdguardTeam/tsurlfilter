@@ -10,7 +10,6 @@ import { RuleFactory } from '../../rules/rule-factory';
 import { type IReader } from '../reader/reader';
 import { ScannerType } from './scanner-type';
 import { NetworkRule } from '../../rules/network-rule';
-import { type FilterListSourceMap } from '../source-map';
 
 /**
  * Represents the RuleScanner configuration.
@@ -38,11 +37,6 @@ export interface RuleScannerConfiguration {
      * TODO(ameshkov): Reconsider how "unsafe" works (does not include JS now).
      */
     ignoreUnsafe?: boolean;
-
-    /**
-     * Source map for the filter list.
-     */
-    sourceMap?: FilterListSourceMap;
 }
 
 /**
