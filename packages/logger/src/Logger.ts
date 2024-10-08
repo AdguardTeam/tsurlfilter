@@ -9,6 +9,7 @@ export const enum LogLevelNumeric {
     Warn,
     Info,
     Debug,
+    Trace,
 }
 
 /**
@@ -19,6 +20,7 @@ export enum LogLevel {
     Warn = 'warn',
     Info = 'info',
     Debug = 'debug',
+    Trace = 'trace',
 }
 
 /**
@@ -29,6 +31,7 @@ const levelMapNumToString = {
     [LogLevelNumeric.Warn]: LogLevel.Warn,
     [LogLevelNumeric.Info]: LogLevel.Info,
     [LogLevelNumeric.Debug]: LogLevel.Debug,
+    [LogLevelNumeric.Trace]: LogLevel.Trace,
 };
 
 /**
@@ -55,6 +58,13 @@ export const enum LogMethod {
 }
 
 /**
+ * Writer method.
+ *
+ * @param {...any} args Arguments list to log.
+ */
+export type WriterMethod = (...args: any[]) => void;
+
+/**
  * Writer interface.
  */
 export interface Writer {
@@ -62,19 +72,28 @@ export interface Writer {
      * Log method.
      * @param args
      */
-    log: (...args: any[]) => void;
+    log: WriterMethod;
+
     /**
      * Info method.
      * @param args
      */
-    info: (...args: any[]) => void;
+    info: WriterMethod;
+
     /**
      * Error method.
      * @param args
      */
-    error: (...args: any[]) => void;
+    error: WriterMethod;
+
+    /**
+     * Trace method.
+     * @param args
+     */
+    trace?: WriterMethod;
+
     // We do not use 'warn' channel, since in the extensions warn is counted as error.
-    // warn: (...args: any[]) => void;
+    // warn: WriterMethod;
 }
 
 /**
@@ -211,6 +230,21 @@ export class Logger {
 
         const formattedTime = `${formatTime(new Date())}:`;
 
-        this.writer[method](formattedTime, ...formattedArgs);
+        /**
+         * Conditions in which trace can happen:
+         * 1. Method is not error (because console.error provides call stack trace)
+         * 2. Log level is equal or higher that `LogLevel.Trace`.
+         * 3. Writer has `trace` method.
+         */
+        if (
+            method !== LogMethod.Error
+            && this.currentLevelValue >= levelMapStringToNum[LogLevel.Trace]
+            && 'trace' in this.writer
+            && typeof this.writer.trace === 'function'
+        ) {
+            this.writer.trace(formattedTime, ...formattedArgs);
+        } else {
+            this.writer[method](formattedTime, ...formattedArgs);
+        }
     }
 }
