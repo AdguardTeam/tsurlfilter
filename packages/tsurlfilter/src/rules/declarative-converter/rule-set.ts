@@ -20,7 +20,7 @@ import {
     type SerializedRuleSetLazyData,
     serializedRuleSetLazyDataValidator,
 } from './rule-set-interfaces';
-import { type ByteRange, type ByteRangeMap } from './byte-range-map';
+import { type ByteRangeMap, type ByteRange } from './byte-range-map';
 
 /**
  * The OriginalSource contains the text of the original rule and the filter
@@ -640,18 +640,16 @@ export class RuleSet implements IRuleSet {
             return { start: startByteOffset, end: endByteOffset };
         };
 
-        const byteRangeMap: ByteRangeMap = {
-            // Metadata used by declarative converter
-            declarative_metadata: getByteRangeFor('/0/metadata/metadata'),
-            declarative_lazy_metadata: getByteRangeFor('/0/metadata/lazyMetadata'),
-            declarative_source_map: getByteRangeFor('/0/metadata/lazyMetadata/sourceMapRaw'),
+        const byteRangeMap = {} as ByteRangeMap;
 
-            // Metadata used by preprocessed filter list
-            preprocessed_filter_list_raw: getByteRangeFor('/0/metadata/rawFilterList'),
-            preprocessed_filter_list_conversion_map: getByteRangeFor('/0/metadata/conversionMap'),
-            preprocessed_filter_list_binary: getByteRangeFor('/0/metadata/filterList'),
-            preprocessed_filter_list_source_map: getByteRangeFor('/0/metadata/sourceMap'),
-        };
+        byteRangeMap.declarative_metadata = getByteRangeFor('/0/metadata/metadata');
+        byteRangeMap.declarative_lazy_metadata = getByteRangeFor('/0/metadata/lazyMetadata');
+        byteRangeMap.declarative_source_map = getByteRangeFor('/0/metadata/lazyMetadata/sourceMapRaw');
+
+        byteRangeMap.preprocessed_filter_list_source_map = getByteRangeFor('/0/metadata/sourceMap');
+        byteRangeMap.preprocessed_filter_list_conversion_map = getByteRangeFor('/0/metadata/conversionMap');
+        byteRangeMap.preprocessed_filter_list_binary = getByteRangeFor('/0/metadata/filterList');
+        byteRangeMap.preprocessed_filter_list_raw = getByteRangeFor('/0/metadata/rawFilterList');
 
         const declarativeRules = await this.getDeclarativeRules();
 

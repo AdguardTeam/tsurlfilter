@@ -39,6 +39,15 @@ module.exports = {
         '@typescript-eslint/interface-name-prefix': 'off',
         'arrow-body-style': 'off',
 
+        'jsdoc/check-tag-names': [
+            'warn',
+            {
+                // Define additional tags
+                // https://github.com/gajus/eslint-plugin-jsdoc/blob/main/docs/rules/check-tag-names.md#definedtags
+                definedTags: ['note'],
+            },
+        ],
+
         // Force proper import and export of types
         '@typescript-eslint/consistent-type-imports': [
             'error',

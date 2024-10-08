@@ -13,8 +13,8 @@ import { FilterListPreprocessor } from '../src';
 import { getIdFromFilterName } from '../src/utils/resource-names';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
-import { type ByteRangeMap } from '../src/rules/declarative-converter/byte-range-map';
 import { createDummyRule } from '../src/rules/declarative-converter/metadata-rule';
+import { type ByteRangeMapCollection } from '../src/rules/declarative-converter/byte-range-map';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
@@ -66,6 +66,7 @@ export const convertFilters = async (
 ): Promise<void> => {
     const {
         debug = CONVERT_FILTER_DEFAULT_OPTIONS.debug,
+        prettifyJson = CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson,
     } = options;
 
     const filtersPath = path.resolve(process.cwd(), filtersDir);
@@ -182,7 +183,7 @@ export const convertFilters = async (
         limitations.forEach((e) => console.log(e.message));
     }
 
-    const byteRangeMaps: Record<string, ByteRangeMap> = {};
+    const byteRangeMapsCollection = {} as ByteRangeMapCollection;
 
     for (let i = 0; i < convertedRuleSets.length; i += 1) {
         const ruleSet = convertedRuleSets[i];
@@ -196,7 +197,7 @@ export const convertFilters = async (
         // eslint-disable-next-line no-await-in-loop
         await fs.promises.writeFile(`${ruleSetDir}/${id}.json`, result);
 
-        byteRangeMaps[id] = byteRangeMap;
+        byteRangeMapsCollection[id] = byteRangeMap;
 
         console.log('===============================================');
         console.info(`Rule set with id ${id} and all rule set info`);
@@ -211,6 +212,10 @@ export const convertFilters = async (
 
     await fs.promises.writeFile(
         `${byteRangeMapsRulesetDir}/ruleset_0.json`,
-        JSON.stringify(Object.assign(dummyDnrRule, { byteRangeMaps }), null, 4),
+        JSON.stringify(
+            Object.assign(dummyDnrRule, { byteRangeMapsCollection }),
+            null,
+            prettifyJson ? 4 : undefined,
+        ),
     );
 };
