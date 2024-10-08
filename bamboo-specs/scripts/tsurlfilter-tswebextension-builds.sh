@@ -33,7 +33,4 @@ npx lerna run build --scope @adguard/tswebextension --include-dependencies
 # FIXME remove this task before merging to master
 (cd packages/tsurlfilter && pnpm pack && mv adguard-tsurlfilter-*.tgz tsurlfilter.tgz)
 
-# FIXME d.seregin move this task to the separate plan
-pnpm --filter @adguard/tsurlfilter docs:mv3
-
 echo "@adguard/tswebextension and @adguard/tsurlfilter builds completed"
