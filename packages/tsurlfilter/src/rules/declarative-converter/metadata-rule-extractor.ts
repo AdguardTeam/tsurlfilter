@@ -16,8 +16,9 @@ import { type MetadataRuleContent } from './metadata-rule-content';
  * @throws If the file does not contain a metadata rule or the metadata rule is invalid.
  */
 export const extractMetadataRule = async (fileUrl: string): Promise<DeclarativeRuleWithMetadata> => {
+    const url = chrome.runtime.getURL(fileUrl);
     try {
-        const response = await fetch(fileUrl);
+        const response = await fetch(url);
         const text = await response.text();
         const parsed = JSON.parse(text);
 
@@ -26,7 +27,7 @@ export const extractMetadataRule = async (fileUrl: string): Promise<DeclarativeR
         return metadataRule;
     } catch (e) {
         logger.error(
-            `Error occurred while extracting metadata rule from ruleset: ${fileUrl}. Got error: ${getErrorMessage(e)}`,
+            `Error occurred while extracting metadata rule from ruleset: ${url}. Got error: ${getErrorMessage(e)}`,
         );
         throw e;
     }

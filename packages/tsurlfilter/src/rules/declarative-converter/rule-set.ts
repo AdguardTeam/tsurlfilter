@@ -1,9 +1,9 @@
 import { RuleParser } from '@adguard/agtree';
-import jsonSourceMap from '@mischnic/json-sourcemap';
+import { jsonpos } from 'jsonpos';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
-import { EMPTY_STRING, TAB } from '../../common/constants';
+import { EMPTY_STRING } from '../../common/constants';
 import { base64ToUint8Array, serializeJson, uint8ArrayToBase64 } from '../../utils/misc';
 import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
 
@@ -476,7 +476,7 @@ export class RuleSet implements IRuleSet {
             data = serializedRuleSetDataValidator.parse(objectFromString);
         } catch (e) {
             // eslint-disable-next-line max-len
-            const msg = `Cannot parse serialized ruleset's data with id "${id}" because of not available source`;
+            const msg = `Cannot parse serialized ruleset's data with id "${id}", got error: ${getErrorMessage(e)}`;
 
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
@@ -611,19 +611,19 @@ export class RuleSet implements IRuleSet {
             rawFilterList: content.rawFilterList,
         });
 
-        const metadataRuleStringified = JSON.stringify([metadataRule], null, prettyPrint ? TAB : undefined);
-        const metadataRuleSourceMap = jsonSourceMap.parse(metadataRuleStringified);
+        const metadataRuleStringified = serializeJson([metadataRule], prettyPrint);
 
         const encoder = new TextEncoder();
 
-        const getByteRangeFor = (pointerName: string): ByteRange => {
-            const pointer = metadataRuleSourceMap.pointers[pointerName];
-            if (!pointer) {
-                throw new Error(`Cannot find pointer name ${pointerName}`);
+        const getByteRangeFor = (pointerPath: string): ByteRange => {
+            const loc = jsonpos(metadataRuleStringified, { pointerPath });
+
+            if (!loc.start || !loc.end) {
+                throw new Error(`Cannot find pointer name ${pointerPath}`);
             }
 
-            const valueStart = pointer.value.pos;
-            const valueEnd = pointer.valueEnd.pos;
+            const valueStart = loc.start.offset;
+            const valueEnd = loc.end.offset;
 
             // Encode source before the data to get the correct start offset
             // Note: this is needed because binary data can be longer than the string representation
@@ -635,12 +635,14 @@ export class RuleSet implements IRuleSet {
             const data = metadataRuleStringified.slice(valueStart, valueEnd);
             const dataEncoded = encoder.encode(data);
 
-            const endByteOffset = startByteOffset + dataEncoded.length;
+            const endByteOffset = startByteOffset + dataEncoded.length - 1;
 
             return { start: startByteOffset, end: endByteOffset };
         };
 
         const byteRangeMap = {} as ByteRangeMap;
+
+        byteRangeMap.metadata_rule = getByteRangeFor('/0');
 
         byteRangeMap.declarative_metadata = getByteRangeFor('/0/metadata/metadata');
         byteRangeMap.declarative_lazy_metadata = getByteRangeFor('/0/metadata/lazyMetadata');
@@ -653,7 +655,14 @@ export class RuleSet implements IRuleSet {
 
         const declarativeRules = await this.getDeclarativeRules();
 
+        declarativeRules.unshift(metadataRule);
+
         const result = serializeJson(declarativeRules, prettyPrint);
+
+        // Special case: get full byte range
+        const { length } = encoder.encode(result);
+
+        byteRangeMap.full = { start: 0, end: length };
 
         return { result, byteRangeMap };
     }
