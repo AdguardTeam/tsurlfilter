@@ -20,6 +20,7 @@ describe('getByteRangeFor', () => {
             start: { offset: 9 },
             end: { offset: 15 },
         };
+
         mockedJsonpos.mockReturnValue(loc as Location);
         mockedGetUtf8EncodedLength.mockImplementation((str) => Buffer.byteLength(str, 'utf8'));
 
@@ -36,6 +37,7 @@ describe('getByteRangeFor', () => {
             start: { offset: 13 },
             end: { offset: 22 },
         };
+
         mockedJsonpos.mockReturnValue(loc as Location);
 
         // Mocking UTF-8 byte lengths for substrings
