@@ -316,3 +316,43 @@ export function findNextLineBreakIndex(str: string, startIndex = 0): [number, nu
 
     return [length, 0];
 }
+
+/**
+ * Calculates the number of bytes required to encode a given string in UTF-8.
+ *
+ * UTF-8 encoding uses:
+ * - 1 byte for code points in the range 0x0000 - 0x007F (ASCII)
+ * - 2 bytes for code points in the range 0x0080 - 0x07FF
+ * - 3 bytes for code points in the range 0x0800 - 0xFFFF
+ * - 4 bytes for code points in the range 0x10000 - 0x10FFFF (surrogate pairs)
+ *
+ * @param str The string to calculate byte length for.
+ *
+ * @returns The number of bytes required to encode the string in UTF-8.
+ *
+ * @see {@link https://encoding.spec.whatwg.org/#utf-8-encoder}
+ */
+export function getUtf8EncodedLength(str: string): number {
+    let byteLength = 0;
+    let i = 0;
+    const { length } = str;
+
+    while (i < length) {
+        const codePoint = str.codePointAt(i)!;
+
+        if (codePoint <= 0x7F) {
+            byteLength += 1;
+        } else if (codePoint <= 0x7FF) {
+            byteLength += 2;
+        } else if (codePoint <= 0xFFFF) {
+            byteLength += 3;
+        } else {
+            byteLength += 4;
+        }
+
+        // Increment by 1 if it's a basic character, by 2 if it's a surrogate pair
+        i += codePoint > 0xFFFF ? 2 : 1;
+    }
+
+    return byteLength;
+}

@@ -5,6 +5,7 @@ import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
 import { EMPTY_STRING } from '../../common/constants';
 import { serializeJson, uint8ArrayToBase64 } from '../../utils/misc';
+import { getUtf8EncodedLength } from '../../utils/string-utils';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
@@ -587,6 +588,41 @@ export class RuleSet implements IRuleSet {
     }
 
     /**
+     * Get byte range for specific pointer path in the JSON.
+     *
+     * @param rawJson Raw JSON string.
+     * @param pointerPath Pointer path.
+     *
+     * @returns Byte range for the specific pointer path.
+     *
+     * @throws Error if the pointer path is not found.
+     */
+    private static getByteRangeFor = (rawJson: string, pointerPath: string): ByteRange => {
+        const loc = jsonpos(rawJson, { pointerPath });
+
+        if (!loc.start || !loc.end) {
+            throw new Error(`Cannot find pointer name ${pointerPath}`);
+        }
+
+        const valueStart = loc.start.offset;
+        const valueEnd = loc.end.offset;
+
+        // Encode source before the data to get the correct start offset
+        // Note: this is needed because binary data can be longer than the string representation
+        const encodedLength = getUtf8EncodedLength(rawJson.slice(0, valueStart));
+
+        const startByteOffset = encodedLength;
+
+        // Now encode the data itself to get the correct end offset
+        const data = rawJson.slice(valueStart, valueEnd);
+        const dataEncodedLength = getUtf8EncodedLength(data);
+
+        const endByteOffset = startByteOffset + dataEncodedLength - 1;
+
+        return { start: startByteOffset, end: endByteOffset };
+    };
+
+    /**
      * Serializes rule set to a single file and produces a byte range map
      * which can be used to extract specific parts of the file without
      * loading the whole file into memory.
@@ -598,6 +634,15 @@ export class RuleSet implements IRuleSet {
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
     public async serializeCompact(prettyPrint = true): Promise<{ result: string, byteRangeMap: ByteRangeMap }> {
+        try {
+            await this.loadContent();
+        } catch (e) {
+            const id = this.getId();
+            const msg = `Cannot serialize rule set '${id}' because of not available source`;
+            throw new UnavailableRuleSetSourceError(msg, id, e as Error);
+        }
+
+        // FIXME
         const [filter] = await this.ruleSetContentProvider.loadFilterList();
         const content = await filter.getContent();
 
@@ -612,59 +657,31 @@ export class RuleSet implements IRuleSet {
             rawFilterList: content.rawFilterList,
         });
 
-        const metadataRuleStringified = serializeJson([metadataRule], prettyPrint);
-
-        // Shared encoder for all byte range calculations
-        const encoder = new TextEncoder();
-
-        const getByteRangeFor = (pointerPath: string): ByteRange => {
-            const loc = jsonpos(metadataRuleStringified, { pointerPath });
-
-            if (!loc.start || !loc.end) {
-                throw new Error(`Cannot find pointer name ${pointerPath}`);
-            }
-
-            const valueStart = loc.start.offset;
-            const valueEnd = loc.end.offset;
-
-            // Encode source before the data to get the correct start offset
-            // Note: this is needed because binary data can be longer than the string representation
-            const encoded = encoder.encode(metadataRuleStringified.slice(0, valueStart));
-
-            const startByteOffset = encoded.length;
-
-            // Now encode the data itself to get the correct end offset
-            const data = metadataRuleStringified.slice(valueStart, valueEnd);
-            const dataEncoded = encoder.encode(data);
-
-            const endByteOffset = startByteOffset + dataEncoded.length - 1;
-
-            return { start: startByteOffset, end: endByteOffset };
-        };
-
-        const byteRangeMap = {} as ByteRangeMap;
-
-        byteRangeMap.metadata_rule = getByteRangeFor('/0');
-
-        byteRangeMap.declarative_metadata = getByteRangeFor('/0/metadata/metadata');
-        byteRangeMap.declarative_lazy_metadata = getByteRangeFor('/0/metadata/lazyMetadata');
-        byteRangeMap.declarative_source_map = getByteRangeFor('/0/metadata/lazyMetadata/sourceMapRaw');
-
-        byteRangeMap.preprocessed_filter_list_source_map = getByteRangeFor('/0/metadata/sourceMap');
-        byteRangeMap.preprocessed_filter_list_conversion_map = getByteRangeFor('/0/metadata/conversionMap');
-        byteRangeMap.preprocessed_filter_list_binary = getByteRangeFor('/0/metadata/filterList');
-        byteRangeMap.preprocessed_filter_list_raw = getByteRangeFor('/0/metadata/rawFilterList');
-
         const declarativeRules = await this.getDeclarativeRules();
 
         declarativeRules.unshift(metadataRule);
 
         const result = serializeJson(declarativeRules, prettyPrint);
 
-        // Special case: get full byte range
-        const { length } = encoder.encode(result);
+        // Create byte range map
+        const byteRangeMap: ByteRangeMap = {};
 
-        byteRangeMap.full = { start: 0, end: length };
+        // `/0` is a pointer to the first element in the array
+        // When we serialize the rule set, we produce an array of rules and the metadata rule is always the first one
+        byteRangeMap.metadata_rule = RuleSet.getByteRangeFor(result, '/0');
+
+        byteRangeMap.declarative_metadata = RuleSet.getByteRangeFor(result, '/0/metadata/metadata');
+        byteRangeMap.declarative_lazy_metadata = RuleSet.getByteRangeFor(result, '/0/metadata/lazyMetadata');
+        byteRangeMap.declarative_source_map = RuleSet.getByteRangeFor(result, '/0/metadata/lazyMetadata/sourceMapRaw');
+
+        byteRangeMap.preprocessed_filter_list_source_map = RuleSet.getByteRangeFor(result, '/0/metadata/sourceMap');
+        // eslint-disable-next-line max-len
+        byteRangeMap.preprocessed_filter_list_conversion_map = RuleSet.getByteRangeFor(result, '/0/metadata/conversionMap');
+        byteRangeMap.preprocessed_filter_list_binary = RuleSet.getByteRangeFor(result, '/0/metadata/filterList');
+        byteRangeMap.preprocessed_filter_list_raw = RuleSet.getByteRangeFor(result, '/0/metadata/rawFilterList');
+
+        // Get byte range for the whole array of rules (i.e. the whole file)
+        byteRangeMap.full = RuleSet.getByteRangeFor(result, '/');
 
         return { result, byteRangeMap };
     }
