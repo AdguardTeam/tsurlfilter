@@ -1,7 +1,7 @@
 import {
     Filter,
     type IFilter,
-    RULE_SET_NAME_PREFIX,
+    RULESET_NAME_PREFIX,
     RuleSetByteRangeCategory,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
@@ -57,8 +57,8 @@ export default class FiltersApi {
             errors: [],
         };
 
-        const enableRulesetIds = enableFiltersIds?.map((filterId) => `${RULE_SET_NAME_PREFIX}${filterId}`) || [];
-        const disableRulesetIds = disableFiltersIds?.map((filterId) => `${RULE_SET_NAME_PREFIX}${filterId}`) || [];
+        const enableRulesetIds = enableFiltersIds?.map((filterId) => `${RULESET_NAME_PREFIX}${filterId}`) || [];
+        const disableRulesetIds = disableFiltersIds?.map((filterId) => `${RULESET_NAME_PREFIX}${filterId}`) || [];
 
         try {
             await browser.declarativeNetRequest.updateEnabledRulesets({
@@ -86,7 +86,7 @@ export default class FiltersApi {
      */
     public static async getEnabledRuleSets(): Promise<number[]> {
         const ruleSets = await browser.declarativeNetRequest.getEnabledRulesets();
-        return ruleSets.map((f) => Number.parseInt(f.slice(RULE_SET_NAME_PREFIX.length), 10));
+        return ruleSets.map((f) => Number.parseInt(f.slice(RULESET_NAME_PREFIX.length), 10));
     }
 
     /**
@@ -103,7 +103,7 @@ export default class FiltersApi {
         ruleSetsLoaderApi: RuleSetsLoaderApi,
     ): Promise<PreprocessedFilterList> {
         // TODO: Add a logic that creates byte buffers to IDB after extension updates
-        const ruleSetId = `${RULE_SET_NAME_PREFIX}${id}`;
+        const ruleSetId = `${RULESET_NAME_PREFIX}${id}`;
 
         // Trigger all async requests concurrently
         const [rawFilterList, conversionMap, sourceMap, filterListBase64] = await Promise.all([

@@ -10,7 +10,7 @@ import {
     BYTE_RANGE_MAP_RULE_SET_ID,
     fetchAndDeserializeByteRangeMaps,
     type ByteRange,
-    RULE_SET_NAME_PREFIX,
+    RULESET_NAME_PREFIX,
     RuleSetByteRangeCategory,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
@@ -77,7 +77,7 @@ export default class RuleSetsLoaderApi {
             return;
         }
 
-        const byteRangeMapsRulesetBaseName = `${RULE_SET_NAME_PREFIX}${BYTE_RANGE_MAP_RULE_SET_ID}`;
+        const byteRangeMapsRulesetBaseName = `${RULESET_NAME_PREFIX}${BYTE_RANGE_MAP_RULE_SET_ID}`;
 
         this.byteRangeMapsCollection = await fetchAndDeserializeByteRangeMaps(
             browser.runtime.getURL(
