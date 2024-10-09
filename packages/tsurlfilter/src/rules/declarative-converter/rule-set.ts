@@ -697,7 +697,8 @@ export class RuleSet implements IRuleSet {
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
 
-        // FIXME: What happens if we have multiple filters in `this.filterList` map?
+        // TODO: Improve this code once we introduce multiple filters within a single rule set
+        // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array
         const filter = this.filterList.values().next().value!;
         const content = await filter.getContent();
 
