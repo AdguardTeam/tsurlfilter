@@ -2,28 +2,9 @@ import { z } from 'zod';
 
 import { fetchExtensionResourceText } from '../../utils/resource-fetch';
 import { isNonEmptyArray } from '../../utils/guards';
+import { byteRangeValidator } from '../../utils/byte-range';
 
 export const BYTE_RANGE_MAP_RULE_SET_ID = 0;
-
-/**
- * Byte range validator.
- */
-const byteRangeValidator = z.object({
-    /**
-     * Start of the byte range.
-     */
-    start: z.number(),
-
-    /**
-     * End of the byte range.
-     */
-    end: z.number(),
-});
-
-/**
- * Byte range.
- */
-export type ByteRange = z.infer<typeof byteRangeValidator>;
 
 /**
  * Byte range map validator.

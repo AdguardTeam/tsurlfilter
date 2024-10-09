@@ -1,4 +1,4 @@
-import { type ByteRange } from '../rules/declarative-converter/byte-range-map';
+import { type ByteRange } from './byte-range';
 
 /**
  * Fetches a resource from the given URL and returns its content as text, optionally with a specified byte range.
