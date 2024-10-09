@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## Unreleased
+
+### Fixed
+
+- Correct export of `EXTENDED_CSS_VERSION` for mv3 version.
+
 ## [2.4.0-alpha.3] - 2024-10-09
 
 ### Changed
@@ -19,7 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MV3 extension cannot apply rules to `about:blank` iframes [AdguardBrowserExtension#2975].
 - JS rules are blocked by Trusted Types on some websites [AdguardBrowserExtension#2980].
 - Scriptlets logging does not work [AdguardBrowserExtension#2977].
-- Correct export of `EXTENDED_CSS_VERSION` for mv3 version.
 
 [2.4.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.3
 [AdguardBrowserExtension#2975]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2975
