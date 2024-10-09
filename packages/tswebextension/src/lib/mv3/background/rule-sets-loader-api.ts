@@ -1,5 +1,5 @@
 import { RuleParser } from '@adguard/agtree';
-import { fetchExtensionResourceText } from '@adguard/tsurlfilter';
+import { type ByteRange, fetchExtensionResourceText } from '@adguard/tsurlfilter';
 import {
     type IFilter,
     type IRuleSet,
@@ -9,7 +9,6 @@ import {
     type ByteRangeMapCollection,
     BYTE_RANGE_MAP_RULE_SET_ID,
     fetchAndDeserializeByteRangeMaps,
-    type ByteRange,
     RULESET_NAME_PREFIX,
     RuleSetByteRangeCategory,
 } from '@adguard/tsurlfilter/es/declarative-converter';
