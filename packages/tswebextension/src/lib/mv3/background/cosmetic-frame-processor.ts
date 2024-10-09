@@ -46,8 +46,24 @@ type PrecalculateCosmeticProps = {
  * Handle sub frame without url props.
  */
 type HandleSubFrameWithoutUrlProps = {
+    /**
+     * Tab id.
+     */
     tabId: number,
+
+    /**
+     * Frame id.
+     */
     frameId: number,
+
+    /**
+     * Main frame url.
+     */
+    mainFrameUrl?: string,
+
+    /**
+     * Parent document id.
+     */
     parentDocumentId?: string,
 };
 
@@ -55,11 +71,30 @@ type HandleSubFrameWithoutUrlProps = {
  * Handle sub frame with url props.
  */
 type HandleSubFrameWithUrlProps = {
+    /**
+     * Frame url.
+     */
     url: string,
+
+    /**
+     * Tab id.
+     */
     tabId: number,
+
+    /**
+     * Frame id.
+     */
     frameId: number,
-    rootFrame?: Frame,
-    rootFrameRule: any,
+
+    /**
+     * Main frame url.
+     */
+    mainFrameUrl?: string,
+
+    /**
+     * Main frame rule.
+     */
+    mainFrameRule: any,
 };
 
 /**
@@ -125,6 +160,7 @@ export class CosmeticFrameProcessor {
         const {
             tabId,
             frameId,
+            mainFrameUrl,
             parentDocumentId,
         } = props;
 
@@ -141,6 +177,7 @@ export class CosmeticFrameProcessor {
         if (parentFrame) {
             tabsApi.updateFrameContext(tabId, frameId, {
                 preparedCosmeticResult: parentFrame.preparedCosmeticResult,
+                mainFrameUrl,
             });
         }
     }
@@ -154,15 +191,15 @@ export class CosmeticFrameProcessor {
             url,
             tabId,
             frameId,
-            rootFrame,
-            rootFrameRule,
+            mainFrameUrl,
+            mainFrameRule,
         } = props;
 
         const result = engineApi.matchRequest({
             requestUrl: url,
-            frameUrl: rootFrame?.url || url,
+            frameUrl: mainFrameUrl || url,
             requestType: RequestType.SubDocument,
-            frameRule: rootFrameRule,
+            frameRule: mainFrameRule,
         });
 
         if (!result) {
@@ -178,6 +215,7 @@ export class CosmeticFrameProcessor {
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
         tabsApi.updateFrameContext(tabId, frameId, {
+            mainFrameUrl,
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
@@ -262,13 +300,15 @@ export class CosmeticFrameProcessor {
                 frameId,
             });
         } else {
-            const rootFrame = tabsApi.getFrameContext(tabId, MAIN_FRAME_ID);
-            const rootFrameRule = rootFrame?.frameRule;
+            const mainFrame = tabsApi.getFrameContext(tabId, MAIN_FRAME_ID);
+            const mainFrameRule = mainFrame?.frameRule;
+            const mainFrameUrl = mainFrame?.url;
 
             if (!isHttpRequest(url)) {
                 CosmeticFrameProcessor.handleSubFrameWithoutUrl({
                     tabId,
                     frameId,
+                    mainFrameUrl,
                     parentDocumentId,
                 });
             } else {
@@ -276,8 +316,8 @@ export class CosmeticFrameProcessor {
                     url,
                     tabId,
                     frameId,
-                    rootFrame,
-                    rootFrameRule,
+                    mainFrameUrl,
+                    mainFrameRule,
                 });
             }
         }

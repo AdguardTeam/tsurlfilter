@@ -68,6 +68,14 @@ export class CosmeticApi extends CosmeticApiCommon {
     private static readonly HIT_END = "' !important; }";
 
     /**
+     * Blob injection urls.
+     */
+    private static readonly BLOB_INJECTION_URLS = new Set([
+        'facebook.com',
+        'open.spotify.com',
+    ]);
+
+    /**
      * Retrieves CSS styles from the cosmetic result.
      *
      * @param cosmeticResult Cosmetic result.
@@ -245,27 +253,22 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Determines if a blob should be used for script injection based on the request url.
+     * Determines if a blob should be used for script injection based on the request URL.
      * This method is used in scenarios where inline scripts are blocked by a Content Security Policy (CSP),
      * but blobs are allowed.
      * A common example of this is on websites like Facebook.
      *
-     * @param requestUrl The URL of the request.
+     * @param url The URL of the main frame or frame URL.
      * @returns True if a blob should be used for injection; otherwise, false.
      */
-    private static shouldUseBlob(requestUrl: string): boolean {
-        const BLOB_INJECTION_URLS = new Set([
-            'facebook.com',
-            'fbsbx.com', // facebook.com iframe
-        ]);
-
-        const domain = getDomain(requestUrl);
+    private static shouldUseBlob(url: string): boolean {
+        const domain = getDomain(url);
 
         if (!domain) {
             return false;
         }
 
-        return BLOB_INJECTION_URLS.has(domain);
+        return CosmeticApi.BLOB_INJECTION_URLS.has(domain);
     }
 
     /**
@@ -288,7 +291,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 tabId,
                 frameId,
                 scriptText,
-                useBlob: CosmeticApi.shouldUseBlob(frameContext.url),
+                useBlob: CosmeticApi.shouldUseBlob(frameContext?.mainFrameUrl || frameContext?.url),
             });
         } catch (e) {
             logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
