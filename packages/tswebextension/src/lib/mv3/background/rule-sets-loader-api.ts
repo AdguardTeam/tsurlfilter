@@ -148,6 +148,8 @@ export class RuleSetsLoaderApi {
 
     /**
      * Fetches the content of the specified category from the rule set file.
+     * This method helps us to fetch only the necessary parts of the rule set files
+     * instead of the whole files and makes possible to use less memory.
      *
      * @param rulesetId Rule set id.
      * @param category Byte range category, see {@link RuleSetByteRangeCategory}.

@@ -319,6 +319,7 @@ export function findNextLineBreakIndex(str: string, startIndex = 0): [number, nu
 
 /**
  * Calculates the number of bytes required to encode a given string in UTF-8.
+ * It helps to avoid "truly encoding" the string to get the byte length.
  *
  * UTF-8 encoding uses:
  * - 1 byte for code points in the range 0x0000 - 0x007F (ASCII)

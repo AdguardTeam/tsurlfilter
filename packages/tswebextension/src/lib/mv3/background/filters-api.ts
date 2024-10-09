@@ -130,14 +130,12 @@ export default class FiltersApi {
      * Loads content for provided filters ids;.
      *
      * @param filtersIds List of filters ids.
-     * @param filtersPath Path to filters directory.
      * @param ruleSetsLoaderApi RuleSetsLoaderApi instance.
      *
      * @returns List of {@link IFilter} with a lazy content loading feature.
      */
     static createStaticFilters(
         filtersIds: ConfigurationMV3['staticFiltersIds'],
-        filtersPath: string,
         ruleSetsLoaderApi: RuleSetsLoaderApi,
     ): IFilter[] {
         return filtersIds.map((filterId) => new Filter(

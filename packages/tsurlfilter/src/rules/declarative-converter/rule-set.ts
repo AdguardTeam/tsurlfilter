@@ -697,8 +697,8 @@ export class RuleSet implements IRuleSet {
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
 
-        // FIXME
-        const [filter] = await this.ruleSetContentProvider.loadFilterList();
+        // FIXME: What happens if we have multiple filters in `this.filterList` map?
+        const filter = this.filterList.values().next().value!;
         const content = await filter.getContent();
 
         const metadata = this.getSerializedRuleSetData();
