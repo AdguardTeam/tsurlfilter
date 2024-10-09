@@ -10,9 +10,9 @@ import {
     BYTE_RANGE_MAP_RULE_SET_ID,
     fetchAndDeserializeByteRangeMaps,
     type ByteRange,
+    RULE_SET_NAME_PREFIX,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
-import { RULE_SET_NAME_PREFIX } from './constants';
 
 const JSON_ELEMENT_SEPARATOR = ',';
 const JSON_ARRAY_OPENING_BRACKET = '[';

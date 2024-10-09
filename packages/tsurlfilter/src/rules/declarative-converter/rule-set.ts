@@ -23,6 +23,11 @@ import {
 import { type ByteRangeMap, type ByteRange } from './byte-range-map';
 
 /**
+ * Prefix for ruleset name.
+ */
+export const RULE_SET_NAME_PREFIX = 'ruleset_';
+
+/**
  * The OriginalSource contains the text of the original rule and the filter
  * identifier of that rule.
  */

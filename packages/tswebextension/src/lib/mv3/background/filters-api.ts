@@ -1,4 +1,4 @@
-import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
+import { Filter, type IFilter, RULE_SET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
 import {
@@ -7,7 +7,6 @@ import {
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import { type ConfigurationMV3 } from './configuration';
-import { RULE_SET_NAME_PREFIX } from './constants';
 import type RuleSetsLoaderApi from './rule-sets-loader-api';
 
 export type UpdateStaticFiltersResult = {

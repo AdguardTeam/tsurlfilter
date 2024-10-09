@@ -7,6 +7,7 @@ import {
     type IRuleSet,
     DeclarativeFilterConverter,
     Filter,
+    RULE_SET_NAME_PREFIX,
 } from '../src/rules/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
 import { FilterListPreprocessor } from '../src';
@@ -210,7 +211,7 @@ export const convertFilters = async (
         console.log('===============================================');
     }
 
-    const byteRangeMapsRulesetBaseName = `ruleset_${BYTE_RANGE_MAP_RULE_SET_ID}`;
+    const byteRangeMapsRulesetBaseName = `${RULE_SET_NAME_PREFIX}${BYTE_RANGE_MAP_RULE_SET_ID}`;
     const byteRangeMapsRulesetDir = `${destRuleSetsPath}/${byteRangeMapsRulesetBaseName}`;
     ensureDirSync(byteRangeMapsRulesetDir);
 
