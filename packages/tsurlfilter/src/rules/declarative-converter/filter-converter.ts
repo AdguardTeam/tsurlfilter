@@ -204,6 +204,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
         const {
             resourcesPath,
             maxNumberOfRules,
+            // FIXME: validate maxNumberOfUnsafeRules
             maxNumberOfRegexpRules,
         } = options;
 

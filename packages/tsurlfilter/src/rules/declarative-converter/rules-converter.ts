@@ -90,7 +90,7 @@
  */
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
-import type { DeclarativeRule } from './declarative-rule';
+import { RuleActionType, type DeclarativeRule } from './declarative-rule';
 import { type ConvertedRules } from './converted-result';
 import { RegularRulesConverter } from './grouped-rules-converters/regular-converter';
 import { RemoveParamRulesConverter } from './grouped-rules-converters/remove-param-converter';
@@ -164,6 +164,11 @@ export class DeclarativeRulesConverter {
 
             const {
                 sourceMapValues,
+                // FIXME: handle different order of rules:
+                // declarativeRules here returned in different order — if there are
+                // 1) $removeheader rule
+                // 2) simple basic rule
+                // the order of declarative rules will be opposite — basic rules are first
                 declarativeRules,
                 errors,
                 // eslint-disable-next-line no-await-in-loop
@@ -182,6 +187,7 @@ export class DeclarativeRulesConverter {
         converted = this.checkLimitations(
             converted,
             options?.maxNumberOfRules,
+            options?.maxNumberOfUnsafeRules,
             options?.maxNumberOfRegexpRules,
         );
 
@@ -268,6 +274,7 @@ export class DeclarativeRulesConverter {
     private static checkLimitations(
         converted: ConvertedRules,
         maxNumberOfRules?: number,
+        maxNumberOfUnsafeRules?:  number,
         maxNumberOfRegexpRules?: number,
     ): ConvertedRules {
         const limitations: LimitationError[] = [];
@@ -318,6 +325,31 @@ export class DeclarativeRulesConverter {
             sourcesIndex.set(source.declarativeRuleId, newValue);
         });
 
+        // FiXME: move outside
+        /**
+         * Checks whether the declarative rule is safe, i.e. rule action is one of the following:
+         * - block
+         * - allow
+         * - allowAllRequests
+         * - upgradeScheme.
+         *
+         * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#safe_rules}
+         *
+         * @returns True if the rule is safe, otherwise false.
+         */
+        const isSafeDynamicRule = (rule: DeclarativeRule): boolean => {
+            return rule.action.type === RuleActionType.BLOCK
+                || rule.action.type === RuleActionType.ALLOW
+                || rule.action.type === RuleActionType.ALLOW_ALL_REQUESTS
+                || rule.action.type === RuleActionType.UPGRADE_SCHEME;
+        }
+
+        let unsafeRulesCounter = 0;
+
+        // FIXME: check case when number of unsafe rules is greater than maxNumberOfUnsafeRules
+        // and less than maxNumberOfRules (consider changing:
+        // 'declarativeRules.length > maxNumberOfRules' -> 'declarativeRules.length > 0')
+
         // Checks and, if necessary, trims the maximum number of rules
         if (maxNumberOfRules && declarativeRules.length > maxNumberOfRules) {
             const filteredRules: DeclarativeRule[] = [];
@@ -325,6 +357,17 @@ export class DeclarativeRulesConverter {
 
             for (let i = 0; i < declarativeRules.length; i += 1) {
                 const rule = declarativeRules[i];
+
+                if (
+                    maxNumberOfUnsafeRules
+                    && !isSafeDynamicRule(rule)
+                ) {
+                    if (unsafeRulesCounter < maxNumberOfUnsafeRules) {
+                        unsafeRulesCounter += 1;
+                    } else {
+                        continue;
+                    }
+                }
 
                 if (i < maxNumberOfRules) {
                     filteredRules.push(rule);
@@ -343,6 +386,8 @@ export class DeclarativeRulesConverter {
                 excludedRulesIds.push(...sourcesRulesIds);
             }
 
+            // FIXME: think how to handle unsafe rules
+            // because different error messages may be needed
             const msg = 'After conversion, too many declarative rules remain: '
                 + `${declarativeRules.length} exceeds `
                 + `the limit provided - ${maxNumberOfRules}`;
@@ -352,6 +397,9 @@ export class DeclarativeRulesConverter {
                 maxNumberOfRules,
                 declarativeRules.length - maxNumberOfRules,
             );
+
+            // FIXME: check safe and unsafe dynamic rules
+
             limitations.push(err);
 
             declarativeRules = filteredRules;

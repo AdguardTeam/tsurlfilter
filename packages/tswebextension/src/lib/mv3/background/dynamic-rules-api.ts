@@ -89,6 +89,7 @@ export default class DynamicRulesApi {
             staticRuleSets,
             {
                 resourcesPath,
+                // FIXME: split limit for safe and unsafe rules
                 maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
                 maxNumberOfRegexpRules: DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
             },
