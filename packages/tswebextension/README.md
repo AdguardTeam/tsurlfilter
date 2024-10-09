@@ -377,7 +377,7 @@ Optional flag responsible for logging. Defaults to true. Will be removed in the 
 
 type: `string | undefined`
 
-Optional flag that sets logging level, defaults to 'error'. Available levels: 'error', 'warn', 'info', 'debug', 'trace'.
+Optional flag that sets logging level, defaults to 'error'. Available levels: 'error', 'warn', 'info', 'debug'.
 
 #### settings
 
