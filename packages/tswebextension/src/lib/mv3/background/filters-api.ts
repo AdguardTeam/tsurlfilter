@@ -12,7 +12,7 @@ import {
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import { type ConfigurationMV3 } from './configuration';
-import type RuleSetsLoaderApi from './rule-sets-loader-api';
+import { type RuleSetsLoaderApi } from './rule-sets-loader-api';
 
 export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[],

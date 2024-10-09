@@ -22,7 +22,7 @@ const JSON_ARRAY_OPENING_BRACKET = '[';
  * RuleSetsLoaderApi can create {@link IRuleSet} from the provided rule set ID
  * with lazy loading (rule set contents will be loaded only after a request).
  */
-export default class RuleSetsLoaderApi {
+export class RuleSetsLoaderApi {
     /**
      * Path to rule sets directory.
      */
