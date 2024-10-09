@@ -189,21 +189,14 @@ export class RuleSetsLoaderApi {
             await this.initialize();
         }
 
-        const ruleSetPath = this.getRuleSetPath(ruleSetId);
+        const rawData = await this.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.declarativeMetadata);
 
-        const rawData = await fetchExtensionResourceText(
-            browser.runtime.getURL(ruleSetPath),
-            this.getByteRange(ruleSetId, RuleSetByteRangeCategory.declarativeMetadata),
+        const loadLazyData = async (): Promise<string> => this.getRawCategoryContent(
+            ruleSetId,
+            RuleSetByteRangeCategory.declarativeLazyMetadata,
         );
 
-        const loadLazyData = (): Promise<string> => {
-            const range = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.declarativeLazyMetadata);
-            return fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath), range);
-        };
-
-        const loadDeclarativeRules = (): Promise<string> => this.getDeclarativeRulesWithoutMetadataRule(
-            browser.runtime.getURL(ruleSetPath),
-        );
+        const loadDeclarativeRules = (): Promise<string> => this.getDeclarativeRulesWithoutMetadataRule(ruleSetId);
 
         const {
             data: {
