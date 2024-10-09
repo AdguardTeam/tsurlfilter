@@ -12,12 +12,6 @@ export {
     getRuleSourceText,
 } from '@adguard/tsurlfilter';
 
-// Re-export needed to print the library version on the extension About page.
-// NOTE: Do not export anything from extended-css in MV3 environment to prevent
-// environment runtime errors, like call window.console, which is not available
-// in the service worker in MV3.
-export { EXTENDED_CSS_VERSION } from '@adguard/extended-css';
-
 export * from './api';
 export * from './app';
 export * from './ext-session-storage';
