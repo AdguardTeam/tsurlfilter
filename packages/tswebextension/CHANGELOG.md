@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MV3 extension cannot apply rules to `about:blank` iframes [AdguardBrowserExtension#2975].
 - JS rules are blocked by Trusted Types on some websites [AdguardBrowserExtension#2980].
 - Scriptlets logging does not work [AdguardBrowserExtension#2977].
+- Correct export of `EXTENDED_CSS_VERSION` for mv3 version.
 
 [AdguardBrowserExtension#2975]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2975
 [AdguardBrowserExtension#2977]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2977
