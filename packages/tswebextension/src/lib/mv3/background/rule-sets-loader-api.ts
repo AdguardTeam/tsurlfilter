@@ -125,8 +125,8 @@ export class RuleSetsLoaderApi {
     private async getDeclarativeRulesWithoutMetadataRule(ruleSetId: string): Promise<string> {
         const ruleSetPath = this.getRuleSetPath(ruleSetId);
 
-        const fullRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.full);
-        const metadataRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.metadataRule);
+        const fullRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.Full);
+        const metadataRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.MetadataRule);
 
         const textAfterMetadata = await fetchExtensionResourceText(
             browser.runtime.getURL(ruleSetPath),
@@ -193,11 +193,11 @@ export class RuleSetsLoaderApi {
             await this.initialize();
         }
 
-        const rawData = await this.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.declarativeMetadata);
+        const rawData = await this.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.DeclarativeMetadata);
 
         const loadLazyData = async (): Promise<string> => this.getRawCategoryContent(
             ruleSetId,
-            RuleSetByteRangeCategory.declarativeLazyMetadata,
+            RuleSetByteRangeCategory.DeclarativeLazyMetadata,
         );
 
         const loadDeclarativeRules = (): Promise<string> => this.getDeclarativeRulesWithoutMetadataRule(ruleSetId);

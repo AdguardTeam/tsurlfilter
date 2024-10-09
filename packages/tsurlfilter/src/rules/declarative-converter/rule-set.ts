@@ -53,47 +53,47 @@ export enum RuleSetByteRangeCategory {
     /**
      * Full byte range of the rule set file.
      */
-    full = 'full',
+    Full = 'full',
 
     /**
      * Byte range for the metadata rule, which is the first rule in the rule set.
      */
-    metadataRule = 'metadata_rule',
+    MetadataRule = 'metadata_rule',
 
     /**
      * Byte range for the metadata of the rule set.
      */
-    declarativeMetadata = 'declarative_metadata',
+    DeclarativeMetadata = 'declarative_metadata',
 
     /**
      * Byte range for the lazy metadata of the rule set.
      */
-    declarativeLazyMetadata = 'declarative_lazy_metadata',
+    DeclarativeLazyMetadata = 'declarative_lazy_metadata',
 
     /**
      * Byte range for the source map of the rule set.
      */
-    declarativeSourceMap = 'declarative_source_map',
+    DeclarativeSourceMap = 'declarative_source_map',
 
     /**
      * Byte range for the source map of the preprocessed filter list.
      */
-    preprocessedFilterListSourceMap = 'preprocessed_filter_list_source_map',
+    PreprocessedFilterListSourceMap = 'preprocessed_filter_list_source_map',
 
     /**
      * Byte range for the conversion map of the preprocessed filter list.
      */
-    preprocessedFilterListConversionMap = 'preprocessed_filter_list_conversion_map',
+    PreprocessedFilterListConversionMap = 'preprocessed_filter_list_conversion_map',
 
     /**
      * Byte range for the binary content of the preprocessed filter list.
      */
-    preprocessedFilterListBinary = 'preprocessed_filter_list_binary',
+    PreprocessedFilterListBinary = 'preprocessed_filter_list_binary',
 
     /**
      * Byte range for the raw content of the preprocessed filter list.
      */
-    preprocessedFilterListRaw = 'preprocessed_filter_list_raw',
+    PreprocessedFilterListRaw = 'preprocessed_filter_list_raw',
 }
 
 /**
@@ -722,21 +722,21 @@ export class RuleSet implements IRuleSet {
         // `/0` is a pointer to the first element in the array
         // When we serialize the rule set, we produce an array of rules and the metadata rule is always the first one
         const byteRangeMap: ByteRangeMap = {
-            [RuleSetByteRangeCategory.metadataRule]: RuleSet.getByteRangeFor(result, '/0'),
+            [RuleSetByteRangeCategory.MetadataRule]: RuleSet.getByteRangeFor(result, '/0'),
 
             /* eslint-disable max-len */
-            [RuleSetByteRangeCategory.declarativeMetadata]: RuleSet.getByteRangeFor(result, '/0/metadata/metadata'),
-            [RuleSetByteRangeCategory.declarativeLazyMetadata]: RuleSet.getByteRangeFor(result, '/0/metadata/lazyMetadata'),
-            [RuleSetByteRangeCategory.declarativeSourceMap]: RuleSet.getByteRangeFor(result, '/0/metadata/lazyMetadata/sourceMapRaw'),
+            [RuleSetByteRangeCategory.DeclarativeMetadata]: RuleSet.getByteRangeFor(result, '/0/metadata/metadata'),
+            [RuleSetByteRangeCategory.DeclarativeLazyMetadata]: RuleSet.getByteRangeFor(result, '/0/metadata/lazyMetadata'),
+            [RuleSetByteRangeCategory.DeclarativeSourceMap]: RuleSet.getByteRangeFor(result, '/0/metadata/lazyMetadata/sourceMapRaw'),
 
-            [RuleSetByteRangeCategory.preprocessedFilterListSourceMap]: RuleSet.getByteRangeFor(result, '/0/metadata/sourceMap'),
-            [RuleSetByteRangeCategory.preprocessedFilterListConversionMap]: RuleSet.getByteRangeFor(result, '/0/metadata/conversionMap'),
-            [RuleSetByteRangeCategory.preprocessedFilterListBinary]: RuleSet.getByteRangeFor(result, '/0/metadata/filterList'),
-            [RuleSetByteRangeCategory.preprocessedFilterListRaw]: RuleSet.getByteRangeFor(result, '/0/metadata/rawFilterList'),
+            [RuleSetByteRangeCategory.PreprocessedFilterListSourceMap]: RuleSet.getByteRangeFor(result, '/0/metadata/sourceMap'),
+            [RuleSetByteRangeCategory.PreprocessedFilterListConversionMap]: RuleSet.getByteRangeFor(result, '/0/metadata/conversionMap'),
+            [RuleSetByteRangeCategory.PreprocessedFilterListBinary]: RuleSet.getByteRangeFor(result, '/0/metadata/filterList'),
+            [RuleSetByteRangeCategory.PreprocessedFilterListRaw]: RuleSet.getByteRangeFor(result, '/0/metadata/rawFilterList'),
             /* eslint-enable max-len */
 
             // Get byte range for the whole array of rules (i.e. the whole file)
-            [RuleSetByteRangeCategory.full]: RuleSet.getByteRangeFor(result, '/'),
+            [RuleSetByteRangeCategory.Full]: RuleSet.getByteRangeFor(result, '/'),
         };
 
         return { result, byteRangeMap };

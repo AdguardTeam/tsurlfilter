@@ -108,10 +108,10 @@ export default class FiltersApi {
         // Trigger all async requests concurrently
         const [rawFilterList, conversionMap, sourceMap, filterListBase64] = await Promise.all([
             /* eslint-disable max-len */
-            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.preprocessedFilterListRaw).then(JSON.parse),
-            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.preprocessedFilterListConversionMap).then(JSON.parse),
-            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.preprocessedFilterListSourceMap).then(JSON.parse),
-            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.preprocessedFilterListBinary).then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.PreprocessedFilterListRaw).then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.PreprocessedFilterListConversionMap).then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.PreprocessedFilterListSourceMap).then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.PreprocessedFilterListBinary).then(JSON.parse),
             /* eslint-enable max-len */
         ]);
 
