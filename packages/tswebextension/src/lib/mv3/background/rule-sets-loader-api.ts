@@ -192,7 +192,7 @@ export default class RuleSetsLoaderApi {
      *
      * @returns New {@link IRuleSet}.
      *
-     * @throws If it need to call initialize, but its failing.
+     * @throws If {@link RuleSetsLoaderApi.initialize} was not called before and it fails.
      */
     public async createRuleSet(
         ruleSetId: string,
