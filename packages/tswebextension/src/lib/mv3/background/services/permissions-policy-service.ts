@@ -8,7 +8,6 @@ import {
 import { requestContextStorage, type RequestContext } from '../request';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { ContentType } from '../../../common/request-type';
-import { nanoid } from '../../nanoid';
 
 /**
  * Permissions Policy service.
@@ -83,7 +82,7 @@ export class PermissionsPolicyService {
                     type: FilteringEventType.ApplyPermissionsRule,
                     data: {
                         tabId,
-                        eventId: nanoid(),
+                        eventId: requestId,
                         requestUrl,
                         frameUrl: referrerUrl,
                         frameDomain: getDomain(referrerUrl),
