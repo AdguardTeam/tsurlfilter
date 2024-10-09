@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## Unreleased
+## [2.3.0-alpha.2] - 2024-10-09
 
 ### Changed
 
@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scriptlets logging does not work [AdguardBrowserExtension#2977].
 - Correct export of `EXTENDED_CSS_VERSION` for mv3 version.
 
+[2.3.0-alpha.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.3.0-alpha.2
 [AdguardBrowserExtension#2975]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2975
 [AdguardBrowserExtension#2977]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2977
 [AdguardBrowserExtension#2980]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2980
@@ -39,8 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `companyCategoryName` property in filtering log `ApplyBasicRuleEvent` for `$redirect` rules [#137].
 - `isAssuredlyBlocked` property in filtering log `ApplyBasicRuleEvent` for definitely blocked requests im MV3.
 
-[#137]: https://github.com/AdguardTeam/tsurlfilter/issues/137
 [2.3.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.3.0-alpha.1
+[#137]: https://github.com/AdguardTeam/tsurlfilter/issues/137
 
 ## [2.0.3] - 2024-09-26
 

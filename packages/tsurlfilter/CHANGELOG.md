@@ -8,12 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## Unreleased
+## [3.1.0-alpha.6] - 2024-10-09
 
 ### Fixed
 
-- Content-type matching of `$permissions` and `$removeparam` rules [AdguardBrowserExtension#2954]
+- Content-type matching of `$permissions` and `$removeparam` rules [AdguardBrowserExtension#2954].
 
+[3.1.0-alpha.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.6
 [AdguardBrowserExtension#2954]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2954
 
 ## [3.1.0-alpha.5] - 2024-10-02
