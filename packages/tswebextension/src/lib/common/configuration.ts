@@ -180,7 +180,13 @@ export const configurationValidator = zod.object({
     /**
      * Logging level.
      */
-    logLevel: zod.enum([LogLevel.Error, LogLevel.Warn, LogLevel.Info, LogLevel.Debug]).optional(),
+    logLevel: zod.enum([
+        LogLevel.Error,
+        LogLevel.Warn,
+        LogLevel.Info,
+        LogLevel.Debug,
+        LogLevel.Trace,
+    ]).optional(),
 
     settings: settingsConfigValidator,
 

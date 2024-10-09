@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.3.0-alpha.2] - 2024-10-09
 
+### Changed
+
+- Updated `@adguard/logger` to `v1.1.0`.
+
 ### Fixed
 
 - MV3 extension cannot apply rules to `about:blank` iframes [AdguardBrowserExtension#2975].
