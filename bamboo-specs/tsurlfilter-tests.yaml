@@ -69,7 +69,7 @@ Test:
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
-          commitMessage: 'skipci: Automatic update tsurlfilter and tswebextension tgz files and MV3 docs'
+          commitMessage: 'skipci: Automatic update tsurlfilter and tswebextension tgz files'
           selectedRepository: defaultRepository
     - script:
         interpreter: SHELL
