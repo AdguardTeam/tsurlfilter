@@ -424,7 +424,7 @@ export class RuleSet implements IRuleSet {
         } catch (e) {
             const id = this.getId();
             // eslint-disable-next-line max-len
-            const msg = `Cannot extract source rule for given declarativeRuleId ${declarativeRuleId} in rule set '${id}'`;
+            const msg = `Cannot extract source rule for given declarativeRuleId ${declarativeRuleId} in rule set '${id}', got error: ${getErrorMessage(e)}`;
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
     }

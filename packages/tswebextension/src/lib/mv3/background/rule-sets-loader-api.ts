@@ -123,6 +123,10 @@ export class RuleSetsLoaderApi {
      * @returns Raw JSON string with declarative rules.
      */
     private async getDeclarativeRulesWithoutMetadataRule(ruleSetId: string): Promise<string> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
         const ruleSetPath = this.getRuleSetPath(ruleSetId);
 
         const fullRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.Full);
