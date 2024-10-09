@@ -47,6 +47,56 @@ export type UpdateStaticRulesOptions = {
 };
 
 /**
+ * Possible categories for byte range.
+ */
+export enum RuleSetByteRangeCategory {
+    /**
+     * Full byte range of the rule set file.
+     */
+    full = 'full',
+
+    /**
+     * Byte range for the metadata rule, which is the first rule in the rule set.
+     */
+    metadataRule = 'metadata_rule',
+
+    /**
+     * Byte range for the metadata of the rule set.
+     */
+    declarativeMetadata = 'declarative_metadata',
+
+    /**
+     * Byte range for the lazy metadata of the rule set.
+     */
+    declarativeLazyMetadata = 'declarative_lazy_metadata',
+
+    /**
+     * Byte range for the source map of the rule set.
+     */
+    declarativeSourceMap = 'declarative_source_map',
+
+    /**
+     * Byte range for the source map of the preprocessed filter list.
+     */
+    preprocessedFilterListSourceMap = 'preprocessed_filter_list_source_map',
+
+    /**
+     * Byte range for the conversion map of the preprocessed filter list.
+     */
+    preprocessedFilterListConversionMap = 'preprocessed_filter_list_conversion_map',
+
+    /**
+     * Byte range for the binary content of the preprocessed filter list.
+     */
+    preprocessedFilterListBinary = 'preprocessed_filter_list_binary',
+
+    /**
+     * Byte range for the raw content of the preprocessed filter list.
+     */
+    preprocessedFilterListRaw = 'preprocessed_filter_list_raw',
+}
+
+/**
  * Keeps converted declarative rules and source map for it.
  */
 export interface IRuleSet {
@@ -669,24 +719,25 @@ export class RuleSet implements IRuleSet {
         const result = serializeJson(declarativeRules, prettyPrint);
 
         // Create byte range map
-        const byteRangeMap: ByteRangeMap = {};
-
         // `/0` is a pointer to the first element in the array
         // When we serialize the rule set, we produce an array of rules and the metadata rule is always the first one
-        byteRangeMap.metadata_rule = RuleSet.getByteRangeFor(result, '/0');
+        const byteRangeMap: ByteRangeMap = {
+            [RuleSetByteRangeCategory.metadataRule]: RuleSet.getByteRangeFor(result, '/0'),
 
-        byteRangeMap.declarative_metadata = RuleSet.getByteRangeFor(result, '/0/metadata/metadata');
-        byteRangeMap.declarative_lazy_metadata = RuleSet.getByteRangeFor(result, '/0/metadata/lazyMetadata');
-        byteRangeMap.declarative_source_map = RuleSet.getByteRangeFor(result, '/0/metadata/lazyMetadata/sourceMapRaw');
+            /* eslint-disable max-len */
+            [RuleSetByteRangeCategory.declarativeMetadata]: RuleSet.getByteRangeFor(result, '/0/metadata/metadata'),
+            [RuleSetByteRangeCategory.declarativeLazyMetadata]: RuleSet.getByteRangeFor(result, '/0/metadata/lazyMetadata'),
+            [RuleSetByteRangeCategory.declarativeSourceMap]: RuleSet.getByteRangeFor(result, '/0/metadata/lazyMetadata/sourceMapRaw'),
 
-        byteRangeMap.preprocessed_filter_list_source_map = RuleSet.getByteRangeFor(result, '/0/metadata/sourceMap');
-        // eslint-disable-next-line max-len
-        byteRangeMap.preprocessed_filter_list_conversion_map = RuleSet.getByteRangeFor(result, '/0/metadata/conversionMap');
-        byteRangeMap.preprocessed_filter_list_binary = RuleSet.getByteRangeFor(result, '/0/metadata/filterList');
-        byteRangeMap.preprocessed_filter_list_raw = RuleSet.getByteRangeFor(result, '/0/metadata/rawFilterList');
+            [RuleSetByteRangeCategory.preprocessedFilterListSourceMap]: RuleSet.getByteRangeFor(result, '/0/metadata/sourceMap'),
+            [RuleSetByteRangeCategory.preprocessedFilterListConversionMap]: RuleSet.getByteRangeFor(result, '/0/metadata/conversionMap'),
+            [RuleSetByteRangeCategory.preprocessedFilterListBinary]: RuleSet.getByteRangeFor(result, '/0/metadata/filterList'),
+            [RuleSetByteRangeCategory.preprocessedFilterListRaw]: RuleSet.getByteRangeFor(result, '/0/metadata/rawFilterList'),
+            /* eslint-enable max-len */
 
-        // Get byte range for the whole array of rules (i.e. the whole file)
-        byteRangeMap.full = RuleSet.getByteRangeFor(result, '/');
+            // Get byte range for the whole array of rules (i.e. the whole file)
+            [RuleSetByteRangeCategory.full]: RuleSet.getByteRangeFor(result, '/'),
+        };
 
         return { result, byteRangeMap };
     }

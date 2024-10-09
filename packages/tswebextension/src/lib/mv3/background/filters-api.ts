@@ -1,4 +1,9 @@
-import { Filter, type IFilter, RULE_SET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
+import {
+    Filter,
+    type IFilter,
+    RULE_SET_NAME_PREFIX,
+    RuleSetByteRangeCategory,
+} from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
 import {
@@ -102,11 +107,12 @@ export default class FiltersApi {
 
         // Trigger all async requests concurrently
         const [rawFilterList, conversionMap, sourceMap, filterListBase64] = await Promise.all([
-            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, 'preprocessed_filter_list_raw').then(JSON.parse),
-            // eslint-disable-next-line max-len
-            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, 'preprocessed_filter_list_conversion_map').then(JSON.parse),
-            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, 'preprocessed_filter_list_source_map').then(JSON.parse),
-            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, 'preprocessed_filter_list_binary').then(JSON.parse),
+            /* eslint-disable max-len */
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.preprocessedFilterListRaw).then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.preprocessedFilterListConversionMap).then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.preprocessedFilterListSourceMap).then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.preprocessedFilterListBinary).then(JSON.parse),
+            /* eslint-enable max-len */
         ]);
 
         // Convert the base64 encoded filter list to Uint8Array

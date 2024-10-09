@@ -11,6 +11,7 @@ import {
     fetchAndDeserializeByteRangeMaps,
     type ByteRange,
     RULE_SET_NAME_PREFIX,
+    RuleSetByteRangeCategory,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
@@ -91,22 +92,14 @@ export default class RuleSetsLoaderApi {
      * Gets the byte range for the specified rule set and category.
      *
      * @param rulesetId Rule set id.
-     * @param category Category name, can be:
-     * - `full` to get the full byte range of the rule set file,
-     * - `declarative_metadata`
-     * - `declarative_lazy_metadata`
-     * - `declarative_source_map`
-     * - `preprocessed_filter_list_source_map`
-     * - `preprocessed_filter_list_conversion_map`
-     * - `preprocessed_filter_list_binary`
-     * - `preprocessed_filter_list_raw`.
+     * @param category Byte range category, see {@link RuleSetByteRangeCategory}.
      *
      * @returns Byte range for the specified rule set and category.
      *
      * @throws Error if the byte range map for the specified rule set is not found
      * or the byte range for the specified category is not found.
      */
-    private getByteRange(rulesetId: string, category: string): ByteRange {
+    private getByteRange(rulesetId: string, category: RuleSetByteRangeCategory): ByteRange {
         const byteRangeMap = this.byteRangeMapsCollection[rulesetId];
 
         if (!byteRangeMap) {
@@ -132,8 +125,8 @@ export default class RuleSetsLoaderApi {
     private async getDeclarativeRulesWithoutMetadataRule(ruleSetId: string): Promise<string> {
         const ruleSetPath = this.getRuleSetPath(ruleSetId);
 
-        const fullRange = this.getByteRange(ruleSetId, 'full');
-        const metadataRange = this.getByteRange(ruleSetId, 'metadata');
+        const fullRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.full);
+        const metadataRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.metadataRule);
 
         const textAfterMetadata = await fetchExtensionResourceText(
             browser.runtime.getURL(ruleSetPath),
@@ -157,22 +150,14 @@ export default class RuleSetsLoaderApi {
      * Fetches the content of the specified category from the rule set file.
      *
      * @param rulesetId Rule set id.
-     * @param category Category name, can be:
-     * - `full` to get the full byte range of the rule set file,
-     * - `declarative_metadata`
-     * - `declarative_lazy_metadata`
-     * - `declarative_source_map`
-     * - `preprocessed_filter_list_source_map`
-     * - `preprocessed_filter_list_conversion_map`
-     * - `preprocessed_filter_list_binary`
-     * - `preprocessed_filter_list_raw`.
+     * @param category Byte range category, see {@link RuleSetByteRangeCategory}.
      *
      * @returns Promise resolved file content as a string.
      *
      * @throws Error if the byte range map for the specified rule set is not found
      * or the byte range for the specified category is not found.
      */
-    public async getRawCategoryContent(rulesetId: string, category: string): Promise<string> {
+    public async getRawCategoryContent(rulesetId: string, category: RuleSetByteRangeCategory): Promise<string> {
         if (!this.isInitialized) {
             await this.initialize();
         }
@@ -206,11 +191,11 @@ export default class RuleSetsLoaderApi {
 
         const rawData = await fetchExtensionResourceText(
             browser.runtime.getURL(ruleSetPath),
-            this.getByteRange(ruleSetId, 'declarative_metadata'),
+            this.getByteRange(ruleSetId, RuleSetByteRangeCategory.declarativeMetadata),
         );
 
         const loadLazyData = (): Promise<string> => {
-            const range = this.getByteRange(ruleSetId, 'declarative_lazy_metadata');
+            const range = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.declarativeLazyMetadata);
             return fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath), range);
         };
 
