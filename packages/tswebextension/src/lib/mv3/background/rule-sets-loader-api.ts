@@ -140,7 +140,11 @@ export class RuleSetsLoaderApi {
         // `[metadata_rule, rule1, rule2, ..., ruleN]` -> `, rule1, rule2, ..., ruleN]`
         // but to make it a valid JSON we need to add the missing opening bracket and remove the comma
         if (textAfterMetadata.startsWith(JSON_ELEMENT_SEPARATOR)) {
-            return `${JSON_ARRAY_OPENING_BRACKET}${textAfterMetadata.slice(1)}`;
+            return `${JSON_ARRAY_OPENING_BRACKET}${textAfterMetadata.slice(JSON_ELEMENT_SEPARATOR.length)}`;
+        }
+
+        if (!textAfterMetadata.startsWith(JSON_ARRAY_OPENING_BRACKET)) {
+            return `${JSON_ARRAY_OPENING_BRACKET}${textAfterMetadata}`;
         }
 
         return textAfterMetadata;
