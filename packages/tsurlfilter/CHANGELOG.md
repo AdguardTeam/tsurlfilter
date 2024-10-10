@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## Unreleased
+
+### Changed
+
+- Declarative converter adds each necessary information to the ruleset `.json` file,
+  other files are not needed anymore (like raw `.txt` files, `metadata.json` files, etc).
+
+### Added
+
+- Metadata declarative rule to hold additional information about the filter list.
+  It is a special rule at the beginning of the ruleset that contains metadata, e.g.
+  raw filter list rules, declarative metadata, lazy metadata, conversion map, source map, etc.
+- Byte range maps. This feature allows retrieving only specific parts of the ruleset `.json` file, saving memory
+  and improving performance.
+
 ## [3.1.0-alpha.6] - 2024-10-09
 
 ### Fixed
