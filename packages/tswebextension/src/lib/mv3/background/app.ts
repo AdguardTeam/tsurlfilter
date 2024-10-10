@@ -13,7 +13,7 @@ import { appContext } from './app-context';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
-import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
+import FiltersApi, { RULE_SET_NAME_PREFIX, type UpdateStaticFiltersResult } from './filters-api';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
@@ -594,12 +594,9 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Cannot find declarative_net_request in manifest');
         }
 
-        // FIXME: Iterate over staticFilters, not over rule resources, because
-        // now we create rule sets for each rule resource, but we need to create
-        // rule set only for enabled filters.
-        const manifestRuleSets = manifest.declarative_net_request.rule_resources;
-        const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
-            return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
+        const staticRuleSetsTasks = staticFilters.map((f) => {
+            const ruleSetId = `${RULE_SET_NAME_PREFIX}${f.getId()}`;
+            return ruleSetsLoaderApi.createRuleSet(ruleSetId, staticFilters);
         });
 
         try {
