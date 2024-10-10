@@ -10,23 +10,16 @@ set -ex
 # Redirect stderr (2) to stdout (1) to capture all output in a single log
 exec 2>&1
 
-echo "@adguard/dnr-rulesets tests starting"
+echo "@adguard/tsurlfilter docs mv3 update starting"
 
 # import helper functions and some common variables
 . ./bamboo-specs/scripts/helpers.sh
 
-if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/dnr-rulesets"; then
-  echo "No changes in @adguard/dnr-rulesets, skipping tests"
-  exit 0;
-fi
-
 # Install dependencies
-pnpm --filter @adguard/dnr-rulesets install
+pnpm install
 
-# Run linter
-pnpm --filter @adguard/dnr-rulesets lint
+# Build with dependencies, lerna is used for builds caching, because
+# we specified dependencies with workspace links.
+npx lerna run build,docs:mv3 --scope @adguard/tsurlfilter --include-dependencies
 
-# Run tests
-pnpm --filter @adguard/dnr-rulesets test
-
-echo "@adguard/dnr-rulesets tests completed"
+echo "@adguard/tsurlfilter docs mv3 updated"

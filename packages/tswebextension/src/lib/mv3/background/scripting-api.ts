@@ -240,7 +240,6 @@ export class ScriptingApi {
                 const blob = new Blob([scriptText], { type: 'text/javascript; charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 scriptTag.src = policy.createScriptURL(url);
-
                 const parent = document.head || document.documentElement;
                 if (parent) {
                     parent.appendChild(scriptTag);
@@ -264,7 +263,7 @@ export class ScriptingApi {
                 const scriptTag = document.createElement('script');
 
                 scriptTag.setAttribute('type', 'text/javascript');
-                scriptTag.appendChild(document.createTextNode(scriptText));
+                scriptTag.textContent = scriptText;
 
                 const parent = document.head || document.documentElement;
                 if (parent) {

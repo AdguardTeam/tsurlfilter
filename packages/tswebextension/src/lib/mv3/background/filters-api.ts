@@ -42,6 +42,12 @@ export function base64ToUint8Array(base64: string): Uint8Array {
  */
 export default class FiltersApi {
     /**
+     * Cache for already created filters. Needed to avoid multiple loading
+     * of the same filter.
+     */
+    static filtersCache: Map<number, IFilter> = new Map();
+
+    /**
      * Enables or disables the provided rule set identifiers.
      *
      * @param disableFiltersIds Rule sets to disable.
@@ -127,7 +133,7 @@ export default class FiltersApi {
     }
 
     /**
-     * Loads content for provided filters ids;.
+     * Wraps static filters into {@link IFilter}.
      *
      * @param filtersIds List of filters ids.
      * @param ruleSetsLoaderApi RuleSetsLoaderApi instance.
@@ -138,14 +144,25 @@ export default class FiltersApi {
         filtersIds: ConfigurationMV3['staticFiltersIds'],
         ruleSetsLoaderApi: RuleSetsLoaderApi,
     ): IFilter[] {
-        return filtersIds.map((filterId) => new Filter(
-            filterId,
-            { getContent: () => this.loadFilterContent(filterId, ruleSetsLoaderApi) },
-            /**
-             * Static filters are trusted.
-             */
-            true,
-        ));
+        return filtersIds.map((filterId) => {
+            const filterFromCache = this.filtersCache.get(filterId);
+            if (filterFromCache) {
+                return filterFromCache;
+            }
+
+            const filter = new Filter(
+                filterId,
+                { getContent: () => this.loadFilterContent(filterId, ruleSetsLoaderApi) },
+                /**
+                 * Static filters are trusted.
+                 */
+                true,
+            );
+
+            this.filtersCache.set(filterId, filter);
+
+            return filter;
+        });
     }
 
     /**

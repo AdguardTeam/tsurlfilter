@@ -1,5 +1,5 @@
 export const rawCompaniesDb = {
-	"timeUpdated": "2024-09-30T10:04:46.112Z",
+	"timeUpdated": "2024-10-07T10:04:33.659Z",
 	"categories": {
 		"0": "audio_video_player",
 		"1": "comments",
@@ -1724,6 +1724,7 @@ export const rawCompaniesDb = {
 		"fastly-insights.com": 6,
 		"fastly.net": 9,
 		"fastlylb.net": 9,
+		"fastly-edge.com": 9,
 		"fastly-masque.net": 9,
 		"fastpic.ru": 10,
 		"fmpub.net": 4,

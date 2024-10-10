@@ -56,6 +56,19 @@ const writer = {
 const logger = new Logger(writer);
 ```
 
+#### `Trace` logging level
+
+This logging level made solely for development purposes, to provided clickable call stack trace in console.
+
+This level works as `Debug` level, only difference is that for every method of logger it prints with call stack trace.
+Except `error()` which already provides call stack trace. In order to make it work these conditions should meet:
+- Logging level must be `LogLevel.Trace` or higher.
+- It should not be `error()` method.
+- `Writer` must have `trace()` method.
+
+If logging level is `LogLevel.Trace` or higher and `trace()` method is not provided with `writer` it will
+work as regular `LogLevel.Debug` level.
+
 ## Development
 
 To contribute to the development of AdGuard Logger, follow these steps:
