@@ -1,4 +1,5 @@
 import { RuleParser } from '@adguard/agtree';
+import { z } from 'zod';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
@@ -13,12 +14,6 @@ import { UnavailableRuleSetSourceError } from './errors/unavailable-sources-erro
 import { type ISourceMap, SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
 import { type IRulesHashMap } from './rules-hash-map';
 import { createMetadataRule } from './metadata-rule';
-import {
-    type SerializedRuleSetData,
-    serializedRuleSetDataValidator,
-    type SerializedRuleSetLazyData,
-    serializedRuleSetLazyDataValidator,
-} from './rule-set-interfaces';
 import { type ByteRangeMap } from './byte-range-map';
 
 /**
@@ -186,6 +181,22 @@ export interface IRuleSet {
      */
     serializeCompact(prettyPrint?: boolean): Promise<{ result: string, byteRangeMap: ByteRangeMap }>;
 }
+
+export const serializedRuleSetLazyDataValidator = z.strictObject({
+    sourceMapRaw: z.string(),
+    filterIds: z.number().array(),
+});
+
+export type SerializedRuleSetLazyData = z.infer<typeof serializedRuleSetLazyDataValidator>;
+
+export const serializedRuleSetDataValidator = z.strictObject({
+    regexpRulesCount: z.number(),
+    rulesCount: z.number(),
+    ruleSetHashMapRaw: z.string(),
+    badFilterRulesRaw: z.string().array(),
+});
+
+export type SerializedRuleSetData = z.infer<typeof serializedRuleSetDataValidator>;
 
 /**
  * Rule set content's provider for lazy load data.

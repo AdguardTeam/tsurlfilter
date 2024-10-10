@@ -14,7 +14,7 @@ import { FilterListPreprocessor } from '../src';
 import { getIdFromFilterName } from '../src/utils/resource-names';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
-import { createDummyRule } from '../src/rules/declarative-converter/metadata-rule';
+import { createMetadataRule } from '../src/rules/declarative-converter/metadata-rule';
 import {
     BYTE_RANGE_MAP_RULE_SET_ID,
     type ByteRangeMapCollection,
@@ -215,12 +215,12 @@ export const convertFilters = async (
     const byteRangeMapsRulesetDir = `${destRuleSetsPath}/${byteRangeMapsRulesetBaseName}`;
     ensureDirSync(byteRangeMapsRulesetDir);
 
-    const dummyDnrRule = createDummyRule();
-    Object.assign(dummyDnrRule, { byteRangeMapsCollection });
+    const metadataRule = createMetadataRule(byteRangeMapsCollection);
+    Object.assign(metadataRule, { byteRangeMapsCollection });
 
     await fs.promises.writeFile(
         `${byteRangeMapsRulesetDir}/${byteRangeMapsRulesetBaseName}.json`,
-        serializeJson([dummyDnrRule], prettifyJson),
+        serializeJson([metadataRule], prettifyJson),
     );
 
     console.log('===============================================');
