@@ -180,7 +180,7 @@ export interface IRuleSet {
      *
      * @param prettyPrint Whether to pretty print the output.
      *
-     * @returns Serialized rule set.
+     * @returns An object with serialized rule set and byte range map.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
@@ -648,7 +648,7 @@ export class RuleSet implements IRuleSet {
      *
      * @param prettyPrint Whether to pretty print the output.
      *
-     * @returns Serialized rule set.
+     * @returns An object with serialized rule set and byte range map.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
