@@ -666,10 +666,8 @@ export class RuleSet implements IRuleSet {
         const filter = this.filterList.values().next().value!;
         const content = await filter.getContent();
 
-        const metadata = this.getSerializedRuleSetData();
-
         const metadataRule = createMetadataRule({
-            metadata,
+            metadata: this.getSerializedRuleSetData(),
             lazyMetadata: this.getSerializedRuleSetLazyData(),
             sourceMap: content.sourceMap,
             conversionMap: content.conversionMap,
