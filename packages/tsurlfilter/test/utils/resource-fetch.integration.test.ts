@@ -27,34 +27,36 @@ describe('fetchExtensionResourceText', () => {
             const rangeHeader = req.headers.range;
             const totalLength = sampleJsonBuffer.length;
 
-            if (rangeHeader) {
-                const matches = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
-                if (matches) {
-                    const start = parseInt(matches[1], 10);
-                    const end = matches[2] ? parseInt(matches[2], 10) : totalLength - 1;
-
-                    // Validate the range
-                    if (start >= totalLength || end >= totalLength || start > end) {
-                        // Range Not Satisfiable
-                        res.statusCode = 416;
-                        res.end();
-                        return;
-                    }
-
-                    // Partial Content
-                    res.statusCode = 206;
-                    res.setHeader('Content-Range', `bytes ${start}-${end}/${totalLength}`);
-                    res.setHeader('Content-Length', end - start + 1);
-                    res.end(sampleJsonBuffer.subarray(start, end + 1));
-                } else {
-                    // Range Not Satisfiable
-                    res.statusCode = 416;
-                    res.end();
-                }
-            } else {
+            if (!rangeHeader) {
                 res.setHeader('Content-Length', totalLength);
                 res.end(sampleJsonBuffer);
+                return;
             }
+
+            const matches = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
+            if (!matches) {
+                // Range Not Satisfiable
+                res.statusCode = 416;
+                res.end();
+                return;
+            }
+
+            const start = parseInt(matches[1], 10);
+            const end = matches[2] ? parseInt(matches[2], 10) : totalLength - 1;
+
+            // Validate the range
+            if (start >= totalLength || end >= totalLength || start > end) {
+                // Range Not Satisfiable
+                res.statusCode = 416;
+                res.end();
+                return;
+            }
+
+            // Partial Content
+            res.statusCode = 206;
+            res.setHeader('Content-Range', `bytes ${start}-${end}/${totalLength}`);
+            res.setHeader('Content-Length', end - start + 1);
+            res.end(sampleJsonBuffer.subarray(start, end + 1));
         });
 
         server.listen(0, () => {
