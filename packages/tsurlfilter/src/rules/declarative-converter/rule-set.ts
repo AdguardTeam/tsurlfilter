@@ -1,5 +1,5 @@
+import { z as zod } from 'zod';
 import { RuleParser } from '@adguard/agtree';
-import { z } from 'zod';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
@@ -182,22 +182,6 @@ export interface IRuleSet {
     serializeCompact(prettyPrint?: boolean): Promise<{ result: string, byteRangeMap: ByteRangeMap }>;
 }
 
-export const serializedRuleSetLazyDataValidator = z.strictObject({
-    sourceMapRaw: z.string(),
-    filterIds: z.number().array(),
-});
-
-export type SerializedRuleSetLazyData = z.infer<typeof serializedRuleSetLazyDataValidator>;
-
-export const serializedRuleSetDataValidator = z.strictObject({
-    regexpRulesCount: z.number(),
-    rulesCount: z.number(),
-    ruleSetHashMapRaw: z.string(),
-    badFilterRulesRaw: z.string().array(),
-});
-
-export type SerializedRuleSetData = z.infer<typeof serializedRuleSetDataValidator>;
-
 /**
  * Rule set content's provider for lazy load data.
  */
@@ -206,6 +190,22 @@ export type RuleSetContentProvider = {
     loadFilterList: () => Promise<IFilter[]>,
     loadDeclarativeRules: () => Promise<DeclarativeRule[]>,
 };
+
+const serializedRuleSetLazyDataValidator = zod.strictObject({
+    sourceMapRaw: zod.string(),
+    filterIds: zod.number().array(),
+});
+
+type SerializedRuleSetLazyData = zod.infer<typeof serializedRuleSetLazyDataValidator>;
+
+const serializedRuleSetDataValidator = zod.strictObject({
+    regexpRulesCount: zod.number(),
+    rulesCount: zod.number(),
+    ruleSetHashMapRaw: zod.string(),
+    badFilterRulesRaw: zod.string().array(),
+});
+
+type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
 
 /**
  * A serialized rule set with primitive values separated into two parts: one is
