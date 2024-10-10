@@ -1,6 +1,7 @@
 import browser from 'webextension-polyfill';
 import {
     Filter,
+    RULESET_NAME_PREFIX,
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
@@ -13,7 +14,7 @@ import { appContext } from './app-context';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
-import FiltersApi, { RULESET_NAME_PREFIX, type UpdateStaticFiltersResult } from './filters-api';
+import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
