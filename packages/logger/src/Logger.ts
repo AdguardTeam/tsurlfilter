@@ -92,6 +92,18 @@ export interface Writer {
      */
     trace?: WriterMethod;
 
+    /**
+     * Group collapsed method.
+     * @param args
+     */
+    groupCollapsed?: WriterMethod;
+
+    /**
+     * Group end method.
+     * @param args
+     */
+    groupEnd?: WriterMethod;
+
     // We do not use 'warn' channel, since in the extensions warn is counted as error.
     // warn: WriterMethod;
 }
