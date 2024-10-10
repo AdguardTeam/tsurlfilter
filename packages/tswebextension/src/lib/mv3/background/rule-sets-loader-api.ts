@@ -14,7 +14,6 @@ import {
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
-const JSON_ELEMENT_SEPARATOR = ',';
 const JSON_ARRAY_OPENING_BRACKET = '[';
 
 /**
@@ -127,25 +126,38 @@ export class RuleSetsLoaderApi {
         }
 
         const ruleSetPath = this.getRuleSetPath(ruleSetId);
+        let metadataRange: ByteRange;
+
+        try {
+            metadataRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.DeclarativeMetadata);
+        } catch {
+            // If metadata rule is not found, we can fetch the full file
+            return fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath));
+        }
 
         const fullRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.Full);
-        const metadataRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.MetadataRule);
+
+        // We need to skip the metadata rule and the comma after it, e.g.
+        // `[metadata_rule, rule1, rule2, ..., ruleN]` -> ` rule1, rule2, ..., ruleN]`
+
+        // Note: there is an edge case when the ruleset only contains the metadata rule and it is minified.
+        // In this case, just adding 2 skips the closing bracket, not the comma, e.g.
+        // `[metadata_rule]` -> ``
+
+        // To handle this edge case, we compare the start index of the full range
+        // with the start index of the metadata
+        const relativeStartOffset = fullRange.end - metadataRange.end ? 2 : 1;
 
         const textAfterMetadata = await fetchExtensionResourceText(
             browser.runtime.getURL(ruleSetPath),
             {
-                start: metadataRange.end + 1,
+                start: metadataRange.end + relativeStartOffset,
                 end: fullRange.end,
             },
         );
 
-        // We just skip the first element from an array, e.g.
-        // `[metadata_rule, rule1, rule2, ..., ruleN]` -> `, rule1, rule2, ..., ruleN]`
-        // but to make it a valid JSON we need to add the missing opening bracket and remove the comma
-        if (textAfterMetadata.startsWith(JSON_ELEMENT_SEPARATOR)) {
-            return `${JSON_ARRAY_OPENING_BRACKET}${textAfterMetadata.slice(JSON_ELEMENT_SEPARATOR.length)}`;
-        }
-
+        // Since we fetched JSON array from a certain byte range, we probably lost the opening bracket,
+        // so we should add it back if it's missing
         if (!textAfterMetadata.startsWith(JSON_ARRAY_OPENING_BRACKET)) {
             return `${JSON_ARRAY_OPENING_BRACKET}${textAfterMetadata}`;
         }
