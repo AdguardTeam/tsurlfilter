@@ -351,7 +351,10 @@ export function getUtf8EncodedLength(str: string): number {
             byteLength += 4;
         }
 
-        // Increment by 1 if it's a basic character, by 2 if it's a surrogate pair
+        // Increment the index i:
+        // - By 1 for basic characters (within 0x0000 - 0xFFFF)
+        // - By 2 for characters encoded as surrogate pairs (code points above 0xFFFF)
+        // Surrogate pairs take up two 16-bit units in the internal UTF-16 representation in JavaScript.
         i += codePoint > 0xFFFF ? 2 : 1;
     }
 
