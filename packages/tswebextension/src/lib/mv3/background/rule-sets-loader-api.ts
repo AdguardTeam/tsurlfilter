@@ -53,7 +53,7 @@ export class RuleSetsLoaderApi {
     /**
      * Helper method to get the path to the rule set file.
      *
-     * @param ruleSetId Rule set id. Should be prefixed, e.g. with `ruleset_`.
+     * @param ruleSetId Rule set id. Should be prefixed with {@link RULESET_NAME_PREFIX}.
      *
      * @returns Path to the rule set file.
      *
