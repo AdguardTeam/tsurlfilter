@@ -13,7 +13,7 @@ import { appContext } from './app-context';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
-import FiltersApi, { RULE_SET_NAME_PREFIX, type UpdateStaticFiltersResult } from './filters-api';
+import FiltersApi, { RULESET_NAME_PREFIX, type UpdateStaticFiltersResult } from './filters-api';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
@@ -595,7 +595,7 @@ export class TsWebExtension implements AppInterface<
         }
 
         const staticRuleSetsTasks = staticFilters.map((f) => {
-            const ruleSetId = `${RULE_SET_NAME_PREFIX}${f.getId()}`;
+            const ruleSetId = `${RULESET_NAME_PREFIX}${f.getId()}`;
             return ruleSetsLoaderApi.createRuleSet(ruleSetId, staticFilters);
         });
 
