@@ -188,7 +188,7 @@ export const convertFilters = async (
         limitations.forEach((e) => console.log(e.message));
     }
 
-    const byteRangeMapsCollection = {} as ByteRangeMapCollection;
+    const byteRangeMapsCollection: ByteRangeMapCollection = {};
 
     for (let i = 0; i < convertedRuleSets.length; i += 1) {
         const ruleSet = convertedRuleSets[i];
