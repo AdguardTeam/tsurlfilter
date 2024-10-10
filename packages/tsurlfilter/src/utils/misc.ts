@@ -43,7 +43,7 @@ export function base64ToUint8Array(base64: string): Uint8Array {
  * Its just helps to keep the code clean and readable.
  *
  * @param data Data to serialize.
- * @param pretty If `true`, the JSON will be prettified.
+ * @param pretty If `true`, the JSON will be prettified with tabs.
  *
  * @returns Serialized JSON.
  */
