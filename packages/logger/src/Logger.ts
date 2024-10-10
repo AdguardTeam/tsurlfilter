@@ -249,14 +249,24 @@ export class Logger {
          * 3. Writer has `trace` method.
          */
         if (
-            method !== LogMethod.Error
-            && this.currentLevelValue >= levelMapStringToNum[LogLevel.Trace]
-            && 'trace' in this.writer
-            && typeof this.writer.trace === 'function'
+            method === LogMethod.Error
+            || this.currentLevelValue < levelMapStringToNum[LogLevel.Trace]
+            || !this.writer.trace
         ) {
-            this.writer.trace(formattedTime, ...formattedArgs);
-        } else {
+            // Print with regular method
             this.writer[method](formattedTime, ...formattedArgs);
+            return;
         }
+
+        if (!this.writer.groupCollapsed || !this.writer.groupEnd) {
+            // Print expanded trace
+            this.writer.trace(formattedTime, ...formattedArgs);
+            return;
+        }
+
+        // Print collapsed trace
+        this.writer.groupCollapsed(formattedTime, ...formattedArgs);
+        this.writer.trace();
+        this.writer.groupEnd();
     }
 }
