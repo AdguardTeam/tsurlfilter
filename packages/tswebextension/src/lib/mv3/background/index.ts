@@ -42,7 +42,7 @@ export type {
     SettingsConfigMV3 as SettingsConfig,
 } from './configuration';
 export { MessageType } from '../../common/message-constants';
-export { RULE_SET_NAME_PREFIX } from './filters-api';
+export { RULESET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
 export { companiesDbService } from '../../common/companies-db-service';
 export {
     getDomain,

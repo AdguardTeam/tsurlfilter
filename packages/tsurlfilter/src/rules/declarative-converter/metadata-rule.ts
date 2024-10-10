@@ -51,7 +51,7 @@ export type DeclarativeRuleWithMetadata = z.infer<typeof metadataRuleValidator>;
  *
  * @returns Dummy declarative rule.
  */
-const createDummyRule = (id = 1): DeclarativeRule => ({
+export const createDummyRule = (id = 1): DeclarativeRule => ({
     id,
     action: {
         type: RuleActionType.BLOCK,

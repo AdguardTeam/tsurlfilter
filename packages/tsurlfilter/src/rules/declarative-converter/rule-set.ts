@@ -2,9 +2,9 @@ import { RuleParser } from '@adguard/agtree';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
-import { EMPTY_STRING, TAB } from '../../common/constants';
-import { base64ToUint8Array, uint8ArrayToBase64 } from '../../utils/misc';
-import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
+import { EMPTY_STRING } from '../../common/constants';
+import { serializeJson, uint8ArrayToBase64 } from '../../utils/misc';
+import { getByteRangeFor } from '../../utils/byte-range';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
@@ -12,13 +12,19 @@ import { type IFilter } from './filter';
 import { UnavailableRuleSetSourceError } from './errors/unavailable-sources-errors/unavailable-rule-set-source-error';
 import { type ISourceMap, SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
 import { type IRulesHashMap } from './rules-hash-map';
-import { createMetadataRule, metadataRuleValidator } from './metadata-rule';
+import { createMetadataRule } from './metadata-rule';
 import {
     type SerializedRuleSetData,
     serializedRuleSetDataValidator,
     type SerializedRuleSetLazyData,
     serializedRuleSetLazyDataValidator,
 } from './rule-set-interfaces';
+import { type ByteRangeMap } from './byte-range-map';
+
+/**
+ * Prefix for ruleset name.
+ */
+export const RULESET_NAME_PREFIX = 'ruleset_';
 
 /**
  * The OriginalSource contains the text of the original rule and the filter
@@ -38,6 +44,56 @@ export type UpdateStaticRulesOptions = {
     rulesetId: string,
     disableRuleIds: number[],
 };
+
+/**
+ * Possible categories for byte range.
+ */
+export enum RuleSetByteRangeCategory {
+    /**
+     * Full byte range of the rule set file.
+     */
+    Full = 'full',
+
+    /**
+     * Byte range for the metadata rule, which is the first rule in the rule set.
+     */
+    MetadataRule = 'metadata_rule',
+
+    /**
+     * Byte range for the metadata of the rule set.
+     */
+    DeclarativeMetadata = 'declarative_metadata',
+
+    /**
+     * Byte range for the lazy metadata of the rule set.
+     */
+    DeclarativeLazyMetadata = 'declarative_lazy_metadata',
+
+    /**
+     * Byte range for the source map of the rule set.
+     */
+    DeclarativeSourceMap = 'declarative_source_map',
+
+    /**
+     * Byte range for the source map of the preprocessed filter list.
+     */
+    PreprocessedFilterListSourceMap = 'preprocessed_filter_list_source_map',
+
+    /**
+     * Byte range for the conversion map of the preprocessed filter list.
+     */
+    PreprocessedFilterListConversionMap = 'preprocessed_filter_list_conversion_map',
+
+    /**
+     * Byte range for the binary content of the preprocessed filter list.
+     */
+    PreprocessedFilterListBinary = 'preprocessed_filter_list_binary',
+
+    /**
+     * Byte range for the raw content of the preprocessed filter list.
+     */
+    PreprocessedFilterListRaw = 'preprocessed_filter_list_raw',
+}
 
 /**
  * Keeps converted declarative rules and source map for it.
@@ -122,11 +178,13 @@ export interface IRuleSet {
     /**
      * Serializes rule set to a single file.
      *
-     * @returns Serialized rule set.
+     * @param prettyPrint Whether to pretty print the output.
+     *
+     * @returns An object with serialized rule set and byte range map.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
-    serializeCompact(): Promise<string>;
+    serializeCompact(prettyPrint?: boolean): Promise<{ result: string, byteRangeMap: ByteRangeMap }>;
 }
 
 /**
@@ -365,7 +423,7 @@ export class RuleSet implements IRuleSet {
         } catch (e) {
             const id = this.getId();
             // eslint-disable-next-line max-len
-            const msg = `Cannot extract source rule for given declarativeRuleId ${declarativeRuleId} in rule set '${id}'`;
+            const msg = `Cannot extract source rule for given declarativeRuleId ${declarativeRuleId} in rule set '${id}', got error: ${getErrorMessage(e)}`;
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
     }
@@ -472,7 +530,7 @@ export class RuleSet implements IRuleSet {
             data = serializedRuleSetDataValidator.parse(objectFromString);
         } catch (e) {
             // eslint-disable-next-line max-len
-            const msg = `Cannot parse serialized ruleset's data with id "${id}" because of not available source`;
+            const msg = `Cannot parse serialized ruleset's data with id "${id}", got error: ${getErrorMessage(e)}`;
 
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
@@ -584,14 +642,28 @@ export class RuleSet implements IRuleSet {
     }
 
     /**
-     * Serializes rule set to a single file.
+     * Serializes rule set to a single file and produces a byte range map
+     * which can be used to extract specific parts of the file without
+     * loading the whole file into memory.
      *
-     * @returns Serialized rule set.
+     * @param prettyPrint Whether to pretty print the output.
+     *
+     * @returns An object with serialized rule set and byte range map.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
-    public async serializeCompact(): Promise<string> {
-        const [filter] = await this.ruleSetContentProvider.loadFilterList();
+    public async serializeCompact(prettyPrint = true): Promise<{ result: string, byteRangeMap: ByteRangeMap }> {
+        try {
+            await this.loadContent();
+        } catch (e) {
+            const id = this.getId();
+            const msg = `Cannot serialize ruleset '${id}' because of not available source`;
+            throw new UnavailableRuleSetSourceError(msg, id, e as Error);
+        }
+
+        // TODO: Improve this code once we introduce multiple filters within a single rule set
+        // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array
+        const filter = this.filterList.values().next().value!;
         const content = await filter.getContent();
 
         const metadataRule = createMetadataRule({
@@ -605,62 +677,31 @@ export class RuleSet implements IRuleSet {
 
         const declarativeRules = await this.getDeclarativeRules();
 
-        // Put metadata rule at the beginning of the rule set
         declarativeRules.unshift(metadataRule);
 
-        return JSON.stringify(declarativeRules, null, TAB);
-    }
+        const result = serializeJson(declarativeRules, prettyPrint);
 
-    /**
-     * Deserializes rule set from a single file.
-     *
-     * @param id Rule set id.
-     * @param rawContent Raw content of the rule set.
-     * @param filterList List of filters.
-     */
-    public static async deserializeCompact(
-        id: string,
-        rawContent: string,
-        filterList: IFilter[],
-    ): Promise<DeserializedRuleSet & PreprocessedFilterList> {
-        const objectFromString = JSON.parse(rawContent);
-        const possibleMetadataRule = objectFromString.shift();
-        const metadataRule = metadataRuleValidator.parse(possibleMetadataRule);
+        // Create byte range map
+        // `/0` is a pointer to the first element in the array
+        // When we serialize the rule set, we produce an array of rules and the metadata rule is always the first one
+        const byteRangeMap: ByteRangeMap = {
+            [RuleSetByteRangeCategory.MetadataRule]: getByteRangeFor(result, '/0'),
 
-        const { metadata } = metadataRule;
+            /* eslint-disable max-len */
+            [RuleSetByteRangeCategory.DeclarativeMetadata]: getByteRangeFor(result, '/0/metadata/metadata'),
+            [RuleSetByteRangeCategory.DeclarativeLazyMetadata]: getByteRangeFor(result, '/0/metadata/lazyMetadata'),
+            [RuleSetByteRangeCategory.DeclarativeSourceMap]: getByteRangeFor(result, '/0/metadata/lazyMetadata/sourceMapRaw'),
 
-        const deserializedRuleSet: DeserializedRuleSet = {
-            id,
-            data: metadata.metadata,
-            ruleSetContentProvider: {
-                loadSourceMap: async () => {
-                    const { sourceMapRaw } = metadata.lazyMetadata;
-                    const sources = SourceMap.deserializeSources(sourceMapRaw);
+            [RuleSetByteRangeCategory.PreprocessedFilterListSourceMap]: getByteRangeFor(result, '/0/metadata/sourceMap'),
+            [RuleSetByteRangeCategory.PreprocessedFilterListConversionMap]: getByteRangeFor(result, '/0/metadata/conversionMap'),
+            [RuleSetByteRangeCategory.PreprocessedFilterListBinary]: getByteRangeFor(result, '/0/metadata/filterList'),
+            [RuleSetByteRangeCategory.PreprocessedFilterListRaw]: getByteRangeFor(result, '/0/metadata/rawFilterList'),
+            /* eslint-enable max-len */
 
-                    return new SourceMap(sources);
-                },
-                loadFilterList: async () => {
-                    const { filterIds } = metadata.lazyMetadata;
-
-                    return filterList.filter((filter) => filterIds.includes(filter.getId()));
-                },
-                loadDeclarativeRules: async () => {
-                    const declarativeRules = DeclarativeRuleValidator
-                        .array()
-                        .parse(objectFromString);
-
-                    return declarativeRules;
-                },
-            },
+            // Get byte range for the whole array of rules (i.e. the whole file)
+            [RuleSetByteRangeCategory.Full]: getByteRangeFor(result, '/'),
         };
 
-        const deserializedFilterList: PreprocessedFilterList = {
-            sourceMap: metadata.sourceMap,
-            conversionMap: metadata.conversionMap,
-            filterList: metadata.filterList.map(base64ToUint8Array),
-            rawFilterList: metadata.rawFilterList,
-        };
-
-        return Object.assign(deserializedRuleSet, deserializedFilterList);
+        return { result, byteRangeMap };
     }
 }

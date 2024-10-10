@@ -3,7 +3,7 @@
  * but it is not worth creating a separate file for them
  */
 
-import { EMPTY_STRING } from '../common/constants';
+import { EMPTY_STRING, TAB } from '../common/constants';
 
 /**
  * A flag indicating whether the code is running in a browser.
@@ -36,4 +36,17 @@ export function base64ToUint8Array(base64: string): Uint8Array {
         uint8Array[i] = binary.charCodeAt(i);
     }
     return uint8Array;
+}
+
+/**
+ * Helper function to serialize data to JSON and optionally prettify it.
+ * Its just helps to keep the code clean and readable.
+ *
+ * @param data Data to serialize.
+ * @param pretty If `true`, the JSON will be prettified with tabs.
+ *
+ * @returns Serialized JSON.
+ */
+export function serializeJson(data: unknown, pretty = false): string {
+    return JSON.stringify(data, null, pretty ? TAB : undefined);
 }

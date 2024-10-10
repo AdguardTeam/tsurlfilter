@@ -61,7 +61,7 @@ module.exports = {
         'jsdoc/tag-lines': 'off',
         'jsdoc/require-throws': 'error',
         'jsdoc/check-tag-names': ['error', {
-            definedTags: ['jest-environment'],
+            definedTags: ['jest-environment', 'note'],
         }],
         'jsdoc/require-jsdoc': [
             'error',

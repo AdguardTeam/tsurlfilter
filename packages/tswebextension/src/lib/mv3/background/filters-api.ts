@@ -1,17 +1,18 @@
 import {
-    extractMetadataContent, Filter, type IFilter,
+    Filter,
+    type IFilter,
+    RULESET_NAME_PREFIX,
+    RuleSetByteRangeCategory,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
 import {
     type PreprocessedFilterList,
 } from '@adguard/tsurlfilter';
-import { ByteBuffer } from '@adguard/agtree';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import { type ConfigurationMV3 } from './configuration';
-
-export const RULE_SET_NAME_PREFIX = 'ruleset_';
+import { type RuleSetsLoaderApi } from './rule-sets-loader-api';
 
 export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[],
@@ -56,8 +57,8 @@ export default class FiltersApi {
             errors: [],
         };
 
-        const enableRulesetIds = enableFiltersIds?.map((filterId) => `${RULE_SET_NAME_PREFIX}${filterId}`) || [];
-        const disableRulesetIds = disableFiltersIds?.map((filterId) => `${RULE_SET_NAME_PREFIX}${filterId}`) || [];
+        const enableRulesetIds = enableFiltersIds?.map((filterId) => `${RULESET_NAME_PREFIX}${filterId}`) || [];
+        const disableRulesetIds = disableFiltersIds?.map((filterId) => `${RULESET_NAME_PREFIX}${filterId}`) || [];
 
         try {
             await browser.declarativeNetRequest.updateEnabledRulesets({
@@ -85,26 +86,7 @@ export default class FiltersApi {
      */
     public static async getEnabledRuleSets(): Promise<number[]> {
         const ruleSets = await browser.declarativeNetRequest.getEnabledRulesets();
-        return ruleSets.map((f) => Number.parseInt(f.slice(RULE_SET_NAME_PREFIX.length), 10));
-    }
-
-    /**
-     * Helper method to load chunks from ArrayBuffer.
-     *
-     * @param arrayBuffer ArrayBuffer to load chunks from.
-     *
-     * @returns List of Uint8Array chunks.
-     */
-    private static async loadChunksFromArrayBuffer(arrayBuffer: ArrayBuffer): Promise<Uint8Array[]> {
-        // we can assume that the arrayBuffer.byteLength is divisible by ByteBuffer.CHUNK_SIZE
-        const chunkSize = ByteBuffer.CHUNK_SIZE;
-        const totalChunks = arrayBuffer.byteLength / chunkSize;
-
-        return Array.from({ length: totalChunks }, (_, i) => {
-            const start = i * chunkSize;
-            const end = Math.min(start + chunkSize, arrayBuffer.byteLength);
-            return new Uint8Array(arrayBuffer.slice(start, end));
-        });
+        return ruleSets.map((f) => Number.parseInt(f.slice(RULESET_NAME_PREFIX.length), 10));
     }
 
     /**
@@ -112,23 +94,29 @@ export default class FiltersApi {
      * from field 'filtersPath' of the {@link Configuration}).
      *
      * @param id Filter id.
-     * @param filtersPath Path to filters directory.
+     * @param ruleSetsLoaderApi RuleSetsLoaderApi instance.
      *
      * @returns Promise resolved file content as a list of strings.
      */
-    private static async loadFilterContent(id: number, filtersPath: string): Promise<PreprocessedFilterList> {
+    private static async loadFilterContent(
+        id: number,
+        ruleSetsLoaderApi: RuleSetsLoaderApi,
+    ): Promise<PreprocessedFilterList> {
         // TODO: Add a logic that creates byte buffers to IDB after extension updates
-        // to avoid reading files every time
-        const ruleSetPath = `${filtersPath}/declarative/ruleset_${id}/ruleset_${id}.json`;
-        const ruleSetContent = await extractMetadataContent(ruleSetPath);
+        const ruleSetId = `${RULESET_NAME_PREFIX}${id}`;
 
-        const {
-            rawFilterList,
-            conversionMap,
-            sourceMap,
-        } = ruleSetContent;
+        // Trigger all async requests concurrently
+        const [rawFilterList, conversionMap, sourceMap, filterListBase64] = await Promise.all([
+            /* eslint-disable max-len */
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.PreprocessedFilterListRaw).then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.PreprocessedFilterListConversionMap).then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.PreprocessedFilterListSourceMap).then(JSON.parse),
+            ruleSetsLoaderApi.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.PreprocessedFilterListBinary).then(JSON.parse),
+            /* eslint-enable max-len */
+        ]);
 
-        const filterList = ruleSetContent.filterList.map(base64ToUint8Array);
+        // Convert the base64 encoded filter list to Uint8Array
+        const filterList = filterListBase64.map(base64ToUint8Array);
 
         return {
             rawFilterList,
@@ -142,17 +130,17 @@ export default class FiltersApi {
      * Loads content for provided filters ids;.
      *
      * @param filtersIds List of filters ids.
-     * @param filtersPath Path to filters directory.
+     * @param ruleSetsLoaderApi RuleSetsLoaderApi instance.
      *
      * @returns List of {@link IFilter} with a lazy content loading feature.
      */
     static createStaticFilters(
         filtersIds: ConfigurationMV3['staticFiltersIds'],
-        filtersPath: string,
+        ruleSetsLoaderApi: RuleSetsLoaderApi,
     ): IFilter[] {
         return filtersIds.map((filterId) => new Filter(
             filterId,
-            { getContent: () => this.loadFilterContent(filterId, filtersPath) },
+            { getContent: () => this.loadFilterContent(filterId, ruleSetsLoaderApi) },
             /**
              * Static filters are trusted.
              */

@@ -1009,7 +1009,7 @@ importers:
         version: 29.1.2(@babel/core@7.24.3)(jest@29.7.0)(typescript@5.4.2)
       ts-node:
         specifier: ^10.9.2
-        version: 10.9.2(@swc/core@1.7.24)(@types/node@20.11.30)(typescript@5.4.2)
+        version: 10.9.2(@swc/core@1.4.8)(@types/node@20.11.30)(typescript@5.4.2)
       tslib:
         specifier: ^2.6.2
         version: 2.6.2
@@ -1043,6 +1043,9 @@ importers:
       is-ip:
         specifier: 3.1.0
         version: 3.1.0
+      jsonpos:
+        specifier: ^4.1.2
+        version: 4.1.2
       lru_map:
         specifier: 0.4.1
         version: 0.4.1
@@ -7971,7 +7974,7 @@ packages:
       webpack: '>=4.0.0 <6.0.0'
     dependencies:
       del: 4.1.1
-      webpack: 5.90.3(@swc/core@1.7.23)
+      webpack: 5.90.3(@swc/core@1.4.8)
     dev: true
 
   /cli-boxes@2.2.1:
@@ -8365,7 +8368,7 @@ packages:
       normalize-path: 3.0.0
       schema-utils: 4.2.0
       serialize-javascript: 6.0.2
-      webpack: 5.90.3(@swc/core@1.7.23)
+      webpack: 5.90.3(@swc/core@1.4.8)
     dev: true
 
   /core-js-pure@3.36.1:
@@ -12222,7 +12225,7 @@ packages:
       lodash: 4.17.21
       pretty-error: 4.0.0
       tapable: 2.2.1
-      webpack: 5.90.3(@swc/core@1.7.23)
+      webpack: 5.90.3(@swc/core@1.4.8)
     dev: true
 
   /htmlparser2@6.1.0:
@@ -13363,7 +13366,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.7.24)(@types/node@20.11.30)(typescript@5.4.2)
+      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@18.7.1)(typescript@4.7.4)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
@@ -13946,6 +13949,17 @@ packages:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
     dev: true
 
+  /json-cst@1.2.0:
+    resolution: {integrity: sha512-liC8jqILo2mZjKs/c/zDknohoLo2FocQH5ZGyPZzPNNHSC/LarVq42R4WA58lqPdH9ssP/JKArp6SZ6aP7vyhA==}
+    engines: {node: ^14.13.1 || >=16.0.0}
+    dependencies:
+      json-lexer: 1.2.0
+    dev: false
+
+  /json-lexer@1.2.0:
+    resolution: {integrity: sha512-7otpx5UPFeSELoF8nkZPHCfywg86wOsJV0WNOaysuO7mfWj1QFp2vlqESRRCeJKBXr+tqDgHh4HgqUFKTLcifQ==}
+    dev: false
+
   /json-merge-patch@0.2.3:
     resolution: {integrity: sha512-mjd5eObNGOhWkKCztwVuF25KOzLj2T4TJaWXLBgCQPeoPRJrMxKNgjNBE8sPmXoWRT0WDlo4Itd/gTlFh29TFw==}
     dependencies:
@@ -14017,6 +14031,13 @@ packages:
     resolution: {integrity: sha512-POQXvpdL69+CluYsillJ7SUhKvytYjW9vG/GKpnf+xP8UWgYEM/RaMzHHofbALDiKbbP1W8UEYmgGl39WkPZsg==}
     engines: {'0': node >= 0.2.0}
     dev: true
+
+  /jsonpos@4.1.2:
+    resolution: {integrity: sha512-cn+7TiBMq9VUsHKp+8uZeSY0K2ZnjEwurSA8uJlBoOmMA7w67axpvfv+v77A/8iEXLkXMN06uvEzblGj51+VBQ==}
+    engines: {node: ^14.13.1 || >=16.0.0}
+    dependencies:
+      json-cst: 1.2.0
+    dev: false
 
   /jsonwebtoken@8.5.1:
     resolution: {integrity: sha512-XjwVfRS6jTMsqYs0EsuJ4LGxXV14zQybNd4L2r0UvbVnSF9Af8x7p5MzbJ90Ioz/9TI41/hTCvznF/loiSzn8w==}

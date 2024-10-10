@@ -18,7 +18,7 @@ import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
 import { declarativeFilteringLog } from './declarative-filtering-log';
-import RuleSetsLoaderApi from './rule-sets-loader-api';
+import { RuleSetsLoaderApi } from './rule-sets-loader-api';
 import { Assistant } from './assistant';
 import {
     type ConfigurationMV3,
@@ -555,7 +555,7 @@ export class TsWebExtension implements AppInterface<
         // Wrap filters to tsurlfilter.IFilter
         const staticFilters = FiltersApi.createStaticFilters(
             parsedConfiguration.staticFiltersIds,
-            parsedConfiguration.filtersPath,
+            new RuleSetsLoaderApi(parsedConfiguration.ruleSetsPath),
         );
         const customFilters = FiltersApi.createCustomFilters(
             parsedConfiguration.customFilters,
