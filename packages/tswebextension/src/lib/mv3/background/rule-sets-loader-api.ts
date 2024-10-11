@@ -59,14 +59,22 @@ export class RuleSetsLoaderApi {
     /**
      * Helper method to get the path to the rule set file.
      *
-     * @param ruleSetId Rule set id. Should be prefixed with {@link RULESET_NAME_PREFIX}.
+     * @param ruleSetId Rule set id. Can be a number or a string.
      *
      * @returns Path to the rule set file.
      *
      * @note This is just a path, not a URL. To get a URL, use {@link browser.runtime.getURL}.
+     * @note Rule set ID automatically gets a {@link RULESET_NAME_PREFIX} prefix if it doesn't have it,
+     * e.g. `123` -> `ruleset_123` or `foo` -> `ruleset_foo`.
      */
-    private getRuleSetPath(ruleSetId: string): string {
-        return `${this.ruleSetsPath}/${ruleSetId}/${ruleSetId}.json`;
+    private getRuleSetPath(ruleSetId: string | number): string {
+        let ruleSetIdStr = String(ruleSetId);
+
+        if (!ruleSetIdStr.startsWith(RULESET_NAME_PREFIX)) {
+            ruleSetIdStr = `${RULESET_NAME_PREFIX}${ruleSetIdStr}`;
+        }
+
+        return `${this.ruleSetsPath}/${ruleSetIdStr}/${ruleSetIdStr}.json`;
     }
 
     /**
