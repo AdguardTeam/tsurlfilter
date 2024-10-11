@@ -32,6 +32,13 @@ export class RuleSetsLoaderApi {
     private isInitialized: boolean;
 
     /**
+     * Promise that resolves when the initialization is complete.
+     * This helps prevent multiple fetches by ensuring {@link RuleSetsLoaderApi.initialize}
+     * is only called once, even if invoked multiple times in quick succession.
+     */
+    private initializerPromise: Promise<void> | undefined;
+
+    /**
      * Byte range maps collection.
      * This collection is used to fetch certain parts of the rule set files instead of the whole files
      * and makes possible to use less memory.
@@ -75,15 +82,28 @@ export class RuleSetsLoaderApi {
             return;
         }
 
-        const byteRangeMapsRulesetBaseName = `${RULESET_NAME_PREFIX}${BYTE_RANGE_MAP_RULE_SET_ID}`;
+        if (this.initializerPromise) {
+            await this.initializerPromise;
+            return;
+        }
 
-        this.byteRangeMapsCollection = await fetchAndDeserializeByteRangeMaps(
-            browser.runtime.getURL(
-                this.getRuleSetPath(byteRangeMapsRulesetBaseName),
-            ),
-        );
+        const initialize = async (): Promise<void> => {
+            const byteRangeMapsRulesetBaseName = `${RULESET_NAME_PREFIX}${BYTE_RANGE_MAP_RULE_SET_ID}`;
 
-        this.isInitialized = true;
+            this.byteRangeMapsCollection = await fetchAndDeserializeByteRangeMaps(
+                browser.runtime.getURL(
+                    this.getRuleSetPath(byteRangeMapsRulesetBaseName),
+                ),
+            );
+
+            this.isInitialized = true;
+        };
+
+        this.initializerPromise = initialize().then(() => {
+            this.initializerPromise = undefined;
+        });
+
+        await this.initializerPromise;
     }
 
     /**
