@@ -15,6 +15,7 @@ import {
 import browser from 'webextension-polyfill';
 
 const JSON_ARRAY_OPENING_BRACKET = '[';
+const JSON_ARRAY_CLOSING_BRACKET = ']';
 
 /**
  * RuleSetsLoaderApi can create {@link IRuleSet} from the provided rule set ID
@@ -147,6 +148,8 @@ export class RuleSetsLoaderApi {
      * @param ruleSetId Rule set id.
      *
      * @returns Raw JSON string with declarative rules.
+     *
+     * @throws Error if the metadata rule is not found in the rule set file.
      */
     private async getDeclarativeRulesWithoutMetadataRule(ruleSetId: string): Promise<string> {
         if (!this.isInitialized) {
@@ -154,43 +157,75 @@ export class RuleSetsLoaderApi {
         }
 
         const ruleSetPath = this.getRuleSetPath(ruleSetId);
-        let metadataRange: ByteRange;
 
-        try {
-            metadataRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.DeclarativeMetadata);
-        } catch {
-            // If metadata rule is not found, we can fetch the full file
-            return fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath));
-        }
+        // The ruleset file contains rules stored in a JSON array with the following structure:
+        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
+        // The first element is always the metadata rule, which provides information about the ruleset.
+        // Our goal is to exclude this metadata rule and fetch only the actual rules,
+        // because metadata can be very large (even several MBs) and it is not a real rule, so we don't need it here.
 
+        // First, we get the byte range of the metadata rule:
+        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
+        //   ^^^^^^^^^^^^^^^^^
+        // This helps us locate the metadata rule's start and end positions in the file.
+
+        // Next, we fetch the byte range of the entire JSON array:
+        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
+        //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        // This provides the start and end positions of the entire ruleset.
+
+        // Using these two ranges, we calculate the byte positions for the rules excluding the metadata:
+        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
+        //                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        const metadataRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.DeclarativeMetadata);
         const fullRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.Full);
 
-        // We need to skip the metadata rule and the comma after it, e.g.
-        // `[metadata_rule, rule1, rule2, ..., ruleN]` -> ` rule1, rule2, ..., ruleN]`
+        // After the metadata rule, there may be a comma or a closing bracket.
+        // During fetching, `metadataRange.end` points to the last character of the metadata rule:
+        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
+        //                   ^
+        //                   `metadataRange.end`
 
-        // Note: there is an edge case when the ruleset only contains the metadata rule and it is minified.
-        // In this case, just adding 2 skips the closing bracket, not the comma, e.g.
-        // `[metadata_rule]` -> ``
+        // By adding just +1, we still include the comma:
+        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
+        //                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        // Therefore, we add +2 to skip the comma too.
+        // This may include some whitespace characters (as you can see on the example),
+        // but they are ignored when parsing the JSON, so we don't need to worry about them.
 
-        // To handle this edge case, we compare the start index of the full range
-        // with the start index of the metadata
-        const relativeStartOffset = fullRange.end - metadataRange.end ? 2 : 1;
-
+        // Now, we fetch the rules excluding the metadata rule:
         const textAfterMetadata = await fetchExtensionResourceText(
             browser.runtime.getURL(ruleSetPath),
             {
-                start: metadataRange.end + relativeStartOffset,
+                start: metadataRange.end + 2,
                 end: fullRange.end,
             },
         );
 
-        // Since we fetched JSON array from a certain byte range, we probably lost the opening bracket,
-        // so we should add it back if it's missing
-        if (!textAfterMetadata.startsWith(JSON_ARRAY_OPENING_BRACKET)) {
-            return `${JSON_ARRAY_OPENING_BRACKET}${textAfterMetadata}`;
+        // Note: we do not need to trim the text because we do not include additional whitespace characters
+        // after our rulesets.
+
+        // Since we skipped the metadata rule, we also lost the opening bracket of the JSON array:
+        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
+        //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        // To make the JSON valid again, we need to prepend the opening bracket before the fetched rules:
+        // `[ { rule1 }, { rule2 }, ..., { ruleN }]`
+        //   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        //         (we fetched this content)
+        let rawJson = `${JSON_ARRAY_OPENING_BRACKET}${textAfterMetadata}`;
+
+        // Edge case: If the ruleset contains only the metadata rule _and_ is minified, adding +2
+        // skips the closing bracket, not the comma:
+        // `[{ metadata_rule }]`
+        //                    ^
+        // This may never happens in practice, but we handle it just in case.
+        if (!rawJson.endsWith(JSON_ARRAY_CLOSING_BRACKET)) {
+            rawJson += JSON_ARRAY_CLOSING_BRACKET;
         }
 
-        return textAfterMetadata;
+        return rawJson;
     }
 
     /**
