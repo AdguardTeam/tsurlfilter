@@ -75,6 +75,12 @@ export class Frame {
     public url: string;
 
     /**
+     * Main frame url.
+     * Used to check if we need to inject script via blob or via script tag. See {@link CosmeticApi.shouldUseBlob}.
+     */
+    public mainFrameUrl?: string;
+
+    /**
      * Tab id.
      */
     public tabId: number;

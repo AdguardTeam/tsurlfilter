@@ -12,10 +12,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Correct export of `EXTENDED_CSS_VERSION` for mv3 version.
+
+## [2.4.0-alpha.3] - 2024-10-09
+
+### Changed
+
+- Updated `@adguard/logger` to `v1.1.0`.
+
+### Fixed
+
 - MV3 extension cannot apply rules to `about:blank` iframes [AdguardBrowserExtension#2975].
 - JS rules are blocked by Trusted Types on some websites [AdguardBrowserExtension#2980].
 - Scriptlets logging does not work [AdguardBrowserExtension#2977].
 
+[2.4.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.3
 [AdguardBrowserExtension#2975]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2975
 [AdguardBrowserExtension#2977]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2977
 [AdguardBrowserExtension#2980]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2980
@@ -34,9 +45,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `companyCategoryName` property in filtering log `ApplyBasicRuleEvent` for `$redirect` rules [#137].
 - `isAssuredlyBlocked` property in filtering log `ApplyBasicRuleEvent` for definitely blocked requests im MV3.
 
-[#137]: https://github.com/AdguardTeam/tsurlfilter/issues/137
 [2.3.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.3.0-alpha.1
+[#137]: https://github.com/AdguardTeam/tsurlfilter/issues/137
 
+## [2.0.3] - 2024-09-26
+
+### Changed
+
+- Updated `@adguard/agtree` to `v2.1.2`.
+- Updated `@adguard/tsurlfilter` to `v3.0.5`.
+- Updated `@adguard/scriptlets` to `v1.12.1`.
+
+[2.0.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.3
 
 ## [2.2.0-alpha.1] - 2024-08-30
 
@@ -55,7 +75,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.2.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.2.0-alpha.1
 [#139]: https://github.com/AdguardTeam/tsurlfilter/issues/139
 
-
 ## [2.0.2] - 2024-08-29
 
 ### Changed
@@ -64,7 +83,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `@adguard/scriptlets` to `v1.11.27`.
 
 [2.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.2
-
 
 ## [2.0.1] - 2024-08-27
 
