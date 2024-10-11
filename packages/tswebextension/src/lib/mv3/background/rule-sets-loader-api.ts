@@ -70,7 +70,7 @@ export class RuleSetsLoaderApi {
      *
      * @throws Error if the byte range maps collection file is not found or its content is invalid.
      */
-    public async initialize(): Promise<void> {
+    private async initialize(): Promise<void> {
         if (this.isInitialized) {
             return;
         }
