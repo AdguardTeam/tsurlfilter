@@ -10,16 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Fixed
-
-- Correct export of `EXTENDED_CSS_VERSION` for mv3 version.
-
 ### Changed
 
 - Updated `@adguard/tsurlfilter` to `v3.1.0-alpha.6`, which includes the byte range maps feature.
   This feature allows retrieving only specific parts of the ruleset `.json` file, saving memory
   and improving performance.
 - Renamed export `RULE_SET_NAME_PREFIX` to `RULESET_NAME_PREFIX`.
+
+### Fixed
+
+- Correct export of `EXTENDED_CSS_VERSION` for mv3 version.
 
 ## [2.4.0-alpha.3] - 2024-10-09
 

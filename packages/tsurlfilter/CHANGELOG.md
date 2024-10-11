@@ -10,11 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Changed
-
-- Declarative converter adds each necessary information to the ruleset `.json` file,
-  other files are not needed anymore (like raw `.txt` files, `metadata.json` files, etc).
-
 ### Added
 
 - Metadata declarative rule to hold additional information about the filter list.
@@ -22,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   raw filter list rules, declarative metadata, lazy metadata, conversion map, source map, etc.
 - Byte range maps. This feature allows retrieving only specific parts of the ruleset `.json` file, saving memory
   and improving performance.
+
+### Changed
+
+- Declarative converter adds each necessary information to the ruleset `.json` file,
+  other files are not needed anymore (like raw `.txt` files, `metadata.json` files, etc).
 
 ## [3.1.0-alpha.6] - 2024-10-09
 
