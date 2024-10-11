@@ -106,11 +106,10 @@ export class RuleSetsLoaderApi {
             );
 
             this.isInitialized = true;
+            this.initializerPromise = undefined;
         };
 
-        this.initializerPromise = initialize().then(() => {
-            this.initializerPromise = undefined;
-        });
+        this.initializerPromise = initialize();
 
         await this.initializerPromise;
     }
