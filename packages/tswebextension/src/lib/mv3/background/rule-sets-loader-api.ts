@@ -27,7 +27,7 @@ export class RuleSetsLoaderApi {
     private ruleSetsPath: string;
 
     /**
-     * Flag that indicates whether the rule sets loader is initialized.
+     * Indicates whether the rule sets loader is initialized.
      */
     private isInitialized: boolean;
 
