@@ -24,6 +24,7 @@ function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
  * Converts error to the error with message.
  *
  * @param maybeError Possible error.
+ * @returns Error with message.
  */
 function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
     if (isErrorWithMessage(maybeError)) {
