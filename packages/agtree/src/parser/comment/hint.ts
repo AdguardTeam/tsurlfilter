@@ -63,9 +63,16 @@ const FREQUENT_HINTS_SERIALIZATION_MAP = new Map<string, number>([
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-const FREQUENT_HINTS_DESERIALIZATION_MAP = new Map<number, string>(
-    Array.from(FREQUENT_HINTS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-);
+let FREQUENT_HINTS_DESERIALIZATION_MAP: Map<number, string>;
+const getFrequentHintsDeserializationMap = () => {
+    if (!FREQUENT_HINTS_DESERIALIZATION_MAP) {
+        FREQUENT_HINTS_DESERIALIZATION_MAP = new Map<number, string>(
+            Array.from(FREQUENT_HINTS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+        );
+    }
+
+    return FREQUENT_HINTS_DESERIALIZATION_MAP;
+};
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
@@ -93,9 +100,16 @@ const FREQUENT_PLATFORMS_SERIALIZATION_MAP = new Map<string, number>([
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-const FREQUENT_PLATFORMS_DESERIALIZATION_MAP = new Map<number, string>(
-    Array.from(FREQUENT_PLATFORMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-);
+let FREQUENT_PLATFORMS_DESERIALIZATION_MAP: Map<number, string>;
+const getFrequentPlatformsDeserializationMap = () => {
+    if (!FREQUENT_PLATFORMS_DESERIALIZATION_MAP) {
+        FREQUENT_PLATFORMS_DESERIALIZATION_MAP = new Map<number, string>(
+            Array.from(FREQUENT_PLATFORMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+        );
+    }
+
+    return FREQUENT_PLATFORMS_DESERIALIZATION_MAP;
+};
 
 /**
  * `HintParser` is responsible for parsing AdGuard hints.
@@ -318,12 +332,12 @@ export class HintParser extends ParserBase {
         while (prop !== NULL) {
             switch (prop) {
                 case HintNodeSerializationMap.Name:
-                    ValueParser.deserialize(buffer, node.name = {} as Value, FREQUENT_HINTS_DESERIALIZATION_MAP);
+                    ValueParser.deserialize(buffer, node.name = {} as Value, getFrequentHintsDeserializationMap());
                     break;
 
                 case HintNodeSerializationMap.Params:
                     // eslint-disable-next-line max-len
-                    ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, FREQUENT_PLATFORMS_DESERIALIZATION_MAP);
+                    ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, getFrequentPlatformsDeserializationMap());
                     break;
 
                 case HintNodeSerializationMap.Start:
