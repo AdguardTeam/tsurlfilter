@@ -53,9 +53,7 @@ const SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-let SEPARATOR_DESERIALIZATION_MAP:Map<number, string> = new Map<number, string>(
-    Array.from(SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-);
+let SEPARATOR_DESERIALIZATION_MAP:Map<number, string>;
 const getSeparatorDeserializationMap = () => {
     if (SEPARATOR_DESERIALIZATION_MAP.size !== SEPARATOR_SERIALIZATION_MAP.size) {
         SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
