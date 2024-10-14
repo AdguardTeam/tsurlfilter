@@ -276,7 +276,6 @@ describe('DeclarativeRuleConverter', () => {
             condition: {
                 urlFilter: '||example.org^',
                 resourceTypes: ['script'],
-
             },
         });
 
@@ -297,8 +296,7 @@ describe('DeclarativeRuleConverter', () => {
             },
             condition: {
                 urlFilter: '||example.org^',
-                excludedResourceTypes: ['script'],
-
+                excludedResourceTypes: ['script', 'main_frame'],
             },
         });
 
@@ -324,7 +322,7 @@ describe('DeclarativeRuleConverter', () => {
             [filterWithMultipleNegatedRequestTypesRules],
         );
         expect(multipleNegatedDeclarativeRule!.condition?.excludedResourceTypes?.sort())
-            .toEqual(['script', 'sub_frame'].sort());
+            .toEqual(['script', 'sub_frame', 'main_frame'].sort());
     });
 
     it('set rules case sensitive if necessary', async () => {

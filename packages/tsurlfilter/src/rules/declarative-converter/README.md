@@ -1456,7 +1456,8 @@ example 3
       "excludedResourceTypes": [
         "stylesheet",
         "script",
-        "image"
+        "image",
+        "main_frame"
       ]
     },
     "priority": 2

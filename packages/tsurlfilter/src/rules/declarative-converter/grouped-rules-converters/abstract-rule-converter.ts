@@ -611,6 +611,14 @@ export abstract class DeclarativeRuleConverter {
         const hasExcludedResourceTypes = restrictedRequestTypes !== 0;
         if (hasExcludedResourceTypes) {
             condition.excludedResourceTypes = this.getResourceTypes(restrictedRequestTypes);
+
+            /**
+             * By default, we do not block the requests that
+             * are loaded in the browser tab ("main_frame").
+             */
+            if (!condition.excludedResourceTypes.includes(ResourceType.MainFrame)) {
+                condition.excludedResourceTypes.push(ResourceType.MainFrame);
+            }
         }
 
         // set resourceTypes
