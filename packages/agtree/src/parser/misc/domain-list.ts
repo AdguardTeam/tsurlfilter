@@ -53,9 +53,17 @@ const SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-const SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
+let SEPARATOR_DESERIALIZATION_MAP:Map<number, string> = new Map<number, string>(
     Array.from(SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
 );
+const getSeparatorDeserializationMap = () => {
+    if (SEPARATOR_DESERIALIZATION_MAP.size !== SEPARATOR_SERIALIZATION_MAP.size) {
+        SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
+            Array.from(SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+        );
+    }
+    return SEPARATOR_DESERIALIZATION_MAP;
+};
 
 /**
  * `DomainListParser` is responsible for parsing a domain list.
@@ -157,7 +165,7 @@ export class DomainListParser extends ParserBase {
             switch (prop) {
                 case DomainListSerializationMap.Separator:
                     // eslint-disable-next-line max-len
-                    node.separator = (SEPARATOR_DESERIALIZATION_MAP.get(buffer.readUint8()) ?? COMMA) as DomainListSeparator;
+                    node.separator = (getSeparatorDeserializationMap().get(buffer.readUint8()) ?? COMMA) as DomainListSeparator;
                     break;
 
                 case DomainListSerializationMap.Children:
