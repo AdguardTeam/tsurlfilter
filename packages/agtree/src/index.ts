@@ -69,7 +69,7 @@ export { FilterListParser } from './parser/filterlist';
 export { HintCommentRuleParser } from './parser/comment/hint-rule';
 export { HintParser } from './parser/comment/hint';
 export { LogicalExpressionParser } from './parser/misc/logical-expression';
-export { MetadataCommentRuleParser, KNOWN_METADATA_HEADERS } from './parser/comment/metadata';
+export { MetadataCommentRuleParser, getKnownMetadataHeaders } from './parser/comment/metadata';
 export { ModifierListParser } from './parser/misc/modifier-list';
 export { ModifierParser } from './parser/misc/modifier';
 export { NetworkRuleParser } from './parser/network';
