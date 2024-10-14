@@ -72,14 +72,28 @@ const FREQUENT_HEADERS_DESERIALIZATION_MAP = new Map<number, string>([
  * @note This map is generated from `FREQUENT_HEADERS_DESERIALIZATION_MAP` to keep uppercase characters
  * while deserializing.
  */
-const FREQUENT_HEADERS_SERIALIZATION_MAP = new Map<string, number>(
-    Array.from(FREQUENT_HEADERS_DESERIALIZATION_MAP.entries()).map(([key, value]) => [value.toLowerCase(), key]),
-);
+let FREQUENT_HEADERS_SERIALIZATION_MAP: Map<string, number>;
+const getFrequentHeadersSerializationMap = () => {
+    if (!FREQUENT_HEADERS_SERIALIZATION_MAP) {
+        FREQUENT_HEADERS_SERIALIZATION_MAP = new Map<string, number>(
+            Array.from(FREQUENT_HEADERS_DESERIALIZATION_MAP.entries())
+                .map(([key, value]) => [value.toLowerCase(), key]),
+        );
+    }
+    return FREQUENT_HEADERS_SERIALIZATION_MAP;
+}
 
 /**
  * Known metadata headers.
  */
-export const KNOWN_METADATA_HEADERS = Array.from(FREQUENT_HEADERS_SERIALIZATION_MAP.keys());
+let KNOWN_METADATA_HEADERS: string[];
+// FIXME used only in this file, probably should not be exported
+export const getKnownMetadataHeaders = () => {
+    if (!KNOWN_METADATA_HEADERS) {
+        KNOWN_METADATA_HEADERS = Array.from(getFrequentHeadersSerializationMap().keys());
+    }
+    return KNOWN_METADATA_HEADERS;
+};
 
 /**
  * `MetadataParser` is responsible for parsing metadata comments.
@@ -133,11 +147,11 @@ export class MetadataCommentRuleParser extends ParserBase {
         // Check if the comment text starts with a known header
         const text = raw.slice(offset);
 
-        for (let i = 0; i < KNOWN_METADATA_HEADERS.length; i += 1) {
+        for (let i = 0; i < getKnownMetadataHeaders().length; i += 1) {
             // Check if the comment text starts with the header (case-insensitive)
-            if (text.toLocaleLowerCase().startsWith(KNOWN_METADATA_HEADERS[i].toLocaleLowerCase())) {
+            if (text.toLocaleLowerCase().startsWith(getKnownMetadataHeaders()[i].toLocaleLowerCase())) {
                 // Skip the header
-                offset += KNOWN_METADATA_HEADERS[i].length;
+                offset += getKnownMetadataHeaders()[i].length;
 
                 // Save header
                 const header = ValueParser.parse(raw.slice(headerStart, offset), options, baseOffset + headerStart);
@@ -229,7 +243,7 @@ export class MetadataCommentRuleParser extends ParserBase {
         ValueParser.serialize(node.marker, buffer);
 
         buffer.writeUint8(MetadataCommentRuleSerializationMap.Header);
-        ValueParser.serialize(node.header, buffer, FREQUENT_HEADERS_SERIALIZATION_MAP, true);
+        ValueParser.serialize(node.header, buffer, getFrequentHeadersSerializationMap(), true);
 
         buffer.writeUint8(MetadataCommentRuleSerializationMap.Value);
         ValueParser.serialize(node.value, buffer);
