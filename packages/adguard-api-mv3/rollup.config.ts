@@ -45,7 +45,11 @@ const backgroundConfig = {
     external: [
         '@adguard/logger',
         '@adguard/tswebextension/mv3',
+        '@adguard/tswebextension',
         'zod',
+        'zod-validation-error',
+        'nanoid',
+        'idb',
     ],
     plugins: [[
         json(),

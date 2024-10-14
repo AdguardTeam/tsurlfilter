@@ -136,13 +136,13 @@ export default class FiltersApi {
      * Wraps static filters into {@link IFilter}.
      *
      * @param filtersIds List of filters ids.
-     * @param ruleSetsLoaderApi RuleSetsLoaderApi instance.
+     * @param loadFilterContent Function to load filter content.
      *
      * @returns List of {@link IFilter} with a lazy content loading feature.
      */
     static createStaticFilters(
         filtersIds: ConfigurationMV3['staticFiltersIds'],
-        ruleSetsLoaderApi: RuleSetsLoaderApi,
+        loadFilterContent: ConfigurationMV3['loadFilterContent'],
     ): IFilter[] {
         return filtersIds.map((filterId) => {
             const filterFromCache = this.filtersCache.get(filterId);
@@ -152,7 +152,7 @@ export default class FiltersApi {
 
             const filter = new Filter(
                 filterId,
-                { getContent: () => this.loadFilterContent(filterId, ruleSetsLoaderApi) },
+                { getContent: () => loadFilterContent(filterId) },
                 /**
                  * Static filters are trusted.
                  */

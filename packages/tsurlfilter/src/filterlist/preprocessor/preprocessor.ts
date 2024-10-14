@@ -247,4 +247,18 @@ export class FilterListPreprocessor {
 
         return result;
     }
+
+    /**
+     * Creates an empty preprocessed filter list.
+     *
+     * @returns An empty preprocessed filter list.
+     */
+    public static createEmptyPreprocessedFilterList(): PreprocessedFilterList {
+        return {
+            filterList: [],
+            rawFilterList: '',
+            conversionMap: {},
+            sourceMap: {},
+        };
+    }
 }

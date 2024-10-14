@@ -87,5 +87,6 @@ module.exports = {
         ],
         'jsdoc/require-description-complete-sentence': ['error'],
         'jsdoc/require-returns': ['error'],
+        'jsdoc/no-defaults': 'off',
     },
 };

@@ -1,4 +1,5 @@
 import { RuleParser } from '@adguard/agtree';
+import zod from 'zod';
 import { type ByteRange, fetchExtensionResourceText } from '@adguard/tsurlfilter';
 import {
     type IFilter,
@@ -8,9 +9,9 @@ import {
     RulesHashMap,
     type ByteRangeMapCollection,
     BYTE_RANGE_MAP_RULE_SET_ID,
-    fetchAndDeserializeByteRangeMaps,
     RULESET_NAME_PREFIX,
     RuleSetByteRangeCategory,
+    deserializeByteRangeMaps,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
@@ -22,6 +23,8 @@ const JSON_ARRAY_CLOSING_BRACKET = ']';
  * with lazy loading (rule set contents will be loaded only after a request).
  */
 export class RuleSetsLoaderApi {
+    private static metadataRulesetContent: string | undefined;
+
     /**
      * Path to rule sets directory.
      */
@@ -47,6 +50,11 @@ export class RuleSetsLoaderApi {
     private byteRangeMapsCollection: ByteRangeMapCollection;
 
     /**
+     * Checksums of the rule sets.
+     */
+    private checksums: Record<string, string>;
+
+    /**
      * Creates new {@link RuleSetsLoaderApi}.
      *
      * @param ruleSetsPath Path to rule sets directory.
@@ -55,6 +63,24 @@ export class RuleSetsLoaderApi {
         this.ruleSetsPath = ruleSetsPath;
         this.isInitialized = false;
         this.byteRangeMapsCollection = {};
+        this.checksums = {};
+    }
+
+    /**
+     * Helper method to get the rule set ID with the {@link RULESET_NAME_PREFIX} prefix.
+     *
+     * @param ruleSetId Rule set id. Can be a number or a string.
+     *
+     * @returns Rule set ID with the {@link RULESET_NAME_PREFIX} prefix.
+     */
+    private static getRuleSetId(ruleSetId: string | number): string {
+        let ruleSetIdStr = String(ruleSetId);
+
+        if (!ruleSetIdStr.startsWith(RULESET_NAME_PREFIX)) {
+            ruleSetIdStr = `${RULESET_NAME_PREFIX}${ruleSetIdStr}`;
+        }
+
+        return ruleSetIdStr;
     }
 
     /**
@@ -69,13 +95,54 @@ export class RuleSetsLoaderApi {
      * e.g. `123` -> `ruleset_123` or `foo` -> `ruleset_foo`.
      */
     private getRuleSetPath(ruleSetId: string | number): string {
-        let ruleSetIdStr = String(ruleSetId);
-
-        if (!ruleSetIdStr.startsWith(RULESET_NAME_PREFIX)) {
-            ruleSetIdStr = `${RULESET_NAME_PREFIX}${ruleSetIdStr}`;
-        }
+        const ruleSetIdStr = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
 
         return `${this.ruleSetsPath}/${ruleSetIdStr}/${ruleSetIdStr}.json`;
+    }
+
+    /**
+     * Parses the checksums from the raw JSON string.
+     *
+     * @param rawJson Raw JSON string with checksums.
+     *
+     * @returns Checksums as a record.
+     *
+     * @throws Error if the JSON is invalid or the checksums are not found.
+     */
+    private static parseChecksums(rawJson: string): Record<string, string> {
+        const parsed = JSON.parse(rawJson);
+
+        const schema = zod.object({
+            checksums: zod.record(zod.string()),
+        }).passthrough();
+
+        const { checksums } = schema.parse(parsed);
+
+        return checksums;
+    }
+
+    /**
+     * Gets the checksums of the rule sets.
+     *
+     * @param ruleSetId Rule set id.
+     *
+     * @returns Checksums of the rule sets.
+     *
+     * @throws If the rule sets loader is not initialized or the checksum for the specified rule set is not found.
+     */
+    public async getChecksum(ruleSetId: string | number): Promise<string> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        const ruleSetIdStr = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
+        const checksum = this.checksums[ruleSetIdStr];
+
+        if (!checksum) {
+            throw new Error(`Checksum for rule set ${ruleSetId} not found`);
+        }
+
+        return checksum;
     }
 
     /**
@@ -97,12 +164,19 @@ export class RuleSetsLoaderApi {
         }
 
         const initialize = async (): Promise<void> => {
-            const byteRangeMapsRulesetBaseName = `${RULESET_NAME_PREFIX}${BYTE_RANGE_MAP_RULE_SET_ID}`;
+            if (!RuleSetsLoaderApi.metadataRulesetContent) {
+                const metadataRulesetPath = this.getRuleSetPath(BYTE_RANGE_MAP_RULE_SET_ID);
+                RuleSetsLoaderApi.metadataRulesetContent = await fetchExtensionResourceText(
+                    browser.runtime.getURL(metadataRulesetPath),
+                );
+            }
 
-            this.byteRangeMapsCollection = await fetchAndDeserializeByteRangeMaps(
-                browser.runtime.getURL(
-                    this.getRuleSetPath(byteRangeMapsRulesetBaseName),
-                ),
+            this.byteRangeMapsCollection = deserializeByteRangeMaps(
+                RuleSetsLoaderApi.metadataRulesetContent,
+            );
+
+            this.checksums = RuleSetsLoaderApi.parseChecksums(
+                RuleSetsLoaderApi.metadataRulesetContent,
             );
 
             this.isInitialized = true;

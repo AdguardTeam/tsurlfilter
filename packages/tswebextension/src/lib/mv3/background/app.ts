@@ -2,10 +2,11 @@ import browser from 'webextension-polyfill';
 import {
     Filter,
     RULESET_NAME_PREFIX,
+    RuleSetByteRangeCategory,
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { FilterListPreprocessor, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
@@ -530,6 +531,7 @@ export class TsWebExtension implements AppInterface<
             filtersPath,
             ruleSetsPath,
             declarativeLogEnabled,
+            loadFilterContent,
         } = configuration;
 
         return {
@@ -540,6 +542,7 @@ export class TsWebExtension implements AppInterface<
             declarativeLogEnabled,
             verbose,
             settings,
+            loadFilterContent,
         };
     }
 
@@ -556,7 +559,7 @@ export class TsWebExtension implements AppInterface<
         // Wrap filters to tsurlfilter.IFilter
         const staticFilters = FiltersApi.createStaticFilters(
             parsedConfiguration.staticFiltersIds,
-            new RuleSetsLoaderApi(parsedConfiguration.ruleSetsPath),
+            parsedConfiguration.loadFilterContent,
         );
         const customFilters = FiltersApi.createCustomFilters(
             parsedConfiguration.customFilters,
@@ -697,4 +700,75 @@ export class TsWebExtension implements AppInterface<
     public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
         return engineApi.retrieveDynamicRuleNode(filterId, ruleIndex);
     }
+
+    /**
+     * Gets the checksums of the rule sets.
+     *
+     * @param ruleSetId Rule set id.
+     * @param ruleSetsPath Path to the rule sets.
+     *
+     * @returns Checksums of the rule sets.
+     *
+     * @throws If the rule sets loader is not initialized or the checksum for the specified rule set is not found.
+     */
+    public getChecksum(ruleSetId: string | number, ruleSetsPath?: string): Promise<string> {
+        const ruleSetsPathToUse = ruleSetsPath || this.configuration?.ruleSetsPath;
+
+        if (!ruleSetsPathToUse) {
+            throw new Error('Rule sets path is not set');
+        }
+
+        // FIXME: add class member for ruleSetsLoaderApi
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPathToUse);
+
+        return ruleSetsLoaderApi.getChecksum(ruleSetId);
+    }
+
+    /**
+     * Retrieves the preprocessed filter list.
+     *
+     * @param filterId Filter id.
+     * @param ruleSetsPath Path to the rule sets.
+     *
+     * @returns Preprocessed filter list.
+     *
+     * @throws Error if rule sets path is not set.
+     */
+    public getPreprocessedFilterList = async (
+        filterId: number,
+        ruleSetsPath?: string,
+    ): Promise<PreprocessedFilterList> => {
+        const ruleSetsPathToUse = ruleSetsPath || this.configuration?.ruleSetsPath;
+
+        if (!ruleSetsPathToUse) {
+            throw new Error('Rule sets path is not set');
+        }
+
+        // FIXME: add class member for ruleSetsLoaderApi
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPathToUse);
+        const ruleSetId = `${RULESET_NAME_PREFIX}${filterId}`;
+
+        const rawFilterList = JSON.parse(
+            await ruleSetsLoaderApi.getRawCategoryContent(
+                ruleSetId,
+                RuleSetByteRangeCategory.PreprocessedFilterListRaw,
+            ),
+        );
+
+        const conversionMap = JSON.parse(
+            await ruleSetsLoaderApi.getRawCategoryContent(
+                ruleSetId,
+                RuleSetByteRangeCategory.PreprocessedFilterListConversionMap,
+            ),
+        );
+
+        // FIXME: make a helper that produces a byte buffer + source map for any filter list
+        const preprocessed = FilterListPreprocessor.preprocess(rawFilterList);
+
+        return {
+            ...preprocessed,
+            rawFilterList,
+            conversionMap,
+        };
+    };
 }

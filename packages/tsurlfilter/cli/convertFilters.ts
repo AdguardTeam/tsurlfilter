@@ -20,6 +20,7 @@ import {
     type ByteRangeMapCollection,
 } from '../src/rules/declarative-converter/byte-range-map';
 import { serializeJson } from '../src/utils/misc';
+import { generateMD5Hash } from '../src/utils/checksum';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
@@ -189,6 +190,7 @@ export const convertFilters = async (
     }
 
     const byteRangeMapsCollection: ByteRangeMapCollection = {};
+    const checksums: Record<string, string> = {};
 
     for (let i = 0; i < convertedRuleSets.length; i += 1) {
         const ruleSet = convertedRuleSets[i];
@@ -203,6 +205,7 @@ export const convertFilters = async (
         await fs.promises.writeFile(`${ruleSetDir}/${id}.json`, result);
 
         byteRangeMapsCollection[id] = byteRangeMap;
+        checksums[id] = generateMD5Hash(result);
 
         console.log('===============================================');
         console.info(`Rule set with id ${id} and all rule set info`);
@@ -216,7 +219,10 @@ export const convertFilters = async (
     ensureDirSync(byteRangeMapsRulesetDir);
 
     const metadataRule = createMetadataRule(byteRangeMapsCollection);
-    Object.assign(metadataRule, { byteRangeMapsCollection });
+    Object.assign(metadataRule, {
+        byteRangeMapsCollection,
+        checksums,
+    });
 
     await fs.promises.writeFile(
         `${byteRangeMapsRulesetDir}/${byteRangeMapsRulesetBaseName}.json`,
