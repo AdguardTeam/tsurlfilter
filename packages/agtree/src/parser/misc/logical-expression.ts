@@ -88,9 +88,15 @@ const OPERATOR_BINARY_MAP = new Map<OperatorValue, number>([
     [OperatorValue.Or, 2],
 ]);
 
-const OPERATOR_BINARY_MAP_REVERSE = new Map<number, OperatorValue>(
-    Array.from(OPERATOR_BINARY_MAP).map(([key, value]) => [value, key]),
-);
+let OPERATOR_BINARY_MAP_REVERSE:Map<number, OperatorValue>;
+const getOperatorBinaryMapReverse = () => {
+    if (!OPERATOR_BINARY_MAP_REVERSE) {
+        OPERATOR_BINARY_MAP_REVERSE = new Map<number, OperatorValue>(
+            Array.from(OPERATOR_BINARY_MAP).map(([key, value]) => [value, key]),
+        );
+    }
+    return OPERATOR_BINARY_MAP_REVERSE;
+};
 
 /**
  * Gets the string representation of the operator from the binary representation.
@@ -100,7 +106,7 @@ const OPERATOR_BINARY_MAP_REVERSE = new Map<number, OperatorValue>(
  * @throws If the operator is unknown
  */
 const getOperatorOrFail = (binary: number): OperatorValue => {
-    const operator = OPERATOR_BINARY_MAP_REVERSE.get(binary);
+    const operator = getOperatorBinaryMapReverse().get(binary);
     if (isUndefined(operator)) {
         throw new Error(`Unknown operator: ${binary}`);
     }
@@ -141,9 +147,15 @@ const KNOWN_VARIABLES_MAP = new Map<string, number>([
 /**
  * Deserialization map for known variables.
  */
-const KNOWN_VARIABLES_MAP_REVERSE = new Map<number, string>(
-    Array.from(KNOWN_VARIABLES_MAP).map(([key, value]) => [value, key]),
-);
+let KNOWN_VARIABLES_MAP_REVERSE: Map<number, string>;
+const getKnownVariablesMapReverse = () => {
+    if (!KNOWN_VARIABLES_MAP_REVERSE) {
+        KNOWN_VARIABLES_MAP_REVERSE = new Map<number, string>(
+            Array.from(KNOWN_VARIABLES_MAP).map(([key, value]) => [value, key]),
+        );
+    }
+    return KNOWN_VARIABLES_MAP_REVERSE;
+};
 
 /**
  * Gets the frequent name of the variable from the binary representation.
@@ -153,7 +165,7 @@ const KNOWN_VARIABLES_MAP_REVERSE = new Map<number, string>(
  * @throws If the variable is unknown
  */
 const getFrequentNameOrFail = (binary: number): string => {
-    const name = KNOWN_VARIABLES_MAP_REVERSE.get(binary);
+    const name = getKnownVariablesMapReverse().get(binary);
     if (isUndefined(name)) {
         throw new Error(`Unknown frequent name: ${binary}`);
     }
