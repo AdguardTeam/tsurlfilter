@@ -1,4 +1,4 @@
-import { type AnyExpressionNode } from '../../../src/parser/common';
+import { type AnyExpressionNode } from '../../../src/nodes';
 import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression';
 
 describe('LogicalExpressionParser', () => {

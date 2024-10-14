@@ -4,7 +4,7 @@ import coerce from 'semver/functions/coerce';
 
 import { EMPTY, NULL, SPACE } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { BinaryTypeMap, type Agent, type Value } from '../common';
+import { BinaryTypeMap, type Agent, type Value } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ParserBase } from '../interface';

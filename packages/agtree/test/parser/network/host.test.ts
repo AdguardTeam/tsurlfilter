@@ -1,5 +1,5 @@
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { type HostRule, NetworkRuleType, RuleCategory } from '../../../src/parser/common';
+import { type HostRule, NetworkRuleType, RuleCategory } from '../../../src/nodes';
 import { HostRuleParser } from '../../../src/parser/network/host';
 
 describe('HostRuleParser', () => {

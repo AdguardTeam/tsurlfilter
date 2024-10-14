@@ -1,4 +1,4 @@
-import { type Modifier } from '../../../src/parser/common';
+import { type Modifier } from '../../../src/nodes';
 import { ModifierParser } from '../../../src/parser/misc/modifier';
 
 /**

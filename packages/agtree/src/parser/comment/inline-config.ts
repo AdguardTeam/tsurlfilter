@@ -24,7 +24,7 @@ import {
     type Value,
     BinaryTypeMap,
     type ConfigNode,
-} from '../common';
+} from '../../nodes';
 import { StringUtils } from '../../utils/string';
 import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';

@@ -19,7 +19,7 @@ import {
     type Value,
     type Node,
     type Modifier,
-} from '../common';
+} from '../../nodes';
 import { tokenizeFnBalanced } from './balancing';
 import { type TokenData } from './css-token-stream';
 import { defaultParserOptions } from '../options';

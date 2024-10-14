@@ -1,6 +1,6 @@
 import { NetworkRuleParser } from '../../../src/parser/network';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/parser/common';
+import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/nodes';
 import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('NetworkRuleParser', () => {

@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
-import { BinaryTypeMap, type Value } from '../common';
+import { BinaryTypeMap, type Value } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { EMPTY, NULL } from '../../utils/constants';

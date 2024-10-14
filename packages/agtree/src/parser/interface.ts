@@ -5,7 +5,7 @@
 import { NotImplementedError } from '../errors/not-implemented-error';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
 import { type OutputByteBuffer } from '../utils/output-byte-buffer';
-import { type Node } from './common';
+import { type Node } from '../nodes';
 import { type ParserOptions } from './options';
 
 /**

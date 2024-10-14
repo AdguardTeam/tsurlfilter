@@ -4,7 +4,7 @@ import {
     type AnyRule,
     type FilterList,
     type NewLine,
-} from './common';
+} from '../nodes';
 import { RuleParser } from './rule';
 import {
     CR,

@@ -13,7 +13,7 @@ import {
     CommentRuleType,
     RuleCategory,
     type Value,
-} from '../common';
+} from '../../nodes';
 import { ParserBase } from '../interface';
 import { ValueParser } from '../misc/value';
 import { defaultParserOptions } from '../options';

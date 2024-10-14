@@ -15,10 +15,10 @@ import {
     RuleCategory,
     type Value,
     BinaryTypeMap,
-    SYNTAX_SERIALIZATION_MAP,
+    getSyntaxSerializationMap,
     type HostnameList,
-    SYNTAX_DESERIALIZATION_MAP,
-} from '../common';
+    getSyntaxDeserializationMap,
+} from '../../nodes';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
@@ -299,7 +299,7 @@ export class HostRuleParser extends ParserBase {
         buffer.writeUint8(BinaryTypeMap.HostRuleNode);
 
         buffer.writeUint8(HostRuleSerializationMap.Syntax);
-        buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+        buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
 
         if (node.ip) {
             buffer.writeUint8(HostRuleSerializationMap.Ip);
@@ -345,7 +345,7 @@ export class HostRuleParser extends ParserBase {
         while (prop !== NULL) {
             switch (prop) {
                 case HostRuleSerializationMap.Syntax:
-                    node.syntax = SYNTAX_DESERIALIZATION_MAP.get(buffer.readUint8()) ?? AdblockSyntax.Common;
+                    node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
                 case HostRuleSerializationMap.Ip:

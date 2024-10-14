@@ -28,14 +28,14 @@ import type {
     ParameterList,
     PreProcessorCommentRule,
     Value,
-} from '../common';
+} from '../../nodes';
 import {
     BinaryTypeMap,
     CommentRuleType,
     RuleCategory,
-    SYNTAX_SERIALIZATION_MAP,
-    SYNTAX_DESERIALIZATION_MAP,
-} from '../common';
+    getSyntaxSerializationMap,
+    getSyntaxDeserializationMap,
+} from '../../nodes';
 import { LogicalExpressionParser } from '../misc/logical-expression';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
@@ -398,7 +398,7 @@ export class PreProcessorCommentRuleParser extends ParserBase {
         ValueParser.serialize(node.name, buffer, FREQUENT_DIRECTIVES_SERIALIZATION_MAP);
 
         buffer.writeUint8(PreProcessorRuleSerializationMap.Syntax);
-        buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+        buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
 
         if (!isUndefined(node.params)) {
             buffer.writeUint8(PreProcessorRuleSerializationMap.Params);
@@ -447,7 +447,7 @@ export class PreProcessorCommentRuleParser extends ParserBase {
                     break;
 
                 case PreProcessorRuleSerializationMap.Syntax:
-                    node.syntax = SYNTAX_DESERIALIZATION_MAP.get(buffer.readUint8()) ?? AdblockSyntax.Common;
+                    node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
                 case PreProcessorRuleSerializationMap.Params:

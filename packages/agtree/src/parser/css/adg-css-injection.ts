@@ -14,7 +14,7 @@ import {
     SEMICOLON,
     SPACE,
 } from '../../utils/constants';
-import { type Value, type CssInjectionRuleBody } from '../common';
+import { type Value, type CssInjectionRuleBody } from '../../nodes';
 import { CssTokenStream } from './css-token-stream';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';

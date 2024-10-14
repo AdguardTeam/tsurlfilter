@@ -10,7 +10,7 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
 import { isUndefined } from '../../utils/type-guards';
-import { ListItemNodeType, type ListItem, BinaryTypeMap } from '../common';
+import { ListItemNodeType, type ListItem, BinaryTypeMap } from '../../nodes';
 import { defaultParserOptions } from '../options';
 
 /**

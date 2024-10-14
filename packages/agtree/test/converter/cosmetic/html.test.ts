@@ -2,7 +2,7 @@ import { sprintf } from 'sprintf-js';
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
-import { type HtmlFilteringRule } from '../../../src/parser/common';
+import { type HtmlFilteringRule } from '../../../src/nodes';
 import { RuleParser } from '../../../src/parser/rule';
 
 import '../../matchers/check-conversion';

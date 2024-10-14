@@ -1,7 +1,7 @@
 import { sprintf } from 'sprintf-js';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type ScriptletInjectionRuleBody } from '../../../../src/parser/common';
+import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import { AdgScriptletInjectionBodyParser } from '../../../../src/parser/cosmetic/body/adg-scriptlet';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 

@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { StringUtils } from '../../utils/string';
-import { type ParameterList } from '../common';
+import { type ParameterList } from '../../nodes';
 import { COMMA } from '../../utils/constants';
 import { defaultParserOptions } from '../options';
 import { ValueParser } from './value';

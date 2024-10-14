@@ -1,7 +1,7 @@
 import { sprintf } from 'sprintf-js';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/parser/common';
+import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/nodes';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
 import { CosmeticRuleParser, ERROR_MESSAGES as COSMETIC_ERROR_MESSAGES } from '../../../src/parser/cosmetic';

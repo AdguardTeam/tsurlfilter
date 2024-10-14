@@ -9,7 +9,7 @@ import {
 } from '../../../src/parser/css/adg-css-injection';
 import { ERROR_MESSAGES as CSS_TOKEN_STREAM_ERROR_MESSAGES, END_OF_INPUT } from '../../../src/parser/css/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { type CssInjectionRuleBody } from '../../../src/parser/common';
+import { type CssInjectionRuleBody } from '../../../src/nodes';
 
 describe('AdgCssInjectionParser', () => {
     describe('AdgCssInjectionParser.parse - valid', () => {

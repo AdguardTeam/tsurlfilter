@@ -16,7 +16,7 @@ import {
     type NetworkRule,
     NetworkRuleType,
     type HostRule,
-} from './common';
+} from '../nodes';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { defaultParserOptions } from './options';
 import { ParserBase } from './interface';

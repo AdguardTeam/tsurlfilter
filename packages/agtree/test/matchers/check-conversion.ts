@@ -9,7 +9,7 @@ import { type ConverterBase } from '../../src/converter/base-interfaces/converte
 import { RuleParser } from '../../src/parser/rule';
 import { everyRefsAreDifferent } from '../helpers/refs';
 import { getErrorMessage } from '../../src/utils/error';
-import { type AnyRule } from '../../src/parser/common';
+import { type AnyRule } from '../../src/nodes';
 import { type NodeConversionResult } from '../../src/converter/base-interfaces/conversion-result';
 
 // Extend Jest's global namespace with the custom matcher

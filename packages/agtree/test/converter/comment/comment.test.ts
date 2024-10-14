@@ -1,6 +1,6 @@
 import { CommentRuleConverter } from '../../../src/converter/comment';
 import { CommentRuleParser } from '../../../src/parser/comment';
-import { type CommentRule } from '../../../src/parser/common';
+import { type CommentRule } from '../../../src/nodes';
 import '../../matchers/check-conversion';
 
 describe('CommentRuleConverter', () => {

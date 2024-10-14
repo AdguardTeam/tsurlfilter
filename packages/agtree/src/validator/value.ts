@@ -7,7 +7,7 @@ import {
     type MethodList,
     type StealthOptionList,
     type AnyListItem,
-} from '../parser/common';
+} from '../nodes';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { AppListParser } from '../parser/misc/app-list';
 import { DomainListParser } from '../parser/misc/domain-list';

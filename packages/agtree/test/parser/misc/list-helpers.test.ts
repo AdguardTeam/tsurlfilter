@@ -1,4 +1,4 @@
-import { ListItemNodeType, type CommaSeparator, type PipeSeparator } from '../../../src/parser/common';
+import { ListItemNodeType, type CommaSeparator, type PipeSeparator } from '../../../src/nodes';
 import { LIST_PARSE_ERROR_PREFIX, parseListItems } from '../../../src/parser/misc/list-helpers';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { COMMA_DOMAIN_LIST_SEPARATOR, PIPE } from '../../../src/utils/constants';
