@@ -6,7 +6,7 @@ import {
     ListItemNodeType,
     BinaryTypeMap,
     type DomainListSeparator,
-} from '../common';
+} from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import {
     deserializeListItems,

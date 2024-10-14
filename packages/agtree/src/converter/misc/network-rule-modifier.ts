@@ -2,7 +2,7 @@
  * @file Network rule modifier list converter.
  */
 
-import { type Modifier, type ModifierList } from '../../parser/common';
+import { type Modifier, type ModifierList } from '../../nodes';
 import { SEMICOLON, SPACE } from '../../utils/constants';
 import { createModifierNode } from '../../ast-utils/modifiers';
 import { ConverterBase } from '../base-interfaces/converter-base';

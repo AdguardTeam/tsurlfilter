@@ -9,7 +9,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { NotImplementedError } from '../../errors/not-implemented-error';
-import { type Node } from '../../parser/common';
+import { type Node } from '../../nodes';
 import { type NodeConversionResult } from './conversion-result';
 import { ConverterBase } from './converter-base';
 

@@ -3,7 +3,7 @@ import { MODIFIERS_SEPARATOR, NULL, UINT16_MAX } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
-import { BinaryTypeMap, type Modifier, type ModifierList } from '../common';
+import { BinaryTypeMap, type Modifier, type ModifierList } from '../../nodes';
 import { ParserBase } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ModifierParser } from './modifier';

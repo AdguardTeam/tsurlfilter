@@ -18,7 +18,7 @@ import {
     RuleCategory,
     BinaryTypeMap,
     type Value,
-} from '../common';
+} from '../../nodes';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
 import { ValueParser } from '../misc/value';

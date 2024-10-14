@@ -8,7 +8,7 @@ import {
     type ExpressionVariableNode,
     type ExpressionOperatorNode,
     OperatorValue,
-} from '../common';
+} from '../../nodes';
 import {
     AMPERSAND,
     CLOSE_PARENTHESIS,

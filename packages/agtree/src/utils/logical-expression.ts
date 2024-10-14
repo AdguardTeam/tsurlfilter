@@ -2,7 +2,7 @@
  * @file Utility functions for logical expression node.
  */
 
-import { OperatorValue, type AnyExpressionNode, type ExpressionVariableNode } from '../parser/common';
+import { OperatorValue, type AnyExpressionNode, type ExpressionVariableNode } from '../nodes';
 import { NodeType } from '../parser/misc/logical-expression';
 
 const ERROR_PREFIX = {

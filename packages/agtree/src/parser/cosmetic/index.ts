@@ -36,11 +36,11 @@ import {
     type JsInjectionRule,
     type HtmlFilteringRule,
     BinaryTypeMap,
-    SYNTAX_SERIALIZATION_MAP,
-    SYNTAX_DESERIALIZATION_MAP,
+    getSyntaxSerializationMap,
+    getSyntaxDeserializationMap,
     type ScriptletInjectionRuleBody,
     type DomainList,
-} from '../common';
+} from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { StringUtils } from '../../utils/string';
 import { CommentRuleParser } from '../comment';
@@ -1038,7 +1038,7 @@ export class CosmeticRuleParser extends ParserBase {
                 // rule type
                 buffer.writeUint8(BinaryTypeMap.ElementHidingRule);
                 // syntax
-                buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+                buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body
                 CosmeticRuleParser.serializeElementHidingBody(node.body, buffer);
                 break;
@@ -1047,7 +1047,7 @@ export class CosmeticRuleParser extends ParserBase {
                 // rule type
                 buffer.writeUint8(BinaryTypeMap.CssInjectionRule);
                 // syntax
-                buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+                buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body
                 CosmeticRuleParser.serializeCssInjectionBody(node.body, buffer);
                 break;
@@ -1056,7 +1056,7 @@ export class CosmeticRuleParser extends ParserBase {
                 // rule type
                 buffer.writeUint8(BinaryTypeMap.JsInjectionRule);
                 // syntax
-                buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+                buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body
                 ValueParser.serialize(node.body, buffer);
                 break;
@@ -1065,7 +1065,7 @@ export class CosmeticRuleParser extends ParserBase {
                 // rule type
                 buffer.writeUint8(BinaryTypeMap.HtmlFilteringRule);
                 // syntax
-                buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+                buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body
                 ValueParser.serialize(node.body, buffer);
                 break;
@@ -1074,7 +1074,7 @@ export class CosmeticRuleParser extends ParserBase {
                 // rule type
                 buffer.writeUint8(BinaryTypeMap.ScriptletInjectionRule);
                 // syntax
-                buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+                buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body
                 switch (node.syntax) {
                     case AdblockSyntax.Adg:
@@ -1141,7 +1141,7 @@ export class CosmeticRuleParser extends ParserBase {
 
         node.category = RuleCategory.Cosmetic;
 
-        const syntax = SYNTAX_DESERIALIZATION_MAP.get(buffer.readUint8()) ?? AdblockSyntax.Common;
+        const syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
         node.syntax = syntax;
 
         node.modifiers = undefined;

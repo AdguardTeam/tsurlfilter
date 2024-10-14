@@ -54,7 +54,7 @@ export {
     type HostnameList,
     type HostRule,
     type AnyNetworkRule,
-} from './parser/common';
+} from './nodes';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
 export { AgentCommentRuleParser } from './parser/comment/agent-rule';
 export { AgentParser } from './parser/comment/agent';

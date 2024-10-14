@@ -15,9 +15,9 @@ import {
     type HintCommentRule,
     RuleCategory,
     BinaryTypeMap,
-    SYNTAX_SERIALIZATION_MAP,
-    SYNTAX_DESERIALIZATION_MAP,
-} from '../common';
+    getSyntaxSerializationMap,
+    getSyntaxDeserializationMap,
+} from '../../nodes';
 import { HintParser } from './hint';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
@@ -200,7 +200,7 @@ export class HintCommentRuleParser extends ParserBase {
 
         if (node.syntax === AdblockSyntax.Adg) {
             buffer.writeUint8(HintRuleSerializationMap.Syntax);
-            buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(AdblockSyntax.Adg) ?? 0);
+            buffer.writeUint8(getSyntaxSerializationMap().get(AdblockSyntax.Adg) ?? 0);
         }
 
         const count = node.children.length;
@@ -244,7 +244,7 @@ export class HintCommentRuleParser extends ParserBase {
         while (prop !== NULL) {
             switch (prop) {
                 case HintRuleSerializationMap.Syntax:
-                    node.syntax = SYNTAX_DESERIALIZATION_MAP.get(buffer.readUint8()) ?? AdblockSyntax.Common;
+                    node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
                 case HintRuleSerializationMap.Children:

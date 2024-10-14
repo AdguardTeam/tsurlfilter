@@ -233,6 +233,7 @@ export const enum CosmeticRuleSeparator {
     AdgHtmlFilteringException = '$@$',
 }
 
+// FIXME move to another folder
 /**
  * Type map for binary serialization.
  *
@@ -300,6 +301,7 @@ export const enum BinaryTypeMap {
     ExpressionParenthesisNode,
 }
 
+// FIXME move to another folder
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
@@ -308,20 +310,36 @@ export const enum BinaryTypeMap {
  *
  * @note Only 256 values can be represented this way.
  */
-export const SYNTAX_SERIALIZATION_MAP: Map<AdblockSyntax, number> = new Map([
-    [AdblockSyntax.Common, 0],
-    [AdblockSyntax.Abp, 1],
-    [AdblockSyntax.Adg, 2],
-    [AdblockSyntax.Ubo, 3],
-]);
+let SYNTAX_SERIALIZATION_MAP: Map<AdblockSyntax, number> | undefined;
+// FIXME move to another folder
+export const getSyntaxSerializationMap = () => {
+    if (!SYNTAX_SERIALIZATION_MAP) {
+        SYNTAX_SERIALIZATION_MAP = new Map([
+            [AdblockSyntax.Common, 0],
+            [AdblockSyntax.Abp, 1],
+            [AdblockSyntax.Adg, 2],
+            [AdblockSyntax.Ubo, 3],
+        ]);
+    }
+    return SYNTAX_SERIALIZATION_MAP;
+};
 
+// FIXME move to another folder
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-export const SYNTAX_DESERIALIZATION_MAP = new Map<number, AdblockSyntax>(
-    Array.from(SYNTAX_SERIALIZATION_MAP, ([key, value]) => [value, key]),
-);
+let SYNTAX_DESERIALIZATION_MAP: Map<number, AdblockSyntax> | undefined;
+// FIXME move to another folder
+export const getSyntaxDeserializationMap = () => {
+    if (!SYNTAX_DESERIALIZATION_MAP) {
+        SYNTAX_DESERIALIZATION_MAP = new Map<number, AdblockSyntax>(
+            Array.from(getSyntaxSerializationMap(), ([key, value]) => [value, key]),
+        );
+    }
+
+    return SYNTAX_DESERIALIZATION_MAP;
+};
 
 /**
  * Represents a basic node in the AST.

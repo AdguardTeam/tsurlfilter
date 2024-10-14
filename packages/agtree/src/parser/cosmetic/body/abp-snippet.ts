@@ -6,7 +6,7 @@ import { SEMICOLON, SPACE } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../../misc/parameter-list';
-import { type ScriptletInjectionRuleBody } from '../../common';
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
 import { defaultParserOptions } from '../../options';
 import { ParserBase } from '../../interface';
 import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';

@@ -3,7 +3,7 @@
  */
 
 import { RuleConverter } from './rule';
-import { type AnyRule, type FilterList } from '../parser/common';
+import { type AnyRule, type FilterList } from '../nodes';
 import { clone } from '../utils/clone';
 import { MultiValueMap } from '../utils/multi-value-map';
 import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';

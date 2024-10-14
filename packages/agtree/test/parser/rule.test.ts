@@ -4,7 +4,7 @@ import {
     CommentRuleType,
     CosmeticRuleType,
     RuleCategory,
-} from '../../src/parser/common';
+} from '../../src/nodes';
 import { type ParserOptions } from '../../src/parser/options';
 import { RuleParser } from '../../src/parser/rule';
 import { AdblockSyntax } from '../../src/utils/adblockers';

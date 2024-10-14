@@ -8,7 +8,7 @@ import { NULL, UINT8_MAX } from '../../../utils/constants';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
 import { isUndefined } from '../../../utils/type-guards';
-import { BinaryTypeMap, type ParameterList, type ScriptletInjectionRuleBody } from '../../common';
+import { BinaryTypeMap, type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
 import { ParameterListParser } from '../../misc/parameter-list';
 import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
 

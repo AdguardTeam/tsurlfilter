@@ -4,7 +4,7 @@ import {
     type DomainListSeparator,
     ListNodeType,
     ListItemNodeType,
-} from '../../../src/parser/common';
+} from '../../../src/nodes';
 import { COMMA, EMPTY } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 

@@ -1,4 +1,4 @@
-import { type CosmeticRuleType } from '../parser/common';
+import { type CosmeticRuleType } from '../nodes';
 import { CosmeticRuleParser } from '../parser/cosmetic';
 import { isNull } from './type-guards';
 import { defaultParserOptions } from '../parser/options';

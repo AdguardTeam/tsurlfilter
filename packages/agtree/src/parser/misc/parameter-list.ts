@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { StringUtils } from '../../utils/string';
-import { type ParameterList, BinaryTypeMap, type Value } from '../common';
+import { type ParameterList, BinaryTypeMap, type Value } from '../../nodes';
 import {
     COMMA,
     EMPTY,

@@ -7,7 +7,7 @@ import {
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { BinaryTypeMap, type Modifier, type Value } from '../common';
+import { BinaryTypeMap, type Modifier, type Value } from '../../nodes';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';

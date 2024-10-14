@@ -19,7 +19,7 @@ import {
     type ParameterList,
     type Hint,
     type Value,
-} from '../common';
+} from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';

@@ -2,7 +2,7 @@
  * @file Validator for modifiers.
  */
 
-import { type Modifier } from '../parser/common';
+import { type Modifier } from '../nodes';
 import { AdblockSyntax } from '../utils/adblockers';
 import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
 import { BLOCKER_PREFIX, SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';

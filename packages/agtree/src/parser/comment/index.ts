@@ -10,7 +10,7 @@ import {
     type MetadataCommentRule,
     type ConfigCommentRule,
     type CommentRule,
-} from '../common';
+} from '../../nodes';
 import { ConfigCommentRuleParser } from './inline-config';
 import { HintCommentRuleParser } from './hint-rule';
 import { MetadataCommentRuleParser } from './metadata';

@@ -25,7 +25,7 @@ import { deserializeScriptletBody, serializeScriptletBody } from './scriptlet-se
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
 import { ValueParser } from '../../misc/value';
-import { type ParameterList, type ScriptletInjectionRuleBody } from '../../common';
+import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
 import { isNull } from '../../../utils/type-guards';
 
 type SingleOrDoubleQuote = typeof SINGLE_QUOTE | typeof DOUBLE_QUOTE;

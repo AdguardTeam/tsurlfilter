@@ -1,5 +1,5 @@
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, RuleCategory, type ScriptletInjectionRule } from '../../../src/parser/common';
+import { CosmeticRuleType, RuleCategory, type ScriptletInjectionRule } from '../../../src/nodes';
 import { UboScriptletInjectionBodyParser } from '../../../src/parser/cosmetic/body/ubo-scriptlet';
 import { CosmeticRuleParser } from '../../../src/parser/cosmetic';
 import { AdblockSyntax } from '../../../src/utils/adblockers';

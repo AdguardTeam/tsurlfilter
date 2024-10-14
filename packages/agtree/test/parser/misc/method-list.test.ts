@@ -1,5 +1,5 @@
 import { MethodListParser } from '../../../src/parser/misc/method-list';
-import { ListNodeType, ListItemNodeType } from '../../../src/parser/common';
+import { ListNodeType, ListItemNodeType } from '../../../src/nodes';
 import { EMPTY } from '../../../src/utils/constants';
 
 describe('MethodListParser', () => {

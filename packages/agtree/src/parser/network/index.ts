@@ -16,11 +16,11 @@ import {
     type NetworkRule,
     RuleCategory,
     BinaryTypeMap,
-    SYNTAX_SERIALIZATION_MAP,
-    SYNTAX_DESERIALIZATION_MAP,
+    getSyntaxSerializationMap,
+    getSyntaxDeserializationMap,
     type Value,
     NetworkRuleType,
-} from '../common';
+} from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { ParserBase } from '../interface';
@@ -207,7 +207,7 @@ export class NetworkRuleParser extends ParserBase {
         buffer.writeUint8(BinaryTypeMap.NetworkRuleNode);
 
         buffer.writeUint8(NetworkRuleSerializationMap.Syntax);
-        buffer.writeUint8(SYNTAX_SERIALIZATION_MAP.get(node.syntax) ?? 0);
+        buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
 
         buffer.writeUint8(NetworkRuleSerializationMap.Exception);
         buffer.writeUint8(node.exception ? 1 : 0);
@@ -250,7 +250,7 @@ export class NetworkRuleParser extends ParserBase {
         while (prop !== NULL) {
             switch (prop) {
                 case NetworkRuleSerializationMap.Syntax:
-                    node.syntax = SYNTAX_DESERIALIZATION_MAP.get(buffer.readUint8()) ?? AdblockSyntax.Common;
+                    node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
                 case NetworkRuleSerializationMap.Exception:

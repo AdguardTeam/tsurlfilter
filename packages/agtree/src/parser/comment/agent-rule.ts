@@ -14,7 +14,7 @@ import {
     RuleCategory,
     BinaryTypeMap,
     type Agent,
-} from '../common';
+} from '../../nodes';
 import { AgentParser } from './agent';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';

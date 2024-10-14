@@ -1,5 +1,5 @@
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, RuleCategory, type JsInjectionRule } from '../../../src/parser/common';
+import { CosmeticRuleType, RuleCategory, type JsInjectionRule } from '../../../src/nodes';
 import { CosmeticRuleParser } from '../../../src/parser/cosmetic';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
