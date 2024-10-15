@@ -81,7 +81,7 @@ const getFrequentHeadersSerializationMap = () => {
         );
     }
     return FREQUENT_HEADERS_SERIALIZATION_MAP;
-}
+};
 
 /**
  * Known metadata headers.

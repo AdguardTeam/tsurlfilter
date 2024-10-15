@@ -86,6 +86,7 @@ const FREQUENT_AGENTS_DESERIALIZATION_MAP = new Map<number, string>([
  *
  * @note Only 256 values can be represented this way.
  */
+// FIXME
 const FREQUENT_AGENTS_SERIALIZATION_MAP = new Map<string, number>(
     Array.from(FREQUENT_AGENTS_DESERIALIZATION_MAP).map(([key, value]) => [value.toLowerCase(), key]),
 );

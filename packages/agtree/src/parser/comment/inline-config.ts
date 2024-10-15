@@ -88,6 +88,7 @@ const FREQUENT_COMMANDS_SERIALIZATION_MAP = new Map<string, number>([
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
+// FIXME
 const FREQUENT_COMMANDS_DESERIALIZATION_MAP = new Map<number, string>(
     Array.from(FREQUENT_COMMANDS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
 );
