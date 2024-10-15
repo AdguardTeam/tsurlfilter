@@ -88,10 +88,10 @@ importers:
   packages/adguard-api-mv3:
     dependencies:
       '@adguard/logger':
-        specifier: workspace:^
-        version: link:../logger
+        specifier: 1.1.0
+        version: 1.1.0
       '@adguard/tswebextension':
-        specifier: workspace:^
+        specifier: 2.4.0-alpha.3
         version: link:../tswebextension
       zod:
         specifier: 3.22.4
@@ -1424,6 +1424,11 @@ packages:
       crypto-js: 4.2.0
     transitivePeerDependencies:
       - debug
+    dev: false
+
+  /@adguard/logger@1.1.0:
+    resolution: {integrity: sha512-o/3yTX8S/zROnNcs4ISta1ysjiCPtSQg1RSOxWbCEQ89O2dDhN5xRyO7tsVXnINs5Zyoi+gwJAWQSKEOVkMA/g==}
+    engines: {node: '>=18.19.0'}
     dev: false
 
   /@adguard/re2-wasm@1.2.0:
