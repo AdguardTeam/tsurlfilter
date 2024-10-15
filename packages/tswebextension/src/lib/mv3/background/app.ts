@@ -748,13 +748,9 @@ export class TsWebExtension implements AppInterface<
             ),
         );
 
-        // FIXME: make a helper that produces a byte buffer + source map for any filter list
-        const preprocessed = FilterListPreprocessor.preprocess(rawFilterList);
-
-        return {
-            ...preprocessed,
+        return FilterListPreprocessor.preprocessLightweight({
             rawFilterList,
             conversionMap,
-        };
+        });
     };
 }
