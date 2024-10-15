@@ -4,6 +4,7 @@
 
 // Parser
 export { RuleParser } from './parser/rule-parser';
+export { RuleSerializer } from './serializer/rule-serializer';
 export {
     type Agent,
     type AgentCommentRule,
@@ -66,6 +67,7 @@ export { DomainListParser } from './parser/misc/domain-list';
 export { MethodListParser } from './parser/misc/method-list';
 export { StealthOptionListParser } from './parser/misc/stealth-option-list';
 export { FilterListParser } from './parser/filterlist';
+export { FilterListSerializer } from './serializer/filterlist-serializer';
 export { HintCommentParser } from './parser/comment/hint-rule';
 export { HintParser } from './parser/comment/hint';
 export { LogicalExpressionParser } from './parser/misc/logical-expression';

@@ -10,7 +10,6 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseParser } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ValueParser } from '../misc/value';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
@@ -77,19 +76,6 @@ const FREQUENT_AGENTS_DESERIALIZATION_MAP = new Map<number, string>([
     [7, 'ABP'],
     [8, 'AdBlock'],
 ]);
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-// FIXME
-const FREQUENT_AGENTS_SERIALIZATION_MAP = new Map<string, number>(
-    Array.from(FREQUENT_AGENTS_DESERIALIZATION_MAP).map(([key, value]) => [value.toLowerCase(), key]),
-);
 
 /**
  * Returns the adblock syntax based on the adblock name parsed from the agent type comment.
@@ -221,36 +207,6 @@ export class AgentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes an agent node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serialize(node: Agent, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.AgentNode);
-
-        buffer.writeUint8(AgentNodeSerializationMap.Adblock);
-        ValueParser.serialize(node.adblock, buffer, FREQUENT_AGENTS_SERIALIZATION_MAP, true);
-
-        if (!isUndefined(node.version)) {
-            buffer.writeUint8(AgentNodeSerializationMap.Version);
-            ValueParser.serialize(node.version, buffer);
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(AgentNodeSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(AgentNodeSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

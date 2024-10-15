@@ -2,6 +2,7 @@ import { HintCommentParser } from '../../../src/parser/comment/hint-rule';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { HintCommentGenerator } from '../../../src/generator/comment/hint-comment-generator';
+import { HintCommentSerializer } from '../../../src/serializer/comment/hint-comment-serializer';
 
 describe('HintCommentParser', () => {
     test('isHintRule', () => {
@@ -772,7 +773,11 @@ describe('HintCommentParser', () => {
             '!+ NOT_OPTIMIZED PLATFORM(, , ,)',
             '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac, ios)',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(HintCommentParser, HintCommentGenerator);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                HintCommentParser,
+                HintCommentGenerator,
+                HintCommentSerializer,
+            );
         });
     });
 });

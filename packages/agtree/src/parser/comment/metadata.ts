@@ -17,8 +17,6 @@ import {
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
 import { ValueParser } from '../misc/value';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
@@ -26,7 +24,7 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  * Property map for binary serialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent a property.
  *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ * ! IMPORTANT: If you change values here, please update the `BINARY_SCHEMA_VERSION` !
  *
  * @note Only 256 values can be represented this way.
  */
@@ -203,38 +201,6 @@ export class MetadataCommentRuleParser extends BaseParser {
         }
 
         return null;
-    }
-
-    /**
-     * Serializes a metadata comment node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: add support for raws, if ever needed
-    public static serialize(node: MetadataCommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.MetadataCommentRuleNode);
-
-        buffer.writeUint8(MetadataCommentRuleSerializationMap.Marker);
-        ValueParser.serialize(node.marker, buffer);
-
-        buffer.writeUint8(MetadataCommentRuleSerializationMap.Header);
-        ValueParser.serialize(node.header, buffer, getFrequentHeadersSerializationMap(), true);
-
-        buffer.writeUint8(MetadataCommentRuleSerializationMap.Value);
-        ValueParser.serialize(node.value, buffer);
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(MetadataCommentRuleSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(MetadataCommentRuleSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

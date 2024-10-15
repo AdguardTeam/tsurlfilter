@@ -3,6 +3,7 @@ import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { AgentCommentGenerator } from '../../../src/generator/comment/agent-comment-generator';
+import { AgentCommentSerializer } from '../../../src/serializer/comment/agent-comment-serializer';
 
 describe('AgentCommentParser', () => {
     test('isAgent', () => {
@@ -496,7 +497,11 @@ describe('AgentCommentParser', () => {
             ['[abp 2.0]', '[ABP 2.0]'],
             ['[abp 3.1; adguard]', '[ABP 3.1; AdGuard]'],
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(AgentCommentParser, AgentCommentGenerator);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                AgentCommentParser,
+                AgentCommentGenerator,
+                AgentCommentSerializer,
+            );
         });
     });
 });

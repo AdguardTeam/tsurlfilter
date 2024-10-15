@@ -4,10 +4,8 @@ import { type ParameterList, BinaryTypeMap, type Value } from '../../nodes';
 import { COMMA, NULL } from '../../utils/constants';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from './value';
-import { isNull, isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
 /**
@@ -101,49 +99,6 @@ export class ParameterListParser extends BaseParser {
         }
 
         return params;
-    }
-
-    /**
-     * Serializes a parameter list node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     * @param frequentValuesMap Optional map of frequent values.
-     * @param toLower Whether to lowercase the value before the frequent value match (defaults to `false`).
-     */
-    public static serialize(
-        node: ParameterList,
-        buffer: OutputByteBuffer,
-        frequentValuesMap?: Map<string, number>,
-        toLower = false,
-    ): void {
-        buffer.writeUint8(BinaryTypeMap.ParameterListNode);
-
-        const count = node.children.length;
-        buffer.writeUint8(ParameterListNodeSerializationMap.Children);
-        // note: we store the count, because re-construction of the array is faster if we know the length
-        buffer.writeUint32(count);
-
-        for (let i = 0; i < count; i += 1) {
-            const child = node.children[i];
-            if (isNull(child)) {
-                buffer.writeUint8(BinaryTypeMap.Null);
-                continue;
-            }
-            ValueParser.serialize(child, buffer, frequentValuesMap, toLower);
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(ParameterListNodeSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(ParameterListNodeSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

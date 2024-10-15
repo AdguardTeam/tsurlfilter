@@ -2,6 +2,7 @@ import { CommentRuleParser } from '../../../src/parser/comment';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { CommentRuleGenerator } from '../../../src/generator/comment';
+import { CommentRuleSerializer } from '../../../src/serializer/comment/comment-rule-serializer';
 
 describe('CommentRuleParser', () => {
     test('isCommentRule', () => {
@@ -804,7 +805,11 @@ describe('CommentRuleParser', () => {
             '! This is just a comment',
             '# This is just a comment',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(CommentRuleParser, CommentRuleGenerator);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                CommentRuleParser,
+                CommentRuleGenerator,
+                CommentRuleSerializer,
+            );
         });
     });
 });

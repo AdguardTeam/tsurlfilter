@@ -5,6 +5,9 @@ import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error'
 import {
     UboScriptletInjectionBodyGenerator,
 } from '../../../../src/generator/cosmetic/body/ubo-scriptlet-injection-body-generator';
+import {
+    UboScriptletInjectionBodySerializer
+} from '../../../../src/serializer/cosmetic/body/ubo-scriptlet-injection-body-serializer';
 
 describe('UboScriptletInjectionBodyParser', () => {
     describe('UboScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -1171,6 +1174,7 @@ describe('UboScriptletInjectionBodyParser', () => {
             await expect(input).toBeSerializedAndDeserializedProperly(
                 UboScriptletInjectionBodyParser,
                 UboScriptletInjectionBodyGenerator,
+                UboScriptletInjectionBodySerializer,
             );
         });
     });

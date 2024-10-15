@@ -2,7 +2,6 @@
 import { AgentCommentParser } from './agent-rule';
 import {
     type AnyCommentRule,
-    CommentRuleType,
     BinaryTypeMap,
     type AgentCommentRule,
     type HintCommentRule,
@@ -17,7 +16,6 @@ import { MetadataCommentRuleParser } from './metadata';
 import { PreProcessorCommentParser } from './preprocessor';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { SimpleCommentParser } from './simple-comment';
 
@@ -111,43 +109,6 @@ export class CommentRuleParser extends BaseParser {
             || MetadataCommentRuleParser.parse(raw, options, baseOffset)
             || ConfigCommentParser.parse(raw, options, baseOffset)
             || SimpleCommentParser.parse(raw, options, baseOffset);
-    }
-
-    /**
-     * Serializes a comment rule node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serialize(node: AnyCommentRule, buffer: OutputByteBuffer): void {
-        switch (node.type) {
-            case CommentRuleType.AgentCommentRule:
-                AgentCommentParser.serialize(node, buffer);
-                return;
-
-            case CommentRuleType.HintCommentRule:
-                HintCommentParser.serialize(node, buffer);
-                return;
-
-            case CommentRuleType.PreProcessorCommentRule:
-                PreProcessorCommentParser.serialize(node, buffer);
-                return;
-
-            case CommentRuleType.MetadataCommentRule:
-                MetadataCommentRuleParser.serialize(node, buffer);
-                return;
-
-            case CommentRuleType.ConfigCommentRule:
-                ConfigCommentParser.serialize(node, buffer);
-                return;
-
-            case CommentRuleType.CommentRule:
-                SimpleCommentParser.serialize(node, buffer);
-                break;
-
-            default:
-                throw new Error('Unknown comment rule type');
-        }
     }
 
     /**

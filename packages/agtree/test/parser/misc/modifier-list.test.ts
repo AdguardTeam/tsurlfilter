@@ -2,6 +2,7 @@ import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
 import { type ModifierList } from '../../../src/nodes';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { ModifierListGenerator } from '../../../src/generator/misc/modifier-list-generator';
+import { ModifierListSerializer } from '../../../src/serializer/misc/modifier-list-serializer';
 
 describe('ModifierListParser', () => {
     test('parse', () => {
@@ -772,7 +773,11 @@ describe('ModifierListParser', () => {
             'path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i',
             'foo=你好,bar=世界',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(ModifierListParser, ModifierListGenerator);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                ModifierListParser,
+                ModifierListGenerator,
+                ModifierListSerializer,
+            );
         });
     });
 });
