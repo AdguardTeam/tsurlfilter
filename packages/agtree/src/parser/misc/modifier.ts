@@ -118,6 +118,7 @@ const FREQUENT_MODIFIERS_SERIALIZATION_MAP = new Map<string, number>([
  *
  * @note Only 256 values can be represented this way.
  */
+// FIXME
 const FREQUENT_MODIFIERS_DESERIALIZATION_MAP = new Map<number, string>(
     Array.from(FREQUENT_MODIFIERS_SERIALIZATION_MAP, ([key, value]) => [value, key]),
 );
@@ -262,6 +263,7 @@ const FREQUENT_VALUES_SERIALIZATION_MAPS = new Map<string, Map<string, number>>(
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
+// FIXME
 const FREQUENT_VALUES_DESERIALIZATION_MAPS = new Map<string, Map<number, string>>(
     Array.from(
         FREQUENT_VALUES_SERIALIZATION_MAPS,
