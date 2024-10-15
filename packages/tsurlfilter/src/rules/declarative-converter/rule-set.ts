@@ -14,7 +14,7 @@ import { UnavailableRuleSetSourceError } from './errors/unavailable-sources-erro
 import { type ISourceMap, SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
 import { type IRulesHashMap } from './rules-hash-map';
 import { createMetadataRule } from './metadata-rule';
-import { type ByteRangeMap } from './byte-range-map';
+import { type ByteRangeMap } from './metadata-ruleset';
 
 /**
  * Prefix for ruleset name.

@@ -1,5 +1,4 @@
 import { RuleParser } from '@adguard/agtree';
-import zod from 'zod';
 import { type ByteRange, fetchExtensionResourceText } from '@adguard/tsurlfilter';
 import {
     type IFilter,
@@ -7,13 +6,13 @@ import {
     RuleSet,
     IndexedNetworkRuleWithHash,
     RulesHashMap,
-    type ByteRangeMapCollection,
-    BYTE_RANGE_MAP_RULE_SET_ID,
     RULESET_NAME_PREFIX,
     RuleSetByteRangeCategory,
-    deserializeByteRangeMaps,
+    MetadataRuleSet,
+    METADATA_RULESET_ID,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
+import { getErrorMessage, logger } from '../../common';
 
 const JSON_ARRAY_OPENING_BRACKET = '[';
 const JSON_ARRAY_CLOSING_BRACKET = ']';
@@ -23,7 +22,7 @@ const JSON_ARRAY_CLOSING_BRACKET = ']';
  * with lazy loading (rule set contents will be loaded only after a request).
  */
 export class RuleSetsLoaderApi {
-    private static metadataRulesetContent: string | undefined;
+    private static metadataRuleset?: MetadataRuleSet;
 
     /**
      * Path to rule sets directory.
@@ -43,18 +42,6 @@ export class RuleSetsLoaderApi {
     private initializerPromise: Promise<void> | undefined;
 
     /**
-     * Byte range maps collection.
-     * This collection is used to fetch certain parts of the rule set files instead of the whole files
-     * and makes possible to use less memory.
-     */
-    private byteRangeMapsCollection: ByteRangeMapCollection;
-
-    /**
-     * Checksums of the rule sets.
-     */
-    private checksums: Record<string, string>;
-
-    /**
      * Creates new {@link RuleSetsLoaderApi}.
      *
      * @param ruleSetsPath Path to rule sets directory.
@@ -62,8 +49,6 @@ export class RuleSetsLoaderApi {
     constructor(ruleSetsPath: string) {
         this.ruleSetsPath = ruleSetsPath;
         this.isInitialized = false;
-        this.byteRangeMapsCollection = {};
-        this.checksums = {};
     }
 
     /**
@@ -101,27 +86,6 @@ export class RuleSetsLoaderApi {
     }
 
     /**
-     * Parses the checksums from the raw JSON string.
-     *
-     * @param rawJson Raw JSON string with checksums.
-     *
-     * @returns Checksums as a record.
-     *
-     * @throws Error if the JSON is invalid or the checksums are not found.
-     */
-    private static parseChecksums(rawJson: string): Record<string, string> {
-        const parsed = JSON.parse(rawJson);
-
-        const schema = zod.object({
-            checksums: zod.record(zod.string()),
-        }).passthrough();
-
-        const { checksums } = schema.parse(parsed);
-
-        return checksums;
-    }
-
-    /**
      * Gets the checksums of the rule sets.
      *
      * @param ruleSetId Rule set id.
@@ -130,19 +94,14 @@ export class RuleSetsLoaderApi {
      *
      * @throws If the rule sets loader is not initialized or the checksum for the specified rule set is not found.
      */
-    public async getChecksum(ruleSetId: string | number): Promise<string> {
+    public async getChecksum(ruleSetId: string | number): Promise<string | undefined> {
         if (!this.isInitialized) {
             await this.initialize();
         }
 
         const ruleSetIdStr = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
-        const checksum = this.checksums[ruleSetIdStr];
 
-        if (!checksum) {
-            throw new Error(`Checksum for rule set ${ruleSetId} not found`);
-        }
-
-        return checksum;
+        return RuleSetsLoaderApi.metadataRuleset?.getChecksum(ruleSetIdStr);
     }
 
     /**
@@ -164,23 +123,21 @@ export class RuleSetsLoaderApi {
         }
 
         const initialize = async (): Promise<void> => {
-            if (!RuleSetsLoaderApi.metadataRulesetContent) {
-                const metadataRulesetPath = this.getRuleSetPath(BYTE_RANGE_MAP_RULE_SET_ID);
-                RuleSetsLoaderApi.metadataRulesetContent = await fetchExtensionResourceText(
-                    browser.runtime.getURL(metadataRulesetPath),
-                );
+            try {
+                if (!RuleSetsLoaderApi.metadataRuleset) {
+                    const metadataRulesetPath = this.getRuleSetPath(METADATA_RULESET_ID);
+                    const rawMetadataRuleset = await fetchExtensionResourceText(
+                        browser.runtime.getURL(metadataRulesetPath),
+                    );
+                    RuleSetsLoaderApi.metadataRuleset = MetadataRuleSet.deserialize(rawMetadataRuleset);
+                }
+
+                this.isInitialized = true;
+                this.initializerPromise = undefined;
+            } catch (error) {
+                logger.error('Failed to initialize RuleSetsLoaderApi. Got error:', getErrorMessage(error));
+                throw error;
             }
-
-            this.byteRangeMapsCollection = deserializeByteRangeMaps(
-                RuleSetsLoaderApi.metadataRulesetContent,
-            );
-
-            this.checksums = RuleSetsLoaderApi.parseChecksums(
-                RuleSetsLoaderApi.metadataRulesetContent,
-            );
-
-            this.isInitialized = true;
-            this.initializerPromise = undefined;
         };
 
         this.initializerPromise = initialize();
@@ -199,8 +156,9 @@ export class RuleSetsLoaderApi {
      * @throws Error if the byte range map for the specified rule set is not found
      * or the byte range for the specified category is not found.
      */
+    // eslint-disable-next-line class-methods-use-this
     private getByteRange(rulesetId: string, category: RuleSetByteRangeCategory): ByteRange {
-        const byteRangeMap = this.byteRangeMapsCollection[rulesetId];
+        const byteRangeMap = RuleSetsLoaderApi.metadataRuleset?.getByteRangeMap(rulesetId);
 
         if (!byteRangeMap) {
             throw new Error(`Byte range map for rule set ${rulesetId} not found`);

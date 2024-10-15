@@ -711,7 +711,7 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws If the rule sets loader is not initialized or the checksum for the specified rule set is not found.
      */
-    public getChecksum(ruleSetId: string | number, ruleSetsPath?: string): Promise<string> {
+    public getChecksum(ruleSetId: string | number, ruleSetsPath?: string): Promise<string | undefined> {
         const ruleSetsPathToUse = ruleSetsPath || this.configuration?.ruleSetsPath;
 
         if (!ruleSetsPathToUse) {

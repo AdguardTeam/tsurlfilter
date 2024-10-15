@@ -7,20 +7,14 @@ import {
     type IRuleSet,
     DeclarativeFilterConverter,
     Filter,
-    RULESET_NAME_PREFIX,
 } from '../src/rules/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
 import { FilterListPreprocessor } from '../src';
 import { getIdFromFilterName } from '../src/utils/resource-names';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
-import { createMetadataRule } from '../src/rules/declarative-converter/metadata-rule';
-import {
-    BYTE_RANGE_MAP_RULE_SET_ID,
-    type ByteRangeMapCollection,
-} from '../src/rules/declarative-converter/byte-range-map';
-import { serializeJson } from '../src/utils/misc';
 import { generateMD5Hash } from '../src/utils/checksum';
+import { MetadataRuleSet } from '../src/rules/declarative-converter/metadata-ruleset';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
@@ -189,8 +183,7 @@ export const convertFilters = async (
         limitations.forEach((e) => console.log(e.message));
     }
 
-    const byteRangeMapsCollection: ByteRangeMapCollection = {};
-    const checksums: Record<string, string> = {};
+    const metadataRuleSet = new MetadataRuleSet();
 
     for (let i = 0; i < convertedRuleSets.length; i += 1) {
         const ruleSet = convertedRuleSets[i];
@@ -204,8 +197,8 @@ export const convertFilters = async (
         // eslint-disable-next-line no-await-in-loop
         await fs.promises.writeFile(`${ruleSetDir}/${id}.json`, result);
 
-        byteRangeMapsCollection[id] = byteRangeMap;
-        checksums[id] = generateMD5Hash(result);
+        metadataRuleSet.setByteRangeMap(id, byteRangeMap);
+        metadataRuleSet.setChecksum(id, generateMD5Hash(result));
 
         console.log('===============================================');
         console.info(`Rule set with id ${id} and all rule set info`);
@@ -214,22 +207,16 @@ export const convertFilters = async (
         console.log('===============================================');
     }
 
-    const byteRangeMapsRulesetBaseName = `${RULESET_NAME_PREFIX}${BYTE_RANGE_MAP_RULE_SET_ID}`;
-    const byteRangeMapsRulesetDir = `${destRuleSetsPath}/${byteRangeMapsRulesetBaseName}`;
-    ensureDirSync(byteRangeMapsRulesetDir);
-
-    const metadataRule = createMetadataRule(byteRangeMapsCollection);
-    Object.assign(metadataRule, {
-        byteRangeMapsCollection,
-        checksums,
-    });
+    const metadataRulesetId = metadataRuleSet.getId();
+    const metadataRulesetDir = `${destRuleSetsPath}/${metadataRulesetId}`;
+    ensureDirSync(metadataRulesetDir);
 
     await fs.promises.writeFile(
-        `${byteRangeMapsRulesetDir}/${byteRangeMapsRulesetBaseName}.json`,
-        serializeJson([metadataRule], prettifyJson),
+        `${metadataRulesetDir}/${metadataRulesetId}.json`,
+        metadataRuleSet.serialize(prettifyJson),
     );
 
     console.log('===============================================');
-    console.info(`Byte range maps collection was saved to ${byteRangeMapsRulesetDir}`);
+    console.info(`Metadata ruleset saved to ${metadataRulesetDir}`);
     console.log('===============================================');
 };
