@@ -5,24 +5,14 @@
 import { TokenType } from '@adguard/css-tokenizer';
 
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import {
-    CLOSE_CURLY_BRACKET,
-    COLON,
-    CSS_MEDIA_MARKER,
-    EMPTY,
-    OPEN_CURLY_BRACKET,
-    SEMICOLON,
-    SPACE,
-} from '../../utils/constants';
+import { CSS_MEDIA_MARKER, EMPTY } from '../../utils/constants';
 import { type Value, type CssInjectionRuleBody } from '../../nodes';
 import { CssTokenStream } from './css-token-stream';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 
 export const REMOVE_PROPERTY = 'remove';
 export const REMOVE_VALUE = 'true';
-
-const removeDeclaration = `${REMOVE_PROPERTY}${COLON}${SPACE}${REMOVE_VALUE}${SEMICOLON}`;
 
 export const ERROR_MESSAGES = {
     MEDIA_QUERY_LIST_IS_EMPTY: 'Media query list is empty',
@@ -33,7 +23,7 @@ export const ERROR_MESSAGES = {
 /**
  * Parser for AdGuard CSS injection.
  */
-export class AdgCssInjectionParser extends ParserBase {
+export class AdgCssInjectionParser extends BaseParser {
     /**
      * Parses an AdGuard CSS injection.
      *
@@ -272,35 +262,5 @@ export class AdgCssInjectionParser extends ParserBase {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes an AdGuard CSS injection node into a raw string.
-     *
-     * @param node Node to serialize.
-     * @returns Raw string.
-     */
-    public static generate(node: CssInjectionRuleBody): string {
-        const result: string[] = [];
-
-        if (node.mediaQueryList) {
-            result.push(CSS_MEDIA_MARKER, SPACE, node.mediaQueryList.value, SPACE, OPEN_CURLY_BRACKET, SPACE);
-        }
-
-        result.push(node.selectorList.value, SPACE, OPEN_CURLY_BRACKET, SPACE);
-
-        if (node.remove) {
-            result.push(removeDeclaration);
-        } else if (node.declarationList?.value) {
-            result.push(node.declarationList.value);
-        }
-
-        result.push(SPACE, CLOSE_CURLY_BRACKET);
-
-        if (node.mediaQueryList) {
-            result.push(SPACE, CLOSE_CURLY_BRACKET);
-        }
-
-        return result.join(EMPTY);
     }
 }

@@ -10,7 +10,6 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
     COMMA,
-    EMPTY,
     HASHMARK,
     IF,
     INCLUDE,
@@ -20,7 +19,6 @@ import {
     PREPROCESSOR_MARKER_LEN,
     PREPROCESSOR_SEPARATOR,
     SAFARI_CB_AFFINITY,
-    SPACE,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import type {
@@ -40,7 +38,7 @@ import { LogicalExpressionParser } from '../misc/logical-expression';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from '../misc/value';
@@ -135,7 +133,7 @@ const FREQUENT_PARAMS_DESERIALIZATION_MAP = new Map<number, string>(
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#pre-processor-directives}
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
  */
-export class PreProcessorCommentRuleParser extends ParserBase {
+export class PreProcessorCommentParser extends BaseParser {
     /**
      * Determines whether the rule is a pre-processor rule.
      *
@@ -160,7 +158,7 @@ export class PreProcessorCommentRuleParser extends ParserBase {
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): PreProcessorCommentRule | null {
         // Ignore non-pre-processor rules
-        if (!PreProcessorCommentRuleParser.isPreProcessorRule(raw)) {
+        if (!PreProcessorCommentParser.isPreProcessorRule(raw)) {
             return null;
         }
 
@@ -349,38 +347,6 @@ export class PreProcessorCommentRuleParser extends ParserBase {
         if (options.isLocIncluded) {
             result.start = baseOffset;
             result.end = baseOffset + raw.length;
-        }
-
-        return result;
-    }
-
-    /**
-     * Converts a pre-processor comment node to a string.
-     *
-     * @param node Pre-processor comment node
-     * @returns Raw string
-     */
-    public static generate(node: PreProcessorCommentRule): string {
-        let result = EMPTY;
-
-        result += PREPROCESSOR_MARKER;
-        result += node.name.value;
-
-        if (node.params) {
-            // Space is not allowed after "safari_cb_affinity" directive, so we need to handle it separately.
-            if (node.name.value !== SAFARI_CB_AFFINITY) {
-                result += SPACE;
-            }
-
-            if (node.params.type === 'Value') {
-                result += ValueParser.generate(node.params);
-            } else if (node.params.type === 'ParameterList') {
-                result += OPEN_PARENTHESIS;
-                result += ParameterListParser.generate(node.params);
-                result += CLOSE_PARENTHESIS;
-            } else {
-                result += LogicalExpressionParser.generate(node.params);
-            }
         }
 
         return result;

@@ -2,6 +2,7 @@ import { SimpleCommentParser } from '../../../src/parser/comment/simple-comment'
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { isNull } from '../../../src/utils/type-guards';
+import { SimpleCommentGenerator } from '../../../src/generator/comment/simple-comment-generator';
 
 describe('SimpleCommentParser', () => {
     describe('isSimpleComment', () => {
@@ -177,7 +178,7 @@ describe('SimpleCommentParser', () => {
                 throw new Error('Rule cannot be parsed as comment');
             }
 
-            expect(SimpleCommentParser.generate(node)).toBe(expected);
+            expect(SimpleCommentGenerator.generate(node)).toBe(expected);
         });
     });
 
@@ -186,7 +187,7 @@ describe('SimpleCommentParser', () => {
             '! This is just a comment',
             '# This is just a comment',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(SimpleCommentParser);
+            await expect(input).toBeSerializedAndDeserializedProperly(SimpleCommentParser, SimpleCommentGenerator);
         });
     });
 });

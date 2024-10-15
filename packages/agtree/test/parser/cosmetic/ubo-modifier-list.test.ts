@@ -12,6 +12,7 @@ import {
     formatPseudoName,
 } from '../../../src/parser/css/ubo-selector';
 import { CSS_NOT_PSEUDO } from '../../../src/utils/constants';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid usage of uBlock modifier list', () => {
@@ -130,7 +131,7 @@ describe('CosmeticRuleParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(CosmeticRuleParser.generate(ruleNode)).toBe(expected);
+            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 });

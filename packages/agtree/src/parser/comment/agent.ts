@@ -2,12 +2,12 @@
 import valid from 'semver/functions/valid';
 import coerce from 'semver/functions/coerce';
 
-import { EMPTY, NULL, SPACE } from '../../utils/constants';
+import { NULL } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { BinaryTypeMap, type Agent, type Value } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ValueParser } from '../misc/value';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
@@ -122,9 +122,9 @@ const getAdblockSyntax = (name: string): AdblockSyntax => {
  * ```
  * then the adblock agents are `Adblock Plus 2.0` and `AdGuard`, and this
  * class is responsible for parsing them. The rule itself is parsed by
- * `AgentCommentRuleParser`, which uses this class to parse single agents.
+ * `AgentCommentParser`, which uses this class to parse single agents.
  */
-export class AgentParser extends ParserBase {
+export class AgentParser extends BaseParser {
     /**
      * Checks if the string is a valid version.
      *
@@ -218,29 +218,6 @@ export class AgentParser extends ParserBase {
         if (options.isLocIncluded) {
             result.start = baseOffset;
             result.end = baseOffset + raw.length;
-        }
-
-        return result;
-    }
-
-    /**
-     * Converts an adblock agent node to a string.
-     *
-     * @param value Agent node
-     * @returns Raw string
-     */
-    public static generate(value: Agent): string {
-        let result = EMPTY;
-
-        // Agent adblock name
-        result += value.adblock.value;
-
-        // Agent adblock version (if present)
-        if (!isUndefined(value.version)) {
-            // Add a space between the name and the version
-            result += SPACE;
-
-            result += value.version.value;
         }
 
         return result;

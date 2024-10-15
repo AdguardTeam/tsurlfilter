@@ -3,7 +3,7 @@ import { type AppList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 
 const APP_LIST_SEPARATOR = PIPE;
 
@@ -12,7 +12,7 @@ const APP_LIST_SEPARATOR = PIPE;
  *
  * @see {@link https://adguard.app/kb/general/ad-filtering/create-own-filters/#app-modifier}
  */
-export class AppListParser extends ParserBase {
+export class AppListParser extends BaseParser {
     /**
      * Parses an app list which items are separated by `|`,
      * e.g. `Example.exe|com.example.osx`.

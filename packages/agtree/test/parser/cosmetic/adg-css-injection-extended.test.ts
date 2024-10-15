@@ -6,6 +6,7 @@ import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid AdGuard CSS injection rules with extended CSS', () => {
@@ -330,7 +331,7 @@ describe('CosmeticRuleParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(CosmeticRuleParser.generate(ruleNode)).toBe(expected);
+            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 });

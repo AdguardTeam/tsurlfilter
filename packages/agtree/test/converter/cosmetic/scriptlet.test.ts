@@ -1,4 +1,4 @@
-import { RuleParser } from '../../../src/parser/rule';
+import { RuleParser } from '../../../src/parser/rule-parser';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
 import { type ScriptletInjectionRule } from '../../../src/nodes';
 import '../../matchers/check-conversion';

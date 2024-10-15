@@ -3,7 +3,7 @@ import { type MethodList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 
 const METHOD_LIST_SEPARATOR = PIPE;
 
@@ -12,7 +12,7 @@ const METHOD_LIST_SEPARATOR = PIPE;
  *
  * @see {@link https://adguard.app/kb/general/ad-filtering/create-own-filters/#method-modifier}
  */
-export class MethodListParser extends ParserBase {
+export class MethodListParser extends BaseParser {
     /**
      * Parses a method list which items are separated by `|`,
      * e.g. `get|post|put`.

@@ -1,14 +1,9 @@
 /* eslint-disable no-param-reassign */
 import { StringUtils } from '../../utils/string';
 import { type ParameterList, BinaryTypeMap, type Value } from '../../nodes';
-import {
-    COMMA,
-    EMPTY,
-    NULL,
-    SPACE,
-} from '../../utils/constants';
+import { COMMA, NULL } from '../../utils/constants';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from './value';
@@ -29,7 +24,7 @@ const enum ParameterListNodeSerializationMap {
     End,
 }
 
-export class ParameterListParser extends ParserBase {
+export class ParameterListParser extends BaseParser {
     /**
      * Parses a raw parameter list.
      *
@@ -106,34 +101,6 @@ export class ParameterListParser extends ParserBase {
         }
 
         return params;
-    }
-
-    /**
-     * Converts a parameter list AST to a string.
-     *
-     * @param params Parameter list AST
-     * @param separator Separator character (default: comma)
-     * @returns String representation of the parameter list
-     */
-    public static generate(params: ParameterList, separator = COMMA): string {
-        const collection: string[] = [];
-
-        // add parameters
-        let i = 0;
-        for (; i < params.children.length; i += 1) {
-            const param = params.children[i];
-            if (param === null) {
-                collection.push(EMPTY);
-            } else {
-                collection.push(ValueParser.generate(param));
-            }
-        }
-
-        // join parameters with separator
-        // if the separator is a space, join with a single space
-        const result = collection.join(separator === SPACE ? separator : `${separator}${SPACE}`);
-
-        return result;
     }
 
     /**

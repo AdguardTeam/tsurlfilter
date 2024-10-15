@@ -4,7 +4,7 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
 import { BinaryTypeMap, type Modifier, type ModifierList } from '../../nodes';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ModifierParser } from './modifier';
 import { isUndefined } from '../../utils/type-guards';
@@ -32,7 +32,7 @@ const enum ModifierListNodeSerializationMap {
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#non-basic-rules-modifiers}
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#options}
  */
-export class ModifierListParser extends ParserBase {
+export class ModifierListParser extends BaseParser {
     /**
      * Parses the cosmetic rule modifiers, eg. `third-party,domain=example.com|~example.org`.
      *
@@ -98,20 +98,6 @@ export class ModifierListParser extends ParserBase {
                 ),
             );
         }
-
-        return result;
-    }
-
-    /**
-     * Converts a modifier list AST to a string.
-     *
-     * @param ast Modifier list AST
-     * @returns Raw string
-     */
-    public static generate(ast: ModifierList): string {
-        const result = ast.children
-            .map(ModifierParser.generate)
-            .join(MODIFIERS_SEPARATOR);
 
         return result;
     }

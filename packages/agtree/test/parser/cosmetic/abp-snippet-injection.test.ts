@@ -5,6 +5,7 @@ import { AbpSnippetInjectionBodyParser } from '../../../src/parser/cosmetic/body
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
 import { defaultParserOptions } from '../../../src/parser/options';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid Adblock Plus snippet injection rules', () => {
@@ -353,7 +354,7 @@ describe('CosmeticRuleParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(CosmeticRuleParser.generate(ruleNode)).toBe(expected);
+            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 });

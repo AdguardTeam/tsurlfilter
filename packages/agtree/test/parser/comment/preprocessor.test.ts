@@ -1,23 +1,24 @@
-import { PreProcessorCommentRuleParser } from '../../../src/parser/comment/preprocessor';
+import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
+import { PreProcessorCommentGenerator } from '../../../src/generator/comment/pre-processor-comment-generator';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {
         // TODO: Refactor to test.each
         // Invalid
-        expect(PreProcessorCommentRuleParser.isPreProcessorRule(EMPTY)).toBeFalsy();
-        expect(PreProcessorCommentRuleParser.isPreProcessorRule(SPACE)).toBeFalsy();
+        expect(PreProcessorCommentParser.isPreProcessorRule(EMPTY)).toBeFalsy();
+        expect(PreProcessorCommentParser.isPreProcessorRule(SPACE)).toBeFalsy();
 
-        expect(PreProcessorCommentRuleParser.isPreProcessorRule('!')).toBeFalsy();
-        expect(PreProcessorCommentRuleParser.isPreProcessorRule('!##')).toBeFalsy();
-        expect(PreProcessorCommentRuleParser.isPreProcessorRule('##')).toBeFalsy();
+        expect(PreProcessorCommentParser.isPreProcessorRule('!')).toBeFalsy();
+        expect(PreProcessorCommentParser.isPreProcessorRule('!##')).toBeFalsy();
+        expect(PreProcessorCommentParser.isPreProcessorRule('##')).toBeFalsy();
     });
 
     test('parse', () => {
         // TODO: Refactor to test.each
         // Valid pre-processors
-        expect(PreProcessorCommentRuleParser.parse('!#endif')).toMatchObject({
+        expect(PreProcessorCommentParser.parse('!#endif')).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 7,
@@ -31,7 +32,7 @@ describe('PreProcessorParser', () => {
             },
         });
 
-        expect(PreProcessorCommentRuleParser.parse('!#include ../sections/ads.txt')).toMatchObject({
+        expect(PreProcessorCommentParser.parse('!#include ../sections/ads.txt')).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 29,
@@ -51,7 +52,7 @@ describe('PreProcessorParser', () => {
             },
         });
 
-        expect(PreProcessorCommentRuleParser.parse('!#if (adguard)')).toMatchObject({
+        expect(PreProcessorCommentParser.parse('!#if (adguard)')).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 14,
@@ -76,7 +77,7 @@ describe('PreProcessorParser', () => {
             },
         });
 
-        expect(PreProcessorCommentRuleParser.parse('!#if      (adguard)')).toMatchObject({
+        expect(PreProcessorCommentParser.parse('!#if      (adguard)')).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 19,
@@ -101,7 +102,7 @@ describe('PreProcessorParser', () => {
             },
         });
 
-        expect(PreProcessorCommentRuleParser.parse('!#if      (adguard)')).toMatchObject({
+        expect(PreProcessorCommentParser.parse('!#if      (adguard)')).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 19,
@@ -127,7 +128,7 @@ describe('PreProcessorParser', () => {
         });
 
         expect(
-            PreProcessorCommentRuleParser.parse('!#safari_cb_affinity(content_blockers)'),
+            PreProcessorCommentParser.parse('!#safari_cb_affinity(content_blockers)'),
         ).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
@@ -159,7 +160,7 @@ describe('PreProcessorParser', () => {
         });
 
         // If the parenthesis is open, do not split it in half along the space:
-        expect(PreProcessorCommentRuleParser.parse('!#aaa(bbb ccc)')).toMatchObject({
+        expect(PreProcessorCommentParser.parse('!#aaa(bbb ccc)')).toMatchObject({
             type: 'PreProcessorCommentRule',
             start: 0,
             end: 14,
@@ -180,11 +181,11 @@ describe('PreProcessorParser', () => {
         });
 
         // Invalid
-        expect(() => PreProcessorCommentRuleParser.parse('!#include    ')).toThrowError(
+        expect(() => PreProcessorCommentParser.parse('!#include    ')).toThrowError(
             'Directive "include" requires parameters',
         );
 
-        expect(() => PreProcessorCommentRuleParser.parse('!#safari_cb_affinity (a)')).toThrowError(
+        expect(() => PreProcessorCommentParser.parse('!#safari_cb_affinity (a)')).toThrowError(
             'Unexpected whitespace after "safari_cb_affinity" directive name',
         );
     });
@@ -218,17 +219,17 @@ describe('PreProcessorParser', () => {
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
             expect(
-                PreProcessorCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+                PreProcessorCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
             ).toEqual(expected);
         });
     });
 
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
-            const ast = PreProcessorCommentRuleParser.parse(raw);
+            const ast = PreProcessorCommentParser.parse(raw);
 
             if (ast) {
-                return PreProcessorCommentRuleParser.generate(ast);
+                return PreProcessorCommentGenerator.generate(ast);
             }
 
             return null;
@@ -267,7 +268,10 @@ describe('PreProcessorParser', () => {
             '!#safari_cb_affinity(general)',
             '!#safari_cb_affinity',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(PreProcessorCommentRuleParser);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                PreProcessorCommentParser,
+                PreProcessorCommentGenerator,
+            );
         });
     });
 });

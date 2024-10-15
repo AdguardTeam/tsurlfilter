@@ -2,6 +2,9 @@ import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-util
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import { UboScriptletInjectionBodyParser } from '../../../../src/parser/cosmetic/body/ubo-scriptlet';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
+import {
+    UboScriptletInjectionBodyGenerator,
+} from '../../../../src/generator/cosmetic/body/ubo-scriptlet-injection-body-generator';
 
 describe('UboScriptletInjectionBodyParser', () => {
     describe('UboScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -1154,7 +1157,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(UboScriptletInjectionBodyParser.generate(ruleNode)).toBe(expected);
+            expect(UboScriptletInjectionBodyGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 
@@ -1165,7 +1168,10 @@ describe('UboScriptletInjectionBodyParser', () => {
             "+js('scriptlet0', 'arg0', 'arg1')",
             '+js(scriptlet0, arg0, arg1)',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(UboScriptletInjectionBodyParser);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                UboScriptletInjectionBodyParser,
+                UboScriptletInjectionBodyGenerator,
+            );
         });
     });
 });

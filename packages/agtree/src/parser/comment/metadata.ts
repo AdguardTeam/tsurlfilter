@@ -5,12 +5,7 @@
 
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntax } from '../../utils/adblockers';
-import {
-    COLON,
-    EMPTY,
-    NULL,
-    SPACE,
-} from '../../utils/constants';
+import { COLON, NULL } from '../../utils/constants';
 import {
     CommentMarker,
     CommentRuleType,
@@ -20,7 +15,7 @@ import {
     type Value,
 } from '../../nodes';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { ValueParser } from '../misc/value';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
@@ -108,7 +103,7 @@ export const getKnownMetadataHeaders = () => {
  * the list title is `My List`, and it can be used in the adblocker UI.
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#special-comments}
  */
-export class MetadataCommentRuleParser extends ParserBase {
+export class MetadataCommentRuleParser extends BaseParser {
     /**
      * Parses a raw rule as a metadata comment.
      *
@@ -208,25 +203,6 @@ export class MetadataCommentRuleParser extends ParserBase {
         }
 
         return null;
-    }
-
-    /**
-     * Converts a metadata comment rule node to a string.
-     *
-     * @param node Metadata comment rule node.
-     * @returns Raw string.
-     */
-    public static generate(node: MetadataCommentRule): string {
-        let result = EMPTY;
-
-        result += ValueParser.generate(node.marker);
-        result += SPACE;
-        result += ValueParser.generate(node.header);
-        result += COLON;
-        result += SPACE;
-        result += ValueParser.generate(node.value);
-
-        return result;
     }
 
     /**

@@ -1,6 +1,7 @@
 import { MetadataCommentRuleParser } from '../../../src/parser/comment/metadata';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
+import { MetadataCommentGenerator } from '../../../src/generator/comment/metadata-comment-generator';
 
 describe('MetadataCommentRuleParser', () => {
     test('parse', () => {
@@ -205,7 +206,7 @@ describe('MetadataCommentRuleParser', () => {
             const ast = MetadataCommentRuleParser.parse(raw);
 
             if (ast) {
-                return MetadataCommentRuleParser.generate(ast);
+                return MetadataCommentGenerator.generate(ast);
             }
 
             return null;
@@ -232,7 +233,8 @@ describe('MetadataCommentRuleParser', () => {
             '# Title: Filter',
             '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(MetadataCommentRuleParser);
+            await expect(input)
+                .toBeSerializedAndDeserializedProperly(MetadataCommentRuleParser, MetadataCommentGenerator);
         });
     });
 });

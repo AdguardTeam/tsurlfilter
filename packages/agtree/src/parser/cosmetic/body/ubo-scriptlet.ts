@@ -5,7 +5,6 @@
 import {
     CLOSE_PARENTHESIS,
     COMMA,
-    EMPTY,
     ESCAPE_CHARACTER,
     OPEN_PARENTHESIS,
     SPACE,
@@ -14,10 +13,9 @@ import {
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../../misc/parameter-list';
 import { type ScriptletInjectionRuleBody } from '../../../nodes';
 import { defaultParserOptions } from '../../options';
-import { ParserBase } from '../../interface';
+import { BaseParser } from '../../interface';
 import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
 import { deserializeScriptletBody, serializeScriptletBody } from './scriptlet-serialization-helper';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
@@ -37,7 +35,7 @@ import { UboParameterListParser } from '../../misc/ubo-parameter-list';
  *
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#scriptlet-injection}
  */
-export class UboScriptletInjectionBodyParser extends ParserBase {
+export class UboScriptletInjectionBodyParser extends BaseParser {
     /**
      * Error messages used by the parser.
      */
@@ -47,7 +45,6 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
         NO_CLOSING_PARENTHESIS: `Invalid uBO scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
         NO_SCRIPTLET_NAME: 'Invalid uBO scriptlet call, no scriptlet name specified',
         WHITESPACE_AFTER_MASK: 'Invalid uBO scriptlet call, whitespace is not allowed after the scriptlet call mask',
-        NO_MULTIPLE_SCRIPTLET_CALLS: 'uBO syntaxes does not support multiple scriptlet calls within one single rule',
     };
 
     /**
@@ -274,33 +271,6 @@ export class UboScriptletInjectionBodyParser extends ParserBase {
         result.children.push(params);
 
         return result;
-    }
-
-    /**
-     * Generates a string representation of the uBlock scriptlet call body.
-     *
-     * @param node Scriptlet injection rule body
-     * @returns String representation of the rule body
-     */
-    public static generate(node: ScriptletInjectionRuleBody): string {
-        const result: string[] = [];
-
-        if (node.children.length > 1) {
-            throw new Error(this.ERROR_MESSAGES.NO_MULTIPLE_SCRIPTLET_CALLS);
-        }
-
-        // During generation, we only support the modern scriptlet mask
-        result.push(UBO_SCRIPTLET_MASK);
-        result.push(OPEN_PARENTHESIS);
-
-        if (node.children.length > 0) {
-            const [parameterListNode] = node.children;
-            result.push(ParameterListParser.generate(parameterListNode));
-        }
-
-        result.push(CLOSE_PARENTHESIS);
-
-        return result.join(EMPTY);
     }
 
     /**
