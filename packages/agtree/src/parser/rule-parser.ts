@@ -14,7 +14,6 @@ import {
     type AnyCommentRule,
     type AnyCosmeticRule,
     type NetworkRule,
-    NetworkRuleType,
     type HostRule,
 } from '../nodes';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
@@ -435,49 +434,6 @@ export class RuleParser extends BaseParser {
             }
 
             prop = buffer.readUint8();
-        }
-    }
-
-    /**
-     * Serializes a rule node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: add support for raws, if ever needed
-    public static serialize(node: AnyRule, buffer: OutputByteBuffer): void {
-        switch (node.category) {
-            case RuleCategory.Comment:
-                CommentRuleParser.serialize(node, buffer);
-                break;
-
-            case RuleCategory.Cosmetic:
-                CosmeticRuleParser.serialize(node, buffer);
-                break;
-
-            case RuleCategory.Network:
-                switch (node.type) {
-                    case NetworkRuleType.HostRule:
-                        HostRuleParser.serialize(node, buffer);
-                        break;
-                    case NetworkRuleType.NetworkRule:
-                        NetworkRuleParser.serialize(node, buffer);
-                        break;
-                    default:
-                        throw new Error('Unknown network rule type');
-                }
-                break;
-
-            case RuleCategory.Empty:
-                RuleParser.serializeEmptyRule(node, buffer);
-                break;
-
-            case RuleCategory.Invalid:
-                RuleParser.serializeInvalidRule(node, buffer);
-                break;
-
-            default:
-                throw new Error('Unknown rule category');
         }
     }
 

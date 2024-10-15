@@ -21,7 +21,6 @@ import {
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 
@@ -492,125 +491,6 @@ export class LogicalExpressionParser extends BaseParser {
         }
 
         return expression;
-    }
-
-    /**
-     * Serializes a variable node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: create a common serialize / deserialize interface for such nodes (Variable, Value, Parameter, etc.)
-    private static serializeVariableNode(node: ExpressionVariableNode, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ExpressionVariableNode);
-
-        const frequentName = KNOWN_VARIABLES_MAP.get(node.name);
-        if (!isUndefined(frequentName)) {
-            buffer.writeUint8(VariableNodeBinaryPropMap.FrequentName);
-            buffer.writeUint8(frequentName);
-        } else {
-            buffer.writeUint8(VariableNodeBinaryPropMap.Name);
-            buffer.writeString(node.name);
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(VariableNodeBinaryPropMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(VariableNodeBinaryPropMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
-    }
-
-    /**
-     * Serializes a parenthesis node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    private static serializeParenthesisNode(node: ExpressionParenthesisNode, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ExpressionParenthesisNode);
-
-        buffer.writeUint8(ParenthesisNodeBinaryPropMap.Expression);
-        LogicalExpressionParser.serialize(node.expression, buffer);
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(ParenthesisNodeBinaryPropMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(ParenthesisNodeBinaryPropMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
-    }
-
-    /**
-     * Serializes an operator node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    private static serializeOperatorNode(node: ExpressionOperatorNode, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ExpressionOperatorNode);
-
-        buffer.writeUint8(OperatorNodeBinaryPropMap.Operator);
-        const operatorBinary = OPERATOR_BINARY_MAP.get(node.operator);
-        if (isUndefined(operatorBinary)) {
-            throw new Error(`Unknown operator: ${node.operator}`);
-        }
-        buffer.writeUint8(operatorBinary);
-
-        buffer.writeUint8(OperatorNodeBinaryPropMap.Left);
-        LogicalExpressionParser.serialize(node.left, buffer);
-
-        if (node.right) {
-            buffer.writeUint8(OperatorNodeBinaryPropMap.Right);
-            LogicalExpressionParser.serialize(node.right, buffer);
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(OperatorNodeBinaryPropMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(OperatorNodeBinaryPropMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
-    }
-
-    /**
-     * Serializes a logical expression node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serialize(node: AnyExpressionNode, buffer: OutputByteBuffer): void {
-        switch (node.type) {
-            case NodeType.Variable:
-                LogicalExpressionParser.serializeVariableNode(node, buffer);
-                break;
-            case NodeType.Operator:
-                LogicalExpressionParser.serializeOperatorNode(node, buffer);
-                break;
-            case NodeType.Parenthesis:
-                LogicalExpressionParser.serializeParenthesisNode(node, buffer);
-                break;
-
-            default:
-                throw new Error(`Unexpected node type: ${node.type}`);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

@@ -16,9 +16,7 @@ import {
 import { StringUtils } from '../utils/string';
 import { defaultParserOptions } from './options';
 import { BaseParser } from './interface';
-import { type OutputByteBuffer } from '../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { isUndefined } from '../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
 import { RuleGenerator } from '../generator';
 
@@ -175,36 +173,6 @@ export class FilterListParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes a filter list node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: add support for raws, if ever needed
-    public static serialize(node: FilterList, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.FilterListNode);
-
-        buffer.writeUint8(FilterListNodeSerializationMap.Children);
-        const count = node.children.length;
-        buffer.writeUint32(count);
-        for (let i = 0; i < count; i += 1) {
-            RuleParser.serialize(node.children[i], buffer);
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(FilterListNodeSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(FilterListNodeSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

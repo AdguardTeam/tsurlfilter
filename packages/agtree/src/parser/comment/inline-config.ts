@@ -301,49 +301,6 @@ export class ConfigCommentParser extends BaseParser {
     }
 
     /**
-     * Serializes a metadata comment node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: add support for raws, if ever needed
-    public static serialize(node: ConfigCommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ConfigCommentRuleNode);
-
-        buffer.writeUint8(ConfigCommentRuleSerializationMap.Marker);
-        ValueParser.serialize(node.marker, buffer);
-
-        buffer.writeUint8(ConfigCommentRuleSerializationMap.Command);
-        ValueParser.serialize(node.command, buffer, FREQUENT_COMMANDS_SERIALIZATION_MAP, true);
-
-        if (!isUndefined(node.params)) {
-            buffer.writeUint8(ConfigCommentRuleSerializationMap.Params);
-            if (node.params.type === 'ParameterList') {
-                ParameterListParser.serialize(node.params, buffer);
-            } else {
-                ConfigCommentParser.serializeConfigNode(node.params, buffer);
-            }
-        }
-
-        if (!isUndefined(node.comment)) {
-            buffer.writeUint8(ConfigCommentRuleSerializationMap.Comment);
-            ValueParser.serialize(node.comment, buffer);
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(ConfigCommentRuleSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(ConfigCommentRuleSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
-    }
-
-    /**
      * Deserializes a metadata comment node from binary format.
      *
      * @param buffer ByteBuffer for reading binary data.

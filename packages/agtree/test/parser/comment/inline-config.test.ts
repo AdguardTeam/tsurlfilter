@@ -2,6 +2,7 @@ import { ConfigCommentParser } from '../../../src/parser/comment/inline-config';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { ConfigCommentGenerator } from '../../../src/generator/comment/config-comment-generator';
+import { ConfigCommentSerializer } from '../../../src/serializer/comment/config-comment-serializer';
 
 describe('ConfigCommentParser', () => {
     test('isConfigComment', () => {
@@ -580,7 +581,11 @@ describe('ConfigCommentParser', () => {
             // eslint-disable-next-line max-len
             '! aglint rule1: "off", rule2: [1, 2], rule3: ["error", { "max": 100 }] -- this is a comment -- this doesn\'t matter',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(ConfigCommentParser, ConfigCommentGenerator);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                ConfigCommentParser,
+                ConfigCommentGenerator,
+                ConfigCommentSerializer,
+            );
         });
     });
 });

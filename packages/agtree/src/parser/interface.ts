@@ -25,17 +25,6 @@ export class BaseParser {
     }
 
     /**
-     * Serializes the AST node to a byte buffer.
-     *
-     * @param node AST node to serialize.
-     * @param buffer Output byte buffer to write to.
-     * @param args Additional, parser-specific arguments, if needed.
-     */
-    public static serialize(node: Node, buffer: OutputByteBuffer, ...args: unknown[]): void {
-        throw new NotImplementedError();
-    }
-
-    /**
      * Deserializes the AST node from a byte buffer.
      *
      * @param buffer Input byte buffer to read from.

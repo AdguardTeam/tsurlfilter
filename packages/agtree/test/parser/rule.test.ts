@@ -10,6 +10,7 @@ import { RuleParser } from '../../src/parser/rule-parser';
 import { AdblockSyntax } from '../../src/utils/adblockers';
 import { defaultParserOptions } from '../../src/parser/options';
 import { RuleGenerator } from '../../src/generator';
+import { RuleSerializer } from '../../src';
 
 describe('RuleParser', () => {
     test('parse', () => {
@@ -1293,7 +1294,11 @@ describe('RuleParser', () => {
             '##:matches-path(/foo/bar) .foo',
             'example.com,~example.org##:matches-path(/foo/bar) .foo',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(RuleParser, RuleGenerator);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                RuleParser,
+                RuleGenerator,
+                RuleSerializer,
+            );
         });
     });
 });

@@ -31,7 +31,6 @@ import {
     BinaryTypeMap,
     CommentRuleType,
     RuleCategory,
-    getSyntaxSerializationMap,
     getSyntaxDeserializationMap,
 } from '../../nodes';
 import { LogicalExpressionParser } from '../misc/logical-expression';
@@ -39,10 +38,8 @@ import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from '../misc/value';
-import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
 /**
@@ -350,47 +347,6 @@ export class PreProcessorCommentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes a pre-processor comment node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: add support for raws, if ever needed
-    public static serialize(node: PreProcessorCommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.PreProcessorCommentRuleNode);
-
-        buffer.writeUint8(PreProcessorRuleSerializationMap.Name);
-        ValueParser.serialize(node.name, buffer, FREQUENT_DIRECTIVES_SERIALIZATION_MAP);
-
-        buffer.writeUint8(PreProcessorRuleSerializationMap.Syntax);
-        buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
-
-        if (!isUndefined(node.params)) {
-            buffer.writeUint8(PreProcessorRuleSerializationMap.Params);
-
-            if (node.params.type === 'Value') {
-                ValueParser.serialize(node.params, buffer);
-            } else if (node.params.type === 'ParameterList') {
-                ParameterListParser.serialize(node.params, buffer, FREQUENT_PARAMS_SERIALIZATION_MAP, true);
-            } else {
-                LogicalExpressionParser.serialize(node.params, buffer);
-            }
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(PreProcessorRuleSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(PreProcessorRuleSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

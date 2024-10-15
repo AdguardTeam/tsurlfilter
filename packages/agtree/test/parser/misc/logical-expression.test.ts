@@ -1,6 +1,7 @@
 import { type AnyExpressionNode } from '../../../src/nodes';
 import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression';
 import { LogicalExpressionGenerator } from '../../../src/generator/misc/logical-expression-generator';
+import { LogicalExpressionSerializer } from '../../../src/serializer/misc/logical-expression-serializer';
 
 describe('LogicalExpressionParser', () => {
     // TODO: Refactor to test.each
@@ -420,6 +421,7 @@ describe('LogicalExpressionParser', () => {
             await expect(input).toBeSerializedAndDeserializedProperly(
                 LogicalExpressionParser,
                 LogicalExpressionGenerator,
+                LogicalExpressionSerializer,
             );
         });
     });

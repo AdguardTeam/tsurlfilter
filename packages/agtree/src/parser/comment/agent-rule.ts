@@ -4,7 +4,6 @@ import {
     NULL,
     OPEN_SQUARE_BRACKET,
     SEMICOLON,
-    UINT8_MAX,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import {
@@ -20,9 +19,8 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { BaseParser } from '../interface';
 import { defaultParserOptions } from '../options';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { isNull, isUndefined } from '../../utils/type-guards';
+import { isNull } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
 /**
@@ -168,45 +166,6 @@ export class AgentCommentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes an adblock agent list node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: add support for raws, if ever needed
-    public static serialize(node: AgentCommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.AgentRuleNode);
-
-        const count = node.children.length;
-        if (count) {
-            buffer.writeUint8(AgentRuleSerializationMap.Children);
-
-            // note: we store the count, because re-construction of the array is faster if we know the length
-            // 8 bits is more than enough here
-            if (count > UINT8_MAX) {
-                throw new Error(`Too many children: ${count}, the limit is ${UINT8_MAX}`);
-            }
-            buffer.writeUint8(count);
-
-            for (let i = 0; i < count; i += 1) {
-                AgentParser.serialize(node.children[i], buffer);
-            }
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(AgentRuleSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(AgentRuleSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

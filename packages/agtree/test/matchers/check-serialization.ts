@@ -11,13 +11,18 @@ import { SimpleStorage } from '../helpers/simple-storage';
 import { InputByteBuffer } from '../../src/utils/input-byte-buffer';
 import { defaultParserOptions } from '../../src/parser/options';
 import { type BaseGenerator } from '../../src/generator/base-generator';
+import { type BaseSerializer } from '../../src/serializer/base-serializer';
 
 // Extend Jest's global namespace with the custom matcher
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace jest {
         interface Matchers<R> {
-            toBeSerializedAndDeserializedProperly(parser: BaseParser, generator: BaseGenerator): Promise<R>;
+            toBeSerializedAndDeserializedProperly(
+                parser: BaseParser,
+                generator: BaseGenerator,
+                serializer: BaseSerializer
+            ): Promise<R>;
         }
     }
 }
@@ -40,12 +45,14 @@ expect.extend({
      * @param received Received parameter from expect()
      * @param parser Parser class to use
      * @param generator Generator class to use
+     * @param serializer
      * @returns Jest matcher result
      */
     async toBeSerializedAndDeserializedProperly(
         received: unknown,
         parser: typeof BaseParser,
         generator: typeof BaseGenerator,
+        serializer: typeof BaseSerializer,
     ): Promise<jest.CustomMatcherResult> {
         try {
             // Validate the received parameter
@@ -100,7 +107,7 @@ expect.extend({
             const outputBuffer = new OutputByteBuffer();
 
             try {
-                parser.serialize(originalNode, outputBuffer);
+                serializer.serialize(originalNode, outputBuffer);
             } catch (error: unknown) {
                 throw new Error(`Failed to serialize '${received}', got error: '${getErrorMessage(error)}')`);
             }

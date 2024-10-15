@@ -171,7 +171,7 @@ export const benchmark = async ({
     const node = agTreeModule.FilterListParser.parse(rawFilterList, agtreeParserOptions);
 
     const outBuffer = new agTreeModule.OutputByteBuffer();
-    agTreeModule.FilterListParser.serialize(node, outBuffer);
+    agTreeModule.FilterListSerializer.serialize(node, outBuffer);
     const inBuffer = new agTreeModule.InputByteBuffer((outBuffer as any).chunks);
     const deserializedNode = {} as AGTree.FilterList;
     agTreeModule.FilterListParser.deserialize(inBuffer, deserializedNode);
@@ -200,7 +200,7 @@ export const benchmark = async ({
 
     suite.add('Serialize AST to byte buffer', () => {
         const tmpOutBuffer = new agTreeModule.OutputByteBuffer();
-        agTreeModule.FilterListParser.serialize(node, tmpOutBuffer);
+        agTreeModule.FilterListSerializer.serialize(node, tmpOutBuffer);
     });
 
     suite.add('Deserialize byte buffer to AST', () => {

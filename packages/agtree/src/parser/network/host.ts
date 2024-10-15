@@ -3,24 +3,21 @@ import * as tldts from 'tldts';
 import isIp from 'is-ip';
 
 import { StringUtils } from '../../utils/string';
-import { NULL, UINT16_MAX } from '../../utils/constants';
+import { NULL } from '../../utils/constants';
 import {
     type HostRule,
     NetworkRuleType,
     RuleCategory,
     type Value,
     BinaryTypeMap,
-    getSyntaxSerializationMap,
     type HostnameList,
     getSyntaxDeserializationMap,
 } from '../../nodes';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ValueParser } from '../misc/value';
-import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
 /**
@@ -183,43 +180,6 @@ export class HostRuleParser extends BaseParser {
     }
 
     /**
-     * Serializes a hostname list node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    private static serializeHostnameList(node: HostnameList, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.HostnameListNode);
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(HostnameListNodeSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(HostnameListNodeSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        const count = node.children.length;
-        if (count) {
-            // note: we store the count, because re-construction of the array is faster if we know the length
-            if (count > UINT16_MAX) {
-                throw new Error(`Too many children: ${count}, the limit is ${UINT16_MAX}`);
-            }
-
-            buffer.writeUint8(HostnameListNodeSerializationMap.Children);
-            buffer.writeUint16(count);
-
-            for (let i = 0; i < count; i += 1) {
-                ValueParser.serialize(node.children[i], buffer);
-            }
-        }
-
-        buffer.writeUint8(NULL);
-    }
-
-    /**
      * Deserializes a hostname list node from binary format.
      *
      * @param buffer ByteBuffer for reading binary data.
@@ -253,47 +213,6 @@ export class HostRuleParser extends BaseParser {
 
             prop = buffer.readUint8();
         }
-    }
-
-    /**
-     * Serializes a host rule node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: add support for raws, if ever needed
-    public static serialize(node: HostRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.HostRuleNode);
-
-        buffer.writeUint8(HostRuleSerializationMap.Syntax);
-        buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
-
-        if (node.ip) {
-            buffer.writeUint8(HostRuleSerializationMap.Ip);
-            ValueParser.serialize(node.ip, buffer);
-        }
-
-        if (node.hostnames) {
-            buffer.writeUint8(HostRuleSerializationMap.HostnameList);
-            HostRuleParser.serializeHostnameList(node.hostnames, buffer);
-        }
-
-        if (node.comment) {
-            buffer.writeUint8(HostRuleSerializationMap.Comment);
-            ValueParser.serialize(node.comment, buffer);
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(HostRuleSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(HostRuleSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

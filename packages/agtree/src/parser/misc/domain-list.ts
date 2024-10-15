@@ -8,11 +8,9 @@ import {
     type DomainListSeparator,
 } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { deserializeListItems, parseListItems, serializeListItems } from './list-helpers';
+import { deserializeListItems, parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
@@ -97,38 +95,6 @@ export class DomainListParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes a domain list node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serialize(node: DomainList, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.DomainListNode);
-
-        const separator = SEPARATOR_SERIALIZATION_MAP.get(node.separator);
-        if (isUndefined(separator)) {
-            throw new Error(`Invalid separator: ${node.separator}`);
-        }
-        buffer.writeUint8(DomainListSerializationMap.Separator);
-        buffer.writeUint8(separator);
-
-        buffer.writeUint8(DomainListSerializationMap.Children);
-        serializeListItems(node.children, buffer);
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(DomainListSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(DomainListSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

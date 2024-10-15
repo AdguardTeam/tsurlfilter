@@ -25,9 +25,7 @@ import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
 import { ValueParser } from '../misc/value';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
 /**
@@ -264,36 +262,6 @@ export class HintParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes a hint node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serialize(node: Hint, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.HintNode);
-
-        buffer.writeUint8(HintNodeSerializationMap.Name);
-        ValueParser.serialize(node.name, buffer, FREQUENT_HINTS_SERIALIZATION_MAP);
-
-        if (!isUndefined(node.params)) {
-            buffer.writeUint8(HintNodeSerializationMap.Params);
-            ParameterListParser.serialize(node.params, buffer, FREQUENT_PLATFORMS_SERIALIZATION_MAP);
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(HintNodeSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(HintNodeSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

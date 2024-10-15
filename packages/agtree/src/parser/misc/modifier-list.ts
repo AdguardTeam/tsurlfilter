@@ -1,13 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { MODIFIERS_SEPARATOR, NULL, UINT16_MAX } from '../../utils/constants';
+import { MODIFIERS_SEPARATOR, NULL } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
 import { BinaryTypeMap, type Modifier, type ModifierList } from '../../nodes';
 import { BaseParser } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ModifierParser } from './modifier';
-import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
 /**
@@ -100,42 +98,6 @@ export class ModifierListParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes a modifier list node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serialize(node: ModifierList, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ModifierListNode);
-
-        const count = node.children.length;
-        if (count) {
-            buffer.writeUint8(ModifierListNodeSerializationMap.Children);
-            // note: we store the count, because re-construction of the array is faster if we know the length
-            if (count > UINT16_MAX) {
-                throw new Error(`Too many modifiers: ${count}, the limit is ${UINT16_MAX}`);
-            }
-            buffer.writeUint16(count);
-
-            for (let i = 0; i < count; i += 1) {
-                ModifierParser.serialize(node.children[i], buffer);
-            }
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(ModifierListNodeSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(ModifierListNodeSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

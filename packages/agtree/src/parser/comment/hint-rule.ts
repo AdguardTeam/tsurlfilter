@@ -14,7 +14,6 @@ import {
     type HintCommentRule,
     RuleCategory,
     BinaryTypeMap,
-    getSyntaxSerializationMap,
     getSyntaxDeserializationMap,
 } from '../../nodes';
 import { HintParser } from './hint';
@@ -22,9 +21,7 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
 /**
@@ -171,45 +168,6 @@ export class HintCommentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes a hint rule node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: add support for raws, if ever needed
-    public static serialize(node: HintCommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.HintRuleNode);
-
-        if (node.syntax === AdblockSyntax.Adg) {
-            buffer.writeUint8(HintRuleSerializationMap.Syntax);
-            buffer.writeUint8(getSyntaxSerializationMap().get(AdblockSyntax.Adg) ?? 0);
-        }
-
-        const count = node.children.length;
-        if (count) {
-            buffer.writeUint8(HintRuleSerializationMap.Children);
-            // note: we store the count, because re-construction of the array is faster if we know the length
-            buffer.writeUint8(count);
-
-            for (let i = 0; i < count; i += 1) {
-                HintParser.serialize(node.children[i], buffer);
-            }
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(HintRuleSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(HintRuleSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

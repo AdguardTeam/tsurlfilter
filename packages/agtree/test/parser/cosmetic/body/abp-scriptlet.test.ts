@@ -6,6 +6,9 @@ import { EMPTY, SPACE } from '../../../../src/utils/constants';
 import {
     AbpSnippetInjectionBodyGenerator,
 } from '../../../../src/generator/cosmetic/body/abp-snippet-injection-body-generator';
+import {
+    AbpSnippetInjectionBodySerializer
+} from '../../../../src/serializer/cosmetic/body/abp-snippet-injection-body-serializer';
 
 describe('AbpSnippetInjectionBodyParser', () => {
     describe('AbpSnippetInjectionBodyParser.parse - valid cases', () => {
@@ -696,6 +699,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
             await expect(input).toBeSerializedAndDeserializedProperly(
                 AbpSnippetInjectionBodyParser,
                 AbpSnippetInjectionBodyGenerator,
+                AbpSnippetInjectionBodySerializer,
             );
         });
     });

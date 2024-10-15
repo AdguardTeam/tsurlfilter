@@ -1,6 +1,7 @@
 import { type Modifier } from '../../../src/nodes';
 import { ModifierParser } from '../../../src/parser/misc/modifier';
 import { ModifierGenerator } from '../../../src/generator/misc/modifier-generator';
+import { ModifierSerializer } from '../../../src/serializer/misc/modifier-serializer';
 
 /**
  * Helper function that parses and generates a modifier.
@@ -208,7 +209,11 @@ describe('ModifierParser', () => {
             'foo=bar',
             '~foo=bar',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(ModifierParser, ModifierGenerator);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                ModifierParser,
+                ModifierGenerator,
+                ModifierSerializer,
+            );
         });
     });
 });

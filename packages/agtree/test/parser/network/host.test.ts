@@ -2,6 +2,7 @@ import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { type HostRule, NetworkRuleType, RuleCategory } from '../../../src/nodes';
 import { HostRuleParser } from '../../../src/parser/network/host';
 import { HostRuleGenerator } from '../../../src/generator/network';
+import { HostRuleSerializer } from '../../../src/serializer/network/host-rule-serializer';
 
 describe('HostRuleParser', () => {
     describe('parse', () => {
@@ -230,7 +231,11 @@ describe('HostRuleParser', () => {
             '127.0.0.1 example.org example.info # this is a comment',
             'ff02::1 ip6-allnodes',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(HostRuleParser, HostRuleGenerator);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                HostRuleParser,
+                HostRuleGenerator,
+                HostRuleSerializer,
+            );
         });
     });
 });

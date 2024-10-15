@@ -7,6 +7,9 @@ import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error'
 import {
     AdgScriptletInjectionBodyGenerator,
 } from '../../../../src/generator/cosmetic/body/adg-scriptlet-injection-body-generator';
+import {
+    AdgScriptletInjectionBodySerializer
+} from '../../../../src/serializer/cosmetic/body/adg-scriptlet-injection-body-serializer';
 
 describe('AdgScriptletInjectionBodyParser', () => {
     describe('AdgScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -492,6 +495,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
             await expect(input).toBeSerializedAndDeserializedProperly(
                 AdgScriptletInjectionBodyParser,
                 AdgScriptletInjectionBodyGenerator,
+                AdgScriptletInjectionBodySerializer,
             );
         });
     });

@@ -2,6 +2,7 @@ import { PreProcessorCommentParser } from '../../../src/parser/comment/preproces
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { PreProcessorCommentGenerator } from '../../../src/generator/comment/pre-processor-comment-generator';
+import { PreProcessorCommentSerializer } from '../../../src/serializer/comment/pre-processor-comment-serializer';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {
@@ -271,6 +272,7 @@ describe('PreProcessorParser', () => {
             await expect(input).toBeSerializedAndDeserializedProperly(
                 PreProcessorCommentParser,
                 PreProcessorCommentGenerator,
+                PreProcessorCommentSerializer,
             );
         });
     });

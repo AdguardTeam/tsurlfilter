@@ -18,8 +18,7 @@ import { StringUtils } from '../../../utils/string';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../../options';
 import { BaseParser } from '../../interface';
-import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
-import { deserializeScriptletBody, serializeScriptletBody } from './scriptlet-serialization-helper';
+import { deserializeScriptletBody } from './scriptlet-serialization-helper';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
 import { ValueParser } from '../../misc/value';
@@ -286,16 +285,6 @@ export class AdgScriptletInjectionBodyParser extends BaseParser {
         result.children.push(parameterList);
 
         return result;
-    }
-
-    /**
-     * Serializes a scriptlet call body node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serialize(node: ScriptletInjectionRuleBody, buffer: OutputByteBuffer): void {
-        serializeScriptletBody(node, buffer, this.FREQUENT_ARGS_SERIALIZATION_MAP);
     }
 
     /**

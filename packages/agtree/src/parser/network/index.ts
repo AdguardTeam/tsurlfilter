@@ -15,7 +15,6 @@ import {
     type NetworkRule,
     RuleCategory,
     BinaryTypeMap,
-    getSyntaxSerializationMap,
     getSyntaxDeserializationMap,
     type Value,
     NetworkRuleType,
@@ -23,8 +22,6 @@ import {
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
 import { ValueParser } from '../misc/value';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
@@ -167,43 +164,6 @@ export class NetworkRuleParser extends BaseParser {
         }
 
         return -1;
-    }
-
-    /**
-     * Serializes a network rule node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: add support for raws, if ever needed
-    public static serialize(node: NetworkRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.NetworkRuleNode);
-
-        buffer.writeUint8(NetworkRuleSerializationMap.Syntax);
-        buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
-
-        buffer.writeUint8(NetworkRuleSerializationMap.Exception);
-        buffer.writeUint8(node.exception ? 1 : 0);
-
-        buffer.writeUint8(NetworkRuleSerializationMap.Pattern);
-        ValueParser.serialize(node.pattern, buffer);
-
-        if (!isUndefined(node.modifiers)) {
-            buffer.writeUint8(NetworkRuleSerializationMap.ModifierList);
-            ModifierListParser.serialize(node.modifiers, buffer);
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(NetworkRuleSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(NetworkRuleSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**

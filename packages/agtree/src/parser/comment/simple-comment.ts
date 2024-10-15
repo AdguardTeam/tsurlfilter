@@ -3,9 +3,7 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import { NULL } from '../../utils/constants';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
-import { isUndefined } from '../../utils/type-guards';
 import {
     BinaryTypeMap,
     CommentMarker,
@@ -140,35 +138,6 @@ export class SimpleCommentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes a simple comment rule node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    // TODO: add support for raws, if ever needed
-    public static serialize(node: CommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.CommentRuleNode);
-
-        buffer.writeUint8(SimpleCommentRuleSerializationMap.Marker);
-        ValueParser.serialize(node.marker, buffer);
-
-        buffer.writeUint8(SimpleCommentRuleSerializationMap.Text);
-        ValueParser.serialize(node.text, buffer);
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(SimpleCommentRuleSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(SimpleCommentRuleSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**
