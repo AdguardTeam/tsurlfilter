@@ -31,7 +31,7 @@ import { FiltersStorage } from './storage/filters';
 import { VersionManager } from './version-manager';
 import { logger } from '../utils/logger';
 import { getErrorMessage } from '../utils/error';
-import { filtersIdbStorage, versionsIdbStorage } from './storage';
+import { versionsIdbStorage } from './storage';
 
 /**
  * AdGuard API is filtering library, provided following features:
@@ -78,6 +78,24 @@ export class AdguardApi {
     }
 
     /**
+     * Helper function to get the path to the rulesets.
+     *
+     * @returns Path to the rulesets.
+     *
+     * @throws Error if the configuration is not set.
+     *
+     * @note During normal operation, error should not be thrown, because we always set the configuration
+     * before handling the updates.
+     */
+    private getRuleSetsPath(): string {
+        if (!this.configuration) {
+            throw new Error('Configuration is not set');
+        }
+
+        return this.configuration.assetsPath + AdguardApi.DECLARATIVE_RULES_PATH;
+    }
+
+    /**
      * Checks if the filter with the specified id needs to be updated in the extension storage.
      *
      * @param rulesetId Filter id.
@@ -87,11 +105,7 @@ export class AdguardApi {
     private async isFilterOutdated(rulesetId: number): Promise<boolean> {
         try {
             const [ruleSetChecksum, ruleSetChecksumStorage] = await Promise.all([
-                TsWebExtension.getChecksum(
-                    rulesetId,
-                    // FIXME
-                    this.configuration!.assetsPath + AdguardApi.DECLARATIVE_RULES_PATH,
-                ),
+                TsWebExtension.getChecksum(rulesetId, this.getRuleSetsPath()),
                 versionsIdbStorage.get(String(rulesetId)),
             ]);
 
@@ -131,11 +145,7 @@ export class AdguardApi {
                 }
 
                 // eslint-disable-next-line no-await-in-loop
-                const preprocessed = await TsWebExtension.getPreprocessedFilterList(
-                    rulesetId,
-                    // FIXME
-                    this.configuration.assetsPath + AdguardApi.DECLARATIVE_RULES_PATH,
-                );
+                const preprocessed = await TsWebExtension.getPreprocessedFilterList(rulesetId, this.getRuleSetsPath());
 
                 if (preprocessed) {
                     filters[rulesetId] = preprocessed;
@@ -164,10 +174,6 @@ export class AdguardApi {
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
         if (isChrome) {
-            // FIXME
-            await filtersIdbStorage.clear();
-            await versionsIdbStorage.clear();
-
             if (await VersionManager.isExtensionUpdated()) {
                 await this.handleExtensionUpdateInChrome();
             }
@@ -200,10 +206,6 @@ export class AdguardApi {
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
         if (isChrome) {
-            // FIXME
-            await filtersIdbStorage.clear();
-            await versionsIdbStorage.clear();
-
             if (await VersionManager.isExtensionUpdated()) {
                 await this.handleExtensionUpdateInChrome();
             }

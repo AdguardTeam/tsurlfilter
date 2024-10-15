@@ -20,16 +20,10 @@ const preprocessedQuickFixes = FilterListPreprocessor.preprocess(
  *
  * @throws Error if the filter content cannot be loaded.
  */
-// FIXME
+// NOTE: We are not implementing this function in this fixture, because it is not yet used in the tests.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
-    switch (filterId) {
-        case 1:
-            return preprocessedUserRules;
-        case 2:
-            return preprocessedQuickFixes;
-        default:
-            throw new Error(`Filter with id ${filterId} not found`);
-    }
+    throw new Error('Not implemented');
 };
 
 export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({

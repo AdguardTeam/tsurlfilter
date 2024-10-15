@@ -154,10 +154,10 @@ const startIfNeed = async () => {
         }
     }
 
-    // FIXME: Storage already initialized error
     try {
         await tsWebExtension.initStorage();
     } catch (e) {
+        // TODO: Investigate why we got "Storage is already initialized" error
         console.error('Failed to init storage', e);
     }
 
