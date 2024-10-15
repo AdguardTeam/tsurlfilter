@@ -734,19 +734,12 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if rule sets path is not set.
      */
-    public getPreprocessedFilterList = async (
+    public static getPreprocessedFilterList = async (
         filterId: number,
-        ruleSetsPath?: string,
+        ruleSetsPath: string,
     ): Promise<PreprocessedFilterList> => {
-        const ruleSetsPathToUse = ruleSetsPath || this.configuration?.ruleSetsPath;
-
-        if (!ruleSetsPathToUse) {
-            throw new Error('Rule sets path is not set');
-        }
-
-        // FIXME: add class member for ruleSetsLoaderApi
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPathToUse);
-        const ruleSetId = `${RULESET_NAME_PREFIX}${filterId}`;
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        const ruleSetId = RuleSetsLoaderApi.getRuleSetId(filterId);
 
         const rawFilterList = JSON.parse(
             await ruleSetsLoaderApi.getRawCategoryContent(

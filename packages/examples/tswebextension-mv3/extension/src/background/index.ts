@@ -14,6 +14,7 @@ import { StorageKeys, storage } from './storage';
 import { loadDefaultConfig } from './loadDefaultConfig';
 import { EXTENSION_INITIALIZED_EVENT } from '../common/constants';
 import { type FilteringLogEvent } from '@adguard/tswebextension';
+import { extendConfigurationWithLoader } from '../../../scripts/extension-config';
 
 declare global {
     interface Window {
@@ -153,7 +154,12 @@ const startIfNeed = async () => {
         }
     }
 
-    await tsWebExtension.initStorage();
+    // FIXME: Storage already initialized error
+    try {
+        await tsWebExtension.initStorage();
+    } catch (e) {
+        console.error('Failed to init storage', e);
+    }
 
     if (isStarted) {
         await tsWebExtension.start(config);
@@ -173,9 +179,9 @@ const checkConfigAndStart = async () => {
     if (config === undefined) {
         const savedConfig = await storage.get<Configuration>(StorageKeys.Config);
         if (savedConfig) {
-            config = savedConfig;
+            config = extendConfigurationWithLoader(savedConfig, TsWebExtension);
         } else {
-            config = loadDefaultConfig();
+            config = extendConfigurationWithLoader(loadDefaultConfig(), TsWebExtension);
             await storage.set(StorageKeys.Config, config);
         }
     }

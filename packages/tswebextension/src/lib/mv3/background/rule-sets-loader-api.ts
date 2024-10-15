@@ -22,6 +22,7 @@ const JSON_ARRAY_CLOSING_BRACKET = ']';
  * with lazy loading (rule set contents will be loaded only after a request).
  */
 export class RuleSetsLoaderApi {
+    // FIXME: cache for different paths
     private static metadataRuleset?: MetadataRuleSet;
 
     /**
@@ -58,7 +59,7 @@ export class RuleSetsLoaderApi {
      *
      * @returns Rule set ID with the {@link RULESET_NAME_PREFIX} prefix.
      */
-    private static getRuleSetId(ruleSetId: string | number): string {
+    public static getRuleSetId(ruleSetId: string | number): string {
         let ruleSetIdStr = String(ruleSetId);
 
         if (!ruleSetIdStr.startsWith(RULESET_NAME_PREFIX)) {
