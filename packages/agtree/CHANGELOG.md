@@ -3,10 +3,10 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog][keepachangelog], and this project adheres to [Semantic Versioning][semver].
+The format is based on [Keep a Changelog], and this project adheres to [Semantic Versioning].
 
-[keepachangelog]: https://keepachangelog.com/en/1.0.0/
-[semver]: https://semver.org/spec/v2.0.0.html
+[Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
+[Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
 ## [2.1.2] - 2024-09-19
 
@@ -62,8 +62,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 ### Fixed
 
 - Conversion for uBO's `rc` and `ra` scriptlets.
-- Converter now unescape scriptlet separators from the previous rule, if needed (e.g. it unescape commas when converting
-  from uBO to AG syntax).
+- Converter now unescape scriptlet separators from the previous rule, if needed,
+  e.g. it unescapes commas when converting from uBO to AG syntax.
 
 [2.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.0.1
 
@@ -71,7 +71,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Added
 
-- Integrated `@adguard/css-tokenizer` package.
+- Integrated [@adguard/css-tokenizer] package.
 - Adjustable syntax parsing. This makes possible to disable parsing of uBO and ABP syntaxes, which can be useful when
   parsing known-syntax filters.
 - `PositionProvider` to convert offsets to line/column pairs.
@@ -107,18 +107,18 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - Library now use CJS.
 - `version` export renamed to `AGTREE_VERSION`.
 
-### Fixed
-
-- HTML rule converter now correctly handles the new `:contains()` syntax.
-- Location handling for `FilterListParser`.
-- Performance issues.
-
 ### Removed
 
 - `@adguard/scriptlets` library. It is not needed anymore, because AGTree now has its own compatibility tables.
 - `css-tree` library. It is not needed anymore, because AGTree now uses `@adguard/css-tokenizer` package.
 - `##^`/`#@#^` and `##+`/`#@#+` from the cosmetic rule separator finder. Instead, `##`/`#@#` is used, and the `^`/`+` is
   checked in the body parser.
+
+### Fixed
+
+- HTML rule converter now correctly handles the new `:contains()` syntax.
+- Location handling for `FilterListParser`.
+- Performance issues.
 
 [2.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.0.0
 
@@ -132,7 +132,6 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 [#126]: https://github.com/AdguardTeam/tsurlfilter/issues/126
 
-
 ## 1.1.7 - 2023-11-07
 
 ### Added
@@ -141,98 +140,93 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 [#98]: https://github.com/AdguardTeam/tsurlfilter/issues/98
 
-
 ## 1.1.6 - 2023-09-22
 
 ### Changed
 
-- Converter now returns an object with `result` and `isConverted` properties instead of just `result`
-- Filter list converter now accepts a second argument `tolerant` which allows to convert filter lists with invalid rules
+- Converter now returns an object with `result` and `isConverted` properties instead of just `result`.
+- Filter list converter now accepts a second argument `tolerant` which allows
+  to convert filter lists with invalid rules.
 
 ### Added
 
-- `RawRuleConverter` class for converting raw rules
-- `RawFilterListConverter` class for converting raw filter lists
+- `RawRuleConverter` class for converting raw rules.
+- `RawFilterListConverter` class for converting raw filter lists.
 
 ### Fixed
 
-- Improved converter's performance
-
+- Improved converter's performance.
 
 ## 1.1.5 - 2023-09-05
 
 ### Changed
 
 - Validation of `$csp` and `$permissions` modifiers value
-  by custom pre-defined validator instead of regular expression
+  by custom pre-defined validator instead of regular expression.
 
 ### Added
 
-- Exports to `package.json`
-
+- Exports to `package.json`.
 
 ## 1.1.4 - 2023-08-30
 
 ### Fixed
 
-- Validation of `$redirect` and `$replace` modifiers by `ModifierValidator.validate()`
-
+- Validation of `$redirect` and `$replace` modifiers by `ModifierValidator.validate()`.
 
 ## 1.1.3 - 2023-08-28
 
 ### Added
 
-- Validation of modifier values due to `value_format`
+- Validation of modifier values due to `value_format`.
 
 ## Changed
 
-- `ModifierValidator.validate()` result type `ValidationResult` — `valid` property instead of `ok`
-
+- `ModifierValidator.validate()` result type `ValidationResult` — `valid` property instead of `ok`.
 
 ## 1.1.2 - 2023-08-14
 
 ### Fixed
 
-- Compatibility tables validation of ABP syntax `$rewrite`
-- Detecting closing parenthesis in ADG/uBO scriptlets while parsing
-
+- Compatibility tables validation of ABP syntax `$rewrite`.
+- Detecting closing parenthesis in ADG/uBO scriptlets while parsing.
 
 ## 1.1.1 - 2023-08-11
 
 ### Fixed
 
-- Validation of assignable modifiers which may be used without a value
-
+- Validation of assignable modifiers which may be used without a value.
 
 ## 1.1.0 - 2023-08-10
 
 ### Added
 
-- Compatibility tables for modifiers
-- Validator for modifiers
-- Basic rule converter
-- New utils (regex, quotes)
+- Compatibility tables for modifiers.
+- Validator for modifiers.
+- Basic rule converter.
+- New utils (regex, quotes).
 
 ### Changed
 
-- Updated dependencies
-- Improved library build
-- Improved CSSTree utils
-- Export CSSTree utils
-- Store raw data while parsing
-- General code improvements
+- Updated dependencies.
+- Improved library build.
+- Improved CSSTree utils.
+- Export CSSTree utils.
+- Store raw data while parsing.
+- General code improvements.
 
 ### Fixed
 
-- Package metadata
-- Type import/export
-- Modifier list parsing
-- Scriptlet parsing
-- Metadata parsing
-
+- Package metadata.
+- Type import/export.
+- Modifier list parsing.
+- Scriptlet parsing.
+- Metadata parsing.
 
 ## 1.0.1 - 2023-05-24
 
 ### Added
 
 - Migrated parser from AGLint to a separate package.
+
+[@adguard/css-tokenizer]: ../css-tokenizer/CHANGELOG.md
