@@ -4,7 +4,7 @@ import { RuleParser } from '@adguard/agtree';
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
 import { EMPTY_STRING } from '../../common/constants';
-import { serializeJson, uint8ArrayToBase64 } from '../../utils/misc';
+import { serializeJson } from '../../utils/misc';
 import { getByteRangeFor } from '../../utils/byte-range';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
@@ -70,19 +70,9 @@ export enum RuleSetByteRangeCategory {
     DeclarativeSourceMap = 'declarative_source_map',
 
     /**
-     * Byte range for the source map of the preprocessed filter list.
-     */
-    PreprocessedFilterListSourceMap = 'preprocessed_filter_list_source_map',
-
-    /**
      * Byte range for the conversion map of the preprocessed filter list.
      */
     PreprocessedFilterListConversionMap = 'preprocessed_filter_list_conversion_map',
-
-    /**
-     * Byte range for the binary content of the preprocessed filter list.
-     */
-    PreprocessedFilterListBinary = 'preprocessed_filter_list_binary',
 
     /**
      * Byte range for the raw content of the preprocessed filter list.
@@ -680,9 +670,7 @@ export class RuleSet implements IRuleSet {
         const metadataRule = createMetadataRule({
             metadata: this.getSerializedRuleSetData(),
             lazyMetadata: this.getSerializedRuleSetLazyData(),
-            sourceMap: content.sourceMap,
             conversionMap: content.conversionMap,
-            filterList: content.filterList.map(uint8ArrayToBase64),
             rawFilterList: content.rawFilterList,
         });
 
@@ -703,9 +691,7 @@ export class RuleSet implements IRuleSet {
             [RuleSetByteRangeCategory.DeclarativeLazyMetadata]: getByteRangeFor(result, '/0/metadata/lazyMetadata'),
             [RuleSetByteRangeCategory.DeclarativeSourceMap]: getByteRangeFor(result, '/0/metadata/lazyMetadata/sourceMapRaw'),
 
-            [RuleSetByteRangeCategory.PreprocessedFilterListSourceMap]: getByteRangeFor(result, '/0/metadata/sourceMap'),
             [RuleSetByteRangeCategory.PreprocessedFilterListConversionMap]: getByteRangeFor(result, '/0/metadata/conversionMap'),
-            [RuleSetByteRangeCategory.PreprocessedFilterListBinary]: getByteRangeFor(result, '/0/metadata/filterList'),
             [RuleSetByteRangeCategory.PreprocessedFilterListRaw]: getByteRangeFor(result, '/0/metadata/rawFilterList'),
             /* eslint-enable max-len */
 
