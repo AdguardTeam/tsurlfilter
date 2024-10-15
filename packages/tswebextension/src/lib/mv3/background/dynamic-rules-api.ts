@@ -30,14 +30,26 @@ export default class DynamicRulesApi {
     }
 
     /**
-     * The maximum number of combined dynamic and session scoped rules an extension can add.
-     * In Chrome, this limit is enforced for the combination of dynamic and session scoped rules.
-     * In Firefox, each ruleset has its own quota.
+     * The maximum number of dynamic rules (safe and unsafe) an extension can add.
+     *
+     * In Chrome before v120, this limit is enforced for the combination of dynamic and session scoped rules.
+     * In Firefox and Chrome (staring v121), each ruleset has its own quota.
      *
      * @returns Maximum number of combined dynamic and session rules.
      */
-    private static get MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES(): number {
-        return browser.declarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES;
+    private static get MAX_NUMBER_OF_DYNAMIC_RULES(): number {
+        return browser.declarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES;
+    }
+
+    /**
+     * The maximum number of **unsafe** dynamic rules an extension can add.
+     *
+     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES}
+     */
+    private static get MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES(): number {
+        return 5000;
+        // TODO: uncomment when the value is available in webextension-polyfill
+        // return browser.declarativeNetRequest.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES;
     }
 
     /**
@@ -89,8 +101,8 @@ export default class DynamicRulesApi {
             staticRuleSets,
             {
                 resourcesPath,
-                // FIXME: split limit for safe and unsafe rules
-                maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
+                maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES,
+                maxNumberOfUnsafeRules: DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES,
                 maxNumberOfRegexpRules: DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
             },
         );
