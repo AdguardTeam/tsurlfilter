@@ -547,9 +547,7 @@ describe('DeclarativeConverter', () => {
                 [filter],
                 [],
                 {
-                    // max number of all dynamic rules — safe and unsafe
-                    maxNumberOfRules: 3,
-                    // max number of unsafe dynamic rules
+                    maxNumberOfRules: 4,
                     maxNumberOfUnsafeRules: 1,
                 },
             );
@@ -572,6 +570,7 @@ describe('DeclarativeConverter', () => {
                     urlFilter: '||example2.org^',
                 },
             });
+            // only one unsafe rule due to the maxNumberOfUnsafeRules limitation
             expect(declarativeRules[2]).toStrictEqual({
                 id: expect.any(Number),
                 priority: 1,
@@ -588,7 +587,7 @@ describe('DeclarativeConverter', () => {
             });
         });
 
-        it('in one filter — unsafe first', async () => {
+        it('in one filter — unsafe first but basic (safe) rules come first after conversion', async () => {
             const filter = createFilter([
                 '||example.com^$removeheader=test',
                 '||example.net^$removeheader=test',
@@ -600,15 +599,129 @@ describe('DeclarativeConverter', () => {
                 [filter],
                 [],
                 {
-                    // max number of all dynamic rules — safe and unsafe
-                    maxNumberOfRules: 3,
-                    // max number of unsafe dynamic rules
+                    maxNumberOfRules: 4,
                     maxNumberOfUnsafeRules: 1,
                 },
             );
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             expect(declarativeRules).toHaveLength(3);
+
+            // the order of rules are different because they are being sorted during conversion
+            expect(declarativeRules[0]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example1.org^',
+                },
+            });
+            expect(declarativeRules[1]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example2.org^',
+                },
+            });
+            // only one unsafe rule due to the maxNumberOfUnsafeRules limitation
+            expect(declarativeRules[2]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [
+                        { header: 'test', operation: 'remove' },
+                    ],
+                },
+                condition: {
+                    urlFilter: '||example.com^',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('in one filter — some unsafe rules may not be included', async () => {
+            const filter = createFilter([
+                '||example.com^$removeheader=test',
+                '||example.net^$removeheader=test',
+                '||example1.org^',
+                '||example2.org^',
+            ]);
+
+            const { ruleSet } = await converter.convertDynamicRuleSets(
+                [filter],
+                [],
+                {
+                    maxNumberOfRules: 3,
+                    maxNumberOfUnsafeRules: 2,
+                },
+            );
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+
+            expect(declarativeRules).toHaveLength(3);
+            // the order of rules are different because they are being sorted during conversion
+            expect(declarativeRules[0]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example1.org^',
+                },
+            });
+            expect(declarativeRules[1]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example2.org^',
+                },
+            });
+            // only one unsafe rule BUT in this case because of the maxNumberOfRules limitation (3)
+            expect(declarativeRules[2]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [
+                        { header: 'test', operation: 'remove' },
+                    ],
+                },
+                condition: {
+                    urlFilter: '||example.com^',
+                    resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+
+        it('in one filter — safe, unsafe, regex limits', async () => {
+            const filter = createFilter([
+                '||example0.org^',
+                '||example1.org^',
+                '||example2.org^',
+                '||example3.org^',
+                '/reg01/$media,third-party',
+                '/reg02/$media,third-party',
+                '/reg03/$media,third-party',
+                '||example.com^$removeheader=test',
+                '||example.net^$removeheader=test',
+                '||example.org^$removeheader=test',
+            ]);
+
+            const { ruleSet } = await converter.convertDynamicRuleSets(
+                [filter],
+                [],
+                {
+                    maxNumberOfRules: 10,
+                    maxNumberOfUnsafeRules: 2,
+                    maxNumberOfRegexpRules: 1,
+                },
+            );
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+
+            // 2 unsafe + 1 regex + 4 safe (simple basic) rules
+            expect(declarativeRules).toHaveLength(7);
+            // the order of rules are different because they are being sorted during conversion
             expect(declarativeRules[0]).toStrictEqual({
                 id: expect.any(Number),
                 priority: 1,
@@ -626,9 +739,15 @@ describe('DeclarativeConverter', () => {
             expect(declarativeRules[1]).toStrictEqual({
                 id: expect.any(Number),
                 priority: 1,
-                action: { type: 'block' },
+                action: {
+                    type: 'modifyHeaders',
+                    responseHeaders: [
+                        { header: 'test', operation: 'remove' },
+                    ],
+                },
                 condition: {
-                    urlFilter: '||example1.org^',
+                    urlFilter: '||example.net^',
+                    resourceTypes: allResourcesTypes,
                 },
             });
             expect(declarativeRules[2]).toStrictEqual({
@@ -636,7 +755,41 @@ describe('DeclarativeConverter', () => {
                 priority: 1,
                 action: { type: 'block' },
                 condition: {
+                    urlFilter: '||example0.org^',
+                },
+            });
+            expect(declarativeRules[3]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example1.org^',
+                },
+            });
+            expect(declarativeRules[4]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
                     urlFilter: '||example2.org^',
+                },
+            });
+            expect(declarativeRules[5]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: { type: 'block' },
+                condition: {
+                    urlFilter: '||example3.org^',
+                },
+            });
+            expect(declarativeRules[6]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 102,
+                action: { type: 'block' },
+                condition: {
+                    domainType: 'thirdParty',
+                    regexFilter: 'reg01',
+                    resourceTypes: ['media'],
                 },
             });
         });
