@@ -164,11 +164,6 @@ export class DeclarativeRulesConverter {
 
             const {
                 sourceMapValues,
-                // FIXME: handle different order of rules:
-                // declarativeRules here returned in different order — if there are
-                // 1) $removeheader rule
-                // 2) simple basic rule
-                // the order of declarative rules will be opposite — basic rules are first
                 declarativeRules,
                 errors,
                 // eslint-disable-next-line no-await-in-loop
@@ -261,6 +256,24 @@ export class DeclarativeRulesConverter {
     }
 
     /**
+     * Checks whether the declarative rule is safe, i.e. rule action is one of the following:
+     * - block
+     * - allow
+     * - allowAllRequests
+     * - upgradeScheme.
+     *
+     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#safe_rules}
+     *
+     * @returns True if the rule is safe, otherwise false.
+     */
+    private static isSafeDynamicRule = (rule: DeclarativeRule): boolean => {
+        return rule.action.type === RuleActionType.BLOCK
+            || rule.action.type === RuleActionType.ALLOW
+            || rule.action.type === RuleActionType.ALLOW_ALL_REQUESTS
+            || rule.action.type === RuleActionType.UPGRADE_SCHEME;
+    }
+
+    /**
      * Check that declarative rules matches the specified constraints and
      * cuts rules if needed as from list also from source map.
      *
@@ -325,33 +338,10 @@ export class DeclarativeRulesConverter {
             sourcesIndex.set(source.declarativeRuleId, newValue);
         });
 
-        // FiXME: move outside
-        /**
-         * Checks whether the declarative rule is safe, i.e. rule action is one of the following:
-         * - block
-         * - allow
-         * - allowAllRequests
-         * - upgradeScheme.
-         *
-         * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#safe_rules}
-         *
-         * @returns True if the rule is safe, otherwise false.
-         */
-        const isSafeDynamicRule = (rule: DeclarativeRule): boolean => {
-            return rule.action.type === RuleActionType.BLOCK
-                || rule.action.type === RuleActionType.ALLOW
-                || rule.action.type === RuleActionType.ALLOW_ALL_REQUESTS
-                || rule.action.type === RuleActionType.UPGRADE_SCHEME;
-        }
-
         let unsafeRulesCounter = 0;
 
-        // FIXME: check case when number of unsafe rules is greater than maxNumberOfUnsafeRules
-        // and less than maxNumberOfRules (consider changing:
-        // 'declarativeRules.length > maxNumberOfRules' -> 'declarativeRules.length > 0')
-
         // Checks and, if necessary, trims the maximum number of rules
-        if (maxNumberOfRules && declarativeRules.length > maxNumberOfRules) {
+        if (maxNumberOfRules && declarativeRules.length > 0) {
             const filteredRules: DeclarativeRule[] = [];
             const excludedRulesIds: number[] = [];
 
@@ -360,7 +350,7 @@ export class DeclarativeRulesConverter {
 
                 if (
                     maxNumberOfUnsafeRules
-                    && !isSafeDynamicRule(rule)
+                    && !this.isSafeDynamicRule(rule)
                 ) {
                     if (unsafeRulesCounter < maxNumberOfUnsafeRules) {
                         unsafeRulesCounter += 1;
@@ -397,8 +387,6 @@ export class DeclarativeRulesConverter {
                 maxNumberOfRules,
                 declarativeRules.length - maxNumberOfRules,
             );
-
-            // FIXME: check safe and unsafe dynamic rules
 
             limitations.push(err);
 
