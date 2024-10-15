@@ -3,7 +3,6 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import { StringUtils } from '../../utils/string';
 import { ModifierListParser } from '../misc/modifier-list';
 import {
-    EMPTY,
     ESCAPE_CHARACTER,
     NETWORK_RULE_EXCEPTION_MARKER,
     NETWORK_RULE_EXCEPTION_MARKER_LEN,
@@ -23,7 +22,7 @@ import {
 } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { ValueParser } from '../misc/value';
@@ -57,7 +56,7 @@ const enum NetworkRuleSerializationMap {
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#basic}
  */
-export class NetworkRuleParser extends ParserBase {
+export class NetworkRuleParser extends BaseParser {
     /**
      * Parses a network rule (also known as basic rule).
      *
@@ -168,32 +167,6 @@ export class NetworkRuleParser extends ParserBase {
         }
 
         return -1;
-    }
-
-    /**
-     * Converts a network rule (basic rule) AST to a string.
-     *
-     * @param node Network rule node
-     * @returns Raw string
-     */
-    public static generate(node: NetworkRule): string {
-        let result = EMPTY;
-
-        // If the rule is an exception, add the exception marker: `@@||example.org`
-        if (node.exception) {
-            result += NETWORK_RULE_EXCEPTION_MARKER;
-        }
-
-        // Add the pattern: `||example.org`
-        result += node.pattern.value;
-
-        // If there are modifiers, add a separator and the modifiers: `||example.org$important`
-        if (node.modifiers && node.modifiers.children.length > 0) {
-            result += NETWORK_RULE_SEPARATOR;
-            result += ModifierListParser.generate(node.modifiers);
-        }
-
-        return result;
     }
 
     /**

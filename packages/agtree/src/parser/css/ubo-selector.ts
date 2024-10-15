@@ -23,7 +23,7 @@ import {
 import { tokenizeFnBalanced } from './balancing';
 import { type TokenData } from './css-token-stream';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
@@ -289,7 +289,7 @@ export const formatPseudoName = (name: string, wrapper?: string): string => {
 /**
  * Parser for uBO selectors.
  */
-export class UboSelectorParser extends ParserBase {
+export class UboSelectorParser extends BaseParser {
     /**
      * Parses a uBO selector list, eg. `div:matches-path(/path)`.
      *

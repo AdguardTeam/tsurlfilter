@@ -5,7 +5,7 @@ import {
     type FilterList,
     type NewLine,
 } from '../nodes';
-import { RuleParser } from './rule';
+import { RuleParser } from './rule-parser';
 import {
     CR,
     CRLF,
@@ -15,11 +15,12 @@ import {
 } from '../utils/constants';
 import { StringUtils } from '../utils/string';
 import { defaultParserOptions } from './options';
-import { ParserBase } from './interface';
+import { BaseParser } from './interface';
 import { type OutputByteBuffer } from '../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
 import { isUndefined } from '../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
+import { RuleGenerator } from '../generator';
 
 /**
  * Property map for binary serialization. This helps to reduce the size of the serialized data,
@@ -39,7 +40,7 @@ const enum FilterListNodeSerializationMap {
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
  * It is a wrapper around `RuleParser` which parses each line separately.
  */
-export class FilterListParser extends ParserBase {
+export class FilterListParser extends BaseParser {
     /**
      * Parses a whole adblock filter list (list of rules).
      *
@@ -152,7 +153,7 @@ export class FilterListParser extends ParserBase {
             if (preferRaw && rule.raws?.text) {
                 result += rule.raws.text;
             } else {
-                result += RuleParser.generate(rule);
+                result += RuleGenerator.generate(rule);
             }
 
             switch (rule.raws?.nl) {

@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { AdblockSyntax } from '../../utils/adblockers';
-import { EMPTY, NULL } from '../../utils/constants';
+import { NULL } from '../../utils/constants';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
@@ -14,7 +14,7 @@ import {
     RuleCategory,
     type Value,
 } from '../../nodes';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { ValueParser } from '../misc/value';
 import { defaultParserOptions } from '../options';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
@@ -46,7 +46,7 @@ const enum SimpleCommentRuleSerializationMap {
  * # This is a simple comment, but in host-like syntax
  * ```
  */
-export class SimpleCommentParser extends ParserBase {
+export class SimpleCommentParser extends BaseParser {
     /**
      * Checks if the raw rule is a simple comment.
      *
@@ -138,21 +138,6 @@ export class SimpleCommentParser extends ParserBase {
             result.start = baseOffset;
             result.end = baseOffset + raw.length;
         }
-
-        return result;
-    }
-
-    /**
-     * Converts a comment rule node to a string.
-     *
-     * @param node Comment rule node.
-     * @returns Raw string.
-     */
-    public static generate(node: CommentRule): string {
-        let result = EMPTY;
-
-        result += ValueParser.generate(node.marker);
-        result += ValueParser.generate(node.text);
 
         return result;
     }

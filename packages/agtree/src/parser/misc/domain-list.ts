@@ -8,14 +8,9 @@ import {
     type DomainListSeparator,
 } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import {
-    deserializeListItems,
-    generateListItems,
-    parseListItems,
-    serializeListItems,
-} from './list-helpers';
+import { deserializeListItems, parseListItems, serializeListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
@@ -55,7 +50,7 @@ const SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
  */
 let SEPARATOR_DESERIALIZATION_MAP:Map<number, string>;
 const getSeparatorDeserializationMap = () => {
-    if (SEPARATOR_DESERIALIZATION_MAP.size !== SEPARATOR_SERIALIZATION_MAP.size) {
+    if (!SEPARATOR_DESERIALIZATION_MAP) {
         SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
             Array.from(SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
@@ -72,7 +67,7 @@ const getSeparatorDeserializationMap = () => {
  * This parser is responsible for parsing these domain lists.
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_domains}
  */
-export class DomainListParser extends ParserBase {
+export class DomainListParser extends BaseParser {
     /**
      * Parses a domain list, eg. `example.com,example.org,~example.org`
      *
@@ -102,17 +97,6 @@ export class DomainListParser extends ParserBase {
         }
 
         return result;
-    }
-
-    /**
-     * Converts a domain list node to a string.
-     *
-     * @param node Domain list node.
-     *
-     * @returns Raw string.
-     */
-    public static generate(node: DomainList): string {
-        return generateListItems(node.children, node.separator);
     }
 
     /**

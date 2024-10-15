@@ -7,6 +7,7 @@ import {
 } from '../../../src/nodes';
 import { COMMA, EMPTY } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
+import { DomainListGenerator } from '../../../src/generator/misc/domain-list-generator';
 
 describe('DomainListParser', () => {
     // invalid inputs are tested in `list-helpers.test.ts`
@@ -330,7 +331,7 @@ describe('DomainListParser', () => {
             const ast = DomainListParser.parse(raw, defaultParserOptions, 0, separator);
 
             if (ast) {
-                return DomainListParser.generate(ast);
+                return DomainListGenerator.generate(ast);
             }
 
             return null;
@@ -368,7 +369,7 @@ describe('DomainListParser', () => {
             'example.com,~example.org',
             '~example.com,~example.org',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(DomainListParser);
+            await expect(input).toBeSerializedAndDeserializedProperly(DomainListParser, DomainListGenerator);
         });
     });
 });

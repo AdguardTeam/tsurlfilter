@@ -5,18 +5,19 @@ import zod from 'zod';
 
 import { getErrorMessage } from '../../src/utils/error';
 import { type Node } from '../../src/nodes';
-import { type ParserBase } from '../../src/parser/interface';
+import { type BaseParser } from '../../src/parser/interface';
 import { OutputByteBuffer } from '../../src/utils/output-byte-buffer';
 import { SimpleStorage } from '../helpers/simple-storage';
 import { InputByteBuffer } from '../../src/utils/input-byte-buffer';
 import { defaultParserOptions } from '../../src/parser/options';
+import { type BaseGenerator } from '../../src/generator/base-generator';
 
 // Extend Jest's global namespace with the custom matcher
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace jest {
         interface Matchers<R> {
-            toBeSerializedAndDeserializedProperly(parser: ParserBase): Promise<R>;
+            toBeSerializedAndDeserializedProperly(parser: BaseParser, generator: BaseGenerator): Promise<R>;
         }
     }
 }
@@ -38,11 +39,13 @@ expect.extend({
      *
      * @param received Received parameter from expect()
      * @param parser Parser class to use
+     * @param generator Generator class to use
      * @returns Jest matcher result
      */
     async toBeSerializedAndDeserializedProperly(
         received: unknown,
-        parser: typeof ParserBase,
+        parser: typeof BaseParser,
+        generator: typeof BaseGenerator,
     ): Promise<jest.CustomMatcherResult> {
         try {
             // Validate the received parameter
@@ -119,7 +122,7 @@ expect.extend({
             expect(deserializedNode).toEqual(expectedNode);
 
             // Generated strings should be equal as well
-            expect(parser.generate(deserializedNode)).toEqual(parser.generate(expectedNode));
+            expect(generator.generate(deserializedNode)).toEqual(generator.generate(expectedNode));
 
             return {
                 pass: true,

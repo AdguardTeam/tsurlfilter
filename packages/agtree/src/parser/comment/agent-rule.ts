@@ -4,7 +4,6 @@ import {
     NULL,
     OPEN_SQUARE_BRACKET,
     SEMICOLON,
-    SPACE,
     UINT8_MAX,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
@@ -19,7 +18,7 @@ import { AgentParser } from './agent';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { defaultParserOptions } from '../options';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
@@ -62,7 +61,7 @@ const enum AgentRuleSerializationMap {
  *    [Adblock Plus 2.0; AdGuard]
  *    ```
  */
-export class AgentCommentRuleParser extends ParserBase {
+export class AgentCommentParser extends BaseParser {
     /**
      * Checks if the raw rule is an adblock agent comment.
      *
@@ -90,7 +89,7 @@ export class AgentCommentRuleParser extends ParserBase {
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AgentCommentRule | null {
         // Ignore non-agent rules
-        if (!AgentCommentRuleParser.isAgentRule(raw)) {
+        if (!AgentCommentParser.isAgentRule(raw)) {
             return null;
         }
 
@@ -167,24 +166,6 @@ export class AgentCommentRuleParser extends ParserBase {
                 baseOffset + raw.length,
             );
         }
-
-        return result;
-    }
-
-    /**
-     * Converts an adblock agent AST to a string.
-     *
-     * @param ast Agent rule AST
-     * @returns Raw string
-     */
-    public static generate(ast: AgentCommentRule): string {
-        let result = OPEN_SQUARE_BRACKET;
-
-        result += ast.children
-            .map(AgentParser.generate)
-            .join(SEMICOLON + SPACE);
-
-        result += CLOSE_SQUARE_BRACKET;
 
         return result;
     }

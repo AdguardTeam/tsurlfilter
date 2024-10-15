@@ -3,12 +3,7 @@ import * as tldts from 'tldts';
 import isIp from 'is-ip';
 
 import { StringUtils } from '../../utils/string';
-import {
-    EMPTY,
-    NULL,
-    SPACE,
-    UINT16_MAX,
-} from '../../utils/constants';
+import { NULL, UINT16_MAX } from '../../utils/constants';
 import {
     type HostRule,
     NetworkRuleType,
@@ -20,7 +15,7 @@ import {
     getSyntaxDeserializationMap,
 } from '../../nodes';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
@@ -78,7 +73,7 @@ const enum HostnameListNodeSerializationMap {
  * `example.org` -- "just domain" syntax
  * @see {@link http://man7.org/linux/man-pages/man5/hosts.5.html}
  */
-export class HostRuleParser extends ParserBase {
+export class HostRuleParser extends BaseParser {
     public static readonly NULL_IP = '0.0.0.0';
 
     public static readonly COMMENT_MARKER = '#';
@@ -185,34 +180,6 @@ export class HostRuleParser extends ParserBase {
         }
 
         return result as HostRule;
-    }
-
-    /**
-     * Converts a host rule node to a raw string.
-     *
-     * @param node Host rule node.
-     * @returns Raw string.
-     */
-    public static generate(node: HostRule): string {
-        const result: string[] = [];
-
-        if (node.ip) {
-            result.push(node.ip.value);
-        }
-
-        if (node.hostnames) {
-            result.push(SPACE);
-            result.push(node.hostnames.children.map(({ value }) => value).join(SPACE));
-        }
-
-        if (node.comment) {
-            result.push(SPACE);
-            result.push(HostRuleParser.COMMENT_MARKER);
-            result.push(SPACE);
-            result.push(node.comment.value);
-        }
-
-        return result.join(EMPTY);
     }
 
     /**

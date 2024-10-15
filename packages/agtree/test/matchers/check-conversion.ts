@@ -6,11 +6,12 @@
 import { z } from 'zod';
 
 import { type ConverterBase } from '../../src/converter/base-interfaces/converter-base';
-import { RuleParser } from '../../src/parser/rule';
+import { RuleParser } from '../../src/parser/rule-parser';
 import { everyRefsAreDifferent } from '../helpers/refs';
 import { getErrorMessage } from '../../src/utils/error';
 import { type AnyRule } from '../../src/nodes';
 import { type NodeConversionResult } from '../../src/converter/base-interfaces/conversion-result';
+import { RuleGenerator } from '../../src/generator';
 
 // Extend Jest's global namespace with the custom matcher
 declare global {
@@ -176,7 +177,7 @@ expect.extend({
         }
 
         // Finally, we should compare the stringified versions of the nodes
-        expect(conversionResult.result.map(RuleParser.generate)).toEqual(receivedParsed.expected);
+        expect(conversionResult.result.map(RuleGenerator.generate)).toEqual(receivedParsed.expected);
 
         return {
             pass: true,

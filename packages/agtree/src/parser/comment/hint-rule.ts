@@ -6,7 +6,6 @@ import {
     HINT_MARKER_LEN,
     NULL,
     OPEN_PARENTHESIS,
-    SPACE,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import {
@@ -22,7 +21,7 @@ import { HintParser } from './hint';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
@@ -54,7 +53,7 @@ const enum HintRuleSerializationMap {
  * contains two hints: `NOT_OPTIMIZED` and `PLATFORM`.
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#hints}
  */
-export class HintCommentRuleParser extends ParserBase {
+export class HintCommentParser extends BaseParser {
     /**
      * Checks if the raw rule is a hint rule.
      *
@@ -77,7 +76,7 @@ export class HintCommentRuleParser extends ParserBase {
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): HintCommentRule | null {
         // Ignore non-hint rules
-        if (!HintCommentRuleParser.isHintRule(raw)) {
+        if (!HintCommentParser.isHintRule(raw)) {
             return null;
         }
 
@@ -170,20 +169,6 @@ export class HintCommentRuleParser extends ParserBase {
             result.start = baseOffset;
             result.end = baseOffset + offset;
         }
-
-        return result;
-    }
-
-    /**
-     * Converts a hint rule node to a raw string.
-     *
-     * @param node Hint rule node
-     * @returns Raw string
-     */
-    public static generate(node: HintCommentRule): string {
-        let result = HINT_MARKER + SPACE;
-
-        result += node.children.map(HintParser.generate).join(SPACE);
 
         return result;
     }

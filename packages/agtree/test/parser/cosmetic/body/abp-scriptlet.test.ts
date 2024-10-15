@@ -3,6 +3,9 @@ import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/body/abp-snippet';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import { EMPTY, SPACE } from '../../../../src/utils/constants';
+import {
+    AbpSnippetInjectionBodyGenerator,
+} from '../../../../src/generator/cosmetic/body/abp-snippet-injection-body-generator';
 
 describe('AbpSnippetInjectionBodyParser', () => {
     describe('AbpSnippetInjectionBodyParser.parse - valid cases', () => {
@@ -679,7 +682,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(AbpSnippetInjectionBodyParser.generate(ruleNode)).toBe(expected);
+            expect(AbpSnippetInjectionBodyGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 
@@ -690,7 +693,10 @@ describe('AbpSnippetInjectionBodyParser', () => {
             'scriptlet0 arg0 arg1',
             'scriptlet0 arg00 arg01; scriptlet1; scriptlet2 arg20',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(AbpSnippetInjectionBodyParser);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                AbpSnippetInjectionBodyParser,
+                AbpSnippetInjectionBodyGenerator,
+            );
         });
     });
 });

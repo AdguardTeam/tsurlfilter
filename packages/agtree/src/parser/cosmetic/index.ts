@@ -7,15 +7,10 @@ import { DomainListParser } from '../misc/domain-list';
 import { ModifierListParser } from '../misc/modifier-list';
 import {
     ADG_SCRIPTLET_MASK,
-    CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,
-    COLON,
     DOLLAR_SIGN,
-    EMPTY,
     NULL,
-    OPEN_PARENTHESIS,
     OPEN_SQUARE_BRACKET,
-    SPACE,
     UBO_HTML_MASK,
     UBO_SCRIPTLET_MASK,
     UBO_SCRIPTLET_MASK_LEGACY,
@@ -50,7 +45,7 @@ import { AdgCssInjectionParser } from '../css/adg-css-injection';
 import { AbpSnippetInjectionBodyParser } from './body/abp-snippet';
 import { UboScriptletInjectionBodyParser } from './body/ubo-scriptlet';
 import { AdgScriptletInjectionBodyParser } from './body/adg-scriptlet';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from '../misc/value';
@@ -185,7 +180,7 @@ const ADG_CSS_INJECTION_PATTERN = /^(?:.+){(?:.+)}$/;
  */
 // TODO: Make raw body parsing optional
 // TODO: Split into smaller sections
-export class CosmeticRuleParser extends ParserBase {
+export class CosmeticRuleParser extends BaseParser {
     /**
      * Determines whether a rule is a cosmetic rule. The rule is considered cosmetic if it
      * contains a cosmetic rule separator.
@@ -732,152 +727,6 @@ export class CosmeticRuleParser extends ParserBase {
             ...baseRule,
             ...restProps,
         };
-    }
-
-    /**
-     * Generates the rule pattern from the AST.
-     *
-     * @param node Cosmetic rule node
-     * @returns Raw rule pattern
-     * @example
-     * - '##.foo' → ''
-     * - 'example.com,example.org##.foo' → 'example.com,example.org'
-     * - '[$path=/foo/bar]example.com##.foo' → '[$path=/foo/bar]example.com'
-     */
-    public static generatePattern(node: AnyCosmeticRule): string {
-        let result = EMPTY;
-
-        // AdGuard modifiers (if any)
-        if (node.syntax === AdblockSyntax.Adg && node.modifiers && node.modifiers.children.length > 0) {
-            result += OPEN_SQUARE_BRACKET;
-            result += DOLLAR_SIGN;
-            result += ModifierListParser.generate(node.modifiers);
-            result += CLOSE_SQUARE_BRACKET;
-        }
-
-        // Domain list (if any)
-        result += DomainListParser.generate(node.domains);
-
-        return result;
-    }
-
-    /**
-     * Generates the rule body from the node.
-     *
-     * @param node Cosmetic rule node
-     * @returns Raw rule body
-     * @example
-     * - '##.foo' → '.foo'
-     * - 'example.com,example.org##.foo' → '.foo'
-     * - 'example.com#%#//scriptlet('foo')' → '//scriptlet('foo')'
-     */
-    public static generateBody(node: AnyCosmeticRule): string {
-        let result = EMPTY;
-
-        // Body
-        switch (node.type) {
-            case CosmeticRuleType.ElementHidingRule:
-                result = node.body.selectorList.value;
-                break;
-
-            case CosmeticRuleType.CssInjectionRule:
-                if (node.syntax === AdblockSyntax.Adg) {
-                    result = AdgCssInjectionParser.generate(node.body);
-                } else if (node.syntax === AdblockSyntax.Ubo) {
-                    if (node.body.mediaQueryList) {
-                        result += COLON;
-                        result += UboPseudoName.MatchesMedia;
-                        result += OPEN_PARENTHESIS;
-                        result += node.body.mediaQueryList.value;
-                        result += CLOSE_PARENTHESIS;
-                        result += SPACE;
-                    }
-
-                    result += node.body.selectorList.value;
-
-                    if (node.body.remove) {
-                        result += COLON;
-                        result += UboPseudoName.Remove;
-                        result += OPEN_PARENTHESIS;
-                        result += CLOSE_PARENTHESIS;
-                    } else if (node.body.declarationList) {
-                        result += COLON;
-                        result += UboPseudoName.Style;
-                        result += OPEN_PARENTHESIS;
-                        result += node.body.declarationList.value;
-                        result += CLOSE_PARENTHESIS;
-                    }
-                }
-                break;
-
-            case CosmeticRuleType.HtmlFilteringRule:
-            case CosmeticRuleType.JsInjectionRule:
-                result = node.body.value;
-                break;
-
-            case CosmeticRuleType.ScriptletInjectionRule:
-                switch (node.syntax) {
-                    case AdblockSyntax.Adg:
-                        result = AdgScriptletInjectionBodyParser.generate(node.body);
-                        break;
-
-                    case AdblockSyntax.Abp:
-                        result = AbpSnippetInjectionBodyParser.generate(node.body);
-                        break;
-
-                    case AdblockSyntax.Ubo:
-                        result = UboScriptletInjectionBodyParser.generate(node.body);
-                        break;
-
-                    default:
-                        throw new Error('Scriptlet rule should have an explicit syntax');
-                }
-                break;
-
-            default:
-                throw new Error('Unknown cosmetic rule type');
-        }
-
-        return result;
-    }
-
-    /**
-     * Converts a cosmetic rule AST into a string.
-     *
-     * @param node Cosmetic rule AST
-     * @returns Raw string
-     */
-    public static generate(node: AnyCosmeticRule): string {
-        let result = EMPTY;
-
-        // Pattern
-        result += CosmeticRuleParser.generatePattern(node);
-
-        // Separator
-        result += node.separator.value;
-
-        // uBO rule modifiers
-        if (node.syntax === AdblockSyntax.Ubo && node.modifiers) {
-            node.modifiers.children.forEach((modifier) => {
-                result += COLON;
-                result += modifier.name.value;
-                if (modifier.value) {
-                    result += OPEN_PARENTHESIS;
-                    result += modifier.value.value;
-                    result += CLOSE_PARENTHESIS;
-                }
-            });
-
-            // If there are at least one modifier, add a space
-            if (node.modifiers.children.length) {
-                result += SPACE;
-            }
-        }
-
-        // Body
-        result += CosmeticRuleParser.generateBody(node);
-
-        return result;
     }
 
     /**

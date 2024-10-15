@@ -2,6 +2,7 @@ import { NetworkRuleParser } from '../../../src/parser/network';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/nodes';
 import { defaultParserOptions } from '../../../src/parser/options';
+import { NetworkRuleGenerator } from '../../../src/generator/network';
 
 describe('NetworkRuleParser', () => {
     test('parse', () => {
@@ -928,7 +929,7 @@ describe('NetworkRuleParser', () => {
             const ast = NetworkRuleParser.parse(raw);
 
             if (ast) {
-                return NetworkRuleParser.generate(ast);
+                return NetworkRuleGenerator.generate(ast);
             }
 
             return null;
@@ -967,7 +968,7 @@ describe('NetworkRuleParser', () => {
             '/ads.js^$script',
             '@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(NetworkRuleParser);
+            await expect(input).toBeSerializedAndDeserializedProperly(NetworkRuleParser, NetworkRuleGenerator);
         });
     });
 });

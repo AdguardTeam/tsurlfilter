@@ -23,7 +23,7 @@ import {
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { ValueParser } from '../misc/value';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
@@ -123,7 +123,7 @@ const getFrequentPlatformsDeserializationMap = () => {
  * class is responsible for parsing them. The rule itself is parsed by
  * the `HintRuleParser`, which uses this class to parse single hints.
  */
-export class HintParser extends ParserBase {
+export class HintParser extends BaseParser {
     /**
      * Parses a raw rule as a hint.
      *
@@ -261,26 +261,6 @@ export class HintParser extends ParserBase {
         if (options.isLocIncluded) {
             result.start = baseOffset;
             result.end = baseOffset + offset;
-        }
-
-        return result;
-    }
-
-    /**
-     * Converts a single hint AST to a string.
-     *
-     * @param hint Hint AST
-     * @returns Hint string
-     */
-    public static generate(hint: Hint): string {
-        let result = EMPTY;
-
-        result += hint.name.value;
-
-        if (hint.params && hint.params.children.length > 0) {
-            result += OPEN_PARENTHESIS;
-            result += ParameterListParser.generate(hint.params, COMMA);
-            result += CLOSE_PARENTHESIS;
         }
 
         return result;

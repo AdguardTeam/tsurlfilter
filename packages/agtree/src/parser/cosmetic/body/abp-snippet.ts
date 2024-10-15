@@ -8,7 +8,7 @@ import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../../misc/parameter-list';
 import { type ScriptletInjectionRuleBody } from '../../../nodes';
 import { defaultParserOptions } from '../../options';
-import { ParserBase } from '../../interface';
+import { BaseParser } from '../../interface';
 import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
 import { deserializeScriptletBody, serializeScriptletBody } from './scriptlet-serialization-helper';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
@@ -27,7 +27,7 @@ import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
  *
  * @see {@link https://help.eyeo.com/adblockplus/snippet-filters-tutorial}
  */
-export class AbpSnippetInjectionBodyParser extends ParserBase {
+export class AbpSnippetInjectionBodyParser extends BaseParser {
     /**
      * Error messages used by the parser.
      */
@@ -150,30 +150,6 @@ export class AbpSnippetInjectionBodyParser extends ParserBase {
         }
 
         return result;
-    }
-
-    /**
-     * Generates a string representation of the Adblock Plus-style snippet call body.
-     *
-     * @param node Scriptlet injection rule body
-     * @returns String representation of the rule body
-     */
-    public static generate(node: ScriptletInjectionRuleBody): string {
-        const result: string[] = [];
-
-        if (node.children.length === 0) {
-            throw new Error(this.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL);
-        }
-
-        for (const scriptletCall of node.children) {
-            if (scriptletCall.children.length === 0) {
-                throw new Error(this.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL);
-            }
-
-            result.push(ParameterListParser.generate(scriptletCall, SPACE));
-        }
-
-        return result.join(SEMICOLON + SPACE);
     }
 
     /**

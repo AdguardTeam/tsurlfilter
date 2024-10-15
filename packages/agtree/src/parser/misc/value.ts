@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { BinaryTypeMap, type Value } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
@@ -27,7 +27,7 @@ const enum ValueNodeSerializationMap {
  * Value parser.
  * This parser is very simple, it just exists to provide a consistent interface for parsing and generating values.
  */
-export class ValueParser extends ParserBase {
+export class ValueParser extends BaseParser {
     /**
      * Parses a value.
      *
@@ -49,16 +49,6 @@ export class ValueParser extends ParserBase {
         }
 
         return result;
-    }
-
-    /**
-     * Converts a value node to a string.
-     *
-     * @param node Value node.
-     * @returns Raw string.
-     */
-    public static generate(node: Value): string {
-        return node.value;
     }
 
     /**

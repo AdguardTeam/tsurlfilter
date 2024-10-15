@@ -9,7 +9,6 @@ import {
     CLOSE_PARENTHESIS,
     COMMA,
     DOUBLE_QUOTE,
-    EMPTY,
     ESCAPE_CHARACTER,
     OPEN_PARENTHESIS,
     SINGLE_QUOTE,
@@ -17,9 +16,8 @@ import {
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../../misc/parameter-list';
 import { defaultParserOptions } from '../../options';
-import { ParserBase } from '../../interface';
+import { BaseParser } from '../../interface';
 import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
 import { deserializeScriptletBody, serializeScriptletBody } from './scriptlet-serialization-helper';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
@@ -43,7 +41,7 @@ type SingleOrDoubleQuote = typeof SINGLE_QUOTE | typeof DOUBLE_QUOTE;
  *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
  */
-export class AdgScriptletInjectionBodyParser extends ParserBase {
+export class AdgScriptletInjectionBodyParser extends BaseParser {
     /**
      * Error messages used by the parser.
      */
@@ -52,7 +50,6 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
         NO_OPENING_PARENTHESIS: `Invalid ADG scriptlet call, no opening parentheses '${OPEN_PARENTHESIS}' found`,
         NO_CLOSING_PARENTHESIS: `Invalid ADG scriptlet call, no closing parentheses '${CLOSE_PARENTHESIS}' found`,
         WHITESPACE_AFTER_MASK: 'Invalid ADG scriptlet call, whitespace is not allowed after the scriptlet call mask',
-        NO_MULTIPLE_SCRIPTLET_CALLS: 'ADG syntaxes does not support multiple scriptlet calls within one single rule',
         NO_INCONSISTENT_QUOTES: 'Invalid ADG scriptlet call, inconsistent quotes',
         NO_UNCLOSED_PARAMETER: 'Invalid ADG scriptlet call, unclosed parameter',
         EXPECTED_QUOTE: "Invalid ADG scriptlet call, expected quote, got '%s'",
@@ -289,31 +286,6 @@ export class AdgScriptletInjectionBodyParser extends ParserBase {
         result.children.push(parameterList);
 
         return result;
-    }
-
-    /**
-     * Generates a string representation of the AdGuard scriptlet call body.
-     *
-     * @param node Scriptlet injection rule body
-     * @returns String representation of the rule body
-     */
-    public static generate(node: ScriptletInjectionRuleBody): string {
-        const result: string[] = [];
-
-        if (node.children.length > 1) {
-            throw new Error(this.ERROR_MESSAGES.NO_MULTIPLE_SCRIPTLET_CALLS);
-        }
-
-        result.push(ADG_SCRIPTLET_MASK);
-        result.push(OPEN_PARENTHESIS);
-
-        if (node.children.length > 0) {
-            result.push(ParameterListParser.generate(node.children[0]));
-        }
-
-        result.push(CLOSE_PARENTHESIS);
-
-        return result.join(EMPTY);
     }
 
     /**

@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { AgentCommentRuleParser } from './agent-rule';
+import { AgentCommentParser } from './agent-rule';
 import {
     type AnyCommentRule,
     CommentRuleType,
@@ -11,12 +11,12 @@ import {
     type ConfigCommentRule,
     type CommentRule,
 } from '../../nodes';
-import { ConfigCommentRuleParser } from './inline-config';
-import { HintCommentRuleParser } from './hint-rule';
+import { ConfigCommentParser } from './inline-config';
+import { HintCommentParser } from './hint-rule';
 import { MetadataCommentRuleParser } from './metadata';
-import { PreProcessorCommentRuleParser } from './preprocessor';
+import { PreProcessorCommentParser } from './preprocessor';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { SimpleCommentParser } from './simple-comment';
@@ -77,7 +77,7 @@ import { SimpleCommentParser } from './simple-comment';
  *        ```
  *      - etc.
  */
-export class CommentRuleParser extends ParserBase {
+export class CommentRuleParser extends BaseParser {
     /**
      * Checks whether a rule is a comment.
      *
@@ -86,7 +86,7 @@ export class CommentRuleParser extends ParserBase {
      */
     public static isCommentRule(raw: string): boolean {
         const trimmed = raw.trim();
-        return SimpleCommentParser.isSimpleComment(trimmed) || AgentCommentRuleParser.isAgentRule(trimmed);
+        return SimpleCommentParser.isSimpleComment(trimmed) || AgentCommentParser.isAgentRule(trimmed);
     }
 
     /**
@@ -105,43 +105,12 @@ export class CommentRuleParser extends ParserBase {
 
         // Note: we parse non-functional comments at the end,
         // if the input does not match any of the previous, more specific comment patterns
-        return AgentCommentRuleParser.parse(raw, options, baseOffset)
-            || HintCommentRuleParser.parse(raw, options, baseOffset)
-            || PreProcessorCommentRuleParser.parse(raw, options, baseOffset)
+        return AgentCommentParser.parse(raw, options, baseOffset)
+            || HintCommentParser.parse(raw, options, baseOffset)
+            || PreProcessorCommentParser.parse(raw, options, baseOffset)
             || MetadataCommentRuleParser.parse(raw, options, baseOffset)
-            || ConfigCommentRuleParser.parse(raw, options, baseOffset)
+            || ConfigCommentParser.parse(raw, options, baseOffset)
             || SimpleCommentParser.parse(raw, options, baseOffset);
-    }
-
-    /**
-     * Converts a comment rule node to a string.
-     *
-     * @param node Comment rule node
-     * @returns Raw string
-     */
-    public static generate(node: AnyCommentRule): string {
-        switch (node.type) {
-            case CommentRuleType.AgentCommentRule:
-                return AgentCommentRuleParser.generate(node);
-
-            case CommentRuleType.HintCommentRule:
-                return HintCommentRuleParser.generate(node);
-
-            case CommentRuleType.PreProcessorCommentRule:
-                return PreProcessorCommentRuleParser.generate(node);
-
-            case CommentRuleType.MetadataCommentRule:
-                return MetadataCommentRuleParser.generate(node);
-
-            case CommentRuleType.ConfigCommentRule:
-                return ConfigCommentRuleParser.generate(node);
-
-            case CommentRuleType.CommentRule:
-                return SimpleCommentParser.generate(node);
-
-            default:
-                throw new Error('Unknown comment rule type');
-        }
     }
 
     /**
@@ -153,15 +122,15 @@ export class CommentRuleParser extends ParserBase {
     public static serialize(node: AnyCommentRule, buffer: OutputByteBuffer): void {
         switch (node.type) {
             case CommentRuleType.AgentCommentRule:
-                AgentCommentRuleParser.serialize(node, buffer);
+                AgentCommentParser.serialize(node, buffer);
                 return;
 
             case CommentRuleType.HintCommentRule:
-                HintCommentRuleParser.serialize(node, buffer);
+                HintCommentParser.serialize(node, buffer);
                 return;
 
             case CommentRuleType.PreProcessorCommentRule:
-                PreProcessorCommentRuleParser.serialize(node, buffer);
+                PreProcessorCommentParser.serialize(node, buffer);
                 return;
 
             case CommentRuleType.MetadataCommentRule:
@@ -169,7 +138,7 @@ export class CommentRuleParser extends ParserBase {
                 return;
 
             case CommentRuleType.ConfigCommentRule:
-                ConfigCommentRuleParser.serialize(node, buffer);
+                ConfigCommentParser.serialize(node, buffer);
                 return;
 
             case CommentRuleType.CommentRule:
@@ -193,15 +162,15 @@ export class CommentRuleParser extends ParserBase {
 
         switch (type) {
             case BinaryTypeMap.AgentRuleNode:
-                AgentCommentRuleParser.deserialize(buffer, node as Partial<AgentCommentRule>);
+                AgentCommentParser.deserialize(buffer, node as Partial<AgentCommentRule>);
                 return;
 
             case BinaryTypeMap.HintRuleNode:
-                HintCommentRuleParser.deserialize(buffer, node as Partial<HintCommentRule>);
+                HintCommentParser.deserialize(buffer, node as Partial<HintCommentRule>);
                 return;
 
             case BinaryTypeMap.PreProcessorCommentRuleNode:
-                PreProcessorCommentRuleParser.deserialize(buffer, node as Partial<PreProcessorCommentRule>);
+                PreProcessorCommentParser.deserialize(buffer, node as Partial<PreProcessorCommentRule>);
                 return;
 
             case BinaryTypeMap.MetadataCommentRuleNode:
@@ -209,7 +178,7 @@ export class CommentRuleParser extends ParserBase {
                 return;
 
             case BinaryTypeMap.ConfigCommentRuleNode:
-                ConfigCommentRuleParser.deserialize(buffer, node as Partial<ConfigCommentRule>);
+                ConfigCommentParser.deserialize(buffer, node as Partial<ConfigCommentRule>);
                 return;
 
             case BinaryTypeMap.CommentRuleNode:

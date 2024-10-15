@@ -5,9 +5,10 @@
  */
 
 import { createConversionResult, type ConversionResult } from './base-interfaces/conversion-result';
-import { RuleParser } from '../parser/rule';
+import { RuleParser } from '../parser/rule-parser';
 import { RuleConverter } from './rule';
 import { ConverterBase } from './base-interfaces/converter-base';
+import { RuleGenerator } from '../generator';
 
 /**
  * Adblock filtering rule converter class.
@@ -37,6 +38,6 @@ export class RawRuleConverter extends ConverterBase {
         }
 
         // Otherwise, serialize the converted rule nodes
-        return createConversionResult(conversionResult.result.map(RuleParser.generate), true);
+        return createConversionResult(conversionResult.result.map(RuleGenerator.generate), true);
     }
 }

@@ -11,9 +11,7 @@ import {
     AGLINT_COMMAND_PREFIX,
     AGLINT_CONFIG_COMMENT_MARKER,
     COMMA,
-    EMPTY,
     NULL,
-    SPACE,
 } from '../../utils/constants';
 import {
     CommentMarker,
@@ -28,7 +26,7 @@ import {
 import { StringUtils } from '../../utils/string';
 import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueParser } from '../misc/value';
 import { isUndefined } from '../../utils/type-guards';
@@ -99,7 +97,7 @@ const FREQUENT_COMMANDS_DESERIALIZATION_MAP = new Map<number, string>(
  *
  * @see {@link https://eslint.org/docs/latest/user-guide/configuring/rules#using-configuration-comments}
  */
-export class ConfigCommentRuleParser extends ParserBase {
+export class ConfigCommentParser extends BaseParser {
     /**
      * Checks if the raw rule is an inline configuration comment rule.
      *
@@ -138,7 +136,7 @@ export class ConfigCommentRuleParser extends ParserBase {
      * Inline configuration comment AST or null (if the raw rule cannot be parsed as configuration comment)
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): ConfigCommentRule | null {
-        if (!ConfigCommentRuleParser.isConfigComment(raw)) {
+        if (!ConfigCommentParser.isConfigComment(raw)) {
             return null;
         }
 
@@ -240,39 +238,6 @@ export class ConfigCommentRuleParser extends ParserBase {
     }
 
     /**
-     * Converts an inline configuration comment node to a string.
-     *
-     * @param node Inline configuration comment node
-     * @returns Raw string
-     */
-    public static generate(node: ConfigCommentRule): string {
-        let result = EMPTY;
-
-        result += node.marker.value;
-        result += SPACE;
-        result += node.command.value;
-
-        if (node.params) {
-            result += SPACE;
-
-            if (node.params.type === 'ParameterList') {
-                result += ParameterListParser.generate(node.params, COMMA);
-            } else {
-                // Trim JSON boundaries
-                result += JSON.stringify(node.params.value).slice(1, -1).trim();
-            }
-        }
-
-        // Add comment within the config comment
-        if (node.comment) {
-            result += SPACE;
-            result += node.comment.value;
-        }
-
-        return result;
-    }
-
-    /**
      * Serializes a config node to binary format.
      *
      * @param node Node to serialize.
@@ -356,7 +321,7 @@ export class ConfigCommentRuleParser extends ParserBase {
             if (node.params.type === 'ParameterList') {
                 ParameterListParser.serialize(node.params, buffer);
             } else {
-                ConfigCommentRuleParser.serializeConfigNode(node.params, buffer);
+                ConfigCommentParser.serializeConfigNode(node.params, buffer);
             }
         }
 
@@ -405,7 +370,7 @@ export class ConfigCommentRuleParser extends ParserBase {
 
                 case ConfigCommentRuleSerializationMap.Params:
                     if (buffer.peekUint8() === BinaryTypeMap.ConfigNode) {
-                        ConfigCommentRuleParser.deserializeConfigNode(buffer, node.params = {} as ConfigNode);
+                        ConfigCommentParser.deserializeConfigNode(buffer, node.params = {} as ConfigNode);
                     } else {
                         ParameterListParser.deserialize(buffer, node.params = {} as ParameterList);
                     }

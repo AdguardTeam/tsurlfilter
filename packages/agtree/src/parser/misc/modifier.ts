@@ -1,15 +1,10 @@
 /* eslint-disable no-param-reassign */
-import {
-    EMPTY,
-    MODIFIER_ASSIGN_OPERATOR,
-    NEGATION_MARKER,
-    NULL,
-} from '../../utils/constants';
+import { MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER, NULL } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { BinaryTypeMap, type Modifier, type Value } from '../../nodes';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueParser } from './value';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
@@ -277,7 +272,7 @@ const FREQUENT_VALUES_DESERIALIZATION_MAPS = new Map<string, Map<number, string>
  * @example
  * `match-case`, `~third-party`, `domain=example.com|~example.org`
  */
-export class ModifierParser extends ParserBase {
+export class ModifierParser extends BaseParser {
     /**
      * Parses a modifier.
      *
@@ -377,29 +372,6 @@ export class ModifierParser extends ParserBase {
         if (options.isLocIncluded) {
             result.start = baseOffset + modifierStart;
             result.end = baseOffset + modifierEnd;
-        }
-
-        return result;
-    }
-
-    /**
-     * Generates a string from a modifier (serializes it).
-     *
-     * @param modifier Modifier to generate string from
-     * @returns String representation of the modifier
-     */
-    public static generate(modifier: Modifier): string {
-        let result = EMPTY;
-
-        if (modifier.exception) {
-            result += NEGATION_MARKER;
-        }
-
-        result += modifier.name.value;
-
-        if (modifier.value !== undefined) {
-            result += MODIFIER_ASSIGN_OPERATOR;
-            result += modifier.value.value;
         }
 
         return result;

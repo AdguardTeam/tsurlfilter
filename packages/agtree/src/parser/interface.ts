@@ -11,7 +11,7 @@ import { type ParserOptions } from './options';
 /**
  * Base class for parsers. Each parser should extend this class.
  */
-export class ParserBase {
+export class BaseParser {
     /**
      * Parses the input string and returns the AST node.
      *
@@ -21,15 +21,6 @@ export class ParserBase {
      * @param args Additional, parser-specific arguments, if needed.
      */
     public static parse(input: string, options: ParserOptions, baseOffset: number, ...args: unknown[]): Node | null {
-        throw new NotImplementedError();
-    }
-
-    /**
-     * Generates a string from the AST node.
-     *
-     * @param node AST node to generate a string from.
-     */
-    public static generate(node: Node): string {
         throw new NotImplementedError();
     }
 

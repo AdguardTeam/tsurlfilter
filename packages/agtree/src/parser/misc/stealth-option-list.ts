@@ -3,7 +3,7 @@ import { type StealthOptionList, ListNodeType, ListItemNodeType } from '../../no
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
-import { ParserBase } from '../interface';
+import { BaseParser } from '../interface';
 
 const STEALTH_OPTION_LIST_SEPARATOR = PIPE;
 
@@ -12,7 +12,7 @@ const STEALTH_OPTION_LIST_SEPARATOR = PIPE;
  *
  * @see {@link https://adguard.app/kb/general/ad-filtering/create-own-filters/#stealth-modifier}
  */
-export class StealthOptionListParser extends ParserBase {
+export class StealthOptionListParser extends BaseParser {
     /**
      * Parses a stealth option list which items are separated by `|`,
      * e.g. `dpi|ip`.

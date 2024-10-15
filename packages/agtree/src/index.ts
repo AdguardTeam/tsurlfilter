@@ -3,7 +3,7 @@
  */
 
 // Parser
-export { RuleParser } from './parser/rule';
+export { RuleParser } from './parser/rule-parser';
 export {
     type Agent,
     type AgentCommentRule,
@@ -56,17 +56,17 @@ export {
     type AnyNetworkRule,
 } from './nodes';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
-export { AgentCommentRuleParser } from './parser/comment/agent-rule';
+export { AgentCommentParser } from './parser/comment/agent-rule';
 export { AgentParser } from './parser/comment/agent';
 export { CommentRuleParser } from './parser/comment';
-export { ConfigCommentRuleParser } from './parser/comment/inline-config';
+export { ConfigCommentParser } from './parser/comment/inline-config';
 export { CosmeticRuleParser } from './parser/cosmetic';
 export { AppListParser } from './parser/misc/app-list';
 export { DomainListParser } from './parser/misc/domain-list';
 export { MethodListParser } from './parser/misc/method-list';
 export { StealthOptionListParser } from './parser/misc/stealth-option-list';
 export { FilterListParser } from './parser/filterlist';
-export { HintCommentRuleParser } from './parser/comment/hint-rule';
+export { HintCommentParser } from './parser/comment/hint-rule';
 export { HintParser } from './parser/comment/hint';
 export { LogicalExpressionParser } from './parser/misc/logical-expression';
 export { MetadataCommentRuleParser, getKnownMetadataHeaders } from './parser/comment/metadata';
@@ -76,7 +76,7 @@ export { NetworkRuleParser } from './parser/network';
 export { NotImplementedError } from './errors/not-implemented-error';
 export { ParameterListParser } from './parser/misc/parameter-list';
 export { HostRuleParser } from './parser/network/host';
-export { PreProcessorCommentRuleParser } from './parser/comment/preprocessor';
+export { PreProcessorCommentParser } from './parser/comment/preprocessor';
 export { RuleConversionError } from './errors/rule-conversion-error';
 export { BinarySchemaMismatchError } from './errors/binary-schema-mismatch-error';
 
