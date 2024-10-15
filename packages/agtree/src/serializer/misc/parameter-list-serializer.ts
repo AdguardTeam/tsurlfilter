@@ -1,0 +1,66 @@
+import { type ParameterList, BinaryTypeMap } from '../../nodes';
+import { NULL } from '../../utils/constants';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { ValueSerializer } from './value-serializer';
+import { isNull, isUndefined } from '../../utils/type-guards';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
+import { BaseSerializer } from '../base-serializer';
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum ParameterListNodeSerializationMap {
+    Children = 1,
+    Start,
+    End,
+}
+
+export class ParameterListSerializer extends BaseSerializer {
+    /**
+     * Serializes a parameter list node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     * @param frequentValuesMap Optional map of frequent values.
+     * @param toLower Whether to lowercase the value before the frequent value match (defaults to `false`).
+     */
+    public static serialize(
+        node: ParameterList,
+        buffer: OutputByteBuffer,
+        frequentValuesMap?: Map<string, number>,
+        toLower = false,
+    ): void {
+        buffer.writeUint8(BinaryTypeMap.ParameterListNode);
+
+        const count = node.children.length;
+        buffer.writeUint8(ParameterListNodeSerializationMap.Children);
+        // note: we store the count, because re-construction of the array is faster if we know the length
+        buffer.writeUint32(count);
+
+        for (let i = 0; i < count; i += 1) {
+            const child = node.children[i];
+            if (isNull(child)) {
+                buffer.writeUint8(BinaryTypeMap.Null);
+                continue;
+            }
+            ValueSerializer.serialize(child, buffer, frequentValuesMap, toLower);
+        }
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(ParameterListNodeSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(ParameterListNodeSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+}
