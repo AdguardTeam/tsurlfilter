@@ -77,6 +77,8 @@ export class MetadataRuleSet {
      *
      * @param byteRangeMapsCollection Byte range maps collection. Default is an empty object.
      * @param checksums Checksums. Default is an empty object.
+     *
+     * @note It takes values by reference. If ever needed, clone them before passing.
      */
     constructor(
         byteRangeMapsCollection: ByteRangeMapCollection = {},
