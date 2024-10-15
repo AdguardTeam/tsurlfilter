@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/logger` to `v1.1.0`.
-- Updated `@adguard/tswebextension` to `v2.4.0-alpha.3`.
+- Updated [@adguard/logger] to `v1.1.0`.
+- Updated [@adguard/tswebextension] to `v2.4.0-alpha.3`.
 
 ### Fixed
 
@@ -28,8 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Path to web accessible resources changed from `/adguard/redirects` to
   `/web-accessible-resources/redirects` for correct work of `@adguard/dnr-rulesets`.
-- Updated `@adguard/logger` to `v1.0.2`.
-- Updated `@adguard/tswebextension` to `v2.3.0-alpha.1`.
+- Updated [@adguard/logger] to `v1.0.2`.
+- Updated [@adguard/tswebextension] to `v2.3.0-alpha.1`.
 
 ### Added
 
@@ -56,11 +56,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Injection of the cosmetic rules is now done from the background page
-
+- Injection of the cosmetic rules is now done from the background page/
 
 ## 0.1.0 - 2024-07-02
 
 ### Added
 
 - New `adguardApi.onRequestBlocking` API for tracking blocked requests.
+
+[@adguard/logger]: ../logger/CHANGELOG.md
+[@adguard/tswebextension]: ../tswebextension/CHANGELOG.md
