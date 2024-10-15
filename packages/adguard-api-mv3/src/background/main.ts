@@ -28,7 +28,7 @@ import { type Configuration, configurationValidator } from './configuration';
 import { RequestBlockingLogger } from './request-blocking-logger';
 import { addChromeUpdateHandler, isChrome } from './chrome-update-handler';
 import { FiltersStorage } from './storage/filters';
-import { VersionManager } from './version-manager';
+import { ExtensionVersionManager } from './extension-version-manager';
 import { logger } from '../utils/logger';
 import { getErrorMessage } from '../utils/error';
 import { versionsIdbStorage } from './storage';
@@ -156,7 +156,7 @@ export class AdguardApi {
         }
 
         await FiltersStorage.setMultiple(filters);
-        await VersionManager.updateExtensionVersion();
+        await ExtensionVersionManager.updateExtensionVersion();
 
         logger.info('Extension storage updated');
     }
@@ -174,7 +174,7 @@ export class AdguardApi {
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
         if (isChrome) {
-            if (await VersionManager.isExtensionUpdated()) {
+            if (await ExtensionVersionManager.isExtensionUpdated()) {
                 await this.handleExtensionUpdateInChrome();
             }
 
@@ -206,7 +206,7 @@ export class AdguardApi {
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
         if (isChrome) {
-            if (await VersionManager.isExtensionUpdated()) {
+            if (await ExtensionVersionManager.isExtensionUpdated()) {
                 await this.handleExtensionUpdateInChrome();
             }
 

@@ -6,7 +6,7 @@ import { versionsIdbStorage } from './storage';
  * This includes retrieving the current version, checking for updates, and
  * updating the stored version.
  */
-export class VersionManager {
+export class ExtensionVersionManager {
     /**
      * The key used to store the extension version in persistent storage.
      */
@@ -38,8 +38,8 @@ export class VersionManager {
      */
     public static async isExtensionUpdated(): Promise<boolean> {
         // Read the previous version from storage
-        const previousVersion = await versionsIdbStorage.get(VersionManager.EXTENSION_VERSION_KEY);
-        const currentVersion = VersionManager.getExtensionVersion();
+        const previousVersion = await versionsIdbStorage.get(ExtensionVersionManager.EXTENSION_VERSION_KEY);
+        const currentVersion = ExtensionVersionManager.getExtensionVersion();
 
         return previousVersion !== currentVersion;
     }
@@ -57,7 +57,7 @@ export class VersionManager {
      * console.log('Extension version updated in storage.');
      */
     public static async updateExtensionVersion(): Promise<void> {
-        const currentVersion = VersionManager.getExtensionVersion();
-        await versionsIdbStorage.set(VersionManager.EXTENSION_VERSION_KEY, currentVersion);
+        const currentVersion = ExtensionVersionManager.getExtensionVersion();
+        await versionsIdbStorage.set(ExtensionVersionManager.EXTENSION_VERSION_KEY, currentVersion);
     }
 }
