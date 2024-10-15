@@ -1,0 +1,65 @@
+import { NULL } from '../../utils/constants';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { isUndefined } from '../../utils/type-guards';
+import { BinaryTypeMap, type CommentRule } from '../../nodes';
+import { ValueSerializer } from '../misc/value-serializer';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
+import { BaseSerializer } from '../base-serializer';
+
+/**
+ * Property map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent a property.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+const enum SimpleCommentRuleSerializationMap {
+    Marker = 1,
+    Text,
+    Start,
+    End,
+}
+
+/**
+ * `SimpleCommentSerializer` is responsible for parsing simple comments.
+ * Some comments have a special meaning in adblock syntax, like agent comments or hints,
+ * but this parser is only responsible for parsing regular comments,
+ * whose only purpose is to provide some human-readable information.
+ *
+ * @example
+ * ```adblock
+ * ! This is a simple comment
+ * # This is a simple comment, but in host-like syntax
+ * ```
+ */
+export class SimpleCommentSerializer extends BaseSerializer {
+    /**
+     * Serializes a simple comment rule node to binary format.
+     *
+     * @param node Node to serialize.
+     * @param buffer ByteBuffer for writing binary data.
+     */
+    // TODO: add support for raws, if ever needed
+    public static serialize(node: CommentRule, buffer: OutputByteBuffer): void {
+        buffer.writeUint8(BinaryTypeMap.CommentRuleNode);
+
+        buffer.writeUint8(SimpleCommentRuleSerializationMap.Marker);
+        ValueSerializer.serialize(node.marker, buffer);
+
+        buffer.writeUint8(SimpleCommentRuleSerializationMap.Text);
+        ValueSerializer.serialize(node.text, buffer);
+
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(SimpleCommentRuleSerializationMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(SimpleCommentRuleSerializationMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        buffer.writeUint8(NULL);
+    }
+}
