@@ -22,8 +22,10 @@ const JSON_ARRAY_CLOSING_BRACKET = ']';
  * with lazy loading (rule set contents will be loaded only after a request).
  */
 export class RuleSetsLoaderApi {
-    // FIXME: cache for different paths
-    private static metadataRuleset?: MetadataRuleSet;
+    /**
+     * Cache of metadata rule sets.
+     */
+    private static metadataRulesetsCache: Record<string, MetadataRuleSet> = {};
 
     /**
      * Path to rule sets directory.
@@ -102,7 +104,7 @@ export class RuleSetsLoaderApi {
 
         const ruleSetIdStr = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
 
-        return RuleSetsLoaderApi.metadataRuleset?.getChecksum(ruleSetIdStr);
+        return RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]?.getChecksum(ruleSetIdStr);
     }
 
     /**
@@ -125,12 +127,13 @@ export class RuleSetsLoaderApi {
 
         const initialize = async (): Promise<void> => {
             try {
-                if (!RuleSetsLoaderApi.metadataRuleset) {
+                if (!RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]) {
                     const metadataRulesetPath = this.getRuleSetPath(METADATA_RULESET_ID);
                     const rawMetadataRuleset = await fetchExtensionResourceText(
                         browser.runtime.getURL(metadataRulesetPath),
                     );
-                    RuleSetsLoaderApi.metadataRuleset = MetadataRuleSet.deserialize(rawMetadataRuleset);
+                    // eslint-disable-next-line max-len
+                    RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath] = MetadataRuleSet.deserialize(rawMetadataRuleset);
                 }
 
                 this.isInitialized = true;
@@ -159,7 +162,7 @@ export class RuleSetsLoaderApi {
      */
     // eslint-disable-next-line class-methods-use-this
     private getByteRange(rulesetId: string, category: RuleSetByteRangeCategory): ByteRange {
-        const byteRangeMap = RuleSetsLoaderApi.metadataRuleset?.getByteRangeMap(rulesetId);
+        const byteRangeMap = RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]?.getByteRangeMap(rulesetId);
 
         if (!byteRangeMap) {
             throw new Error(`Byte range map for rule set ${rulesetId} not found`);

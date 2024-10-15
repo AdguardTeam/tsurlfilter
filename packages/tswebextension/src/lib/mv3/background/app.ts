@@ -711,15 +711,8 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws If the rule sets loader is not initialized or the checksum for the specified rule set is not found.
      */
-    public getChecksum(ruleSetId: string | number, ruleSetsPath?: string): Promise<string | undefined> {
-        const ruleSetsPathToUse = ruleSetsPath || this.configuration?.ruleSetsPath;
-
-        if (!ruleSetsPathToUse) {
-            throw new Error('Rule sets path is not set');
-        }
-
-        // FIXME: add class member for ruleSetsLoaderApi
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPathToUse);
+    public static getChecksum(ruleSetId: string | number, ruleSetsPath: string): Promise<string | undefined> {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
 
         return ruleSetsLoaderApi.getChecksum(ruleSetId);
     }

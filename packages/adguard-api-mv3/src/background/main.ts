@@ -87,10 +87,10 @@ export class AdguardApi {
     private async isFilterOutdated(rulesetId: number): Promise<boolean> {
         try {
             const [ruleSetChecksum, ruleSetChecksumStorage] = await Promise.all([
-                this.tswebextension.getChecksum(
+                TsWebExtension.getChecksum(
                     rulesetId,
                     // FIXME
-                    this.configuration ? this.configuration.assetsPath + AdguardApi.DECLARATIVE_RULES_PATH : undefined,
+                    this.configuration!.assetsPath + AdguardApi.DECLARATIVE_RULES_PATH,
                 ),
                 versionsIdbStorage.get(String(rulesetId)),
             ]);
@@ -131,7 +131,7 @@ export class AdguardApi {
                 }
 
                 // eslint-disable-next-line no-await-in-loop
-                const preprocessed = await this.tswebextension.getPreprocessedFilterList(
+                const preprocessed = await TsWebExtension.getPreprocessedFilterList(
                     rulesetId,
                     // FIXME
                     this.configuration.assetsPath + AdguardApi.DECLARATIVE_RULES_PATH,
