@@ -1,8 +1,7 @@
 import { ListItemNodeType, type CommaSeparator, type PipeSeparator } from '../../../src/nodes';
-import { LIST_PARSE_ERROR_PREFIX, parseListItems } from '../../../src/parser/misc/list-helpers';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { COMMA_DOMAIN_LIST_SEPARATOR, PIPE } from '../../../src/utils/constants';
-import { ListItemsParser } from '../../../src/parser/misc/list-items-parser';
+import { LIST_PARSE_ERROR_PREFIX, ListItemsParser } from '../../../src/parser/misc/list-items-parser';
 
 /**
  * Checks that common function `parseListItems()` throws an error with the `expected` message.
