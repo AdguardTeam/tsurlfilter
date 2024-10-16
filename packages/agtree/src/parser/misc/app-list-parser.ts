@@ -1,9 +1,9 @@
 import { PIPE as APP_LIST_SEPARATOR } from '../../utils/constants';
 import { type AppList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { ListItemsParser } from './list-items-parser';
 
 /**
  * `AppListParser` is responsible for parsing an app list.
@@ -27,7 +27,7 @@ export class AppListParser extends BaseParser {
         const result: AppList = {
             type: ListNodeType.AppList,
             separator: APP_LIST_SEPARATOR,
-            children: parseListItems(raw, options, baseOffset, APP_LIST_SEPARATOR, ListItemNodeType.App),
+            children: ListItemsParser.parse(raw, options, baseOffset, APP_LIST_SEPARATOR, ListItemNodeType.App),
         };
 
         if (options.isLocIncluded) {

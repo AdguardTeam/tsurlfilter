@@ -1,9 +1,9 @@
 import { PIPE } from '../../utils/constants';
 import { type StealthOptionList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { ListItemsParser } from './list-items-parser';
 
 const STEALTH_OPTION_LIST_SEPARATOR = PIPE;
 
@@ -29,8 +29,13 @@ export class StealthOptionListParser extends BaseParser {
         const result: StealthOptionList = {
             type: ListNodeType.StealthOptionList,
             separator: STEALTH_OPTION_LIST_SEPARATOR,
-            // eslint-disable-next-line max-len
-            children: parseListItems(raw, options, baseOffset, STEALTH_OPTION_LIST_SEPARATOR, ListItemNodeType.StealthOption),
+            children: ListItemsParser.parse(
+                raw,
+                options,
+                baseOffset,
+                STEALTH_OPTION_LIST_SEPARATOR,
+                ListItemNodeType.StealthOption,
+            ),
         };
 
         if (options.isLocIncluded) {
