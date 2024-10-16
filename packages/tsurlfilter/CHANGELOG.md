@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Excluding request types causes document blocking [AdguardBrowserExtension#2992]
+- Excluding request types causes document blocking [AdguardBrowserExtension#2992].
+- Not unique `eventId` on `ApplyPermissionsRule` filtering log events.
 
 [AdguardBrowserExtension#2992]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2992
 
@@ -21,7 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Content-type matching of `$permissions` and `$removeparam` rules [AdguardBrowserExtension#2954].
-- Not unique `eventId` on `ApplyPermissionsRule` filtering log events.
 
 [3.1.0-alpha.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.6
 [AdguardBrowserExtension#2954]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2954
