@@ -318,17 +318,6 @@ export class FiltersStorage {
     }
 
     /**
-     * Helper method to extract filter id from the key.
-     *
-     * @param key Storage key.
-     * @returns Filter id or `null` if the key is invalid.
-     */
-    static extractFilterIdFromFilterKey(key: string): number | null {
-        const match = key.match(RE_FILTER_KEY);
-        return match ? parseInt(match.groups?.filterId ?? '', 10) : null;
-    }
-
-    /**
      * Returns {@link filtersIdbStorage} key to conversion map from specified filter list.
      *
      * @param filterId Filter id.
