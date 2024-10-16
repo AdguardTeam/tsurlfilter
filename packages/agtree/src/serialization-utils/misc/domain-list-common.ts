@@ -1,4 +1,5 @@
 import { COMMA, PIPE } from '../../utils/constants';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
 /**
  * Property map for binary serialization. This helps to reduce the size of the serialized data,
