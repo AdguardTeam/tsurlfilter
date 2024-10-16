@@ -4,6 +4,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { AgentCommentGenerator } from '../../../src/generator/comment/agent-comment-generator';
 import { AgentCommentSerializer } from '../../../src/serializer/comment/agent-comment-serializer';
+import { AgentCommentDeserializer } from '../../../src/deserializer/comment/agent-comment-deserializer';
 
 describe('AgentCommentParser', () => {
     test('isAgent', () => {
@@ -501,6 +502,7 @@ describe('AgentCommentParser', () => {
                 AgentCommentParser,
                 AgentCommentGenerator,
                 AgentCommentSerializer,
+                AgentCommentDeserializer,
             );
         });
     });

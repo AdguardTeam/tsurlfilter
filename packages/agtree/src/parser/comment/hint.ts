@@ -8,106 +8,17 @@ import {
     CLOSE_PARENTHESIS,
     COMMA,
     EMPTY,
-    NULL,
     OPEN_PARENTHESIS,
     SPACE,
     UNDERSCORE,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import {
-    BinaryTypeMap,
-    type ParameterList,
-    type Hint,
-    type Value,
-} from '../../nodes';
+import { type Hint } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
 import { ValueParser } from '../misc/value';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum HintNodeSerializationMap {
-    Name = 1,
-    Params,
-    Start,
-    End,
-}
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const FREQUENT_HINTS_SERIALIZATION_MAP = new Map<string, number>([
-    ['NOT_OPTIMIZED', 0],
-    ['PLATFORM', 1],
-    ['NOT_PLATFORM', 2],
-]);
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- */
-let FREQUENT_HINTS_DESERIALIZATION_MAP: Map<number, string>;
-const getFrequentHintsDeserializationMap = () => {
-    if (!FREQUENT_HINTS_DESERIALIZATION_MAP) {
-        FREQUENT_HINTS_DESERIALIZATION_MAP = new Map<number, string>(
-            Array.from(FREQUENT_HINTS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-        );
-    }
-
-    return FREQUENT_HINTS_DESERIALIZATION_MAP;
-};
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const FREQUENT_PLATFORMS_SERIALIZATION_MAP = new Map<string, number>([
-    ['windows', 0],
-    ['mac', 1],
-    ['android', 2],
-    ['ios', 3],
-    ['ext_chromium', 4],
-    ['ext_ff', 5],
-    ['ext_edge', 6],
-    ['ext_opera', 7],
-    ['ext_safari', 8],
-    ['ext_android_cb', 9],
-    ['ext_ublock', 10],
-]);
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- */
-let FREQUENT_PLATFORMS_DESERIALIZATION_MAP: Map<number, string>;
-const getFrequentPlatformsDeserializationMap = () => {
-    if (!FREQUENT_PLATFORMS_DESERIALIZATION_MAP) {
-        FREQUENT_PLATFORMS_DESERIALIZATION_MAP = new Map<number, string>(
-            Array.from(FREQUENT_PLATFORMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-        );
-    }
-
-    return FREQUENT_PLATFORMS_DESERIALIZATION_MAP;
-};
 
 /**
  * `HintParser` is responsible for parsing AdGuard hints.
@@ -262,45 +173,5 @@ export class HintParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Deserializes a hint node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<Hint>): void {
-        buffer.assertUint8(BinaryTypeMap.HintNode);
-
-        node.type = 'Hint';
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case HintNodeSerializationMap.Name:
-                    ValueParser.deserialize(buffer, node.name = {} as Value, getFrequentHintsDeserializationMap());
-                    break;
-
-                case HintNodeSerializationMap.Params:
-                    // eslint-disable-next-line max-len
-                    ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, getFrequentPlatformsDeserializationMap());
-                    break;
-
-                case HintNodeSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case HintNodeSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

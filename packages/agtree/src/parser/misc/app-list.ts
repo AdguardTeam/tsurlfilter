@@ -1,11 +1,9 @@
-import { PIPE } from '../../utils/constants';
+import { PIPE as APP_LIST_SEPARATOR } from '../../utils/constants';
 import { type AppList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-
-const APP_LIST_SEPARATOR = PIPE;
 
 /**
  * `AppListParser` is responsible for parsing an app list.

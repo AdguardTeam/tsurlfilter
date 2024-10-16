@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * @file Base parser class.
  */
 import { NotImplementedError } from '../errors/not-implemented-error';
-import { type InputByteBuffer } from '../utils/input-byte-buffer';
 import { type Node } from '../nodes';
 import { type ParserOptions } from './options';
 
@@ -19,18 +17,8 @@ export class BaseParser {
      * @param baseOffset Base offset. Locations in the AST node will be relative to this offset.
      * @param args Additional, parser-specific arguments, if needed.
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public static parse(input: string, options: ParserOptions, baseOffset: number, ...args: unknown[]): Node | null {
-        throw new NotImplementedError();
-    }
-
-    /**
-     * Deserializes the AST node from a byte buffer.
-     *
-     * @param buffer Input byte buffer to read from.
-     * @param node Destination node to write to.
-     * @param args Additional, parser-specific arguments, if needed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<Node>, ...args: unknown[]): void {
         throw new NotImplementedError();
     }
 }

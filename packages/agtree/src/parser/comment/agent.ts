@@ -2,101 +2,15 @@
 import valid from 'semver/functions/valid';
 import coerce from 'semver/functions/coerce';
 
-import { NULL } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { BinaryTypeMap, type Agent, type Value } from '../../nodes';
+import { type Agent, type Value } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseParser } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ValueParser } from '../misc/value';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum AgentNodeSerializationMap {
-    Adblock = 1,
-    Version,
-    Start,
-    End,
-}
-
-/**
- * Possible AdGuard agent markers.
- */
-const ADG_NAME_MARKERS = new Set([
-    'adguard',
-    'adg',
-]);
-
-/**
- * Possible uBlock Origin agent markers.
- */
-const UBO_NAME_MARKERS = new Set([
-    'ublock',
-    'ublock origin',
-    'ubo',
-]);
-
-/**
- * Possible Adblock Plus agent markers.
- */
-const ABP_NAME_MARKERS = new Set([
-    'adblock',
-    'adblock plus',
-    'adblockplus',
-    'abp',
-]);
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- */
-const FREQUENT_AGENTS_DESERIALIZATION_MAP = new Map<number, string>([
-    // AdGuard
-    [0, 'AdGuard'],
-    [1, 'ADG'],
-
-    // uBlock Origin
-    [2, 'uBlock Origin'],
-    [3, 'uBlock'],
-    [4, 'uBO'],
-
-    // Adblock Plus
-    [5, 'Adblock Plus'],
-    [6, 'AdblockPlus'],
-    [7, 'ABP'],
-    [8, 'AdBlock'],
-]);
-
-/**
- * Returns the adblock syntax based on the adblock name parsed from the agent type comment.
- * Needed for modifiers validation of network rules by AGLint.
- *
- * @param name Adblock name.
- *
- * @returns Adblock syntax.
- */
-const getAdblockSyntax = (name: string): AdblockSyntax => {
-    let syntax = AdblockSyntax.Common;
-    const lowerCaseName = name.toLowerCase();
-    if (ADG_NAME_MARKERS.has(lowerCaseName)) {
-        syntax = AdblockSyntax.Adg;
-    } else if (UBO_NAME_MARKERS.has(lowerCaseName)) {
-        syntax = AdblockSyntax.Ubo;
-    } else if (ABP_NAME_MARKERS.has(lowerCaseName)) {
-        syntax = AdblockSyntax.Abp;
-    }
-    return syntax;
-};
+import { getAdblockSyntax } from '../../common/agent-common';
 
 /**
  * `AgentParser` is responsible for parsing single adblock agent elements.
@@ -207,47 +121,5 @@ export class AgentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Deserializes an agent node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<Agent>): void {
-        buffer.assertUint8(BinaryTypeMap.AgentNode);
-
-        node.type = 'Agent';
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case AgentNodeSerializationMap.Adblock:
-                    ValueParser.deserialize(buffer, node.adblock = {} as Value, FREQUENT_AGENTS_DESERIALIZATION_MAP);
-                    if (node.adblock) {
-                        node.syntax = getAdblockSyntax(node.adblock.value);
-                    }
-                    break;
-
-                case AgentNodeSerializationMap.Version:
-                    ValueParser.deserialize(buffer, node.version = {} as Value);
-                    break;
-
-                case AgentNodeSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case AgentNodeSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

@@ -1,26 +1,10 @@
 /* eslint-disable no-param-reassign */
-import { MODIFIERS_SEPARATOR, NULL } from '../../utils/constants';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { MODIFIERS_SEPARATOR } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { BinaryTypeMap, type Modifier, type ModifierList } from '../../nodes';
+import { type ModifierList } from '../../nodes';
 import { BaseParser } from '../interface';
 import { defaultParserOptions } from '../options';
 import { ModifierParser } from './modifier';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ModifierListNodeSerializationMap {
-    Children = 1,
-    Start,
-    End,
-}
 
 /**
  * `ModifierListParser` is responsible for parsing modifier lists. Please note that the name is not
@@ -98,43 +82,5 @@ export class ModifierListParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Deserializes a modifier list node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: ModifierList): void {
-        buffer.assertUint8(BinaryTypeMap.ModifierListNode);
-
-        node.type = 'ModifierList';
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case ModifierListNodeSerializationMap.Children:
-                    node.children = new Array(buffer.readUint16());
-
-                    // read children
-                    for (let i = 0; i < node.children.length; i += 1) {
-                        ModifierParser.deserialize(buffer, node.children[i] = {} as Modifier);
-                    }
-                    break;
-
-                case ModifierListNodeSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case ModifierListNodeSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}.`);
-            }
-            prop = buffer.readUint8();
-        }
     }
 }

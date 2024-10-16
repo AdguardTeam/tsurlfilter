@@ -3,6 +3,7 @@ import { type ModifierList } from '../../../src/nodes';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { ModifierListGenerator } from '../../../src/generator/misc/modifier-list-generator';
 import { ModifierListSerializer } from '../../../src/serializer/misc/modifier-list-serializer';
+import { ModifierListDeserializer } from '../../../src/deserializer/misc/modifier-list-deserializer';
 
 describe('ModifierListParser', () => {
     test('parse', () => {
@@ -777,6 +778,7 @@ describe('ModifierListParser', () => {
                 ModifierListParser,
                 ModifierListGenerator,
                 ModifierListSerializer,
+                ModifierListDeserializer,
             );
         });
     });

@@ -4,6 +4,7 @@ import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/no
 import { defaultParserOptions } from '../../../src/parser/options';
 import { NetworkRuleGenerator } from '../../../src/generator/network';
 import { NetworkRuleSerializer } from '../../../src/serializer/network/network-rule-serializer';
+import { NetworkRuleDeserializer } from '../../../src/deserializer/network/network-rule-deserializer';
 
 describe('NetworkRuleParser', () => {
     test('parse', () => {
@@ -973,6 +974,7 @@ describe('NetworkRuleParser', () => {
                 NetworkRuleParser,
                 NetworkRuleGenerator,
                 NetworkRuleSerializer,
+                NetworkRuleDeserializer,
             );
         });
     });

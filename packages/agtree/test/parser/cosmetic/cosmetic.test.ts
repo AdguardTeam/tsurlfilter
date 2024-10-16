@@ -6,6 +6,7 @@ import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 import { CosmeticRulePatternGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-pattern-generator';
 import { CosmeticRuleBodyGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-body-generator';
 import { CosmeticRuleSerializer } from '../../../src/serializer/cosmetic/cosmetic-rule-serializer';
+import { CosmeticRuleDeserializer } from '../../../src/deserializer/cosmetic/cosmetic-rule-deserializer';
 
 describe('CosmeticRuleParser - general tests', () => {
     describe('CosmeticRuleParser.isCosmetic', () => {
@@ -204,6 +205,7 @@ describe('CosmeticRuleParser - general tests', () => {
                 CosmeticRuleParser,
                 CosmeticRuleGenerator,
                 CosmeticRuleSerializer,
+                CosmeticRuleDeserializer,
             );
         });
     });

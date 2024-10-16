@@ -7,42 +7,18 @@ import {
     NETWORK_RULE_EXCEPTION_MARKER,
     NETWORK_RULE_EXCEPTION_MARKER_LEN,
     NETWORK_RULE_SEPARATOR,
-    NULL,
     REGEX_MARKER,
 } from '../../utils/constants';
 import {
     type ModifierList,
     type NetworkRule,
     RuleCategory,
-    BinaryTypeMap,
-    getSyntaxDeserializationMap,
-    type Value,
     NetworkRuleType,
 } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
 import { ValueParser } from '../misc/value';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum NetworkRuleSerializationMap {
-    Syntax = 1,
-    Raws,
-    Exception,
-    Pattern,
-    ModifierList,
-    Start,
-    End,
-}
 
 /**
  * `NetworkRuleParser` is responsible for parsing network rules.
@@ -164,53 +140,5 @@ export class NetworkRuleParser extends BaseParser {
         }
 
         return -1;
-    }
-
-    /**
-     * Deserializes a modifier node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<NetworkRule>): void {
-        buffer.assertUint8(BinaryTypeMap.NetworkRuleNode);
-
-        node.type = NetworkRuleType.NetworkRule;
-        node.category = RuleCategory.Network;
-        node.modifiers = undefined;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case NetworkRuleSerializationMap.Syntax:
-                    node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
-                    break;
-
-                case NetworkRuleSerializationMap.Exception:
-                    node.exception = buffer.readUint8() === 1;
-                    break;
-
-                case NetworkRuleSerializationMap.Pattern:
-                    ValueParser.deserialize(buffer, node.pattern = {} as Value);
-                    break;
-
-                case NetworkRuleSerializationMap.ModifierList:
-                    ModifierListParser.deserialize(buffer, node.modifiers = {} as ModifierList);
-                    break;
-
-                case NetworkRuleSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case NetworkRuleSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}.`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

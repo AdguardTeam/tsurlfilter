@@ -3,6 +3,7 @@ import { type HostRule, NetworkRuleType, RuleCategory } from '../../../src/nodes
 import { HostRuleParser } from '../../../src/parser/network/host';
 import { HostRuleGenerator } from '../../../src/generator/network';
 import { HostRuleSerializer } from '../../../src/serializer/network/host-rule-serializer';
+import { HostRuleDeserializer } from '../../../src/deserializer/network/host-rule-deserializer';
 
 describe('HostRuleParser', () => {
     describe('parse', () => {
@@ -235,6 +236,7 @@ describe('HostRuleParser', () => {
                 HostRuleParser,
                 HostRuleGenerator,
                 HostRuleSerializer,
+                HostRuleDeserializer,
             );
         });
     });

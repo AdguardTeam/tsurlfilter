@@ -4,7 +4,6 @@ import {
     CLOSE_PARENTHESIS,
     HINT_MARKER,
     HINT_MARKER_LEN,
-    NULL,
     OPEN_PARENTHESIS,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
@@ -13,31 +12,12 @@ import {
     type Hint,
     type HintCommentRule,
     RuleCategory,
-    BinaryTypeMap,
-    getSyntaxDeserializationMap,
 } from '../../nodes';
 import { HintParser } from './hint';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum HintRuleSerializationMap {
-    Syntax = 1,
-    Children,
-    Start,
-    End,
-}
 
 /**
  * `HintRuleParser` is responsible for parsing AdGuard hint rules.
@@ -168,50 +148,5 @@ export class HintCommentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Deserializes a hint rule node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<HintCommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.HintRuleNode);
-
-        node.category = RuleCategory.Comment;
-        node.type = CommentRuleType.HintCommentRule;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case HintRuleSerializationMap.Syntax:
-                    node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
-                    break;
-
-                case HintRuleSerializationMap.Children:
-                    node.children = new Array(buffer.readUint8());
-
-                    // read children
-                    for (let i = 0; i < node.children.length; i += 1) {
-                        HintParser.deserialize(buffer, node.children[i] = {} as Hint);
-                    }
-                    break;
-
-                case HintRuleSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case HintRuleSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

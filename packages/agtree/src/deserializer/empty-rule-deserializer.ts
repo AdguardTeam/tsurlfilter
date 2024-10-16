@@ -1,0 +1,40 @@
+/* eslint-disable no-param-reassign */
+import { BaseDeserializer } from './base-deserializer';
+import { BinaryTypeMap, RuleCategory, type EmptyRule } from '../nodes';
+import { NULL } from '../utils/constants';
+import { type InputByteBuffer } from '../utils/input-byte-buffer';
+import { EmptyRuleSerializationMap } from '../serialization-utils/empty-rule-common';
+import { AdblockSyntax } from '../utils/adblockers';
+
+export class EmptyRuleDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes an empty rule node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: EmptyRule): void {
+        buffer.assertUint8(BinaryTypeMap.EmptyRule);
+
+        node.type = 'EmptyRule';
+        node.category = RuleCategory.Empty;
+        node.syntax = AdblockSyntax.Common;
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case EmptyRuleSerializationMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case EmptyRuleSerializationMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid property: ${prop}.`);
+            }
+            prop = buffer.readUint8();
+        }
+    }
+}

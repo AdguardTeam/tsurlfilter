@@ -5,88 +5,17 @@
 
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { COLON, NULL } from '../../utils/constants';
+import { COLON } from '../../utils/constants';
 import {
     CommentMarker,
     CommentRuleType,
     type MetadataCommentRule,
     RuleCategory,
-    BinaryTypeMap,
-    type Value,
 } from '../../nodes';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
 import { ValueParser } from '../misc/value';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the `BINARY_SCHEMA_VERSION` !
- *
- * @note Only 256 values can be represented this way.
- */
-const enum MetadataCommentRuleSerializationMap {
-    Marker = 1,
-    Header,
-    Value,
-    Start,
-    End,
-}
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- */
-const FREQUENT_HEADERS_DESERIALIZATION_MAP = new Map<number, string>([
-    [1, 'Checksum'],
-    [2, 'Description'],
-    [3, 'Expires'],
-    [4, 'Homepage'],
-    [5, 'Last Modified'],
-    [6, 'LastModified'],
-    [7, 'Licence'],
-    [8, 'License'],
-    [9, 'Time Updated'],
-    [10, 'TimeUpdated'],
-    [11, 'Version'],
-    [12, 'Title'],
-]);
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- * @note This map is generated from `FREQUENT_HEADERS_DESERIALIZATION_MAP` to keep uppercase characters
- * while deserializing.
- */
-let FREQUENT_HEADERS_SERIALIZATION_MAP: Map<string, number>;
-const getFrequentHeadersSerializationMap = () => {
-    if (!FREQUENT_HEADERS_SERIALIZATION_MAP) {
-        FREQUENT_HEADERS_SERIALIZATION_MAP = new Map<string, number>(
-            Array.from(FREQUENT_HEADERS_DESERIALIZATION_MAP.entries())
-                .map(([key, value]) => [value.toLowerCase(), key]),
-        );
-    }
-    return FREQUENT_HEADERS_SERIALIZATION_MAP;
-};
-
-/**
- * Known metadata headers.
- */
-let KNOWN_METADATA_HEADERS: string[];
-// FIXME used only in this file, probably should not be exported
-export const getKnownMetadataHeaders = () => {
-    if (!KNOWN_METADATA_HEADERS) {
-        KNOWN_METADATA_HEADERS = Array.from(getFrequentHeadersSerializationMap().keys());
-    }
-    return KNOWN_METADATA_HEADERS;
-};
+import { KNOWN_METADATA_HEADERS } from '../../common/metadata-comment-common';
 
 /**
  * `MetadataParser` is responsible for parsing metadata comments.
@@ -140,11 +69,11 @@ export class MetadataCommentRuleParser extends BaseParser {
         // Check if the comment text starts with a known header
         const text = raw.slice(offset);
 
-        for (let i = 0; i < getKnownMetadataHeaders().length; i += 1) {
+        for (const knownHeader of KNOWN_METADATA_HEADERS) {
             // Check if the comment text starts with the header (case-insensitive)
-            if (text.toLocaleLowerCase().startsWith(getKnownMetadataHeaders()[i].toLocaleLowerCase())) {
+            if (text.toLocaleLowerCase().startsWith(knownHeader.toLocaleLowerCase())) {
                 // Skip the header
-                offset += getKnownMetadataHeaders()[i].length;
+                offset += knownHeader.length;
 
                 // Save header
                 const header = ValueParser.parse(raw.slice(headerStart, offset), options, baseOffset + headerStart);
@@ -201,50 +130,5 @@ export class MetadataCommentRuleParser extends BaseParser {
         }
 
         return null;
-    }
-
-    /**
-     * Deserializes a metadata comment node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<MetadataCommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.MetadataCommentRuleNode);
-
-        node.type = CommentRuleType.MetadataCommentRule;
-        node.category = RuleCategory.Comment;
-        node.syntax = AdblockSyntax.Common;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case MetadataCommentRuleSerializationMap.Marker:
-                    ValueParser.deserialize(buffer, node.marker = {} as Value);
-                    break;
-
-                case MetadataCommentRuleSerializationMap.Header:
-                    ValueParser.deserialize(buffer, node.header = {} as Value, FREQUENT_HEADERS_DESERIALIZATION_MAP);
-                    break;
-
-                case MetadataCommentRuleSerializationMap.Value:
-                    ValueParser.deserialize(buffer, node.value = {} as Value);
-                    break;
-
-                case MetadataCommentRuleSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case MetadataCommentRuleSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

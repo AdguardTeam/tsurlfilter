@@ -12,6 +12,7 @@ import { InputByteBuffer } from '../../src/utils/input-byte-buffer';
 import { defaultParserOptions } from '../../src/parser/options';
 import { type BaseGenerator } from '../../src/generator/base-generator';
 import { type BaseSerializer } from '../../src/serializer/base-serializer';
+import { type BaseDeserializer } from '../../src/deserializer/base-deserializer';
 
 // Extend Jest's global namespace with the custom matcher
 declare global {
@@ -21,7 +22,8 @@ declare global {
             toBeSerializedAndDeserializedProperly(
                 parser: BaseParser,
                 generator: BaseGenerator,
-                serializer: BaseSerializer
+                serializer: BaseSerializer,
+                deserializer: BaseDeserializer,
             ): Promise<R>;
         }
     }
@@ -46,6 +48,7 @@ expect.extend({
      * @param parser Parser class to use
      * @param generator Generator class to use
      * @param serializer Serializer class to use
+     * @param deserializer Deserializer class to use
      * @returns Jest matcher result
      */
     async toBeSerializedAndDeserializedProperly(
@@ -53,6 +56,7 @@ expect.extend({
         parser: typeof BaseParser,
         generator: typeof BaseGenerator,
         serializer: typeof BaseSerializer,
+        deserializer: typeof BaseDeserializer,
     ): Promise<jest.CustomMatcherResult> {
         try {
             // Validate the received parameter
@@ -120,7 +124,7 @@ expect.extend({
             const deserializedNode: Node = {} as Node;
 
             try {
-                parser.deserialize(inputBuffer, deserializedNode);
+                deserializer.deserialize(inputBuffer, deserializedNode);
             } catch (error: unknown) {
                 throw new Error(`Failed to deserialize '${received}', got error: '${getErrorMessage(error)}'`);
             }

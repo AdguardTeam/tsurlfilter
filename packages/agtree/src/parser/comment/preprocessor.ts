@@ -13,7 +13,6 @@ import {
     HASHMARK,
     IF,
     INCLUDE,
-    NULL,
     OPEN_PARENTHESIS,
     PREPROCESSOR_MARKER,
     PREPROCESSOR_MARKER_LEN,
@@ -21,98 +20,14 @@ import {
     SAFARI_CB_AFFINITY,
 } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import type {
-    AnyExpressionNode,
-    ParameterList,
-    PreProcessorCommentRule,
-    Value,
-} from '../../nodes';
-import {
-    BinaryTypeMap,
-    CommentRuleType,
-    RuleCategory,
-    getSyntaxDeserializationMap,
-} from '../../nodes';
+import type { AnyExpressionNode, PreProcessorCommentRule, Value } from '../../nodes';
+import { CommentRuleType, RuleCategory } from '../../nodes';
 import { LogicalExpressionParser } from '../misc/logical-expression';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from '../misc/value';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum PreProcessorRuleSerializationMap {
-    Name = 1,
-    Params,
-    Syntax,
-    Start,
-    End,
-}
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- *
- * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#preprocessor-directives}
- * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
- */
-const FREQUENT_DIRECTIVES_SERIALIZATION_MAP = new Map<string, number>([
-    ['if', 0],
-    ['else', 1],
-    ['endif', 2],
-    ['include', 3],
-    ['safari_cb_affinity', 4],
-]);
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- */
-// FIXME
-const FREQUENT_DIRECTIVES_DESERIALIZATION_MAP = new Map<number, string>(
-    Array.from(FREQUENT_DIRECTIVES_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-);
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const FREQUENT_PARAMS_SERIALIZATION_MAP = new Map<string, number>([
-    // safari_cb_affinity parameters
-    ['general', 0],
-    ['privacy', 1],
-    ['social', 2],
-    ['security', 3],
-    ['other', 4],
-    ['custom', 5],
-    ['all', 6],
-]);
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- */
-// FIXME
-const FREQUENT_PARAMS_DESERIALIZATION_MAP = new Map<number, string>(
-    Array.from(FREQUENT_PARAMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-);
 
 /**
  * `PreProcessorParser` is responsible for parsing preprocessor rules.
@@ -347,68 +262,5 @@ export class PreProcessorCommentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Deserializes a pre-processor comment node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<PreProcessorCommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.PreProcessorCommentRuleNode);
-
-        node.type = CommentRuleType.PreProcessorCommentRule;
-        node.category = RuleCategory.Comment;
-        node.syntax = AdblockSyntax.Common;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case PreProcessorRuleSerializationMap.Name:
-                    ValueParser.deserialize(buffer, node.name = {} as Value, FREQUENT_DIRECTIVES_DESERIALIZATION_MAP);
-                    break;
-
-                case PreProcessorRuleSerializationMap.Syntax:
-                    node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
-                    break;
-
-                case PreProcessorRuleSerializationMap.Params:
-                    switch (buffer.peekUint8()) {
-                        case BinaryTypeMap.ValueNode:
-                            ValueParser.deserialize(buffer, node.params = {} as Value);
-                            break;
-
-                        case BinaryTypeMap.ParameterListNode:
-                            // eslint-disable-next-line max-len
-                            ParameterListParser.deserialize(buffer, node.params = {} as ParameterList, FREQUENT_PARAMS_DESERIALIZATION_MAP);
-                            break;
-
-                        case BinaryTypeMap.ExpressionOperatorNode:
-                        case BinaryTypeMap.ExpressionParenthesisNode:
-                        case BinaryTypeMap.ExpressionVariableNode:
-                            LogicalExpressionParser.deserialize(buffer, node.params = {} as AnyExpressionNode);
-                            break;
-
-                        default:
-                            throw new Error(`Invalid binary type: ${prop}`);
-                    }
-                    break;
-
-                case PreProcessorRuleSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case PreProcessorRuleSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

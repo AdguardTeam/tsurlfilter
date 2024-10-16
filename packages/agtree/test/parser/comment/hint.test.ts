@@ -3,6 +3,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { HintCommentGenerator } from '../../../src/generator/comment/hint-comment-generator';
 import { HintCommentSerializer } from '../../../src/serializer/comment/hint-comment-serializer';
+import { HintCommentDeserializer } from '../../../src/deserializer/comment/hint-comment-deserializer';
 
 describe('HintCommentParser', () => {
     test('isHintRule', () => {
@@ -777,6 +778,7 @@ describe('HintCommentParser', () => {
                 HintCommentParser,
                 HintCommentGenerator,
                 HintCommentSerializer,
+                HintCommentDeserializer,
             );
         });
     });

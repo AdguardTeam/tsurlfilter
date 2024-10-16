@@ -6,7 +6,7 @@ import { type OutputByteBuffer } from '../utils/output-byte-buffer';
 import { type Node } from '../nodes';
 
 /**
- * Base class for parsers. Each parser should extend this class.
+ * Base class for serializers. Each serializer should extend this class.
  */
 export class BaseSerializer {
     /**

@@ -68,10 +68,12 @@ export { MethodListParser } from './parser/misc/method-list';
 export { StealthOptionListParser } from './parser/misc/stealth-option-list';
 export { FilterListParser } from './parser/filterlist';
 export { FilterListSerializer } from './serializer/filterlist-serializer';
+export { FilterListDeserializer } from './deserializer/filterlist-deserializer';
 export { HintCommentParser } from './parser/comment/hint-rule';
 export { HintParser } from './parser/comment/hint';
 export { LogicalExpressionParser } from './parser/misc/logical-expression';
-export { MetadataCommentRuleParser, getKnownMetadataHeaders } from './parser/comment/metadata';
+// FIXME: getKnownMetadataHeaders moved and removed export temporarily
+export { MetadataCommentRuleParser } from './parser/comment/metadata';
 export { ModifierListParser } from './parser/misc/modifier-list';
 export { ModifierParser } from './parser/misc/modifier';
 export { NetworkRuleParser } from './parser/network';

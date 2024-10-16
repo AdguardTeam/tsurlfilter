@@ -1,41 +1,13 @@
-/* eslint-disable no-param-reassign */
-import {
-    CLOSE_SQUARE_BRACKET,
-    NULL,
-    OPEN_SQUARE_BRACKET,
-    SEMICOLON,
-} from '../../utils/constants';
+import { CLOSE_SQUARE_BRACKET, OPEN_SQUARE_BRACKET, SEMICOLON } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import {
-    type AgentCommentRule,
-    CommentRuleType,
-    RuleCategory,
-    BinaryTypeMap,
-    type Agent,
-} from '../../nodes';
+import { type AgentCommentRule, CommentRuleType, RuleCategory } from '../../nodes';
 import { AgentParser } from './agent';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { BaseParser } from '../interface';
 import { defaultParserOptions } from '../options';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isNull } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum AgentRuleSerializationMap {
-    Children = 1,
-    Start,
-    End,
-}
 
 /**
  * `AgentParser` is responsible for parsing an Adblock agent rules.
@@ -166,46 +138,5 @@ export class AgentCommentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Deserializes an agent list node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<AgentCommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.AgentRuleNode);
-
-        node.type = CommentRuleType.AgentCommentRule;
-        node.syntax = AdblockSyntax.Common;
-        node.category = RuleCategory.Comment;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case AgentRuleSerializationMap.Children:
-                    node.children = new Array(buffer.readUint8());
-
-                    // read children
-                    for (let i = 0; i < node.children.length; i += 1) {
-                        AgentParser.deserialize(buffer, node.children[i] = {} as Agent);
-                    }
-                    break;
-
-                case AgentRuleSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case AgentRuleSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

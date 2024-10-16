@@ -3,6 +3,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { PreProcessorCommentGenerator } from '../../../src/generator/comment/pre-processor-comment-generator';
 import { PreProcessorCommentSerializer } from '../../../src/serializer/comment/pre-processor-comment-serializer';
+import { PreProcessorCommentDeserializer } from '../../../src/deserializer/comment/pre-processor-comment-deserializer';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {
@@ -273,6 +274,7 @@ describe('PreProcessorParser', () => {
                 PreProcessorCommentParser,
                 PreProcessorCommentGenerator,
                 PreProcessorCommentSerializer,
+                PreProcessorCommentDeserializer,
             );
         });
     });

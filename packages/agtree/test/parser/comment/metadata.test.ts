@@ -3,6 +3,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { MetadataCommentGenerator } from '../../../src/generator/comment/metadata-comment-generator';
 import { MetadataCommentSerializer } from '../../../src/serializer/comment/metadata-comment-serializer';
+import { MetadataCommentDeserializer } from '../../../src/deserializer/comment/metadata-comment-deserializer';
 
 describe('MetadataCommentRuleParser', () => {
     test('parse', () => {
@@ -238,6 +239,7 @@ describe('MetadataCommentRuleParser', () => {
                 MetadataCommentRuleParser,
                 MetadataCommentGenerator,
                 MetadataCommentSerializer,
+                MetadataCommentDeserializer,
             );
         });
     });

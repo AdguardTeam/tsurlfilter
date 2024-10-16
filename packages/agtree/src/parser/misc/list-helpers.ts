@@ -6,7 +6,6 @@ import {
     NEGATION_MARKER,
     NULL,
 } from '../../utils/constants';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { StringUtils } from '../../utils/string';
 import { isUndefined } from '../../utils/type-guards';
@@ -252,64 +251,6 @@ const serializeListItem = <T extends ListItemNodeType>(item: ListItem<T>, buffer
 };
 
 /**
- * Deserializes a list item from binary format.
- *
- * @param buffer Input byte buffer.
- * @param node Partial list item to deserialize.
- * @template T Type of the list item.
- */
-const deserializeListItem = <T extends ListItemNodeType>(buffer: InputByteBuffer, node: Partial<ListItem<T>>): void => {
-    const type = buffer.readUint8();
-
-    switch (type) {
-        case BinaryTypeMap.AppNode:
-            node.type = ListItemNodeType.App as T;
-            break;
-
-        case BinaryTypeMap.DomainNode:
-            node.type = ListItemNodeType.Domain as T;
-            break;
-
-        case BinaryTypeMap.MethodNode:
-            node.type = ListItemNodeType.Method as T;
-            break;
-
-        case BinaryTypeMap.StealthOptionNode:
-            node.type = ListItemNodeType.StealthOption as T;
-            break;
-
-        default:
-            throw new Error(`Invalid list item type: ${type}`);
-    }
-
-    let prop = buffer.readUint8();
-    while (prop !== NULL) {
-        switch (prop) {
-            case ListItemSerializationMap.Exception:
-                node.exception = buffer.readUint8() === 1;
-                break;
-
-            case ListItemSerializationMap.Value:
-                node.value = buffer.readString();
-                break;
-
-            case ListItemSerializationMap.Start:
-                node.start = buffer.readUint32();
-                break;
-
-            case ListItemSerializationMap.End:
-                node.end = buffer.readUint32();
-                break;
-
-            default:
-                throw new Error(`Invalid property: ${type}`);
-        }
-
-        prop = buffer.readUint8();
-    }
-};
-
-/**
  * Serializes a list of items to binary format.
  *
  * @param items List of items to serialize.
@@ -325,24 +266,5 @@ export const serializeListItems = <T extends ListItemNodeType>(
 
     for (let i = 0; i < length; i += 1) {
         serializeListItem(items[i], buffer);
-    }
-};
-
-/**
- * Deserializes a list of items from binary format.
- *
- * @param buffer Input byte buffer.
- * @param items Partial list of items to deserialize.
- * @template T Type of the list items.
- */
-export const deserializeListItems = <T extends ListItemNodeType>(
-    buffer: InputByteBuffer,
-    items: Partial<ListItem<T>>[],
-): void => {
-    const length = buffer.readUint16();
-    items.length = length;
-
-    for (let i = 0; i < length; i += 1) {
-        deserializeListItem(buffer, items[i] = {});
     }
 };

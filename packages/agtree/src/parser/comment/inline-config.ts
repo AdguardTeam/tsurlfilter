@@ -7,12 +7,7 @@
 import JSON5 from 'json5';
 
 import { AdblockSyntax } from '../../utils/adblockers';
-import {
-    AGLINT_COMMAND_PREFIX,
-    AGLINT_CONFIG_COMMENT_MARKER,
-    COMMA,
-    NULL,
-} from '../../utils/constants';
+import { AGLINT_COMMAND_PREFIX, AGLINT_CONFIG_COMMENT_MARKER, COMMA } from '../../utils/constants';
 import {
     CommentMarker,
     CommentRuleType,
@@ -20,76 +15,13 @@ import {
     type ParameterList,
     RuleCategory,
     type Value,
-    BinaryTypeMap,
     type ConfigNode,
 } from '../../nodes';
 import { StringUtils } from '../../utils/string';
 import { ParameterListParser } from '../misc/parameter-list';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueParser } from '../misc/value';
-import { isUndefined } from '../../utils/type-guards';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ConfigCommentRuleSerializationMap {
-    Marker = 1,
-    Command,
-    Params,
-    Comment,
-    Start,
-    End,
-}
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ConfigNodeSerializationMap {
-    Value = 1,
-    Start,
-    End,
-}
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- *
- * @see {@link https://github.com/AdguardTeam/AGLint/blob/master/src/linter/inline-config.ts}
- */
-const FREQUENT_COMMANDS_SERIALIZATION_MAP = new Map<string, number>([
-    ['aglint', 0],
-    ['aglint-disable', 1],
-    ['aglint-enable', 2],
-    ['aglint-disable-next-line', 3],
-    ['aglint-enable-next-line', 4],
-]);
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- */
-// FIXME
-const FREQUENT_COMMANDS_DESERIALIZATION_MAP = new Map<number, string>(
-    Array.from(FREQUENT_COMMANDS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-);
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.
@@ -235,121 +167,5 @@ export class ConfigCommentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Serializes a config node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    private static serializeConfigNode(node: ConfigNode, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ConfigNode);
-
-        buffer.writeUint8(ConfigNodeSerializationMap.Value);
-        // note: we don't support serializing generic objects, only AGTree nodes
-        // this is a very special case, so we just stringify the configuration object
-        buffer.writeString(JSON.stringify(node.value));
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(ConfigNodeSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(ConfigNodeSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
-    }
-
-    /**
-     * Deserializes a metadata comment node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    private static deserializeConfigNode(buffer: InputByteBuffer, node: Partial<ConfigNode>): void {
-        buffer.assertUint8(BinaryTypeMap.ConfigNode);
-
-        node.type = 'ConfigNode';
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case ConfigNodeSerializationMap.Value:
-                    // note: it is safe to use JSON.parse here, because we serialized it with JSON.stringify
-                    node.value = JSON.parse(buffer.readString());
-                    break;
-
-                case ConfigNodeSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case ConfigNodeSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}.`);
-            }
-
-            prop = buffer.readUint8();
-        }
-    }
-
-    /**
-     * Deserializes a metadata comment node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<ConfigCommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.ConfigCommentRuleNode);
-
-        node.type = CommentRuleType.ConfigCommentRule;
-        node.category = RuleCategory.Comment;
-        node.syntax = AdblockSyntax.Common;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case ConfigCommentRuleSerializationMap.Marker:
-                    ValueParser.deserialize(buffer, node.marker = {} as Value);
-                    break;
-
-                case ConfigCommentRuleSerializationMap.Command:
-                    ValueParser.deserialize(buffer, node.command = {} as Value, FREQUENT_COMMANDS_DESERIALIZATION_MAP);
-                    break;
-
-                case ConfigCommentRuleSerializationMap.Params:
-                    if (buffer.peekUint8() === BinaryTypeMap.ConfigNode) {
-                        ConfigCommentParser.deserializeConfigNode(buffer, node.params = {} as ConfigNode);
-                    } else {
-                        ParameterListParser.deserialize(buffer, node.params = {} as ParameterList);
-                    }
-                    break;
-
-                case ConfigCommentRuleSerializationMap.Comment:
-                    ValueParser.deserialize(buffer, node.comment = {} as Value);
-                    break;
-
-                case ConfigCommentRuleSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case ConfigCommentRuleSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }
