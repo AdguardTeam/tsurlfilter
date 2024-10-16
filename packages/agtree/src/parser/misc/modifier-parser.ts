@@ -1,11 +1,10 @@
-/* eslint-disable no-param-reassign */
 import { MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { type Modifier, type Value } from '../../nodes';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
-import { ValueParser } from './value';
+import { BaseParser } from '../base-parser';
+import { ValueParser } from './value-parser';
 
 /**
  * `ModifierParser` is responsible for parsing modifiers.

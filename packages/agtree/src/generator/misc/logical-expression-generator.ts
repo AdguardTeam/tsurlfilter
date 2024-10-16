@@ -1,6 +1,6 @@
 import { BaseGenerator } from '../base-generator';
 import { type AnyExpressionNode, OperatorValue } from '../../nodes';
-import { NodeType } from '../../parser/misc/logical-expression';
+import { NodeType } from '../../parser/misc/logical-expression-parser';
 
 export class LogicalExpressionGenerator extends BaseGenerator {
     /**

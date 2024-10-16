@@ -1,4 +1,4 @@
-import { ConfigCommentParser } from '../../../src/parser/comment/inline-config';
+import { ConfigCommentParser } from '../../../src/parser/comment/config-comment-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { ConfigCommentGenerator } from '../../../src/generator/comment/config-comment-generator';

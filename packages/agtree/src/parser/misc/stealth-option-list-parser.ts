@@ -3,7 +3,7 @@ import { type StealthOptionList, ListNodeType, ListItemNodeType } from '../../no
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 
 const STEALTH_OPTION_LIST_SEPARATOR = PIPE;
 

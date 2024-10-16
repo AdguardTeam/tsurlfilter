@@ -1,13 +1,13 @@
 /* eslint-disable no-param-reassign */
-import { AgentCommentParser } from './agent-rule';
+import { AgentCommentParser } from './agent-comment-parser';
 import { type AnyCommentRule } from '../../nodes';
-import { ConfigCommentParser } from './inline-config';
-import { HintCommentParser } from './hint-rule';
-import { MetadataCommentRuleParser } from './metadata';
-import { PreProcessorCommentParser } from './preprocessor';
+import { ConfigCommentParser } from './config-comment-parser';
+import { HintCommentParser } from './hint-comment-parser';
+import { MetadataCommentParser } from './metadata-comment-parser';
+import { PreProcessorCommentParser } from './preprocessor-parser';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
-import { SimpleCommentParser } from './simple-comment';
+import { BaseParser } from '../base-parser';
+import { SimpleCommentParser } from './simple-comment-parser';
 
 /**
  * `CommentParser` is responsible for parsing any comment-like adblock rules.
@@ -65,7 +65,7 @@ import { SimpleCommentParser } from './simple-comment';
  *        ```
  *      - etc.
  */
-export class CommentRuleParser extends BaseParser {
+export class CommentParser extends BaseParser {
     /**
      * Checks whether a rule is a comment.
      *
@@ -87,7 +87,7 @@ export class CommentRuleParser extends BaseParser {
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): AnyCommentRule | null {
         // Ignore non-comment rules
-        if (!CommentRuleParser.isCommentRule(raw)) {
+        if (!CommentParser.isCommentRule(raw)) {
             return null;
         }
 
@@ -96,7 +96,7 @@ export class CommentRuleParser extends BaseParser {
         return AgentCommentParser.parse(raw, options, baseOffset)
             || HintCommentParser.parse(raw, options, baseOffset)
             || PreProcessorCommentParser.parse(raw, options, baseOffset)
-            || MetadataCommentRuleParser.parse(raw, options, baseOffset)
+            || MetadataCommentParser.parse(raw, options, baseOffset)
             || ConfigCommentParser.parse(raw, options, baseOffset)
             || SimpleCommentParser.parse(raw, options, baseOffset);
     }

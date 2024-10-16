@@ -3,7 +3,7 @@ import { type MethodList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 
 const METHOD_LIST_SEPARATOR = PIPE;
 

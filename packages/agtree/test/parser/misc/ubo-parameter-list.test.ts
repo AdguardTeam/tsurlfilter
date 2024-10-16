@@ -1,7 +1,7 @@
 import { COMMA } from '../../../src/utils/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { UboParameterListParser } from '../../../src/parser/misc/ubo-parameter-list';
+import { UboParameterListParser } from '../../../src/parser/misc/ubo-parameter-list-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
 
 describe('UboParameterListParser', () => {

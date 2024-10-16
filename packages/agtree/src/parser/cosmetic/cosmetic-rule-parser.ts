@@ -1,9 +1,8 @@
-/* eslint-disable no-param-reassign */
 import { sprintf } from 'sprintf-js';
 
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { DomainListParser } from '../misc/domain-list';
+import { DomainListParser } from '../misc/domain-list-parser';
 import { ModifierListParser } from '../misc/modifier-list';
 import {
     ADG_SCRIPTLET_MASK,
@@ -29,17 +28,19 @@ import {
     type ScriptletInjectionRule,
     type JsInjectionRule,
     type HtmlFilteringRule,
+    type UboSelector,
 } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { StringUtils } from '../../utils/string';
-import { CommentRuleParser } from '../comment';
+import { CommentParser } from '../comment/comment-parser';
 import { defaultParserOptions } from '../options';
-import { UboPseudoName, type UboSelector, UboSelectorParser } from '../css/ubo-selector';
-import { AdgCssInjectionParser } from '../css/adg-css-injection';
-import { AbpSnippetInjectionBodyParser } from './body/abp-snippet';
-import { UboScriptletInjectionBodyParser } from './body/ubo-scriptlet';
-import { AdgScriptletInjectionBodyParser } from './body/adg-scriptlet';
-import { BaseParser } from '../interface';
+import { UboSelectorParser } from '../css/ubo-selector-parser';
+import { AdgCssInjectionParser } from '../css/adg-css-injection-parser';
+import { AbpSnippetInjectionBodyParser } from './body/abp-snippet-injection-body-parser';
+import { UboScriptletInjectionBodyParser } from './body/ubo-scriptlet-injection-body-parser';
+import { AdgScriptletInjectionBodyParser } from './body/adg-scriptlet-injection-body-parser';
+import { BaseParser } from '../base-parser';
+import { UboPseudoName } from '../../common/ubo-selector-common';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
@@ -82,7 +83,7 @@ export class CosmeticRuleParser extends BaseParser {
     public static isCosmeticRule(raw: string) {
         const trimmed = raw.trim();
 
-        if (CommentRuleParser.isCommentRule(trimmed)) {
+        if (CommentParser.isCommentRule(trimmed)) {
             return false;
         }
 

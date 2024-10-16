@@ -1,4 +1,4 @@
-import { AgentCommentParser } from '../../../src/parser/comment/agent-rule';
+import { AgentCommentParser } from '../../../src/parser/comment/agent-comment-parser';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';

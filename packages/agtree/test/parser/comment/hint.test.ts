@@ -1,4 +1,4 @@
-import { HintCommentParser } from '../../../src/parser/comment/hint-rule';
+import { HintCommentParser } from '../../../src/parser/comment/hint-comment-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { HintCommentGenerator } from '../../../src/generator/comment/hint-comment-generator';

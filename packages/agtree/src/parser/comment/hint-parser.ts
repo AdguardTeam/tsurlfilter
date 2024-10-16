@@ -15,10 +15,10 @@ import {
 import { StringUtils } from '../../utils/string';
 import { type Hint } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../misc/parameter-list';
+import { ParameterListParser } from '../misc/parameter-list-parser';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
-import { ValueParser } from '../misc/value';
+import { BaseParser } from '../base-parser';
+import { ValueParser } from '../misc/value-parser';
 
 /**
  * `HintParser` is responsible for parsing AdGuard hints.

@@ -3,7 +3,7 @@ import { RuleParser } from './rule-parser';
 import { CR, LF } from '../utils/constants';
 import { StringUtils } from '../utils/string';
 import { defaultParserOptions } from './options';
-import { BaseParser } from './interface';
+import { BaseParser } from './base-parser';
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).

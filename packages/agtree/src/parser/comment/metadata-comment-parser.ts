@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 /**
  * @file Metadata comments
  */
@@ -13,8 +12,8 @@ import {
     RuleCategory,
 } from '../../nodes';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
-import { ValueParser } from '../misc/value';
+import { BaseParser } from '../base-parser';
+import { ValueParser } from '../misc/value-parser';
 import { KNOWN_METADATA_HEADERS } from '../../common/metadata-comment-common';
 
 /**
@@ -30,7 +29,7 @@ import { KNOWN_METADATA_HEADERS } from '../../common/metadata-comment-common';
  * the list title is `My List`, and it can be used in the adblocker UI.
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#special-comments}
  */
-export class MetadataCommentRuleParser extends BaseParser {
+export class MetadataCommentParser extends BaseParser {
     /**
      * Parses a raw rule as a metadata comment.
      *

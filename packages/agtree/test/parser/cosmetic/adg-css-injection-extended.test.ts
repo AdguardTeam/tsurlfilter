@@ -2,9 +2,9 @@ import { sprintf } from 'sprintf-js';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 import { CosmeticRuleType, RuleCategory, type CssInjectionRule } from '../../../src/nodes';
-import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic';
+import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 

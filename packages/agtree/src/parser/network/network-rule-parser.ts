@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import { AdblockSyntax } from '../../utils/adblockers';
 import { StringUtils } from '../../utils/string';
 import { ModifierListParser } from '../misc/modifier-list';
@@ -17,8 +16,8 @@ import {
 } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
-import { ValueParser } from '../misc/value';
+import { BaseParser } from '../base-parser';
+import { ValueParser } from '../misc/value-parser';
 
 /**
  * `NetworkRuleParser` is responsible for parsing network rules.

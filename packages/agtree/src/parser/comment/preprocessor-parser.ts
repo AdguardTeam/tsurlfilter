@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 /**
  * Pre-processor directives
  *
@@ -22,12 +21,12 @@ import {
 import { StringUtils } from '../../utils/string';
 import type { AnyExpressionNode, PreProcessorCommentRule, Value } from '../../nodes';
 import { CommentRuleType, RuleCategory } from '../../nodes';
-import { LogicalExpressionParser } from '../misc/logical-expression';
+import { LogicalExpressionParser } from '../misc/logical-expression-parser';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../misc/parameter-list';
+import { ParameterListParser } from '../misc/parameter-list-parser';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
-import { ValueParser } from '../misc/value';
+import { BaseParser } from '../base-parser';
+import { ValueParser } from '../misc/value-parser';
 
 /**
  * `PreProcessorParser` is responsible for parsing preprocessor rules.

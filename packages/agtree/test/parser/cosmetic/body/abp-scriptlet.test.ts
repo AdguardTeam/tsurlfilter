@@ -1,6 +1,6 @@
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
-import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/body/abp-snippet';
+import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/body/abp-snippet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import { EMPTY, SPACE } from '../../../../src/utils/constants';
 import {

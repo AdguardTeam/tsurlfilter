@@ -1,4 +1,4 @@
-import { DomainListParser } from '../../../src/parser/misc/domain-list';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import {
     type DomainList,
     type DomainListSeparator,

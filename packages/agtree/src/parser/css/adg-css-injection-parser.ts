@@ -9,7 +9,7 @@ import { CSS_MEDIA_MARKER, EMPTY } from '../../utils/constants';
 import { type Value, type CssInjectionRuleBody } from '../../nodes';
 import { CssTokenStream } from './css-token-stream';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 
 export const REMOVE_PROPERTY = 'remove';
 export const REMOVE_VALUE = 'true';

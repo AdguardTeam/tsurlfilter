@@ -3,7 +3,7 @@ import { type AppList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 
 /**
  * `AppListParser` is responsible for parsing an app list.

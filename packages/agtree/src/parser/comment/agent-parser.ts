@@ -6,9 +6,9 @@ import { StringUtils } from '../../utils/string';
 import { type Agent, type Value } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 import { defaultParserOptions } from '../options';
-import { ValueParser } from '../misc/value';
+import { ValueParser } from '../misc/value-parser';
 import { isUndefined } from '../../utils/type-guards';
 import { getAdblockSyntax } from '../../common/agent-common';
 
