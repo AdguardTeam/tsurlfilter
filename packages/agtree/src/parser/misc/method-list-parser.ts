@@ -1,9 +1,9 @@
 import { PIPE } from '../../utils/constants';
 import { type MethodList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { ListItemsParser } from './list-items-parser';
 
 const METHOD_LIST_SEPARATOR = PIPE;
 
@@ -29,7 +29,7 @@ export class MethodListParser extends BaseParser {
         const result: MethodList = {
             type: ListNodeType.MethodList,
             separator: METHOD_LIST_SEPARATOR,
-            children: parseListItems(raw, options, baseOffset, METHOD_LIST_SEPARATOR, ListItemNodeType.Method),
+            children: ListItemsParser.parse(raw, options, baseOffset, METHOD_LIST_SEPARATOR, ListItemNodeType.Method),
         };
 
         if (options.isLocIncluded) {

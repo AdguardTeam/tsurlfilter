@@ -1,10 +1,9 @@
-/* eslint-disable no-param-reassign */
 import { COMMA, PIPE } from '../../utils/constants';
 import { type DomainList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
+import { ListItemsParser } from './list-items-parser';
 
 /**
  * `DomainListParser` is responsible for parsing a domain list.
@@ -36,7 +35,7 @@ export class DomainListParser extends BaseParser {
         const result: DomainList = {
             type: ListNodeType.DomainList,
             separator,
-            children: parseListItems(raw, options, baseOffset, separator, ListItemNodeType.Domain),
+            children: ListItemsParser.parse(raw, options, baseOffset, separator, ListItemNodeType.Domain),
         };
 
         if (options.isLocIncluded) {
