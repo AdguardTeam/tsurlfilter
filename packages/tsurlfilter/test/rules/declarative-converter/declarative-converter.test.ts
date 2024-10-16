@@ -5,6 +5,7 @@ import {
 } from '../../../src/rules/declarative-converter/errors/limitation-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
+    NonRequiredMaxUnsafeRulesNumberError,
     ResourcesPathError,
 } from '../../../src/rules/declarative-converter/errors/converter-options-errors';
 import { UnsupportedModifierError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
@@ -917,6 +918,28 @@ describe('DeclarativeConverter', () => {
 
             const msg = 'Maximum number of regexp rules cannot be less than 0';
             await expect(convert).rejects.toThrow(new EmptyOrNegativeNumberOfRulesError(msg));
+        });
+
+        it('dynamic rules - error if the maximum number of unsafe rules less than 0', async () => {
+            const filter = createFilter(['||example.org^']);
+            const maxNumberOfUnsafeRules = -1;
+            const convert = async () => {
+                await converter.convertDynamicRuleSets([filter], [], { maxNumberOfUnsafeRules });
+            };
+
+            const msg = 'Maximum number of unsafe rules cannot be less than 0';
+            await expect(convert).rejects.toThrow(new EmptyOrNegativeNumberOfRulesError(msg));
+        });
+
+        it('static ruleset - error if the maximum number of unsafe rules is set at all', async () => {
+            const filter = createFilter(['||example.org^']);
+            const maxNumberOfUnsafeRules = 0;
+            const convert = async () => {
+                await converter.convertStaticRuleSet(filter, { maxNumberOfUnsafeRules });
+            };
+
+            const msg = 'Static rulesets do not require the maximum number of unsafe rules';
+            await expect(convert).rejects.toThrow(new NonRequiredMaxUnsafeRulesNumberError(msg));
         });
     });
 
