@@ -66,7 +66,7 @@ export { AppListParser } from './parser/misc/app-list';
 export { DomainListParser } from './parser/misc/domain-list';
 export { MethodListParser } from './parser/misc/method-list';
 export { StealthOptionListParser } from './parser/misc/stealth-option-list';
-export { FilterListParser } from './parser/filterlist';
+export { FilterListParser } from './parser/filterlist-parser';
 export { FilterListSerializer } from './serializer/filterlist-serializer';
 export { FilterListDeserializer } from './deserializer/filterlist-deserializer';
 export { HintCommentParser } from './parser/comment/hint-rule';

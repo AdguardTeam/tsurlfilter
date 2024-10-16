@@ -1,16 +1,9 @@
-/* eslint-disable no-param-reassign */
 import { type AnyRule, type FilterList, type NewLine } from '../nodes';
 import { RuleParser } from './rule-parser';
-import {
-    CR,
-    CRLF,
-    EMPTY,
-    LF,
-} from '../utils/constants';
+import { CR, LF } from '../utils/constants';
 import { StringUtils } from '../utils/string';
 import { defaultParserOptions } from './options';
 import { BaseParser } from './interface';
-import { RuleGenerator } from '../generator';
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
@@ -107,48 +100,6 @@ export class FilterListParser extends BaseParser {
         if (options.isLocIncluded) {
             result.start = baseOffset;
             result.end = baseOffset + raw.length;
-        }
-
-        return result;
-    }
-
-    // FIXME:remove
-    /**
-     * Serializes a whole adblock filter list (list of rules).
-     *
-     * @param ast AST to generate
-     * @param preferRaw If `true`, then the parser will use `raws.text` property of each rule
-     * if it is available. Default is `false`.
-     * @returns Serialized filter list
-     */
-    public static generate(ast: FilterList, preferRaw = false): string {
-        let result = EMPTY;
-
-        for (let i = 0; i < ast.children.length; i += 1) {
-            const rule = ast.children[i];
-
-            if (preferRaw && rule.raws?.text) {
-                result += rule.raws.text;
-            } else {
-                result += RuleGenerator.generate(rule);
-            }
-
-            switch (rule.raws?.nl) {
-                case 'crlf':
-                    result += CRLF;
-                    break;
-                case 'cr':
-                    result += CR;
-                    break;
-                case 'lf':
-                    result += LF;
-                    break;
-                default:
-                    if (i !== ast.children.length - 1) {
-                        result += LF;
-                    }
-                    break;
-            }
         }
 
         return result;
