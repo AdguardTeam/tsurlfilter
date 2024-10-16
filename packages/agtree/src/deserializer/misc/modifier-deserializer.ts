@@ -16,22 +16,32 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
  *
  * @note Only 256 values can be represented this way.
  */
-// FIXME
-const FREQUENT_MODIFIERS_DESERIALIZATION_MAP = new Map<number, string>(
-    Array.from(FREQUENT_MODIFIERS_SERIALIZATION_MAP, ([key, value]) => [value, key]),
-);
+let FREQUENT_MODIFIERS_DESERIALIZATION_MAP: Map<number, string>;
+const getFrequentModifiersDeserializationMap = () => {
+    if (!FREQUENT_MODIFIERS_DESERIALIZATION_MAP) {
+        FREQUENT_MODIFIERS_DESERIALIZATION_MAP = new Map<number, string>(
+            Array.from(FREQUENT_MODIFIERS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+        );
+    }
+    return FREQUENT_MODIFIERS_DESERIALIZATION_MAP;
+};
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-// FIXME
-const FREQUENT_VALUES_DESERIALIZATION_MAPS = new Map<string, Map<number, string>>(
-    Array.from(
-        FREQUENT_VALUES_SERIALIZATION_MAPS,
-        ([modifier, valueMap]) => [modifier, new Map(Array.from(valueMap, ([key, value]) => [value, key]))],
-    ),
-);
+let FREQUENT_VALUES_DESERIALIZATION_MAPS: Map<string, Map<number, string>>;
+const getFrequentValuesDeserializationMaps = () => {
+    if (!FREQUENT_VALUES_DESERIALIZATION_MAPS) {
+        FREQUENT_VALUES_DESERIALIZATION_MAPS = new Map<string, Map<number, string>>(
+            Array.from(
+                FREQUENT_VALUES_SERIALIZATION_MAPS,
+                ([modifier, valueMap]) => [modifier, new Map(Array.from(valueMap, ([key, value]) => [value, key]))],
+            ),
+        );
+    }
+    return FREQUENT_VALUES_DESERIALIZATION_MAPS;
+};
 
 /**
  * `ModifierSerializer` is responsible for serializing modifiers.
@@ -56,13 +66,13 @@ export class ModifierDeserializer extends BaseDeserializer {
             switch (prop) {
                 case ModifierNodeSerializationMap.Name:
                     // eslint-disable-next-line max-len
-                    ValueDeserializer.deserialize(buffer, node.name = {} as Value, FREQUENT_MODIFIERS_DESERIALIZATION_MAP);
+                    ValueDeserializer.deserialize(buffer, node.name = {} as Value, getFrequentModifiersDeserializationMap());
                     break;
 
                 case ModifierNodeSerializationMap.Value:
                     if (node.name) {
                         // eslint-disable-next-line max-len
-                        ValueDeserializer.deserialize(buffer, node.value = {} as Value, FREQUENT_VALUES_DESERIALIZATION_MAPS.get(node.name.value));
+                        ValueDeserializer.deserialize(buffer, node.value = {} as Value, getFrequentValuesDeserializationMaps().get(node.name.value));
                     } else {
                         ValueDeserializer.deserialize(buffer, node.value = {} as Value);
                     }
