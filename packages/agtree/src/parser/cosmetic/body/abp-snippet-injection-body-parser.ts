@@ -9,6 +9,7 @@ import { ParameterListParser } from '../../misc/parameter-list-parser';
 import { type ScriptletInjectionRuleBody } from '../../../nodes';
 import { defaultParserOptions } from '../../options';
 import { BaseParser } from '../../base-parser';
+import { AbpSnippetInjectionBodyCommon } from '../../../common/abp-snippet-injection-body-common';
 
 /**
  * `AbpSnippetInjectionBodyParser` is responsible for parsing the body of an Adblock Plus-style snippet rule.
@@ -24,13 +25,6 @@ import { BaseParser } from '../../base-parser';
  * @see {@link https://help.eyeo.com/adblockplus/snippet-filters-tutorial}
  */
 export class AbpSnippetInjectionBodyParser extends BaseParser {
-    /**
-     * Error messages used by the parser.
-     */
-    public static readonly ERROR_MESSAGES = {
-        EMPTY_SCRIPTLET_CALL: 'Empty ABP snippet call',
-    };
-
     /**
      * Parses the body of an Adblock Plus-style snippet rule.
      *
@@ -90,7 +84,7 @@ export class AbpSnippetInjectionBodyParser extends BaseParser {
 
         if (result.children.length === 0) {
             throw new AdblockSyntaxError(
-                this.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
+                AbpSnippetInjectionBodyCommon.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
                 baseOffset,
                 baseOffset + raw.length,
             );
