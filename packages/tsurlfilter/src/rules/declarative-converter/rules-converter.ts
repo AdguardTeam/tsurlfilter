@@ -376,8 +376,9 @@ export class DeclarativeRulesConverter {
                 excludedRulesIds.push(...sourcesRulesIds);
             }
 
-            // FIXME: think how to handle unsafe rules
-            // because different error messages may be needed
+            // TODO: consider handling the unsafe rules limit reaching
+            // since it may be useful to catch and display in the UI of the extension
+
             const msg = 'After conversion, too many declarative rules remain: '
                 + `${declarativeRules.length} exceeds `
                 + `the limit provided - ${maxNumberOfRules}`;
