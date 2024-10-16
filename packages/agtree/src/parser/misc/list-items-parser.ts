@@ -3,7 +3,18 @@ import { defaultParserOptions } from '../options';
 import { COMMA, NEGATION_MARKER } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { LIST_PARSE_ERROR_PREFIX } from './list-helpers';
+
+/**
+ * Prefixes for error messages which are used for parsing of value lists.
+ */
+export const LIST_PARSE_ERROR_PREFIX = {
+    EMPTY_ITEM: 'Empty value specified in the list',
+    NO_MULTIPLE_NEGATION: 'Exception marker cannot be followed by another exception marker',
+    NO_SEPARATOR_AFTER_NEGATION: 'Exception marker cannot be followed by a separator',
+    NO_SEPARATOR_AT_THE_BEGINNING: 'Value list cannot start with a separator',
+    NO_SEPARATOR_AT_THE_END: 'Value list cannot end with a separator',
+    NO_WHITESPACE_AFTER_NEGATION: 'Exception marker cannot be followed by whitespace',
+};
 
 export class ListItemsParser {
     /**

@@ -1,6 +1,6 @@
 import type { DomainList } from '../../nodes';
-import { generateListItems } from '../../parser/misc/list-helpers';
 import { BaseGenerator } from '../base-generator';
+import { ListItemsGenerator } from './list-items-generator';
 
 export class DomainListGenerator extends BaseGenerator {
     /**
@@ -11,6 +11,6 @@ export class DomainListGenerator extends BaseGenerator {
      * @returns Raw string.
      */
     public static generate(node: DomainList): string {
-        return generateListItems(node.children, node.separator);
+        return ListItemsGenerator.generate(node.children, node.separator);
     }
 }
