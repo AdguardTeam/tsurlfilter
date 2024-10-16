@@ -726,6 +726,9 @@ export class TsWebExtension implements AppInterface<
      * @returns Preprocessed filter list.
      *
      * @throws Error if rule sets path is not set.
+     *
+     * @note You can learn more about the preprocessed filter list in
+     * {@link https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#preprocessedfilterlist-interface|tsurlfilter documentation}.
      */
     public static getPreprocessedFilterList = async (
         filterId: number,

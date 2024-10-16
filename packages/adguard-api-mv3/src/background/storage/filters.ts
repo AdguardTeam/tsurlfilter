@@ -168,8 +168,13 @@ export class FiltersStorage {
      * Returns raw preprocessed filter list for the specified filter id.
      *
      * @param filterId Filter id.
+     *
      * @returns Promise, resolved with preprocessed filter list.
+     *
      * @throws Error, if filter list data is not valid.
+     *
+     * @note You can learn more about the preprocessed filter list in
+     * {@link https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#preprocessedfilterlist-interface|tsurlfilter documentation}.
      */
     static async getPreprocessedFilterList(filterId: number): Promise<string> {
         try {
