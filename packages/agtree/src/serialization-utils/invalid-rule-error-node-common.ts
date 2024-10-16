@@ -1,3 +1,5 @@
+import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
+
 /**
  * Property map for binary serialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent a property.

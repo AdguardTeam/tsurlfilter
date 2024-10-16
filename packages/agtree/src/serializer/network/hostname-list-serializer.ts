@@ -4,12 +4,13 @@ import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL, UINT16_MAX } from '../../utils/constants';
 import { ValueSerializer } from '../misc/value-serializer';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
 /**
  * Property map for binary serialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent a property.
  *
- * ! IMPORTANT: If you change values here, please update the `BINARY_SCHEMA_VERSION`
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}
  *
  * @note Only 256 values can be represented this way.
  */
