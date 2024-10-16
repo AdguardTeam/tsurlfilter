@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this */
 import { z } from 'zod';
 
 import { serializeJson } from '../../utils/misc';
@@ -95,6 +94,8 @@ export class MetadataRuleSet {
      *
      * @returns Rule set id.
      */
+    // Note: we prefer `instance.getId()` over `MetadataRuleSet.getId(instance)` for consistency.
+    // eslint-disable-next-line class-methods-use-this
     public getId(): string {
         return `${RULESET_NAME_PREFIX}${METADATA_RULESET_ID}`;
     }
