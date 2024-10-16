@@ -260,28 +260,6 @@ export class RuleParser extends BaseParser {
     }
 
     /**
-     * Serializes an empty rule node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serializeEmptyRule(node: EmptyRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.EmptyRule);
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(EmptyRuleSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(EmptyRuleSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
-    }
-
-    /**
      * Deserializes an empty rule node from binary format.
      *
      * @param buffer ByteBuffer for reading binary data.
@@ -310,34 +288,6 @@ export class RuleParser extends BaseParser {
             }
             prop = buffer.readUint8();
         }
-    }
-
-    /**
-     * Serializes an invalid rule error node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serializeInvalidRuleErrorNode(node: InvalidRuleError, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.InvalidRuleErrorNode);
-
-        buffer.writeUint8(InvalidRuleErrorNodeSerializationMap.Name);
-        buffer.writeString(node.name);
-
-        buffer.writeUint8(InvalidRuleErrorNodeSerializationMap.Message);
-        buffer.writeString(node.message);
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(InvalidRuleErrorNodeSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(InvalidRuleErrorNodeSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**
@@ -375,31 +325,6 @@ export class RuleParser extends BaseParser {
             }
             prop = buffer.readUint8();
         }
-    }
-
-    /**
-     * Serializes an invalid rule node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serializeInvalidRule(node: InvalidRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.InvalidRule);
-
-        buffer.writeUint8(InvalidRuleSerializationMap.Error);
-        RuleParser.serializeInvalidRuleErrorNode(node.error, buffer);
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(InvalidRuleSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(InvalidRuleSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
     }
 
     /**
