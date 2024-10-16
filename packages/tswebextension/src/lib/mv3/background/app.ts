@@ -734,19 +734,17 @@ export class TsWebExtension implements AppInterface<
         const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
         const ruleSetId = RuleSetsLoaderApi.getRuleSetId(filterId);
 
-        const rawFilterList = JSON.parse(
-            await ruleSetsLoaderApi.getRawCategoryContent(
+        const [rawFilterList, conversionMap] = await Promise.all([
+            ruleSetsLoaderApi.getRawCategoryContent(
                 ruleSetId,
                 RuleSetByteRangeCategory.PreprocessedFilterListRaw,
-            ),
-        );
+            ).then(JSON.parse),
 
-        const conversionMap = JSON.parse(
-            await ruleSetsLoaderApi.getRawCategoryContent(
+            ruleSetsLoaderApi.getRawCategoryContent(
                 ruleSetId,
                 RuleSetByteRangeCategory.PreprocessedFilterListConversionMap,
-            ),
-        );
+            ).then(JSON.parse),
+        ]);
 
         return FilterListPreprocessor.preprocessLightweight({
             rawFilterList,

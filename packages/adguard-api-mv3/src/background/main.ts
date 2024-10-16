@@ -96,26 +96,57 @@ export class AdguardApi {
     }
 
     /**
-     * Checks if the filter with the specified id needs to be updated in the extension storage.
+     * Syncs enabled filters with the extension storage.
      *
-     * @param rulesetId Filter id.
+     * This method is needed to update the extension storage with the latest filters content.
      *
-     * @returns True if the filter needs to be updated, false otherwise.
+     * @returns Promise that resolves when the sync is finished.
      */
-    private async isFilterOutdated(rulesetId: number): Promise<boolean> {
-        try {
-            const [ruleSetChecksum, ruleSetChecksumStorage] = await Promise.all([
-                TsWebExtension.getChecksum(rulesetId, this.getRuleSetsPath()),
-                versionsIdbStorage.get(String(rulesetId)),
-            ]);
+    private async syncEnabledFiltersWithStorage(): Promise<void> {
+        logger.info('Syncing enabled filters with the extension storage');
 
-            return ruleSetChecksum !== ruleSetChecksumStorage;
-        } catch (e) {
-            logger.error(
-                `Failed to check if filter with id ${rulesetId} needs update. Got error: ${getErrorMessage(e)}`,
-            );
-            return true;
+        if (!this.configuration?.filters) {
+            logger.info('No filters are enabled, skipping the sync');
+            return;
         }
+
+        const enabledRulesetIds = this.configuration.filters;
+
+        const filters: Record<number, PreprocessedFilterList> = {};
+        const checksums: Record<number, string> = {};
+
+        // Ruleset JSON files might be updated, so we need to update preprocessed filter list in the extension storage
+        for (const rulesetId of enabledRulesetIds) {
+            // Get up-to-date preprocessed filter list
+            try {
+                // eslint-disable-next-line no-await-in-loop
+                const [ruleSetChecksum, ruleSetChecksumStorage] = await Promise.all([
+                    TsWebExtension.getChecksum(rulesetId, this.getRuleSetsPath()),
+                    versionsIdbStorage.get(String(rulesetId)),
+                ]);
+
+                if (ruleSetChecksum === ruleSetChecksumStorage) {
+                    logger.info(`Filter with id ${rulesetId} is up-to-date, skipping the update`);
+                    continue;
+                }
+
+                // eslint-disable-next-line no-await-in-loop
+                const preprocessed = await TsWebExtension.getPreprocessedFilterList(rulesetId, this.getRuleSetsPath());
+
+                filters[rulesetId] = preprocessed;
+
+                if (ruleSetChecksum) {
+                    checksums[rulesetId] = ruleSetChecksum;
+                }
+            } catch (e) {
+                logger.error(`Failed to update filter with id ${rulesetId}. Got error: ${getErrorMessage(e)}`);
+            }
+        }
+
+        await FiltersStorage.setMultiple(filters);
+        await versionsIdbStorage.setMultiple(checksums);
+
+        logger.info(`Synced the following filters: ${enabledRulesetIds.join(', ')}`);
     }
 
     /**
@@ -125,40 +156,11 @@ export class AdguardApi {
     private async handleExtensionUpdateInChrome(): Promise<void> {
         logger.info('Extension has been updated, updating the extension storage');
 
-        if (!this.configuration?.filters) {
-            logger.info('No filters are enabled, skipping the update');
-            return;
-        }
+        await this.syncEnabledFiltersWithStorage();
 
-        const enabledRulesetIds = this.configuration.filters;
-
-        const filters: Record<number, PreprocessedFilterList> = {};
-
-        // Ruleset JSON files might be updated, so we need to update preprocessed filter list in the extension storage
-        for (const rulesetId of enabledRulesetIds) {
-            // Get up-to-date preprocessed filter list
-            try {
-                // eslint-disable-next-line no-await-in-loop
-                if (!(await this.isFilterOutdated(rulesetId))) {
-                    logger.info(`Filter with id ${rulesetId} is up-to-date, skipping the update`);
-                    continue;
-                }
-
-                // eslint-disable-next-line no-await-in-loop
-                const preprocessed = await TsWebExtension.getPreprocessedFilterList(rulesetId, this.getRuleSetsPath());
-
-                if (preprocessed) {
-                    filters[rulesetId] = preprocessed;
-                }
-            } catch (e) {
-                logger.error(`Failed to update filter with id ${rulesetId}. Got error: ${getErrorMessage(e)}`);
-            }
-        }
-
-        await FiltersStorage.setMultiple(filters);
+        logger.info('Syncing new extension version with the storage');
         await ExtensionVersionManager.updateExtensionVersion();
-
-        logger.info('Extension storage updated');
+        logger.info('Extension version has been updated');
     }
 
     /**
@@ -173,13 +175,7 @@ export class AdguardApi {
 
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
-        if (isChrome) {
-            if (await ExtensionVersionManager.isExtensionUpdated()) {
-                await this.handleExtensionUpdateInChrome();
-            }
-
-            addChromeUpdateHandler(this.handleExtensionUpdateInChrome);
-        }
+        await this.syncEnabledFiltersWithStorage();
 
         await this.tswebextension.start(tsWebExtensionConfiguration);
 
