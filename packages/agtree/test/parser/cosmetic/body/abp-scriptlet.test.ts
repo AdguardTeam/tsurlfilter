@@ -7,7 +7,7 @@ import {
     AbpSnippetInjectionBodyGenerator,
 } from '../../../../src/generator/cosmetic/body/abp-snippet-injection-body-generator';
 import {
-    AbpSnippetInjectionBodySerializer
+    AbpSnippetInjectionBodySerializer,
 } from '../../../../src/serializer/cosmetic/body/abp-snippet-injection-body-serializer';
 
 describe('AbpSnippetInjectionBodyParser', () => {

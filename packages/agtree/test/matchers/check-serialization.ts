@@ -45,7 +45,7 @@ expect.extend({
      * @param received Received parameter from expect()
      * @param parser Parser class to use
      * @param generator Generator class to use
-     * @param serializer
+     * @param serializer Serializer class to use
      * @returns Jest matcher result
      */
     async toBeSerializedAndDeserializedProperly(

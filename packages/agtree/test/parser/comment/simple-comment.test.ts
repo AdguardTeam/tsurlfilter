@@ -191,7 +191,7 @@ describe('SimpleCommentParser', () => {
             await expect(input).toBeSerializedAndDeserializedProperly(
                 SimpleCommentParser,
                 SimpleCommentGenerator,
-                SimpleCommentSerializer
+                SimpleCommentSerializer,
             );
         });
     });

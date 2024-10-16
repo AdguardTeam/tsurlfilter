@@ -6,7 +6,7 @@ import {
     UboScriptletInjectionBodyGenerator,
 } from '../../../../src/generator/cosmetic/body/ubo-scriptlet-injection-body-generator';
 import {
-    UboScriptletInjectionBodySerializer
+    UboScriptletInjectionBodySerializer,
 } from '../../../../src/serializer/cosmetic/body/ubo-scriptlet-injection-body-serializer';
 
 describe('UboScriptletInjectionBodyParser', () => {
