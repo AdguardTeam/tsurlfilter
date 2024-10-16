@@ -28,19 +28,29 @@ import { ParameterListDeserializer } from '../misc/parameter-list-deserializer';
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-// FIXME
-const FREQUENT_DIRECTIVES_DESERIALIZATION_MAP = new Map<number, string>(
-    Array.from(FREQUENT_DIRECTIVES_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-);
+let FREQUENT_DIRECTIVES_DESERIALIZATION_MAP: Map<number, string>;
+const getFrequentDirectivesDeserializationMap = (): Map<number, string> => {
+    if (!FREQUENT_DIRECTIVES_DESERIALIZATION_MAP) {
+        FREQUENT_DIRECTIVES_DESERIALIZATION_MAP = new Map<number, string>(
+            Array.from(FREQUENT_DIRECTIVES_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+        );
+    }
+    return FREQUENT_DIRECTIVES_DESERIALIZATION_MAP;
+};
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-// FIXME
-const FREQUENT_PARAMS_DESERIALIZATION_MAP = new Map<number, string>(
-    Array.from(FREQUENT_PARAMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-);
+let FREQUENT_PARAMS_DESERIALIZATION_MAP: Map<number, string>;
+const getFrequentParamsDeserializationMap = () => {
+    if (!FREQUENT_PARAMS_DESERIALIZATION_MAP) {
+        FREQUENT_PARAMS_DESERIALIZATION_MAP = new Map<number, string>(
+            Array.from(FREQUENT_PARAMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+        );
+    }
+    return FREQUENT_PARAMS_DESERIALIZATION_MAP;
+};
 
 /**
  * `PreProcessorCommentDeserializer` is responsible for deserializing preprocessor rules.
@@ -78,7 +88,7 @@ export class PreProcessorCommentDeserializer extends BaseDeserializer {
             switch (prop) {
                 case PreProcessorRuleSerializationMap.Name:
                     // eslint-disable-next-line max-len
-                    ValueDeserializer.deserialize(buffer, node.name = {} as Value, FREQUENT_DIRECTIVES_DESERIALIZATION_MAP);
+                    ValueDeserializer.deserialize(buffer, node.name = {} as Value, getFrequentDirectivesDeserializationMap());
                     break;
 
                 case PreProcessorRuleSerializationMap.Syntax:
@@ -93,7 +103,7 @@ export class PreProcessorCommentDeserializer extends BaseDeserializer {
 
                         case BinaryTypeMap.ParameterListNode:
                             // eslint-disable-next-line max-len
-                            ParameterListDeserializer.deserialize(buffer, node.params = {} as ParameterList, FREQUENT_PARAMS_DESERIALIZATION_MAP);
+                            ParameterListDeserializer.deserialize(buffer, node.params = {} as ParameterList, getFrequentParamsDeserializationMap());
                             break;
 
                         case BinaryTypeMap.ExpressionOperatorNode:
