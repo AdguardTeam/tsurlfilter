@@ -10,7 +10,7 @@ import { RuleParser } from '../../src/parser/rule-parser';
 import { AdblockSyntax } from '../../src/utils/adblockers';
 import { defaultParserOptions } from '../../src/parser/options';
 import { RuleGenerator } from '../../src/generator';
-import { RuleSerializer } from '../../src';
+import { RuleSerializer } from '../../src/serializer/rule-serializer';
 
 describe('RuleParser', () => {
     test('parse', () => {
