@@ -18,8 +18,23 @@ const JSON_ARRAY_OPENING_BRACKET = '[';
 const JSON_ARRAY_CLOSING_BRACKET = ']';
 
 /**
- * RuleSetsLoaderApi can create {@link IRuleSet} from the provided rule set ID
- * with lazy loading (rule set contents will be loaded only after a request).
+ * RuleSetsLoaderApi is responsible for creating {@link IRuleSet} instances from provided rule set IDs and paths.
+ * It supports lazy loading, meaning the rule set contents are loaded only upon request.
+ *
+ * This class also manages a cache of metadata rule sets to optimize performance and reduce redundant fetches.
+ *
+ * The main functionalities include:
+ * - Initializing the rule sets loader to prepare it for fetching rule sets.
+ * - Fetching checksums of rule sets.
+ * - Fetching specific byte ranges of rule sets to minimize memory usage.
+ * - Creating new {@link IRuleSet} instances with lazy loading capabilities.
+ *
+ * @example
+ * ```typescript
+ * const loader = new RuleSetsLoaderApi('/path/to/rulesets');
+ * await loader.initialize();
+ * const ruleSet = await loader.createRuleSet('123', filters);
+ * ```
  */
 export class RuleSetsLoaderApi {
     /**
