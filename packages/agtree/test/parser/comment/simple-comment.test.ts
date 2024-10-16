@@ -4,6 +4,7 @@ import { defaultParserOptions } from '../../../src/parser/options';
 import { isNull } from '../../../src/utils/type-guards';
 import { SimpleCommentGenerator } from '../../../src/generator/comment/simple-comment-generator';
 import { SimpleCommentSerializer } from '../../../src/serializer/comment/simple-comment-serializer';
+import { SimpleCommentDeserializer } from '../../../src/deserializer/comment/simple-comment-deserializer';
 
 describe('SimpleCommentParser', () => {
     describe('isSimpleComment', () => {
@@ -192,6 +193,7 @@ describe('SimpleCommentParser', () => {
                 SimpleCommentParser,
                 SimpleCommentGenerator,
                 SimpleCommentSerializer,
+                SimpleCommentDeserializer,
             );
         });
     });

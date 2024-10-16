@@ -174,7 +174,7 @@ export const benchmark = async ({
     agTreeModule.FilterListSerializer.serialize(node, outBuffer);
     const inBuffer = new agTreeModule.InputByteBuffer((outBuffer as any).chunks);
     const deserializedNode = {} as AGTree.FilterList;
-    agTreeModule.FilterListParser.deserialize(inBuffer, deserializedNode);
+    agTreeModule.FilterListDeserializer.deserialize(inBuffer, deserializedNode);
 
     const stats = {
         rawFilterListSize: new Blob([rawFilterList]).size,
@@ -206,7 +206,7 @@ export const benchmark = async ({
     suite.add('Deserialize byte buffer to AST', () => {
         const tmpInBuffer = new agTreeModule.InputByteBuffer((outBuffer as any).chunks);
         const tmpDeserializedNode = {} as AGTree.FilterList;
-        agTreeModule.FilterListParser.deserialize(tmpInBuffer, tmpDeserializedNode);
+        agTreeModule.FilterListDeserializer.deserialize(tmpInBuffer, tmpDeserializedNode);
     });
 
     suite.on('complete', function (this: Benchmark.Suite) {

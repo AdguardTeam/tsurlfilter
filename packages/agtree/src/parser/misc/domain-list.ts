@@ -1,60 +1,10 @@
 /* eslint-disable no-param-reassign */
-import { COMMA, PIPE, NULL } from '../../utils/constants';
-import {
-    type DomainList,
-    ListNodeType,
-    ListItemNodeType,
-    BinaryTypeMap,
-    type DomainListSeparator,
-} from '../../nodes';
+import { COMMA, PIPE } from '../../utils/constants';
+import { type DomainList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { deserializeListItems, parseListItems } from './list-helpers';
+import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the binary schema version
- *
- * @note Only 256 values can be represented this way.
- */
-const enum DomainListSerializationMap {
-    Separator = 1,
-    Children,
-    Start,
-    End,
-}
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
-    [COMMA, 0],
-    [PIPE, 1],
-]);
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- */
-let SEPARATOR_DESERIALIZATION_MAP:Map<number, string>;
-const getSeparatorDeserializationMap = () => {
-    if (!SEPARATOR_DESERIALIZATION_MAP) {
-        SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
-            Array.from(SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-        );
-    }
-    return SEPARATOR_DESERIALIZATION_MAP;
-};
 
 /**
  * `DomainListParser` is responsible for parsing a domain list.
@@ -95,44 +45,5 @@ export class DomainListParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Deserializes a modifier list node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: DomainList): void {
-        buffer.assertUint8(BinaryTypeMap.DomainListNode);
-
-        node.type = ListNodeType.DomainList;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case DomainListSerializationMap.Separator:
-                    // eslint-disable-next-line max-len
-                    node.separator = (getSeparatorDeserializationMap().get(buffer.readUint8()) ?? COMMA) as DomainListSeparator;
-                    break;
-
-                case DomainListSerializationMap.Children:
-                    deserializeListItems(buffer, node.children = []);
-                    break;
-
-                case DomainListSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case DomainListSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}.`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

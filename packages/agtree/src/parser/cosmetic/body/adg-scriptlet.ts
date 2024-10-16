@@ -18,8 +18,6 @@ import { StringUtils } from '../../../utils/string';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../../options';
 import { BaseParser } from '../../interface';
-import { deserializeScriptletBody } from './scriptlet-serialization-helper';
-import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
 import { ValueParser } from '../../misc/value';
 import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
@@ -285,16 +283,5 @@ export class AdgScriptletInjectionBodyParser extends BaseParser {
         result.children.push(parameterList);
 
         return result;
-    }
-
-    /**
-     * Deserializes a scriptlet call body node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void {
-        deserializeScriptletBody(buffer, node, this.FREQUENT_ARGS_DESERIALIZATION_MAP);
     }
 }

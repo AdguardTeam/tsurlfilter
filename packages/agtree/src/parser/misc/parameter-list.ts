@@ -1,26 +1,10 @@
 /* eslint-disable no-param-reassign */
 import { StringUtils } from '../../utils/string';
-import { type ParameterList, BinaryTypeMap, type Value } from '../../nodes';
-import { COMMA, NULL } from '../../utils/constants';
+import { type ParameterList } from '../../nodes';
+import { COMMA } from '../../utils/constants';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from './value';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ParameterListNodeSerializationMap {
-    Children = 1,
-    Start,
-    End,
-}
 
 export class ParameterListParser extends BaseParser {
     /**
@@ -99,62 +83,5 @@ export class ParameterListParser extends BaseParser {
         }
 
         return params;
-    }
-
-    /**
-     * Deserializes a parameter list node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @param frequentValuesMap Optional map of frequent values.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(
-        buffer: InputByteBuffer,
-        node: ParameterList,
-        frequentValuesMap?: Map<number, string>,
-    ): void {
-        buffer.assertUint8(BinaryTypeMap.ParameterListNode);
-
-        node.type = 'ParameterList';
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case ParameterListNodeSerializationMap.Children:
-                    node.children = new Array(buffer.readUint32());
-
-                    // read children
-                    for (let i = 0; i < node.children.length; i += 1) {
-                        switch (buffer.peekUint8()) {
-                            case BinaryTypeMap.Null:
-                                buffer.readUint8();
-                                node.children[i] = null;
-                                break;
-
-                            case BinaryTypeMap.ValueNode:
-                                ValueParser.deserialize(buffer, node.children[i] = {} as Value, frequentValuesMap);
-                                break;
-
-                            default:
-                                throw new Error(`Invalid child type: ${buffer.peekUint8()}`);
-                        }
-                    }
-                    break;
-
-                case ParameterListNodeSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case ParameterListNodeSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

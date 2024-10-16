@@ -1,0 +1,36 @@
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
+import { BaseDeserializer } from '../../base-deserializer';
+import { ScriptletBodyDeserializer } from './scriptlet-body-deserializer';
+import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
+import {
+    FREQUENT_ABP_SNIPPET_ARGS_SERIALIZATION_MAP,
+} from '../../../serialization-utils/cosmetic/body/abp-snippet-injection-body-common';
+
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+let FREQUENT_ABP_SNIPPET_ARGS_DESERIALIZATION_MAP: Map<number, string>;
+
+export const getFrequentPlatformsDeserializationMap = () => {
+    if (!FREQUENT_ABP_SNIPPET_ARGS_DESERIALIZATION_MAP) {
+        FREQUENT_ABP_SNIPPET_ARGS_DESERIALIZATION_MAP = new Map<number, string>(
+            Array.from(FREQUENT_ABP_SNIPPET_ARGS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+        );
+    }
+
+    return FREQUENT_ABP_SNIPPET_ARGS_DESERIALIZATION_MAP;
+};
+
+export class AbpSnippetInjectionBodyDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a scriptlet call body node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @throws If the binary data is malformed.
+     */
+    public static deserialize(buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void {
+        ScriptletBodyDeserializer.deserialize(buffer, node, FREQUENT_ABP_SNIPPET_ARGS_DESERIALIZATION_MAP);
+    }
+}

@@ -8,6 +8,9 @@ import {
 import {
     UboScriptletInjectionBodySerializer,
 } from '../../../../src/serializer/cosmetic/body/ubo-scriptlet-injection-body-serializer';
+import {
+    UboScriptletInjectionBodyDeserializer,
+} from '../../../../src/deserializer/cosmetic/body/ubo-scriptlet-injection-body-deserializer';
 
 describe('UboScriptletInjectionBodyParser', () => {
     describe('UboScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -1175,6 +1178,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                 UboScriptletInjectionBodyParser,
                 UboScriptletInjectionBodyGenerator,
                 UboScriptletInjectionBodySerializer,
+                UboScriptletInjectionBodyDeserializer,
             );
         });
     });

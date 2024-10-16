@@ -9,6 +9,9 @@ import {
 import {
     AbpSnippetInjectionBodySerializer,
 } from '../../../../src/serializer/cosmetic/body/abp-snippet-injection-body-serializer';
+import {
+    AbpSnippetInjectionBodyDeserializer,
+} from '../../../../src/deserializer/cosmetic/body/abp-snippet-injection-body-deserializer';
 
 describe('AbpSnippetInjectionBodyParser', () => {
     describe('AbpSnippetInjectionBodyParser.parse - valid cases', () => {
@@ -700,6 +703,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                 AbpSnippetInjectionBodyParser,
                 AbpSnippetInjectionBodyGenerator,
                 AbpSnippetInjectionBodySerializer,
+                AbpSnippetInjectionBodyDeserializer,
             );
         });
     });

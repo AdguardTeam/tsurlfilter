@@ -2,18 +2,15 @@
 /* eslint-disable max-classes-per-file */
 import { StringUtils } from '../../utils/string';
 import {
-    BinaryTypeMap,
     type AnyExpressionNode,
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
-    type ExpressionOperatorNode,
     OperatorValue,
 } from '../../nodes';
 import {
     AMPERSAND,
     CLOSE_PARENTHESIS,
     EXCLAMATION_MARK,
-    NULL,
     OPEN_PARENTHESIS,
     PIPE,
     UNDERSCORE,
@@ -21,38 +18,6 @@ import {
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-
-/**
- * Property map for binary serialization.
- */
-const enum VariableNodeBinaryPropMap {
-    Name = 1,
-    FrequentName,
-    Start,
-    End,
-}
-
-/**
- * Property map for binary serialization.
- */
-const enum OperatorNodeBinaryPropMap {
-    Operator = 1,
-    Left,
-    Right,
-    Start,
-    End,
-}
-
-/**
- * Property map for binary serialization.
- */
-const enum ParenthesisNodeBinaryPropMap {
-    Expression = 1,
-    Start,
-    End,
-}
 
 /**
  * Possible token types in the logical expression.
@@ -79,96 +44,6 @@ const OPERATOR_PRECEDENCE = {
     [OperatorValue.Not]: 3,
     [OperatorValue.And]: 2,
     [OperatorValue.Or]: 1,
-};
-
-const OPERATOR_BINARY_MAP = new Map<OperatorValue, number>([
-    [OperatorValue.Not, 0],
-    [OperatorValue.And, 1],
-    [OperatorValue.Or, 2],
-]);
-
-let OPERATOR_BINARY_MAP_REVERSE:Map<number, OperatorValue>;
-const getOperatorBinaryMapReverse = () => {
-    if (!OPERATOR_BINARY_MAP_REVERSE) {
-        OPERATOR_BINARY_MAP_REVERSE = new Map<number, OperatorValue>(
-            Array.from(OPERATOR_BINARY_MAP).map(([key, value]) => [value, key]),
-        );
-    }
-    return OPERATOR_BINARY_MAP_REVERSE;
-};
-
-/**
- * Gets the string representation of the operator from the binary representation.
- *
- * @param binary Binary representation of the operator
- * @returns String representation of the operator
- * @throws If the operator is unknown
- */
-const getOperatorOrFail = (binary: number): OperatorValue => {
-    const operator = getOperatorBinaryMapReverse().get(binary);
-    if (isUndefined(operator)) {
-        throw new Error(`Unknown operator: ${binary}`);
-    }
-    return operator;
-};
-
-/**
- * Serialization map for known variables.
- */
-const KNOWN_VARIABLES_MAP = new Map<string, number>([
-    ['ext_abp', 0],
-    ['ext_ublock', 1],
-    ['ext_ubol', 2],
-    ['ext_devbuild', 3],
-    ['env_chromium', 4],
-    ['env_edge', 5],
-    ['env_firefox', 6],
-    ['env_mobile', 7],
-    ['env_safari', 8],
-    ['env_mv3', 9],
-    ['false', 10],
-    ['cap_html_filtering', 11],
-    ['cap_user_stylesheet', 12],
-    ['adguard', 13],
-    ['adguard_app_windows', 14],
-    ['adguard_app_mac', 15],
-    ['adguard_app_android', 16],
-    ['adguard_app_ios', 17],
-    ['adguard_ext_safari', 18],
-    ['adguard_ext_chromium', 19],
-    ['adguard_ext_firefox', 20],
-    ['adguard_ext_edge', 21],
-    ['adguard_ext_opera', 22],
-    ['adguard_ext_android_cb', 23],
-    // TODO: Add 'adguard_ext_chromium_mv3' to the list
-]);
-
-/**
- * Deserialization map for known variables.
- */
-let KNOWN_VARIABLES_MAP_REVERSE: Map<number, string>;
-const getKnownVariablesMapReverse = () => {
-    if (!KNOWN_VARIABLES_MAP_REVERSE) {
-        KNOWN_VARIABLES_MAP_REVERSE = new Map<number, string>(
-            Array.from(KNOWN_VARIABLES_MAP).map(([key, value]) => [value, key]),
-        );
-    }
-    return KNOWN_VARIABLES_MAP_REVERSE;
-};
-
-/**
- * Gets the frequent name of the variable from the binary representation.
- *
- * @param binary Binary representation of the variable
- * @returns Frequent name of the variable
- * @throws If the variable is unknown
- */
-const getFrequentNameOrFail = (binary: number): string => {
-    const name = getKnownVariablesMapReverse().get(binary);
-    if (isUndefined(name)) {
-        throw new Error(`Unknown frequent name: ${binary}`);
-    }
-    return name;
 };
 
 /**
@@ -491,159 +366,5 @@ export class LogicalExpressionParser extends BaseParser {
         }
 
         return expression;
-    }
-
-    /**
-     * Deserializes a variable node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    private static deserializeVariableNode(buffer: InputByteBuffer, node: Partial<ExpressionVariableNode>): void {
-        buffer.assertUint8(BinaryTypeMap.ExpressionVariableNode);
-
-        node.type = NodeType.Variable;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case VariableNodeBinaryPropMap.Name:
-                    node.name = buffer.readString();
-                    break;
-
-                case VariableNodeBinaryPropMap.FrequentName:
-                    node.name = getFrequentNameOrFail(buffer.readUint8());
-                    break;
-
-                case VariableNodeBinaryPropMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case VariableNodeBinaryPropMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
-    }
-
-    /**
-     * Deserializes a parenthesis node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    private static deserializeParenthesisNode(buffer: InputByteBuffer, node: Partial<ExpressionParenthesisNode>): void {
-        buffer.assertUint8(BinaryTypeMap.ExpressionParenthesisNode);
-
-        node.type = NodeType.Parenthesis;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case ParenthesisNodeBinaryPropMap.Expression:
-                    LogicalExpressionParser.deserialize(buffer, node.expression = {} as AnyExpressionNode);
-                    break;
-
-                case ParenthesisNodeBinaryPropMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case ParenthesisNodeBinaryPropMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
-    }
-
-    /**
-     * Deserializes an operator node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    private static deserializeOperatorNode(buffer: InputByteBuffer, node: Partial<ExpressionOperatorNode>): void {
-        buffer.assertUint8(BinaryTypeMap.ExpressionOperatorNode);
-
-        node.type = NodeType.Operator;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case OperatorNodeBinaryPropMap.Operator:
-                    node.operator = getOperatorOrFail(buffer.readUint8());
-                    break;
-
-                case OperatorNodeBinaryPropMap.Left:
-                    LogicalExpressionParser.deserialize(buffer, node.left = {} as AnyExpressionNode);
-                    break;
-
-                case OperatorNodeBinaryPropMap.Right:
-                    LogicalExpressionParser.deserialize(buffer, node.right = {} as AnyExpressionNode);
-                    break;
-
-                case OperatorNodeBinaryPropMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case OperatorNodeBinaryPropMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
-    }
-
-    /**
-     * Deserializes a logical expression node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<AnyExpressionNode>): void {
-        // note: we just do a simple lookahead here, because advancing the buffer is done in the
-        // 'sub-deserialize' methods
-        let type = buffer.peekUint8();
-        while (type !== NULL) {
-            switch (type) {
-                case BinaryTypeMap.ExpressionVariableNode:
-                    LogicalExpressionParser.deserializeVariableNode(buffer, node as Partial<ExpressionVariableNode>);
-                    break;
-
-                case BinaryTypeMap.ExpressionOperatorNode:
-                    LogicalExpressionParser.deserializeOperatorNode(buffer, node as Partial<ExpressionOperatorNode>);
-                    break;
-
-                case BinaryTypeMap.ExpressionParenthesisNode:
-                    // eslint-disable-next-line max-len
-                    LogicalExpressionParser.deserializeParenthesisNode(buffer, node as Partial<ExpressionParenthesisNode>);
-                    break;
-
-                default:
-                    throw new Error(`Unexpected node type: ${type}`);
-            }
-
-            type = buffer.peekUint8();
-        }
-
-        // consume NULL
-        buffer.readUint8();
     }
 }

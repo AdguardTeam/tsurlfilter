@@ -3,54 +3,16 @@ import * as tldts from 'tldts';
 import isIp from 'is-ip';
 
 import { StringUtils } from '../../utils/string';
-import { NULL } from '../../utils/constants';
 import {
     type HostRule,
     NetworkRuleType,
     RuleCategory,
     type Value,
-    BinaryTypeMap,
-    type HostnameList,
-    getSyntaxDeserializationMap,
 } from '../../nodes';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ValueParser } from '../misc/value';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum HostRuleSerializationMap {
-    Syntax = 1,
-    Raws,
-    Ip,
-    HostnameList,
-    Comment,
-    Start,
-    End,
-}
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum HostnameListNodeSerializationMap {
-    Children = 1,
-    Start,
-    End,
-}
 
 /**
  * `HostRuleParser` is responsible for parsing hosts-like rules.
@@ -177,91 +139,5 @@ export class HostRuleParser extends BaseParser {
         }
 
         return result as HostRule;
-    }
-
-    /**
-     * Deserializes a hostname list node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     */
-    private static deserializeHostnameList(buffer: InputByteBuffer, node: HostnameList): void {
-        buffer.assertUint8(BinaryTypeMap.HostnameListNode);
-
-        node.type = 'HostnameList';
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case HostnameListNodeSerializationMap.Children:
-                    node.children = new Array(buffer.readUint16());
-
-                    // read children
-                    for (let i = 0; i < node.children.length; i += 1) {
-                        ValueParser.deserialize(buffer, node.children[i] = {} as Value);
-                    }
-                    break;
-                case HostnameListNodeSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-                case HostnameListNodeSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-                default:
-                    throw new Error(`Unknown property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
-    }
-
-    /**
-     * Deserializes a modifier node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<HostRule>): void {
-        buffer.assertUint8(BinaryTypeMap.HostRuleNode);
-
-        node.category = RuleCategory.Network;
-        node.type = NetworkRuleType.HostRule;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case HostRuleSerializationMap.Syntax:
-                    node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
-                    break;
-
-                case HostRuleSerializationMap.Ip:
-                    node.ip = {} as Value;
-                    ValueParser.deserialize(buffer, node.ip);
-                    break;
-
-                case HostRuleSerializationMap.HostnameList:
-                    node.hostnames = {} as HostnameList;
-                    HostRuleParser.deserializeHostnameList(buffer, node.hostnames);
-                    break;
-
-                case HostRuleSerializationMap.Comment:
-                    node.comment = {} as Value;
-                    ValueParser.deserialize(buffer, node.comment);
-                    break;
-
-                case HostRuleSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case HostRuleSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}.`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

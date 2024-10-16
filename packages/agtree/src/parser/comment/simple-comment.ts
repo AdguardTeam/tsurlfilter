@@ -1,36 +1,16 @@
 /* eslint-disable no-param-reassign */
 import { AdblockSyntax } from '../../utils/adblockers';
-import { NULL } from '../../utils/constants';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { StringUtils } from '../../utils/string';
 import {
-    BinaryTypeMap,
     CommentMarker,
     type CommentRule,
     CommentRuleType,
     RuleCategory,
-    type Value,
 } from '../../nodes';
 import { BaseParser } from '../interface';
 import { ValueParser } from '../misc/value';
 import { defaultParserOptions } from '../options';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum SimpleCommentRuleSerializationMap {
-    Marker = 1,
-    Text,
-    Start,
-    End,
-}
 
 /**
  * `SimpleCommentParser` is responsible for parsing simple comments.
@@ -138,46 +118,5 @@ export class SimpleCommentParser extends BaseParser {
         }
 
         return result;
-    }
-
-    /**
-     * Deserializes a simple comment node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<CommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.CommentRuleNode);
-
-        node.type = CommentRuleType.CommentRule;
-        node.category = RuleCategory.Comment;
-        node.syntax = AdblockSyntax.Common;
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case SimpleCommentRuleSerializationMap.Marker:
-                    ValueParser.deserialize(buffer, (node as CommentRule).marker = {} as Value);
-                    break;
-
-                case SimpleCommentRuleSerializationMap.Text:
-                    ValueParser.deserialize(buffer, (node as CommentRule).text = {} as Value);
-                    break;
-
-                case SimpleCommentRuleSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case SimpleCommentRuleSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}`);
-            }
-
-            prop = buffer.readUint8();
-        }
     }
 }

@@ -3,6 +3,7 @@ import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { CommentRuleGenerator } from '../../../src/generator/comment';
 import { CommentRuleSerializer } from '../../../src/serializer/comment/comment-rule-serializer';
+import { CommentRuleDeserializer } from '../../../src/deserializer/comment/comment-rule-deserializer';
 
 describe('CommentRuleParser', () => {
     test('isCommentRule', () => {
@@ -809,6 +810,7 @@ describe('CommentRuleParser', () => {
                 CommentRuleParser,
                 CommentRuleGenerator,
                 CommentRuleSerializer,
+                CommentRuleDeserializer,
             );
         });
     });

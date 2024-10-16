@@ -11,6 +11,7 @@ import { AdblockSyntax } from '../../src/utils/adblockers';
 import { defaultParserOptions } from '../../src/parser/options';
 import { RuleGenerator } from '../../src/generator';
 import { RuleSerializer } from '../../src/serializer/rule-serializer';
+import { RuleDeserializer } from '../../src/deserializer/rule-deserializer';
 
 describe('RuleParser', () => {
     test('parse', () => {
@@ -1298,6 +1299,7 @@ describe('RuleParser', () => {
                 RuleParser,
                 RuleGenerator,
                 RuleSerializer,
+                RuleDeserializer,
             );
         });
     });

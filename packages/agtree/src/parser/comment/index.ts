@@ -1,22 +1,12 @@
 /* eslint-disable no-param-reassign */
 import { AgentCommentParser } from './agent-rule';
-import {
-    type AnyCommentRule,
-    BinaryTypeMap,
-    type AgentCommentRule,
-    type HintCommentRule,
-    type PreProcessorCommentRule,
-    type MetadataCommentRule,
-    type ConfigCommentRule,
-    type CommentRule,
-} from '../../nodes';
+import { type AnyCommentRule } from '../../nodes';
 import { ConfigCommentParser } from './inline-config';
 import { HintCommentParser } from './hint-rule';
 import { MetadataCommentRuleParser } from './metadata';
 import { PreProcessorCommentParser } from './preprocessor';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../interface';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { SimpleCommentParser } from './simple-comment';
 
 /**
@@ -109,45 +99,5 @@ export class CommentRuleParser extends BaseParser {
             || MetadataCommentRuleParser.parse(raw, options, baseOffset)
             || ConfigCommentParser.parse(raw, options, baseOffset)
             || SimpleCommentParser.parse(raw, options, baseOffset);
-    }
-
-    /**
-     * Deserializes a comment rule node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     * @throws If the binary data is malformed.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: Partial<AnyCommentRule>): void {
-        const type = buffer.peekUint8();
-
-        switch (type) {
-            case BinaryTypeMap.AgentRuleNode:
-                AgentCommentParser.deserialize(buffer, node as Partial<AgentCommentRule>);
-                return;
-
-            case BinaryTypeMap.HintRuleNode:
-                HintCommentParser.deserialize(buffer, node as Partial<HintCommentRule>);
-                return;
-
-            case BinaryTypeMap.PreProcessorCommentRuleNode:
-                PreProcessorCommentParser.deserialize(buffer, node as Partial<PreProcessorCommentRule>);
-                return;
-
-            case BinaryTypeMap.MetadataCommentRuleNode:
-                MetadataCommentRuleParser.deserialize(buffer, node as Partial<MetadataCommentRule>);
-                return;
-
-            case BinaryTypeMap.ConfigCommentRuleNode:
-                ConfigCommentParser.deserialize(buffer, node as Partial<ConfigCommentRule>);
-                return;
-
-            case BinaryTypeMap.CommentRuleNode:
-                SimpleCommentParser.deserialize(buffer, node as Partial<CommentRule>);
-                return;
-
-            default:
-                throw new Error(`Unknown comment rule type: ${type}`);
-        }
     }
 }

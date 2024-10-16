@@ -1,10 +1,12 @@
 import { BinaryTypeMap, type ScriptletInjectionRuleBody } from '../../../nodes';
 import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
-import { AbpSnippetBodySerializationMap } from '../../../parser/cosmetic/body/scriptlet-serialization-helper';
 import { NULL, UINT8_MAX } from '../../../utils/constants';
 import { ParameterListSerializer } from '../../misc/parameter-list-serializer';
 import { isUndefined } from '../../../utils/type-guards';
 import { BaseSerializer } from '../../base-serializer';
+import {
+    AbpSnippetBodySerializationMap,
+} from '../../../serialization-utils/cosmetic/body/abp-snippet-injection-body-common';
 
 export class ScriptletBodySerializer extends BaseSerializer {
     /**
