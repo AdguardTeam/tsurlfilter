@@ -34,10 +34,16 @@ import {
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-// FIXME
-const SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
-    Array.from(SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
-);
+let SEPARATOR_DESERIALIZATION_MAP: Map<number, string>;
+const getSeparatorDeserializationMap = () => {
+    if (!SEPARATOR_DESERIALIZATION_MAP) {
+        SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
+            Array.from(SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+        );
+    }
+
+    return SEPARATOR_DESERIALIZATION_MAP;
+};
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
@@ -132,7 +138,11 @@ export class CosmeticRuleDeserializer extends BaseDeserializer {
                     break;
 
                 case CosmeticRuleSerializationMap.Separator:
-                    ValueDeserializer.deserialize(buffer, node.separator = {} as Value, SEPARATOR_DESERIALIZATION_MAP);
+                    ValueDeserializer.deserialize(
+                        buffer,
+                        node.separator = {} as Value,
+                        getSeparatorDeserializationMap(),
+                    );
                     break;
 
                 case CosmeticRuleSerializationMap.Modifiers:
