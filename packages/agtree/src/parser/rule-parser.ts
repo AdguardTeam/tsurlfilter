@@ -19,9 +19,7 @@ import {
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { defaultParserOptions } from './options';
 import { BaseParser } from './interface';
-import { type OutputByteBuffer } from '../utils/output-byte-buffer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { isUndefined } from '../utils/type-guards';
 import { HostRuleParser } from './network/host';
 import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
 

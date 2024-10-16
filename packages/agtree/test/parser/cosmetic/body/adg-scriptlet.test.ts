@@ -8,7 +8,7 @@ import {
     AdgScriptletInjectionBodyGenerator,
 } from '../../../../src/generator/cosmetic/body/adg-scriptlet-injection-body-generator';
 import {
-    AdgScriptletInjectionBodySerializer
+    AdgScriptletInjectionBodySerializer,
 } from '../../../../src/serializer/cosmetic/body/adg-scriptlet-injection-body-serializer';
 
 describe('AdgScriptletInjectionBodyParser', () => {
