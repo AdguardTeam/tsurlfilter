@@ -12,6 +12,7 @@ import {
 import {
     AbpSnippetInjectionBodyDeserializer,
 } from '../../../../src/deserializer/cosmetic/body/abp-snippet-injection-body-deserializer';
+import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common';
 
 describe('AbpSnippetInjectionBodyParser', () => {
     describe('AbpSnippetInjectionBodyParser.parse - valid cases', () => {
@@ -595,7 +596,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                 actual: EMPTY,
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        AbpSnippetInjectionBodyParser.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
+                        AbpSnippetInjectionBodyCommon.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
                         ...context.toTuple(context.getFullRange()),
                     );
                 },
@@ -605,7 +606,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                 actual: SPACE,
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        AbpSnippetInjectionBodyParser.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
+                        AbpSnippetInjectionBodyCommon.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
                         ...context.toTuple(context.getFullRange()),
                     );
                 },
