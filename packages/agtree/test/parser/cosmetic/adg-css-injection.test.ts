@@ -1,8 +1,8 @@
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 import { CosmeticRuleType, RuleCategory, type CssInjectionRule } from '../../../src/nodes';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic';
+import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 
 describe('CosmeticRuleParser', () => {

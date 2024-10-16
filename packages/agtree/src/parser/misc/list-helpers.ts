@@ -1,31 +1,8 @@
-/* eslint-disable no-param-reassign */
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import {
-    COMMA,
-    EMPTY,
-    NEGATION_MARKER,
-    NULL,
-} from '../../utils/constants';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { COMMA, EMPTY, NEGATION_MARKER } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { isUndefined } from '../../utils/type-guards';
-import { ListItemNodeType, type ListItem, BinaryTypeMap } from '../../nodes';
+import { ListItemNodeType, type ListItem } from '../../nodes';
 import { defaultParserOptions } from '../options';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the binary schema version
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ListItemSerializationMap {
-    Exception = 1,
-    Value,
-    Start,
-    End,
-}
 
 /**
  * Prefixes for error messages which are used for parsing of value lists.
@@ -39,6 +16,7 @@ export const LIST_PARSE_ERROR_PREFIX = {
     NO_WHITESPACE_AFTER_NEGATION: 'Exception marker cannot be followed by whitespace',
 };
 
+// FIXME move to the separate file with parsers
 /**
  * Parses a `raw` modifier value which may be represented as a list of items separated by `separator`.
  * Needed for $app, $denyallow, $domain, $method.
@@ -177,6 +155,7 @@ export const parseListItems = <T extends ListItemNodeType>(
     return rawListItems;
 };
 
+// FIXME move to a separate file with generators
 /**
  * Generates a string representation of a list item.
  *
@@ -189,6 +168,7 @@ const generateListItem = <T extends ListItemNodeType>(item: ListItem<T>): string
     return `${item.exception ? NEGATION_MARKER : EMPTY}${item.value}`;
 };
 
+// FIXME move to a separate file with generators
 /**
  * Generates a string representation of a list of items.
  *
@@ -200,71 +180,4 @@ const generateListItem = <T extends ListItemNodeType>(item: ListItem<T>): string
  */
 export const generateListItems = <T extends ListItemNodeType>(items: ListItem<T>[], separator: string): string => {
     return items.map(generateListItem).join(separator);
-};
-
-/**
- * Serializes a list item to binary format.
- *
- * @param item List item to serialize.
- * @param buffer Output byte buffer.
- * @template T Type of the list item.
- */
-const serializeListItem = <T extends ListItemNodeType>(item: ListItem<T>, buffer: OutputByteBuffer): void => {
-    switch (item.type) {
-        case ListItemNodeType.App:
-            buffer.writeUint8(BinaryTypeMap.AppNode);
-            break;
-
-        case ListItemNodeType.Domain:
-            buffer.writeUint8(BinaryTypeMap.DomainNode);
-            break;
-
-        case ListItemNodeType.Method:
-            buffer.writeUint8(BinaryTypeMap.MethodNode);
-            break;
-
-        case ListItemNodeType.StealthOption:
-            buffer.writeUint8(BinaryTypeMap.StealthOptionNode);
-            break;
-
-        default:
-            throw new Error(`Invalid list item type: ${item.type}`);
-    }
-
-    buffer.writeUint8(ListItemSerializationMap.Exception);
-    buffer.writeUint8(item.exception ? 1 : 0);
-
-    buffer.writeUint8(ListItemSerializationMap.Value);
-    buffer.writeString(item.value);
-
-    if (!isUndefined(item.start)) {
-        buffer.writeUint8(ListItemSerializationMap.Start);
-        buffer.writeUint32(item.start);
-    }
-
-    if (!isUndefined(item.end)) {
-        buffer.writeUint8(ListItemSerializationMap.End);
-        buffer.writeUint32(item.end);
-    }
-
-    buffer.writeUint8(NULL);
-};
-
-/**
- * Serializes a list of items to binary format.
- *
- * @param items List of items to serialize.
- * @param buffer Output byte buffer.
- * @template T Type of the list items.
- */
-export const serializeListItems = <T extends ListItemNodeType>(
-    items: ListItem<T>[],
-    buffer: OutputByteBuffer,
-): void => {
-    const { length } = items;
-    buffer.writeUint16(length);
-
-    for (let i = 0; i < length; i += 1) {
-        serializeListItem(items[i], buffer);
-    }
 };

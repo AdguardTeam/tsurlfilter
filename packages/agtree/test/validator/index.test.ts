@@ -1,5 +1,5 @@
 import { type Modifier } from '../../src/nodes';
-import { ModifierParser } from '../../src/parser/misc/modifier';
+import { ModifierParser } from '../../src/parser/misc/modifier-parser';
 import { modifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
 import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';

@@ -5,10 +5,10 @@
 import { SEMICOLON, SPACE } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../../misc/parameter-list';
+import { ParameterListParser } from '../../misc/parameter-list-parser';
 import { type ScriptletInjectionRuleBody } from '../../../nodes';
 import { defaultParserOptions } from '../../options';
-import { BaseParser } from '../../interface';
+import { BaseParser } from '../../base-parser';
 
 /**
  * `AbpSnippetInjectionBodyParser` is responsible for parsing the body of an Adblock Plus-style snippet rule.

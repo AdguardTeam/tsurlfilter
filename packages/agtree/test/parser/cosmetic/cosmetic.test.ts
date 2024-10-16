@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic';
+import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';

@@ -4,7 +4,7 @@ import { type DomainList, ListNodeType, ListItemNodeType } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { parseListItems } from './list-helpers';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 
 /**
  * `DomainListParser` is responsible for parsing a domain list.

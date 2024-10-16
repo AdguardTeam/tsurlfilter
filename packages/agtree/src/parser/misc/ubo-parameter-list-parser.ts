@@ -1,12 +1,11 @@
-/* eslint-disable no-param-reassign */
 import { StringUtils } from '../../utils/string';
 import { type ParameterList } from '../../nodes';
 import { COMMA } from '../../utils/constants';
 import { defaultParserOptions } from '../options';
-import { ValueParser } from './value';
+import { ValueParser } from './value-parser';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { QUOTE_SET } from '../../utils/quotes';
-import { ParameterListParser } from './parameter-list';
+import { ParameterListParser } from './parameter-list-parser';
 
 export class UboParameterListParser extends ParameterListParser {
     /**

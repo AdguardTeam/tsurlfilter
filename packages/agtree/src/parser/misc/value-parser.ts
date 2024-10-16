@@ -1,6 +1,5 @@
-/* eslint-disable no-param-reassign */
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 import { type Value } from '../../nodes';
 
 /**

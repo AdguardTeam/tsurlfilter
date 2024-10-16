@@ -1,5 +1,5 @@
 import { type CosmeticRuleType } from '../nodes';
-import { CosmeticRuleParser } from '../parser/cosmetic';
+import { CosmeticRuleParser } from '../parser/cosmetic/cosmetic-rule-parser';
 import { isNull } from './type-guards';
 import { defaultParserOptions } from '../parser/options';
 

@@ -1,11 +1,11 @@
 import { CLOSE_SQUARE_BRACKET, OPEN_SQUARE_BRACKET, SEMICOLON } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { type AgentCommentRule, CommentRuleType, RuleCategory } from '../../nodes';
-import { AgentParser } from './agent';
+import { AgentParser } from './agent-parser';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 import { defaultParserOptions } from '../options';
 import { isNull } from '../../utils/type-guards';
 

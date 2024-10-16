@@ -1,10 +1,9 @@
-/* eslint-disable no-param-reassign */
 import { StringUtils } from '../../utils/string';
 import { type ParameterList } from '../../nodes';
 import { COMMA } from '../../utils/constants';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
-import { ValueParser } from './value';
+import { BaseParser } from '../base-parser';
+import { ValueParser } from './value-parser';
 
 export class ParameterListParser extends BaseParser {
     /**

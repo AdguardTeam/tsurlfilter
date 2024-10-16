@@ -1,8 +1,8 @@
 /* eslint-disable no-param-reassign */
 import { AdblockSyntax } from '../utils/adblockers';
-import { CommentRuleParser } from './comment';
-import { CosmeticRuleParser } from './cosmetic';
-import { NetworkRuleParser } from './network';
+import { CommentParser } from './comment/comment-parser';
+import { CosmeticRuleParser } from './cosmetic/cosmetic-rule-parser';
+import { NetworkRuleParser } from './network/network-rule-parser';
 import {
     type AnyRule,
     type InvalidRule,
@@ -14,8 +14,8 @@ import {
 } from '../nodes';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
 import { defaultParserOptions } from './options';
-import { BaseParser } from './interface';
-import { HostRuleParser } from './network/host';
+import { BaseParser } from './base-parser';
+import { HostRuleParser } from './network/host-rule-parser';
 
 /**
  * `RuleParser` is responsible for parsing the rules.
@@ -137,7 +137,7 @@ export class RuleParser extends BaseParser {
             // pattern of a parser, then it will return the AST of the rule, or
             // throw an error if the rule is syntactically invalid.
             if (options.ignoreComments) {
-                if (CommentRuleParser.isCommentRule(raw)) {
+                if (CommentParser.isCommentRule(raw)) {
                     const result: EmptyRule = {
                         type: 'EmptyRule',
                         category: RuleCategory.Empty,
@@ -162,7 +162,7 @@ export class RuleParser extends BaseParser {
                     || RuleParser.parseHostOrNetworkRule(raw, options, baseOffset);
             }
 
-            return CommentRuleParser.parse(raw, options, baseOffset)
+            return CommentParser.parse(raw, options, baseOffset)
                 || CosmeticRuleParser.parse(raw, options, baseOffset)
                 || RuleParser.parseHostOrNetworkRule(raw, options, baseOffset);
         } catch (error: unknown) {

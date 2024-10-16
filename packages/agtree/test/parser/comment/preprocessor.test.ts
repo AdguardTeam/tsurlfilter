@@ -1,4 +1,4 @@
-import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor';
+import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { PreProcessorCommentGenerator } from '../../../src/generator/comment/pre-processor-comment-generator';

@@ -9,10 +9,10 @@ import {
     type AnyListItem,
 } from '../nodes';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
-import { AppListParser } from '../parser/misc/app-list';
-import { DomainListParser } from '../parser/misc/domain-list';
-import { MethodListParser } from '../parser/misc/method-list';
-import { StealthOptionListParser } from '../parser/misc/stealth-option-list';
+import { AppListParser } from '../parser/misc/app-list-parser';
+import { DomainListParser } from '../parser/misc/domain-list-parser';
+import { MethodListParser } from '../parser/misc/method-list-parser';
+import { StealthOptionListParser } from '../parser/misc/stealth-option-list-parser';
 import { DomainUtils } from '../utils/domain';
 import { QuoteType, QuoteUtils } from '../utils/quotes';
 import {

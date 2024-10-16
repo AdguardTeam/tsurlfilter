@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import { AdblockSyntax } from '../../utils/adblockers';
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { StringUtils } from '../../utils/string';
@@ -8,8 +7,8 @@ import {
     CommentRuleType,
     RuleCategory,
 } from '../../nodes';
-import { BaseParser } from '../interface';
-import { ValueParser } from '../misc/value';
+import { BaseParser } from '../base-parser';
+import { ValueParser } from '../misc/value-parser';
 import { defaultParserOptions } from '../options';
 
 /**

@@ -1,5 +1,5 @@
 import { type AnyExpressionNode } from '../../../src/nodes';
-import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression';
+import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression-parser';
 import { LogicalExpressionGenerator } from '../../../src/generator/misc/logical-expression-generator';
 import { LogicalExpressionSerializer } from '../../../src/serializer/misc/logical-expression-serializer';
 import { LogicalExpressionDeserializer } from '../../../src/deserializer/misc/logical-expression-deserializer';

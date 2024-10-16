@@ -15,8 +15,8 @@ import { StringUtils } from '../../../utils/string';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { type ScriptletInjectionRuleBody } from '../../../nodes';
 import { defaultParserOptions } from '../../options';
-import { BaseParser } from '../../interface';
-import { UboParameterListParser } from '../../misc/ubo-parameter-list';
+import { BaseParser } from '../../base-parser';
+import { UboParameterListParser } from '../../misc/ubo-parameter-list-parser';
 
 /**
  * `UboScriptletInjectionBodyParser` is responsible for parsing the body of a uBlock-style scriptlet rule.

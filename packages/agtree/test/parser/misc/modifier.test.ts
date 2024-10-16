@@ -1,5 +1,5 @@
 import { type Modifier } from '../../../src/nodes';
-import { ModifierParser } from '../../../src/parser/misc/modifier';
+import { ModifierParser } from '../../../src/parser/misc/modifier-parser';
 import { ModifierGenerator } from '../../../src/generator/misc/modifier-generator';
 import { ModifierSerializer } from '../../../src/serializer/misc/modifier-serializer';
 import { ModifierDeserializer } from '../../../src/deserializer/misc/modifier-deserializer';

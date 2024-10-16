@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 /**
  * @file AGLint configuration comments. Inspired by ESLint inline configuration comments.
  * @see {@link https://eslint.org/docs/latest/user-guide/configuring/rules#using-configuration-comments}
@@ -18,10 +17,10 @@ import {
     type ConfigNode,
 } from '../../nodes';
 import { StringUtils } from '../../utils/string';
-import { ParameterListParser } from '../misc/parameter-list';
+import { ParameterListParser } from '../misc/parameter-list-parser';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
-import { ValueParser } from '../misc/value';
+import { BaseParser } from '../base-parser';
+import { ValueParser } from '../misc/value-parser';
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.

@@ -1452,3 +1452,23 @@ export interface HostRule extends NetworkRuleBase {
      */
     comment?: Value;
 }
+
+/**
+ * Interface for parsed uBO selector.
+ */
+export interface UboSelector extends Node {
+    /**
+     * Node type.
+     */
+    type: 'UboSelector';
+
+    /**
+     * Selector string cleaned from uBO specific syntax.
+     */
+    selector: Value;
+
+    /**
+     * List of uBO modifiers applied to the selector.
+     */
+    modifiers?: ModifierList;
+}

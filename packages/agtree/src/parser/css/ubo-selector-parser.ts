@@ -12,18 +12,18 @@ import {
     CSS_NOT_PSEUDO,
     EMPTY,
     OPEN_PARENTHESIS,
-    SPACE,
 } from '../../utils/constants';
 import {
     type ModifierList,
     type Value,
-    type Node,
     type Modifier,
+    type UboSelector,
 } from '../../nodes';
 import { tokenizeFnBalanced } from './balancing';
 import { type TokenData } from './css-token-stream';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
+import { UboPseudoName } from '../../common/ubo-selector-common';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
@@ -45,16 +45,6 @@ export const ERROR_MESSAGES = {
 const DUMMY_PARAM = '...';
 
 /**
- * Known uBO modifiers.
- */
-export const enum UboPseudoName {
-    MatchesMedia = 'matches-media',
-    MatchesPath = 'matches-path',
-    Remove = 'remove',
-    Style = 'style',
-}
-
-/**
  * Set of known uBO modifiers.
  *
  * @note We use `string` instead of `UboPseudoName` because we use this set for checking if a modifier is a known uBO,
@@ -66,26 +56,6 @@ const KNOWN_UBO_MODIFIERS = new Set<string>([
     UboPseudoName.Remove,
     UboPseudoName.Style,
 ]);
-
-/**
- * Interface for parsed uBO selector.
- */
-export interface UboSelector extends Node {
-    /**
-     * Node type.
-     */
-    type: 'UboSelector';
-
-    /**
-     * Selector string cleaned from uBO specific syntax.
-     */
-    selector: Value;
-
-    /**
-     * List of uBO modifiers applied to the selector.
-     */
-    modifiers?: ModifierList;
-}
 
 /**
  * Interface for stacked uBO modifier.
@@ -297,7 +267,7 @@ export class UboSelectorParser extends BaseParser {
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
      *
-     * @returns Parsed uBO selector {@link UboSelector}.
+     * @returns Parsed uBO selector {@link UboSelectorParser}.
      * @throws An {@link AdblockSyntaxError} if the selector list is syntactically invalid.
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): UboSelector {
@@ -645,63 +615,6 @@ export class UboSelectorParser extends BaseParser {
             result.start = baseOffset;
             result.end = baseOffset + raw.length;
         }
-
-        return result;
-    }
-
-    /**
-     * Serializes a uBO selector node to a string.
-     *
-     * @param node UBO selector node
-     * @returns Raw string
-     */
-    public static generate(node: UboSelector): string {
-        const prefix: string[] = []; // List of leading modifiers
-        const suffix: string[] = []; // List of trailing modifiers, typically style injection
-
-        if (node.modifiers) {
-            for (const modifier of node.modifiers.children) {
-                switch (modifier.name.value) {
-                    case UboPseudoName.Remove:
-                    case UboPseudoName.Style:
-                        // eslint-disable-next-line max-len
-                        suffix.push(COLON, modifier.name.value, OPEN_PARENTHESIS, modifier.value?.value || EMPTY, CLOSE_PARENTHESIS);
-                        break;
-
-                    default:
-                        // Wrap exceptions in `:not()`
-                        if (modifier.exception) {
-                            prefix.push(COLON, CSS_NOT_PSEUDO, OPEN_PARENTHESIS);
-                        }
-
-                        // :modifier-name(value)
-                        // eslint-disable-next-line max-len
-                        prefix.push(COLON, modifier.name.value, OPEN_PARENTHESIS, modifier.value?.value || EMPTY, CLOSE_PARENTHESIS);
-
-                        // Close the `:not()` if we are in an exception
-                        if (modifier.exception) {
-                            prefix.push(CLOSE_PARENTHESIS);
-                        }
-
-                        break;
-                }
-            }
-        }
-
-        // Prepare the result
-        let result = EMPTY;
-
-        if (prefix.length > 0) {
-            result += prefix.join(EMPTY);
-
-            // Add a space between the selector and the leading modifier(s)
-            if (node.selector?.value) {
-                result += SPACE;
-            }
-        }
-
-        result += node.selector?.value || EMPTY;
-        result += suffix.join(EMPTY);
 
         return result;
     }

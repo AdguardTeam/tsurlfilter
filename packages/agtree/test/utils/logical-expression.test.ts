@@ -1,4 +1,4 @@
-import { LogicalExpressionParser } from '../../src/parser/misc/logical-expression';
+import { LogicalExpressionParser } from '../../src/parser/misc/logical-expression-parser';
 import { LogicalExpressionUtils } from '../../src/utils/logical-expression';
 
 describe('LogicalExpressionUtils', () => {

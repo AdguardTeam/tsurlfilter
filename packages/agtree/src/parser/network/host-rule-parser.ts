@@ -10,9 +10,9 @@ import {
     type Value,
 } from '../../nodes';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { ValueParser } from '../misc/value';
+import { ValueParser } from '../misc/value-parser';
 
 /**
  * `HostRuleParser` is responsible for parsing hosts-like rules.

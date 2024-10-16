@@ -1,6 +1,8 @@
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
-import { UboScriptletInjectionBodyParser } from '../../../../src/parser/cosmetic/body/ubo-scriptlet';
+import {
+    UboScriptletInjectionBodyParser,
+} from '../../../../src/parser/cosmetic/body/ubo-scriptlet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import {
     UboScriptletInjectionBodyGenerator,

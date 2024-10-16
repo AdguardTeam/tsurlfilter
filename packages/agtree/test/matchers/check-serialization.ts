@@ -5,7 +5,7 @@ import zod from 'zod';
 
 import { getErrorMessage } from '../../src/utils/error';
 import { type Node } from '../../src/nodes';
-import { type BaseParser } from '../../src/parser/interface';
+import { type BaseParser } from '../../src/parser/base-parser';
 import { OutputByteBuffer } from '../../src/utils/output-byte-buffer';
 import { SimpleStorage } from '../helpers/simple-storage';
 import { InputByteBuffer } from '../../src/utils/input-byte-buffer';

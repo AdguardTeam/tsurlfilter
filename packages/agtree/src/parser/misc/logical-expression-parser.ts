@@ -1,5 +1,3 @@
-/* eslint-disable no-param-reassign */
-/* eslint-disable max-classes-per-file */
 import { StringUtils } from '../../utils/string';
 import {
     type AnyExpressionNode,
@@ -17,7 +15,7 @@ import {
 } from '../../utils/constants';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 
 /**
  * Possible token types in the logical expression.

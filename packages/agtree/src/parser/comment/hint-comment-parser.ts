@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import {
     BACKSLASH,
     CLOSE_PARENTHESIS,
@@ -13,11 +12,11 @@ import {
     type HintCommentRule,
     RuleCategory,
 } from '../../nodes';
-import { HintParser } from './hint';
+import { HintParser } from './hint-parser';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { defaultParserOptions } from '../options';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 
 /**
  * `HintRuleParser` is responsible for parsing AdGuard hint rules.

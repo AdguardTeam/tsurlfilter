@@ -9,7 +9,7 @@ import {
     SPACE,
 } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
-import { REMOVE_PROPERTY, REMOVE_VALUE } from '../../parser/css/adg-css-injection';
+import { REMOVE_PROPERTY, REMOVE_VALUE } from '../../parser/css/adg-css-injection-parser';
 
 export class AdgCssInjectionGenerator extends BaseGenerator {
     private static removeDeclaration = `${REMOVE_PROPERTY}${COLON}${SPACE}${REMOVE_VALUE}${SEMICOLON}`;

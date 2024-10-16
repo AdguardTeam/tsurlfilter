@@ -2,9 +2,9 @@
 import { MODIFIERS_SEPARATOR } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { type ModifierList } from '../../nodes';
-import { BaseParser } from '../interface';
+import { BaseParser } from '../base-parser';
 import { defaultParserOptions } from '../options';
-import { ModifierParser } from './modifier';
+import { ModifierParser } from './modifier-parser';
 
 /**
  * `ModifierListParser` is responsible for parsing modifier lists. Please note that the name is not
