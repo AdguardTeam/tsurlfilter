@@ -8,11 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## Unreleased
+## [2.4.0-alpha.4] - 2024-10-16
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.1.0-alpha.7`.
 
 ### Fixed
 
-- Correct export of `EXTENDED_CSS_VERSION` for mv3 version.
+- Correct export of `EXTENDED_CSS_VERSION` for MV3 version.
+
+[2.4.0-alpha.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.4
 
 ## [2.4.0-alpha.3] - 2024-10-09
 
