@@ -50,10 +50,15 @@ const FREQUENT_AGENTS_DESERIALIZATION_MAP = new Map<number, string>([
  *
  * @note Only 256 values can be represented this way.
  */
-// FIXME
-const FREQUENT_AGENTS_SERIALIZATION_MAP = new Map<string, number>(
-    Array.from(FREQUENT_AGENTS_DESERIALIZATION_MAP).map(([key, value]) => [value.toLowerCase(), key]),
-);
+let FREQUENT_AGENTS_SERIALIZATION_MAP: Map<string, number>;
+const getFrequentAgentsSerializationMap = () => {
+    if (!FREQUENT_AGENTS_SERIALIZATION_MAP) {
+        FREQUENT_AGENTS_SERIALIZATION_MAP = new Map<string, number>(
+            Array.from(FREQUENT_AGENTS_DESERIALIZATION_MAP).map(([key, value]) => [value.toLowerCase(), key]),
+        );
+    }
+    return FREQUENT_AGENTS_SERIALIZATION_MAP;
+};
 
 /**
  * `AgentParser` is responsible for parsing single adblock agent elements.
@@ -78,7 +83,7 @@ export class AgentSerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMap.AgentNode);
 
         buffer.writeUint8(AgentNodeSerializationMap.Adblock);
-        ValueSerializer.serialize(node.adblock, buffer, FREQUENT_AGENTS_SERIALIZATION_MAP, true);
+        ValueSerializer.serialize(node.adblock, buffer, getFrequentAgentsSerializationMap(), true);
 
         if (!isUndefined(node.version)) {
             buffer.writeUint8(AgentNodeSerializationMap.Version);

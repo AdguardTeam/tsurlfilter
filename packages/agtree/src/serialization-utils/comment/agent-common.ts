@@ -35,16 +35,3 @@ export const FREQUENT_AGENTS_DESERIALIZATION_MAP = new Map<number, string>([
     [7, 'ABP'],
     [8, 'AdBlock'],
 ]);
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-// FIXME
-export const FREQUENT_AGENTS_SERIALIZATION_MAP = new Map<string, number>(
-    Array.from(FREQUENT_AGENTS_DESERIALIZATION_MAP).map(([key, value]) => [value.toLowerCase(), key]),
-);
