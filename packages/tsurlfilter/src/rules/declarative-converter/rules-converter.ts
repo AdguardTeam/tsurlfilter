@@ -256,7 +256,7 @@ export class DeclarativeRulesConverter {
     }
 
     /**
-     * Checks whether the declarative rule is safe, i.e. rule action is one of the following:
+     * Checks whether the declarative rule is safe which means that rule action is one of the following:
      * - block
      * - allow
      * - allowAllRequests
@@ -264,9 +264,11 @@ export class DeclarativeRulesConverter {
      *
      * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#safe_rules}
      *
+     * @param rule Declarative rule to check.
+     *
      * @returns True if the rule is safe, otherwise false.
      */
-    private static isSafeDynamicRule = (rule: DeclarativeRule): boolean => {
+    private static isSafeDynamicRule(rule: DeclarativeRule): boolean {
         return rule.action.type === RuleActionType.BLOCK
             || rule.action.type === RuleActionType.ALLOW
             || rule.action.type === RuleActionType.ALLOW_ALL_REQUESTS
@@ -279,6 +281,7 @@ export class DeclarativeRulesConverter {
      *
      * @param converted Converted rules, errors, sourcemap and counters.
      * @param maxNumberOfRules Maximum number of converted rules.
+     * @param maxNumberOfUnsafeRules Maximum number of converted unsafe rules.
      * @param maxNumberOfRegexpRules Maximum number of converted regexp rules.
      *
      * @returns Transformed converted rules with modified (if abbreviated)
@@ -287,7 +290,7 @@ export class DeclarativeRulesConverter {
     private static checkLimitations(
         converted: ConvertedRules,
         maxNumberOfRules?: number,
-        maxNumberOfUnsafeRules?:  number,
+        maxNumberOfUnsafeRules?: number,
         maxNumberOfRegexpRules?: number,
     ): ConvertedRules {
         const limitations: LimitationError[] = [];
