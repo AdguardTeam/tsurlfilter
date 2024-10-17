@@ -10,9 +10,9 @@ import {
 import {
     KNOWN_VARIABLES_MAP,
     OPERATOR_BINARY_MAP,
-    OperatorNodeBinaryPropMap,
-    ParenthesisNodeBinaryPropMap,
-    VariableNodeBinaryPropMap,
+    OperatorNodeBinaryPropMarshallingMap,
+    ParenthesisNodeBinaryPropMarshallingMap,
+    VariableNodeBinaryPropMarshallingMap,
 } from '../../serialization-utils/misc/logical-expression-common';
 import { NodeType } from '../../serializer/misc/logical-expression-serializer';
 import { NULL } from '../../utils/constants';
@@ -101,19 +101,19 @@ export class LogicalExpressionDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case VariableNodeBinaryPropMap.Name:
+                case VariableNodeBinaryPropMarshallingMap.Name:
                     node.name = buffer.readString();
                     break;
 
-                case VariableNodeBinaryPropMap.FrequentName:
+                case VariableNodeBinaryPropMarshallingMap.FrequentName:
                     node.name = getFrequentNameOrFail(buffer.readUint8());
                     break;
 
-                case VariableNodeBinaryPropMap.Start:
+                case VariableNodeBinaryPropMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case VariableNodeBinaryPropMap.End:
+                case VariableNodeBinaryPropMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 
@@ -140,15 +140,15 @@ export class LogicalExpressionDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ParenthesisNodeBinaryPropMap.Expression:
+                case ParenthesisNodeBinaryPropMarshallingMap.Expression:
                     LogicalExpressionDeserializer.deserialize(buffer, node.expression = {} as AnyExpressionNode);
                     break;
 
-                case ParenthesisNodeBinaryPropMap.Start:
+                case ParenthesisNodeBinaryPropMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ParenthesisNodeBinaryPropMap.End:
+                case ParenthesisNodeBinaryPropMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 
@@ -175,23 +175,23 @@ export class LogicalExpressionDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case OperatorNodeBinaryPropMap.Operator:
+                case OperatorNodeBinaryPropMarshallingMap.Operator:
                     node.operator = getOperatorOrFail(buffer.readUint8());
                     break;
 
-                case OperatorNodeBinaryPropMap.Left:
+                case OperatorNodeBinaryPropMarshallingMap.Left:
                     LogicalExpressionDeserializer.deserialize(buffer, node.left = {} as AnyExpressionNode);
                     break;
 
-                case OperatorNodeBinaryPropMap.Right:
+                case OperatorNodeBinaryPropMarshallingMap.Right:
                     LogicalExpressionDeserializer.deserialize(buffer, node.right = {} as AnyExpressionNode);
                     break;
 
-                case OperatorNodeBinaryPropMap.Start:
+                case OperatorNodeBinaryPropMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case OperatorNodeBinaryPropMap.End:
+                case OperatorNodeBinaryPropMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

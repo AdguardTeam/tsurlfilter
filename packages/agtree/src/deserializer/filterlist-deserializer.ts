@@ -4,7 +4,7 @@ import { NULL } from '../utils/constants';
 import { BaseDeserializer } from './base-deserializer';
 import { RuleDeserializer } from './rule-deserializer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { FilterListNodeSerializationMap } from '../serialization-utils/filter-list-common';
+import { FilterListNodeMarshallingMap } from '../serialization-utils/filter-list-common';
 
 export class FilterListDeserializer extends BaseDeserializer {
     /**
@@ -21,18 +21,18 @@ export class FilterListDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case FilterListNodeSerializationMap.Children:
+                case FilterListNodeMarshallingMap.Children:
                     node.children = new Array(buffer.readUint32());
                     for (let i = 0; i < node.children.length; i += 1) {
                         RuleDeserializer.deserialize(buffer, node.children[i] = {} as AnyRule);
                     }
                     break;
 
-                case FilterListNodeSerializationMap.Start:
+                case FilterListNodeMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case FilterListNodeSerializationMap.End:
+                case FilterListNodeMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 
@@ -67,11 +67,11 @@ export class FilterListDeserializer extends BaseDeserializer {
 
         while (prop) {
             switch (prop) {
-                case FilterListNodeSerializationMap.Children:
+                case FilterListNodeMarshallingMap.Children:
                     return buffer.readUint32();
 
-                case FilterListNodeSerializationMap.Start:
-                case FilterListNodeSerializationMap.End:
+                case FilterListNodeMarshallingMap.Start:
+                case FilterListNodeMarshallingMap.End:
                     buffer.readUint32(); // ignore value
                     break;
 

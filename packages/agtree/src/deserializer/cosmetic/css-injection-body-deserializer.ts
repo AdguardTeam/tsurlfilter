@@ -3,7 +3,7 @@ import { BinaryTypeMap, type Value, type CssInjectionRuleBody } from '../../node
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { NULL } from '../../utils/constants';
 import { BaseDeserializer } from '../base-deserializer';
-import { CssInjectionRuleSerializationMap } from '../../serialization-utils/cosmetic/body/css-injection-body-common';
+import { CssInjectionRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/css-injection-body-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 
 export class CssInjectionBodyDeserializer extends BaseDeserializer {
@@ -22,27 +22,27 @@ export class CssInjectionBodyDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case CssInjectionRuleSerializationMap.MediaQueryList:
+                case CssInjectionRuleMarshallingMap.MediaQueryList:
                     ValueDeserializer.deserialize(buffer, node.mediaQueryList = {} as Value);
                     break;
 
-                case CssInjectionRuleSerializationMap.SelectorList:
+                case CssInjectionRuleMarshallingMap.SelectorList:
                     ValueDeserializer.deserialize(buffer, node.selectorList = {} as Value);
                     break;
 
-                case CssInjectionRuleSerializationMap.DeclarationList:
+                case CssInjectionRuleMarshallingMap.DeclarationList:
                     ValueDeserializer.deserialize(buffer, node.declarationList = {} as Value);
                     break;
 
-                case CssInjectionRuleSerializationMap.Remove:
+                case CssInjectionRuleMarshallingMap.Remove:
                     node.remove = true;
                     break;
 
-                case CssInjectionRuleSerializationMap.Start:
+                case CssInjectionRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case CssInjectionRuleSerializationMap.End:
+                case CssInjectionRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

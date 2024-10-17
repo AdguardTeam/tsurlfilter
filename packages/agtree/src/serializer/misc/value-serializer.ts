@@ -2,23 +2,8 @@ import { BinaryTypeMap, type Value } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { NULL } from '../../utils/constants';
 import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ValueNodeSerializationMap {
-    Value = 1,
-    FrequentValue,
-    Start,
-    End,
-}
+import { ValueNodeMarshallingMap } from '../../serialization-utils/misc/value-common';
 
 /**
  * Value serializer.
@@ -43,21 +28,21 @@ export class ValueSerializer extends BaseSerializer {
         const frequentValue = frequentValuesMap?.get(toLower ? node.value.toLowerCase() : node.value);
         // note: do not use just `if (frequentValue)` because it can be 0
         if (!isUndefined(frequentValue)) {
-            buffer.writeUint8(ValueNodeSerializationMap.FrequentValue);
+            buffer.writeUint8(ValueNodeMarshallingMap.FrequentValue);
             buffer.writeUint8(frequentValue);
         } else {
-            buffer.writeUint8(ValueNodeSerializationMap.Value);
+            buffer.writeUint8(ValueNodeMarshallingMap.Value);
             buffer.writeString(node.value);
         }
 
         // note: do not use just `if (node.start)` because it can be 0
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(ValueNodeSerializationMap.Start);
+            buffer.writeUint8(ValueNodeMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(ValueNodeSerializationMap.End);
+            buffer.writeUint8(ValueNodeMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

@@ -3,21 +3,7 @@ import { BinaryTypeMap, type ListItem, ListItemNodeType } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL } from '../../utils/constants';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the binary schema version
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ListItemSerializationMap {
-    Exception = 1,
-    Value,
-    Start,
-    End,
-}
+import { ListItemMarshallingMap } from '../../serialization-utils/misc/list-item-common';
 
 export class ListItemSerializer extends BaseSerializer {
     /**
@@ -49,19 +35,19 @@ export class ListItemSerializer extends BaseSerializer {
                 throw new Error(`Invalid list item type: ${item.type}`);
         }
 
-        buffer.writeUint8(ListItemSerializationMap.Exception);
+        buffer.writeUint8(ListItemMarshallingMap.Exception);
         buffer.writeUint8(item.exception ? 1 : 0);
 
-        buffer.writeUint8(ListItemSerializationMap.Value);
+        buffer.writeUint8(ListItemMarshallingMap.Value);
         buffer.writeString(item.value);
 
         if (!isUndefined(item.start)) {
-            buffer.writeUint8(ListItemSerializationMap.Start);
+            buffer.writeUint8(ListItemMarshallingMap.Start);
             buffer.writeUint32(item.start);
         }
 
         if (!isUndefined(item.end)) {
-            buffer.writeUint8(ListItemSerializationMap.End);
+            buffer.writeUint8(ListItemMarshallingMap.End);
             buffer.writeUint32(item.end);
         }
 

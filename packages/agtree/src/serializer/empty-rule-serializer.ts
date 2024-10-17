@@ -3,20 +3,7 @@ import { BinaryTypeMap, type EmptyRule } from '../nodes';
 import type { OutputByteBuffer } from '../utils/output-byte-buffer';
 import { isUndefined } from '../utils/type-guards';
 import { NULL } from '../utils/constants';
-import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
- *
- * @note Only 256 values can be represented this way.
- */
-const enum EmptyRuleSerializationMap {
-    Start = 1,
-    End,
-}
+import { EmptyRuleMarshallingMap } from '../serialization-utils/empty-rule-common';
 
 export class EmptyRuleSerializer extends BaseSerializer {
     /**
@@ -29,12 +16,12 @@ export class EmptyRuleSerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMap.EmptyRule);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(EmptyRuleSerializationMap.Start);
+            buffer.writeUint8(EmptyRuleMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(EmptyRuleSerializationMap.End);
+            buffer.writeUint8(EmptyRuleMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

@@ -3,7 +3,7 @@ import { BaseDeserializer } from '../base-deserializer';
 import { BinaryTypeMap, type Value, type ElementHidingRuleBody } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ElementHidingRuleSerializationMap } from '../../serialization-utils/cosmetic/body/element-hiding-body-common';
+import { ElementHidingRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/element-hiding-body-common';
 import { ValueDeserializer } from '../misc/value-deserializer';
 
 export class ElementHidingBodyDeserializer extends BaseDeserializer {
@@ -21,15 +21,15 @@ export class ElementHidingBodyDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ElementHidingRuleSerializationMap.SelectorList:
+                case ElementHidingRuleMarshallingMap.SelectorList:
                     ValueDeserializer.deserialize(buffer, node.selectorList = {} as Value);
                     break;
 
-                case ElementHidingRuleSerializationMap.Start:
+                case ElementHidingRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ElementHidingRuleSerializationMap.End:
+                case ElementHidingRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

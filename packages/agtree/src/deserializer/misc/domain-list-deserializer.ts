@@ -8,7 +8,7 @@ import {
 } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
 import {
-    DomainListSerializationMap,
+    DomainListMarshallingMap,
     SEPARATOR_SERIALIZATION_MAP,
 } from '../../serialization-utils/misc/domain-list-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
@@ -46,20 +46,20 @@ export class DomainListDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case DomainListSerializationMap.Separator:
+                case DomainListMarshallingMap.Separator:
                     // eslint-disable-next-line max-len
                     node.separator = (getSeparatorDeserializationMap().get(buffer.readUint8()) ?? COMMA) as DomainListSeparator;
                     break;
 
-                case DomainListSerializationMap.Children:
+                case DomainListMarshallingMap.Children:
                     ListItemsDeserializer.deserialize(buffer, node.children = []);
                     break;
 
-                case DomainListSerializationMap.Start:
+                case DomainListMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case DomainListSerializationMap.End:
+                case DomainListMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

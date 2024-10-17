@@ -9,7 +9,7 @@ import {
 import { NULL } from '../utils/constants';
 import { InvalidRuleErrorNodeDeserializer } from './invalid-rule-error-node-deserializer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { InvalidRuleSerializationMap } from '../serialization-utils/invalid-rule-common';
+import { InvalidRuleMarshallingMap } from '../serialization-utils/invalid-rule-common';
 
 export class InvalidRuleDeserializer extends BaseDeserializer {
     /**
@@ -27,15 +27,15 @@ export class InvalidRuleDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case InvalidRuleSerializationMap.Error:
+                case InvalidRuleMarshallingMap.Error:
                     InvalidRuleErrorNodeDeserializer.deserialize(buffer, node.error = {} as InvalidRuleError);
                     break;
 
-                case InvalidRuleSerializationMap.Start:
+                case InvalidRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case InvalidRuleSerializationMap.End:
+                case InvalidRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

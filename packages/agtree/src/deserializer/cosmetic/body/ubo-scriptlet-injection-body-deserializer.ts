@@ -31,6 +31,6 @@ export class UboScriptletInjectionBodyDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void {
-        ScriptletBodyDeserializer.deserialize(buffer, node, FREQUENT_UBO_SCRIPTLET_ARGS_DESERIALIZATION_MAP);
+        ScriptletBodyDeserializer.deserialize(buffer, node, getFrequentPlatformsDeserializationMap());
     }
 }

@@ -3,22 +3,8 @@ import { NULL } from '../../utils/constants';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from './value-serializer';
 import { isNull, isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ParameterListNodeSerializationMap {
-    Children = 1,
-    Start,
-    End,
-}
+import { ParameterListNodeMarshallingMap } from '../../serialization-utils/misc/parameter-list-common';
 
 export class ParameterListSerializer extends BaseSerializer {
     /**
@@ -38,7 +24,7 @@ export class ParameterListSerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMap.ParameterListNode);
 
         const count = node.children.length;
-        buffer.writeUint8(ParameterListNodeSerializationMap.Children);
+        buffer.writeUint8(ParameterListNodeMarshallingMap.Children);
         // note: we store the count, because re-construction of the array is faster if we know the length
         buffer.writeUint32(count);
 
@@ -52,12 +38,12 @@ export class ParameterListSerializer extends BaseSerializer {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(ParameterListNodeSerializationMap.Start);
+            buffer.writeUint8(ParameterListNodeMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(ParameterListNodeSerializationMap.End);
+            buffer.writeUint8(ParameterListNodeMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

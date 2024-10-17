@@ -3,7 +3,7 @@ import { BaseDeserializer } from '../base-deserializer';
 import { BinaryTypeMap, type ListItem, ListItemNodeType } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ListItemSerializationMap } from '../../serialization-utils/misc/list-item-common';
+import { ListItemMarshallingMap } from '../../serialization-utils/misc/list-item-common';
 
 export class ListItemDeserializer extends BaseDeserializer {
 /**
@@ -43,19 +43,19 @@ export class ListItemDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ListItemSerializationMap.Exception:
+                case ListItemMarshallingMap.Exception:
                     node.exception = buffer.readUint8() === 1;
                     break;
 
-                case ListItemSerializationMap.Value:
+                case ListItemMarshallingMap.Value:
                     node.value = buffer.readString();
                     break;
 
-                case ListItemSerializationMap.Start:
+                case ListItemMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ListItemSerializationMap.End:
+                case ListItemMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

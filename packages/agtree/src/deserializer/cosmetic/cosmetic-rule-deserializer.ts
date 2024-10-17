@@ -26,8 +26,8 @@ import { CssInjectionBodyDeserializer } from './css-injection-body-deserializer'
 import { ModifierListDeserializer } from '../misc/modifier-list-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import {
-    CosmeticRuleSerializationMap,
-    SEPARATOR_SERIALIZATION_MAP,
+    CosmeticRuleMarshallingMap,
+    COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP,
 } from '../../serialization-utils/cosmetic/cosmetic-rule-common';
 
 /**
@@ -38,7 +38,7 @@ let SEPARATOR_DESERIALIZATION_MAP: Map<number, string>;
 const getSeparatorDeserializationMap = () => {
     if (!SEPARATOR_DESERIALIZATION_MAP) {
         SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
-            Array.from(SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+            Array.from(COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
 
@@ -133,11 +133,11 @@ export class CosmeticRuleDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case CosmeticRuleSerializationMap.Exception:
+                case CosmeticRuleMarshallingMap.Exception:
                     node.exception = buffer.readUint8() === 1;
                     break;
 
-                case CosmeticRuleSerializationMap.Separator:
+                case CosmeticRuleMarshallingMap.Separator:
                     ValueDeserializer.deserialize(
                         buffer,
                         node.separator = {} as Value,
@@ -145,20 +145,20 @@ export class CosmeticRuleDeserializer extends BaseDeserializer {
                     );
                     break;
 
-                case CosmeticRuleSerializationMap.Modifiers:
+                case CosmeticRuleMarshallingMap.Modifiers:
                     node.modifiers = {} as ModifierList;
                     ModifierListDeserializer.deserialize(buffer, node.modifiers);
                     break;
 
-                case CosmeticRuleSerializationMap.Domains:
+                case CosmeticRuleMarshallingMap.Domains:
                     DomainListDeserializer.deserialize(buffer, node.domains = {} as DomainList);
                     break;
 
-                case CosmeticRuleSerializationMap.Start:
+                case CosmeticRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case CosmeticRuleSerializationMap.End:
+                case CosmeticRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

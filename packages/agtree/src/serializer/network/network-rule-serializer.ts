@@ -3,27 +3,9 @@ import { type NetworkRule, BinaryTypeMap, getSyntaxSerializationMap } from '../.
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { ValueSerializer } from '../misc/value-serializer';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
 import { ModifierListSerializer } from '../misc/modifier-list-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum NetworkRuleSerializationMap {
-    Syntax = 1,
-    Raws,
-    Exception,
-    Pattern,
-    ModifierList,
-    Start,
-    End,
-}
+import { NetworkRuleMarshallingMap } from '../../serialization-utils/network/network-rule-common';
 
 /**
  * `NetworkRuleSerializer` is responsible for serializing network rules.
@@ -42,27 +24,27 @@ export class NetworkRuleSerializer extends BaseSerializer {
     public static serialize(node: NetworkRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.NetworkRuleNode);
 
-        buffer.writeUint8(NetworkRuleSerializationMap.Syntax);
+        buffer.writeUint8(NetworkRuleMarshallingMap.Syntax);
         buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
 
-        buffer.writeUint8(NetworkRuleSerializationMap.Exception);
+        buffer.writeUint8(NetworkRuleMarshallingMap.Exception);
         buffer.writeUint8(node.exception ? 1 : 0);
 
-        buffer.writeUint8(NetworkRuleSerializationMap.Pattern);
+        buffer.writeUint8(NetworkRuleMarshallingMap.Pattern);
         ValueSerializer.serialize(node.pattern, buffer);
 
         if (!isUndefined(node.modifiers)) {
-            buffer.writeUint8(NetworkRuleSerializationMap.ModifierList);
+            buffer.writeUint8(NetworkRuleMarshallingMap.ModifierList);
             ModifierListSerializer.serialize(node.modifiers, buffer);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(NetworkRuleSerializationMap.Start);
+            buffer.writeUint8(NetworkRuleMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(NetworkRuleSerializationMap.End);
+            buffer.writeUint8(NetworkRuleMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

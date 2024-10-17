@@ -8,7 +8,7 @@ import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum InvalidRuleErrorNodeSerializationMap {
+export const enum InvalidRuleErrorNodeMarshallingMap {
     Name = 1,
     Message,
     Start,

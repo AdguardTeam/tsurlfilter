@@ -4,7 +4,7 @@ import { BinaryTypeMap, type Modifier, type ModifierList } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
 import { ModifierDeserializer } from './modifier-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ModifierListNodeSerializationMap } from '../../serialization-utils/misc/modifier-list-common';
+import { ModifierListNodeMarshallingMap } from '../../serialization-utils/misc/modifier-list-common';
 
 /**
  * `ModifierListDeserializer` is responsible for deserializing modifier lists. Please note that the name is not
@@ -29,7 +29,7 @@ export class ModifierListDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ModifierListNodeSerializationMap.Children:
+                case ModifierListNodeMarshallingMap.Children:
                     node.children = new Array(buffer.readUint16());
 
                     // read children
@@ -38,11 +38,11 @@ export class ModifierListDeserializer extends BaseDeserializer {
                     }
                     break;
 
-                case ModifierListNodeSerializationMap.Start:
+                case ModifierListNodeMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ModifierListNodeSerializationMap.End:
+                case ModifierListNodeMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 
