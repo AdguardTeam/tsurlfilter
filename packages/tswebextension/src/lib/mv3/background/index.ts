@@ -22,6 +22,7 @@ export {
     getRuleSourceText,
     type PreprocessedFilterList,
     FilterListPreprocessor,
+    preprocessedFilterListValidator,
 } from '@adguard/tsurlfilter';
 
 // re-exports to prevent collision, when both tsurlfilter and tswebextension are imported

@@ -29,7 +29,6 @@ import { RequestBlockingLogger } from './request-blocking-logger';
 import { FiltersStorage } from './storage/filters';
 import { logger } from '../utils/logger';
 import { getErrorMessage } from '../utils/error';
-import { versionsIdbStorage } from './storage';
 
 /**
  * AdGuard API is filtering library, provided following features:
@@ -120,7 +119,7 @@ export class AdguardApi {
                 // eslint-disable-next-line no-await-in-loop
                 const [ruleSetChecksum, ruleSetChecksumStorage] = await Promise.all([
                     TsWebExtension.getChecksum(rulesetId, this.getRuleSetsPath()),
-                    versionsIdbStorage.get(String(rulesetId)),
+                    FiltersStorage.getChecksum(rulesetId),
                 ]);
 
                 if (ruleSetChecksum === ruleSetChecksumStorage) {
@@ -141,8 +140,10 @@ export class AdguardApi {
             }
         }
 
-        await FiltersStorage.setMultiple(filters);
-        await versionsIdbStorage.setMultiple(checksums);
+        if (Object.keys(filters).length > 0) {
+            await FiltersStorage.setMultipleFilters(filters);
+            await FiltersStorage.setMultipleChecksums(checksums);
+        }
 
         logger.info(`Synced the following filters: ${enabledRulesetIds.join(', ')}`);
     }
@@ -159,7 +160,7 @@ export class AdguardApi {
      */
     private static loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
         try {
-            const result = await FiltersStorage.getAllFilterData(filterId);
+            const result = await FiltersStorage.getFilter(filterId);
 
             if (!result) {
                 throw new Error(`Filter with id ${filterId} not found`);

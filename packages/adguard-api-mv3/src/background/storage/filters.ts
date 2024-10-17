@@ -1,342 +1,125 @@
-/**
- * @file
- * This file is part of AdGuard Browser Extension (https://github.com/AdguardTeam/AdguardBrowserExtension).
- *
- * AdGuard Browser Extension is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * AdGuard Browser Extension is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with AdGuard Browser Extension. If not, see <http://www.gnu.org/licenses/>.
- */
-import zod from 'zod';
-
-import { FilterListPreprocessor, type PreprocessedFilterList } from '@adguard/tswebextension/mv3';
-
+import { preprocessedFilterListValidator, type PreprocessedFilterList } from '@adguard/tswebextension/mv3';
+import { z } from 'zod';
 import { logger } from '../../utils/logger';
 import { getErrorMessage } from '../../utils/error';
-
 import { filtersIdbStorage } from './shared-instances';
 
-const FILTER_LIST_EXTENSION = '.txt';
-
 /**
- * Storage prefix for raw preprocessed filter lists.
- */
-export const FILTER_KEY_PREFIX = 'filterrules_';
-
-/**
- * Storage prefix for binary serialized preprocessed filter lists.
- */
-export const BINARY_FILTER_KEY_PREFIX = 'binaryfilterrules_';
-
-/**
- * Storage prefix for conversion map.
- * Conversion map is used to get original user rules from the preprocessed filter list.
- */
-export const CONVERSION_MAP_PREFIX = 'conversionmap_';
-
-/**
- * Storage prefix for source map.
- * Source map is used to map binary serialized rules to the raw preprocessed filter list.
- */
-export const SOURCE_MAP_PREFIX = 'sourcemap_';
-
-/**
- * Schema for the conversion map.
- */
-const CONVERSION_MAP_SCHEMA = zod.record(zod.string(), zod.string()).default({});
-
-/**
- * Schema for the source map.
- */
-const SOURCE_MAP_SCHEMA = zod.record(zod.string(), zod.number()).default({});
-
-/**
- * Encapsulates interaction with stored filter rules.
+ * Provides a storage for filter lists.
+ * It is built on top of {@link filtersIdbStorage}.
  */
 export class FiltersStorage {
+    private static readonly FILTER_KEY = 'filter';
+
+    private static readonly CHECKSUM_KEY = 'checksum';
+
     /**
-     * Sets specified filter list to {@link filtersIdbStorage}.
+     * Returns key with prefix.
      *
      * @param filterId Filter id.
-     * @param filter Filter rules strings.
+     * @param key Key.
+     *
+     * @returns Key with prefix.
      */
-    static async set(filterId: number, filter: string[]): Promise<void> {
-        try {
-            const data = FiltersStorage.prepareFilterForStorage(filterId, filter);
-            const succeeded = await filtersIdbStorage.setMultiple(data);
-
-            if (!succeeded) {
-                throw new Error('Transaction failed');
-            }
-        } catch (e) {
-            logger.error(`Failed to set filter list for filter id ${filterId}, got error:`, getErrorMessage(e));
-            throw e;
-        }
+    private static getKey(filterId: number | string, key: string): string {
+        return `${key}_${filterId}`;
     }
 
     /**
-     * Sets multiple filter lists to {@link filtersIdbStorage}.
+     * Sets multiple filter lists to {@link filtersIdbStorage} in batch.
      *
      * @param filters Record with filter id as a key and filter rules strings as a value.
+     *
+     * @throws Error, if transaction failed.
      */
-    static async setMultiple(filters: Record<number, PreprocessedFilterList>): Promise<void> {
-        const data: Record<string, unknown> = {};
+    public static async setMultipleFilters(filters: Record<number, PreprocessedFilterList>): Promise<void> {
+        const data: Record<string, PreprocessedFilterList> = {};
 
         for (const [filterId, filter] of Object.entries(filters)) {
-            data[FiltersStorage.getFilterKey(Number(filterId))] = filter.rawFilterList;
-            data[FiltersStorage.getBinaryFilterKey(Number(filterId))] = filter.filterList;
-            data[FiltersStorage.getConversionMapKey(Number(filterId))] = filter.conversionMap;
-            data[FiltersStorage.getSourceMapKey(Number(filterId))] = filter.sourceMap;
+            data[FiltersStorage.getKey(filterId, FiltersStorage.FILTER_KEY)] = filter;
         }
 
         try {
             const succeeded = await filtersIdbStorage.setMultiple(data);
-
             if (!succeeded) {
                 throw new Error('Transaction failed');
             }
         } catch (e) {
-            logger.error('Failed to set multiple filter lists', e);
+            logger.error(`Failed to set multiple filter data, got error: ${getErrorMessage(e)}`);
             throw e;
         }
     }
 
     /**
-     * Helper method to get data to set to the storage for the specified filter list.
+     * Returns specified filter list from cache or {@link filtersIdbStorage}.
      *
      * @param filterId Filter id.
-     * @param filter Filter rules strings.
-     * @returns Record with data to set to the storage.
-     */
-    static prepareFilterForStorage(filterId: number, filter: string[]): Record<string, unknown> {
-        const {
-            rawFilterList,
-            filterList,
-            conversionMap,
-            sourceMap,
-        } = FilterListPreprocessor.preprocess(filter.join('\n'));
-
-        const result: Record<string, unknown> = {
-            [FiltersStorage.getFilterKey(filterId)]: rawFilterList,
-            [FiltersStorage.getBinaryFilterKey(filterId)]: filterList,
-            [FiltersStorage.getConversionMapKey(filterId)]: conversionMap,
-            [FiltersStorage.getSourceMapKey(filterId)]: sourceMap,
-        };
-
-        return result;
-    }
-
-    /**
-     * Returns specified filter list from {@link filtersIdbStorage}.
-     *
-     * @param filterId Filter id.
-     * @param logError If `true`, logs error if it occurs.
      *
      * @returns Promise, resolved with filter rules strings.
-     * @throws Error, if filter list data is not valid.
+     *
+     * @throws Error, if DB operation failed or returned data is not valid.
      */
-    static async get(filterId: number, logError = true): Promise<Uint8Array[]> {
+    static async getFilter(filterId: number): Promise<PreprocessedFilterList | null> {
         try {
-            const binaryFilterKey = FiltersStorage.getBinaryFilterKey(filterId);
-            const data = await filtersIdbStorage.get(binaryFilterKey);
-            return zod.array(zod.instanceof(Uint8Array)).parse(data);
-        } catch (e) {
-            if (logError) {
-                // eslint-disable-next-line max-len
-                logger.error(`Failed to get binary filter data for filter id ${filterId}, got error:`, getErrorMessage(e));
+            const filter = await filtersIdbStorage.get(FiltersStorage.getKey(filterId, FiltersStorage.FILTER_KEY));
+
+            if (!filter) {
+                return null;
             }
+
+            return preprocessedFilterListValidator.parse(filter);
+        } catch (e) {
+            logger.error(`Failed to get filter data for filter id ${filterId}, got error:`, getErrorMessage(e));
             throw e;
         }
     }
 
     /**
-     * Returns raw preprocessed filter list for the specified filter id.
+     * Sets multiple filter checksums to {@link filtersIdbStorage} in batch.
      *
-     * @param filterId Filter id.
+     * @param checksums Record with filter id as a key and checksum as a value.
      *
-     * @returns Promise, resolved with preprocessed filter list.
-     *
-     * @throws Error, if filter list data is not valid.
-     *
-     * @note You can learn more about the preprocessed filter list in
-     * {@link https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#preprocessedfilterlist-interface|tsurlfilter documentation}.
+     * @throws Error, if transaction failed.
      */
-    static async getPreprocessedFilterList(filterId: number): Promise<string> {
+    static async setMultipleChecksums(checksums: Record<number, string>): Promise<void> {
+        const data: Record<string, string> = {};
+
+        for (const [filterId, checksum] of Object.entries(checksums)) {
+            data[FiltersStorage.getKey(filterId, FiltersStorage.CHECKSUM_KEY)] = checksum;
+        }
+
         try {
-            const filterKey = FiltersStorage.getFilterKey(filterId);
-            const data = await filtersIdbStorage.get(filterKey);
-            return zod.string().parse(data);
+            const succeeded = await filtersIdbStorage.setMultiple(data);
+            if (!succeeded) {
+                throw new Error('Transaction failed');
+            }
         } catch (e) {
-            // eslint-disable-next-line max-len
-            logger.error(`Failed to get preprocessed raw filter list for filter id ${filterId}, got error:`, getErrorMessage(e));
+            logger.error(`Failed to set multiple filter checksums, got error: ${getErrorMessage(e)}`);
             throw e;
         }
     }
 
     /**
-     * Returns source map for the specified filter list.
+     * Returns specified filter checksum from cache or {@link filtersIdbStorage}.
      *
      * @param filterId Filter id.
-     * @returns Promise, resolved with source map.
-     * @throws Error, if source map data is not valid.
+     *
+     * @returns Promise, resolved with checksum.
+     *
+     * @throws Error, if DB operation failed or returned data is not valid.
      */
-    static async getSourceMap(filterId: number): Promise<Record<string, number>> {
+    static async getChecksum(filterId: number): Promise<string | null> {
         try {
-            const sourceMapKey = FiltersStorage.getSourceMapKey(filterId);
-            const data = await filtersIdbStorage.get(sourceMapKey);
-            return SOURCE_MAP_SCHEMA.parse(data);
+            const checksum = await filtersIdbStorage.get(FiltersStorage.getKey(filterId, FiltersStorage.CHECKSUM_KEY));
+
+            if (!checksum) {
+                return null;
+            }
+
+            return z.string().parse(checksum);
         } catch (e) {
-            // eslint-disable-next-line max-len
-            logger.error(`Failed to get source map for filter id '${filterId}', ${filterId}, got error:`, getErrorMessage(e));
+            logger.error(`Failed to get filter checksum for filter id ${filterId}, got error:`, getErrorMessage(e));
             throw e;
         }
-    }
-
-    /**
-     * Returns conversion map for the specified filter list.
-     *
-     * @param filterId Filter id.
-     * @returns Promise, resolved with conversion map.
-     * @throws Error, if conversion map data is not valid.
-     */
-    static async getConversionMap(filterId: number): Promise<Record<string, string>> {
-        try {
-            const conversionMapKey = FiltersStorage.getConversionMapKey(filterId);
-            const data = await filtersIdbStorage.get(conversionMapKey);
-            return CONVERSION_MAP_SCHEMA.parse(data);
-        } catch (e) {
-            logger.error(`Failed to get conversion map for filter id ${filterId}, got error:`, getErrorMessage(e));
-            throw e;
-        }
-    }
-
-    /**
-     * Returns original user rules from {@link filtersIdbStorage}.
-     *
-     * @param filterId Filter id.
-     * @returns Promise, resolved with original user rules strings.
-     * @throws Error, if filter list data is not valid.
-     */
-    static async getOriginalRules(filterId: number): Promise<string[]> {
-        const [rawFilterList, conversionMap] = await Promise.all([
-            FiltersStorage.getPreprocessedFilterList(filterId),
-            FiltersStorage.getConversionMap(filterId),
-        ]);
-
-        return FilterListPreprocessor.getOriginalRules({
-            rawFilterList,
-            conversionMap,
-        });
-    }
-
-    /**
-     * Returns original filter list text for the specified filter id.
-     *
-     * @param filterId Filter id.
-     * @returns Promise, resolved with original filter list text.
-     * @throws Error, if filter list data is not valid.
-     */
-    static async getOriginalFilterListText(filterId: number): Promise<string> {
-        const [rawFilterList, conversionMap] = await Promise.all([
-            FiltersStorage.getPreprocessedFilterList(filterId),
-            FiltersStorage.getConversionMap(filterId),
-        ]);
-
-        return FilterListPreprocessor.getOriginalFilterListText({
-            rawFilterList,
-            conversionMap,
-        });
-    }
-
-    /**
-     * Get all filter data, including conversion map and source map.
-     *
-     * @param filterId Filter id.
-     *
-     * @returns Promise, resolved with filter data or `null` if filter is not
-     * found or some part of the data is missing.
-     */
-    static async getAllFilterData(filterId: number): Promise<PreprocessedFilterList | null> {
-        try {
-            const [filterList, rawFilterList, conversionMap, sourceMap] = await Promise.all([
-                FiltersStorage.get(filterId),
-                FiltersStorage.getPreprocessedFilterList(filterId),
-                FiltersStorage.getConversionMap(filterId),
-                FiltersStorage.getSourceMap(filterId),
-            ]);
-
-            return {
-                filterList,
-                rawFilterList,
-                conversionMap,
-                sourceMap,
-            };
-        } catch (e) {
-            logger.error('Failed to get all filter data', e);
-
-            return null;
-        }
-    }
-
-    /**
-     * Removes specified filter list from {@link filtersIdbStorage}.
-     *
-     * @param filterId Filter id.
-     */
-    static async remove(filterId: number): Promise<void> {
-        await filtersIdbStorage.removeMultiple([
-            FiltersStorage.getBinaryFilterKey(filterId),
-            FiltersStorage.getFilterKey(filterId),
-            FiltersStorage.getConversionMapKey(filterId),
-            FiltersStorage.getSourceMapKey(filterId),
-        ]);
-    }
-
-    /**
-     * Returns {@link filtersIdbStorage} key from specified filter list.
-     *
-     * @param filterId Filter id.
-     * @returns Storage key from specified filter list.
-     */
-    private static getFilterKey(filterId: number): string {
-        return `${FILTER_KEY_PREFIX}${filterId}${FILTER_LIST_EXTENSION}`;
-    }
-
-    /**
-     * Returns {@link filtersIdbStorage} key to conversion map from specified filter list.
-     *
-     * @param filterId Filter id.
-     * @returns Storage key to conversion map from specified filter list.
-     */
-    private static getConversionMapKey(filterId: number): string {
-        return `${CONVERSION_MAP_PREFIX}${filterId}${FILTER_LIST_EXTENSION}`;
-    }
-
-    /**
-     * Returns {@link filtersIdbStorage} key to source map from specified filter list.
-     *
-     * @param filterId Filter id.
-     * @returns Storage key to source map from specified filter list.
-     */
-    private static getSourceMapKey(filterId: number): string {
-        return `${SOURCE_MAP_PREFIX}${filterId}${FILTER_LIST_EXTENSION}`;
-    }
-
-    /**
-     * Returns {@link filtersIdbStorage} key to binary filter list from specified filter list.
-     *
-     * @param filterId Filter id.
-     * @returns Storage key to binary filter list from specified filter list.
-     */
-    private static getBinaryFilterKey(filterId: number): string {
-        return `${BINARY_FILTER_KEY_PREFIX}${filterId}${FILTER_LIST_EXTENSION}`;
     }
 }

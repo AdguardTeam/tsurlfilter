@@ -1,1 +1,1 @@
-export { versionsIdbStorage, filtersIdbStorage } from './shared-instances';
+export { filtersIdbStorage } from './shared-instances';
