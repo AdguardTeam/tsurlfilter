@@ -6,7 +6,7 @@ import { BaseDeserializer } from '../base-deserializer';
 import {
     FREQUENT_MODIFIERS_SERIALIZATION_MAP,
     FREQUENT_VALUES_SERIALIZATION_MAPS,
-    ModifierNodeSerializationMap,
+    ModifierNodeMarshallingMap,
 } from '../../serialization-utils/misc/modifier-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 
@@ -64,12 +64,12 @@ export class ModifierDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ModifierNodeSerializationMap.Name:
+                case ModifierNodeMarshallingMap.Name:
                     // eslint-disable-next-line max-len
                     ValueDeserializer.deserialize(buffer, node.name = {} as Value, getFrequentModifiersDeserializationMap());
                     break;
 
-                case ModifierNodeSerializationMap.Value:
+                case ModifierNodeMarshallingMap.Value:
                     if (node.name) {
                         // eslint-disable-next-line max-len
                         ValueDeserializer.deserialize(buffer, node.value = {} as Value, getFrequentValuesDeserializationMaps().get(node.name.value));
@@ -78,15 +78,15 @@ export class ModifierDeserializer extends BaseDeserializer {
                     }
                     break;
 
-                case ModifierNodeSerializationMap.Exception:
+                case ModifierNodeMarshallingMap.Exception:
                     node.exception = buffer.readUint8() === 1;
                     break;
 
-                case ModifierNodeSerializationMap.Start:
+                case ModifierNodeMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ModifierNodeSerializationMap.End:
+                case ModifierNodeMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

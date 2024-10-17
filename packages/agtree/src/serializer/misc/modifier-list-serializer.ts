@@ -2,23 +2,9 @@ import { NULL, UINT16_MAX } from '../../utils/constants';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { BinaryTypeMap, type ModifierList } from '../../nodes';
 import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
 import { ModifierSerializer } from './modifier-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ModifierListNodeSerializationMap {
-    Children = 1,
-    Start,
-    End,
-}
+import { ModifierListNodeMarshallingMap } from '../../serialization-utils/misc/modifier-list-common';
 
 /**
  * `ModifierListSerializer` is responsible for serializing modifier lists. Please note that the name is not
@@ -40,7 +26,7 @@ export class ModifierListSerializer extends BaseSerializer {
 
         const count = node.children.length;
         if (count) {
-            buffer.writeUint8(ModifierListNodeSerializationMap.Children);
+            buffer.writeUint8(ModifierListNodeMarshallingMap.Children);
             // note: we store the count, because re-construction of the array is faster if we know the length
             if (count > UINT16_MAX) {
                 throw new Error(`Too many modifiers: ${count}, the limit is ${UINT16_MAX}`);
@@ -53,12 +39,12 @@ export class ModifierListSerializer extends BaseSerializer {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(ModifierListNodeSerializationMap.Start);
+            buffer.writeUint8(ModifierListNodeMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(ModifierListNodeSerializationMap.End);
+            buffer.writeUint8(ModifierListNodeMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

@@ -18,52 +18,10 @@ import { BaseSerializer } from '../base-serializer';
 import { ElementHidingBodySerializer } from './element-hiding-body-serializer';
 import { CssInjectionBodySerializer } from './css-injection-body-serializer';
 import { ModifierListSerializer } from '../misc/modifier-list-serializer';
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
-    ['##', 0],
-    ['#@#', 1],
-
-    ['#?#', 2],
-    ['#@?#', 3],
-
-    ['#$#', 4],
-    ['#$?#', 5],
-    ['#@$#', 6],
-    ['#@$?#', 7],
-
-    ['#%#', 8],
-    ['#@%#', 9],
-
-    ['$$', 10],
-    ['$@$', 11],
-]);
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum CosmeticRuleSerializationMap {
-    Syntax = 1,
-    Exception,
-    Separator,
-    Modifiers,
-    Domains,
-    Body,
-    Start,
-    End,
-}
+import {
+    CosmeticRuleMarshallingMap,
+    COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP
+} from '../../serialization-utils/cosmetic/cosmetic-rule-common';
 
 /**
  * `CosmeticRuleParser` is responsible for parsing cosmetic rules.
@@ -157,27 +115,27 @@ export class CosmeticRuleSerializer extends BaseSerializer {
         }
 
         // common properties
-        buffer.writeUint8(CosmeticRuleSerializationMap.Exception);
+        buffer.writeUint8(CosmeticRuleMarshallingMap.Exception);
         buffer.writeUint8(node.exception ? 1 : 0);
 
-        buffer.writeUint8(CosmeticRuleSerializationMap.Separator);
-        ValueSerializer.serialize(node.separator, buffer, SEPARATOR_SERIALIZATION_MAP);
+        buffer.writeUint8(CosmeticRuleMarshallingMap.Separator);
+        ValueSerializer.serialize(node.separator, buffer, COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP);
 
         if (node.modifiers) {
-            buffer.writeUint8(CosmeticRuleSerializationMap.Modifiers);
+            buffer.writeUint8(CosmeticRuleMarshallingMap.Modifiers);
             ModifierListSerializer.serialize(node.modifiers, buffer);
         }
 
-        buffer.writeUint8(CosmeticRuleSerializationMap.Domains);
+        buffer.writeUint8(CosmeticRuleMarshallingMap.Domains);
         DomainListSerializer.serialize(node.domains, buffer);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(CosmeticRuleSerializationMap.Start);
+            buffer.writeUint8(CosmeticRuleMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(CosmeticRuleSerializationMap.End);
+            buffer.writeUint8(CosmeticRuleMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

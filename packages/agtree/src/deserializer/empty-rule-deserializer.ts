@@ -3,7 +3,7 @@ import { BaseDeserializer } from './base-deserializer';
 import { BinaryTypeMap, RuleCategory, type EmptyRule } from '../nodes';
 import { NULL } from '../utils/constants';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { EmptyRuleSerializationMap } from '../serialization-utils/empty-rule-common';
+import { EmptyRuleMarshallingMap } from '../serialization-utils/empty-rule-common';
 import { AdblockSyntax } from '../utils/adblockers';
 
 export class EmptyRuleDeserializer extends BaseDeserializer {
@@ -23,11 +23,11 @@ export class EmptyRuleDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case EmptyRuleSerializationMap.Start:
+                case EmptyRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case EmptyRuleSerializationMap.End:
+                case EmptyRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

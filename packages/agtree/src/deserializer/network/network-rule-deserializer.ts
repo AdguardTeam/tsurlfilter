@@ -13,7 +13,7 @@ import { ValueDeserializer } from '../misc/value-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import { ModifierListDeserializer } from '../misc/modifier-list-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { NetworkRuleSerializationMap } from '../../serialization-utils/network/network-rule-common';
+import { NetworkRuleMarshallingMap } from '../../serialization-utils/network/network-rule-common';
 import { AdblockSyntax } from '../../utils/adblockers';
 
 /**
@@ -39,27 +39,27 @@ export class NetworkRuleDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case NetworkRuleSerializationMap.Syntax:
+                case NetworkRuleMarshallingMap.Syntax:
                     node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
-                case NetworkRuleSerializationMap.Exception:
+                case NetworkRuleMarshallingMap.Exception:
                     node.exception = buffer.readUint8() === 1;
                     break;
 
-                case NetworkRuleSerializationMap.Pattern:
+                case NetworkRuleMarshallingMap.Pattern:
                     ValueDeserializer.deserialize(buffer, node.pattern = {} as Value);
                     break;
 
-                case NetworkRuleSerializationMap.ModifierList:
+                case NetworkRuleMarshallingMap.ModifierList:
                     ModifierListDeserializer.deserialize(buffer, node.modifiers = {} as ModifierList);
                     break;
 
-                case NetworkRuleSerializationMap.Start:
+                case NetworkRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case NetworkRuleSerializationMap.End:
+                case NetworkRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

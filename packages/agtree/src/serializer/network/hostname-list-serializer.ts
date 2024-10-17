@@ -4,21 +4,7 @@ import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL, UINT16_MAX } from '../../utils/constants';
 import { ValueSerializer } from '../misc/value-serializer';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}
- *
- * @note Only 256 values can be represented this way.
- */
-const enum HostnameListNodeSerializationMap {
-    Children = 1,
-    Start,
-    End,
-}
+import { HostnameListNodeMarshallingMap } from '../../serialization-utils/misc/hostname-list-common';
 
 export class HostnameListSerializer extends BaseSerializer {
     /**
@@ -31,12 +17,12 @@ export class HostnameListSerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMap.HostnameListNode);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(HostnameListNodeSerializationMap.Start);
+            buffer.writeUint8(HostnameListNodeMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(HostnameListNodeSerializationMap.End);
+            buffer.writeUint8(HostnameListNodeMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -47,7 +33,7 @@ export class HostnameListSerializer extends BaseSerializer {
                 throw new Error(`Too many children: ${count}, the limit is ${UINT16_MAX}`);
             }
 
-            buffer.writeUint8(HostnameListNodeSerializationMap.Children);
+            buffer.writeUint8(HostnameListNodeMarshallingMap.Children);
             buffer.writeUint16(count);
 
             for (let i = 0; i < count; i += 1) {

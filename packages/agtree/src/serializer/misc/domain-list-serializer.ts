@@ -5,21 +5,7 @@ import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
 import { ListItemsSerializer } from './list-items-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the binary schema version
- *
- * @note Only 256 values can be represented this way.
- */
-const enum DomainListSerializationMap {
-    Separator = 1,
-    Children,
-    Start,
-    End,
-}
+import { DomainListMarshallingMap } from '../../serialization-utils/misc/domain-list-common';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
@@ -57,19 +43,19 @@ export class DomainListSerializer extends BaseSerializer {
         if (isUndefined(separator)) {
             throw new Error(`Invalid separator: ${node.separator}`);
         }
-        buffer.writeUint8(DomainListSerializationMap.Separator);
+        buffer.writeUint8(DomainListMarshallingMap.Separator);
         buffer.writeUint8(separator);
 
-        buffer.writeUint8(DomainListSerializationMap.Children);
+        buffer.writeUint8(DomainListMarshallingMap.Children);
         ListItemsSerializer.serialize(node.children, buffer);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(DomainListSerializationMap.Start);
+            buffer.writeUint8(DomainListMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(DomainListSerializationMap.End);
+            buffer.writeUint8(DomainListMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

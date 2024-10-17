@@ -8,7 +8,7 @@ import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum EmptyRuleSerializationMap {
+export const enum EmptyRuleMarshallingMap {
     Start = 1,
     End,
 }

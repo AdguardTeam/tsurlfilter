@@ -3,7 +3,7 @@ import { BaseDeserializer } from './base-deserializer';
 import { BinaryTypeMap, type InvalidRuleError } from '../nodes';
 import { NULL } from '../utils/constants';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { InvalidRuleErrorNodeSerializationMap } from '../serialization-utils/invalid-rule-error-node-common';
+import { InvalidRuleErrorNodeMarshallingMap } from '../serialization-utils/invalid-rule-error-node-common';
 
 export class InvalidRuleErrorNodeDeserializer extends BaseDeserializer {
     /**
@@ -20,19 +20,19 @@ export class InvalidRuleErrorNodeDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case InvalidRuleErrorNodeSerializationMap.Name:
+                case InvalidRuleErrorNodeMarshallingMap.Name:
                     node.name = buffer.readString();
                     break;
 
-                case InvalidRuleErrorNodeSerializationMap.Message:
+                case InvalidRuleErrorNodeMarshallingMap.Message:
                     node.message = buffer.readString();
                     break;
 
-                case InvalidRuleErrorNodeSerializationMap.Start:
+                case InvalidRuleErrorNodeMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case InvalidRuleErrorNodeSerializationMap.End:
+                case InvalidRuleErrorNodeMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

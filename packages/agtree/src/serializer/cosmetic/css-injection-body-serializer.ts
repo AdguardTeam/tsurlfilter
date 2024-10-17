@@ -4,24 +4,7 @@ import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL } from '../../utils/constants';
 import { BaseSerializer } from '../base-serializer';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum CssInjectionRuleSerializationMap {
-    SelectorList = 1,
-    DeclarationList,
-    MediaQueryList,
-    Remove,
-    Start,
-    End,
-}
+import { CssInjectionRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/css-injection-body-common';
 
 export class CssInjectionBodySerializer extends BaseSerializer {
     /**
@@ -34,29 +17,29 @@ export class CssInjectionBodySerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMap.CssInjectionRuleBody);
 
         if (node.mediaQueryList) {
-            buffer.writeUint8(CssInjectionRuleSerializationMap.MediaQueryList);
+            buffer.writeUint8(CssInjectionRuleMarshallingMap.MediaQueryList);
             ValueSerializer.serialize(node.mediaQueryList, buffer);
         }
 
-        buffer.writeUint8(CssInjectionRuleSerializationMap.SelectorList);
+        buffer.writeUint8(CssInjectionRuleMarshallingMap.SelectorList);
         ValueSerializer.serialize(node.selectorList, buffer);
 
         if (node.declarationList) {
-            buffer.writeUint8(CssInjectionRuleSerializationMap.DeclarationList);
+            buffer.writeUint8(CssInjectionRuleMarshallingMap.DeclarationList);
             ValueSerializer.serialize(node.declarationList, buffer);
         }
 
         if (node.remove) {
-            buffer.writeUint8(CssInjectionRuleSerializationMap.Remove);
+            buffer.writeUint8(CssInjectionRuleMarshallingMap.Remove);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(CssInjectionRuleSerializationMap.Start);
+            buffer.writeUint8(CssInjectionRuleMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(CssInjectionRuleSerializationMap.End);
+            buffer.writeUint8(CssInjectionRuleMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

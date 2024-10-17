@@ -13,7 +13,7 @@ import { ValueDeserializer } from '../misc/value-deserializer';
 import { HostnameListDeserializer } from './hostname-list-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { HostRuleSerializationMap } from '../../serialization-utils/misc/host-rule-common';
+import { HostRuleMarshallingMap } from '../../serialization-utils/misc/host-rule-common';
 import { AdblockSyntax } from '../../utils/adblockers';
 
 /**
@@ -50,30 +50,30 @@ export class HostRuleDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case HostRuleSerializationMap.Syntax:
+                case HostRuleMarshallingMap.Syntax:
                     node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
-                case HostRuleSerializationMap.Ip:
+                case HostRuleMarshallingMap.Ip:
                     node.ip = {} as Value;
                     ValueDeserializer.deserialize(buffer, node.ip);
                     break;
 
-                case HostRuleSerializationMap.HostnameList:
+                case HostRuleMarshallingMap.HostnameList:
                     node.hostnames = {} as HostnameList;
                     HostnameListDeserializer.deserialize(buffer, node.hostnames);
                     break;
 
-                case HostRuleSerializationMap.Comment:
+                case HostRuleMarshallingMap.Comment:
                     node.comment = {} as Value;
                     ValueDeserializer.deserialize(buffer, node.comment);
                     break;
 
-                case HostRuleSerializationMap.Start:
+                case HostRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case HostRuleSerializationMap.End:
+                case HostRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

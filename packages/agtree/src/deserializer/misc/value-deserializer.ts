@@ -3,7 +3,7 @@ import { BinaryTypeMap, type Value } from '../../nodes';
 import { EMPTY, NULL } from '../../utils/constants';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ValueNodeSerializationMap } from '../../serialization-utils/misc/value-common';
+import { ValueNodeMarshallingMap } from '../../serialization-utils/misc/value-common';
 
 /**
  * Value deserializer.
@@ -29,19 +29,19 @@ export class ValueDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ValueNodeSerializationMap.Value:
+                case ValueNodeMarshallingMap.Value:
                     node.value = buffer.readString();
                     break;
 
-                case ValueNodeSerializationMap.FrequentValue:
+                case ValueNodeMarshallingMap.FrequentValue:
                     node.value = frequentValuesMap?.get(buffer.readUint8()) ?? EMPTY;
                     break;
 
-                case ValueNodeSerializationMap.Start:
+                case ValueNodeMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ValueNodeSerializationMap.End:
+                case ValueNodeMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

@@ -3,27 +3,9 @@ import { type HostRule, BinaryTypeMap, getSyntaxSerializationMap } from '../../n
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { HostnameListSerializer } from './hostname-list-serializer';
 import { BaseSerializer } from '../base-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum HostRuleSerializationMap {
-    Syntax = 1,
-    Raws,
-    Ip,
-    HostnameList,
-    Comment,
-    Start,
-    End,
-}
+import { HostRuleMarshallingMap } from '../../serialization-utils/misc/host-rule-common';
 
 /**
  * `HostRuleSerializer` is responsible for serializing hosts-like rules.
@@ -54,31 +36,31 @@ export class HostRuleSerializer extends BaseSerializer {
     public static serialize(node: HostRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.HostRuleNode);
 
-        buffer.writeUint8(HostRuleSerializationMap.Syntax);
+        buffer.writeUint8(HostRuleMarshallingMap.Syntax);
         buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
 
         if (node.ip) {
-            buffer.writeUint8(HostRuleSerializationMap.Ip);
+            buffer.writeUint8(HostRuleMarshallingMap.Ip);
             ValueSerializer.serialize(node.ip, buffer);
         }
 
         if (node.hostnames) {
-            buffer.writeUint8(HostRuleSerializationMap.HostnameList);
+            buffer.writeUint8(HostRuleMarshallingMap.HostnameList);
             HostnameListSerializer.serialize(node.hostnames, buffer);
         }
 
         if (node.comment) {
-            buffer.writeUint8(HostRuleSerializationMap.Comment);
+            buffer.writeUint8(HostRuleMarshallingMap.Comment);
             ValueSerializer.serialize(node.comment, buffer);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(HostRuleSerializationMap.Start);
+            buffer.writeUint8(HostRuleMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(HostRuleSerializationMap.End);
+            buffer.writeUint8(HostRuleMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

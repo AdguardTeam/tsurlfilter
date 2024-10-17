@@ -10,36 +10,12 @@ import { NULL } from '../../utils/constants';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
-
-/**
- * Property map for binary serialization.
- */
-const enum VariableNodeBinaryPropMap {
-    Name = 1,
-    FrequentName,
-    Start,
-    End,
-}
-
-/**
- * Property map for binary serialization.
- */
-const enum OperatorNodeBinaryPropMap {
-    Operator = 1,
-    Left,
-    Right,
-    Start,
-    End,
-}
-
-/**
- * Property map for binary serialization.
- */
-const enum ParenthesisNodeBinaryPropMap {
-    Expression = 1,
-    Start,
-    End,
-}
+import {
+    KNOWN_VARIABLES_MAP,
+    OPERATOR_BINARY_MAP,
+    OperatorNodeBinaryPropMarshallingMap, ParenthesisNodeBinaryPropMarshallingMap,
+    VariableNodeBinaryPropMarshallingMap
+} from '../../serialization-utils/misc/logical-expression-common';
 
 /**
  * Possible node types in the logical expression.
@@ -49,43 +25,6 @@ export const enum NodeType {
     Operator = 'Operator',
     Parenthesis = 'Parenthesis',
 }
-
-const OPERATOR_BINARY_MAP = new Map<OperatorValue, number>([
-    [OperatorValue.Not, 0],
-    [OperatorValue.And, 1],
-    [OperatorValue.Or, 2],
-]);
-
-/**
- * Serialization map for known variables.
- */
-const KNOWN_VARIABLES_MAP = new Map<string, number>([
-    ['ext_abp', 0],
-    ['ext_ublock', 1],
-    ['ext_ubol', 2],
-    ['ext_devbuild', 3],
-    ['env_chromium', 4],
-    ['env_edge', 5],
-    ['env_firefox', 6],
-    ['env_mobile', 7],
-    ['env_safari', 8],
-    ['env_mv3', 9],
-    ['false', 10],
-    ['cap_html_filtering', 11],
-    ['cap_user_stylesheet', 12],
-    ['adguard', 13],
-    ['adguard_app_windows', 14],
-    ['adguard_app_mac', 15],
-    ['adguard_app_android', 16],
-    ['adguard_app_ios', 17],
-    ['adguard_ext_safari', 18],
-    ['adguard_ext_chromium', 19],
-    ['adguard_ext_firefox', 20],
-    ['adguard_ext_edge', 21],
-    ['adguard_ext_opera', 22],
-    ['adguard_ext_android_cb', 23],
-    // TODO: Add 'adguard_ext_chromium_mv3' to the list
-]);
 
 /**
  * `LogicalExpressionParser` is responsible for parsing logical expressions.
@@ -111,20 +50,20 @@ export class LogicalExpressionSerializer extends BaseSerializer {
 
         const frequentName = KNOWN_VARIABLES_MAP.get(node.name);
         if (!isUndefined(frequentName)) {
-            buffer.writeUint8(VariableNodeBinaryPropMap.FrequentName);
+            buffer.writeUint8(VariableNodeBinaryPropMarshallingMap.FrequentName);
             buffer.writeUint8(frequentName);
         } else {
-            buffer.writeUint8(VariableNodeBinaryPropMap.Name);
+            buffer.writeUint8(VariableNodeBinaryPropMarshallingMap.Name);
             buffer.writeString(node.name);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(VariableNodeBinaryPropMap.Start);
+            buffer.writeUint8(VariableNodeBinaryPropMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(VariableNodeBinaryPropMap.End);
+            buffer.writeUint8(VariableNodeBinaryPropMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -140,16 +79,16 @@ export class LogicalExpressionSerializer extends BaseSerializer {
     private static serializeParenthesisNode(node: ExpressionParenthesisNode, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ExpressionParenthesisNode);
 
-        buffer.writeUint8(ParenthesisNodeBinaryPropMap.Expression);
+        buffer.writeUint8(ParenthesisNodeBinaryPropMarshallingMap.Expression);
         LogicalExpressionSerializer.serialize(node.expression, buffer);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(ParenthesisNodeBinaryPropMap.Start);
+            buffer.writeUint8(ParenthesisNodeBinaryPropMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(ParenthesisNodeBinaryPropMap.End);
+            buffer.writeUint8(ParenthesisNodeBinaryPropMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -165,28 +104,28 @@ export class LogicalExpressionSerializer extends BaseSerializer {
     private static serializeOperatorNode(node: ExpressionOperatorNode, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ExpressionOperatorNode);
 
-        buffer.writeUint8(OperatorNodeBinaryPropMap.Operator);
+        buffer.writeUint8(OperatorNodeBinaryPropMarshallingMap.Operator);
         const operatorBinary = OPERATOR_BINARY_MAP.get(node.operator);
         if (isUndefined(operatorBinary)) {
             throw new Error(`Unknown operator: ${node.operator}`);
         }
         buffer.writeUint8(operatorBinary);
 
-        buffer.writeUint8(OperatorNodeBinaryPropMap.Left);
+        buffer.writeUint8(OperatorNodeBinaryPropMarshallingMap.Left);
         LogicalExpressionSerializer.serialize(node.left, buffer);
 
         if (node.right) {
-            buffer.writeUint8(OperatorNodeBinaryPropMap.Right);
+            buffer.writeUint8(OperatorNodeBinaryPropMarshallingMap.Right);
             LogicalExpressionSerializer.serialize(node.right, buffer);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(OperatorNodeBinaryPropMap.Start);
+            buffer.writeUint8(OperatorNodeBinaryPropMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(OperatorNodeBinaryPropMap.End);
+            buffer.writeUint8(OperatorNodeBinaryPropMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

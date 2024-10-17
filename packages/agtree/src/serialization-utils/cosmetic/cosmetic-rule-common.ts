@@ -8,7 +8,7 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum CosmeticRuleSerializationMap {
+export const enum CosmeticRuleMarshallingMap {
     Syntax = 1,
     Exception,
     Separator,
@@ -27,7 +27,7 @@ export const enum CosmeticRuleSerializationMap {
  *
  * @note Only 256 values can be represented this way.
  */
-export const SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
+export const COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
     ['##', 0],
     ['#@#', 1],
 

@@ -1,9 +1,12 @@
 import { OperatorValue } from '../../nodes';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 
 /**
  * Property map for binary serialization.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
  */
-export const enum VariableNodeBinaryPropMap {
+export const enum VariableNodeBinaryPropMarshallingMap {
     Name = 1,
     FrequentName,
     Start,
@@ -12,8 +15,10 @@ export const enum VariableNodeBinaryPropMap {
 
 /**
  * Property map for binary serialization.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
  */
-export const enum OperatorNodeBinaryPropMap {
+export const enum OperatorNodeBinaryPropMarshallingMap {
     Operator = 1,
     Left,
     Right,
@@ -23,8 +28,10 @@ export const enum OperatorNodeBinaryPropMap {
 
 /**
  * Property map for binary serialization.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
  */
-export const enum ParenthesisNodeBinaryPropMap {
+export const enum ParenthesisNodeBinaryPropMarshallingMap {
     Expression = 1,
     Start,
     End,

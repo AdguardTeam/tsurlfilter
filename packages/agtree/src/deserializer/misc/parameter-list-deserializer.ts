@@ -3,7 +3,7 @@ import { type ParameterList, BinaryTypeMap, type Value } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { ValueDeserializer } from './value-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
-import { ParameterListNodeSerializationMap } from '../../serialization-utils/misc/parameter-list-common';
+import { ParameterListNodeMarshallingMap } from '../../serialization-utils/misc/parameter-list-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 
 export class ParameterListDeserializer extends BaseDeserializer {
@@ -27,7 +27,7 @@ export class ParameterListDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ParameterListNodeSerializationMap.Children:
+                case ParameterListNodeMarshallingMap.Children:
                     node.children = new Array(buffer.readUint32());
 
                     // read children
@@ -49,11 +49,11 @@ export class ParameterListDeserializer extends BaseDeserializer {
                     }
                     break;
 
-                case ParameterListNodeSerializationMap.Start:
+                case ParameterListNodeMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ParameterListNodeSerializationMap.End:
+                case ParameterListNodeMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 
