@@ -8,7 +8,7 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum HintNodeSerializationMap {
+export const enum HintNodeMarshallingMap {
     Name = 1,
     Params,
     Start,

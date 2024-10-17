@@ -10,7 +10,7 @@ import {
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseDeserializer } from '../base-deserializer';
-import { AgentRuleSerializationMap } from '../../serialization-utils/comment/agent-comment-common';
+import { AgentRuleMarshallingMap } from '../../serialization-utils/comment/agent-comment-common';
 import { AgentDeserializer } from './agent-deserializer';
 
 /**
@@ -52,7 +52,7 @@ export class AgentCommentDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case AgentRuleSerializationMap.Children:
+                case AgentRuleMarshallingMap.Children:
                     node.children = new Array(buffer.readUint8());
 
                     // read children
@@ -61,11 +61,11 @@ export class AgentCommentDeserializer extends BaseDeserializer {
                     }
                     break;
 
-                case AgentRuleSerializationMap.Start:
+                case AgentRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case AgentRuleSerializationMap.End:
+                case AgentRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

@@ -6,62 +6,12 @@ import { ParameterListSerializer } from '../misc/parameter-list-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum PreProcessorRuleSerializationMap {
-    Name = 1,
-    Params,
-    Syntax,
-    Start,
-    End,
-}
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- *
- * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#preprocessor-directives}
- * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
- */
-const FREQUENT_DIRECTIVES_SERIALIZATION_MAP = new Map<string, number>([
-    ['if', 0],
-    ['else', 1],
-    ['endif', 2],
-    ['include', 3],
-    ['safari_cb_affinity', 4],
-]);
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const FREQUENT_PARAMS_SERIALIZATION_MAP = new Map<string, number>([
-    // safari_cb_affinity parameters
-    ['general', 0],
-    ['privacy', 1],
-    ['social', 2],
-    ['security', 3],
-    ['other', 4],
-    ['custom', 5],
-    ['all', 6],
-]);
+import {
+    FREQUENT_DIRECTIVES_SERIALIZATION_MAP,
+    FREQUENT_PARAMS_SERIALIZATION_MAP,
+    PreProcessorRuleMarshallingMap,
+} from '../../serialization-utils/comment/pre-processor-comment-common';
 
 /**
  * `PreProcessorSerializer` is responsible for serializing preprocessor rules.
@@ -90,14 +40,14 @@ export class PreProcessorCommentSerializer extends BaseSerializer {
     public static serialize(node: PreProcessorCommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.PreProcessorCommentRuleNode);
 
-        buffer.writeUint8(PreProcessorRuleSerializationMap.Name);
+        buffer.writeUint8(PreProcessorRuleMarshallingMap.Name);
         ValueSerializer.serialize(node.name, buffer, FREQUENT_DIRECTIVES_SERIALIZATION_MAP);
 
-        buffer.writeUint8(PreProcessorRuleSerializationMap.Syntax);
+        buffer.writeUint8(PreProcessorRuleMarshallingMap.Syntax);
         buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
 
         if (!isUndefined(node.params)) {
-            buffer.writeUint8(PreProcessorRuleSerializationMap.Params);
+            buffer.writeUint8(PreProcessorRuleMarshallingMap.Params);
 
             if (node.params.type === 'Value') {
                 ValueSerializer.serialize(node.params, buffer);
@@ -109,12 +59,12 @@ export class PreProcessorCommentSerializer extends BaseSerializer {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(PreProcessorRuleSerializationMap.Start);
+            buffer.writeUint8(PreProcessorRuleMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(PreProcessorRuleSerializationMap.End);
+            buffer.writeUint8(PreProcessorRuleMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

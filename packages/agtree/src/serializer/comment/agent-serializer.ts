@@ -5,42 +5,10 @@ import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum AgentNodeSerializationMap {
-    Adblock = 1,
-    Version,
-    Start,
-    End,
-}
-
-/**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- */
-const FREQUENT_AGENTS_DESERIALIZATION_MAP = new Map<number, string>([
-    // AdGuard
-    [0, 'AdGuard'],
-    [1, 'ADG'],
-
-    // uBlock Origin
-    [2, 'uBlock Origin'],
-    [3, 'uBlock'],
-    [4, 'uBO'],
-
-    // Adblock Plus
-    [5, 'Adblock Plus'],
-    [6, 'AdblockPlus'],
-    [7, 'ABP'],
-    [8, 'AdBlock'],
-]);
+import {
+    AgentNodeMarshallingMap,
+    FREQUENT_AGENTS_DESERIALIZATION_MAP,
+} from '../../serialization-utils/comment/agent-common';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
@@ -82,21 +50,21 @@ export class AgentSerializer extends BaseSerializer {
     public static serialize(node: Agent, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.AgentNode);
 
-        buffer.writeUint8(AgentNodeSerializationMap.Adblock);
+        buffer.writeUint8(AgentNodeMarshallingMap.Adblock);
         ValueSerializer.serialize(node.adblock, buffer, getFrequentAgentsSerializationMap(), true);
 
         if (!isUndefined(node.version)) {
-            buffer.writeUint8(AgentNodeSerializationMap.Version);
+            buffer.writeUint8(AgentNodeMarshallingMap.Version);
             ValueSerializer.serialize(node.version, buffer);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(AgentNodeSerializationMap.Start);
+            buffer.writeUint8(AgentNodeMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(AgentNodeSerializationMap.End);
+            buffer.writeUint8(AgentNodeMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

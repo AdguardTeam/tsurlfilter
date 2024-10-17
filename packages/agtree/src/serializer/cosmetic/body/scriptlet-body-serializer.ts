@@ -5,7 +5,7 @@ import { ParameterListSerializer } from '../../misc/parameter-list-serializer';
 import { isUndefined } from '../../../utils/type-guards';
 import { BaseSerializer } from '../../base-serializer';
 import {
-    AbpSnippetBodySerializationMap,
+    AbpSnippetBodyMarshallingMap,
 } from '../../../serialization-utils/cosmetic/body/abp-snippet-injection-body-common';
 
 export class ScriptletBodySerializer extends BaseSerializer {
@@ -25,7 +25,7 @@ export class ScriptletBodySerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMap.ScriptletInjectionRuleBodyNode);
 
         const { length } = node.children;
-        buffer.writeUint8(AbpSnippetBodySerializationMap.Children);
+        buffer.writeUint8(AbpSnippetBodyMarshallingMap.Children);
 
         // note: we store the count, because re-construction of the array is faster if we know the length
         if (length > UINT8_MAX) {
@@ -37,12 +37,12 @@ export class ScriptletBodySerializer extends BaseSerializer {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(AbpSnippetBodySerializationMap.Start);
+            buffer.writeUint8(AbpSnippetBodyMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(AbpSnippetBodySerializationMap.End);
+            buffer.writeUint8(AbpSnippetBodyMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

@@ -3,22 +3,8 @@ import { type AgentCommentRule, BinaryTypeMap } from '../../nodes';
 import { AgentSerializer } from './agent-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum AgentRuleSerializationMap {
-    Children = 1,
-    Start,
-    End,
-}
+import { AgentRuleMarshallingMap } from '../../serialization-utils/comment/agent-comment-common';
 
 /**
  * `AgentCommentSerializer` is responsible for serializing an Adblock agent comments.
@@ -55,7 +41,7 @@ export class AgentCommentSerializer extends BaseSerializer {
 
         const count = node.children.length;
         if (count) {
-            buffer.writeUint8(AgentRuleSerializationMap.Children);
+            buffer.writeUint8(AgentRuleMarshallingMap.Children);
 
             // note: we store the count, because re-construction of the array is faster if we know the length
             // 8 bits is more than enough here
@@ -70,12 +56,12 @@ export class AgentCommentSerializer extends BaseSerializer {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(AgentRuleSerializationMap.Start);
+            buffer.writeUint8(AgentRuleMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(AgentRuleSerializationMap.End);
+            buffer.writeUint8(AgentRuleMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

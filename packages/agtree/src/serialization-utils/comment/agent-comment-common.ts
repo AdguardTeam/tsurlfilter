@@ -8,7 +8,7 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum AgentRuleSerializationMap {
+export const enum AgentRuleMarshallingMap {
     Children = 1,
     Start,
     End,

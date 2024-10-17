@@ -8,7 +8,7 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum ConfigCommentRuleSerializationMap {
+export const enum ConfigCommentRuleMarshallingMap {
     Marker = 1,
     Command,
     Params,
@@ -25,7 +25,7 @@ export const enum ConfigCommentRuleSerializationMap {
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum ConfigNodeSerializationMap {
+export const enum ConfigNodeMarshallingMap {
     Value = 1,
     Start,
     End,

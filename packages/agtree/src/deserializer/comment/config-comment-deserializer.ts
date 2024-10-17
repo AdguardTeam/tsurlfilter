@@ -12,8 +12,8 @@ import {
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import {
-    ConfigCommentRuleSerializationMap,
-    ConfigNodeSerializationMap,
+    ConfigCommentRuleMarshallingMap,
+    ConfigNodeMarshallingMap,
     FREQUENT_COMMANDS_SERIALIZATION_MAP,
 } from '../../serialization-utils/comment/config-comment-common';
 import { AdblockSyntax } from '../../utils/adblockers';
@@ -57,16 +57,16 @@ export class ConfigCommentDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ConfigNodeSerializationMap.Value:
+                case ConfigNodeMarshallingMap.Value:
                     // note: it is safe to use JSON.parse here, because we serialized it with JSON.stringify
                     node.value = JSON.parse(buffer.readString());
                     break;
 
-                case ConfigNodeSerializationMap.Start:
+                case ConfigNodeMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ConfigNodeSerializationMap.End:
+                case ConfigNodeMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 
@@ -95,16 +95,16 @@ export class ConfigCommentDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ConfigCommentRuleSerializationMap.Marker:
+                case ConfigCommentRuleMarshallingMap.Marker:
                     ValueDeserializer.deserialize(buffer, node.marker = {} as Value);
                     break;
 
-                case ConfigCommentRuleSerializationMap.Command:
+                case ConfigCommentRuleMarshallingMap.Command:
                     // eslint-disable-next-line max-len
                     ValueDeserializer.deserialize(buffer, node.command = {} as Value, getFrequentPlatformsDeserializationMap());
                     break;
 
-                case ConfigCommentRuleSerializationMap.Params:
+                case ConfigCommentRuleMarshallingMap.Params:
                     if (buffer.peekUint8() === BinaryTypeMap.ConfigNode) {
                         ConfigCommentDeserializer.deserializeConfigNode(buffer, node.params = {} as ConfigNode);
                     } else {
@@ -112,15 +112,15 @@ export class ConfigCommentDeserializer extends BaseDeserializer {
                     }
                     break;
 
-                case ConfigCommentRuleSerializationMap.Comment:
+                case ConfigCommentRuleMarshallingMap.Comment:
                     ValueDeserializer.deserialize(buffer, node.comment = {} as Value);
                     break;
 
-                case ConfigCommentRuleSerializationMap.Start:
+                case ConfigCommentRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case ConfigCommentRuleSerializationMap.End:
+                case ConfigCommentRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 
