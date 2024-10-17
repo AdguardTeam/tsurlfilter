@@ -164,6 +164,30 @@ export class AdguardApi {
     }
 
     /**
+     * Loads filter content by filter id.
+     *
+     * @param filterId Filter identifier to load content for.
+     *
+     * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
+     * or null if the filter is not found.
+     *
+     * @throws Error if the filter content cannot be loaded.
+     */
+    private static loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
+        try {
+            const result = await FiltersStorage.getAllFilterData(filterId);
+
+            if (!result) {
+                throw new Error(`Filter with id ${filterId} not found`);
+            }
+
+            return result;
+        } catch (e) {
+            throw new Error(`Failed to load filter content: ${e}`);
+        }
+    };
+
+    /**
      * Initializes AdGuard with specified {@link Configuration} and starts it immediately.
      *
      * @param configuration - Api {@link Configuration}.
@@ -177,7 +201,7 @@ export class AdguardApi {
 
         await this.syncEnabledFiltersWithStorage();
 
-        await this.tswebextension.start(tsWebExtensionConfiguration);
+        await this.tswebextension.start(tsWebExtensionConfiguration, AdguardApi.loadFilterContent);
 
         return this.configuration;
     }
@@ -277,30 +301,6 @@ export class AdguardApi {
             { trusted: true },
         );
 
-        /**
-         * Loads filter content by filter id.
-         *
-         * @param filterId Filter identifier to load content for.
-         *
-         * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
-         * or null if the filter is not found.
-         *
-         * @throws Error if the filter content cannot be loaded.
-         */
-        const loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
-            try {
-                const result = await FiltersStorage.getAllFilterData(filterId);
-
-                if (!result) {
-                    throw new Error(`Filter with id ${filterId} not found`);
-                }
-
-                return result;
-            } catch (e) {
-                throw new Error(`Failed to load filter content: ${e}`);
-            }
-        };
-
         return {
             filtersPath: this.configuration.assetsPath,
             ruleSetsPath: this.configuration.assetsPath + AdguardApi.DECLARATIVE_RULES_PATH,
@@ -311,7 +311,6 @@ export class AdguardApi {
             allowlist,
             userrules,
             quickFixesRules,
-            loadFilterContent,
             settings: {
                 assistantUrl: 'adguard-assistant.js',
                 // Related stealth option is disabled

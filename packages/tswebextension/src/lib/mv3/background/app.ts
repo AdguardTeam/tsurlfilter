@@ -1,4 +1,5 @@
 import browser from 'webextension-polyfill';
+import zod from 'zod';
 import {
     Filter,
     RULESET_NAME_PREFIX,
@@ -6,7 +7,11 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor, type PreprocessedFilterList } from '@adguard/tsurlfilter';
+import {
+    FilterListPreprocessor,
+    preprocessedFilterListValidator,
+    type PreprocessedFilterList,
+} from '@adguard/tsurlfilter';
 
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
@@ -58,6 +63,26 @@ export type {
     FailedEnableRuleSetsError,
 };
 
+const loadFilterContentValidator = zod.function()
+    .args(zod.number())
+    .returns(
+        zod.promise(
+            preprocessedFilterListValidator,
+        ),
+    );
+
+/**
+ * Lazy load filter content.
+ *
+ * @param filterId Filter identifier to load content for.
+ *
+ * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
+ * or null if the filter is not found.
+ *
+ * @throws Error if the filter content cannot be loaded.
+ */
+export type LoadFilterContent = zod.infer<typeof loadFilterContentValidator>;
+
 /**
  * The TsWebExtension class is a facade for working with the Chrome
  * declarativeNetRequest module: enabling/disabling static filters,
@@ -68,7 +93,8 @@ export class TsWebExtension implements AppInterface<
     ConfigurationMV3,
     ConfigurationMV3Context,
     ConfigurationResult,
-    MessagesHandlerMV3
+    MessagesHandlerMV3,
+    LoadFilterContent
 > {
     /**
      * Fires on filtering log event.
@@ -107,6 +133,11 @@ export class TsWebExtension implements AppInterface<
     isStarted = false;
 
     /**
+     * Lazy load filter content.
+     */
+    filterContentLoader: LoadFilterContent | undefined;
+
+    /**
      * Stores the initialize promise to prevent multiple initialize calls when
      * a large number of messages are received when the service worker
      * starts or wakes up.
@@ -136,11 +167,15 @@ export class TsWebExtension implements AppInterface<
      *
      * @param config {@link ConfigurationMV3} Configuration object which contains all
      * needed information to start.
+     * @param loadFilterContent Lazy load filter content function.
      *
      * @returns Promise resolved with result of configuration
      * {@link ConfigurationResult}.
      */
-    private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
+    private async innerStart(
+        config: ConfigurationMV3,
+        loadFilterContent: LoadFilterContent,
+    ): Promise<ConfigurationResult> {
         logger.debug('[tswebextension.innerStart]: start');
 
         if (!appContext.startTimeMs) {
@@ -148,7 +183,7 @@ export class TsWebExtension implements AppInterface<
         }
 
         try {
-            const res = await this.configure(config);
+            const res = await this.configure(config, loadFilterContent);
 
             // Start listening for request events.
             RequestEvents.init();
@@ -187,10 +222,14 @@ export class TsWebExtension implements AppInterface<
      * example: cosmetic rules in iframes.
      *
      * @param config {@link ConfigurationMV3} Configuration object to start with.
+     * @param loadFilterContent Lazy load filter content function.
      *
      * @returns Promise resolved with result of configuration {@link ConfigurationResult}.
      */
-    public async start(config: ConfigurationMV3): Promise<ConfigurationResult> {
+    public async start(
+        config: ConfigurationMV3,
+        loadFilterContent: LoadFilterContent,
+    ): Promise<ConfigurationResult> {
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 
@@ -208,7 +247,7 @@ export class TsWebExtension implements AppInterface<
         }
 
         // Call and wait for promise for allow multiple calling start
-        this.startPromise = this.innerStart(config);
+        this.startPromise = this.innerStart(config, loadFilterContent);
         return this.startPromise;
     }
 
@@ -260,13 +299,25 @@ export class TsWebExtension implements AppInterface<
      * rules.
      *
      * @param config A {@link ConfigurationMV3} to apply.
+     * @param loadFilterContent Lazy load filter content function.
      *
      * @returns ConfigurationResult {@link ConfigurationResult} which contains:
      * - list of errors for static filters, if any of them has been thrown
      * - converted dynamic rule set with rule set, errors and limitations.
      * @see {@link ConversionResult}
+     *
+     * @throws Error if the filter content is not provided and not already set in the class instance.
      */
-    public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
+    public async configure(
+        config: ConfigurationMV3,
+        loadFilterContent?: LoadFilterContent,
+    ): Promise<ConfigurationResult> {
+        const loadFilterContentToUse = loadFilterContent || this.filterContentLoader;
+
+        if (!loadFilterContentToUse) {
+            throw new Error('Filter content loader is not set');
+        }
+
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 
@@ -292,7 +343,7 @@ export class TsWebExtension implements AppInterface<
                 customFilters,
                 filtersIdsToEnable,
                 filtersIdsToDisable,
-            } = await TsWebExtension.getFiltersUpdateInfo(configuration);
+            } = await TsWebExtension.getFiltersUpdateInfo(configuration, loadFilterContentToUse);
 
             // Update list of enabled static filters
             res.staticFiltersStatus = await FiltersApi.updateFiltering(
@@ -367,6 +418,8 @@ export class TsWebExtension implements AppInterface<
         }
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
+
+        this.filterContentLoader = loadFilterContentToUse;
 
         // Update previously opened tabs with new rules - find for each tab
         // new main frame rule.
@@ -531,7 +584,6 @@ export class TsWebExtension implements AppInterface<
             filtersPath,
             ruleSetsPath,
             declarativeLogEnabled,
-            loadFilterContent,
         } = configuration;
 
         return {
@@ -542,7 +594,6 @@ export class TsWebExtension implements AppInterface<
             declarativeLogEnabled,
             verbose,
             settings,
-            loadFilterContent,
         };
     }
 
@@ -550,16 +601,18 @@ export class TsWebExtension implements AppInterface<
      * Extract configuration update info from already parsed configuration.
      *
      * @param parsedConfiguration Already parsed {@link ConfigurationMV3}.
+     * @param loadFilterContent Lazy load filter content function.
      *
      * @returns Item of {@link FiltersUpdateInfo}.
      */
     private static async getFiltersUpdateInfo(
         parsedConfiguration: ConfigurationMV3,
+        loadFilterContent: LoadFilterContent,
     ): Promise<FiltersUpdateInfo> {
         // Wrap filters to tsurlfilter.IFilter
         const staticFilters = FiltersApi.createStaticFilters(
             parsedConfiguration.staticFiltersIds,
-            parsedConfiguration.loadFilterContent,
+            loadFilterContent,
         );
         const customFilters = FiltersApi.createCustomFilters(
             parsedConfiguration.customFilters,

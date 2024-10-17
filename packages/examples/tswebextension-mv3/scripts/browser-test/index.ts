@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 
 import {
+    DEFAULT_EXTENSION_CONFIG,
     TESTCASES_BASE_URL,
 } from '../constants';
 import {
@@ -17,8 +18,6 @@ import { filterCompatibleTestcases } from './testcase';
 import { logTestResult, logTestTimeout } from './logger';
 import { Product } from './product';
 import { BUILD_PATH, USER_DATA_PATH } from '../build/constants';
-import { DEFAULT_EXTENSION_CONFIG, extendConfigurationWithLoader } from '../extension-config';
-import { TsWebExtension } from '@adguard/tswebextension/mv3';
 
 const TESTS_TIMEOUT_MS = 5 * 1000;
 const TESTS_TIMEOUT_CODE = 'tests_timeout';
@@ -73,7 +72,7 @@ const CSP_TEST_ID = 12;
         // update tsWebExtension config
         await backgroundPage.evaluate<void, SetTsWebExtensionConfigArg>(
             setTsWebExtensionConfig,
-            [extendConfigurationWithLoader(DEFAULT_EXTENSION_CONFIG, TsWebExtension), userrules],
+            [DEFAULT_EXTENSION_CONFIG, userrules],
         );
 
         const openPageAndWaitForTests = testcase.id === CSP_TEST_ID

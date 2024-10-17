@@ -7,6 +7,7 @@ export interface AppInterface<
     TConfigurationContext,
     TConfigurationResult,
     TMessageHandler,
+    TFilterContentLoader = void,
 > {
     /**
      * Configuration context.
@@ -30,18 +31,27 @@ export interface AppInterface<
     onAssistantCreateRule: EventChannelInterface<string>;
 
     /**
+     * Lazy loader for filter content.
+     */
+    filterContentLoader?: TFilterContentLoader;
+
+    /**
      * Starts api.
      *
      * @param configuration App configuration.
      */
-    start: (configuration: TConfiguration) => Promise<TConfigurationResult>;
+    start: TFilterContentLoader extends void
+        ? (configuration: TConfiguration) => Promise<TConfigurationResult>
+        : (configuration: TConfiguration, filterContentLoader: TFilterContentLoader) => Promise<TConfigurationResult>;
 
     /**
      * Updates configuration.
      *
      * @param configuration App configuration.
      */
-    configure: (configuration: TConfiguration) => Promise<TConfigurationResult>;
+    configure: TFilterContentLoader extends void
+        ? (configuration: TConfiguration) => Promise<TConfigurationResult>
+        : (configuration: TConfiguration, filterContentLoader?: TFilterContentLoader) => Promise<TConfigurationResult>;
 
     /**
      * Stops api.

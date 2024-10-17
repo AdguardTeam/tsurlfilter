@@ -59,13 +59,6 @@ const CONVERSION_MAP_SCHEMA = zod.record(zod.string(), zod.string()).default({})
 const SOURCE_MAP_SCHEMA = zod.record(zod.string(), zod.number()).default({});
 
 /**
- * Regular expression that helps to extract filter id from the key.
- */
-const RE_FILTER_KEY = new RegExp(
-    `^(${FILTER_KEY_PREFIX})(?<filterId>\\d+)${FILTER_LIST_EXTENSION}$`,
-);
-
-/**
  * Encapsulates interaction with stored filter rules.
  */
 export class FiltersStorage {

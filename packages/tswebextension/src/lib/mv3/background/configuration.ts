@@ -85,24 +85,6 @@ export const configurationMV3Validator = configurationValidator.extend({
      * List of rules added by user.
      */
     userrules: customFilterMV3Validator.omit({ filterId: true }),
-
-    /**
-     * Lazy load filter content.
-     *
-     * @param filterId Filter identifier to load content for.
-     *
-     * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
-     * or null if the filter is not found.
-     *
-     * @throws Error if the filter content cannot be loaded.
-     */
-    loadFilterContent: zod.function()
-        .args(zod.number())
-        .returns(
-            zod.promise(
-                preprocessedFilterListValidator,
-            ),
-        ),
 });
 
 /**

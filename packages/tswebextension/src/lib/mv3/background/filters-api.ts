@@ -8,6 +8,7 @@ import browser from 'webextension-polyfill';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import { type ConfigurationMV3 } from './configuration';
+import { type LoadFilterContent } from './app';
 
 export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[],
@@ -83,7 +84,7 @@ export default class FiltersApi {
      */
     static createStaticFilters(
         filtersIds: ConfigurationMV3['staticFiltersIds'],
-        loadFilterContent: ConfigurationMV3['loadFilterContent'],
+        loadFilterContent: LoadFilterContent,
     ): IFilter[] {
         return filtersIds.map((filterId) => {
             const filterFromCache = this.filtersCache.get(filterId);
