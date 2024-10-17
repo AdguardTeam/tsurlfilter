@@ -26,9 +26,7 @@ import {
 } from '@adguard/tswebextension/mv3';
 import { type Configuration, configurationValidator } from './configuration';
 import { RequestBlockingLogger } from './request-blocking-logger';
-import { addChromeUpdateHandler, isChrome } from './chrome-update-handler';
 import { FiltersStorage } from './storage/filters';
-import { ExtensionVersionManager } from './extension-version-manager';
 import { logger } from '../utils/logger';
 import { getErrorMessage } from '../utils/error';
 import { versionsIdbStorage } from './storage';
@@ -150,20 +148,6 @@ export class AdguardApi {
     }
 
     /**
-     * Called when the extension is updated in Chrome.
-     * Its needed to read the new ruleset files and update the extension storage.
-     */
-    private async handleExtensionUpdateInChrome(): Promise<void> {
-        logger.info('Extension has been updated, updating the extension storage');
-
-        await this.syncEnabledFiltersWithStorage();
-
-        logger.info('Syncing new extension version with the storage');
-        await ExtensionVersionManager.updateExtensionVersion();
-        logger.info('Extension version has been updated');
-    }
-
-    /**
      * Loads filter content by filter id.
      *
      * @param filterId Filter identifier to load content for.
@@ -225,13 +209,7 @@ export class AdguardApi {
 
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
-        if (isChrome) {
-            if (await ExtensionVersionManager.isExtensionUpdated()) {
-                await this.handleExtensionUpdateInChrome();
-            }
-
-            addChromeUpdateHandler(this.handleExtensionUpdateInChrome);
-        }
+        await this.syncEnabledFiltersWithStorage();
 
         await this.tswebextension.configure(tsWebExtensionConfiguration);
 
