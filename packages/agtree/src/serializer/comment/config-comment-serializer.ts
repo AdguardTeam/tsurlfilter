@@ -4,57 +4,12 @@ import { ParameterListSerializer } from '../misc/parameter-list-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ConfigCommentRuleSerializationMap {
-    Marker = 1,
-    Command,
-    Params,
-    Comment,
-    Start,
-    End,
-}
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ConfigNodeSerializationMap {
-    Value = 1,
-    Start,
-    End,
-}
-
-/**
- * Value map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- *
- * @see {@link https://github.com/AdguardTeam/AGLint/blob/master/src/linter/inline-config.ts}
- */
-const FREQUENT_COMMANDS_SERIALIZATION_MAP = new Map<string, number>([
-    ['aglint', 0],
-    ['aglint-disable', 1],
-    ['aglint-enable', 2],
-    ['aglint-disable-next-line', 3],
-    ['aglint-enable-next-line', 4],
-]);
+import {
+    ConfigCommentRuleMarshallingMap,
+    ConfigNodeMarshallingMap,
+    FREQUENT_COMMANDS_SERIALIZATION_MAP,
+} from '../../serialization-utils/comment/config-comment-common';
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.
@@ -72,18 +27,18 @@ export class ConfigCommentSerializer extends BaseSerializer {
     private static serializeConfigNode(node: ConfigNode, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ConfigNode);
 
-        buffer.writeUint8(ConfigNodeSerializationMap.Value);
+        buffer.writeUint8(ConfigNodeMarshallingMap.Value);
         // note: we don't support serializing generic objects, only AGTree nodes
         // this is a very special case, so we just stringify the configuration object
         buffer.writeString(JSON.stringify(node.value));
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(ConfigNodeSerializationMap.Start);
+            buffer.writeUint8(ConfigNodeMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(ConfigNodeSerializationMap.End);
+            buffer.writeUint8(ConfigNodeMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 
@@ -100,14 +55,14 @@ export class ConfigCommentSerializer extends BaseSerializer {
     public static serialize(node: ConfigCommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.ConfigCommentRuleNode);
 
-        buffer.writeUint8(ConfigCommentRuleSerializationMap.Marker);
+        buffer.writeUint8(ConfigCommentRuleMarshallingMap.Marker);
         ValueSerializer.serialize(node.marker, buffer);
 
-        buffer.writeUint8(ConfigCommentRuleSerializationMap.Command);
+        buffer.writeUint8(ConfigCommentRuleMarshallingMap.Command);
         ValueSerializer.serialize(node.command, buffer, FREQUENT_COMMANDS_SERIALIZATION_MAP, true);
 
         if (!isUndefined(node.params)) {
-            buffer.writeUint8(ConfigCommentRuleSerializationMap.Params);
+            buffer.writeUint8(ConfigCommentRuleMarshallingMap.Params);
             if (node.params.type === 'ParameterList') {
                 ParameterListSerializer.serialize(node.params, buffer);
             } else {
@@ -116,17 +71,17 @@ export class ConfigCommentSerializer extends BaseSerializer {
         }
 
         if (!isUndefined(node.comment)) {
-            buffer.writeUint8(ConfigCommentRuleSerializationMap.Comment);
+            buffer.writeUint8(ConfigCommentRuleMarshallingMap.Comment);
             ValueSerializer.serialize(node.comment, buffer);
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(ConfigCommentRuleSerializationMap.Start);
+            buffer.writeUint8(ConfigCommentRuleMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(ConfigCommentRuleSerializationMap.End);
+            buffer.writeUint8(ConfigCommentRuleMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

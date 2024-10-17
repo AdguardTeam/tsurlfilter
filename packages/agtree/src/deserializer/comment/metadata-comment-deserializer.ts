@@ -10,7 +10,7 @@ import {
 import { BaseDeserializer } from '../base-deserializer';
 import {
     FREQUENT_HEADERS_DESERIALIZATION_MAP,
-    MetadataCommentRuleSerializationMap,
+    MetadataCommentRuleMarshallingMap,
 } from '../../serialization-utils/comment/metadata-comment-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
@@ -47,24 +47,24 @@ export class MetadataCommentDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case MetadataCommentRuleSerializationMap.Marker:
+                case MetadataCommentRuleMarshallingMap.Marker:
                     ValueDeserializer.deserialize(buffer, node.marker = {} as Value);
                     break;
 
-                case MetadataCommentRuleSerializationMap.Header:
+                case MetadataCommentRuleMarshallingMap.Header:
                     // eslint-disable-next-line max-len
                     ValueDeserializer.deserialize(buffer, node.header = {} as Value, FREQUENT_HEADERS_DESERIALIZATION_MAP);
                     break;
 
-                case MetadataCommentRuleSerializationMap.Value:
+                case MetadataCommentRuleMarshallingMap.Value:
                     ValueDeserializer.deserialize(buffer, node.value = {} as Value);
                     break;
 
-                case MetadataCommentRuleSerializationMap.Start:
+                case MetadataCommentRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case MetadataCommentRuleSerializationMap.End:
+                case MetadataCommentRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

@@ -4,7 +4,7 @@ import { BinaryTypeMap, type Value, type Agent } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import {
-    AgentNodeSerializationMap,
+    AgentNodeMarshallingMap,
     FREQUENT_AGENTS_DESERIALIZATION_MAP,
 } from '../../serialization-utils/comment/agent-common';
 import { getAdblockSyntax } from '../../common/agent-common';
@@ -38,7 +38,7 @@ export class AgentDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case AgentNodeSerializationMap.Adblock:
+                case AgentNodeMarshallingMap.Adblock:
                     // eslint-disable-next-line max-len
                     ValueDeserializer.deserialize(buffer, node.adblock = {} as Value, FREQUENT_AGENTS_DESERIALIZATION_MAP);
                     if (node.adblock) {
@@ -46,15 +46,15 @@ export class AgentDeserializer extends BaseDeserializer {
                     }
                     break;
 
-                case AgentNodeSerializationMap.Version:
+                case AgentNodeMarshallingMap.Version:
                     ValueDeserializer.deserialize(buffer, node.version = {} as Value);
                     break;
 
-                case AgentNodeSerializationMap.Start:
+                case AgentNodeMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case AgentNodeSerializationMap.End:
+                case AgentNodeMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

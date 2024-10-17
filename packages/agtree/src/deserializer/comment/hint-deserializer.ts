@@ -11,7 +11,7 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import {
     FREQUENT_HINTS_SERIALIZATION_MAP,
     FREQUENT_PLATFORMS_SERIALIZATION_MAP,
-    HintNodeSerializationMap,
+    HintNodeMarshallingMap,
 } from '../../serialization-utils/comment/hint-common';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { ParameterListDeserializer } from '../misc/parameter-list-deserializer';
@@ -74,21 +74,21 @@ export class HintDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case HintNodeSerializationMap.Name:
+                case HintNodeMarshallingMap.Name:
                     // eslint-disable-next-line max-len
                     ValueDeserializer.deserialize(buffer, node.name = {} as Value, getFrequentHintsDeserializationMap());
                     break;
 
-                case HintNodeSerializationMap.Params:
+                case HintNodeMarshallingMap.Params:
                     // eslint-disable-next-line max-len
                     ParameterListDeserializer.deserialize(buffer, node.params = {} as ParameterList, getFrequentPlatformsDeserializationMap());
                     break;
 
-                case HintNodeSerializationMap.Start:
+                case HintNodeMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case HintNodeSerializationMap.End:
+                case HintNodeMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

@@ -16,7 +16,7 @@ import { BaseDeserializer } from '../base-deserializer';
 import {
     FREQUENT_DIRECTIVES_SERIALIZATION_MAP,
     FREQUENT_PARAMS_SERIALIZATION_MAP,
-    PreProcessorRuleSerializationMap,
+    PreProcessorRuleMarshallingMap,
 } from '../../serialization-utils/comment/pre-processor-comment-common';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
@@ -86,16 +86,16 @@ export class PreProcessorCommentDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case PreProcessorRuleSerializationMap.Name:
+                case PreProcessorRuleMarshallingMap.Name:
                     // eslint-disable-next-line max-len
                     ValueDeserializer.deserialize(buffer, node.name = {} as Value, getFrequentDirectivesDeserializationMap());
                     break;
 
-                case PreProcessorRuleSerializationMap.Syntax:
+                case PreProcessorRuleMarshallingMap.Syntax:
                     node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
-                case PreProcessorRuleSerializationMap.Params:
+                case PreProcessorRuleMarshallingMap.Params:
                     switch (buffer.peekUint8()) {
                         case BinaryTypeMap.ValueNode:
                             ValueDeserializer.deserialize(buffer, node.params = {} as Value);
@@ -117,11 +117,11 @@ export class PreProcessorCommentDeserializer extends BaseDeserializer {
                     }
                     break;
 
-                case PreProcessorRuleSerializationMap.Start:
+                case PreProcessorRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case PreProcessorRuleSerializationMap.End:
+                case PreProcessorRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

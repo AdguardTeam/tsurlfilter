@@ -8,12 +8,21 @@ import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum AbpSnippetBodySerializationMap {
+export const enum AbpSnippetBodyMarshallingMap {
     Children = 1,
     Start,
     End,
 }
 
+/**
+ * Value map for binary serialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
+ *
+ * @note Only 256 values can be represented this way.
+ */
+// TODO: Update this map with the actual values
 export const FREQUENT_ABP_SNIPPET_ARGS_SERIALIZATION_MAP = new Map<string, number>([
     ['abort-current-inline-script', 0],
     ['abort-on-property-read', 1],

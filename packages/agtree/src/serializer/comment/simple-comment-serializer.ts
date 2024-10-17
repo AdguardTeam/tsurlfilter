@@ -3,23 +3,8 @@ import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BinaryTypeMap, type CommentRule } from '../../nodes';
 import { ValueSerializer } from '../misc/value-serializer';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum SimpleCommentRuleSerializationMap {
-    Marker = 1,
-    Text,
-    Start,
-    End,
-}
+import { SimpleCommentRuleMarshallingMap } from '../../serialization-utils/comment/simple-comment-common';
 
 /**
  * `SimpleCommentSerializer` is responsible for parsing simple comments.
@@ -44,19 +29,19 @@ export class SimpleCommentSerializer extends BaseSerializer {
     public static serialize(node: CommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMap.CommentRuleNode);
 
-        buffer.writeUint8(SimpleCommentRuleSerializationMap.Marker);
+        buffer.writeUint8(SimpleCommentRuleMarshallingMap.Marker);
         ValueSerializer.serialize(node.marker, buffer);
 
-        buffer.writeUint8(SimpleCommentRuleSerializationMap.Text);
+        buffer.writeUint8(SimpleCommentRuleMarshallingMap.Text);
         ValueSerializer.serialize(node.text, buffer);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(SimpleCommentRuleSerializationMap.Start);
+            buffer.writeUint8(SimpleCommentRuleMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(SimpleCommentRuleSerializationMap.End);
+            buffer.writeUint8(SimpleCommentRuleMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

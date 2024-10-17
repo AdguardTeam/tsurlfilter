@@ -5,7 +5,7 @@ import { ParameterListDeserializer } from '../../misc/parameter-list-deserialize
 import { BaseDeserializer } from '../../base-deserializer';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import {
-    AbpSnippetBodySerializationMap,
+    AbpSnippetBodyMarshallingMap,
 } from '../../../serialization-utils/cosmetic/body/abp-snippet-injection-body-common';
 
 export class ScriptletBodyDeserializer extends BaseDeserializer {
@@ -30,7 +30,7 @@ export class ScriptletBodyDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case AbpSnippetBodySerializationMap.Children:
+                case AbpSnippetBodyMarshallingMap.Children:
                     node.children = new Array(buffer.readUint8());
 
                     // read children
@@ -43,11 +43,11 @@ export class ScriptletBodyDeserializer extends BaseDeserializer {
                     }
                     break;
 
-                case AbpSnippetBodySerializationMap.Start:
+                case AbpSnippetBodyMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case AbpSnippetBodySerializationMap.End:
+                case AbpSnippetBodyMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

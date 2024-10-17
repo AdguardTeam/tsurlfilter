@@ -11,7 +11,7 @@ import {
 import { HintDeserializer } from './hint-deserializer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseDeserializer } from '../base-deserializer';
-import { HintRuleSerializationMap } from '../../serialization-utils/comment/hint-comment-common';
+import { HintRuleMarshallingMap } from '../../serialization-utils/comment/hint-comment-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 
 /**
@@ -42,11 +42,11 @@ export class HintCommentDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case HintRuleSerializationMap.Syntax:
+                case HintRuleMarshallingMap.Syntax:
                     node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
-                case HintRuleSerializationMap.Children:
+                case HintRuleMarshallingMap.Children:
                     node.children = new Array(buffer.readUint8());
 
                     // read children
@@ -55,11 +55,11 @@ export class HintCommentDeserializer extends BaseDeserializer {
                     }
                     break;
 
-                case HintRuleSerializationMap.Start:
+                case HintRuleMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case HintRuleSerializationMap.End:
+                case HintRuleMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

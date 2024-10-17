@@ -4,7 +4,6 @@ import {
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
     type ExpressionOperatorNode,
-    OperatorValue,
 } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
@@ -13,8 +12,9 @@ import { BaseSerializer } from '../base-serializer';
 import {
     KNOWN_VARIABLES_MAP,
     OPERATOR_BINARY_MAP,
-    OperatorNodeBinaryPropMarshallingMap, ParenthesisNodeBinaryPropMarshallingMap,
-    VariableNodeBinaryPropMarshallingMap
+    OperatorNodeBinaryPropMarshallingMap,
+    ParenthesisNodeBinaryPropMarshallingMap,
+    VariableNodeBinaryPropMarshallingMap,
 } from '../../serialization-utils/misc/logical-expression-common';
 
 /**

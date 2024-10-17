@@ -13,14 +13,13 @@ import { AdgScriptletInjectionBodySerializer } from './body/adg-scriptlet-inject
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
 import { ElementHidingBodySerializer } from './element-hiding-body-serializer';
 import { CssInjectionBodySerializer } from './css-injection-body-serializer';
 import { ModifierListSerializer } from '../misc/modifier-list-serializer';
 import {
     CosmeticRuleMarshallingMap,
-    COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP
+    COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP,
 } from '../../serialization-utils/cosmetic/cosmetic-rule-common';
 
 /**
