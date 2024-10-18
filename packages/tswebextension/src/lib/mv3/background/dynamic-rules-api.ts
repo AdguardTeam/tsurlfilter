@@ -35,7 +35,7 @@ export default class DynamicRulesApi {
      * In Chrome before v120, this limit is enforced for the combination of dynamic and session scoped rules.
      * In Firefox and Chrome (staring v121), each ruleset has its own quota.
      *
-     * @returns Maximum number of combined dynamic and session rules.
+     * @returns Maximum number of dynamic rules.
      */
     private static get MAX_NUMBER_OF_DYNAMIC_RULES(): number {
         return browser.declarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES;
@@ -45,6 +45,8 @@ export default class DynamicRulesApi {
      * The maximum number of **unsafe** dynamic rules an extension can add.
      *
      * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES}
+     *
+     * @returns Maximum number of dynamic **unsafe** rules.
      */
     private static get MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES(): number {
         return 5000;
