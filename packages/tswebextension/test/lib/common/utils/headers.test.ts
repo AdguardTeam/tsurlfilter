@@ -86,6 +86,21 @@ describe('Headers utils', () => {
             },
         ], {
             name: 'test_name',
+            value: 'an_other_value',
+        });
+        expect(result).toBe(false);
+
+        result = hasHeader([
+            {
+                name: 'test_name',
+                value: 'test_value',
+            },
+            {
+                name: 'an_other_name',
+                value: 'an_other_value',
+            },
+        ], {
+            name: 'test_name',
             value: 'test_value',
         });
         expect(result).toBe(true);
