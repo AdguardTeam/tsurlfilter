@@ -21,9 +21,17 @@ enum StealthContentScriptId {
     DocumentReferrer = 'documentReferrer',
 }
 
+/**
+ * Extracted stealth setting from {@link SettingsConfigMV3} which can be used
+ * in MV3 and which will be returned as a result of the configuration, because
+ * during the configuration settings can because during the installation of the
+ * DNR rules, something may go wrong and the rule is not created - in this case,
+ * we will return the current configuration status unchanged.
+ */
 export type StealthConfigurationResult = Pick<
     StealthConfig,
-    'hideReferrer' | 'blockWebRTC' | 'blockChromeClientData' | 'sendDoNotTrack' | 'hideSearchQueries'>;
+    'hideReferrer' | 'blockWebRTC' | 'blockChromeClientData' | 'sendDoNotTrack' | 'hideSearchQueries'
+>;
 
 /**
  * Stealth service module.
