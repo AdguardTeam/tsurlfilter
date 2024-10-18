@@ -96,7 +96,7 @@ export default class RuleSetsLoaderApi {
             .map((rawString) => IndexedNetworkRuleWithHash.createFromNode(0, 0, RuleParser.parse(rawString)))
             .flat();
 
-        return new RuleSet(
+        const ruleset = new RuleSet(
             ruleSetId,
             rulesCount,
             regexpRulesCount,
@@ -104,5 +104,9 @@ export default class RuleSetsLoaderApi {
             badFilterRules,
             ruleSetHashMap,
         );
+
+        this.ruleSetsCache.set(ruleSetId, ruleset);
+
+        return ruleset;
     }
 }
