@@ -1,7 +1,7 @@
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
-
 import { type WebRequest } from 'webextension-polyfill';
+
 import type { SettingsConfigMV3 } from '../configuration';
 import { searchEngineDomains } from './searchEngineDomains';
 import { logger } from '../../../common/utils/logger';
@@ -105,7 +105,7 @@ export class StealthService {
      * Temporary flag that used to identify is stealth `Hide Referrer`
      * and `Hide Search Queries` checkboxes is presented or not.
      *
-     * TODO: After reverting that checkboxes we should remove it.
+     * TODO: After reverting that checkboxes we should remove it (AG-34765).
      */
     private static readonly IS_REFERRER_CHECKBOX_PRESENT = false;
 
