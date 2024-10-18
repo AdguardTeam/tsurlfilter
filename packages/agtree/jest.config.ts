@@ -17,6 +17,9 @@ const config: Config = {
         './test/helpers/',
         './test/matchers/',
     ],
+    modulePathIgnorePatterns: [
+        '<rootDir>/.rollup.cache/',
+    ],
 };
 
 export default config;

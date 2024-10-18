@@ -5,6 +5,9 @@
 // Parser
 export { RuleParser } from './parser/rule-parser';
 export { RuleSerializer } from './serializer/rule-serializer';
+export { RuleDeserializer } from './deserializer/rule-deserializer';
+export { RuleGenerator } from './generator/rule-generator';
+
 export {
     type Agent,
     type AgentCommentRule,
