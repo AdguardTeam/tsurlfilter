@@ -110,8 +110,6 @@ export class StealthService {
      *
      * @param isReferrerHidden Flag that determines if the referrer should be hidden.
      *
-     * @throws Error if something went wrong.
-     *
      * @returns Promise that resolves with current state of the referrer header.
      */
     public static async setHideReferrer(isReferrerHidden: boolean): Promise<boolean> {
@@ -157,8 +155,6 @@ export class StealthService {
      * `X-Client-Data` header from every request.
      *
      * @param isBlockChromeClientData Flag that determines if the `X-Client-Data` header is removed.
-     *
-     * @throws Error if something went wrong.
      *
      * @returns Promise that resolves with current state of the referrer header.
      */
@@ -207,8 +203,6 @@ export class StealthService {
      *
      * @param isSendDoNotTrack Flag that determines if the `Do Not Track` and `Global Privacy Control` signals is set.
      * @param gpcScriptUrl Path to content script for injecting GPC signal.
-     *
-     * @throws Error if something went wrong.
      *
      * @returns Promise that resolves with current state of the referrer header.
      */

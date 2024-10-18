@@ -392,12 +392,10 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Configuration not set');
         }
 
-        const successfully = await StealthService.setHideReferrer(isHideReferrer);
-        if (successfully) {
-            this.configuration.settings.stealth.hideReferrer = isHideReferrer;
-        }
+        const currentValue = await StealthService.setHideReferrer(isHideReferrer);
+        this.configuration.settings.stealth.hideReferrer = currentValue;
 
-        return successfully;
+        return currentValue;
     }
 
     /**
@@ -414,12 +412,10 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Configuration not set');
         }
 
-        const successfully = await StealthService.setDisableWebRTC(isBlockWebRTC);
-        if (successfully) {
-            this.configuration.settings.stealth.blockWebRTC = isBlockWebRTC;
-        }
+        const currentValue = await StealthService.setDisableWebRTC(isBlockWebRTC);
+        this.configuration.settings.stealth.blockWebRTC = currentValue;
 
-        return successfully;
+        return currentValue;
     }
 
     /**
@@ -435,12 +431,10 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Configuration not set');
         }
 
-        const successfully = await StealthService.setBlockChromeClientData(isBlockChromeClientData);
-        if (successfully) {
-            this.configuration.settings.stealth.blockChromeClientData = isBlockChromeClientData;
-        }
+        const currentValue = await StealthService.setBlockChromeClientData(isBlockChromeClientData);
+        this.configuration.settings.stealth.blockChromeClientData = currentValue;
 
-        return successfully;
+        return currentValue;
     }
 
     /**
@@ -456,15 +450,13 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Configuration not set');
         }
 
-        const successfully = await StealthService.setSendDoNotTrack(
+        const currentValue = await StealthService.setSendDoNotTrack(
             isSendDoNotTrack,
             this.configuration.settings.gpcScriptUrl,
         );
-        if (successfully) {
-            this.configuration.settings.stealth.sendDoNotTrack = isSendDoNotTrack;
-        }
+        this.configuration.settings.stealth.sendDoNotTrack = currentValue;
 
-        return successfully;
+        return currentValue;
     }
 
     /**
@@ -480,16 +472,14 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Configuration not set');
         }
 
-        const successfully = await StealthService.setHideSearchQueries(
+        const currentValue = await StealthService.setHideSearchQueries(
             isHideSearchQueries,
             this.configuration.settings.hideDocumentReferrerScriptUrl,
         );
 
-        if (successfully) {
-            this.configuration.settings.stealth.hideSearchQueries = isHideSearchQueries;
-        }
+        this.configuration.settings.stealth.hideSearchQueries = currentValue;
 
-        return successfully;
+        return currentValue;
     }
 
     /**
