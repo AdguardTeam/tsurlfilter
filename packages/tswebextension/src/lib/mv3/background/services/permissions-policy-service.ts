@@ -83,6 +83,9 @@ export class PermissionsPolicyService {
                     type: FilteringEventType.ApplyPermissionsRule,
                     data: {
                         tabId,
+                        // for proper filtering log request info rule displaying
+                        // event id should be unique for each event, not copied from request
+                        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341
                         eventId: nanoid(),
                         requestUrl,
                         frameUrl: referrerUrl,
