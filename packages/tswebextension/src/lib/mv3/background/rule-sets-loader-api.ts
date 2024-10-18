@@ -16,6 +16,12 @@ import browser from 'webextension-polyfill';
  */
 export default class RuleSetsLoaderApi {
     /**
+     * Cache for already created rulesets. Needed to avoid multiple loading
+     * of the same ruleset.
+     */
+    private ruleSetsCache: Map<string, IRuleSet>;
+
+    /**
      * Path to rule sets directory.
      */
     private ruleSetsPath: string;
@@ -27,11 +33,14 @@ export default class RuleSetsLoaderApi {
      */
     constructor(ruleSetsPath: string) {
         this.ruleSetsPath = ruleSetsPath;
+        this.ruleSetsCache = new Map();
     }
 
     /**
-     * Creates a new {@link IRuleSet} from the provided ID and list of
-     * {@link IFilter|filters} with lazy loading of this rule set contents.
+     * If the rule set with the provided ID is already loaded, it will
+     * be returned from the cache. Otherwise, it will create a new {@link IRuleSet}
+     * from the provided ID and list of {@link IFilter|filters} with lazy
+     * loading of this rule set contents.
      *
      * @param ruleSetId Rule set id.
      * @param filterList List of all available {@link IFilter|filters}.
@@ -42,6 +51,11 @@ export default class RuleSetsLoaderApi {
         ruleSetId: string,
         filterList: IFilter[],
     ): Promise<IRuleSet> {
+        const ruleSetCache = this.ruleSetsCache.get(ruleSetId);
+        if (ruleSetCache) {
+            return ruleSetCache;
+        }
+
         const loadFileText = async (url: string): Promise<string> => {
             const file = await fetch(url);
 

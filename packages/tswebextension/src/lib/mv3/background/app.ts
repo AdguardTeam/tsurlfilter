@@ -594,9 +594,11 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Cannot find declarative_net_request in manifest');
         }
 
-        const staticRuleSetsTasks = staticFilters.map((f) => {
-            const ruleSetId = `${RULE_SET_NAME_PREFIX}${f.getId()}`;
-            return ruleSetsLoaderApi.createRuleSet(ruleSetId, staticFilters);
+        // Note: we cannot create rulesets only for enabled filters because we
+        // need to get all rulesets' counters for checking limits on the client.
+        const manifestRuleSets = manifest.declarative_net_request.rule_resources;
+        const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
+            return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
         });
 
         try {
