@@ -1,4 +1,4 @@
-import { findHeaderByName, removeHeader } from '../../../../../src/lib/mv2/background/utils';
+import { findHeaderByName, removeHeader } from '../../../../src/lib/common/utils/headers';
 
 describe('Headers utils', () => {
     it('finds header by name', () => {
