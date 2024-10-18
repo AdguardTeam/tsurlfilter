@@ -19,7 +19,12 @@ export default class RuleSetsLoaderApi {
      * Cache for already created rulesets. Needed to avoid multiple loading
      * of the same ruleset.
      */
-    private ruleSetsCache: Map<string, IRuleSet>;
+    private static ruleSetsCache: Map<string, IRuleSet>;
+
+    /**
+     * Path to rule sets cache directory to invalidate it when path changes.
+     */
+    private static ruleSetsCachePath: string;
 
     /**
      * Path to rule sets directory.
@@ -33,7 +38,11 @@ export default class RuleSetsLoaderApi {
      */
     constructor(ruleSetsPath: string) {
         this.ruleSetsPath = ruleSetsPath;
-        this.ruleSetsCache = new Map();
+
+        if (RuleSetsLoaderApi.ruleSetsCachePath !== ruleSetsPath) {
+            RuleSetsLoaderApi.ruleSetsCachePath = ruleSetsPath;
+            RuleSetsLoaderApi.ruleSetsCache = new Map();
+        }
     }
 
     /**
@@ -51,7 +60,7 @@ export default class RuleSetsLoaderApi {
         ruleSetId: string,
         filterList: IFilter[],
     ): Promise<IRuleSet> {
-        const ruleSetCache = this.ruleSetsCache.get(ruleSetId);
+        const ruleSetCache = RuleSetsLoaderApi.ruleSetsCache.get(ruleSetId);
         if (ruleSetCache) {
             return ruleSetCache;
         }
@@ -105,7 +114,7 @@ export default class RuleSetsLoaderApi {
             ruleSetHashMap,
         );
 
-        this.ruleSetsCache.set(ruleSetId, ruleset);
+        RuleSetsLoaderApi.ruleSetsCache.set(ruleSetId, ruleset);
 
         return ruleset;
     }
