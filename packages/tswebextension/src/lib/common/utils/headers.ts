@@ -54,11 +54,12 @@ export function hasHeader(headers: HttpHeaders, header: HttpHeadersItemType): bo
  * @returns True if headers were removed.
  */
 export function removeHeader(headers: HttpHeaders, headerName: string): boolean {
+    const lowerCaseHeaderName = headerName.toLowerCase();
     let removed = false;
 
     for (let i = headers.length - 1; i >= 0; i -= 1) {
         const header = headers[i];
-        if (header.name.toLowerCase() === headerName.toLowerCase()) {
+        if (header.name.toLowerCase() === lowerCaseHeaderName) {
             headers.splice(i, 1);
             removed = true;
         }
