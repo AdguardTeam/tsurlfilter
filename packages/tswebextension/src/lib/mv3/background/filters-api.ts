@@ -32,7 +32,7 @@ export default class FiltersApi {
      * Cache for already created filters. Needed to avoid multiple loading
      * of the same filter.
      */
-    static filtersCache: Map<number, IFilter> = new Map();
+    private static filtersCache: Map<number, IFilter> = new Map();
 
     /**
      * Enables or disables the provided rule set identifiers.

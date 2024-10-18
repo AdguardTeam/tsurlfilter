@@ -13,7 +13,7 @@ import { appContext } from './app-context';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
-import FiltersApi, { RULE_SET_NAME_PREFIX, type UpdateStaticFiltersResult } from './filters-api';
+import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
@@ -594,9 +594,11 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Cannot find declarative_net_request in manifest');
         }
 
-        const staticRuleSetsTasks = staticFilters.map((f) => {
-            const ruleSetId = `${RULE_SET_NAME_PREFIX}${f.getId()}`;
-            return ruleSetsLoaderApi.createRuleSet(ruleSetId, staticFilters);
+        // Note: we cannot create rulesets only for enabled filters because we
+        // need to get all rulesets' counters for checking limits on the client.
+        const manifestRuleSets = manifest.declarative_net_request.rule_resources;
+        const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
+            return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
         });
 
         try {
