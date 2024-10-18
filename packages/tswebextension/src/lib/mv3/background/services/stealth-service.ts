@@ -102,10 +102,10 @@ export class StealthService {
     private static readonly IS_ALLOWLIST_IMPLEMENTED = false;
 
     /**
-     * Temporary flag that used to identify is stealth `Hide Referrer` checkbox
-     * is presented or not.
+     * Temporary flag that used to identify is stealth `Hide Referrer`
+     * and `Hide Search Queries` checkboxes is presented or not.
      *
-     * TODO: After reverting that checkbox we should remove it.
+     * TODO: After reverting that checkboxes we should remove it.
      */
     private static readonly IS_REFERRER_CHECKBOX_PRESENT = false;
 
@@ -181,7 +181,7 @@ export class StealthService {
 
         // Removes `Referrer` header in case of search engine is referrer
         const isMainFrame = requestType === RequestType.Document;
-        if (isMainFrame && hideSearchQueries) {
+        if (StealthService.IS_REFERRER_CHECKBOX_PRESENT && isMainFrame && hideSearchQueries) {
             const disablingRule = matchingResult?.getStealthRule(StealthOptionName.HideSearchQueries);
             if (StealthService.IS_ALLOWLIST_IMPLEMENTED && disablingRule) {
                 appliedAllowlistRules.add(disablingRule);
