@@ -1,8 +1,26 @@
-import { preprocessedFilterListValidator, type PreprocessedFilterList } from '@adguard/tswebextension/mv3';
 import { z } from 'zod';
-import { logger } from '../../utils/logger';
-import { getErrorMessage } from '../../utils/error';
-import { filtersIdbStorage } from './shared-instances';
+import { type PreprocessedFilterList, preprocessedFilterListValidator } from '@adguard/tsurlfilter';
+import { logger } from '../utils/logger';
+import { IDBStorage } from './core/idb-storage';
+
+/**
+ * The name of the IndexedDB database for AdGuard API.
+ */
+const ADGUARD_API_IDB_NAME = 'adguardApiIDB';
+
+/**
+ * The name of the filters database within the AdGuard API IndexedDB.
+ */
+const ADGUARD_API_FILTERS_DB_NAME = 'filters';
+
+/**
+ * An instance of IDBStorage for storing filter data.
+ */
+export const filtersIdbStorage = new IDBStorage(
+    ADGUARD_API_FILTERS_DB_NAME,
+    IDBStorage.DEFAULT_IDB_VERSION,
+    ADGUARD_API_IDB_NAME,
+);
 
 /**
  * Provides a storage for filter lists.
@@ -45,7 +63,7 @@ export class FiltersStorage {
                 throw new Error('Transaction failed');
             }
         } catch (e) {
-            logger.error(`Failed to set multiple filter data, got error: ${getErrorMessage(e)}`);
+            logger.error('Failed to set multiple filter data, got error:', e);
             throw e;
         }
     }
@@ -69,7 +87,7 @@ export class FiltersStorage {
 
             return preprocessedFilterListValidator.parse(filter);
         } catch (e) {
-            logger.error(`Failed to get filter data for filter id ${filterId}, got error:`, getErrorMessage(e));
+            logger.error(`Failed to get filter data for filter id ${filterId}, got error:`, e);
             throw e;
         }
     }
@@ -94,7 +112,7 @@ export class FiltersStorage {
                 throw new Error('Transaction failed');
             }
         } catch (e) {
-            logger.error(`Failed to set multiple filter checksums, got error: ${getErrorMessage(e)}`);
+            logger.error('Failed to set multiple filter checksums, got error:', e);
             throw e;
         }
     }
@@ -118,7 +136,7 @@ export class FiltersStorage {
 
             return z.string().parse(checksum);
         } catch (e) {
-            logger.error(`Failed to get filter checksum for filter id ${filterId}, got error:`, getErrorMessage(e));
+            logger.error(`Failed to get filter checksum for filter id ${filterId}, got error:`, e);
             throw e;
         }
     }

@@ -42,6 +42,7 @@ import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { FiltersStorage } from '../../common/storage/filters';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -93,8 +94,7 @@ export class TsWebExtension implements AppInterface<
     ConfigurationMV3,
     ConfigurationMV3Context,
     ConfigurationResult,
-    MessagesHandlerMV3,
-    LoadFilterContent
+    MessagesHandlerMV3
 > {
     /**
      * Fires on filtering log event.
@@ -133,11 +133,6 @@ export class TsWebExtension implements AppInterface<
     isStarted = false;
 
     /**
-     * Lazy load filter content.
-     */
-    filterContentLoader: LoadFilterContent | undefined;
-
-    /**
      * Stores the initialize promise to prevent multiple initialize calls when
      * a large number of messages are received when the service worker
      * starts or wakes up.
@@ -162,20 +157,92 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
+     * Syncs specified filters with the extension storage.
+     *
+     * This method is needed to update the extension storage with the latest filters content.
+     *
+     * @param filterIds Filter identifiers to sync.
+     * @param ruleSetsPath Path to the rulesets.
+     *
+     * @returns Promise that resolves when the sync is finished.
+     */
+    private static async syncFiltersWithStorage(filterIds: number[], ruleSetsPath: string): Promise<void> {
+        logger.info('Syncing enabled filters with the extension storage');
+
+        const filters: Record<number, PreprocessedFilterList> = {};
+        const checksums: Record<number, string> = {};
+
+        // Ruleset JSON files might be updated, so we need to update preprocessed filter list in the extension storage
+        for (const rulesetId of filterIds) {
+            // Get up-to-date preprocessed filter list
+            try {
+                // eslint-disable-next-line no-await-in-loop
+                const [ruleSetChecksum, ruleSetChecksumStorage] = await Promise.all([
+                    TsWebExtension.getChecksum(rulesetId, ruleSetsPath),
+                    FiltersStorage.getChecksum(rulesetId),
+                ]);
+
+                if (ruleSetChecksum === ruleSetChecksumStorage) {
+                    logger.info(`Filter with id ${rulesetId} is up-to-date, skipping the update`);
+                    continue;
+                }
+
+                // eslint-disable-next-line no-await-in-loop
+                const preprocessed = await TsWebExtension.getPreprocessedFilterList(rulesetId, ruleSetsPath);
+
+                filters[rulesetId] = preprocessed;
+
+                if (ruleSetChecksum) {
+                    checksums[rulesetId] = ruleSetChecksum;
+                }
+            } catch (e) {
+                logger.error(`Failed to update filter with id ${rulesetId}. Got error: ${getErrorMessage(e)}`);
+            }
+        }
+
+        if (Object.keys(filters).length > 0) {
+            await FiltersStorage.setMultipleFilters(filters);
+            await FiltersStorage.setMultipleChecksums(checksums);
+        }
+
+        logger.info(`Synced the following filters: ${filterIds.join(', ')}`);
+    }
+
+    /**
+     * Loads filter content by filter id.
+     *
+     * @param filterId Filter identifier to load content for.
+     *
+     * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
+     * or null if the filter is not found.
+     *
+     * @throws Error if the filter content cannot be loaded.
+     */
+    private static loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
+        try {
+            const result = await FiltersStorage.getFilter(filterId);
+
+            if (!result) {
+                throw new Error(`Filter with id ${filterId} not found`);
+            }
+
+            return result;
+        } catch (e) {
+            throw new Error(`Failed to load filter content: ${e}`);
+        }
+    };
+
+    /**
      * Starts the configuration process, keeping the promise to prevent multiple
      * initialize calls, and executes scripts after configuration.
      *
      * @param config {@link ConfigurationMV3} Configuration object which contains all
      * needed information to start.
-     * @param loadFilterContent Lazy load filter content function.
      *
      * @returns Promise resolved with result of configuration
      * {@link ConfigurationResult}.
      */
-    private async innerStart(
-        config: ConfigurationMV3,
-        loadFilterContent: LoadFilterContent,
-    ): Promise<ConfigurationResult> {
+    private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
         logger.debug('[tswebextension.innerStart]: start');
 
         if (!appContext.startTimeMs) {
@@ -183,7 +250,7 @@ export class TsWebExtension implements AppInterface<
         }
 
         try {
-            const res = await this.configure(config, loadFilterContent);
+            const res = await this.configure(config);
 
             // Start listening for request events.
             RequestEvents.init();
@@ -222,14 +289,10 @@ export class TsWebExtension implements AppInterface<
      * example: cosmetic rules in iframes.
      *
      * @param config {@link ConfigurationMV3} Configuration object to start with.
-     * @param loadFilterContent Lazy load filter content function.
      *
      * @returns Promise resolved with result of configuration {@link ConfigurationResult}.
      */
-    public async start(
-        config: ConfigurationMV3,
-        loadFilterContent: LoadFilterContent,
-    ): Promise<ConfigurationResult> {
+    public async start(config: ConfigurationMV3): Promise<ConfigurationResult> {
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 
@@ -247,7 +310,7 @@ export class TsWebExtension implements AppInterface<
         }
 
         // Call and wait for promise for allow multiple calling start
-        this.startPromise = this.innerStart(config, loadFilterContent);
+        this.startPromise = this.innerStart(config);
         return this.startPromise;
     }
 
@@ -299,7 +362,6 @@ export class TsWebExtension implements AppInterface<
      * rules.
      *
      * @param config A {@link ConfigurationMV3} to apply.
-     * @param loadFilterContent Lazy load filter content function.
      *
      * @returns ConfigurationResult {@link ConfigurationResult} which contains:
      * - list of errors for static filters, if any of them has been thrown
@@ -308,15 +370,8 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
-    public async configure(
-        config: ConfigurationMV3,
-        loadFilterContent?: LoadFilterContent,
-    ): Promise<ConfigurationResult> {
-        const loadFilterContentToUse = loadFilterContent || this.filterContentLoader;
-
-        if (!loadFilterContentToUse) {
-            throw new Error('Filter content loader is not set');
-        }
+    public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
+        await TsWebExtension.syncFiltersWithStorage(config.staticFiltersIds, config.ruleSetsPath);
 
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
@@ -343,7 +398,7 @@ export class TsWebExtension implements AppInterface<
                 customFilters,
                 filtersIdsToEnable,
                 filtersIdsToDisable,
-            } = await TsWebExtension.getFiltersUpdateInfo(configuration, loadFilterContentToUse);
+            } = await TsWebExtension.getFiltersUpdateInfo(configuration, TsWebExtension.loadFilterContent);
 
             // Update list of enabled static filters
             res.staticFiltersStatus = await FiltersApi.updateFiltering(
@@ -418,8 +473,6 @@ export class TsWebExtension implements AppInterface<
         }
 
         this.configuration = TsWebExtension.createConfigurationContext(configuration);
-
-        this.filterContentLoader = loadFilterContentToUse;
 
         // Update previously opened tabs with new rules - find for each tab
         // new main frame rule.

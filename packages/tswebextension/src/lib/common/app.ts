@@ -1,13 +1,12 @@
 import { type AnyRule } from '@adguard/agtree';
 import { type FilteringLogEvent } from './filtering-log';
-import { type EventChannelInterface } from './utils/channels';
+import { type EventChannelInterface } from './utils';
 
 export interface AppInterface<
     TConfiguration,
     TConfigurationContext,
     TConfigurationResult,
     TMessageHandler,
-    TFilterContentLoader = void,
 > {
     /**
      * Configuration context.
@@ -31,27 +30,18 @@ export interface AppInterface<
     onAssistantCreateRule: EventChannelInterface<string>;
 
     /**
-     * Lazy loader for filter content.
-     */
-    filterContentLoader?: TFilterContentLoader;
-
-    /**
      * Starts api.
      *
      * @param configuration App configuration.
      */
-    start: TFilterContentLoader extends void
-        ? (configuration: TConfiguration) => Promise<TConfigurationResult>
-        : (configuration: TConfiguration, filterContentLoader: TFilterContentLoader) => Promise<TConfigurationResult>;
+    start: (configuration: TConfiguration) => Promise<TConfigurationResult>;
 
     /**
      * Updates configuration.
      *
      * @param configuration App configuration.
      */
-    configure: TFilterContentLoader extends void
-        ? (configuration: TConfiguration) => Promise<TConfigurationResult>
-        : (configuration: TConfiguration, filterContentLoader?: TFilterContentLoader) => Promise<TConfigurationResult>;
+    configure: (configuration: TConfiguration) => Promise<TConfigurationResult>;
 
     /**
      * Stops api.

@@ -93,12 +93,6 @@ importers:
       '@adguard/tswebextension':
         specifier: workspace:^
         version: link:../tswebextension
-      idb:
-        specifier: ^8.0.0
-        version: 8.0.0
-      nanoid:
-        specifier: 4.0.2
-        version: 4.0.2
       zod:
         specifier: 3.22.4
         version: 3.22.4
@@ -124,9 +118,6 @@ importers:
       '@swc/jest':
         specifier: ^0.2.36
         version: 0.2.36(@swc/core@1.7.23)
-      '@types/chrome':
-        specifier: ^0.0.277
-        version: 0.0.277
       '@types/jest':
         specifier: ^29.5.12
         version: 29.5.12
@@ -4860,13 +4851,6 @@ packages:
 
   /@types/chrome@0.0.272:
     resolution: {integrity: sha512-9cxDmmgyhXV8gsZvlRjqaDizNjIjbV0spsR0fIEaQUoHtbl9D8VkTOLyONgiBKK+guR38x5eMO3E3avUYOXwcQ==}
-    dependencies:
-      '@types/filesystem': 0.0.35
-      '@types/har-format': 1.2.15
-    dev: true
-
-  /@types/chrome@0.0.277:
-    resolution: {integrity: sha512-qoTgBcDWblSsX+jvFnpUlLUE3LAuOhZfBh9MyMWMQHDsQiYVgBvdZWu9COrdB9+aNnInEyXcFgfc2HE16sdSYQ==}
     dependencies:
       '@types/filesystem': 0.0.35
       '@types/har-format': 1.2.15
@@ -9781,8 +9765,8 @@ packages:
       eslint: ^7.32.0 || ^8.2.0
       eslint-plugin-import: ^2.25.3
     dependencies:
-      '@typescript-eslint/eslint-plugin': 6.21.0(@typescript-eslint/parser@6.13.1)(eslint@8.54.0)(typescript@5.4.2)
-      '@typescript-eslint/parser': 6.13.1(eslint@8.54.0)(typescript@5.4.2)
+      '@typescript-eslint/eslint-plugin': 6.21.0(@typescript-eslint/parser@6.13.1)(eslint@8.54.0)(typescript@5.4.5)
+      '@typescript-eslint/parser': 6.13.1(eslint@8.54.0)(typescript@5.4.5)
       eslint: 8.54.0
       eslint-config-airbnb-base: 15.0.0(eslint-plugin-import@2.29.1)(eslint@8.54.0)
       eslint-plugin-import: 2.29.1(@typescript-eslint/parser@6.13.1)(eslint@8.54.0)
@@ -9965,7 +9949,7 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 6.13.1(eslint@8.54.0)(typescript@5.4.2)
+      '@typescript-eslint/parser': 6.13.1(eslint@8.54.0)(typescript@5.4.5)
       debug: 3.2.7
       eslint: 8.54.0
       eslint-import-resolver-node: 0.3.9
@@ -10205,7 +10189,7 @@ packages:
       '@typescript-eslint/parser':
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 6.13.1(eslint@8.54.0)(typescript@5.4.2)
+      '@typescript-eslint/parser': 6.13.1(eslint@8.54.0)(typescript@5.4.5)
       array-includes: 3.1.7
       array.prototype.findlastindex: 1.2.4
       array.prototype.flat: 1.3.2
@@ -13437,7 +13421,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@20.16.5)(typescript@5.6.2)
+      ts-node: 10.9.2(@swc/core@1.7.23)(@types/node@20.16.5)(typescript@5.4.5)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
