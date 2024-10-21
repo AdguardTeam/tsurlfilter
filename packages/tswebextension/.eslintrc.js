@@ -95,5 +95,6 @@ module.exports = {
             },
         ],
         'jsdoc/require-returns': ['error'],
+        'jsdoc/no-defaults': 'off',
     },
 };

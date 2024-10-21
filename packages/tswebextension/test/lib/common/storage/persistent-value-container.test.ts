@@ -1,10 +1,10 @@
-import browser from 'webextension-polyfill';
+import { BrowserStorage } from '../../../../src/lib/common/storage/core';
 import { PersistentValueContainer } from '../../../../src/lib/common/storage';
 
 describe('PersistentValueContainer', () => {
     const key = 'test-key';
     const value = 'test-value';
-    const api = browser.storage.local;
+    const api = new BrowserStorage<string>();
 
     it('should initialize the value', async () => {
         const container = new PersistentValueContainer(key, api);
@@ -24,14 +24,14 @@ describe('PersistentValueContainer', () => {
     });
 
     it('should throw an error if storage is not initialized', () => {
-        const container = new PersistentValueContainer(key, browser.storage.local);
+        const container = new PersistentValueContainer(key, new BrowserStorage<string>());
 
         expect(() => container.get()).toThrow('Storage not initialized');
         expect(() => container.set(value)).toThrow('Storage not initialized');
     });
 
     it('should throw an error if storage is already initialized', async () => {
-        const container = new PersistentValueContainer(key, browser.storage.local);
+        const container = new PersistentValueContainer(key, new BrowserStorage<string>());
         await container.init(value);
 
         await expect(container.init(value)).rejects.toThrow('Storage already initialized');
