@@ -11,12 +11,12 @@
 import { NotImplementedError } from '../../errors/not-implemented-error';
 import { type Node } from '../../nodes';
 import { type NodeConversionResult } from './conversion-result';
-import { ConverterBase } from './converter-base';
+import { BaseConverter } from './base-converter';
 
 /**
  * Basic class for rule converters
  */
-export class RuleConverterBase extends ConverterBase {
+export class RuleConverterBase extends BaseConverter {
     /**
      * Converts an adblock filtering rule to AdGuard format, if possible.
      *
