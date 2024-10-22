@@ -256,6 +256,7 @@ export class RuleSet implements IRuleSet {
      *
      * @param id Id of rule set.
      * @param rulesCount Number of rules.
+     * @param unsafeRulesCount Number of unsafe rules.
      * @param regexpRulesCount Number of regexp rules.
      * @param ruleSetContentProvider Rule set content provider.
      * @param badFilterRules List of rules with $badfilter modifier.

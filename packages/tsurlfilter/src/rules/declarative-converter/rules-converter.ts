@@ -98,7 +98,12 @@ import { RemoveHeaderRulesConverter } from './grouped-rules-converters/remove-he
 import { CspRulesConverter } from './grouped-rules-converters/csp-converter';
 import { type Source } from './source-map';
 import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
-import { type LimitationError, TooManyRulesError, TooManyRegexpRulesError, TooManyUnsafeRulesError } from './errors/limitation-errors';
+import {
+    type LimitationError,
+    TooManyRulesError,
+    TooManyRegexpRulesError,
+    TooManyUnsafeRulesError,
+} from './errors/limitation-errors';
 import { BadFilterRulesConverter } from './grouped-rules-converters/bad-filter-converter';
 import { DeclarativeRulesGrouper, type GroupedRules, RulesGroup } from './rules-grouper';
 import { type DeclarativeConverterOptions } from './declarative-converter-options';
@@ -127,7 +132,7 @@ export class DeclarativeRulesConverter {
         RuleActionType.ALLOW,
         RuleActionType.ALLOW_ALL_REQUESTS,
         RuleActionType.UPGRADE_SCHEME,
-    ])
+    ]);
 
     /**
      * Describes for which group of rules which converter should be used.
@@ -396,8 +401,8 @@ export class DeclarativeRulesConverter {
             }
 
             if (
-                maxNumberOfUnsafeRules &&
-                unsafeRulesCounter > maxNumberOfUnsafeRules
+                maxNumberOfUnsafeRules
+                && unsafeRulesCounter > maxNumberOfUnsafeRules
             ) {
                 const msg = 'After conversion, too many unsafe rules remain: '
                     + `${unsafeRulesCounter} exceeds `
