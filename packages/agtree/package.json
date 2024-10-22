@@ -40,15 +40,20 @@
             "import": "./dist/esm/parser/index.mjs",
             "require": "./dist/cjs/parser/index.js"
         },
+        "./generator": {
+            "types": "./dist/types/generator/index.d.ts",
+            "import": "./dist/esm/generator/index.mjs",
+            "require": "./dist/cjs/generator/index.js"
+        },
         "./serializer": {
             "types": "./dist/types/serializer/index.d.ts",
             "import": "./dist/esm/serializer/index.mjs",
             "require": "./dist/cjs/serializer/index.js"
         },
-        "./generator": {
-            "types": "./dist/types/generator/index.d.ts",
-            "import": "./dist/esm/generator/index.mjs",
-            "require": "./dist/cjs/generator/index.js"
+        "./deserializer": {
+            "types": "./dist/types/deserializer/index.d.ts",
+            "import": "./dist/esm/deserializer/index.mjs",
+            "require": "./dist/cjs/deserializer/index.js"
         }
     },
     "files": [
