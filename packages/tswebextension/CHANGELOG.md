@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## Unreleased
+
+### Changed
+
+- Updated `@adguard/agtree` to `v2.1.3`.
+
+## [2.0.4] - 2024-10-16
+
+### Fixed
+
+- Not unique `eventId` on `ApplyPermissionsRule` filtering log events.
+
+[2.0.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.4
+
 ## [2.0.3] - 2024-09-26
 
 ### Changed
@@ -133,7 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [1.0.26]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.26
 
-## [1.0.15] - 2024-05-23
+## [1.0.25] - 2024-05-23
 
 ## Fixed
 
@@ -165,9 +179,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Do not block "Should collapse" mechanism with `$popup` rules.
-
-[1.0.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.21
-
 
 [1.0.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.21
 
@@ -685,7 +696,7 @@ its setting [#2584].
 - Updated `@adguard/tsurlfilter` to `v2.1.5`.
 - Updated `@adguard/scriptlets` to `v1.9.57`.
 
-## Fixed
+### Fixed
 
 - Duplicate `eventId` of filtering events.
 
