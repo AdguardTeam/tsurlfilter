@@ -13,6 +13,7 @@ export {
     type LimitationError,
     MaxScannedRulesError,
     TooManyRegexpRulesError,
+    TooManyUnsafeRulesError,
     TooManyRulesError,
     UnavailableFilterSourceError,
     UnavailableRuleSetSourceError,
