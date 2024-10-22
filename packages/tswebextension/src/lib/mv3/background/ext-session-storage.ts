@@ -35,7 +35,7 @@ export class ExtSessionStorage extends ExtensionStorage<SessionStorageSchema> {
         // is launched outside the extension (case from partners)
         super(
             ExtSessionStorage.#DOMAIN,
-            browser?.storage?.session
+            browser.storage.session
                 ? new BrowserStorage<SessionStorageSchema>(browser.storage.session)
                 : new MemoryStorage<SessionStorageSchema>(),
         );

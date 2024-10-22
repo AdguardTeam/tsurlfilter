@@ -15,9 +15,7 @@ export class BrowserStorage<Data = unknown> implements ExtendedStorageInterface<
      *
      * @param storage The storage area to use.
      */
-    constructor(
-        storage: Storage.StorageArea = browser.storage.local,
-    ) {
+    constructor(storage: Storage.StorageArea = browser.storage.local) {
         this.storage = storage;
     }
 

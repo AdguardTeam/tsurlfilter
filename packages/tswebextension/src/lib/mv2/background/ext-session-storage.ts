@@ -34,7 +34,7 @@ export class ExtSessionStorage extends ExtensionStorage<SessionStorageSchema> {
         // Use memory storage as a fallback for old browsers.
         super(
             ExtSessionStorage.#DOMAIN,
-            browser?.storage?.session
+            browser.storage.session
                 ? new BrowserStorage<SessionStorageSchema>(browser.storage.session)
                 : new MemoryStorage<SessionStorageSchema>(),
         );
