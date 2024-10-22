@@ -26,6 +26,7 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
 
     #value!: Value;
 
+    // TODO: make required after the migration to event-driven background.
     #save?: () => void;
 
     #isInitialized = false;
