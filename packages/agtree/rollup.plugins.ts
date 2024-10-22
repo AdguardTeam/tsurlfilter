@@ -1,6 +1,7 @@
 import path from 'path';
 import { type Plugin } from 'rollup';
 import { fileURLToPath } from 'url';
+import { stringify } from 'javascript-stringify';
 
 import * as data from './src/compatibility-tables/compatibility-table-data';
 
@@ -29,9 +30,9 @@ export function compatibilityTablePlugin(): Plugin {
 
             if (id === targetPath) {
                 const transformedCode = `
-export const modifiersCompatibilityTableData = ${JSON.stringify(data.modifiersCompatibilityTableData)};
-export const redirectsCompatibilityTableData = ${JSON.stringify(data.redirectsCompatibilityTableData)};
-export const scriptletsCompatibilityTableData = ${JSON.stringify(data.scriptletsCompatibilityTableData)};
+export const modifiersCompatibilityTableData = ${stringify(data.modifiersCompatibilityTableData)};
+export const redirectsCompatibilityTableData = ${stringify(data.redirectsCompatibilityTableData)};
+export const scriptletsCompatibilityTableData = ${stringify(data.scriptletsCompatibilityTableData)};
 `;
 
                 return {
