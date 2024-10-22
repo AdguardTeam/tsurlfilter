@@ -9,7 +9,7 @@ import {
 } from '../../nodes';
 import {
     KNOWN_VARIABLES_MAP,
-    OPERATOR_BINARY_MAP,
+    LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP,
     OperatorNodeBinaryPropMarshallingMap,
     ParenthesisNodeBinaryPropMarshallingMap,
     VariableNodeBinaryPropMarshallingMap,
@@ -20,14 +20,15 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseDeserializer } from '../base-deserializer';
 
-let OPERATOR_BINARY_MAP_REVERSE:Map<number, OperatorValue>;
+let LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE: Map<number, OperatorValue>;
+
 const getOperatorBinaryMapReverse = () => {
-    if (!OPERATOR_BINARY_MAP_REVERSE) {
-        OPERATOR_BINARY_MAP_REVERSE = new Map<number, OperatorValue>(
-            Array.from(OPERATOR_BINARY_MAP).map(([key, value]) => [value, key]),
+    if (!LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE) {
+        LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE = new Map<number, OperatorValue>(
+            Array.from(LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP).map(([key, value]) => [value, key]),
         );
     }
-    return OPERATOR_BINARY_MAP_REVERSE;
+    return LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE;
 };
 
 /**

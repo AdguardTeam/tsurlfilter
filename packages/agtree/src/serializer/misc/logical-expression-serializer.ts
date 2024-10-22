@@ -11,7 +11,7 @@ import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
 import {
     KNOWN_VARIABLES_MAP,
-    OPERATOR_BINARY_MAP,
+    LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP,
     OperatorNodeBinaryPropMarshallingMap,
     ParenthesisNodeBinaryPropMarshallingMap,
     VariableNodeBinaryPropMarshallingMap,
@@ -105,7 +105,7 @@ export class LogicalExpressionSerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMap.ExpressionOperatorNode);
 
         buffer.writeUint8(OperatorNodeBinaryPropMarshallingMap.Operator);
-        const operatorBinary = OPERATOR_BINARY_MAP.get(node.operator);
+        const operatorBinary = LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP.get(node.operator);
         if (isUndefined(operatorBinary)) {
             throw new Error(`Unknown operator: ${node.operator}`);
         }
