@@ -1,6 +1,6 @@
 import { StringUtils } from '../../utils/string';
 import { type ParameterList } from '../../nodes';
-import { COMMA } from '../../utils/constants';
+import { COMMA, ESCAPE_CHARACTER } from '../../utils/constants';
 import { defaultParserOptions } from '../options';
 import { ValueParser } from './value-parser';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
@@ -60,13 +60,6 @@ export class UboParameterListParser extends ParameterListParser {
                     const nextSeparatorIndex = StringUtils.skipWS(raw, possibleClosingQuoteIndex + 1);
 
                     if (nextSeparatorIndex === length) {
-                        if (requireQuotes) {
-                            throw new AdblockSyntaxError(
-                                'Expected separator, got end of string',
-                                baseOffset + nextSeparatorIndex,
-                                baseOffset + length,
-                            );
-                        }
                         // If the separator is not found, the param end is the end of the string
                         paramEnd = StringUtils.skipWSBack(raw, length - 1) + 1;
                         offset = length;
@@ -82,13 +75,51 @@ export class UboParameterListParser extends ParameterListParser {
                                 baseOffset + length,
                             );
                         }
-                        // Param end should be the last separator before the quote
-                        offset = StringUtils.findNextUnescapedCharacterBackwards(
+
+                        /**
+                         * At that point found `possibleClosingQuoteIndex` is wrong
+                         * | is `offset`
+                         * ~ is `possibleClosingQuoteIndex`
+                         * ^ is `nextSeparatorIndex`
+                         *
+                         * Example 1: "abc, ').cba='1'"
+                         *                  |      ~^
+                         * Example 2: "abc, ').cba, '1'"
+                         *                  |       ~^
+                         * Example 3: "abc, ').cba='1', cba"
+                         *                  |      ~^
+                         *
+                         * Search for separator before `possibleClosingQuoteIndex`
+                         */
+
+                        const separatorIndexBeforeQuote = StringUtils.findNextUnescapedCharacterBackwards(
                             raw,
                             separator,
                             possibleClosingQuoteIndex,
-                        ) + 1;
-                        paramEnd = StringUtils.skipWSBack(raw, offset - 2) + 1;
+                            ESCAPE_CHARACTER,
+                            offset + 1,
+                        );
+                        if (separatorIndexBeforeQuote !== -1) {
+                            // Found separator before (Example 2)
+                            paramEnd = StringUtils.skipWSBack(raw, separatorIndexBeforeQuote - 1) + 1;
+                            offset = separatorIndexBeforeQuote + 1;
+                        } else {
+                            // Didn't found separator before, search after
+                            const separatorIndexAfterQuote = StringUtils.findNextUnescapedCharacter(
+                                raw,
+                                separator,
+                                possibleClosingQuoteIndex,
+                            );
+                            if (separatorIndexAfterQuote !== -1) {
+                                // We found separator after (Example 3)
+                                paramEnd = StringUtils.skipWSBack(raw, separatorIndexAfterQuote - 1) + 1;
+                                offset = separatorIndexAfterQuote + 1;
+                            } else {
+                                // If the separator is not found, the param end is the end of the string (Example 1)
+                                paramEnd = StringUtils.skipWSBack(raw, length - 1) + 1;
+                                offset = length;
+                            }
+                        }
                     }
                 } else {
                     if (requireQuotes) {
