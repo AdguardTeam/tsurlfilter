@@ -6,7 +6,7 @@ import { IDBStorage } from './core/idb-storage';
 /**
  * The name of the IndexedDB database for AdGuard API.
  */
-const ADGUARD_API_IDB_NAME = 'adguardApiIDB';
+const ADGUARD_API_IDB_NAME = 'tswebextensionIDB';
 
 /**
  * The name of the filters database within the AdGuard API IndexedDB.
