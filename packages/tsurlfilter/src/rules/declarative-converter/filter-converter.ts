@@ -410,9 +410,15 @@ export class DeclarativeFilterConverter implements IFilterConverter {
 
         const rulesHashMap = new RulesHashMap(listOfRulesWithHash);
 
+        // calculate number of unsafe rules only for dynamic rules
+        const unsafeRulesCount = DeclarativeFilterConverter.COMBINED_RULESET_ID === ruleSetId
+            ? declarativeRules.filter((r) => !DeclarativeRulesConverter.isSafeRule(r)).length
+            : 0;
+
         const ruleSet = new RuleSet(
             ruleSetId,
             declarativeRules.length,
+            unsafeRulesCount,
             declarativeRules.filter((d) => d.condition.regexFilter).length,
             ruleSetContent,
             badFilterRules,
