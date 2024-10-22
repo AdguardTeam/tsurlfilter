@@ -2,6 +2,7 @@ import { DeclarativeFilterConverter } from '../../../src/rules/declarative-conve
 import {
     MaxScannedRulesError,
     TooManyRulesError,
+    TooManyUnsafeRulesError,
 } from '../../../src/rules/declarative-converter/errors/limitation-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
@@ -544,14 +545,28 @@ describe('DeclarativeConverter', () => {
                 '||example.net^$removeheader=test',
             ]);
 
-            const { ruleSet } = await converter.convertDynamicRuleSets(
+            const maxNumberOfRules = 4;
+            const maxNumberOfUnsafeRules = 1;
+
+            const {
+                errors,
+                ruleSet,
+                limitations,
+                declarativeRulesToCancel,
+            } = await converter.convertDynamicRuleSets(
                 [filter],
                 [],
                 {
-                    maxNumberOfRules: 4,
-                    maxNumberOfUnsafeRules: 1,
+                    maxNumberOfRules,
+                    maxNumberOfUnsafeRules,
                 },
             );
+
+            // FIXME: add such checks for other tests
+            expect(ruleSet.getRulesCount()).toStrictEqual(3);
+            expect(ruleSet.getUnsafeRulesCount()).toStrictEqual(maxNumberOfUnsafeRules);
+            expect(ruleSet.getRegexpRulesCount()).toStrictEqual(0);
+
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             expect(declarativeRules).toHaveLength(3);
@@ -586,6 +601,15 @@ describe('DeclarativeConverter', () => {
                     resourceTypes: allResourcesTypes,
                 },
             });
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRulesToCancel).toHaveLength(0);
+
+            expect(limitations).toHaveLength(1);
+            const msg = 'After conversion, too many unsafe rules remain: '
+                + `2 exceeds the limit provided - ${maxNumberOfUnsafeRules}`;
+            const err = new TooManyUnsafeRulesError(msg, [2], maxNumberOfUnsafeRules, 1);
+            expect(limitations[0]).toStrictEqual(err);
         });
 
         it('in one filter — unsafe first but basic (safe) rules come first after conversion', async () => {
@@ -596,18 +620,30 @@ describe('DeclarativeConverter', () => {
                 '||example2.org^',
             ]);
 
-            const { ruleSet } = await converter.convertDynamicRuleSets(
+            const maxNumberOfRules = 4;
+            const maxNumberOfUnsafeRules = 1;
+
+            const {
+                errors,
+                ruleSet,
+                limitations,
+                declarativeRulesToCancel,
+            } = await converter.convertDynamicRuleSets(
                 [filter],
                 [],
                 {
-                    maxNumberOfRules: 4,
-                    maxNumberOfUnsafeRules: 1,
+                    maxNumberOfRules,
+                    maxNumberOfUnsafeRules,
                 },
             );
+
+            expect(ruleSet.getRulesCount()).toStrictEqual(3);
+            expect(ruleSet.getUnsafeRulesCount()).toStrictEqual(maxNumberOfUnsafeRules);
+            expect(ruleSet.getRegexpRulesCount()).toStrictEqual(0);
+
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             expect(declarativeRules).toHaveLength(3);
-
             // the order of rules are different because they are being sorted during conversion
             expect(declarativeRules[0]).toStrictEqual({
                 id: expect.any(Number),
@@ -640,24 +676,57 @@ describe('DeclarativeConverter', () => {
                     resourceTypes: allResourcesTypes,
                 },
             });
+
+            expect(errors).toHaveLength(0);
+            expect(declarativeRulesToCancel).toHaveLength(0);
+
+            expect(limitations).toHaveLength(1);
+
+            const actualErr = limitations[0];
+            const expectedMsg = 'After conversion, too many unsafe rules remain: '
+                + `2 exceeds the limit provided - ${maxNumberOfUnsafeRules}`;
+            const expectedErr = new TooManyUnsafeRulesError(expectedMsg, [53], maxNumberOfUnsafeRules, 1);
+
+            expect(actualErr).toStrictEqual(expectedErr);
+            expect(actualErr).toBeInstanceOf(TooManyUnsafeRulesError);
+            if (actualErr instanceof TooManyUnsafeRulesError) {
+                // toStrictEqual checks the structure and type but not the values
+                // so values should be checked explicitly
+                expect(actualErr.excludedRulesIds).toStrictEqual(expectedErr.excludedRulesIds);
+                expect(actualErr.numberOfMaximumRules).toStrictEqual(expectedErr.numberOfMaximumRules);
+            }
         });
 
         it('in one filter — some unsafe rules may not be included', async () => {
-            const filter = createFilter([
+            const rules = [
                 '||example.com^$removeheader=test',
                 '||example.net^$removeheader=test',
                 '||example1.org^',
                 '||example2.org^',
-            ]);
+            ];
+            const filter = createFilter(rules);
 
-            const { ruleSet } = await converter.convertDynamicRuleSets(
+            const maxNumberOfRules = 3;
+            const maxNumberOfUnsafeRules = 2;
+
+            const {
+                errors,
+                ruleSet,
+                limitations,
+                declarativeRulesToCancel,
+            } = await converter.convertDynamicRuleSets(
                 [filter],
                 [],
                 {
-                    maxNumberOfRules: 3,
-                    maxNumberOfUnsafeRules: 2,
+                    maxNumberOfRules,
+                    maxNumberOfUnsafeRules,
                 },
             );
+
+            expect(ruleSet.getRulesCount()).toStrictEqual(maxNumberOfRules);
+            expect(ruleSet.getUnsafeRulesCount()).toStrictEqual(1);
+            expect(ruleSet.getRegexpRulesCount()).toStrictEqual(0);
+
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             expect(declarativeRules).toHaveLength(3);
@@ -693,6 +762,29 @@ describe('DeclarativeConverter', () => {
                     resourceTypes: allResourcesTypes,
                 },
             });
+
+            const lineIndex = rules.slice(0, rules.length - 1).join('\n').length + 1;
+            const msg = `Maximum number of scanned network rules reached at line index ${lineIndex}.`;
+            expect(errors).toHaveLength(1);
+            expect(errors[0]).toEqual(new MaxScannedRulesError(msg, lineIndex));
+
+            expect(declarativeRulesToCancel).toHaveLength(0);
+
+            expect(limitations).toHaveLength(1);
+
+            const actualErr = limitations[0];
+            const expectedMsg = 'After conversion, too many declarative rules remain: '
+                + `4 exceeds the limit provided - ${maxNumberOfRules}`;
+            const expectedErr = new TooManyRulesError(expectedMsg, [53], maxNumberOfRules, 1);
+
+            expect(actualErr).toStrictEqual(expectedErr);
+            expect(actualErr).toBeInstanceOf(TooManyRulesError);
+            if (actualErr instanceof TooManyRulesError) {
+                // toStrictEqual checks the structure and type but not the values
+                // so values should be checked explicitly
+                expect(actualErr.excludedRulesIds).toStrictEqual(expectedErr.excludedRulesIds);
+                expect(actualErr.numberOfMaximumRules).toStrictEqual(expectedErr.numberOfMaximumRules);
+            }
         });
 
         it('in one filter — safe, unsafe, regex limits', async () => {
@@ -709,15 +801,24 @@ describe('DeclarativeConverter', () => {
                 '||example.org^$removeheader=test',
             ]);
 
+            const maxNumberOfRules = 10;
+            const maxNumberOfUnsafeRules = 2;
+            const maxNumberOfRegexpRules = 1;
+
             const { ruleSet } = await converter.convertDynamicRuleSets(
                 [filter],
                 [],
                 {
-                    maxNumberOfRules: 10,
-                    maxNumberOfUnsafeRules: 2,
-                    maxNumberOfRegexpRules: 1,
+                    maxNumberOfRules,
+                    maxNumberOfUnsafeRules,
+                    maxNumberOfRegexpRules,
                 },
             );
+
+            expect(ruleSet.getRulesCount()).toStrictEqual(7);
+            expect(ruleSet.getUnsafeRulesCount()).toStrictEqual(maxNumberOfUnsafeRules);
+            expect(ruleSet.getRegexpRulesCount()).toStrictEqual(maxNumberOfRegexpRules);
+
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             // 2 unsafe + 1 regex + 4 safe (simple basic) rules
@@ -806,15 +907,24 @@ describe('DeclarativeConverter', () => {
                 '||example.net^$removeheader=test',
             ]);
 
+            const maxNumberOfRules = 6;
+            const maxNumberOfUnsafeRules = 2;
+            const maxNumberOfRegexpRules = 1;
+
             const { ruleSet } = await converter.convertDynamicRuleSets(
                 [filter],
                 [],
                 {
-                    maxNumberOfRules: 6,
-                    maxNumberOfUnsafeRules: 2,
-                    maxNumberOfRegexpRules: 1,
+                    maxNumberOfRules,
+                    maxNumberOfUnsafeRules,
+                    maxNumberOfRegexpRules,
                 },
             );
+
+            expect(ruleSet.getRulesCount()).toStrictEqual(5);
+            expect(ruleSet.getUnsafeRulesCount()).toStrictEqual(maxNumberOfUnsafeRules);
+            expect(ruleSet.getRegexpRulesCount()).toStrictEqual(maxNumberOfRegexpRules);
+
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
             expect(declarativeRules).toHaveLength(5);

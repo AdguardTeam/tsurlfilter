@@ -61,6 +61,8 @@ describe('RuleSet', () => {
         return new RuleSet(
             'ruleSetId',
             declarativeRules.length,
+            // FIXME: add unsafeRulesCount
+            0,
             declarativeRules.filter((d) => d.condition.regexFilter).length,
             ruleSetContent,
             badFilterRules,
@@ -136,6 +138,7 @@ describe('RuleSet', () => {
         const {
             data: {
                 regexpRulesCount,
+                unsafeRulesCount,
                 rulesCount,
                 ruleSetHashMapRaw,
                 badFilterRulesRaw,
@@ -164,6 +167,7 @@ describe('RuleSet', () => {
         const deserializedRuleSet = new RuleSet(
             id,
             rulesCount,
+            unsafeRulesCount || 0,
             regexpRulesCount,
             ruleSetContentProvider,
             badFilterRules,
