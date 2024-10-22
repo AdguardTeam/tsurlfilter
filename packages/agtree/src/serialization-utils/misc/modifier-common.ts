@@ -24,7 +24,7 @@ export const enum ModifierNodeMarshallingMap {
  *
  * @note Only 256 values can be represented this way.
  */
-export const FREQUENT_MODIFIERS_SERIALIZATION_MAP = new Map<string, number>([
+export const FREQUENT_MODIFIERS_MARSHALLING_MAP = new Map<string, number>([
     ['_', 0],
     ['all', 1],
     ['app', 2],
@@ -104,7 +104,7 @@ export const FREQUENT_MODIFIERS_SERIALIZATION_MAP = new Map<string, number>([
  *
  * @note Only 256 values can be represented this way.
  */
-export const FREQUENT_REDIRECT_VALUES_SERIALIZATION_MAP = new Map<string, number>([
+export const FREQUENT_REDIRECT_VALUES_MARSHALLING_MAP = new Map<string, number>([
     // AdGuard
     ['1x1-transparent.gif', 0],
     ['2x2-transparent.png', 1],
@@ -225,10 +225,10 @@ export const FREQUENT_REDIRECT_VALUES_SERIALIZATION_MAP = new Map<string, number
  * @note This is a special map which allows us to use different value maps for different modifiers.
  */
 // FIXME: rename to better name
-export const FREQUENT_VALUES_SERIALIZATION_MAPS = new Map<string, Map<string, number>>([
-    ['redirect', FREQUENT_REDIRECT_VALUES_SERIALIZATION_MAP],
-    ['redirect-rule', FREQUENT_REDIRECT_VALUES_SERIALIZATION_MAP],
-    ['rewrite', FREQUENT_REDIRECT_VALUES_SERIALIZATION_MAP],
+export const FREQUENT_REDIRECT_MODIFIERS_MARSHALLING_MAP = new Map<string, Map<string, number>>([
+    ['redirect', FREQUENT_REDIRECT_VALUES_MARSHALLING_MAP],
+    ['redirect-rule', FREQUENT_REDIRECT_VALUES_MARSHALLING_MAP],
+    ['rewrite', FREQUENT_REDIRECT_VALUES_MARSHALLING_MAP],
 
     // TODO: Add other modifiers here
 ]);

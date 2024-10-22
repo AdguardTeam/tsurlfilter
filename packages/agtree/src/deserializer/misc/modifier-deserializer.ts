@@ -4,8 +4,8 @@ import { BinaryTypeMap, type Value, type Modifier } from '../../nodes';
 import { ValueDeserializer } from './value-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import {
-    FREQUENT_MODIFIERS_SERIALIZATION_MAP,
-    FREQUENT_VALUES_SERIALIZATION_MAPS,
+    FREQUENT_MODIFIERS_MARSHALLING_MAP,
+    FREQUENT_REDIRECT_MODIFIERS_MARSHALLING_MAP,
     ModifierNodeMarshallingMap,
 } from '../../serialization-utils/misc/modifier-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
@@ -20,7 +20,7 @@ let FREQUENT_MODIFIERS_DESERIALIZATION_MAP: Map<number, string>;
 const getFrequentModifiersDeserializationMap = () => {
     if (!FREQUENT_MODIFIERS_DESERIALIZATION_MAP) {
         FREQUENT_MODIFIERS_DESERIALIZATION_MAP = new Map<number, string>(
-            Array.from(FREQUENT_MODIFIERS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
+            Array.from(FREQUENT_MODIFIERS_MARSHALLING_MAP).map(([key, value]) => [value, key]),
         );
     }
     return FREQUENT_MODIFIERS_DESERIALIZATION_MAP;
@@ -35,7 +35,7 @@ const getFrequentValuesDeserializationMaps = () => {
     if (!FREQUENT_VALUES_DESERIALIZATION_MAPS) {
         FREQUENT_VALUES_DESERIALIZATION_MAPS = new Map<string, Map<number, string>>(
             Array.from(
-                FREQUENT_VALUES_SERIALIZATION_MAPS,
+                FREQUENT_REDIRECT_MODIFIERS_MARSHALLING_MAP,
                 ([modifier, valueMap]) => [modifier, new Map(Array.from(valueMap, ([key, value]) => [value, key]))],
             ),
         );

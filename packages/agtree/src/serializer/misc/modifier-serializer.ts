@@ -5,8 +5,8 @@ import { ValueSerializer } from './value-serializer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
 import {
-    FREQUENT_MODIFIERS_SERIALIZATION_MAP,
-    FREQUENT_VALUES_SERIALIZATION_MAPS,
+    FREQUENT_MODIFIERS_MARSHALLING_MAP,
+    FREQUENT_REDIRECT_MODIFIERS_MARSHALLING_MAP,
     ModifierNodeMarshallingMap,
 } from '../../serialization-utils/misc/modifier-common';
 
@@ -27,11 +27,11 @@ export class ModifierSerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMap.ModifierNode);
 
         buffer.writeUint8(ModifierNodeMarshallingMap.Name);
-        ValueSerializer.serialize(node.name, buffer, FREQUENT_MODIFIERS_SERIALIZATION_MAP);
+        ValueSerializer.serialize(node.name, buffer, FREQUENT_MODIFIERS_MARSHALLING_MAP);
 
         if (!isUndefined(node.value)) {
             buffer.writeUint8(ModifierNodeMarshallingMap.Value);
-            ValueSerializer.serialize(node.value, buffer, FREQUENT_VALUES_SERIALIZATION_MAPS.get(node.name.value));
+            ValueSerializer.serialize(node.value, buffer, FREQUENT_REDIRECT_MODIFIERS_MARSHALLING_MAP.get(node.name.value));
         }
 
         buffer.writeUint8(ModifierNodeMarshallingMap.Exception);

@@ -38,7 +38,7 @@ export const enum ParenthesisNodeBinaryPropMarshallingMap {
 }
 
 // FIXME find better name
-export const OPERATOR_BINARY_MAP = new Map<OperatorValue, number>([
+export const LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP = new Map<OperatorValue, number>([
     [OperatorValue.Not, 0],
     [OperatorValue.And, 1],
     [OperatorValue.Or, 2],
