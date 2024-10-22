@@ -31,7 +31,11 @@ export class ModifierSerializer extends BaseSerializer {
 
         if (!isUndefined(node.value)) {
             buffer.writeUint8(ModifierNodeMarshallingMap.Value);
-            ValueSerializer.serialize(node.value, buffer, FREQUENT_REDIRECT_MODIFIERS_MARSHALLING_MAP.get(node.name.value));
+            ValueSerializer.serialize(
+                node.value,
+                buffer,
+                FREQUENT_REDIRECT_MODIFIERS_MARSHALLING_MAP.get(node.name.value),
+            );
         }
 
         buffer.writeUint8(ModifierNodeMarshallingMap.Exception);
