@@ -208,6 +208,9 @@ importers:
       glob:
         specifier: ^9.3.2
         version: 9.3.5
+      javascript-stringify:
+        specifier: ^2.1.0
+        version: 2.1.0
       jest:
         specifier: ^29.5.0
         version: 29.7.0(@types/node@20.11.30)(ts-node@10.9.2)
@@ -8871,7 +8874,7 @@ packages:
     dependencies:
       confusing-browser-globals: 1.0.11
       eslint: 8.54.0
-      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@5.62.0)(eslint@8.54.0)
+      eslint-plugin-import: 2.29.1(@typescript-eslint/parser@6.13.1)(eslint@8.54.0)
       object.assign: 4.1.5
       object.entries: 1.1.8
       semver: 6.3.1
@@ -12102,6 +12105,10 @@ packages:
       chalk: 4.1.2
       filelist: 1.0.4
       minimatch: 3.1.2
+    dev: true
+
+  /javascript-stringify@2.1.0:
+    resolution: {integrity: sha512-JVAfqNPTvNq3sB/VHQJAFxN/sPgKnsKrCwyRt15zwNCdrMMJDdcEOdubuy+DuJYYdm0ox1J4uzEuYKkN+9yhVg==}
     dev: true
 
   /jed@1.1.1:
