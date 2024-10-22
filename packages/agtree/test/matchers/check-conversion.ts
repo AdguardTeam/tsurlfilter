@@ -1,8 +1,6 @@
 /**
  * @file Custom Jest matcher to check proper rule conversion
  */
-
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { z } from 'zod';
 
 import { type BaseConverter } from '../../src/converter/base-interfaces/base-converter';
