@@ -7,7 +7,7 @@
 import { createConversionResult, type ConversionResult } from './base-interfaces/conversion-result';
 import { RuleParser } from '../parser/rule-parser';
 import { RuleConverter } from './rule';
-import { ConverterBase } from './base-interfaces/converter-base';
+import { BaseConverter } from './base-interfaces/base-converter';
 import { RuleGenerator } from '../generator';
 
 /**
@@ -19,7 +19,7 @@ import { RuleGenerator } from '../generator';
  *
  * @todo Implement `convertToUbo` and `convertToAbp`
  */
-export class RawRuleConverter extends ConverterBase {
+export class RawRuleConverter extends BaseConverter {
     /**
      * Converts an adblock filtering rule to AdGuard format, if possible.
      *

@@ -63,7 +63,7 @@
         "node": ">=18"
     },
     "scripts": {
-        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && pnpm build-types",
+        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && pnpm build-types",
         "build-rollup": "pnpm rimraf dist && pnpm rollup --config rollup.config.ts --configPlugin typescript --bundleConfigAsCjs",
         "build-types": "tsc --project tsconfig.build.json",
         "build-txt": "tsx scripts/build-txt.ts",

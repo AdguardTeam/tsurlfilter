@@ -10,7 +10,7 @@ import {
     OPEN_PARENTHESIS,
 } from '../../utils/constants';
 import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css';
-import { ConverterBase } from '../base-interfaces/converter-base';
+import { BaseConverter } from '../base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
 import { CssTokenStream } from '../../parser/css/css-token-stream';
 
@@ -46,7 +46,7 @@ const PSEUDO_ELEMENT_NAMES = new Set<string>([
  *
  * @todo Implement `convertToUbo` and `convertToAbp`
  */
-export class CssSelectorConverter extends ConverterBase {
+export class CssSelectorConverter extends BaseConverter {
     /**
      * Converts Extended CSS elements to AdGuard-compatible ones
      *

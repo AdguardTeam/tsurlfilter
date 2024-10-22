@@ -5,7 +5,7 @@
 import { type Modifier, type ModifierList } from '../../nodes';
 import { SEMICOLON, SPACE } from '../../utils/constants';
 import { createModifierNode } from '../../ast-utils/modifiers';
-import { ConverterBase } from '../base-interfaces/converter-base';
+import { BaseConverter } from '../base-interfaces/base-converter';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { MultiValueMap } from '../../utils/multi-value-map';
 import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result';
@@ -113,7 +113,7 @@ const ADG_CONVERSION_MAP = new Map<string, ModifierConversion[]>([
  *
  * @todo Implement `convertToUbo` and `convertToAbp`
  */
-export class NetworkRuleModifierListConverter extends ConverterBase {
+export class NetworkRuleModifierListConverter extends BaseConverter {
     /**
      * Converts a network rule modifier list to AdGuard format, if possible.
      *
