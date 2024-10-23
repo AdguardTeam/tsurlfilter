@@ -3,7 +3,6 @@ import { NULL } from '../../utils/constants';
 import {
     type Agent,
     type AgentCommentRule,
-    BinaryTypeMap,
     CommentRuleType,
     RuleCategory,
 } from '../../nodes';
@@ -12,6 +11,7 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseDeserializer } from '../base-deserializer';
 import { AgentRuleMarshallingMap } from '../../serialization-utils/comment/agent-comment-common';
 import { AgentDeserializer } from './agent-deserializer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `AgentCommentDeserializer` is responsible for deserializing an Adblock agent comments.
@@ -43,7 +43,7 @@ export class AgentCommentDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<AgentCommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.AgentRuleNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.AgentRuleNode);
 
         node.type = CommentRuleType.AgentCommentRule;
         node.syntax = AdblockSyntax.Common;

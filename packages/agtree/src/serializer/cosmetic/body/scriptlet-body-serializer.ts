@@ -1,4 +1,4 @@
-import { BinaryTypeMap, type ScriptletInjectionRuleBody } from '../../../nodes';
+import { type ScriptletInjectionRuleBody } from '../../../nodes';
 import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
 import { NULL, UINT8_MAX } from '../../../utils/constants';
 import { ParameterListSerializer } from '../../misc/parameter-list-serializer';
@@ -7,6 +7,7 @@ import { BaseSerializer } from '../../base-serializer';
 import {
     AbpSnippetBodyMarshallingMap,
 } from '../../../serialization-utils/cosmetic/body/abp-snippet-injection-body-common';
+import { BinaryTypeMarshallingMap } from '../../../common/marshalling-common';
 
 export class ScriptletBodySerializer extends BaseSerializer {
     /**
@@ -22,7 +23,7 @@ export class ScriptletBodySerializer extends BaseSerializer {
         buffer: OutputByteBuffer,
         frequentScriptletArgs?: Map<string, number>,
     ): void => {
-        buffer.writeUint8(BinaryTypeMap.ScriptletInjectionRuleBodyNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ScriptletInjectionRuleBodyNode);
 
         const { length } = node.children;
         buffer.writeUint8(AbpSnippetBodyMarshallingMap.Children);

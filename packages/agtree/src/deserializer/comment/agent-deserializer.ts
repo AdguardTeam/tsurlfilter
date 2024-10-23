@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { NULL } from '../../utils/constants';
-import { BinaryTypeMap, type Value, type Agent } from '../../nodes';
+import { type Value, type Agent } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import {
@@ -9,6 +9,7 @@ import {
 } from '../../serialization-utils/comment/agent-common';
 import { getAdblockSyntax } from '../../common/agent-common';
 import { ValueDeserializer } from '../misc/value-deserializer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `AgentDeserializer` is responsible for deserializing single adblock agent elements.
@@ -31,7 +32,7 @@ export class AgentDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Agent>): void {
-        buffer.assertUint8(BinaryTypeMap.AgentNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.AgentNode);
 
         node.type = 'Agent';
 

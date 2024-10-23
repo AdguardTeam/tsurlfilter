@@ -1,9 +1,10 @@
 import { BaseSerializer } from '../base-serializer';
-import { BinaryTypeMap, type ListItem, ListItemNodeType } from '../../nodes';
+import { type ListItem, ListItemNodeType } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL } from '../../utils/constants';
 import { ListItemMarshallingMap } from '../../serialization-utils/misc/list-item-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 export class ListItemSerializer extends BaseSerializer {
     /**
@@ -16,19 +17,19 @@ export class ListItemSerializer extends BaseSerializer {
     public static serialize<T extends ListItemNodeType>(item: ListItem<T>, buffer: OutputByteBuffer): void {
         switch (item.type) {
             case ListItemNodeType.App:
-                buffer.writeUint8(BinaryTypeMap.AppNode);
+                buffer.writeUint8(BinaryTypeMarshallingMap.AppNode);
                 break;
 
             case ListItemNodeType.Domain:
-                buffer.writeUint8(BinaryTypeMap.DomainNode);
+                buffer.writeUint8(BinaryTypeMarshallingMap.DomainNode);
                 break;
 
             case ListItemNodeType.Method:
-                buffer.writeUint8(BinaryTypeMap.MethodNode);
+                buffer.writeUint8(BinaryTypeMarshallingMap.MethodNode);
                 break;
 
             case ListItemNodeType.StealthOption:
-                buffer.writeUint8(BinaryTypeMap.StealthOptionNode);
+                buffer.writeUint8(BinaryTypeMarshallingMap.StealthOptionNode);
                 break;
 
             default:

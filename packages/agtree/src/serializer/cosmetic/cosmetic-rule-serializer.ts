@@ -1,12 +1,7 @@
 import { AdblockSyntax } from '../../utils/adblockers';
 import { DomainListSerializer } from '../misc/domain-list-serializer';
 import { NULL } from '../../utils/constants';
-import {
-    type AnyCosmeticRule,
-    CosmeticRuleType,
-    BinaryTypeMap,
-    getSyntaxSerializationMap,
-} from '../../nodes';
+import { type AnyCosmeticRule, CosmeticRuleType, getSyntaxSerializationMap } from '../../nodes';
 import { AbpSnippetInjectionBodySerializer } from './body/abp-snippet-injection-body-serializer';
 import { UboScriptletInjectionBodySerializer } from './body/ubo-scriptlet-injection-body-serializer';
 import { AdgScriptletInjectionBodySerializer } from './body/adg-scriptlet-injection-body-serializer';
@@ -21,6 +16,7 @@ import {
     CosmeticRuleMarshallingMap,
     COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP,
 } from '../../serialization-utils/cosmetic/cosmetic-rule-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `CosmeticRuleParser` is responsible for parsing cosmetic rules.
@@ -51,7 +47,7 @@ export class CosmeticRuleSerializer extends BaseSerializer {
         switch (node.type) {
             case CosmeticRuleType.ElementHidingRule:
                 // rule type
-                buffer.writeUint8(BinaryTypeMap.ElementHidingRule);
+                buffer.writeUint8(BinaryTypeMarshallingMap.ElementHidingRule);
                 // syntax
                 buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body
@@ -60,7 +56,7 @@ export class CosmeticRuleSerializer extends BaseSerializer {
 
             case CosmeticRuleType.CssInjectionRule:
                 // rule type
-                buffer.writeUint8(BinaryTypeMap.CssInjectionRule);
+                buffer.writeUint8(BinaryTypeMarshallingMap.CssInjectionRule);
                 // syntax
                 buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body
@@ -69,7 +65,7 @@ export class CosmeticRuleSerializer extends BaseSerializer {
 
             case CosmeticRuleType.JsInjectionRule:
                 // rule type
-                buffer.writeUint8(BinaryTypeMap.JsInjectionRule);
+                buffer.writeUint8(BinaryTypeMarshallingMap.JsInjectionRule);
                 // syntax
                 buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body
@@ -78,7 +74,7 @@ export class CosmeticRuleSerializer extends BaseSerializer {
 
             case CosmeticRuleType.HtmlFilteringRule:
                 // rule type
-                buffer.writeUint8(BinaryTypeMap.HtmlFilteringRule);
+                buffer.writeUint8(BinaryTypeMarshallingMap.HtmlFilteringRule);
                 // syntax
                 buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body
@@ -87,7 +83,7 @@ export class CosmeticRuleSerializer extends BaseSerializer {
 
             case CosmeticRuleType.ScriptletInjectionRule:
                 // rule type
-                buffer.writeUint8(BinaryTypeMap.ScriptletInjectionRule);
+                buffer.writeUint8(BinaryTypeMarshallingMap.ScriptletInjectionRule);
                 // syntax
                 buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body

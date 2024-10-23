@@ -1,6 +1,5 @@
 import {
     type AnyRule,
-    BinaryTypeMap,
     type AnyCommentRule,
     type AnyCosmeticRule,
     type NetworkRule,
@@ -16,6 +15,7 @@ import { NetworkRuleDeserializer } from './network/network-rule-deserializer';
 import { EmptyRuleDeserializer } from './empty-rule-deserializer';
 import { InvalidRuleDeserializer } from './invalid-rule-deserializer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
+import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
 
 /**
  * `RuleDeserializer` is responsible for deserializing the rules.
@@ -33,36 +33,36 @@ export class RuleDeserializer extends BaseDeserializer {
         // lookup instead of storing +1 byte
         const type = buffer.peekUint8();
         switch (type) {
-            case BinaryTypeMap.AgentRuleNode:
-            case BinaryTypeMap.HintRuleNode:
-            case BinaryTypeMap.PreProcessorCommentRuleNode:
-            case BinaryTypeMap.MetadataCommentRuleNode:
-            case BinaryTypeMap.ConfigCommentRuleNode:
-            case BinaryTypeMap.CommentRuleNode:
+            case BinaryTypeMarshallingMap.AgentRuleNode:
+            case BinaryTypeMarshallingMap.HintRuleNode:
+            case BinaryTypeMarshallingMap.PreProcessorCommentRuleNode:
+            case BinaryTypeMarshallingMap.MetadataCommentRuleNode:
+            case BinaryTypeMarshallingMap.ConfigCommentRuleNode:
+            case BinaryTypeMarshallingMap.CommentRuleNode:
                 CommentRuleDeserializer.deserialize(buffer, node as AnyCommentRule);
                 break;
 
-            case BinaryTypeMap.ElementHidingRule:
-            case BinaryTypeMap.CssInjectionRule:
-            case BinaryTypeMap.ScriptletInjectionRule:
-            case BinaryTypeMap.HtmlFilteringRule:
-            case BinaryTypeMap.JsInjectionRule:
+            case BinaryTypeMarshallingMap.ElementHidingRule:
+            case BinaryTypeMarshallingMap.CssInjectionRule:
+            case BinaryTypeMarshallingMap.ScriptletInjectionRule:
+            case BinaryTypeMarshallingMap.HtmlFilteringRule:
+            case BinaryTypeMarshallingMap.JsInjectionRule:
                 CosmeticRuleDeserializer.deserialize(buffer, node as AnyCosmeticRule);
                 break;
 
-            case BinaryTypeMap.NetworkRuleNode:
+            case BinaryTypeMarshallingMap.NetworkRuleNode:
                 NetworkRuleDeserializer.deserialize(buffer, node as NetworkRule);
                 break;
 
-            case BinaryTypeMap.HostRuleNode:
+            case BinaryTypeMarshallingMap.HostRuleNode:
                 HostRuleDeserializer.deserialize(buffer, node as HostRule);
                 break;
 
-            case BinaryTypeMap.EmptyRule:
+            case BinaryTypeMarshallingMap.EmptyRule:
                 EmptyRuleDeserializer.deserialize(buffer, node as EmptyRule);
                 break;
 
-            case BinaryTypeMap.InvalidRule:
+            case BinaryTypeMarshallingMap.InvalidRule:
                 InvalidRuleDeserializer.deserialize(buffer, node as InvalidRule);
                 break;
 

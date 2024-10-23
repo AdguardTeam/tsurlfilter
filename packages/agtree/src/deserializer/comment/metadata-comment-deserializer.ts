@@ -2,7 +2,6 @@
 import { NULL } from '../../utils/constants';
 import {
     type MetadataCommentRule,
-    BinaryTypeMap,
     CommentRuleType,
     RuleCategory,
     type Value,
@@ -15,6 +14,7 @@ import {
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ValueDeserializer } from '../misc/value-deserializer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `MetadataCommentDeserializer` is responsible for deserializing metadata comments.
@@ -38,7 +38,7 @@ export class MetadataCommentDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<MetadataCommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.MetadataCommentRuleNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.MetadataCommentRuleNode);
 
         node.type = CommentRuleType.MetadataCommentRule;
         node.category = RuleCategory.Comment;

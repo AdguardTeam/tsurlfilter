@@ -1,10 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { type AnyRule, BinaryTypeMap, type FilterList } from '../nodes';
+import { type AnyRule, type FilterList } from '../nodes';
 import { NULL } from '../utils/constants';
 import { BaseDeserializer } from './base-deserializer';
 import { RuleDeserializer } from './rule-deserializer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
 import { FilterListNodeMarshallingMap } from '../serialization-utils/filter-list-common';
+import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
 
 export class FilterListDeserializer extends BaseDeserializer {
     /**
@@ -14,7 +15,7 @@ export class FilterListDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<FilterList>): void {
-        buffer.assertUint8(BinaryTypeMap.FilterListNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.FilterListNode);
 
         node.type = 'FilterList';
 
@@ -62,7 +63,7 @@ export class FilterListDeserializer extends BaseDeserializer {
      * @returns Number of children nodes.
      */
     public static jumpToChildren(buffer: InputByteBuffer): number {
-        buffer.assertUint8(BinaryTypeMap.FilterListNode); // filter list indicator
+        buffer.assertUint8(BinaryTypeMarshallingMap.FilterListNode); // filter list indicator
         let prop = buffer.readUint8();
 
         while (prop) {

@@ -1,5 +1,4 @@
 import {
-    BinaryTypeMap,
     type AnyExpressionNode,
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
@@ -16,6 +15,7 @@ import {
     ParenthesisNodeBinaryPropMarshallingMap,
     VariableNodeBinaryPropMarshallingMap,
 } from '../../serialization-utils/misc/logical-expression-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Possible node types in the logical expression.
@@ -46,7 +46,7 @@ export class LogicalExpressionSerializer extends BaseSerializer {
      */
     // TODO: create a common serialize / deserialize interface for such nodes (Variable, Value, Parameter, etc.)
     private static serializeVariableNode(node: ExpressionVariableNode, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ExpressionVariableNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ExpressionVariableNode);
 
         const frequentName = KNOWN_VARIABLES_MAP.get(node.name);
         if (!isUndefined(frequentName)) {
@@ -77,7 +77,7 @@ export class LogicalExpressionSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     private static serializeParenthesisNode(node: ExpressionParenthesisNode, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ExpressionParenthesisNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ExpressionParenthesisNode);
 
         buffer.writeUint8(ParenthesisNodeBinaryPropMarshallingMap.Expression);
         LogicalExpressionSerializer.serialize(node.expression, buffer);
@@ -102,7 +102,7 @@ export class LogicalExpressionSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     private static serializeOperatorNode(node: ExpressionOperatorNode, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ExpressionOperatorNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ExpressionOperatorNode);
 
         buffer.writeUint8(OperatorNodeBinaryPropMarshallingMap.Operator);
         const operatorBinary = LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP.get(node.operator);

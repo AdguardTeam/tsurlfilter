@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
 import {
-    BinaryTypeMap,
     type AnyExpressionNode,
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
@@ -19,6 +18,7 @@ import { NULL } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseDeserializer } from '../base-deserializer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 let LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE: Map<number, OperatorValue>;
 
@@ -66,7 +66,6 @@ const getKnownVariablesMapReverse = () => {
  * @returns Frequent name of the variable
  * @throws If the variable is unknown
  */
-// FIXME: maybe not needed or not here
 export const getFrequentNameOrFail = (binary: number): string => {
     const name = getKnownVariablesMapReverse().get(binary);
     if (isUndefined(name)) {
@@ -95,7 +94,7 @@ export class LogicalExpressionDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     private static deserializeVariableNode(buffer: InputByteBuffer, node: Partial<ExpressionVariableNode>): void {
-        buffer.assertUint8(BinaryTypeMap.ExpressionVariableNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ExpressionVariableNode);
 
         node.type = NodeType.Variable;
 
@@ -134,7 +133,7 @@ export class LogicalExpressionDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     private static deserializeParenthesisNode(buffer: InputByteBuffer, node: Partial<ExpressionParenthesisNode>): void {
-        buffer.assertUint8(BinaryTypeMap.ExpressionParenthesisNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ExpressionParenthesisNode);
 
         node.type = NodeType.Parenthesis;
 
@@ -169,7 +168,7 @@ export class LogicalExpressionDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     private static deserializeOperatorNode(buffer: InputByteBuffer, node: Partial<ExpressionOperatorNode>): void {
-        buffer.assertUint8(BinaryTypeMap.ExpressionOperatorNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ExpressionOperatorNode);
 
         node.type = NodeType.Operator;
 
@@ -217,21 +216,21 @@ export class LogicalExpressionDeserializer extends BaseDeserializer {
         let type = buffer.peekUint8();
         while (type !== NULL) {
             switch (type) {
-                case BinaryTypeMap.ExpressionVariableNode:
+                case BinaryTypeMarshallingMap.ExpressionVariableNode:
                     LogicalExpressionDeserializer.deserializeVariableNode(
                         buffer,
                         node as Partial<ExpressionVariableNode>,
                     );
                     break;
 
-                case BinaryTypeMap.ExpressionOperatorNode:
+                case BinaryTypeMarshallingMap.ExpressionOperatorNode:
                     LogicalExpressionDeserializer.deserializeOperatorNode(
                         buffer,
                         node as Partial<ExpressionOperatorNode>,
                     );
                     break;
 
-                case BinaryTypeMap.ExpressionParenthesisNode:
+                case BinaryTypeMarshallingMap.ExpressionParenthesisNode:
                     LogicalExpressionDeserializer.deserializeParenthesisNode(
                         buffer,
                         node as Partial<ExpressionParenthesisNode>,

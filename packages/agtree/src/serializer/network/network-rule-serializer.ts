@@ -1,11 +1,12 @@
 import { NULL } from '../../utils/constants';
-import { type NetworkRule, BinaryTypeMap, getSyntaxSerializationMap } from '../../nodes';
+import { type NetworkRule, getSyntaxSerializationMap } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { ValueSerializer } from '../misc/value-serializer';
 import { BaseSerializer } from '../base-serializer';
 import { ModifierListSerializer } from '../misc/modifier-list-serializer';
 import { NetworkRuleMarshallingMap } from '../../serialization-utils/network/network-rule-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `NetworkRuleSerializer` is responsible for serializing network rules.
@@ -22,7 +23,7 @@ export class NetworkRuleSerializer extends BaseSerializer {
      */
     // TODO: add support for raws, if ever needed
     public static serialize(node: NetworkRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.NetworkRuleNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.NetworkRuleNode);
 
         buffer.writeUint8(NetworkRuleMarshallingMap.Syntax);
         buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);

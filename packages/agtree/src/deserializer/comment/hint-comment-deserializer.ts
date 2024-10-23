@@ -2,7 +2,6 @@
 import { NULL } from '../../utils/constants';
 import {
     type HintCommentRule,
-    BinaryTypeMap,
     CommentRuleType,
     getSyntaxDeserializationMap,
     type Hint,
@@ -13,6 +12,7 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseDeserializer } from '../base-deserializer';
 import { HintRuleMarshallingMap } from '../../serialization-utils/comment/hint-comment-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `HintCommentDeserializer` is responsible for deserializing AdGuard hint rules.
@@ -34,7 +34,7 @@ export class HintCommentDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<HintCommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.HintRuleNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.HintRuleNode);
 
         node.category = RuleCategory.Comment;
         node.type = CommentRuleType.HintCommentRule;

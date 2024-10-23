@@ -1,10 +1,11 @@
 import { NULL, UINT16_MAX } from '../../utils/constants';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { BinaryTypeMap, type ModifierList } from '../../nodes';
+import { type ModifierList } from '../../nodes';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
 import { ModifierSerializer } from './modifier-serializer';
 import { ModifierListNodeMarshallingMap } from '../../serialization-utils/misc/modifier-list-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `ModifierListSerializer` is responsible for serializing modifier lists. Please note that the name is not
@@ -22,7 +23,7 @@ export class ModifierListSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: ModifierList, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ModifierListNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ModifierListNode);
 
         const count = node.children.length;
         if (count) {

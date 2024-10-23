@@ -1,10 +1,11 @@
 /* eslint-disable no-param-reassign */
 import { BaseDeserializer } from '../base-deserializer';
-import { BinaryTypeMap, type Value, type HostnameList } from '../../nodes';
+import { type Value, type HostnameList } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { HostnameListNodeMarshallingMap } from '../../serialization-utils/misc/hostname-list-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 export class HostnameListDeserializer extends BaseDeserializer {
     /**
@@ -14,7 +15,7 @@ export class HostnameListDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: HostnameList): void {
-        buffer.assertUint8(BinaryTypeMap.HostnameListNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.HostnameListNode);
 
         node.type = 'HostnameList';
 

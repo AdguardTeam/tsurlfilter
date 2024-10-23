@@ -1,10 +1,11 @@
 /* eslint-disable no-param-reassign */
 import { BaseDeserializer } from '../base-deserializer';
-import { BinaryTypeMap, type Value, type ElementHidingRuleBody } from '../../nodes';
+import { type Value, type ElementHidingRuleBody } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ElementHidingRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/element-hiding-body-common';
 import { ValueDeserializer } from '../misc/value-deserializer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 export class ElementHidingBodyDeserializer extends BaseDeserializer {
     /**
@@ -14,7 +15,7 @@ export class ElementHidingBodyDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserializeElementHidingBody(buffer: InputByteBuffer, node: Partial<ElementHidingRuleBody>): void {
-        buffer.assertUint8(BinaryTypeMap.ElementHidingRuleBody);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ElementHidingRuleBody);
 
         node.type = 'ElementHidingRuleBody';
 

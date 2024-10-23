@@ -1,11 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { NULL } from '../../utils/constants';
-import {
-    BinaryTypeMap,
-    type ParameterList,
-    type Value,
-    type Hint,
-} from '../../nodes';
+import { type ParameterList, type Value, type Hint } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import {
@@ -15,6 +10,7 @@ import {
 } from '../../serialization-utils/comment/hint-common';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { ParameterListDeserializer } from '../misc/parameter-list-deserializer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
@@ -67,7 +63,7 @@ export class HintDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Hint>): void {
-        buffer.assertUint8(BinaryTypeMap.HintNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.HintNode);
 
         node.type = 'Hint';
 

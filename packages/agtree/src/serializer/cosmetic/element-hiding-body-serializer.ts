@@ -1,10 +1,11 @@
 import { BaseSerializer } from '../base-serializer';
-import { BinaryTypeMap, type ElementHidingRuleBody } from '../../nodes';
+import { type ElementHidingRuleBody } from '../../nodes';
 import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL } from '../../utils/constants';
 import { ElementHidingRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/element-hiding-body-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 export class ElementHidingBodySerializer extends BaseSerializer {
     /**
@@ -14,7 +15,7 @@ export class ElementHidingBodySerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: ElementHidingRuleBody, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ElementHidingRuleBody);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ElementHidingRuleBody);
 
         buffer.writeUint8(ElementHidingRuleMarshallingMap.SelectorList);
         ValueSerializer.serialize(node.selectorList, buffer);

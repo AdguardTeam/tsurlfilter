@@ -1,9 +1,10 @@
-import { BinaryTypeMap, type Value } from '../../nodes';
+import { type Value } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { NULL } from '../../utils/constants';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
 import { ValueNodeMarshallingMap } from '../../serialization-utils/misc/value-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value serializer.
@@ -23,7 +24,7 @@ export class ValueSerializer extends BaseSerializer {
         frequentValuesMap?: Map<string, number>,
         toLower = false,
     ): void {
-        buffer.writeUint8(BinaryTypeMap.ValueNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ValueNode);
 
         const frequentValue = frequentValuesMap?.get(toLower ? node.value.toLowerCase() : node.value);
         // note: do not use just `if (frequentValue)` because it can be 0

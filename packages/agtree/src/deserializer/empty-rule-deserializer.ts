@@ -1,10 +1,11 @@
 /* eslint-disable no-param-reassign */
 import { BaseDeserializer } from './base-deserializer';
-import { BinaryTypeMap, RuleCategory, type EmptyRule } from '../nodes';
+import { RuleCategory, type EmptyRule } from '../nodes';
 import { NULL } from '../utils/constants';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
 import { EmptyRuleMarshallingMap } from '../serialization-utils/empty-rule-common';
 import { AdblockSyntax } from '../utils/adblockers';
+import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
 
 export class EmptyRuleDeserializer extends BaseDeserializer {
     /**
@@ -14,7 +15,7 @@ export class EmptyRuleDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: EmptyRule): void {
-        buffer.assertUint8(BinaryTypeMap.EmptyRule);
+        buffer.assertUint8(BinaryTypeMarshallingMap.EmptyRule);
 
         node.type = 'EmptyRule';
         node.category = RuleCategory.Empty;

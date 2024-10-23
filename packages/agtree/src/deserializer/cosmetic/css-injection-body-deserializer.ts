@@ -1,10 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { BinaryTypeMap, type Value, type CssInjectionRuleBody } from '../../nodes';
+import { type Value, type CssInjectionRuleBody } from '../../nodes';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { NULL } from '../../utils/constants';
 import { BaseDeserializer } from '../base-deserializer';
 import { CssInjectionRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/css-injection-body-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 export class CssInjectionBodyDeserializer extends BaseDeserializer {
     /**
@@ -14,7 +15,7 @@ export class CssInjectionBodyDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: CssInjectionRuleBody): void {
-        buffer.assertUint8(BinaryTypeMap.CssInjectionRuleBody);
+        buffer.assertUint8(BinaryTypeMarshallingMap.CssInjectionRuleBody);
 
         node.type = 'CssInjectionRuleBody';
         node.remove = false;

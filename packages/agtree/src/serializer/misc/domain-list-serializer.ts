@@ -1,11 +1,12 @@
 import { COMMA, PIPE, NULL } from '../../utils/constants';
-import { type DomainList, BinaryTypeMap } from '../../nodes';
+import { type DomainList } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
 import { ListItemsSerializer } from './list-items-serializer';
 import { DomainListMarshallingMap } from '../../serialization-utils/misc/domain-list-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
@@ -37,7 +38,7 @@ export class DomainListSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: DomainList, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.DomainListNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.DomainListNode);
 
         const separator = SEPARATOR_SERIALIZATION_MAP.get(node.separator);
         if (isUndefined(separator)) {

@@ -1,10 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { type ParameterList, BinaryTypeMap, type Value } from '../../nodes';
+import { type ParameterList, type Value } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { ValueDeserializer } from './value-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import { ParameterListNodeMarshallingMap } from '../../serialization-utils/misc/parameter-list-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 export class ParameterListDeserializer extends BaseDeserializer {
     /**
@@ -20,7 +21,7 @@ export class ParameterListDeserializer extends BaseDeserializer {
         node: ParameterList,
         frequentValuesMap?: Map<number, string>,
     ): void {
-        buffer.assertUint8(BinaryTypeMap.ParameterListNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ParameterListNode);
 
         node.type = 'ParameterList';
 
@@ -33,12 +34,12 @@ export class ParameterListDeserializer extends BaseDeserializer {
                     // read children
                     for (let i = 0; i < node.children.length; i += 1) {
                         switch (buffer.peekUint8()) {
-                            case BinaryTypeMap.Null:
+                            case BinaryTypeMarshallingMap.Null:
                                 buffer.readUint8();
                                 node.children[i] = null;
                                 break;
 
-                            case BinaryTypeMap.ValueNode:
+                            case BinaryTypeMarshallingMap.ValueNode:
                                 // eslint-disable-next-line max-len
                                 ValueDeserializer.deserialize(buffer, node.children[i] = {} as Value, frequentValuesMap);
                                 break;

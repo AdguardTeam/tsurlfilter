@@ -5,7 +5,6 @@ import { NULL } from '../../utils/constants';
 import {
     type AnyCosmeticRule,
     CosmeticRuleType,
-    BinaryTypeMap,
     getSyntaxDeserializationMap,
     type ElementHidingRuleBody,
     type CssInjectionRuleBody,
@@ -29,6 +28,7 @@ import {
     CosmeticRuleMarshallingMap,
     COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP,
 } from '../../serialization-utils/cosmetic/cosmetic-rule-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
@@ -49,12 +49,12 @@ const getSeparatorDeserializationMap = () => {
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-const COSMETIC_RULE_TYPE_DESERIALIZATION_MAP = new Map<BinaryTypeMap, CosmeticRuleType>([
-    [BinaryTypeMap.ElementHidingRule, CosmeticRuleType.ElementHidingRule],
-    [BinaryTypeMap.CssInjectionRule, CosmeticRuleType.CssInjectionRule],
-    [BinaryTypeMap.ScriptletInjectionRule, CosmeticRuleType.ScriptletInjectionRule],
-    [BinaryTypeMap.JsInjectionRule, CosmeticRuleType.JsInjectionRule],
-    [BinaryTypeMap.HtmlFilteringRule, CosmeticRuleType.HtmlFilteringRule],
+const COSMETIC_RULE_TYPE_DESERIALIZATION_MAP = new Map<BinaryTypeMarshallingMap, CosmeticRuleType>([
+    [BinaryTypeMarshallingMap.ElementHidingRule, CosmeticRuleType.ElementHidingRule],
+    [BinaryTypeMarshallingMap.CssInjectionRule, CosmeticRuleType.CssInjectionRule],
+    [BinaryTypeMarshallingMap.ScriptletInjectionRule, CosmeticRuleType.ScriptletInjectionRule],
+    [BinaryTypeMarshallingMap.JsInjectionRule, CosmeticRuleType.JsInjectionRule],
+    [BinaryTypeMarshallingMap.HtmlFilteringRule, CosmeticRuleType.HtmlFilteringRule],
 ]);
 
 export class CosmeticRuleDeserializer extends BaseDeserializer {

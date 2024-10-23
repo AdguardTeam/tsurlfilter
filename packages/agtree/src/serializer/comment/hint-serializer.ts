@@ -1,5 +1,5 @@
 import { NULL } from '../../utils/constants';
-import { BinaryTypeMap, type Hint } from '../../nodes';
+import { type Hint } from '../../nodes';
 import { ParameterListSerializer } from '../misc/parameter-list-serializer';
 import { ValueSerializer } from '../misc/value-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
@@ -10,6 +10,7 @@ import {
     FREQUENT_PLATFORMS_SERIALIZATION_MAP,
     HintNodeMarshallingMap,
 } from '../../serialization-utils/comment/hint-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `HintSerializer` is responsible for serializing AdGuard hints.
@@ -31,7 +32,7 @@ export class HintSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: Hint, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.HintNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.HintNode);
 
         buffer.writeUint8(HintNodeMarshallingMap.Name);
         ValueSerializer.serialize(node.name, buffer, FREQUENT_HINTS_SERIALIZATION_MAP);

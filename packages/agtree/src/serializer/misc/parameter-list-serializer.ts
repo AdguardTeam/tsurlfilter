@@ -1,10 +1,11 @@
-import { type ParameterList, BinaryTypeMap } from '../../nodes';
+import { type ParameterList } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from './value-serializer';
 import { isNull, isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
 import { ParameterListNodeMarshallingMap } from '../../serialization-utils/misc/parameter-list-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 export class ParameterListSerializer extends BaseSerializer {
     /**
@@ -21,7 +22,7 @@ export class ParameterListSerializer extends BaseSerializer {
         frequentValuesMap?: Map<string, number>,
         toLower = false,
     ): void {
-        buffer.writeUint8(BinaryTypeMap.ParameterListNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ParameterListNode);
 
         const count = node.children.length;
         buffer.writeUint8(ParameterListNodeMarshallingMap.Children);
@@ -31,7 +32,7 @@ export class ParameterListSerializer extends BaseSerializer {
         for (let i = 0; i < count; i += 1) {
             const child = node.children[i];
             if (isNull(child)) {
-                buffer.writeUint8(BinaryTypeMap.Null);
+                buffer.writeUint8(BinaryTypeMarshallingMap.Null);
                 continue;
             }
             ValueSerializer.serialize(child, buffer, frequentValuesMap, toLower);

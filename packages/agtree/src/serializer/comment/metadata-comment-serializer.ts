@@ -1,5 +1,5 @@
 import { NULL } from '../../utils/constants';
-import { type MetadataCommentRule, BinaryTypeMap } from '../../nodes';
+import { type MetadataCommentRule } from '../../nodes';
 import { ValueSerializer } from '../misc/value-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
@@ -9,6 +9,7 @@ import {
     FREQUENT_HEADERS_DESERIALIZATION_MAP,
     MetadataCommentRuleMarshallingMap,
 } from '../../serialization-utils/comment/metadata-comment-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
@@ -53,7 +54,7 @@ export class MetadataCommentSerializer extends BaseSerializer {
      */
     // TODO: add support for raws, if ever needed
     public static serialize(node: MetadataCommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.MetadataCommentRuleNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.MetadataCommentRuleNode);
 
         buffer.writeUint8(MetadataCommentRuleMarshallingMap.Marker);
         ValueSerializer.serialize(node.marker, buffer);
