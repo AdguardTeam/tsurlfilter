@@ -11,7 +11,6 @@ import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
  * as it allows us to use a single byte to represent frequently used values.
  */
 let frequentUboScriptletArgsDeserializationMap: Map<number, string>;
-// FIXME write documentation to all such functions that we use them this way to avoid side effects
 export const getFrequentPlatformsDeserializationMap = () => {
     if (!frequentUboScriptletArgsDeserializationMap) {
         frequentUboScriptletArgsDeserializationMap = new Map<number, string>(
