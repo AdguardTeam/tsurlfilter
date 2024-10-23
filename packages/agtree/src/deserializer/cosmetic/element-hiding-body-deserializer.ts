@@ -3,9 +3,9 @@ import { BaseDeserializer } from '../base-deserializer';
 import { type Value, type ElementHidingRuleBody } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ElementHidingRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/element-hiding-body-common';
+import { ElementHidingRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/element-hiding-body-common';
 import { ValueDeserializer } from '../misc/value-deserializer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 export class ElementHidingBodyDeserializer extends BaseDeserializer {
     /**

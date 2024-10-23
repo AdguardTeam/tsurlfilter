@@ -3,7 +3,7 @@ import { BaseDeserializer } from '../../base-deserializer';
 import { ScriptletBodyDeserializer } from './scriptlet-body-deserializer';
 import {
     FREQUENT_UBO_SCRIPTLET_ARGS_SERIALIZATION_MAP,
-} from '../../../serialization-utils/cosmetic/body/ubo-scriptlet-injection-body-common';
+} from '../../../marshalling-utils/cosmetic/body/ubo-scriptlet-injection-body-common';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 
 /**

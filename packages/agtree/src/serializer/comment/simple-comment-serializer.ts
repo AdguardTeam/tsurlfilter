@@ -4,8 +4,8 @@ import { isUndefined } from '../../utils/type-guards';
 import { type CommentRule } from '../../nodes';
 import { ValueSerializer } from '../misc/value-serializer';
 import { BaseSerializer } from '../base-serializer';
-import { SimpleCommentRuleMarshallingMap } from '../../serialization-utils/comment/simple-comment-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { SimpleCommentRuleMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `SimpleCommentSerializer` is responsible for parsing simple comments.

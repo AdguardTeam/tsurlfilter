@@ -4,8 +4,8 @@ import { AgentSerializer } from './agent-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
-import { AgentRuleMarshallingMap } from '../../serialization-utils/comment/agent-comment-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { AgentRuleMarshallingMap } from '../../marshalling-utils/comment/agent-comment-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `AgentCommentSerializer` is responsible for serializing an Adblock agent comments.

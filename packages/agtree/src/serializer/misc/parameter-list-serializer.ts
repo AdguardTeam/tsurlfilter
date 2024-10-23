@@ -4,8 +4,8 @@ import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from './value-serializer';
 import { isNull, isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
-import { ParameterListNodeMarshallingMap } from '../../serialization-utils/misc/parameter-list-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { ParameterListNodeMarshallingMap } from '../../marshalling-utils/misc/parameter-list-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 export class ParameterListSerializer extends BaseSerializer {
     /**

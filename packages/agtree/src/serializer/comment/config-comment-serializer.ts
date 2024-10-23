@@ -9,8 +9,8 @@ import {
     ConfigCommentRuleMarshallingMap,
     ConfigNodeMarshallingMap,
     FREQUENT_COMMANDS_SERIALIZATION_MAP,
-} from '../../serialization-utils/comment/config-comment-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+} from '../../marshalling-utils/comment/config-comment-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.

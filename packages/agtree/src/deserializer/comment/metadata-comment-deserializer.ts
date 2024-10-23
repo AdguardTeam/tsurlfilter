@@ -10,11 +10,11 @@ import { BaseDeserializer } from '../base-deserializer';
 import {
     FREQUENT_HEADERS_DESERIALIZATION_MAP,
     MetadataCommentRuleMarshallingMap,
-} from '../../serialization-utils/comment/metadata-comment-common';
+} from '../../marshalling-utils/comment/metadata-comment-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ValueDeserializer } from '../misc/value-deserializer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `MetadataCommentDeserializer` is responsible for deserializing metadata comments.

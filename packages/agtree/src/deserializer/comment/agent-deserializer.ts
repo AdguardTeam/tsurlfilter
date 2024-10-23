@@ -6,10 +6,10 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import {
     AgentNodeMarshallingMap,
     FREQUENT_AGENTS_DESERIALIZATION_MAP,
-} from '../../serialization-utils/comment/agent-common';
+} from '../../marshalling-utils/comment/agent-common';
 import { getAdblockSyntax } from '../../common/agent-common';
 import { ValueDeserializer } from '../misc/value-deserializer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `AgentDeserializer` is responsible for deserializing single adblock agent elements.

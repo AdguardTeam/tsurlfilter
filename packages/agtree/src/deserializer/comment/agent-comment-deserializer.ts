@@ -9,9 +9,9 @@ import {
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseDeserializer } from '../base-deserializer';
-import { AgentRuleMarshallingMap } from '../../serialization-utils/comment/agent-comment-common';
+import { AgentRuleMarshallingMap } from '../../marshalling-utils/comment/agent-comment-common';
 import { AgentDeserializer } from './agent-deserializer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `AgentCommentDeserializer` is responsible for deserializing an Adblock agent comments.

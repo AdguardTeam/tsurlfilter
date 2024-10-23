@@ -5,8 +5,8 @@ import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
 import { ListItemsSerializer } from './list-items-serializer';
-import { DomainListMarshallingMap } from '../../serialization-utils/misc/domain-list-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { DomainListMarshallingMap } from '../../marshalling-utils/misc/domain-list-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,

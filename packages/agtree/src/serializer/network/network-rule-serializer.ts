@@ -1,12 +1,13 @@
 import { NULL } from '../../utils/constants';
-import { type NetworkRule, getSyntaxSerializationMap } from '../../nodes';
+import { type NetworkRule } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { ValueSerializer } from '../misc/value-serializer';
 import { BaseSerializer } from '../base-serializer';
 import { ModifierListSerializer } from '../misc/modifier-list-serializer';
-import { NetworkRuleMarshallingMap } from '../../serialization-utils/network/network-rule-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { NetworkRuleMarshallingMap } from '../../marshalling-utils/network/network-rule-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
 
 /**
  * `NetworkRuleSerializer` is responsible for serializing network rules.

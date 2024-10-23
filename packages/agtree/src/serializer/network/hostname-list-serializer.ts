@@ -4,8 +4,8 @@ import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL, UINT16_MAX } from '../../utils/constants';
 import { ValueSerializer } from '../misc/value-serializer';
-import { HostnameListNodeMarshallingMap } from '../../serialization-utils/misc/hostname-list-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { HostnameListNodeMarshallingMap } from '../../marshalling-utils/misc/hostname-list-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 export class HostnameListSerializer extends BaseSerializer {
     /**

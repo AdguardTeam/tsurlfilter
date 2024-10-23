@@ -4,7 +4,7 @@ import { BaseSerializer } from '../../base-serializer';
 import { ScriptletBodySerializer } from './scriptlet-body-serializer';
 import {
     FREQUENT_ABP_SNIPPET_ARGS_SERIALIZATION_MAP,
-} from '../../../serialization-utils/cosmetic/body/abp-snippet-injection-body-common';
+} from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common';
 
 /**
  * `AbpSnippetInjectionBodyParser` is responsible for parsing the body of an Adblock Plus-style snippet rule.

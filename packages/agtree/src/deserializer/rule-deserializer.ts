@@ -15,7 +15,7 @@ import { NetworkRuleDeserializer } from './network/network-rule-deserializer';
 import { EmptyRuleDeserializer } from './empty-rule-deserializer';
 import { InvalidRuleDeserializer } from './invalid-rule-deserializer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
 /**
  * `RuleDeserializer` is responsible for deserializing the rules.

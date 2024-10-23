@@ -4,8 +4,8 @@ import { type Modifier, type ModifierList } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
 import { ModifierDeserializer } from './modifier-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ModifierListNodeMarshallingMap } from '../../serialization-utils/misc/modifier-list-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { ModifierListNodeMarshallingMap } from '../../marshalling-utils/misc/modifier-list-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `ModifierListDeserializer` is responsible for deserializing modifier lists. Please note that the name is not

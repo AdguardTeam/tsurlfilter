@@ -4,8 +4,8 @@ import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL } from '../../utils/constants';
 import { BaseSerializer } from '../base-serializer';
-import { CssInjectionRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/css-injection-body-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { CssInjectionRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/css-injection-body-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 export class CssInjectionBodySerializer extends BaseSerializer {
     /**

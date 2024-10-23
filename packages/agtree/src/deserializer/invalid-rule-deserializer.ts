@@ -4,8 +4,8 @@ import { type InvalidRuleError, RuleCategory, type InvalidRule } from '../nodes'
 import { NULL } from '../utils/constants';
 import { InvalidRuleErrorNodeDeserializer } from './invalid-rule-error-node-deserializer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { InvalidRuleMarshallingMap } from '../serialization-utils/invalid-rule-common';
-import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
+import { InvalidRuleMarshallingMap } from '../marshalling-utils/invalid-rule-common';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
 export class InvalidRuleDeserializer extends BaseDeserializer {
     /**

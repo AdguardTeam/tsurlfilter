@@ -3,8 +3,8 @@ import { type Value } from '../../nodes';
 import { EMPTY, NULL } from '../../utils/constants';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ValueNodeMarshallingMap } from '../../serialization-utils/misc/value-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { ValueNodeMarshallingMap } from '../../marshalling-utils/misc/value-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * Value deserializer.

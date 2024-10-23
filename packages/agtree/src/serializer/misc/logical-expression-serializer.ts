@@ -9,13 +9,13 @@ import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
 import {
-    KNOWN_VARIABLES_MAP,
-    LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP,
+    KNOWN_VARIABLES_SERIALIZATION_MAP,
+    LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP,
     OperatorNodeBinaryPropMarshallingMap,
     ParenthesisNodeBinaryPropMarshallingMap,
     VariableNodeBinaryPropMarshallingMap,
-} from '../../serialization-utils/misc/logical-expression-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+} from '../../marshalling-utils/misc/logical-expression-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * Possible node types in the logical expression.
@@ -48,7 +48,7 @@ export class LogicalExpressionSerializer extends BaseSerializer {
     private static serializeVariableNode(node: ExpressionVariableNode, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMarshallingMap.ExpressionVariableNode);
 
-        const frequentName = KNOWN_VARIABLES_MAP.get(node.name);
+        const frequentName = KNOWN_VARIABLES_SERIALIZATION_MAP.get(node.name);
         if (!isUndefined(frequentName)) {
             buffer.writeUint8(VariableNodeBinaryPropMarshallingMap.FrequentName);
             buffer.writeUint8(frequentName);
@@ -105,7 +105,7 @@ export class LogicalExpressionSerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMarshallingMap.ExpressionOperatorNode);
 
         buffer.writeUint8(OperatorNodeBinaryPropMarshallingMap.Operator);
-        const operatorBinary = LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP.get(node.operator);
+        const operatorBinary = LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP.get(node.operator);
         if (isUndefined(operatorBinary)) {
             throw new Error(`Unknown operator: ${node.operator}`);
         }

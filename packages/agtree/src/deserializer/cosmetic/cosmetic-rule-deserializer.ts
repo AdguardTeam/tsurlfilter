@@ -5,7 +5,6 @@ import { NULL } from '../../utils/constants';
 import {
     type AnyCosmeticRule,
     CosmeticRuleType,
-    getSyntaxDeserializationMap,
     type ElementHidingRuleBody,
     type CssInjectionRuleBody,
     type Value,
@@ -27,8 +26,9 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import {
     CosmeticRuleMarshallingMap,
     COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP,
-} from '../../serialization-utils/cosmetic/cosmetic-rule-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+} from '../../marshalling-utils/cosmetic/cosmetic-rule-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

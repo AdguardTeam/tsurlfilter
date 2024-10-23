@@ -4,8 +4,8 @@ import { NULL } from '../utils/constants';
 import { BaseDeserializer } from './base-deserializer';
 import { RuleDeserializer } from './rule-deserializer';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { FilterListNodeMarshallingMap } from '../serialization-utils/filter-list-common';
-import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
+import { FilterListNodeMarshallingMap } from '../marshalling-utils/filter-list-common';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
 export class FilterListDeserializer extends BaseDeserializer {
     /**

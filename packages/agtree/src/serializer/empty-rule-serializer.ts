@@ -3,8 +3,8 @@ import { type EmptyRule } from '../nodes';
 import type { OutputByteBuffer } from '../utils/output-byte-buffer';
 import { isUndefined } from '../utils/type-guards';
 import { NULL } from '../utils/constants';
-import { EmptyRuleMarshallingMap } from '../serialization-utils/empty-rule-common';
-import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
+import { EmptyRuleMarshallingMap } from '../marshalling-utils/empty-rule-common';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
 export class EmptyRuleSerializer extends BaseSerializer {
     /**

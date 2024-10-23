@@ -4,8 +4,8 @@ import type { OutputByteBuffer } from '../utils/output-byte-buffer';
 import { isUndefined } from '../utils/type-guards';
 import { NULL } from '../utils/constants';
 import { InvalidRuleErrorNodeSerializer } from './invalid-rule-error-node-serializer';
-import { InvalidRuleMarshallingMap } from '../serialization-utils/invalid-rule-common';
-import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
+import { InvalidRuleMarshallingMap } from '../marshalling-utils/invalid-rule-common';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
 export class InvalidRuleSerializer extends BaseSerializer {
     /**

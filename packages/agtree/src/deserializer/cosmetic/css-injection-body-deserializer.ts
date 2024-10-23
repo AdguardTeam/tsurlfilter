@@ -3,9 +3,9 @@ import { type Value, type CssInjectionRuleBody } from '../../nodes';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { NULL } from '../../utils/constants';
 import { BaseDeserializer } from '../base-deserializer';
-import { CssInjectionRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/css-injection-body-common';
+import { CssInjectionRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/css-injection-body-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 export class CssInjectionBodyDeserializer extends BaseDeserializer {
     /**

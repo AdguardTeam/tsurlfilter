@@ -37,8 +37,12 @@ export const enum ParenthesisNodeBinaryPropMarshallingMap {
     End,
 }
 
-// FIXME find better name
-export const LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP = new Map<OperatorValue, number>([
+/**
+ * Property map for binary serialization.
+ *
+ * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
+ */
+export const LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP = new Map<OperatorValue, number>([
     [OperatorValue.Not, 0],
     [OperatorValue.And, 1],
     [OperatorValue.Or, 2],
@@ -47,8 +51,7 @@ export const LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP = new Map<OperatorValue
 /**
  * Serialization map for known variables.
  */
-// FIXME find better name
-export const KNOWN_VARIABLES_MAP = new Map<string, number>([
+export const KNOWN_VARIABLES_SERIALIZATION_MAP = new Map<string, number>([
     ['ext_abp', 0],
     ['ext_ublock', 1],
     ['ext_ubol', 2],

@@ -9,9 +9,9 @@ import {
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { SimpleCommentRuleMarshallingMap } from '../../serialization-utils/comment/simple-comment-common';
+import { SimpleCommentRuleMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common';
 import { ValueDeserializer } from '../misc/value-deserializer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `SimpleCommentDeserializer` is responsible for deserializing simple comments.

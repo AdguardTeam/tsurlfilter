@@ -6,19 +6,20 @@ import type {
     PreProcessorCommentRule,
     Value,
 } from '../../nodes';
-import { CommentRuleType, getSyntaxDeserializationMap, RuleCategory } from '../../nodes';
+import { CommentRuleType, RuleCategory } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
 import {
     FREQUENT_DIRECTIVES_SERIALIZATION_MAP,
     FREQUENT_PARAMS_SERIALIZATION_MAP,
     PreProcessorRuleMarshallingMap,
-} from '../../serialization-utils/comment/pre-processor-comment-common';
+} from '../../marshalling-utils/comment/pre-processor-comment-common';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { LogicalExpressionDeserializer } from '../misc/logical-expression-deserializer';
 import { ParameterListDeserializer } from '../misc/parameter-list-deserializer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
