@@ -6,8 +6,8 @@ import { isUndefined } from '../../../utils/type-guards';
 import { BaseSerializer } from '../../base-serializer';
 import {
     AbpSnippetBodyMarshallingMap,
-} from '../../../serialization-utils/cosmetic/body/abp-snippet-injection-body-common';
-import { BinaryTypeMarshallingMap } from '../../../common/marshalling-common';
+} from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common';
+import { BinaryTypeMarshallingMap } from '../../../marshalling-utils/misc/binary-type-common';
 
 export class ScriptletBodySerializer extends BaseSerializer {
     /**

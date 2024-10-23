@@ -4,8 +4,8 @@ import { type ModifierList } from '../../nodes';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
 import { ModifierSerializer } from './modifier-serializer';
-import { ModifierListNodeMarshallingMap } from '../../serialization-utils/misc/modifier-list-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { ModifierListNodeMarshallingMap } from '../../marshalling-utils/misc/modifier-list-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `ModifierListSerializer` is responsible for serializing modifier lists. Please note that the name is not

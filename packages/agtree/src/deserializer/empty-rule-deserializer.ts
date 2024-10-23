@@ -3,9 +3,9 @@ import { BaseDeserializer } from './base-deserializer';
 import { RuleCategory, type EmptyRule } from '../nodes';
 import { NULL } from '../utils/constants';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { EmptyRuleMarshallingMap } from '../serialization-utils/empty-rule-common';
+import { EmptyRuleMarshallingMap } from '../marshalling-utils/empty-rule-common';
 import { AdblockSyntax } from '../utils/adblockers';
-import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
 export class EmptyRuleDeserializer extends BaseDeserializer {
     /**

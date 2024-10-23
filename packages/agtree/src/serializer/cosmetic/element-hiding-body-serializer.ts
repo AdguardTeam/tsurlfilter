@@ -4,8 +4,8 @@ import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL } from '../../utils/constants';
-import { ElementHidingRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/element-hiding-body-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { ElementHidingRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/element-hiding-body-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 export class ElementHidingBodySerializer extends BaseSerializer {
     /**

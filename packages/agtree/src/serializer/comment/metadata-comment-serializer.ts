@@ -8,8 +8,8 @@ import { BaseSerializer } from '../base-serializer';
 import {
     FREQUENT_HEADERS_DESERIALIZATION_MAP,
     MetadataCommentRuleMarshallingMap,
-} from '../../serialization-utils/comment/metadata-comment-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+} from '../../marshalling-utils/comment/metadata-comment-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,

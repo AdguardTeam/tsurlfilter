@@ -3,9 +3,9 @@ import { type ParameterList, type Value } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { ValueDeserializer } from './value-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
-import { ParameterListNodeMarshallingMap } from '../../serialization-utils/misc/parameter-list-common';
+import { ParameterListNodeMarshallingMap } from '../../marshalling-utils/misc/parameter-list-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 export class ParameterListDeserializer extends BaseDeserializer {
     /**

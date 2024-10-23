@@ -2,7 +2,6 @@
 import { NULL } from '../../utils/constants';
 import {
     type NetworkRule,
-    getSyntaxDeserializationMap,
     type ModifierList,
     NetworkRuleType,
     RuleCategory,
@@ -12,9 +11,10 @@ import { ValueDeserializer } from '../misc/value-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import { ModifierListDeserializer } from '../misc/modifier-list-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { NetworkRuleMarshallingMap } from '../../serialization-utils/network/network-rule-common';
+import { NetworkRuleMarshallingMap } from '../../marshalling-utils/network/network-rule-common';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
 
 /**
  * `NetworkRuleDeserializer` is responsible for deserializing network rules.

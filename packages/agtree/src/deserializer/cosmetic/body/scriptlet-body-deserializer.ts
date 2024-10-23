@@ -6,8 +6,8 @@ import { BaseDeserializer } from '../../base-deserializer';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import {
     AbpSnippetBodyMarshallingMap,
-} from '../../../serialization-utils/cosmetic/body/abp-snippet-injection-body-common';
-import { BinaryTypeMarshallingMap } from '../../../common/marshalling-common';
+} from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common';
+import { BinaryTypeMarshallingMap } from '../../../marshalling-utils/misc/binary-type-common';
 
 export class ScriptletBodyDeserializer extends BaseDeserializer {
     /**

@@ -4,7 +4,7 @@ import { ScriptletBodySerializer } from './scriptlet-body-serializer';
 import { BaseSerializer } from '../../base-serializer';
 import {
     FREQUENT_UBO_SCRIPTLET_ARGS_SERIALIZATION_MAP,
-} from '../../../serialization-utils/cosmetic/body/ubo-scriptlet-injection-body-common';
+} from '../../../marshalling-utils/cosmetic/body/ubo-scriptlet-injection-body-common';
 
 /**
  * `UboScriptletInjectionBodySerializer` is responsible for serializing the body of a uBlock-style scriptlet rule.

@@ -15,7 +15,7 @@ import { PreProcessorCommentDeserializer } from './pre-processor-comment-deseria
 import { SimpleCommentDeserializer } from './simple-comment-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `CommentRuleSerializer` is responsible for serializing any comment-like adblock rules.

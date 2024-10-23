@@ -4,7 +4,7 @@ import { ScriptletBodyDeserializer } from './scriptlet-body-deserializer';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import {
     FREQUENT_ABP_SNIPPET_ARGS_SERIALIZATION_MAP,
-} from '../../../serialization-utils/cosmetic/body/abp-snippet-injection-body-common';
+} from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

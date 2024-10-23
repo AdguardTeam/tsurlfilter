@@ -4,7 +4,7 @@ import { BaseSerializer } from '../../base-serializer';
 import { ScriptletBodySerializer } from './scriptlet-body-serializer';
 import {
     FREQUENT_ADG_SCRIPTLET_ARGS_SERIALIZATION_MAP,
-} from '../../../serialization-utils/cosmetic/body/adg-scriptlet-injection-body-common';
+} from '../../../marshalling-utils/cosmetic/body/adg-scriptlet-injection-body-common';
 
 /**
  * `AdgScriptletInjectionBodyParser` is responsible for parsing the body of an AdGuard-style scriptlet rule.

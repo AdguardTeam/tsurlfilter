@@ -2,13 +2,10 @@
 import { COMMA, NULL } from '../../utils/constants';
 import { type DomainList, type DomainListSeparator, ListNodeType } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
-import {
-    DomainListMarshallingMap,
-    SEPARATOR_SERIALIZATION_MAP,
-} from '../../serialization-utils/misc/domain-list-common';
+import { DomainListMarshallingMap, SEPARATOR_SERIALIZATION_MAP } from '../../marshalling-utils/misc/domain-list-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ListItemsDeserializer } from './list-items-deserializer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

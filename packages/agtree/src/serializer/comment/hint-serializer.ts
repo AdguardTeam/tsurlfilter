@@ -9,8 +9,8 @@ import {
     FREQUENT_HINTS_SERIALIZATION_MAP,
     FREQUENT_PLATFORMS_SERIALIZATION_MAP,
     HintNodeMarshallingMap,
-} from '../../serialization-utils/comment/hint-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+} from '../../marshalling-utils/comment/hint-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * `HintSerializer` is responsible for serializing AdGuard hints.

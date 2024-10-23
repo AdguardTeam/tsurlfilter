@@ -1,12 +1,13 @@
 import { NULL } from '../../utils/constants';
-import { type HintCommentRule, getSyntaxSerializationMap } from '../../nodes';
+import { type HintCommentRule } from '../../nodes';
 import { HintSerializer } from './hint-serializer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
-import { HintRuleMarshallingMap } from '../../serialization-utils/comment/hint-comment-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { HintRuleMarshallingMap } from '../../marshalling-utils/comment/hint-comment-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
 
 /**
  * `HintCommentSerializer` is responsible for serializing AdGuard hint rules.

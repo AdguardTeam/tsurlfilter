@@ -7,25 +7,25 @@ import {
     type OperatorValue,
 } from '../../nodes';
 import {
-    KNOWN_VARIABLES_MAP,
-    LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP,
+    KNOWN_VARIABLES_SERIALIZATION_MAP,
+    LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP,
     OperatorNodeBinaryPropMarshallingMap,
     ParenthesisNodeBinaryPropMarshallingMap,
     VariableNodeBinaryPropMarshallingMap,
-} from '../../serialization-utils/misc/logical-expression-common';
+} from '../../marshalling-utils/misc/logical-expression-common';
 import { NodeType } from '../../serializer/misc/logical-expression-serializer';
 import { NULL } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseDeserializer } from '../base-deserializer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 let LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE: Map<number, OperatorValue>;
 
 const getOperatorBinaryMapReverse = () => {
     if (!LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE) {
         LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE = new Map<number, OperatorValue>(
-            Array.from(LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP).map(([key, value]) => [value, key]),
+            Array.from(LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP).map(([key, value]) => [value, key]),
         );
     }
     return LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE;
@@ -53,7 +53,7 @@ let KNOWN_VARIABLES_MAP_REVERSE: Map<number, string>;
 const getKnownVariablesMapReverse = () => {
     if (!KNOWN_VARIABLES_MAP_REVERSE) {
         KNOWN_VARIABLES_MAP_REVERSE = new Map<number, string>(
-            Array.from(KNOWN_VARIABLES_MAP).map(([key, value]) => [value, key]),
+            Array.from(KNOWN_VARIABLES_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
     return KNOWN_VARIABLES_MAP_REVERSE;

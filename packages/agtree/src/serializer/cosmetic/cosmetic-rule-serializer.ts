@@ -1,7 +1,7 @@
 import { AdblockSyntax } from '../../utils/adblockers';
 import { DomainListSerializer } from '../misc/domain-list-serializer';
 import { NULL } from '../../utils/constants';
-import { type AnyCosmeticRule, CosmeticRuleType, getSyntaxSerializationMap } from '../../nodes';
+import { type AnyCosmeticRule, CosmeticRuleType } from '../../nodes';
 import { AbpSnippetInjectionBodySerializer } from './body/abp-snippet-injection-body-serializer';
 import { UboScriptletInjectionBodySerializer } from './body/ubo-scriptlet-injection-body-serializer';
 import { AdgScriptletInjectionBodySerializer } from './body/adg-scriptlet-injection-body-serializer';
@@ -15,8 +15,9 @@ import { ModifierListSerializer } from '../misc/modifier-list-serializer';
 import {
     CosmeticRuleMarshallingMap,
     COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP,
-} from '../../serialization-utils/cosmetic/cosmetic-rule-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+} from '../../marshalling-utils/cosmetic/cosmetic-rule-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
 
 /**
  * `CosmeticRuleParser` is responsible for parsing cosmetic rules.

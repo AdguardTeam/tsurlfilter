@@ -2,7 +2,6 @@
 import { NULL } from '../../utils/constants';
 import {
     type HostRule,
-    getSyntaxDeserializationMap,
     type HostnameList,
     NetworkRuleType,
     RuleCategory,
@@ -12,9 +11,10 @@ import { ValueDeserializer } from '../misc/value-deserializer';
 import { HostnameListDeserializer } from './hostname-list-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { HostRuleMarshallingMap } from '../../serialization-utils/misc/host-rule-common';
+import { HostRuleMarshallingMap } from '../../marshalling-utils/misc/host-rule-common';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
 
 /**
  * `HostRuleSerializer` is responsible for serializing hosts-like rules.

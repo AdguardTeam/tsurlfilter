@@ -3,8 +3,8 @@ import { BaseDeserializer } from '../base-deserializer';
 import { type ListItem, ListItemNodeType } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ListItemMarshallingMap } from '../../serialization-utils/misc/list-item-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { ListItemMarshallingMap } from '../../marshalling-utils/misc/list-item-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 export class ListItemDeserializer extends BaseDeserializer {
 /**

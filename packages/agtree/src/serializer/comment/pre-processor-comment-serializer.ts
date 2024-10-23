@@ -1,6 +1,5 @@
 import { NULL } from '../../utils/constants';
 import type { PreProcessorCommentRule } from '../../nodes';
-import { getSyntaxSerializationMap } from '../../nodes';
 import { LogicalExpressionSerializer } from '../misc/logical-expression-serializer';
 import { ParameterListSerializer } from '../misc/parameter-list-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
@@ -11,8 +10,9 @@ import {
     FREQUENT_DIRECTIVES_SERIALIZATION_MAP,
     FREQUENT_PARAMS_SERIALIZATION_MAP,
     PreProcessorRuleMarshallingMap,
-} from '../../serialization-utils/comment/pre-processor-comment-common';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+} from '../../marshalling-utils/comment/pre-processor-comment-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
 
 /**
  * `PreProcessorSerializer` is responsible for serializing preprocessor rules.

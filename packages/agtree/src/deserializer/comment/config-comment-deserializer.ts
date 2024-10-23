@@ -14,11 +14,11 @@ import {
     ConfigCommentRuleMarshallingMap,
     ConfigNodeMarshallingMap,
     FREQUENT_COMMANDS_SERIALIZATION_MAP,
-} from '../../serialization-utils/comment/config-comment-common';
+} from '../../marshalling-utils/comment/config-comment-common';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { ParameterListDeserializer } from '../misc/parameter-list-deserializer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

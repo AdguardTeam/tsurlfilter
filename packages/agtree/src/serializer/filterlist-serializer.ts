@@ -4,8 +4,8 @@ import { type OutputByteBuffer } from '../utils/output-byte-buffer';
 import { isUndefined } from '../utils/type-guards';
 import { BaseSerializer } from './base-serializer';
 import { RuleSerializer } from './rule-serializer';
-import { FilterListNodeMarshallingMap } from '../serialization-utils/filter-list-common';
-import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
+import { FilterListNodeMarshallingMap } from '../marshalling-utils/filter-list-common';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).

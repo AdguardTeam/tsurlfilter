@@ -3,16 +3,16 @@ import { NULL } from '../../utils/constants';
 import {
     type HintCommentRule,
     CommentRuleType,
-    getSyntaxDeserializationMap,
     type Hint,
     RuleCategory,
 } from '../../nodes';
 import { HintDeserializer } from './hint-deserializer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseDeserializer } from '../base-deserializer';
-import { HintRuleMarshallingMap } from '../../serialization-utils/comment/hint-comment-common';
+import { HintRuleMarshallingMap } from '../../marshalling-utils/comment/hint-comment-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
 
 /**
  * `HintCommentDeserializer` is responsible for deserializing AdGuard hint rules.

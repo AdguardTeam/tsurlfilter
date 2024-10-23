@@ -3,9 +3,9 @@ import { BaseDeserializer } from '../base-deserializer';
 import { type Value, type HostnameList } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { ValueDeserializer } from '../misc/value-deserializer';
-import { HostnameListNodeMarshallingMap } from '../../serialization-utils/misc/hostname-list-common';
+import { HostnameListNodeMarshallingMap } from '../../marshalling-utils/misc/hostname-list-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 export class HostnameListDeserializer extends BaseDeserializer {
     /**

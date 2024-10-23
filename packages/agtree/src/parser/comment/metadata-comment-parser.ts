@@ -14,7 +14,25 @@ import {
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';
-import { KNOWN_METADATA_HEADERS } from '../../common/metadata-comment-common';
+
+/**
+ * Value map for binary deserialization. This helps to reduce the size of the serialized data,
+ * as it allows us to use a single byte to represent frequently used values.
+ */
+const KNOWN_METADATA_HEADERS = new Set([
+    'Checksum',
+    'Description',
+    'Expires',
+    'Homepage',
+    'Last Modified',
+    'LastModified',
+    'Licence',
+    'License',
+    'Time Updated',
+    'TimeUpdated',
+    'Version',
+    'Title',
+]);
 
 /**
  * `MetadataParser` is responsible for parsing metadata comments.
