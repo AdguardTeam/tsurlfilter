@@ -8,7 +8,7 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum MetadataCommentRuleMarshallingMap {
+export const enum MetadataCommentMarshallingMap {
     Marker = 1,
     Header,
     Value,

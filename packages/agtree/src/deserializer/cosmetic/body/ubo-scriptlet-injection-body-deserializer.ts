@@ -10,16 +10,16 @@ import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-let FREQUENT_UBO_SCRIPTLET_ARGS_DESERIALIZATION_MAP: Map<number, string>;
-
+let frequentUboScriptletArgsDeserializationMap: Map<number, string>;
+// FIXME write documentation to all such functions that we use them this way to avoid side effects
 export const getFrequentPlatformsDeserializationMap = () => {
-    if (!FREQUENT_UBO_SCRIPTLET_ARGS_DESERIALIZATION_MAP) {
-        FREQUENT_UBO_SCRIPTLET_ARGS_DESERIALIZATION_MAP = new Map<number, string>(
+    if (!frequentUboScriptletArgsDeserializationMap) {
+        frequentUboScriptletArgsDeserializationMap = new Map<number, string>(
             Array.from(FREQUENT_UBO_SCRIPTLET_ARGS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
 
-    return FREQUENT_UBO_SCRIPTLET_ARGS_DESERIALIZATION_MAP;
+    return frequentUboScriptletArgsDeserializationMap;
 };
 
 export class UboScriptletInjectionBodyDeserializer extends BaseDeserializer {

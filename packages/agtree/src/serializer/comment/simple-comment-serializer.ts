@@ -4,7 +4,7 @@ import { isUndefined } from '../../utils/type-guards';
 import { type CommentRule } from '../../nodes';
 import { ValueSerializer } from '../misc/value-serializer';
 import { BaseSerializer } from '../base-serializer';
-import { SimpleCommentRuleMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common';
+import { SimpleCommentMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
@@ -30,19 +30,19 @@ export class SimpleCommentSerializer extends BaseSerializer {
     public static serialize(node: CommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMarshallingMap.CommentRuleNode);
 
-        buffer.writeUint8(SimpleCommentRuleMarshallingMap.Marker);
+        buffer.writeUint8(SimpleCommentMarshallingMap.Marker);
         ValueSerializer.serialize(node.marker, buffer);
 
-        buffer.writeUint8(SimpleCommentRuleMarshallingMap.Text);
+        buffer.writeUint8(SimpleCommentMarshallingMap.Text);
         ValueSerializer.serialize(node.text, buffer);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(SimpleCommentRuleMarshallingMap.Start);
+            buffer.writeUint8(SimpleCommentMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(SimpleCommentRuleMarshallingMap.End);
+            buffer.writeUint8(SimpleCommentMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

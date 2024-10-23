@@ -17,31 +17,31 @@ import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-ty
  *
  * @note Only 256 values can be represented this way.
  */
-let FREQUENT_MODIFIERS_DESERIALIZATION_MAP: Map<number, string>;
+let frequentModifiersDeserializationMap: Map<number, string>;
 const getFrequentModifiersDeserializationMap = () => {
-    if (!FREQUENT_MODIFIERS_DESERIALIZATION_MAP) {
-        FREQUENT_MODIFIERS_DESERIALIZATION_MAP = new Map<number, string>(
+    if (!frequentModifiersDeserializationMap) {
+        frequentModifiersDeserializationMap = new Map<number, string>(
             Array.from(FREQUENT_MODIFIERS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
-    return FREQUENT_MODIFIERS_DESERIALIZATION_MAP;
+    return frequentModifiersDeserializationMap;
 };
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-let FREQUENT_VALUES_DESERIALIZATION_MAPS: Map<string, Map<number, string>>;
+let frequentValuesDeserializationMaps: Map<string, Map<number, string>>;
 const getFrequentValuesDeserializationMaps = () => {
-    if (!FREQUENT_VALUES_DESERIALIZATION_MAPS) {
-        FREQUENT_VALUES_DESERIALIZATION_MAPS = new Map<string, Map<number, string>>(
+    if (!frequentValuesDeserializationMaps) {
+        frequentValuesDeserializationMaps = new Map<string, Map<number, string>>(
             Array.from(
                 FREQUENT_REDIRECT_MODIFIERS_SERIALIZATION_MAP,
                 ([modifier, valueMap]) => [modifier, new Map(Array.from(valueMap, ([key, value]) => [value, key]))],
             ),
         );
     }
-    return FREQUENT_VALUES_DESERIALIZATION_MAPS;
+    return frequentValuesDeserializationMaps;
 };
 
 /**

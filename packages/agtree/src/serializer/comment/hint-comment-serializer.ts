@@ -5,7 +5,7 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
-import { HintRuleMarshallingMap } from '../../marshalling-utils/comment/hint-comment-common';
+import { HintCommentMarshallingMap } from '../../marshalling-utils/comment/hint-comment-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
 
@@ -32,13 +32,13 @@ export class HintCommentSerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMarshallingMap.HintRuleNode);
 
         if (node.syntax === AdblockSyntax.Adg) {
-            buffer.writeUint8(HintRuleMarshallingMap.Syntax);
+            buffer.writeUint8(HintCommentMarshallingMap.Syntax);
             buffer.writeUint8(getSyntaxSerializationMap().get(AdblockSyntax.Adg) ?? 0);
         }
 
         const count = node.children.length;
         if (count) {
-            buffer.writeUint8(HintRuleMarshallingMap.Children);
+            buffer.writeUint8(HintCommentMarshallingMap.Children);
             // note: we store the count, because re-construction of the array is faster if we know the length
             buffer.writeUint8(count);
 
@@ -48,12 +48,12 @@ export class HintCommentSerializer extends BaseSerializer {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(HintRuleMarshallingMap.Start);
+            buffer.writeUint8(HintCommentMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(HintRuleMarshallingMap.End);
+            buffer.writeUint8(HintCommentMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

@@ -7,7 +7,7 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
 import { BaseSerializer } from '../base-serializer';
 import {
     FREQUENT_HEADERS_DESERIALIZATION_MAP,
-    MetadataCommentRuleMarshallingMap,
+    MetadataCommentMarshallingMap,
 } from '../../marshalling-utils/comment/metadata-comment-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
@@ -21,15 +21,15 @@ import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-ty
  * @note This map is generated from `FREQUENT_HEADERS_DESERIALIZATION_MAP` to keep uppercase characters
  * while deserializing.
  */
-let FREQUENT_HEADERS_SERIALIZATION_MAP: Map<string, number>;
+let frequentHeadersSerializationMap: Map<string, number>;
 const getFrequentHeadersSerializationMap = () => {
-    if (!FREQUENT_HEADERS_SERIALIZATION_MAP) {
-        FREQUENT_HEADERS_SERIALIZATION_MAP = new Map<string, number>(
+    if (!frequentHeadersSerializationMap) {
+        frequentHeadersSerializationMap = new Map<string, number>(
             Array.from(FREQUENT_HEADERS_DESERIALIZATION_MAP.entries())
                 .map(([key, value]) => [value.toLowerCase(), key]),
         );
     }
-    return FREQUENT_HEADERS_SERIALIZATION_MAP;
+    return frequentHeadersSerializationMap;
 };
 
 /**
@@ -56,22 +56,22 @@ export class MetadataCommentSerializer extends BaseSerializer {
     public static serialize(node: MetadataCommentRule, buffer: OutputByteBuffer): void {
         buffer.writeUint8(BinaryTypeMarshallingMap.MetadataCommentRuleNode);
 
-        buffer.writeUint8(MetadataCommentRuleMarshallingMap.Marker);
+        buffer.writeUint8(MetadataCommentMarshallingMap.Marker);
         ValueSerializer.serialize(node.marker, buffer);
 
-        buffer.writeUint8(MetadataCommentRuleMarshallingMap.Header);
+        buffer.writeUint8(MetadataCommentMarshallingMap.Header);
         ValueSerializer.serialize(node.header, buffer, getFrequentHeadersSerializationMap(), true);
 
-        buffer.writeUint8(MetadataCommentRuleMarshallingMap.Value);
+        buffer.writeUint8(MetadataCommentMarshallingMap.Value);
         ValueSerializer.serialize(node.value, buffer);
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(MetadataCommentRuleMarshallingMap.Start);
+            buffer.writeUint8(MetadataCommentMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(MetadataCommentRuleMarshallingMap.End);
+            buffer.writeUint8(MetadataCommentMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

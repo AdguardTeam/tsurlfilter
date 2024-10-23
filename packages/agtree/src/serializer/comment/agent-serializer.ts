@@ -19,14 +19,14 @@ import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-ty
  *
  * @note Only 256 values can be represented this way.
  */
-let FREQUENT_AGENTS_SERIALIZATION_MAP: Map<string, number>;
+let frequentAgentsSerializationMap: Map<string, number>;
 const getFrequentAgentsSerializationMap = () => {
-    if (!FREQUENT_AGENTS_SERIALIZATION_MAP) {
-        FREQUENT_AGENTS_SERIALIZATION_MAP = new Map<string, number>(
+    if (!frequentAgentsSerializationMap) {
+        frequentAgentsSerializationMap = new Map<string, number>(
             Array.from(FREQUENT_AGENTS_DESERIALIZATION_MAP).map(([key, value]) => [value.toLowerCase(), key]),
         );
     }
-    return FREQUENT_AGENTS_SERIALIZATION_MAP;
+    return frequentAgentsSerializationMap;
 };
 
 /**

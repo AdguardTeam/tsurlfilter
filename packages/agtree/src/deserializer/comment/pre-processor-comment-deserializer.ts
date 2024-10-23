@@ -25,28 +25,28 @@ import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-let FREQUENT_DIRECTIVES_DESERIALIZATION_MAP: Map<number, string>;
+let frequentDirectivesDeserializationMap: Map<number, string>;
 const getFrequentDirectivesDeserializationMap = (): Map<number, string> => {
-    if (!FREQUENT_DIRECTIVES_DESERIALIZATION_MAP) {
-        FREQUENT_DIRECTIVES_DESERIALIZATION_MAP = new Map<number, string>(
+    if (!frequentDirectivesDeserializationMap) {
+        frequentDirectivesDeserializationMap = new Map<number, string>(
             Array.from(FREQUENT_DIRECTIVES_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
-    return FREQUENT_DIRECTIVES_DESERIALIZATION_MAP;
+    return frequentDirectivesDeserializationMap;
 };
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-let FREQUENT_PARAMS_DESERIALIZATION_MAP: Map<number, string>;
+let frequentParamsDeserializationMap: Map<number, string>;
 const getFrequentParamsDeserializationMap = () => {
-    if (!FREQUENT_PARAMS_DESERIALIZATION_MAP) {
-        FREQUENT_PARAMS_DESERIALIZATION_MAP = new Map<number, string>(
+    if (!frequentParamsDeserializationMap) {
+        frequentParamsDeserializationMap = new Map<number, string>(
             Array.from(FREQUENT_PARAMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
-    return FREQUENT_PARAMS_DESERIALIZATION_MAP;
+    return frequentParamsDeserializationMap;
 };
 
 /**

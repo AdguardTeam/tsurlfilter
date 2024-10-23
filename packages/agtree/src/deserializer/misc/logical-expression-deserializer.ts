@@ -20,15 +20,15 @@ import { isUndefined } from '../../utils/type-guards';
 import { BaseDeserializer } from '../base-deserializer';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
-let LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE: Map<number, OperatorValue>;
+let logicalExpressionOperatorMarshallingMapReverse: Map<number, OperatorValue>;
 
 const getOperatorBinaryMapReverse = () => {
-    if (!LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE) {
-        LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE = new Map<number, OperatorValue>(
+    if (!logicalExpressionOperatorMarshallingMapReverse) {
+        logicalExpressionOperatorMarshallingMapReverse = new Map<number, OperatorValue>(
             Array.from(LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP).map(([key, value]) => [value, key]),
         );
     }
-    return LOGICAL_EXPRESSION_OPERATOR_MARSHALLING_MAP_REVERSE;
+    return logicalExpressionOperatorMarshallingMapReverse;
 };
 
 /**
@@ -49,14 +49,14 @@ const getOperatorOrFail = (binary: number): OperatorValue => {
 /**
  * Deserialization map for known variables.
  */
-let KNOWN_VARIABLES_MAP_REVERSE: Map<number, string>;
+let knownVariablesMapReverse: Map<number, string>;
 const getKnownVariablesMapReverse = () => {
-    if (!KNOWN_VARIABLES_MAP_REVERSE) {
-        KNOWN_VARIABLES_MAP_REVERSE = new Map<number, string>(
+    if (!knownVariablesMapReverse) {
+        knownVariablesMapReverse = new Map<number, string>(
             Array.from(KNOWN_VARIABLES_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
-    return KNOWN_VARIABLES_MAP_REVERSE;
+    return knownVariablesMapReverse;
 };
 
 /**
