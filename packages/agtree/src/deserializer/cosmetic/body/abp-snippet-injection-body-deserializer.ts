@@ -10,16 +10,15 @@ import {
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-let FREQUENT_ABP_SNIPPET_ARGS_DESERIALIZATION_MAP: Map<number, string>;
-
-export const getFrequentPlatformsDeserializationMap = () => {
-    if (!FREQUENT_ABP_SNIPPET_ARGS_DESERIALIZATION_MAP) {
-        FREQUENT_ABP_SNIPPET_ARGS_DESERIALIZATION_MAP = new Map<number, string>(
+let frequentAbpSnippetArgsDeserializationMap: Map<number, string>;
+const getFrequentAbpSnippetArgsDeserializationMap = () => {
+    if (!frequentAbpSnippetArgsDeserializationMap) {
+        frequentAbpSnippetArgsDeserializationMap = new Map<number, string>(
             Array.from(FREQUENT_ABP_SNIPPET_ARGS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
 
-    return FREQUENT_ABP_SNIPPET_ARGS_DESERIALIZATION_MAP;
+    return frequentAbpSnippetArgsDeserializationMap;
 };
 
 export class AbpSnippetInjectionBodyDeserializer extends BaseDeserializer {
@@ -31,6 +30,6 @@ export class AbpSnippetInjectionBodyDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void {
-        ScriptletBodyDeserializer.deserialize(buffer, node, FREQUENT_ABP_SNIPPET_ARGS_DESERIALIZATION_MAP);
+        ScriptletBodyDeserializer.deserialize(buffer, node, getFrequentAbpSnippetArgsDeserializationMap());
     }
 }

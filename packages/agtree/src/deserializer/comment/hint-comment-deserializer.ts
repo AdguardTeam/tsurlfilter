@@ -9,7 +9,7 @@ import {
 import { HintDeserializer } from './hint-deserializer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseDeserializer } from '../base-deserializer';
-import { HintRuleMarshallingMap } from '../../marshalling-utils/comment/hint-comment-common';
+import { HintCommentMarshallingMap } from '../../marshalling-utils/comment/hint-comment-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
@@ -42,11 +42,11 @@ export class HintCommentDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case HintRuleMarshallingMap.Syntax:
+                case HintCommentMarshallingMap.Syntax:
                     node.syntax = getSyntaxDeserializationMap().get(buffer.readUint8()) ?? AdblockSyntax.Common;
                     break;
 
-                case HintRuleMarshallingMap.Children:
+                case HintCommentMarshallingMap.Children:
                     node.children = new Array(buffer.readUint8());
 
                     // read children
@@ -55,11 +55,11 @@ export class HintCommentDeserializer extends BaseDeserializer {
                     }
                     break;
 
-                case HintRuleMarshallingMap.Start:
+                case HintCommentMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case HintRuleMarshallingMap.End:
+                case HintCommentMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

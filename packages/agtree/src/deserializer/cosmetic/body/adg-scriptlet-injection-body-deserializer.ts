@@ -10,16 +10,15 @@ import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-let FREQUENT_ADG_SCRIPTLET_ARGS_DESERIALIZATION_MAP: Map<number, string>;
-
-export const getFrequentPlatformsDeserializationMap = () => {
-    if (!FREQUENT_ADG_SCRIPTLET_ARGS_DESERIALIZATION_MAP) {
-        FREQUENT_ADG_SCRIPTLET_ARGS_DESERIALIZATION_MAP = new Map<number, string>(
+let frequentAdgScriptletArgsDeserializationMap: Map<number, string>;
+const getFrequentAdgScriptletArgsDeserializationMap = () => {
+    if (!frequentAdgScriptletArgsDeserializationMap) {
+        frequentAdgScriptletArgsDeserializationMap = new Map<number, string>(
             Array.from(FREQUENT_ADG_SCRIPTLET_ARGS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
 
-    return FREQUENT_ADG_SCRIPTLET_ARGS_DESERIALIZATION_MAP;
+    return frequentAdgScriptletArgsDeserializationMap;
 };
 
 export class AdgScriptletInjectionBodyDeserializer extends BaseDeserializer {
@@ -31,6 +30,6 @@ export class AdgScriptletInjectionBodyDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void {
-        ScriptletBodyDeserializer.deserialize(buffer, node, FREQUENT_ADG_SCRIPTLET_ARGS_DESERIALIZATION_MAP);
+        ScriptletBodyDeserializer.deserialize(buffer, node, getFrequentAdgScriptletArgsDeserializationMap());
     }
 }

@@ -9,7 +9,7 @@ import {
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { SimpleCommentRuleMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common';
+import { SimpleCommentMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
@@ -44,19 +44,19 @@ export class SimpleCommentDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case SimpleCommentRuleMarshallingMap.Marker:
+                case SimpleCommentMarshallingMap.Marker:
                     ValueDeserializer.deserialize(buffer, (node as CommentRule).marker = {} as Value);
                     break;
 
-                case SimpleCommentRuleMarshallingMap.Text:
+                case SimpleCommentMarshallingMap.Text:
                     ValueDeserializer.deserialize(buffer, (node as CommentRule).text = {} as Value);
                     break;
 
-                case SimpleCommentRuleMarshallingMap.Start:
+                case SimpleCommentMarshallingMap.Start:
                     node.start = buffer.readUint32();
                     break;
 
-                case SimpleCommentRuleMarshallingMap.End:
+                case SimpleCommentMarshallingMap.End:
                     node.end = buffer.readUint32();
                     break;
 

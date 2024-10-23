@@ -4,7 +4,7 @@ import { AgentSerializer } from './agent-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
-import { AgentRuleMarshallingMap } from '../../marshalling-utils/comment/agent-comment-common';
+import { AgentCommentMarshallingMap } from '../../marshalling-utils/comment/agent-comment-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
@@ -42,7 +42,7 @@ export class AgentCommentSerializer extends BaseSerializer {
 
         const count = node.children.length;
         if (count) {
-            buffer.writeUint8(AgentRuleMarshallingMap.Children);
+            buffer.writeUint8(AgentCommentMarshallingMap.Children);
 
             // note: we store the count, because re-construction of the array is faster if we know the length
             // 8 bits is more than enough here
@@ -57,12 +57,12 @@ export class AgentCommentSerializer extends BaseSerializer {
         }
 
         if (!isUndefined(node.start)) {
-            buffer.writeUint8(AgentRuleMarshallingMap.Start);
+            buffer.writeUint8(AgentCommentMarshallingMap.Start);
             buffer.writeUint32(node.start);
         }
 
         if (!isUndefined(node.end)) {
-            buffer.writeUint8(AgentRuleMarshallingMap.End);
+            buffer.writeUint8(AgentCommentMarshallingMap.End);
             buffer.writeUint32(node.end);
         }
 

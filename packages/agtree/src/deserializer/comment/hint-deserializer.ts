@@ -16,30 +16,30 @@ import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-ty
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-let FREQUENT_HINTS_DESERIALIZATION_MAP: Map<number, string>;
-export const getFrequentHintsDeserializationMap = () => {
-    if (!FREQUENT_HINTS_DESERIALIZATION_MAP) {
-        FREQUENT_HINTS_DESERIALIZATION_MAP = new Map<number, string>(
+let frequentHintsDeserializationMap: Map<number, string>;
+const getFrequentHintsDeserializationMap = () => {
+    if (!frequentHintsDeserializationMap) {
+        frequentHintsDeserializationMap = new Map<number, string>(
             Array.from(FREQUENT_HINTS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
 
-    return FREQUENT_HINTS_DESERIALIZATION_MAP;
+    return frequentHintsDeserializationMap;
 };
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-let FREQUENT_PLATFORMS_DESERIALIZATION_MAP: Map<number, string>;
+let frequentPlatformsDeserializationMap: Map<number, string>;
 export const getFrequentPlatformsDeserializationMap = () => {
-    if (!FREQUENT_PLATFORMS_DESERIALIZATION_MAP) {
-        FREQUENT_PLATFORMS_DESERIALIZATION_MAP = new Map<number, string>(
+    if (!frequentPlatformsDeserializationMap) {
+        frequentPlatformsDeserializationMap = new Map<number, string>(
             Array.from(FREQUENT_PLATFORMS_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
 
-    return FREQUENT_PLATFORMS_DESERIALIZATION_MAP;
+    return frequentPlatformsDeserializationMap;
 };
 
 /**

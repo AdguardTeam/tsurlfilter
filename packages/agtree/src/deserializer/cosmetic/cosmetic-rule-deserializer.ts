@@ -34,15 +34,15 @@ import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-let SEPARATOR_DESERIALIZATION_MAP: Map<number, string>;
-const getSeparatorDeserializationMap = () => {
-    if (!SEPARATOR_DESERIALIZATION_MAP) {
-        SEPARATOR_DESERIALIZATION_MAP = new Map<number, string>(
+let cosmeticRuleSeparatorDeserializationMap: Map<number, string>;
+const getCosmeticRuleSeparatorDeserializationMap = () => {
+    if (!cosmeticRuleSeparatorDeserializationMap) {
+        cosmeticRuleSeparatorDeserializationMap = new Map<number, string>(
             Array.from(COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP).map(([key, value]) => [value, key]),
         );
     }
 
-    return SEPARATOR_DESERIALIZATION_MAP;
+    return cosmeticRuleSeparatorDeserializationMap;
 };
 
 /**
@@ -141,7 +141,7 @@ export class CosmeticRuleDeserializer extends BaseDeserializer {
                     ValueDeserializer.deserialize(
                         buffer,
                         node.separator = {} as Value,
-                        getSeparatorDeserializationMap(),
+                        getCosmeticRuleSeparatorDeserializationMap(),
                     );
                     break;
 
