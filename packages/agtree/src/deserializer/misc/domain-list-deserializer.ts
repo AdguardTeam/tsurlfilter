@@ -1,11 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { COMMA, NULL } from '../../utils/constants';
-import {
-    type DomainList,
-    BinaryTypeMap,
-    type DomainListSeparator,
-    ListNodeType,
-} from '../../nodes';
+import { type DomainList, type DomainListSeparator, ListNodeType } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
 import {
     DomainListMarshallingMap,
@@ -13,6 +8,7 @@ import {
 } from '../../serialization-utils/misc/domain-list-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ListItemsDeserializer } from './list-items-deserializer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
@@ -39,7 +35,7 @@ export class DomainListDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: DomainList): void {
-        buffer.assertUint8(BinaryTypeMap.DomainListNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.DomainListNode);
 
         node.type = ListNodeType.DomainList;
 

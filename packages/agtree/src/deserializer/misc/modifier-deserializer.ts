@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { NULL } from '../../utils/constants';
-import { BinaryTypeMap, type Value, type Modifier } from '../../nodes';
+import { type Value, type Modifier } from '../../nodes';
 import { ValueDeserializer } from './value-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import {
@@ -9,6 +9,7 @@ import {
     ModifierNodeMarshallingMap,
 } from '../../serialization-utils/misc/modifier-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
@@ -57,7 +58,7 @@ export class ModifierDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<Modifier>): void {
-        buffer.assertUint8(BinaryTypeMap.ModifierNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ModifierNode);
 
         node.type = 'Modifier';
 

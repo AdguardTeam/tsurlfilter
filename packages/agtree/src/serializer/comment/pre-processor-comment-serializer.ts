@@ -1,6 +1,6 @@
 import { NULL } from '../../utils/constants';
 import type { PreProcessorCommentRule } from '../../nodes';
-import { BinaryTypeMap, getSyntaxSerializationMap } from '../../nodes';
+import { getSyntaxSerializationMap } from '../../nodes';
 import { LogicalExpressionSerializer } from '../misc/logical-expression-serializer';
 import { ParameterListSerializer } from '../misc/parameter-list-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
@@ -12,6 +12,7 @@ import {
     FREQUENT_PARAMS_SERIALIZATION_MAP,
     PreProcessorRuleMarshallingMap,
 } from '../../serialization-utils/comment/pre-processor-comment-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `PreProcessorSerializer` is responsible for serializing preprocessor rules.
@@ -38,7 +39,7 @@ export class PreProcessorCommentSerializer extends BaseSerializer {
      */
     // TODO: add support for raws, if ever needed
     public static serialize(node: PreProcessorCommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.PreProcessorCommentRuleNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.PreProcessorCommentRuleNode);
 
         buffer.writeUint8(PreProcessorRuleMarshallingMap.Name);
         ValueSerializer.serialize(node.name, buffer, FREQUENT_DIRECTIVES_SERIALIZATION_MAP);

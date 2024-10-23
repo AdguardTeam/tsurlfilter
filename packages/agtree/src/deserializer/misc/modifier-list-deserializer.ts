@@ -1,10 +1,11 @@
 /* eslint-disable no-param-reassign */
 import { NULL } from '../../utils/constants';
-import { BinaryTypeMap, type Modifier, type ModifierList } from '../../nodes';
+import { type Modifier, type ModifierList } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
 import { ModifierDeserializer } from './modifier-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ModifierListNodeMarshallingMap } from '../../serialization-utils/misc/modifier-list-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `ModifierListDeserializer` is responsible for deserializing modifier lists. Please note that the name is not
@@ -22,7 +23,7 @@ export class ModifierListDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: ModifierList): void {
-        buffer.assertUint8(BinaryTypeMap.ModifierListNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ModifierListNode);
 
         node.type = 'ModifierList';
 

@@ -1,5 +1,5 @@
 import { NULL } from '../../utils/constants';
-import { BinaryTypeMap, type Agent } from '../../nodes';
+import { type Agent } from '../../nodes';
 import { ValueSerializer } from '../misc/value-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
@@ -9,6 +9,7 @@ import {
     AgentNodeMarshallingMap,
     FREQUENT_AGENTS_DESERIALIZATION_MAP,
 } from '../../serialization-utils/comment/agent-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
@@ -48,7 +49,7 @@ export class AgentSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: Agent, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.AgentNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.AgentNode);
 
         buffer.writeUint8(AgentNodeMarshallingMap.Adblock);
         ValueSerializer.serialize(node.adblock, buffer, getFrequentAgentsSerializationMap(), true);

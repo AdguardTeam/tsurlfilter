@@ -1,11 +1,12 @@
 import { NULL } from '../../utils/constants';
-import { type HintCommentRule, BinaryTypeMap, getSyntaxSerializationMap } from '../../nodes';
+import { type HintCommentRule, getSyntaxSerializationMap } from '../../nodes';
 import { HintSerializer } from './hint-serializer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
 import { HintRuleMarshallingMap } from '../../serialization-utils/comment/hint-comment-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `HintCommentSerializer` is responsible for serializing AdGuard hint rules.
@@ -27,7 +28,7 @@ export class HintCommentSerializer extends BaseSerializer {
      */
     // TODO: add support for raws, if ever needed
     public static serialize(node: HintCommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.HintRuleNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.HintRuleNode);
 
         if (node.syntax === AdblockSyntax.Adg) {
             buffer.writeUint8(HintRuleMarshallingMap.Syntax);

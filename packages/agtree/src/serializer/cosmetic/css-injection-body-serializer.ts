@@ -1,10 +1,11 @@
-import { BinaryTypeMap, type CssInjectionRuleBody } from '../../nodes';
+import { type CssInjectionRuleBody } from '../../nodes';
 import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL } from '../../utils/constants';
 import { BaseSerializer } from '../base-serializer';
 import { CssInjectionRuleMarshallingMap } from '../../serialization-utils/cosmetic/body/css-injection-body-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 export class CssInjectionBodySerializer extends BaseSerializer {
     /**
@@ -14,7 +15,7 @@ export class CssInjectionBodySerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: CssInjectionRuleBody, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.CssInjectionRuleBody);
+        buffer.writeUint8(BinaryTypeMarshallingMap.CssInjectionRuleBody);
 
         if (node.mediaQueryList) {
             buffer.writeUint8(CssInjectionRuleMarshallingMap.MediaQueryList);

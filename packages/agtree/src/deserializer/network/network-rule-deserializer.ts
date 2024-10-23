@@ -2,7 +2,6 @@
 import { NULL } from '../../utils/constants';
 import {
     type NetworkRule,
-    BinaryTypeMap,
     getSyntaxDeserializationMap,
     type ModifierList,
     NetworkRuleType,
@@ -15,6 +14,7 @@ import { ModifierListDeserializer } from '../misc/modifier-list-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { NetworkRuleMarshallingMap } from '../../serialization-utils/network/network-rule-common';
 import { AdblockSyntax } from '../../utils/adblockers';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `NetworkRuleDeserializer` is responsible for deserializing network rules.
@@ -30,7 +30,7 @@ export class NetworkRuleDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<NetworkRule>): void {
-        buffer.assertUint8(BinaryTypeMap.NetworkRuleNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.NetworkRuleNode);
 
         node.type = NetworkRuleType.NetworkRule;
         node.category = RuleCategory.Network;

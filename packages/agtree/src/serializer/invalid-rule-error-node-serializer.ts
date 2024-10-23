@@ -1,9 +1,10 @@
 import { BaseSerializer } from './base-serializer';
-import { BinaryTypeMap, type InvalidRuleError } from '../nodes';
+import { type InvalidRuleError } from '../nodes';
 import type { OutputByteBuffer } from '../utils/output-byte-buffer';
 import { isUndefined } from '../utils/type-guards';
 import { NULL } from '../utils/constants';
 import { InvalidRuleErrorNodeMarshallingMap } from '../serialization-utils/invalid-rule-error-node-common';
+import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
 
 export class InvalidRuleErrorNodeSerializer extends BaseSerializer {
     /**
@@ -13,7 +14,7 @@ export class InvalidRuleErrorNodeSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: InvalidRuleError, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.InvalidRuleErrorNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.InvalidRuleErrorNode);
 
         buffer.writeUint8(InvalidRuleErrorNodeMarshallingMap.Name);
         buffer.writeString(node.name);

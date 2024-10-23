@@ -1,5 +1,5 @@
 import { NULL } from '../../utils/constants';
-import { type ConfigCommentRule, BinaryTypeMap, type ConfigNode } from '../../nodes';
+import { type ConfigCommentRule, type ConfigNode } from '../../nodes';
 import { ParameterListSerializer } from '../misc/parameter-list-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from '../misc/value-serializer';
@@ -10,6 +10,7 @@ import {
     ConfigNodeMarshallingMap,
     FREQUENT_COMMANDS_SERIALIZATION_MAP,
 } from '../../serialization-utils/comment/config-comment-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.
@@ -25,7 +26,7 @@ export class ConfigCommentSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     private static serializeConfigNode(node: ConfigNode, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ConfigNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ConfigNode);
 
         buffer.writeUint8(ConfigNodeMarshallingMap.Value);
         // note: we don't support serializing generic objects, only AGTree nodes
@@ -53,7 +54,7 @@ export class ConfigCommentSerializer extends BaseSerializer {
      */
     // TODO: add support for raws, if ever needed
     public static serialize(node: ConfigCommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ConfigCommentRuleNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ConfigCommentRuleNode);
 
         buffer.writeUint8(ConfigCommentRuleMarshallingMap.Marker);
         ValueSerializer.serialize(node.marker, buffer);

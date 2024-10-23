@@ -1,10 +1,11 @@
 import { NULL } from '../../utils/constants';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
-import { BinaryTypeMap, type CommentRule } from '../../nodes';
+import { type CommentRule } from '../../nodes';
 import { ValueSerializer } from '../misc/value-serializer';
 import { BaseSerializer } from '../base-serializer';
 import { SimpleCommentRuleMarshallingMap } from '../../serialization-utils/comment/simple-comment-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `SimpleCommentSerializer` is responsible for parsing simple comments.
@@ -27,7 +28,7 @@ export class SimpleCommentSerializer extends BaseSerializer {
      */
     // TODO: add support for raws, if ever needed
     public static serialize(node: CommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.CommentRuleNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.CommentRuleNode);
 
         buffer.writeUint8(SimpleCommentRuleMarshallingMap.Marker);
         ValueSerializer.serialize(node.marker, buffer);

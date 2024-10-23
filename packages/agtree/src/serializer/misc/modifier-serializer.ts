@@ -1,5 +1,5 @@
 import { NULL } from '../../utils/constants';
-import { BinaryTypeMap, type Modifier } from '../../nodes';
+import { type Modifier } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from './value-serializer';
 import { isUndefined } from '../../utils/type-guards';
@@ -9,6 +9,7 @@ import {
     FREQUENT_REDIRECT_MODIFIERS_MARSHALLING_MAP,
     ModifierNodeMarshallingMap,
 } from '../../serialization-utils/misc/modifier-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `ModifierSerializer` is responsible for serializing modifiers.
@@ -24,7 +25,7 @@ export class ModifierSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: Modifier, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ModifierNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.ModifierNode);
 
         buffer.writeUint8(ModifierNodeMarshallingMap.Name);
         ValueSerializer.serialize(node.name, buffer, FREQUENT_MODIFIERS_MARSHALLING_MAP);

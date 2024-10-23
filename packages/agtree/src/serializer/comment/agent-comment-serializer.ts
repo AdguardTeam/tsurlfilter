@@ -1,10 +1,11 @@
 import { NULL, UINT8_MAX } from '../../utils/constants';
-import { type AgentCommentRule, BinaryTypeMap } from '../../nodes';
+import { type AgentCommentRule } from '../../nodes';
 import { AgentSerializer } from './agent-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseSerializer } from '../base-serializer';
 import { AgentRuleMarshallingMap } from '../../serialization-utils/comment/agent-comment-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `AgentCommentSerializer` is responsible for serializing an Adblock agent comments.
@@ -37,7 +38,7 @@ export class AgentCommentSerializer extends BaseSerializer {
      */
     // TODO: add support for raws, if ever needed
     public static serialize(node: AgentCommentRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.AgentRuleNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.AgentRuleNode);
 
         const count = node.children.length;
         if (count) {

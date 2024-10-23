@@ -1,11 +1,12 @@
 import { NULL } from '../../utils/constants';
-import { type HostRule, BinaryTypeMap, getSyntaxSerializationMap } from '../../nodes';
+import { type HostRule, getSyntaxSerializationMap } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
 import { HostnameListSerializer } from './hostname-list-serializer';
 import { BaseSerializer } from '../base-serializer';
 import { HostRuleMarshallingMap } from '../../serialization-utils/misc/host-rule-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `HostRuleSerializer` is responsible for serializing hosts-like rules.
@@ -34,7 +35,7 @@ export class HostRuleSerializer extends BaseSerializer {
      */
     // TODO: add support for raws, if ever needed
     public static serialize(node: HostRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.HostRuleNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.HostRuleNode);
 
         buffer.writeUint8(HostRuleMarshallingMap.Syntax);
         buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);

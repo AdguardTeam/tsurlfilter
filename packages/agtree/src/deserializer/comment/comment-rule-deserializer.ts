@@ -2,7 +2,6 @@ import { AgentCommentDeserializer } from './agent-comment-deserializer';
 import {
     type AgentCommentRule,
     type AnyCommentRule,
-    BinaryTypeMap,
     type CommentRule,
     type ConfigCommentRule,
     type HintCommentRule,
@@ -16,6 +15,7 @@ import { PreProcessorCommentDeserializer } from './pre-processor-comment-deseria
 import { SimpleCommentDeserializer } from './simple-comment-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `CommentRuleSerializer` is responsible for serializing any comment-like adblock rules.
@@ -85,27 +85,27 @@ export class CommentRuleDeserializer extends BaseDeserializer {
         const type = buffer.peekUint8();
 
         switch (type) {
-            case BinaryTypeMap.AgentRuleNode:
+            case BinaryTypeMarshallingMap.AgentRuleNode:
                 AgentCommentDeserializer.deserialize(buffer, node as Partial<AgentCommentRule>);
                 return;
 
-            case BinaryTypeMap.HintRuleNode:
+            case BinaryTypeMarshallingMap.HintRuleNode:
                 HintCommentDeserializer.deserialize(buffer, node as Partial<HintCommentRule>);
                 return;
 
-            case BinaryTypeMap.PreProcessorCommentRuleNode:
+            case BinaryTypeMarshallingMap.PreProcessorCommentRuleNode:
                 PreProcessorCommentDeserializer.deserialize(buffer, node as Partial<PreProcessorCommentRule>);
                 return;
 
-            case BinaryTypeMap.MetadataCommentRuleNode:
+            case BinaryTypeMarshallingMap.MetadataCommentRuleNode:
                 MetadataCommentDeserializer.deserialize(buffer, node as Partial<MetadataCommentRule>);
                 return;
 
-            case BinaryTypeMap.ConfigCommentRuleNode:
+            case BinaryTypeMarshallingMap.ConfigCommentRuleNode:
                 ConfigCommentDeserializer.deserialize(buffer, node as Partial<ConfigCommentRule>);
                 return;
 
-            case BinaryTypeMap.CommentRuleNode:
+            case BinaryTypeMarshallingMap.CommentRuleNode:
                 SimpleCommentDeserializer.deserialize(buffer, node as Partial<CommentRule>);
                 return;
 

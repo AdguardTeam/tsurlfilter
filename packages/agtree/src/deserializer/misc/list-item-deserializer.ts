@@ -1,9 +1,10 @@
 /* eslint-disable no-param-reassign */
 import { BaseDeserializer } from '../base-deserializer';
-import { BinaryTypeMap, type ListItem, ListItemNodeType } from '../../nodes';
+import { type ListItem, ListItemNodeType } from '../../nodes';
 import { NULL } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ListItemMarshallingMap } from '../../serialization-utils/misc/list-item-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 export class ListItemDeserializer extends BaseDeserializer {
 /**
@@ -20,19 +21,19 @@ export class ListItemDeserializer extends BaseDeserializer {
         const type = buffer.readUint8();
 
         switch (type) {
-            case BinaryTypeMap.AppNode:
+            case BinaryTypeMarshallingMap.AppNode:
                 node.type = ListItemNodeType.App as T;
                 break;
 
-            case BinaryTypeMap.DomainNode:
+            case BinaryTypeMarshallingMap.DomainNode:
                 node.type = ListItemNodeType.Domain as T;
                 break;
 
-            case BinaryTypeMap.MethodNode:
+            case BinaryTypeMarshallingMap.MethodNode:
                 node.type = ListItemNodeType.Method as T;
                 break;
 
-            case BinaryTypeMap.StealthOptionNode:
+            case BinaryTypeMarshallingMap.StealthOptionNode:
                 node.type = ListItemNodeType.StealthOption as T;
                 break;
 

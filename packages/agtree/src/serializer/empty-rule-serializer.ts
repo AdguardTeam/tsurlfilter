@@ -1,9 +1,10 @@
 import { BaseSerializer } from './base-serializer';
-import { BinaryTypeMap, type EmptyRule } from '../nodes';
+import { type EmptyRule } from '../nodes';
 import type { OutputByteBuffer } from '../utils/output-byte-buffer';
 import { isUndefined } from '../utils/type-guards';
 import { NULL } from '../utils/constants';
 import { EmptyRuleMarshallingMap } from '../serialization-utils/empty-rule-common';
+import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
 
 export class EmptyRuleSerializer extends BaseSerializer {
     /**
@@ -13,7 +14,7 @@ export class EmptyRuleSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: EmptyRule, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.EmptyRule);
+        buffer.writeUint8(BinaryTypeMarshallingMap.EmptyRule);
 
         if (!isUndefined(node.start)) {
             buffer.writeUint8(EmptyRuleMarshallingMap.Start);

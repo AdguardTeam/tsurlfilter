@@ -2,7 +2,6 @@
 import { NULL } from '../../utils/constants';
 import {
     type ConfigCommentRule,
-    BinaryTypeMap,
     type ConfigNode,
     CommentRuleType,
     RuleCategory,
@@ -19,6 +18,7 @@ import {
 import { AdblockSyntax } from '../../utils/adblockers';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { ParameterListDeserializer } from '../misc/parameter-list-deserializer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
@@ -50,7 +50,7 @@ export class ConfigCommentDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     private static deserializeConfigNode(buffer: InputByteBuffer, node: Partial<ConfigNode>): void {
-        buffer.assertUint8(BinaryTypeMap.ConfigNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ConfigNode);
 
         node.type = 'ConfigNode';
 
@@ -86,7 +86,7 @@ export class ConfigCommentDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<ConfigCommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.ConfigCommentRuleNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ConfigCommentRuleNode);
 
         node.type = CommentRuleType.ConfigCommentRule;
         node.category = RuleCategory.Comment;
@@ -105,7 +105,7 @@ export class ConfigCommentDeserializer extends BaseDeserializer {
                     break;
 
                 case ConfigCommentRuleMarshallingMap.Params:
-                    if (buffer.peekUint8() === BinaryTypeMap.ConfigNode) {
+                    if (buffer.peekUint8() === BinaryTypeMarshallingMap.ConfigNode) {
                         ConfigCommentDeserializer.deserializeConfigNode(buffer, node.params = {} as ConfigNode);
                     } else {
                         ParameterListDeserializer.deserialize(buffer, node.params = {} as ParameterList);

@@ -1,10 +1,11 @@
 import { BaseSerializer } from '../base-serializer';
-import { BinaryTypeMap, type HostnameList } from '../../nodes';
+import { type HostnameList } from '../../nodes';
 import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL, UINT16_MAX } from '../../utils/constants';
 import { ValueSerializer } from '../misc/value-serializer';
 import { HostnameListNodeMarshallingMap } from '../../serialization-utils/misc/hostname-list-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 export class HostnameListSerializer extends BaseSerializer {
     /**
@@ -14,7 +15,7 @@ export class HostnameListSerializer extends BaseSerializer {
      * @param buffer ByteBuffer for writing binary data.
      */
     public static serialize(node: HostnameList, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.HostnameListNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.HostnameListNode);
 
         if (!isUndefined(node.start)) {
             buffer.writeUint8(HostnameListNodeMarshallingMap.Start);

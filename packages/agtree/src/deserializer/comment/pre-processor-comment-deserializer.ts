@@ -6,12 +6,7 @@ import type {
     PreProcessorCommentRule,
     Value,
 } from '../../nodes';
-import {
-    BinaryTypeMap,
-    CommentRuleType,
-    getSyntaxDeserializationMap,
-    RuleCategory,
-} from '../../nodes';
+import { CommentRuleType, getSyntaxDeserializationMap, RuleCategory } from '../../nodes';
 import { BaseDeserializer } from '../base-deserializer';
 import {
     FREQUENT_DIRECTIVES_SERIALIZATION_MAP,
@@ -23,6 +18,7 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { LogicalExpressionDeserializer } from '../misc/logical-expression-deserializer';
 import { ParameterListDeserializer } from '../misc/parameter-list-deserializer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
@@ -77,7 +73,7 @@ export class PreProcessorCommentDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<PreProcessorCommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.PreProcessorCommentRuleNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.PreProcessorCommentRuleNode);
 
         node.type = CommentRuleType.PreProcessorCommentRule;
         node.category = RuleCategory.Comment;
@@ -97,18 +93,18 @@ export class PreProcessorCommentDeserializer extends BaseDeserializer {
 
                 case PreProcessorRuleMarshallingMap.Params:
                     switch (buffer.peekUint8()) {
-                        case BinaryTypeMap.ValueNode:
+                        case BinaryTypeMarshallingMap.ValueNode:
                             ValueDeserializer.deserialize(buffer, node.params = {} as Value);
                             break;
 
-                        case BinaryTypeMap.ParameterListNode:
+                        case BinaryTypeMarshallingMap.ParameterListNode:
                             // eslint-disable-next-line max-len
                             ParameterListDeserializer.deserialize(buffer, node.params = {} as ParameterList, getFrequentParamsDeserializationMap());
                             break;
 
-                        case BinaryTypeMap.ExpressionOperatorNode:
-                        case BinaryTypeMap.ExpressionParenthesisNode:
-                        case BinaryTypeMap.ExpressionVariableNode:
+                        case BinaryTypeMarshallingMap.ExpressionOperatorNode:
+                        case BinaryTypeMarshallingMap.ExpressionParenthesisNode:
+                        case BinaryTypeMarshallingMap.ExpressionVariableNode:
                             LogicalExpressionDeserializer.deserialize(buffer, node.params = {} as AnyExpressionNode);
                             break;
 

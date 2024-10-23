@@ -1,9 +1,10 @@
 /* eslint-disable no-param-reassign */
-import { BinaryTypeMap, type Value } from '../../nodes';
+import { type Value } from '../../nodes';
 import { EMPTY, NULL } from '../../utils/constants';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueNodeMarshallingMap } from '../../serialization-utils/misc/value-common';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * Value deserializer.
@@ -22,7 +23,7 @@ export class ValueDeserializer extends BaseDeserializer {
         node: Partial<Value>,
         frequentValuesMap?: Map<number, string>,
     ): void {
-        buffer.assertUint8(BinaryTypeMap.ValueNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ValueNode);
 
         node.type = 'Value';
 

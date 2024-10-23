@@ -2,7 +2,6 @@
 import { NULL } from '../../utils/constants';
 import {
     type HostRule,
-    BinaryTypeMap,
     getSyntaxDeserializationMap,
     type HostnameList,
     NetworkRuleType,
@@ -15,6 +14,7 @@ import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { HostRuleMarshallingMap } from '../../serialization-utils/misc/host-rule-common';
 import { AdblockSyntax } from '../../utils/adblockers';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `HostRuleSerializer` is responsible for serializing hosts-like rules.
@@ -42,7 +42,7 @@ export class HostRuleDeserializer extends BaseDeserializer {
      * @param node Destination node.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<HostRule>): void {
-        buffer.assertUint8(BinaryTypeMap.HostRuleNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.HostRuleNode);
 
         node.category = RuleCategory.Network;
         node.type = NetworkRuleType.HostRule;

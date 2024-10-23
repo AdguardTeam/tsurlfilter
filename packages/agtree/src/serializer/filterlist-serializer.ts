@@ -1,10 +1,11 @@
-import { BinaryTypeMap, type FilterList } from '../nodes';
+import { type FilterList } from '../nodes';
 import { NULL } from '../utils/constants';
 import { type OutputByteBuffer } from '../utils/output-byte-buffer';
 import { isUndefined } from '../utils/type-guards';
 import { BaseSerializer } from './base-serializer';
 import { RuleSerializer } from './rule-serializer';
 import { FilterListNodeMarshallingMap } from '../serialization-utils/filter-list-common';
+import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
@@ -19,7 +20,7 @@ export class FilterListSerializer extends BaseSerializer {
      */
     // TODO: add support for raws, if ever needed
     public static serialize(node: FilterList, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.FilterListNode);
+        buffer.writeUint8(BinaryTypeMarshallingMap.FilterListNode);
 
         buffer.writeUint8(FilterListNodeMarshallingMap.Children);
         const count = node.children.length;

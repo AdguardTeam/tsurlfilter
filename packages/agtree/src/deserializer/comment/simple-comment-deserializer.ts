@@ -1,7 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { NULL } from '../../utils/constants';
 import {
-    BinaryTypeMap,
     CommentRuleType,
     RuleCategory,
     type Value,
@@ -12,6 +11,7 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { SimpleCommentRuleMarshallingMap } from '../../serialization-utils/comment/simple-comment-common';
 import { ValueDeserializer } from '../misc/value-deserializer';
+import { BinaryTypeMarshallingMap } from '../../common/marshalling-common';
 
 /**
  * `SimpleCommentDeserializer` is responsible for deserializing simple comments.
@@ -35,7 +35,7 @@ export class SimpleCommentDeserializer extends BaseDeserializer {
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<CommentRule>): void {
-        buffer.assertUint8(BinaryTypeMap.CommentRuleNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.CommentRuleNode);
 
         node.type = CommentRuleType.CommentRule;
         node.category = RuleCategory.Comment;

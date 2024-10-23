@@ -1,9 +1,10 @@
 /* eslint-disable no-param-reassign */
 import { BaseDeserializer } from './base-deserializer';
-import { BinaryTypeMap, type InvalidRuleError } from '../nodes';
+import { type InvalidRuleError } from '../nodes';
 import { NULL } from '../utils/constants';
 import { type InputByteBuffer } from '../utils/input-byte-buffer';
 import { InvalidRuleErrorNodeMarshallingMap } from '../serialization-utils/invalid-rule-error-node-common';
+import { BinaryTypeMarshallingMap } from '../common/marshalling-common';
 
 export class InvalidRuleErrorNodeDeserializer extends BaseDeserializer {
     /**
@@ -12,8 +13,8 @@ export class InvalidRuleErrorNodeDeserializer extends BaseDeserializer {
      * @param buffer ByteBuffer for reading binary data.
      * @param node Destination node.
      */
-    public static deserializeInvalidRuleErrorNode(buffer: InputByteBuffer, node: Partial<InvalidRuleError>): void {
-        buffer.assertUint8(BinaryTypeMap.InvalidRuleErrorNode);
+    public static deserialize(buffer: InputByteBuffer, node: Partial<InvalidRuleError>): void {
+        buffer.assertUint8(BinaryTypeMarshallingMap.InvalidRuleErrorNode);
 
         node.type = 'InvalidRuleError';
 

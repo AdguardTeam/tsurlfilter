@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { BinaryTypeMap, type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
+import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
 import { NULL } from '../../../utils/constants';
 import { ParameterListDeserializer } from '../../misc/parameter-list-deserializer';
 import { BaseDeserializer } from '../../base-deserializer';
@@ -7,6 +7,7 @@ import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import {
     AbpSnippetBodyMarshallingMap,
 } from '../../../serialization-utils/cosmetic/body/abp-snippet-injection-body-common';
+import { BinaryTypeMarshallingMap } from '../../../common/marshalling-common';
 
 export class ScriptletBodyDeserializer extends BaseDeserializer {
     /**
@@ -23,7 +24,7 @@ export class ScriptletBodyDeserializer extends BaseDeserializer {
         node: Partial<ScriptletInjectionRuleBody>,
         frequentScriptletArgs?: Map<number, string>,
     ): void => {
-        buffer.assertUint8(BinaryTypeMap.ScriptletInjectionRuleBodyNode);
+        buffer.assertUint8(BinaryTypeMarshallingMap.ScriptletInjectionRuleBodyNode);
 
         node.type = 'ScriptletInjectionRuleBody';
 
