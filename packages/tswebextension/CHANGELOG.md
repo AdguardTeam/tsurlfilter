@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated [@adguard/agtree] to `v2.1.3`.
 
+### Fixed
+
+- A rule from a disabled filter list disables another rule [AdguardBrowserExtension#3002].
+
+[AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
+
 ## [2.4.0-alpha.6] - 2024-10-18
 
 ### Fixed
