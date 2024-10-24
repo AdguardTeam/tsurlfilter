@@ -6,6 +6,16 @@ import type { SettingsConfigMV3 } from '../configuration';
 import { searchEngineDomains } from './searchEngineDomains';
 import { logger } from '../../../common/utils/logger';
 import { type StealthConfig } from '../../../common/configuration';
+import { requestContextStorage, type RequestContext } from '../request';
+import { StealthActions } from '../../../common/stealth-actions';
+import {
+    findHeaderByName,
+    getDomain,
+    hasHeader,
+    hasHeaderByName,
+} from '../../../common/utils';
+import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
+import { appContext } from '../app-context';
 
 /**
  * Reserved stealth rule ids for the DNR.
