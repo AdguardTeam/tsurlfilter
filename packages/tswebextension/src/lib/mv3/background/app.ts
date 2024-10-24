@@ -304,6 +304,13 @@ export class TsWebExtension implements AppInterface<
                 staticFilters,
             );
 
+            // Get enabled static rule sets
+            const enabledRuleSetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
+            const enabledStaticRuleSets = staticRuleSets.filter((ruleSet) => {
+                const ruleSetId = ruleSet.getId();
+                return enabledRuleSetsIds.includes(ruleSetId);
+            });
+
             // Update allowlist settings.
             allowlistApi.configure(configuration);
             // Combine all allowlist rules into one network rule.
@@ -335,7 +342,7 @@ export class TsWebExtension implements AppInterface<
                 allowlistFilter,
                 userRulesFilter,
                 customFilters,
-                staticRuleSets,
+                enabledStaticRuleSets,
                 this.webAccessibleResourcesPath,
             );
 

@@ -54,7 +54,7 @@ export default class DynamicRulesApi {
      * @param allowlistRules Filter with allowlist rules.
      * @param userRules Filter with user rules.
      * @param customFilters List of custom filters.
-     * @param staticRuleSets List of enabled static rule sets to apply
+     * @param enabledStaticRuleSets List of enabled static rule sets to apply
      * $badfilter rules from dynamic rules to static.
      * @param resourcesPath String path to web accessible resources,
      * relative to the extension root dir. Should start with leading slash '/'.
@@ -71,7 +71,7 @@ export default class DynamicRulesApi {
         allowlistRules: IFilter,
         userRules: IFilter,
         customFilters: IFilter[],
-        staticRuleSets: IRuleSet[],
+        enabledStaticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
@@ -83,10 +83,10 @@ export default class DynamicRulesApi {
 
         // Create filter and convert into single rule set
         const converter = new DeclarativeFilterConverter();
+
         const conversionResult = await converter.convertDynamicRuleSets(
             filterList,
-            // TODO: (AG-34651) Pass only enabled rulesets
-            staticRuleSets,
+            enabledStaticRuleSets,
             {
                 resourcesPath,
                 maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
@@ -114,7 +114,7 @@ export default class DynamicRulesApi {
             // Because in other case, when we will re-enable filter - maybe it
             // will contains already disabled rules?
             // Undoes all previously applied changes.
-            await this.cancelAllStaticRulesUpdates(staticRuleSets);
+            await this.cancelAllStaticRulesUpdates(enabledStaticRuleSets);
         }
 
         return conversionResult;
