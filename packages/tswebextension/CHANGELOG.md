@@ -8,6 +8,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
+## Unreleased
+
+### Changed
+
+- Updated [@adguard/agtree] to `v2.1.3`.
+
+### Fixed
+
+- A rule from a disabled filter list disables another rule [AdguardBrowserExtension#3002].
+
+[AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
+
+## [2.4.0-alpha.6] - 2024-10-18
+
+### Fixed
+
+- Incorrect caching strategy for filters and rulesets.
+
+[2.4.0-alpha.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.6
+
+## [2.4.0-alpha.5] - 2024-10-17
+
+### Fixed
+
+- Allowlist determination for a new tab.
+
+[2.4.0-alpha.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.5
+
 ## [2.4.0-alpha.4] - 2024-10-16
 
 ### Changed
