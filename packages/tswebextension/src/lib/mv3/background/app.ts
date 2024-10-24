@@ -29,7 +29,7 @@ import { RequestEvents } from './request/events/request-events';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { WebRequestApi } from './web-request-api';
-import { StealthService } from './services/stealth-service';
+import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { allowlistApi } from './allowlist-api';
 import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
@@ -40,6 +40,7 @@ type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
     staticFilters: IRuleSet[],
     dynamicRules?: ConversionResult
+    stealthResult?: StealthConfigurationResult,
 };
 
 type FiltersUpdateInfo = {
@@ -282,7 +283,7 @@ export class TsWebExtension implements AppInterface<
         };
 
         if (configuration.settings.filteringEnabled) {
-            await StealthService.applySettings(configuration.settings);
+            res.stealthResult = await StealthService.applySettings(configuration.settings);
 
             // Extract filters info from configuration and wrap them into IFilters.
             const {
@@ -390,14 +391,18 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if {@link configuration} not set.
      * @param isHideReferrer `isHideReferrer` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
      */
-    public async setHideReferrer(isHideReferrer: boolean): Promise<void> {
+    public async setHideReferrer(isHideReferrer: boolean): Promise<boolean> {
         if (!this.configuration) {
             throw new Error('Configuration not set');
         }
 
-        await StealthService.setHideReferrer(isHideReferrer);
-        this.configuration.settings.stealth.hideReferrer = isHideReferrer;
+        const currentValue = await StealthService.setHideReferrer(isHideReferrer);
+        this.configuration.settings.stealth.hideReferrer = currentValue;
+
+        return currentValue;
     }
 
     /**
@@ -406,14 +411,18 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if {@link configuration} not set.
      * @param isBlockWebRTC `blockWebRTC` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
      */
-    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<void> {
+    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<boolean> {
         if (!this.configuration) {
             throw new Error('Configuration not set');
         }
 
-        await StealthService.setDisableWebRTC(isBlockWebRTC);
-        this.configuration.settings.stealth.blockWebRTC = isBlockWebRTC;
+        const currentValue = await StealthService.setDisableWebRTC(isBlockWebRTC);
+        this.configuration.settings.stealth.blockWebRTC = currentValue;
+
+        return currentValue;
     }
 
     /**
@@ -421,14 +430,18 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if {@link configuration} not set.
      * @param isBlockChromeClientData `blockChromeClientData` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
      */
-    public async setBlockChromeClientData(isBlockChromeClientData: boolean): Promise<void> {
+    public async setBlockChromeClientData(isBlockChromeClientData: boolean): Promise<boolean> {
         if (!this.configuration) {
             throw new Error('Configuration not set');
         }
 
-        await StealthService.setBlockChromeClientData(isBlockChromeClientData);
-        this.configuration.settings.stealth.blockChromeClientData = isBlockChromeClientData;
+        const currentValue = await StealthService.setBlockChromeClientData(isBlockChromeClientData);
+        this.configuration.settings.stealth.blockChromeClientData = currentValue;
+
+        return currentValue;
     }
 
     /**
@@ -436,18 +449,21 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if {@link configuration} not set.
      * @param isSendDoNotTrack `sendDoNotTrack` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
      */
-    public async setSendDoNotTrack(isSendDoNotTrack: boolean): Promise<void> {
+    public async setSendDoNotTrack(isSendDoNotTrack: boolean): Promise<boolean> {
         if (!this.configuration) {
             throw new Error('Configuration not set');
         }
 
-        await StealthService.setSendDoNotTrack(
+        const currentValue = await StealthService.setSendDoNotTrack(
             isSendDoNotTrack,
             this.configuration.settings.gpcScriptUrl,
         );
+        this.configuration.settings.stealth.sendDoNotTrack = currentValue;
 
-        this.configuration.settings.stealth.sendDoNotTrack = isSendDoNotTrack;
+        return currentValue;
     }
 
     /**
@@ -455,18 +471,22 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if {@link configuration} not set.
      * @param isHideSearchQueries `hideSearchQueries` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
      */
-    public async setHideSearchQueries(isHideSearchQueries: boolean): Promise<void> {
+    public async setHideSearchQueries(isHideSearchQueries: boolean): Promise<boolean> {
         if (!this.configuration) {
             throw new Error('Configuration not set');
         }
 
-        await StealthService.setHideSearchQueries(
+        const currentValue = await StealthService.setHideSearchQueries(
             isHideSearchQueries,
             this.configuration.settings.hideDocumentReferrerScriptUrl,
         );
 
-        this.configuration.settings.stealth.hideSearchQueries = isHideSearchQueries;
+        this.configuration.settings.stealth.hideSearchQueries = currentValue;
+
+        return currentValue;
     }
 
     /**
