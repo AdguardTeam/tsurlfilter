@@ -351,9 +351,13 @@ MessageHandlerMV2
      *
      * @throws Error if {@link configuration} not set.
      * @param isHideReferrer `isHideReferrer` stealth config value.
+     *
+     * @returns Applied value for compatibility with MV3 interface.
      */
-    public setHideReferrer(isHideReferrer: boolean): void {
+    public setHideReferrer(isHideReferrer: boolean): boolean {
         this.configuration.settings.stealth.hideReferrer = isHideReferrer;
+
+        return isHideReferrer;
     }
 
     /**
@@ -361,9 +365,13 @@ MessageHandlerMV2
      *
      * @throws Error if {@link configuration} not set.
      * @param isHideSearchQueries `hideSearchQueries` stealth config value.
+     *
+     * @returns Applied value for compatibility with MV3 interface.
      */
-    public setHideSearchQueries(isHideSearchQueries: boolean): void {
+    public setHideSearchQueries(isHideSearchQueries: boolean): boolean {
         this.configuration.settings.stealth.hideSearchQueries = isHideSearchQueries;
+
+        return isHideSearchQueries;
     }
 
     /**
@@ -371,9 +379,13 @@ MessageHandlerMV2
      *
      * @throws Error if {@link configuration} not set.
      * @param isBlockChromeClientData `blockChromeClientData` stealth config value.
+     *
+     * @returns Applied value for compatibility with MV3 interface.
      */
-    public setBlockChromeClientData(isBlockChromeClientData: boolean): void {
+    public setBlockChromeClientData(isBlockChromeClientData: boolean): boolean {
         this.configuration.settings.stealth.blockChromeClientData = isBlockChromeClientData;
+
+        return isBlockChromeClientData;
     }
 
     /**
@@ -381,9 +393,13 @@ MessageHandlerMV2
      *
      * @throws Error if {@link configuration} not set.
      * @param isSendDoNotTrack `sendDoNotTrack` stealth config value.
+     *
+     * @returns Applied value for compatibility with MV3 interface.
      */
-    public setSendDoNotTrack(isSendDoNotTrack: boolean): void {
+    public setSendDoNotTrack(isSendDoNotTrack: boolean): boolean {
         this.configuration.settings.stealth.sendDoNotTrack = isSendDoNotTrack;
+
+        return isSendDoNotTrack;
     }
 
     /**
@@ -392,11 +408,15 @@ MessageHandlerMV2
      *
      * @throws Error if {@link configuration} not set.
      * @param isBlockWebRTC `blockWebRTC` stealth config value.
+     *
+     * @returns Applied value for compatibility with MV3 interface.
      */
-    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<void> {
+    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<boolean> {
         this.configuration.settings.stealth.blockWebRTC = isBlockWebRTC;
 
         await this.stealthApi.updateWebRtcPrivacyPermissions();
+
+        return isBlockWebRTC;
     }
 
     /**

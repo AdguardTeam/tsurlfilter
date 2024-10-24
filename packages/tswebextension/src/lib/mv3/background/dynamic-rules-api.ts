@@ -31,6 +31,8 @@ export default class DynamicRulesApi {
 
     /**
      * The maximum number of combined dynamic and session scoped rules an extension can add.
+     * TODO: Looks like it latest Chrome (v130) limit dynamic and session rulesets
+     * has theirs own quota. Maybe now we can move Quick Fixes rules to session ruleset.
      * In Chrome, this limit is enforced for the combination of dynamic and session scoped rules.
      * In Firefox, each ruleset has its own quota.
      *
