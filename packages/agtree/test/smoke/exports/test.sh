@@ -6,6 +6,7 @@ curr_path="test/smoke/exports"
 agtree="agtree.tgz"
 nm_path="node_modules"
 
+#FIXME uncomment
 ## Define cleanup function
 #cleanup() {
 #    echo "Performing cleanup..."
@@ -23,5 +24,5 @@ agtree_node_modules=$nm_path"/@adguard/agtree"
 mkdir -p $agtree_node_modules
 tar -xzf $agtree --strip-components=1 -C $agtree_node_modules
 
-#pnpm start
+pnpm start
 #echo "Test successfully built."

@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
+    "moduleResolution": "Node",
     "target": "es5",
-    "module":"es2015",
     "lib": ["esnext", "dom"],
     "strict": true,
     "allowSyntheticDefaultImports": true,

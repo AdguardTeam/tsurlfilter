@@ -161,6 +161,7 @@ export {
     isValidResourceType,
 } from './compatibility-tables';
 
+// FIXME consider removing from this path
 export { defaultParserOptions, type ParserOptions } from './parser/options';
 
 // Version
