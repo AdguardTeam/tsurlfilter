@@ -51,21 +51,22 @@ const banner = `/*
 
 // Common plugins for all types of builds
 export const commonPlugins = [
-    alias({
-        entries: [
-            // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
-            // We need this because we import functions from the "semver" package directly,
-            // otherwise it will cause a "circular dependency" warning during the build.
-            // See https://github.com/npm/node-semver/issues/381
-            // Rollup detects "semver" as an external dependency, so it doesn't add the ".js"
-            // extension by default, and we need to do it manually here, otherwise the ESM
-            // build will fail with "Cannot find module" error.
-            {
-                find: /semver\/(.*)(?<!\.js)$/,
-                replacement: 'semver/$1.js',
-            },
-        ],
-    }),
+    // FIXME check if this file is needed, if not remove it
+    // alias({
+    //     entries: [
+    //         // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
+    //         // We need this because we import functions from the "semver" package directly,
+    //         // otherwise it will cause a "circular dependency" warning during the build.
+    //         // See https://github.com/npm/node-semver/issues/381
+    //         // Rollup detects "semver" as an external dependency, so it doesn't add the ".js"
+    //         // extension by default, and we need to do it manually here, otherwise the ESM
+    //         // build will fail with "Cannot find module" error.
+    //         {
+    //             find: /semver\/(.*)(?<!\.js)$/,
+    //             replacement: 'semver/$1.js',
+    //         },
+    //     ],
+    // }),
     json({ preferConst: true }),
     resolve({ preferBuiltins: false }),
     commonjs({ sourceMap: false }),

@@ -2,7 +2,7 @@ import {
     type AnyRule,
     NetworkRuleType,
     RuleCategory,
-    RuleParser,
+    RuleGenerator,
 } from '@adguard/agtree';
 
 import { CosmeticRule } from './cosmetic-rule';
@@ -23,7 +23,7 @@ export class RuleFactory {
      *
      * TODO: Pack `ignore*` parameters and `silent` into one object with flags.
      *
-     * @param inputRule rule string
+     * @param node Rule node
      * @param filterListId list id
      * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
@@ -81,7 +81,7 @@ export class RuleFactory {
                     return null;
             }
         } catch (e) {
-            const ruleText = RuleParser.generate(node);
+            const ruleText = RuleGenerator.generate(node);
             const msg = `"${getErrorMessage(e)}" in the rule: "${ruleText}"`;
             if (silent) {
                 logger.info(`Error: ${msg}`);

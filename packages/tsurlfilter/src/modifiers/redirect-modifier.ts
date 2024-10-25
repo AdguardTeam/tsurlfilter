@@ -1,4 +1,5 @@
-import scriptlets from '@adguard/scriptlets';
+import { validators } from '@adguard/scriptlets/validators';
+
 import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
@@ -19,9 +20,8 @@ export class RedirectModifier implements IAdvancedModifier {
     /**
      * Constructor
      *
-     * @param value
-     * @param ruleText
-     * @param isAllowlist
+     * @param value Redirect title
+     * @param isAllowlist Is allowlist
      * @param isRedirectingOnlyBlocked is redirect-rule modifier
      */
     constructor(value: string, isAllowlist: boolean, isRedirectingOnlyBlocked = false) {
@@ -41,9 +41,8 @@ export class RedirectModifier implements IAdvancedModifier {
     /**
      * Validates redirect rule
      *
-     * @param ruleText
-     * @param redirectTitle
-     * @param isAllowlist
+     * @param redirectTitle Redirect title
+     * @param isAllowlist Is allowlist
      */
     private static validate(redirectTitle: string, isAllowlist: boolean): void {
         if (isAllowlist && !redirectTitle) {
@@ -54,8 +53,7 @@ export class RedirectModifier implements IAdvancedModifier {
             throw new SyntaxError('Invalid $redirect rule, redirect value must not be empty');
         }
 
-        const { redirects } = scriptlets;
-        if (!redirects.isRedirectResourceCompatibleWithAdg(redirectTitle)) {
+        if (!validators.isRedirectResourceCompatibleWithAdg(redirectTitle)) {
             throw new SyntaxError('$redirect modifier is invalid');
         }
     }
