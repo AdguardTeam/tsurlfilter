@@ -5,9 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- TODO: manually add compare links for version changes -->
-<!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
-
 ## Unreleased
 
 ### Changed
@@ -131,12 +128,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Stealth Mode support for MV3. New required `gpcScriptUrl` and `hideDocumentReferrerScriptUrl` configuration properties are provided to specify the path to stealth content scripts.
+- Stealth Mode support for MV3. New required `gpcScriptUrl` and `hideDocumentReferrerScriptUrl` configuration
+  properties are provided to specify the path to stealth content scripts.
 - Content Script for setting GPC signal bundled to separate module `@adguard/tswebextension/mv3/gpc`.
-- Content Script for hiding Document Referrer bundled to separate module `@adguard/tswebextension/mv3/hideDocumentReferrer`.
+- Content Script for hiding Document Referrer bundled
+  to separate module `@adguard/tswebextension/mv3/hideDocumentReferrer`.
 - Possibility to retrieve AST for dynamically generated rules via the `retrieveDynamicRuleNode` method.
 - Support for `$cookie` modifier in MV3 via `browser.cookies` API and content-script.
-- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100].
+- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`,
+  `1p-cookie` and `3p-cookie` [#100].
 - Export `EventChannel` utility class in MV3 build.
 
 ### Changed
@@ -649,8 +649,6 @@ its setting [AdguardBrowserExtension#2584].
   as filtering log events.
 - Fixed cosmetic rules injection into a cached subdocument [AdguardBrowserExtension#2420],
   [AdguardBrowserExtension#2190], [AdguardBrowserExtension#2328].
-
-<!-- FIXME: max-len -->
 
 [0.3.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.19
 [AdguardBrowserExtension#2190]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2190
