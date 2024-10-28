@@ -14,7 +14,8 @@
     "./content-script": "./dist/content-script.js",
     "./content-script/css-hits-counter": "./dist/css-hits-counter.js",
     "./cli": "./dist/cli.js",
-    "./assistant-inject": "./dist/assistant-inject.js"
+    "./assistant-inject": "./dist/assistant-inject.js",
+    "./core-storages": "./dist/core-storages.js"
   },
   "typesVersions": {
     "*": {
@@ -38,6 +39,9 @@
       ],
       "assistant-inject": [
         "dist/types/src/lib/mv2/content-script/assistant-inject.d.ts"
+      ],
+      "core-storages": [
+        "dist/types/src/lib/common/storage/index.d.ts"
       ]
     }
   },
