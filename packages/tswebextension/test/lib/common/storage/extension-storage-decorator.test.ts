@@ -1,4 +1,6 @@
 /* eslint-disable jsdoc/require-jsdoc */
+import browser from 'webextension-polyfill';
+
 import { BrowserStorage } from '../../../../src/lib/common/storage/core';
 import { createExtensionStorageDecorator, ExtensionStorage } from '../../../../src/lib/common/storage';
 
@@ -8,7 +10,7 @@ describe('createExtensionStorageDecorator', () => {
     let storage: ExtensionStorage<typeof data>;
 
     beforeAll(async () => {
-        storage = new ExtensionStorage(key, new BrowserStorage<typeof data>());
+        storage = new ExtensionStorage(key, new BrowserStorage<typeof data>(browser.storage.local));
         await storage.init(data);
     });
 

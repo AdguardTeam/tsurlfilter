@@ -1,4 +1,4 @@
-import browser, { type Storage } from 'webextension-polyfill';
+import type { Storage } from 'webextension-polyfill';
 
 import { type ExtendedStorageInterface } from './storage-interface';
 
@@ -15,7 +15,7 @@ export class BrowserStorage<Data = unknown> implements ExtendedStorageInterface<
      *
      * @param storage The storage area to use.
      */
-    constructor(storage: Storage.StorageArea = browser.storage.local) {
+    constructor(storage: Storage.StorageArea) {
         this.storage = storage;
     }
 

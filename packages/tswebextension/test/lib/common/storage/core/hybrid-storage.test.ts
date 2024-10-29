@@ -1,4 +1,5 @@
 import * as idb from 'idb';
+import browser from 'webextension-polyfill';
 import { cloneDeep } from 'lodash-es';
 import { HybridStorage } from '../../../../../src/lib/common/storage/core/hybrid-storage';
 import { IDBStorage } from '../../../../../src/lib/common/storage/core/idb-storage';
@@ -14,11 +15,11 @@ describe('HybridStorage', () => {
 
     describe('When IndexedDB is supported', () => {
         beforeEach(() => {
-            storage = new HybridStorage();
+            storage = new HybridStorage(browser.storage.local);
         });
 
         test('IDBStorage is used when IndexedDB is supported', async () => {
-            const dummyStorage = new HybridStorage();
+            const dummyStorage = new HybridStorage(browser.storage.local);
 
             // We need to make some operation to trigger the IndexedDB check, because its lazy
             // and only happens when the storage is used
@@ -32,7 +33,7 @@ describe('HybridStorage', () => {
         // HybridStorage.isIDBSupported creates a test database to check if IndexedDB is supported,
         // and we need to check if its deleted after the check
         test('test database deleted', async () => {
-            const dummyStorage = new HybridStorage();
+            const dummyStorage = new HybridStorage(browser.storage.local);
 
             // We need to make some operation to trigger the IndexedDB check, because its lazy
             // and only happens when the storage is used
@@ -141,11 +142,11 @@ describe('HybridStorage', () => {
                 throw new Error('IndexedDB not supported');
             });
 
-            storage = new HybridStorage();
+            storage = new HybridStorage(browser.storage.local);
         });
 
         test('BrowserStorage is used when IndexedDB is not supported', async () => {
-            const dummyStorage = new HybridStorage();
+            const dummyStorage = new HybridStorage(browser.storage.local);
 
             // We need to make some operation to trigger the IndexedDB check, because its lazy
             // and only happens when the storage is used

@@ -1,3 +1,5 @@
+import browser from 'webextension-polyfill';
+
 import { BrowserStorage } from '../../../../../src/lib/common/storage/core/browser-storage';
 
 jest.mock('webextension-polyfill');
@@ -6,7 +8,7 @@ describe('BrowserStorage', () => {
     let storage: BrowserStorage<any>;
 
     beforeEach(() => {
-        storage = new BrowserStorage();
+        storage = new BrowserStorage(browser.storage.local);
     });
 
     afterEach(async () => {

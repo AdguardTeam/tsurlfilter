@@ -3,7 +3,7 @@
  */
 
 import { cloneDeep } from 'lodash-es';
-import { logger } from '../../utils';
+import { logger } from '../../utils/logger';
 import { type ExtendedStorageInterface } from './storage-interface';
 
 /**

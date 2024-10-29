@@ -4,6 +4,7 @@
  * providing a unified API for storage operations. It automatically chooses between IndexedDB storage and
  * a fallback storage mechanism based on the environment's capabilities.
  */
+import type { Storage } from 'webextension-polyfill';
 
 import { nanoid } from 'nanoid';
 import * as idb from 'idb';
@@ -59,6 +60,20 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
     private storage: IDBStorage<Data> | BrowserStorage<SuperJSONResult> | null = null;
 
     /**
+     * The storage area to use when IndexedDB is not supported.
+     */
+    private fallbackStorage: Storage.StorageArea;
+
+    /**
+     * Constructs an instance of the HybridStorage class.
+     *
+     * @param fallbackStorage The storage area to use when IndexedDB is not supported.
+     */
+    constructor(fallbackStorage: Storage.StorageArea) {
+        this.fallbackStorage = fallbackStorage;
+    }
+
+    /**
      * Checks if the given storage is an instance of IDBStorage.
      *
      * @param storage The storage instance to check.
@@ -85,19 +100,36 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
         if (await HybridStorage.isIDBSupported()) {
             this.storage = new IDBStorage<Data>();
         } else {
-            this.storage = new BrowserStorage<SuperJSONResult>();
+            this.storage = new BrowserStorage<SuperJSONResult>(this.fallbackStorage);
         }
 
         return this.storage;
     }
 
     /**
-     * Checks if IndexedDB is supported in the current environment. This is determined by trying to open
-     * a test database; if successful, IndexedDB is supported.
+     * Serializes the given data using SuperJSON.
+     *
+     * @param data The data to serialize.
+     * @returns The serialized data.
+     */
+    public static serialize = SuperJSON.serialize;
+
+    /**
+     * Deserializes the given data using SuperJSON.
+     *
+     * @param data The data to deserialize.
+     * @returns The deserialized data.
+     */
+    public static deserialize = SuperJSON.deserialize;
+
+    /**
+     * Checks if IndexedDB is supported in the current environment.
+     * This is determined by trying to open a test database; if successful, IndexedDB is supported.
+     * The result of this check is cached to prevent multiple checks.
      *
      * @returns True if IndexedDB is supported, false otherwise.
      */
-    private static async isIDBSupported(): Promise<boolean> {
+    public static async isIDBSupported(): Promise<boolean> {
         if (HybridStorage.isIDBCapabilityChecked) {
             return HybridStorage.idbSupported;
         }
@@ -140,7 +172,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
             return storage.set(key, value);
         }
 
-        const serialized = SuperJSON.serialize(value);
+        const serialized = HybridStorage.serialize(value);
 
         return storage.set(key, serialized);
     }
@@ -168,7 +200,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
         }
 
         // Deserialize the value before returning it.
-        return SuperJSON.deserialize(value);
+        return HybridStorage.deserialize(value);
     }
 
     /**
