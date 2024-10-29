@@ -3,14 +3,12 @@ import escapeStringRegexp from 'escape-string-regexp';
 import { CosmeticEngine } from '../../../src/engine/cosmetic-engine/cosmetic-engine';
 import { RuleStorage } from '../../../src/filterlist/rule-storage';
 import { BufferRuleList } from '../../../src/filterlist/buffer-rule-list';
-import {
-    CosmeticOption,
-    FilterListPreprocessor,
-    type PreprocessedFilterList,
-    Request,
-    RequestType,
-    getRuleSourceIndex,
-} from '../../../src';
+import { WebRequest } from '../../../src/web-request';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
+import { RequestType } from '../../../src/request-type';
+import { CosmeticOption } from '../../../src/engine/cosmetic-option';
+import { getRuleSourceIndex } from '../../../src/filterlist/source-map';
+import { PreprocessedFilterList } from '../../../src/filterlist/preprocessor/schema';
 
 /**
  * Helper function creates rule storage.
@@ -34,7 +32,7 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
     return rawFilterList.search(new RegExp(`^${escapeStringRegexp(rule)}$`, 'm'));
 };
 
-const createRequest = (url: string) => new Request(url, null, RequestType.Document);
+const createRequest = (url: string) => new WebRequest(url, null, RequestType.Document);
 
 describe('Test cosmetic engine', () => {
     const specificRuleContent = 'banner_specific';

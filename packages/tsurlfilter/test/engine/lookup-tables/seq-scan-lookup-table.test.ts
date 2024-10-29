@@ -1,8 +1,8 @@
-import { RequestType } from '../../../src';
-import { Request } from '../../../src/request';
+import { WebRequest } from '../../../src/web-request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { SeqScanLookupTable } from '../../../src/engine/lookup-tables/seq-scan-lookup-table';
 import { createNetworkRule } from '../../helpers/rule-creator';
+import { RequestType } from '../../../src/request-type';
 
 describe('Sequence-scan Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
@@ -35,22 +35,22 @@ describe('Sequence-scan Lookup Table Tests', () => {
         fillLookupTable(table, ruleStorage);
         expect(table.getRulesCount()).toBe(4);
 
-        expect(table.matchAll(new Request('http://other.com/', '', RequestType.Document))).toHaveLength(0);
-        expect(table.matchAll(new Request('http://other.com/path', '', RequestType.Document))).toHaveLength(1);
-        expect(table.matchAll(new Request('http://example.net/path', '', RequestType.Document))).toHaveLength(2);
-        expect(table.matchAll(new Request('http://example.com/path', '', RequestType.Document))).toHaveLength(2);
+        expect(table.matchAll(new WebRequest('http://other.com/', '', RequestType.Document))).toHaveLength(0);
+        expect(table.matchAll(new WebRequest('http://other.com/path', '', RequestType.Document))).toHaveLength(1);
+        expect(table.matchAll(new WebRequest('http://example.net/path', '', RequestType.Document))).toHaveLength(2);
+        expect(table.matchAll(new WebRequest('http://example.com/path', '', RequestType.Document))).toHaveLength(2);
 
         expect(
-            table.matchAll(new Request('http://example.com/path', 'http://example.com', RequestType.Document)),
+            table.matchAll(new WebRequest('http://example.com/path', 'http://example.com', RequestType.Document)),
         ).toHaveLength(2);
         expect(
-            table.matchAll(new Request('http://example.org/path', 'http://example.org', RequestType.Document)),
+            table.matchAll(new WebRequest('http://example.org/path', 'http://example.org', RequestType.Document)),
         ).toHaveLength(2);
         expect(
-            table.matchAll(new Request('http://test.com/path', 'http://example.org', RequestType.Document)),
+            table.matchAll(new WebRequest('http://test.com/path', 'http://example.org', RequestType.Document)),
         ).toHaveLength(1);
         expect(
-            table.matchAll(new Request('http://test.com/path', 'http://sub.example.org', RequestType.Document)),
+            table.matchAll(new WebRequest('http://test.com/path', 'http://sub.example.org', RequestType.Document)),
         ).toHaveLength(1);
     });
 });

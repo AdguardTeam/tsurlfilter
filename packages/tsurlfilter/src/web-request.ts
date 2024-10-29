@@ -6,9 +6,9 @@ import { type RequestType } from './request-type';
 import { type HTTPMethod } from './modifiers/method-modifier';
 
 /**
- * Request represents a web request with all it's necessary properties
+ * WebRequest represents a web request with all it's necessary properties
  */
-export class Request {
+export class WebRequest {
     /**
      * Max url length for matching
      * Some urls are really long and slow down matching, so we cut them to this length.
@@ -16,7 +16,7 @@ export class Request {
     public static readonly MAX_URL_MATCH_LENGTH = 2000;
 
     /**
-     * Request type
+     * WebRequest type
      */
     public readonly requestType: RequestType;
 
@@ -33,7 +33,7 @@ export class Request {
     public readonly url: string;
 
     /**
-     * Request identifier
+     * WebRequest identifier
      */
     public requestId: number | undefined;
 
@@ -48,7 +48,7 @@ export class Request {
     public method: HTTPMethod | undefined;
 
     /**
-     * Request tab identifier
+     * WebRequest tab identifier
      */
     public tabId: number | undefined;
 
@@ -60,12 +60,12 @@ export class Request {
     public readonly urlLowercase: string;
 
     /**
-     * Request's hostname
+     * WebRequest's hostname
      */
     public readonly hostname: string;
 
     /**
-     * Request's domain (eTLD+1)
+     * WebRequest's domain (eTLD+1)
      */
     public readonly domain: string;
 
@@ -121,7 +121,7 @@ export class Request {
     public clientIP: string | undefined;
 
     /**
-     * Creates an instance of a Request
+     * Creates an instance of a WebRequest
      *
      * @param url - request URL
      * @param sourceUrl - source URL
@@ -139,20 +139,20 @@ export class Request {
         this.requestType = requestType;
         this.method = method;
 
-        this.urlLowercase = Request.compactUrl(url)!.toLowerCase();
-        this.sourceUrl = Request.compactUrl(sourceUrl);
+        this.urlLowercase = WebRequest.compactUrl(url)!.toLowerCase();
+        this.sourceUrl = WebRequest.compactUrl(sourceUrl);
 
         const tldResult = parse(url);
         this.hostname = tldResult.hostname!;
         this.domain = tldResult.domain!;
-        this.subdomains = Request.getSubdomains(tldResult);
+        this.subdomains = WebRequest.getSubdomains(tldResult);
 
         let sourceTldResult;
         if (sourceUrl) {
             sourceTldResult = parse(sourceUrl);
             this.sourceHostname = sourceTldResult.hostname!;
             this.sourceDomain = sourceTldResult.domain!;
-            this.sourceSubdomains = Request.getSubdomains(sourceTldResult);
+            this.sourceSubdomains = WebRequest.getSubdomains(sourceTldResult);
         } else {
             this.sourceHostname = null;
             this.sourceDomain = null;
@@ -174,8 +174,8 @@ export class Request {
      */
     private static compactUrl(url: string | null): string | null {
         let compacted = url;
-        if (compacted && compacted.length > Request.MAX_URL_MATCH_LENGTH) {
-            compacted = compacted.substring(0, Request.MAX_URL_MATCH_LENGTH);
+        if (compacted && compacted.length > WebRequest.MAX_URL_MATCH_LENGTH) {
+            compacted = compacted.substring(0, WebRequest.MAX_URL_MATCH_LENGTH);
         }
 
         return compacted;

@@ -332,7 +332,7 @@ export class MatchingResult {
      *
      * Function is intended to be called on onHeadersReceived event as an alternative to getBasicResult,
      * it returns only a blocking or allowlist rule without modifiers which could modify the request.
-     * Request modifying rules with $header modifier are handled in a corresponding service.
+     * WebRequest modifying rules with $header modifier are handled in a corresponding service.
      *
      * TODO: filterAdvancedModifierRules may not be optimal for sorting rules with $header modifier,
      * as $header is not an advanced modifier.

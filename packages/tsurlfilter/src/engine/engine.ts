@@ -3,7 +3,7 @@
 import { LRUMap } from 'lru_map';
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
-import { Request } from '../request';
+import { WebRequest } from '../web-request';
 import { MatchingResult } from './matching-result';
 import { NetworkRule } from '../rules/network-rule';
 import { type RuleStorage } from '../filterlist/rule-storage';
@@ -19,7 +19,7 @@ import { RequestType } from '../request-type';
  */
 export class Engine {
     /**
-     * Request's cache size
+     * WebRequest's cache size
      * Used as both source rules and others limit.
      * The value is based on benchmark runs.
      */
@@ -41,7 +41,7 @@ export class Engine {
     private readonly ruleStorage: RuleStorage;
 
     /**
-     * Request results cache
+     * WebRequest results cache
      */
     private readonly resultCache: LRUMap<string, MatchingResult>;
 
@@ -106,7 +106,7 @@ export class Engine {
      * @param frameRule - source document rule or null
      * @return matching result
      */
-    matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult {
+    matchRequest(request: WebRequest, frameRule: NetworkRule | null = null): MatchingResult {
         let cacheKey = `${request.url}#${request.sourceHostname}#${request.requestType}`;
 
         if (request.method) {
@@ -139,7 +139,7 @@ export class Engine {
      * @param frameUrl
      */
     matchFrame(frameUrl: string): NetworkRule | null {
-        const sourceRequest = new Request(frameUrl, '', RequestType.Document);
+        const sourceRequest = new WebRequest(frameUrl, '', RequestType.Document);
         let sourceRules = this.networkEngine.matchAll(sourceRequest);
 
         sourceRules = MatchingResult.removeBadfilterRules(sourceRules);
@@ -163,7 +163,7 @@ export class Engine {
      * @param option mask of enabled cosmetic types
      * @return cosmetic result
      */
-    getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult {
+    getCosmeticResult(request: WebRequest, option: CosmeticOption): CosmeticResult {
         return this.cosmeticEngine.match(request, option);
     }
 

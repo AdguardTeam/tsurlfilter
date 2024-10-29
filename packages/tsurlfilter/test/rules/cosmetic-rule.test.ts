@@ -2,10 +2,11 @@
 import { type IConfiguration } from '@adguard/scriptlets';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { Request } from '../../src/request';
+import { WebRequest } from '../../src/web-request';
 import { RequestType } from '../../src/request-type';
-import { type CosmeticRule, RULE_INDEX_NONE } from '../../src';
 import { createCosmeticRule } from '../helpers/rule-creator';
+import { RULE_INDEX_NONE } from '../../src/rules/rule';
+import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 
 const parseParamsFromScript = (script: string): IConfiguration | null => {
     const matchArr = script.match(/\{"args.+"}/);
@@ -225,9 +226,9 @@ describe('Element hiding rules constructor', () => {
 });
 
 describe('CosmeticRule match', () => {
-    const createRequest = (url: string, sourceUrl?: string): Request => {
+    const createRequest = (url: string, sourceUrl?: string): WebRequest => {
         const source = sourceUrl || url;
-        return new Request(url, source, RequestType.Document);
+        return new WebRequest(url, source, RequestType.Document);
     };
 
     it('works if it matches wide rules', () => {
@@ -251,7 +252,7 @@ describe('CosmeticRule match', () => {
     });
 
     it('matches by $domain modifier with mixed type values', () => {
-        let request: Request;
+        let request: WebRequest;
         const rule = createCosmeticRule(String.raw`[$domain=/\.(io\|com)/|evil.*|ads.net|~/jwt\.io/|~evil.gov]##banner`, 0);
         expect(rule.getPermittedDomains()).toHaveLength(3);
         expect(rule.getRestrictedDomains()).toHaveLength(2);

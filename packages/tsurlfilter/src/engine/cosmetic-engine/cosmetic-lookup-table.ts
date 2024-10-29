@@ -3,7 +3,7 @@ import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
 import { type RuleStorage } from '../../filterlist/rule-storage';
-import { type Request } from '../../request';
+import { type WebRequest } from '../../web-request';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
@@ -119,7 +119,7 @@ export class CosmeticLookupTable {
      * Finds rules by hostname
      * @param request
      */
-    findByHostname(request: Request): CosmeticRule[] {
+    findByHostname(request: WebRequest): CosmeticRule[] {
         const result = [] as CosmeticRule[];
         const { subdomains } = request;
         // Iterate over all sub-domains
@@ -150,10 +150,10 @@ export class CosmeticLookupTable {
      * 2. If there's a specific allowlist rule that matches the request.
      *
      * @param content Content of the scriptlet. Empty string '' searches for scriptlets allowlisted globally.
-     * @param request Request details to match against allowlist rules.
+     * @param request WebRequest details to match against allowlist rules.
      * @returns True if allowlisted by a matching rule or a generic rule. False otherwise.
      */
-    isScriptletAllowlisted = (content: string, request: Request) => {
+    isScriptletAllowlisted = (content: string, request: WebRequest) => {
         // check for rules with that content
         const allowlistScriptletRulesIndexes = this.allowlist.get(content);
         if (allowlistScriptletRulesIndexes) {
@@ -183,7 +183,7 @@ export class CosmeticLookupTable {
      * @param request
      * @param rule
      */
-    isAllowlisted(request: Request, rule: CosmeticRule): boolean {
+    isAllowlisted(request: WebRequest, rule: CosmeticRule): boolean {
         if (rule.isScriptlet) {
             // Empty string '' is a special case for scriptlet when the allowlist scriptlet has no name
             // e.g. #@%#//scriptlet(); example.org#@%#//scriptlet();

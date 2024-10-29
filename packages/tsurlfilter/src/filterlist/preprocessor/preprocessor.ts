@@ -1,6 +1,7 @@
-import { OutputByteBuffer, RuleCategory, RuleConverter } from '@adguard/agtree';
+import { OutputByteBuffer, RuleCategory } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
 import { RuleSerializer } from '@adguard/agtree/serializer';
+import { RuleConverter } from '@adguard/agtree/converter';
 import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
 import { type FilterListConversionMap, type PreprocessedFilterList } from './schema';
 import { logger } from '../../utils/logger';

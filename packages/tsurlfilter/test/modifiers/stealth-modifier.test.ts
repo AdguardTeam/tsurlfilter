@@ -1,6 +1,6 @@
 import { StealthModifier, StealthOptionName } from '../../src/modifiers/stealth-modifier';
 import { LoggerMock } from '../mocks';
-import { setLogger } from '../../src';
+import { setLogger } from '../../src/utils/logger';
 
 describe('Stealth modifier api', () => {
     const loggerMock = new LoggerMock();

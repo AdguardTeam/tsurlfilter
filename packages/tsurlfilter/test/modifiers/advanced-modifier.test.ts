@@ -1,11 +1,12 @@
 /* eslint-disable max-len */
-import { NetworkRuleOption, RemoveHeaderModifier } from '../../src';
 import { ReplaceModifier } from '../../src/modifiers/replace-modifier';
 import { CspModifier } from '../../src/modifiers/csp-modifier';
 import { CookieModifier } from '../../src/modifiers/cookie-modifier';
 import { RedirectModifier } from '../../src/modifiers/redirect-modifier';
 import { RemoveParamModifier } from '../../src/modifiers/remove-param-modifier';
 import { createNetworkRule } from '../helpers/rule-creator';
+import { NetworkRuleOption } from '../../src/rules/network-rule';
+import { RemoveHeaderModifier } from '../../src/modifiers/remove-header-modifier';
 
 describe('NetworkRule - csp rules', () => {
     it('works if csp modifier is correctly parsed', () => {

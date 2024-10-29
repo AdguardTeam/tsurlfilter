@@ -1,10 +1,8 @@
-import {
-    MatchingResult,
-    CosmeticOption,
-    StealthOptionName,
-    type NetworkRule,
-} from '../../src';
 import { createNetworkRule } from '../helpers/rule-creator';
+import { CosmeticOption } from '../../src/engine/cosmetic-option';
+import { MatchingResult } from '../../src/engine/matching-result';
+import { StealthOptionName } from '../../src/modifiers/stealth-modifier';
+import { NetworkRule } from '../../src/rules/network-rule';
 
 describe('MatchingResult constructor', () => {
     it('works if basic rule is found', () => {

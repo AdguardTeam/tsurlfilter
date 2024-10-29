@@ -36,7 +36,8 @@
             "parser": ["dist/types/parser/index.d.ts"],
             "generator": ["dist/types/generator/index.d.ts"],
             "serializer": ["dist/types/serializer/index.d.ts"],
-            "deserializer": ["dist/types/deserializer/index.d.ts"]
+            "deserializer": ["dist/types/deserializer/index.d.ts"],
+            "converter": ["dist/types/converter/index.d.ts"]
         }
     },
     "exports": {
@@ -64,6 +65,11 @@
             "types": "./dist/types/deserializer/index.d.ts",
             "import": "./dist/esm/deserializer/index.mjs",
             "require": "./dist/cjs/deserializer/index.js"
+        },
+        "./converter": {
+            "types": "./dist/types/converter/index.d.ts",
+            "import": "./dist/esm/converter/index.mjs",
+            "require": "./dist/cjs/converter/index.js"
         }
     },
     "files": [

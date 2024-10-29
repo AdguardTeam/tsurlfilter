@@ -3,7 +3,7 @@ import { type ModifierList, type NetworkRule as NetworkRuleNode, RuleGenerator }
 
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
-import { type Request } from '../request';
+import { type WebRequest } from '../web-request';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
 import { type IAdvancedModifier } from '../modifiers/advanced-modifier';
@@ -686,7 +686,7 @@ export class NetworkRule implements rule.IRule {
      * In case we use Trie in lookup table, we don't need to use shortcut cause we already check if request's url
      * includes full rule shortcut.
      */
-    match(request: Request, useShortcut = true): boolean {
+    match(request: WebRequest, useShortcut = true): boolean {
         // Regex rules should not be tested by shortcut
         if (useShortcut && !this.matchShortcut(request)) {
             return false;
@@ -745,7 +745,7 @@ export class NetworkRule implements rule.IRule {
      * matchShortcut simply checks if shortcut is a substring of the URL.
      * @param request - request to check.
      */
-    private matchShortcut(request: Request): boolean {
+    private matchShortcut(request: WebRequest): boolean {
         return request.urlLowercase.indexOf(this.getShortcut()) >= 0;
     }
 
@@ -764,7 +764,7 @@ export class NetworkRule implements rule.IRule {
      * https://github.com/AdguardTeam/tsurlfilter/issues/45
      * @param request
      */
-    matchDomainModifier(request: Request): boolean {
+    matchDomainModifier(request: WebRequest): boolean {
         if (!this.domainModifier) {
             return true;
         }
@@ -950,7 +950,7 @@ export class NetworkRule implements rule.IRule {
         }
 
         /**
-         * Request's method must be either explicitly
+         * WebRequest's method must be either explicitly
          * permitted or not be included in list of restricted methods
          * for the rule to apply
          */
@@ -1839,7 +1839,7 @@ export class NetworkRule implements rule.IRule {
         if (this.headerModifier && this.isOptionEnabled(NetworkRuleOption.Header)) {
             const removeHeaderValue = this.getAdvancedModifierValue();
             if (!removeHeaderValue || removeHeaderValue.includes('request:')) {
-                const message = 'Request headers removal of $removeheaders is not compatible with $header rules.';
+                const message = 'WebRequest headers removal of $removeheaders is not compatible with $header rules.';
                 throw new SyntaxError(message);
             }
         }

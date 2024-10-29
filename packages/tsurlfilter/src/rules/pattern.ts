@@ -1,5 +1,5 @@
 import { SimpleRegex } from './simple-regex';
-import { type Request } from '../request';
+import { type WebRequest } from '../web-request';
 
 /**
  * Rule pattern class
@@ -73,7 +73,7 @@ export class Pattern {
      * this pattern's shortcut and we don't need to match it again.
      * @returns true if pattern matches
      */
-    public matchPattern(request: Request, shortcutMatched: boolean): boolean {
+    public matchPattern(request: WebRequest, shortcutMatched: boolean): boolean {
         this.prepare();
 
         if (this.patternShortcut) {
@@ -203,7 +203,7 @@ export class Pattern {
      *
      * @param request
      */
-    private shouldMatchHostname(request: Request): boolean {
+    private shouldMatchHostname(request: WebRequest): boolean {
         if (!request.isHostnameRequest) {
             return false;
         }

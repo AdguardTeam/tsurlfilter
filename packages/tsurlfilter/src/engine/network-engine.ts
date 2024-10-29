@@ -1,4 +1,4 @@
-import { type Request } from '../request';
+import { type WebRequest } from '../web-request';
 import { NetworkRule } from '../rules/network-rule';
 import { MatchingResult } from './matching-result';
 import { type RuleStorage } from '../filterlist/rule-storage';
@@ -79,7 +79,7 @@ export class NetworkEngine {
      * @param request to check
      * @return rule matching request or null
      */
-    match(request: Request): NetworkRule | null {
+    match(request: WebRequest): NetworkRule | null {
         const networkRules = this.matchAll(request);
 
         if (networkRules.length === 0) {
@@ -97,7 +97,7 @@ export class NetworkEngine {
      * @param request to check
      * @return array of matching rules
      */
-    matchAll(request: Request): NetworkRule[] {
+    matchAll(request: WebRequest): NetworkRule[] {
         // First check by shortcuts
         const result = this.hostnameLookupTable.matchAll(request);
         result.push(...(this.shortcutsLookupTable.matchAll(request)));

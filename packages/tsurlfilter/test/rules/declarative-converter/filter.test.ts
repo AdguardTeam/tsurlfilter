@@ -1,4 +1,4 @@
-import { FilterListPreprocessor } from '../../../src';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
 import { Filter } from '../../../src/rules/declarative-converter';
 
 describe('Filter', () => {

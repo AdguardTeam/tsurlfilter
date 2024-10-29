@@ -168,7 +168,7 @@ export abstract class DeclarativeRuleConverter {
     /**
      * Gets resource type matching request type.
      *
-     * @param requestTypes Request type.
+     * @param requestTypes WebRequest type.
      *
      * @returns List of resource types.
      */

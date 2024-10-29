@@ -11,7 +11,8 @@
   "typesVersions": {
     "*": {
       "*": ["dist/types/index.d.ts"],
-      "cli": ["dist/types/cli/index.d.ts"]
+      "cli": ["dist/types/cli/index.d.ts"],
+      "engine": ["dist/types/engine/index.d.ts"]
     }
   },
   "exports": {
@@ -22,12 +23,17 @@
     },
     "./cli": {
       "types": "./dist/types/cli/index.d.ts",
-      "import": "./dist/esm/cli/index.mjs",
-      "require": "./dist/cjs/cli/index.js"
+      "import": "./dist/cli/index.mjs",
+      "require": "./dist/cli/index.js"
+    },
+    "./engine": {
+      "types": "./dist/types/engine/index.d.ts",
+      "import": "./dist/engine/index.mjs",
+      "require": "./dist/engine/index.js"
     }
   },
   "bin": {
-    "tsurlfilter": "dist/cli.js"
+    "tsurlfilter": "dist/cli"
   },
   "author": "Adguard Software Ltd.",
   "repository": {

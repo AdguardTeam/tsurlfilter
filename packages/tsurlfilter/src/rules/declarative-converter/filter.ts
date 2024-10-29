@@ -1,8 +1,8 @@
 import { EMPTY_STRING } from '../../common/constants';
-import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
 import { getRuleSourceIndex, getRuleSourceText } from '../../filterlist/source-map';
 
 import { UnavailableFilterSourceError } from './errors/unavailable-sources-errors';
+import { PreprocessedFilterList } from '../../filterlist/preprocessor/schema';
 
 /**
  * String source for filter content.

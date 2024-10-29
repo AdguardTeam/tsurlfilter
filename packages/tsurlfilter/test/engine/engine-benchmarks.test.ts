@@ -3,18 +3,16 @@ import fs from 'fs';
 import zlib from 'zlib';
 import console from 'console';
 import { performance } from 'perf_hooks';
-import {
-    CosmeticOption,
-    Engine,
-    Request,
-    RequestType,
-    BufferRuleList,
-    RuleStorage,
-    DnsEngine,
-    CosmeticEngine,
-    setLogger,
-    FilterListPreprocessor,
-} from '../../src';
+import { RequestType } from '../../src/request-type';
+import { WebRequest } from '../../src/web-request';
+import { setLogger } from '../../src/utils/logger';
+import { FilterListPreprocessor } from '../../src/filterlist/preprocessor';
+import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
+import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { Engine } from '../../src/engine';
+import { DnsEngine } from '../../src/engine/dns-engine';
+import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
+import { CosmeticOption } from '../../src/engine/cosmetic-option';
 
 /**
  * The comment below describes the bench test results that are achieved on
@@ -167,13 +165,13 @@ function testGetRequestType(requestType: string): RequestType {
     }
 }
 
-async function parseRequests(): Promise<Request[]> {
+async function parseRequests(): Promise<WebRequest[]> {
     const testRequests = await loadRequests();
     expect(testRequests.length).toBe(expectedRequestsCount);
 
-    const requests: Request[] = [];
+    const requests: WebRequest[] = [];
     testRequests.forEach((t) => {
-        requests.push(new Request(t.url, t.frameUrl, testGetRequestType(t.cpt)));
+        requests.push(new WebRequest(t.url, t.frameUrl, testGetRequestType(t.cpt)));
     });
 
     return requests;
@@ -188,7 +186,7 @@ function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
     return ({ heapUsed, heapTotal });
 }
 
-function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): number {
+function runEngine(requests: WebRequest[], matchFunc: (r: WebRequest) => boolean): number {
     console.log(`Processing ${requests.length} requests...`);
 
     let totalMatches = 0;

@@ -2,8 +2,10 @@ import escapeStringRegexp from 'escape-string-regexp';
 
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { FilterListPreprocessor, NetworkRule, getRuleSourceIndex } from '../../src';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
+import { FilterListPreprocessor } from '../../src/filterlist/preprocessor';
+import { getRuleSourceIndex } from '../../src/filterlist/source-map';
+import { NetworkRule } from '../../src/rules/network-rule';
 
 describe('Test RuleStorage', () => {
     // ! WARNING: Do not run these tests individually, as the scanner state is shared between tests

@@ -1,11 +1,12 @@
 import { InputByteBuffer } from '@adguard/agtree';
 import escapeStringRegexp from 'escape-string-regexp';
 
-import { FilterListPreprocessor, getRuleSourceIndex } from '../../../src';
 import { BufferReader } from '../../../src/filterlist/reader/buffer-reader';
 import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
 import { RuleStorageScanner } from '../../../src/filterlist/scanner/rule-storage-scanner';
 import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
+import { getRuleSourceIndex } from '../../../src/filterlist/source-map';
 
 describe('Empty Scanners Test', () => {
     const storageScanner = new RuleStorageScanner([]);

@@ -21,32 +21,32 @@ const cliConfig: RollupOptions = {
     input: 'src/cli/index.ts',
     output: [
         {
-            dir: `${DIST_DIR}/cjs`,
+            dir: `${DIST_DIR}/cli`,
             format: 'cjs',
             exports: 'named',
             sourcemap: false,
-            preserveModules: true,
-            preserveModulesRoot: 'src',
+            // preserveModules: true,
+            // preserveModulesRoot: 'src',
         },
         {
-            dir: `${DIST_DIR}/esm`,
+            dir: `${DIST_DIR}/cli`,
             entryFileNames: '[name].mjs',
             format: 'esm',
             sourcemap: false,
-            preserveModules: true,
-            preserveModulesRoot: 'src',
+            // preserveModules: true,
+            // preserveModulesRoot: 'src',
         },
     ],
-    cache: false,
-    watch: {
-        include: 'cli/**',
-    },
     external: (id) => {
         return (
             /node_modules/.test(id)
             // Added because when agtree is linked using 'yarn link', its ID does not contain 'node_modules'
             || id === '@adguard/agtree'
             || id.startsWith('@adguard/agtree/')
+            || id === '@adguard/scriptlets'
+            || id.startsWith('@adguard/scriptlets/')
+            || id === '@adguard/css-tokenizer'
+            || id.startsWith('@adguard/css-tokenizer/')
         );
     },
     plugins: [
@@ -57,7 +57,6 @@ const cliConfig: RollupOptions = {
 
 const mainConfig: RollupOptions = {
     input: [
-        // from '@adguard/tsurlfilter'
         'src/index.ts',
         // from '@adguard/tsurlfilter/declarative-converter'
         'src/rules/declarative-converter/index.ts',
@@ -77,7 +76,6 @@ const mainConfig: RollupOptions = {
             sourcemap: false,
             preserveModules: true,
             preserveModulesRoot: 'src',
-            // banner,
         },
         {
             dir: `${DIST_DIR}/esm`,
@@ -86,19 +84,18 @@ const mainConfig: RollupOptions = {
             sourcemap: false,
             preserveModules: true,
             preserveModulesRoot: 'src',
-            // banner,
         },
     ],
-    cache: false,
-    watch: {
-        include: 'cli/**',
-    },
     external: (id) => {
         return (
             /node_modules/.test(id)
             // Added because when agtree is linked using 'yarn link', its ID does not contain 'node_modules'
             || id === '@adguard/agtree'
             || id.startsWith('@adguard/agtree/')
+            || id === '@adguard/scriptlets'
+            || id.startsWith('@adguard/scriptlets/')
+            || id === '@adguard/css-tokenizer'
+            || id.startsWith('@adguard/css-tokenizer/')
         );
     },
     plugins: [

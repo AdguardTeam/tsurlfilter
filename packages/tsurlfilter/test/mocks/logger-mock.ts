@@ -1,4 +1,4 @@
-import { type ILogger } from '../../src';
+import { ILogger } from '../../src/utils/logger';
 
 export class LoggerMock implements ILogger {
     public error = jest.fn();

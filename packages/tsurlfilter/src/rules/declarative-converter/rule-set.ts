@@ -1,5 +1,5 @@
 import { z as zod } from 'zod';
-import { RuleParser } from '@adguard/agtree';
+import { RuleParser } from '@adguard/agtree/parser';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';

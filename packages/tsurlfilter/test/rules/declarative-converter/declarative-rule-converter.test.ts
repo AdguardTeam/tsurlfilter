@@ -10,8 +10,8 @@ import { DeclarativeRulesConverter } from '../../../src/rules/declarative-conver
 import type { ScannedFilter } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { NetworkRule, NetworkRuleOption } from '../../../src/rules/network-rule';
 import { createNetworkRule } from '../../helpers/rule-creator';
-import { FilterListPreprocessor } from '../../../src';
 import { Filter } from '../../../src/rules/declarative-converter';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
 
 const createFilter = async (
     filterId: number,

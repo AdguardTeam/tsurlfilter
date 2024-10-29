@@ -1,8 +1,8 @@
-import { RequestType } from '../../../src';
-import { Request } from '../../../src/request';
+import { WebRequest } from '../../../src/web-request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { TrieLookupTable } from '../../../src/engine/lookup-tables/trie-lookup-table';
 import { createNetworkRule } from '../../helpers/rule-creator';
+import { RequestType } from '../../../src/request-type';
 
 describe('Trie Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
@@ -40,14 +40,14 @@ describe('Trie Lookup Table Tests', () => {
         fillLookupTable(table, ruleStorage);
         expect(table.getRulesCount()).toBe(4);
 
-        expect(table.matchAll(new Request('http://other.com/', '', RequestType.Document))).toHaveLength(0);
-        expect(table.matchAll(new Request('http://example.com/path', '', RequestType.Document))).toHaveLength(0);
+        expect(table.matchAll(new WebRequest('http://other.com/', '', RequestType.Document))).toHaveLength(0);
+        expect(table.matchAll(new WebRequest('http://example.com/path', '', RequestType.Document))).toHaveLength(0);
 
-        expect(table.matchAll(new Request('http://example.com/path/one', '', RequestType.Document))).toHaveLength(1);
-        expect(table.matchAll(new Request('http://example.com/path/two', '', RequestType.Document))).toHaveLength(1);
-        expect(table.matchAll(new Request('http://example.com/path/three', '', RequestType.Document))).toHaveLength(1);
+        expect(table.matchAll(new WebRequest('http://example.com/path/one', '', RequestType.Document))).toHaveLength(1);
+        expect(table.matchAll(new WebRequest('http://example.com/path/two', '', RequestType.Document))).toHaveLength(1);
+        expect(table.matchAll(new WebRequest('http://example.com/path/three', '', RequestType.Document))).toHaveLength(1);
         expect(
-            table.matchAll(new Request('http://example.com/path/three/one', '', RequestType.Document)),
+            table.matchAll(new WebRequest('http://example.com/path/three/one', '', RequestType.Document)),
         ).toHaveLength(2);
     });
 });

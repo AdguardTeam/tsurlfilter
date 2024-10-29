@@ -1,6 +1,6 @@
 import { type ILookupTable } from './lookup-table';
 import { type RuleStorage } from '../../filterlist/rule-storage';
-import { type Request } from '../../request';
+import { type WebRequest } from '../../web-request';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
 import { type NetworkRule } from '../../rules/network-rule';
@@ -76,7 +76,7 @@ export class DomainsLookupTable implements ILookupTable {
      * Implements the ILookupTable interface method.
      * @param request
      */
-    matchAll(request: Request): NetworkRule[] {
+    matchAll(request: WebRequest): NetworkRule[] {
         const result: NetworkRule[] = [];
 
         if (!request.sourceHostname) {
