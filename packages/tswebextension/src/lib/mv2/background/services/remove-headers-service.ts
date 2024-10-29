@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid';
 import { type WebRequest } from 'webextension-polyfill';
 import { NetworkRuleOption, type NetworkRule, type RemoveHeaderModifier } from '@adguard/tsurlfilter';
 
-import { removeHeader, findHeaderByName } from '../utils/headers';
+import { removeHeader, findHeaderByName } from '../../../common/utils';
 import { type RequestContext, requestContextStorage } from '../request';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { getDomain } from '../../../common/utils/url';

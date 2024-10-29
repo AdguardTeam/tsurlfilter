@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid';
 import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
-import { findHeaderByName } from '../../../../common/utils/find-header-by-name';
+import { findHeaderByName } from '../../../../common/utils';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
 import CookieUtils from './utils';
