@@ -173,7 +173,7 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { tabsApi, engineApi, documentApi } from './api';
 import { Frame } from './tabs/frame';
-import { findHeaderByName } from '../../common/utils/find-header-by-name';
+import { findHeaderByName } from '../../common/utils';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 import { logger } from '../../common/utils/logger';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';

@@ -1,7 +1,21 @@
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
+import { type WebRequest } from 'webextension-polyfill';
+
 import type { SettingsConfigMV3 } from '../configuration';
 import { searchEngineDomains } from './searchEngineDomains';
 import { logger } from '../../../common/utils/logger';
 import { type StealthConfig } from '../../../common/configuration';
+import { requestContextStorage, type RequestContext } from '../request';
+import { StealthActions } from '../../../common/stealth-actions';
+import {
+    findHeaderByName,
+    getDomain,
+    hasHeader,
+    hasHeaderByName,
+} from '../../../common/utils';
+import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
+import { appContext } from '../app-context';
 
 /**
  * Reserved stealth rule ids for the DNR.
@@ -49,6 +63,26 @@ export class StealthService {
     private static readonly SETTING_SCOPE = 'regular';
 
     /**
+     * Stealth headers.
+     */
+    private static readonly HEADERS: Record<string, WebRequest.HttpHeadersItemType> = {
+        REFERRER: {
+            name: 'Referer',
+        },
+        X_CLIENT_DATA: {
+            name: 'X-Client-Data',
+        },
+        DO_NOT_TRACK: {
+            name: 'DNT',
+            value: '1',
+        },
+        GLOBAL_PRIVACY_CONTROL: {
+            name: 'Sec-GPC',
+            value: '1',
+        },
+    };
+
+    /**
      * Types of resources to apply the stealth declarative network rules.
      *
      * @returns Array of resource types.
@@ -69,6 +103,205 @@ export class StealthService {
             chrome.declarativeNetRequest.ResourceType.WEBSOCKET,
             chrome.declarativeNetRequest.ResourceType.OTHER,
         ];
+    }
+
+    /**
+     * Temporary flag that used to identify is stealth allowlist implemented or not.
+     * It's used to identify should we check for allowlist rule in order
+     * to publish `StealthAllowlistAction` event.
+     *
+     * TODO: After adding stealth allowlist we should remove it.
+     */
+    private static readonly IS_ALLOWLIST_IMPLEMENTED = false;
+
+    /**
+     * Temporary flag that used to identify is stealth `Hide Referrer`
+     * and `Hide Search Queries` checkboxes is presented or not.
+     *
+     * TODO: After reverting that checkboxes we should remove it (AG-34765).
+     */
+    private static readonly IS_REFERRER_CHECKBOX_PRESENT = false;
+
+    /**
+     * Applies stealth actions to request headers and publishes filtering log event.
+     *
+     * @param context Request context.
+     */
+    public static onBeforeSendHeaders(context: RequestContext): void {
+        const settings = appContext.configuration?.settings;
+
+        if (!settings || !settings.stealthModeEnabled) {
+            return;
+        }
+
+        let stealthActions = StealthActions.None;
+
+        const {
+            requestUrl,
+            requestHeaders,
+            matchingResult,
+            requestType,
+            tabId,
+            eventId,
+            referrerUrl,
+            contentType,
+            timestamp,
+            requestId,
+        } = context;
+
+        if (!requestHeaders || matchingResult?.documentRule) {
+            return;
+        }
+
+        /**
+         * Regarding stealth rule modifier, stealth options can be disabled on two occasions:
+         * - stealth modifier does not have specific values, thus disabling stealth entirely
+         * - stealth modifier has specific options to disable.
+         */
+        const stealthDisablingRule = matchingResult?.getStealthRule();
+        if (StealthService.IS_ALLOWLIST_IMPLEMENTED && stealthDisablingRule) {
+            // $stealth rule without options is not being published to the filtering log
+            // to conform with desktop application behavior
+            return;
+        }
+
+        const {
+            hideReferrer,
+            hideSearchQueries,
+            blockChromeClientData,
+            sendDoNotTrack,
+        } = settings.stealth;
+
+        const headersToRemove = new Set<string>();
+        const headersToAdd: WebRequest.HttpHeaders = [];
+
+        // Collect applied allowlist rules in a set to only publish
+        // one filtering event per applied allowlist rule
+        const appliedAllowlistRules = new Set<NetworkRule>();
+
+        // Removes `Referrer` header if present
+        if (StealthService.IS_REFERRER_CHECKBOX_PRESENT && hideReferrer) {
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.HideReferrer);
+            if (StealthService.IS_ALLOWLIST_IMPLEMENTED && disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else if (hasHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER.name)) {
+                stealthActions |= StealthActions.HideReferrer;
+                headersToRemove.add(
+                    StealthService.HEADERS.REFERRER.name.toLowerCase(),
+                );
+            }
+        }
+
+        // Removes `Referrer` header in case of search engine is referrer
+        const isMainFrame = requestType === RequestType.Document;
+        if (StealthService.IS_REFERRER_CHECKBOX_PRESENT && isMainFrame && hideSearchQueries) {
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.HideSearchQueries);
+            if (StealthService.IS_ALLOWLIST_IMPLEMENTED && disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else if (
+                hasHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER.name)
+                && StealthService.isSearchEngine(requestUrl)
+            ) {
+                stealthActions |= StealthActions.HideSearchQueries;
+                headersToRemove.add(
+                    StealthService.HEADERS.REFERRER.name.toLowerCase(),
+                );
+            }
+        }
+
+        // Removes `X-Client-Data` header if present
+        if (blockChromeClientData) {
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.XClientData);
+            if (StealthService.IS_ALLOWLIST_IMPLEMENTED && disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else if (hasHeaderByName(requestHeaders, StealthService.HEADERS.X_CLIENT_DATA.name)) {
+                stealthActions |= StealthActions.BlockChromeClientData;
+                headersToRemove.add(
+                    StealthService.HEADERS.X_CLIENT_DATA.name.toLowerCase(),
+                );
+            }
+        }
+
+        // Adds `Do-Not-Track (DNT)` and `Global-Privacy-Control (Sec-GPC)` headers if not present
+        if (sendDoNotTrack) {
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.DoNotTrack);
+            if (StealthService.IS_ALLOWLIST_IMPLEMENTED && disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else {
+                let headerAdded = false;
+
+                if (!hasHeader(requestHeaders, StealthService.HEADERS.DO_NOT_TRACK)) {
+                    headersToAdd.push(StealthService.HEADERS.DO_NOT_TRACK);
+                    headerAdded = true;
+                }
+
+                if (!hasHeader(requestHeaders, StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL)) {
+                    headersToAdd.push(StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL);
+                    headerAdded = true;
+                }
+
+                if (headerAdded) {
+                    stealthActions |= StealthActions.SendDoNotTrack;
+                }
+            }
+        }
+
+        // Removing headers
+        let newRequestHeaders = requestHeaders;
+        if (headersToRemove.size > 0) {
+            newRequestHeaders = requestHeaders.filter((header) => {
+                return !headersToRemove.has(header.name.toLowerCase());
+            });
+        }
+
+        // Adding headers
+        for (const header of headersToAdd) {
+            const foundHeader = findHeaderByName(newRequestHeaders, header.name);
+            if (foundHeader) {
+                foundHeader.value = header.value;
+            } else {
+                newRequestHeaders.push(header);
+            }
+        }
+
+        requestContextStorage.update(requestId, {
+            requestHeaders: newRequestHeaders,
+        });
+
+        if (appliedAllowlistRules.size > 0) {
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.StealthAllowlistAction,
+                data: {
+                    tabId,
+                    eventId,
+                    rules: Array.from(appliedAllowlistRules).map((rule) => ({
+                        filterId: rule.getFilterListId(),
+                        ruleIndex: rule.getIndex(),
+                        isAllowlist: rule.isAllowlist(),
+                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                        advancedModifier: rule.getAdvancedModifierValue(),
+                    })),
+                    requestUrl,
+                    frameUrl: referrerUrl,
+                    requestType: contentType,
+                    timestamp,
+                },
+            });
+        }
+
+        if (stealthActions > 0) {
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.StealthAction,
+                data: {
+                    tabId,
+                    eventId,
+                    stealthActions,
+                },
+            });
+        }
     }
 
     /**
@@ -140,7 +373,7 @@ export class StealthService {
                 action: {
                     type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
                     requestHeaders: [{
-                        header: 'Referer',
+                        header: StealthService.HEADERS.REFERRER.name,
                         operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
                     }],
                 },
@@ -186,7 +419,7 @@ export class StealthService {
                 action: {
                     type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
                     requestHeaders: [{
-                        header: 'X-Client-Data',
+                        header: StealthService.HEADERS.X_CLIENT_DATA.name,
                         operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
                     }],
                 },
@@ -240,13 +473,13 @@ export class StealthService {
                     action: {
                         type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
                         requestHeaders: [{
-                            header: 'DNT',
+                            header: StealthService.HEADERS.DO_NOT_TRACK.name,
+                            value: StealthService.HEADERS.DO_NOT_TRACK.value,
                             operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                            value: '1',
                         }, {
-                            header: 'Sec-GPC',
+                            header: StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL.name,
+                            value: StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL.value,
                             operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                            value: '1',
                         }],
                     },
                     condition: {
@@ -311,7 +544,7 @@ export class StealthService {
                     action: {
                         type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
                         requestHeaders: [{
-                            header: 'Referer',
+                            header: StealthService.HEADERS.REFERRER.name,
                             operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
                         }],
                     },
@@ -555,5 +788,16 @@ export class StealthService {
         contentScriptIds.forEach(async (id) => {
             await StealthService.removeContentScript(id);
         });
+    }
+
+    /**
+     * Is url search engine.
+     *
+     * @param url Url for check.
+     * @returns True if url is search engine.
+     */
+    private static isSearchEngine(url: string): boolean {
+        const domain = getDomain(url);
+        return searchEngineDomains.some((searchEngine) => searchEngine === domain);
     }
 }
