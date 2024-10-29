@@ -402,6 +402,10 @@ export class TabsApi {
             return;
         }
 
+        if (frameId === MAIN_FRAME_ID && partialFrameContext.frameRule) {
+            tabContext.mainFrameRule = partialFrameContext.frameRule;
+        }
+
         const frameContext = tabContext?.getFrameContext(frameId);
 
         if (!frameContext) {

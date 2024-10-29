@@ -106,7 +106,6 @@ export class BufferRuleList implements IRuleList {
             ignoreCosmetic: this.ignoreCosmetic,
             ignoreJS: this.ignoreJS,
             ignoreUnsafe: this.ignoreUnsafe,
-            sourceMap: this.sourceMap,
         });
     }
 

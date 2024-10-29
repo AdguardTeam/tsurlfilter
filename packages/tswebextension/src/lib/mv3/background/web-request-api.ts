@@ -163,6 +163,7 @@ import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
+import { StealthService } from './services/stealth-service';
 
 /**
  * API for applying rules from background service by handling
@@ -404,6 +405,8 @@ export class WebRequestApi {
         if (context?.matchingResult) {
             cookieFiltering.onBeforeSendHeaders(context);
         }
+
+        StealthService.onBeforeSendHeaders(context);
     }
 
     /**
