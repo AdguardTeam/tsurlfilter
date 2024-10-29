@@ -1,16 +1,14 @@
 import escapeStringRegexp from 'escape-string-regexp';
 
 import { NetworkEngine } from '../../src/engine/network-engine';
-import {
-    Request,
-    HTTPMethod,
-    type PreprocessedFilterList,
-    FilterListPreprocessor,
-    getRuleSourceIndex,
-} from '../../src';
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { RequestType } from '../../src/request-type';
+import { FilterListPreprocessor } from '../../src/filterlist/preprocessor';
+import { WebRequest } from '../../src/web-request';
+import { getRuleSourceIndex } from '../../src/filterlist/source-map';
+import { HTTPMethod } from '../../src/modifiers/method-modifier';
+import { PreprocessedFilterList } from '../../src/filterlist/preprocessor/schema';
 
 /**
  * Helper function creates rule storage.
@@ -38,7 +36,7 @@ describe('TestEmptyNetworkEngine', () => {
     it('works if empty engine is ok', () => {
         const processed = FilterListPreprocessor.preprocess('');
         const engine = new NetworkEngine(createTestRuleStorage(1, processed));
-        const request = new Request('http://example.org/', '', RequestType.Other);
+        const request = new WebRequest('http://example.org/', '', RequestType.Other);
         const result = engine.match(request);
 
         expect(result).toBeNull();
@@ -53,7 +51,7 @@ describe('TestMatchAllowlistRule', () => {
         const processed = FilterListPreprocessor.preprocess(rules.join('\n'));
 
         const engine = new NetworkEngine(createTestRuleStorage(1, processed));
-        const request = new Request('http://example.org/', '', RequestType.Script);
+        const request = new WebRequest('http://example.org/', '', RequestType.Script);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -71,7 +69,7 @@ describe('TestMatchAllowlistRule', () => {
         const processed = FilterListPreprocessor.preprocess(rules.join('\n'));
 
         const engine = new NetworkEngine(createTestRuleStorage(1, processed));
-        const request = new Request('http://example.org/', '', RequestType.Script, HTTPMethod.POST);
+        const request = new WebRequest('http://example.org/', '', RequestType.Script, HTTPMethod.POST);
         let result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -99,7 +97,7 @@ describe('TestMatchAllowlistRule', () => {
         const processed = FilterListPreprocessor.preprocess(rules.join('\n'));
 
         const engine = new NetworkEngine(createTestRuleStorage(1, processed));
-        const request = new Request('http://evil.com/', '', RequestType.Script);
+        const request = new WebRequest('http://evil.com/', '', RequestType.Script);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -123,7 +121,7 @@ describe('TestMatchImportantRule', () => {
     let result;
 
     it('should find domain allowlist rule ', () => {
-        request = new Request('http://example.org/', '', RequestType.Other);
+        request = new WebRequest('http://example.org/', '', RequestType.Other);
         result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -135,7 +133,7 @@ describe('TestMatchImportantRule', () => {
     });
 
     it('should find domain allowlist rule', () => {
-        request = new Request('http://test1.example.org/', '', RequestType.Other);
+        request = new WebRequest('http://test1.example.org/', '', RequestType.Other);
         result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -147,7 +145,7 @@ describe('TestMatchImportantRule', () => {
     });
 
     it('should find suitable sub-domain allowlist rule', () => {
-        request = new Request('http://test2.example.org/', '', RequestType.Other);
+        request = new WebRequest('http://test2.example.org/', '', RequestType.Other);
         result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -169,7 +167,7 @@ describe('TestMatchSourceRule', () => {
         const url = 'https://ci.phncdn.com/videos/201809/25/184777011/original/(m=ecuKGgaaaa)(mh=VSmV9L_iouBcWJJ)4.jpg';
         const sourceURL = 'https://www.pornhub.com/view_video.php?viewkey=ph5be89d11de4b0';
 
-        const request = new Request(url, sourceURL, RequestType.Image);
+        const request = new WebRequest(url, sourceURL, RequestType.Image);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -187,7 +185,7 @@ describe('Test $domain modifier semantics', () => {
     const engine = new NetworkEngine(createTestRuleStorage(1, processed));
 
     it('will match document url host', () => {
-        const request = new Request('http://check.com/path', 'http://www.example.org/', RequestType.Document);
+        const request = new WebRequest('http://check.com/path', 'http://www.example.org/', RequestType.Document);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -199,14 +197,14 @@ describe('Test $domain modifier semantics', () => {
     });
 
     it('checks pattern does not match', () => {
-        const request = new Request('http://check.com/url', 'http://www.example.org/', RequestType.Document);
+        const request = new WebRequest('http://check.com/url', 'http://www.example.org/', RequestType.Document);
         const result = engine.match(request);
 
         expect(result).toBeFalsy();
     });
 
     it('will match request url host', () => {
-        const request = new Request('http://check.com/path', 'http://test.com/', RequestType.Document);
+        const request = new WebRequest('http://check.com/path', 'http://test.com/', RequestType.Document);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -218,7 +216,7 @@ describe('Test $domain modifier semantics', () => {
     });
 
     it('checks request type Document is required', () => {
-        const request = new Request('http://check.com/path', 'http://test.com/', RequestType.Image);
+        const request = new WebRequest('http://check.com/path', 'http://test.com/', RequestType.Image);
         const result = engine.match(request);
 
         expect(result).toBeFalsy();
@@ -234,7 +232,7 @@ describe('TestMatchSimplePattern', () => {
         const url = 'https://ap.lijit.com/rtb/bid?src=prebid_prebid_1.35.0';
         const sourceURL = 'https://www.drudgereport.com/';
 
-        const request = new Request(url, sourceURL, RequestType.XmlHttpRequest);
+        const request = new WebRequest(url, sourceURL, RequestType.XmlHttpRequest);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -255,7 +253,7 @@ describe('Test match simple domain rules', () => {
         const url = 'https://example.org/rtb/bid?src=prebid_prebid_1.35.0';
         const sourceURL = 'https://www.test.com/';
 
-        const request = new Request(url, sourceURL, RequestType.XmlHttpRequest);
+        const request = new WebRequest(url, sourceURL, RequestType.XmlHttpRequest);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -274,7 +272,7 @@ describe('Test match simple domain rules', () => {
         const url = 'https://example.org/rtb/bid?src=prebid_prebid_1.35.0';
         const sourceURL = 'https://www.test.com/';
 
-        const request = new Request(url, sourceURL, RequestType.XmlHttpRequest);
+        const request = new WebRequest(url, sourceURL, RequestType.XmlHttpRequest);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -292,7 +290,7 @@ describe('Test Match Wildcard domain', () => {
         const processed = FilterListPreprocessor.preprocess(rule);
         const engine = new NetworkEngine(createTestRuleStorage(1, processed));
 
-        const request = new Request('https://test.ru/te/', 'https://example.com/', RequestType.Image);
+        const request = new WebRequest('https://test.ru/te/', 'https://example.com/', RequestType.Image);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -302,7 +300,7 @@ describe('Test Match Wildcard domain', () => {
             getRawRuleIndex(processed.rawFilterList, rule),
         );
 
-        const negativeRequest = new Request('https://test.ru/te/', 'https://negative.com/', RequestType.Image);
+        const negativeRequest = new WebRequest('https://test.ru/te/', 'https://negative.com/', RequestType.Image);
         const negativeResult = engine.match(negativeRequest);
 
         expect(negativeResult).toBeNull();
@@ -313,7 +311,7 @@ describe('Test Match Wildcard domain', () => {
         const processed = FilterListPreprocessor.preprocess(rule);
         const engine = new NetworkEngine(createTestRuleStorage(1, processed));
 
-        const request = new Request('https://test.ru/tests/', 'https://example.com/', RequestType.Image);
+        const request = new WebRequest('https://test.ru/tests/', 'https://example.com/', RequestType.Image);
         const result = engine.match(request);
 
         expect(result).toBeTruthy();
@@ -331,7 +329,7 @@ describe('Test match denyallow rules', () => {
         const processed = FilterListPreprocessor.preprocess(rule);
         const engine = new NetworkEngine(createTestRuleStorage(1, processed));
 
-        const result = engine.match(new Request(
+        const result = engine.match(new WebRequest(
             'https://z.com/',
             'https://www.a.com/',
             RequestType.Script,
@@ -344,25 +342,25 @@ describe('Test match denyallow rules', () => {
             getRawRuleIndex(processed.rawFilterList, rule),
         );
 
-        expect(engine.match(new Request(
+        expect(engine.match(new WebRequest(
             'https://z.com/',
             'https://www.c.com/',
             RequestType.Script,
         ))).toBeNull();
 
-        expect(engine.match(new Request(
+        expect(engine.match(new WebRequest(
             'https://x.com/',
             'https://www.a.com/',
             RequestType.Script,
         ))).toBeNull();
 
-        expect(engine.match(new Request(
+        expect(engine.match(new WebRequest(
             'https://www.x.com/',
             'https://www.a.com/',
             RequestType.Script,
         ))).toBeNull();
 
-        expect(engine.match(new Request(
+        expect(engine.match(new WebRequest(
             'https://sub.x.com/',
             'https://www.a.com/',
             RequestType.Script,
@@ -374,7 +372,7 @@ describe('Test match denyallow rules', () => {
         const processed = FilterListPreprocessor.preprocess(rule);
         const engine = new NetworkEngine(createTestRuleStorage(1, processed));
 
-        const result = engine.match(new Request(
+        const result = engine.match(new WebRequest(
             'https://z.com/',
             'https://www.a.com/',
             RequestType.Script,
@@ -387,13 +385,13 @@ describe('Test match denyallow rules', () => {
             getRawRuleIndex(processed.rawFilterList, rule),
         );
 
-        expect(engine.match(new Request(
+        expect(engine.match(new WebRequest(
             'https://z.com/',
             'https://www.c.com/',
             RequestType.Script,
         ))).toBeNull();
 
-        expect(engine.match(new Request(
+        expect(engine.match(new WebRequest(
             'https://x.com/',
             'https://www.a.com/',
             RequestType.Script,

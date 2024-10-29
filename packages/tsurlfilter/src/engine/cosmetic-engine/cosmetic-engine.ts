@@ -7,7 +7,7 @@ import { CosmeticResult } from './cosmetic-result';
 import { type CosmeticContentResult } from './cosmetic-content-result';
 import { CosmeticOption } from '../cosmetic-option';
 import { ScannerType } from '../../filterlist/scanner/scanner-type';
-import { type Request } from '../../request';
+import { type WebRequest } from '../../web-request';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
@@ -126,7 +126,7 @@ export class CosmeticEngine {
      * @param option mask of enabled cosmetic types
      * @return CosmeticResult
      */
-    match(request: Request, option: CosmeticOption): CosmeticResult {
+    match(request: WebRequest, option: CosmeticOption): CosmeticResult {
         const includeGeneric = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionGenericCSS);
         const includeSpecific = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionSpecificCSS);
 
@@ -169,7 +169,7 @@ export class CosmeticEngine {
     private static appendGenericRules(
         cosmeticResult: CosmeticContentResult,
         lookupTable: CosmeticLookupTable,
-        request: Request,
+        request: WebRequest,
     ): void {
         for (const genericRule of lookupTable.genericRules) {
             if (!lookupTable.isAllowlisted(request, genericRule)
@@ -188,7 +188,7 @@ export class CosmeticEngine {
     private static appendSpecificRules(
         cosmeticResult: CosmeticContentResult,
         lookupTable: CosmeticLookupTable,
-        request: Request,
+        request: WebRequest,
     ): void {
         const hostnameRules = lookupTable.findByHostname(request);
         if (hostnameRules.length > 0) {

@@ -2,7 +2,7 @@ import fs from 'fs';
 
 import { CompatibilityTypes, setConfiguration } from '../src/configuration/configuration';
 import { type DeclarativeRule, DeclarativeFilterConverter, Filter } from '../src/rules/declarative-converter';
-import { FilterListPreprocessor } from '../src';
+import { FilterListPreprocessor } from '../src/filterlist/preprocessor';
 
 const readmeTxtPath = './src/rules/declarative-converter/readme.txt';
 const readmeMdPath = './src/rules/declarative-converter/README.md';

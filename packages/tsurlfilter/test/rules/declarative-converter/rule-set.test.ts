@@ -15,7 +15,7 @@ import {
     type ScannedFilter,
 } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
-import { FilterListPreprocessor } from '../../../src';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
 
 const createFilter = (
     rules: string[],

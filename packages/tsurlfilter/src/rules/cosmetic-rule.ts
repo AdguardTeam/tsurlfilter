@@ -20,7 +20,7 @@ import * as rule from './rule';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
-import { type Request } from '../request';
+import { type WebRequest } from '../web-request';
 import { Pattern } from './pattern';
 import { config } from '../configuration/configuration';
 import { EMPTY_STRING, WILDCARD } from '../common/constants';
@@ -629,7 +629,7 @@ export class CosmeticRule implements rule.IRule {
      *
      * @param request - request to check
      */
-    match(request: Request): boolean {
+    match(request: WebRequest): boolean {
         if (!this.domainModifier
             && !this.pathModifier
             && !this.urlModifier

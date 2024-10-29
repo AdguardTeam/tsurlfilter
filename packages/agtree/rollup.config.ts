@@ -52,21 +52,21 @@ const banner = `/*
 // Common plugins for all types of builds
 export const commonPlugins = [
     // FIXME check if this file is needed, if not remove it
-    // alias({
-    //     entries: [
-    //         // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
-    //         // We need this because we import functions from the "semver" package directly,
-    //         // otherwise it will cause a "circular dependency" warning during the build.
-    //         // See https://github.com/npm/node-semver/issues/381
-    //         // Rollup detects "semver" as an external dependency, so it doesn't add the ".js"
-    //         // extension by default, and we need to do it manually here, otherwise the ESM
-    //         // build will fail with "Cannot find module" error.
-    //         {
-    //             find: /semver\/(.*)(?<!\.js)$/,
-    //             replacement: 'semver/$1.js',
-    //         },
-    //     ],
-    // }),
+    alias({
+        entries: [
+            // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
+            // We need this because we import functions from the "semver" package directly,
+            // otherwise it will cause a "circular dependency" warning during the build.
+            // See https://github.com/npm/node-semver/issues/381
+            // Rollup detects "semver" as an external dependency, so it doesn't add the ".js"
+            // extension by default, and we need to do it manually here, otherwise the ESM
+            // build will fail with "Cannot find module" error.
+            {
+                find: /semver\/(.*)(?<!\.js)$/,
+                replacement: 'semver/$1.js',
+            },
+        ],
+    }),
     json({ preferConst: true }),
     resolve({ preferBuiltins: false }),
     commonjs({ sourceMap: false }),
@@ -75,11 +75,12 @@ export const commonPlugins = [
 
 const main = {
     input: [
-        path.resolve(ROOT_DIR, 'src/index.ts'),
-        path.resolve(ROOT_DIR, 'src/parser/index.ts'),
-        path.resolve(ROOT_DIR, 'src/generator/index.ts'),
-        path.resolve(ROOT_DIR, 'src/serializer/index.ts'),
-        path.resolve(ROOT_DIR, 'src/deserializer/index.ts'),
+        'src/index.ts',
+        'src/parser/index.ts',
+        'src/generator/index.ts',
+        'src/serializer/index.ts',
+        'src/deserializer/index.ts',
+        'src/converter/index.ts',
     ],
     output: [
         {

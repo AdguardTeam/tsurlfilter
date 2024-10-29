@@ -1,5 +1,5 @@
 import { type RuleStorage } from '../../filterlist/rule-storage';
-import { type Request } from '../../request';
+import { type WebRequest } from '../../web-request';
 import { type NetworkRule } from '../../rules/network-rule';
 import { TrieNode } from '../../utils/trie';
 import { type ILookupTable } from './lookup-table';
@@ -41,7 +41,7 @@ export class TrieLookupTable implements ILookupTable {
      * @param request to check
      * @return array of matching rules
      */
-    public matchAll(request: Request): NetworkRule[] {
+    public matchAll(request: WebRequest): NetworkRule[] {
         const rulesIndexes = this.traverse(request);
         return this.matchRules(request, rulesIndexes);
     }
@@ -80,7 +80,7 @@ export class TrieLookupTable implements ILookupTable {
      * @param request
      * @param rulesIndexes
      */
-    private matchRules(request: Request, rulesIndexes: number[] | undefined): NetworkRule[] {
+    private matchRules(request: WebRequest, rulesIndexes: number[] | undefined): NetworkRule[] {
         if (!rulesIndexes) {
             return [];
         }
@@ -103,7 +103,7 @@ export class TrieLookupTable implements ILookupTable {
      *
      * @param request
      */
-    private traverse(request: Request): number[] {
+    private traverse(request: WebRequest): number[] {
         return this.trie.traverseAll(request.urlLowercase, request.urlLowercase.length);
     }
 

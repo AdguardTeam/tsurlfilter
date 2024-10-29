@@ -8,14 +8,10 @@ import {
     type NetworkRule as NetworkRuleNode,
 } from '@adguard/agtree';
 import { isString } from 'lodash';
-
-import {
-    CosmeticRule,
-    type IRule,
-    NetworkRule,
-    RULE_INDEX_NONE,
-    RuleFactory,
-} from '../../src';
+import { IRule, RULE_INDEX_NONE } from '../../src/rules/rule';
+import { NetworkRule } from '../../src/rules/network-rule';
+import { CosmeticRule } from '../../src/rules/cosmetic-rule';
+import { RuleFactory } from '../../src/rules/rule-factory';
 
 /**
  * Helper function to create a network rule from a string or a parsed node.

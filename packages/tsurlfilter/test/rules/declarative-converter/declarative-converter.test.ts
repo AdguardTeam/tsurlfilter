@@ -7,8 +7,8 @@ import {
 import { UnsupportedModifierError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import { RuleActionType } from '../../../src/rules/declarative-converter/declarative-rule';
 import { createNetworkRule } from '../../helpers/rule-creator';
-import { FilterListPreprocessor } from '../../../src';
 import { Filter, type IFilter } from '../../../src/rules/declarative-converter';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
 
 const createFilter = (
     rules: string[],

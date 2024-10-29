@@ -1,5 +1,5 @@
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
-import { type Request } from '../../request';
+import { type WebRequest } from '../../web-request';
 
 /**
  * Cosmetic results interface
@@ -10,7 +10,7 @@ export interface CosmeticContentResult {
      * @param rule to add
      * @param request used to provide domain information to scriptlet rule
      */
-    append(rule: CosmeticRule, request?: Request): void;
+    append(rule: CosmeticRule, request?: WebRequest): void;
 
     /**
      * Collection of generic (domain insensitive) rules

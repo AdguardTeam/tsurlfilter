@@ -21,7 +21,7 @@ export enum HTTPMethod {
  */
 export class MethodModifier implements IValueListModifier<HTTPMethod> {
     /**
-     * Request methods separator
+     * WebRequest methods separator
      */
     private static PIPE_SEPARATOR = '|';
 

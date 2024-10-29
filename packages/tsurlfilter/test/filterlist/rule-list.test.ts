@@ -4,7 +4,9 @@ import { RuleParser } from '@adguard/agtree';
 import { LIST_ID_MAX_VALUE } from '../../src/filterlist/rule-list';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
-import { FilterListPreprocessor, PREPROCESSOR_AGTREE_OPTIONS, getRuleSourceIndex } from '../../src';
+import { FilterListPreprocessor } from '../../src/filterlist/preprocessor';
+import { getRuleSourceIndex } from '../../src/filterlist/source-map';
+import { PREPROCESSOR_AGTREE_OPTIONS } from '../../src/filterlist/preprocessor/preprocessor';
 
 describe('RuleScanner tests', () => {
     describe('BufferRuleList', () => {

@@ -1,4 +1,4 @@
-import { type Request } from '../../request';
+import { type WebRequest } from '../../web-request';
 import { type NetworkRule } from '../../rules/network-rule';
 
 /**
@@ -11,7 +11,7 @@ export interface ILookupTable {
      * @param request to check
      * @return array of matching rules
      */
-    matchAll(request: Request): NetworkRule[];
+    matchAll(request: WebRequest): NetworkRule[];
 
     /**
      * Tries to add the rule to the lookup table.

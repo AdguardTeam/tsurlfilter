@@ -1,5 +1,5 @@
 import { type ILookupTable } from './lookup-table';
-import { type Request } from '../../request';
+import { type WebRequest } from '../../web-request';
 import { type NetworkRule } from '../../rules/network-rule';
 
 /**
@@ -43,7 +43,7 @@ export class SeqScanLookupTable implements ILookupTable {
      * Implements the ILookupTable interface method.
      * @param request
      */
-    matchAll(request: Request): NetworkRule[] {
+    matchAll(request: WebRequest): NetworkRule[] {
         const result = [];
 
         for (let i = 0; i < this.rules.length; i += 1) {

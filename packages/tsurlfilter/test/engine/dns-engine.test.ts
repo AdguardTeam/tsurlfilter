@@ -1,9 +1,11 @@
 import escapeStringRegexp from 'escape-string-regexp';
 
-import { FilterListPreprocessor, type PreprocessedFilterList, getRuleSourceIndex } from '../../src';
 import { DnsEngine } from '../../src/engine/dns-engine';
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { FilterListPreprocessor } from '../../src/filterlist/preprocessor';
+import { getRuleSourceIndex } from '../../src/filterlist/source-map';
+import { PreprocessedFilterList } from '../../src/filterlist/preprocessor/schema';
 
 describe('General DNS engine tests', () => {
     /**

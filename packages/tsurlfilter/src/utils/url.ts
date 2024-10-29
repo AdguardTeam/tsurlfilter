@@ -108,7 +108,7 @@ export const getRelativeUrl = (url: string): string | null => {
 /**
  * Checks if url is http or websocket.
  *
- * @param url Request url.
+ * @param url WebRequest url.
  * @returns True if url starts with http{s?} or ws.
  */
 export function isHttpOrWsRequest(url: string): boolean {

@@ -8,7 +8,8 @@ import { sprintf } from 'sprintf-js';
 import {
     CosmeticRuleSeparator,
     CosmeticRuleType,
-    type HtmlFilteringRule, RuleCategory,
+    type HtmlFilteringRule,
+    RuleCategory,
 } from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { RuleConversionError } from '../../errors/rule-conversion-error';

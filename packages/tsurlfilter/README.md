@@ -114,7 +114,7 @@ constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined
  * @param frameRules - source rules or undefined
  * @return matching result
  */
-matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult;
+matchRequest(request: WebRequest, frameRule: NetworkRule | null = null): MatchingResult;
 ```
 
 ##### **matchFrame**
@@ -167,7 +167,7 @@ console.log(`Engine loaded with ${engine.getRulesCount()} rule(s)`);
 ##### Matching requests
 
 ```ts
-const request = new Request(url, sourceUrl, RequestType.Document);
+const request = new WebRequest(url, sourceUrl, RequestType.Document);
 const result = engine.matchRequest(request);
 ```
 
@@ -198,7 +198,7 @@ getBasicResult(): NetworkRule | null;
 
 ##### **getCosmeticOption**
 
-This flag should be used for `getCosmeticResult(request: Request, option: CosmeticOption)`
+This flag should be used for `getCosmeticResult(request: WebRequest, option: CosmeticOption)`
 
 ```ts
 /**

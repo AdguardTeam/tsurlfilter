@@ -60,7 +60,7 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     ];
 
     /**
-     * Request prefix
+     * WebRequest prefix
      */
     private static REQUEST_PREFIX = 'request:';
 

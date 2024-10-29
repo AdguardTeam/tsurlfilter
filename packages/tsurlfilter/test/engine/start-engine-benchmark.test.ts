@@ -1,15 +1,13 @@
 import console from 'console';
 import fs from 'fs';
 import os from 'os';
-import {
-    BufferRuleList,
-    DnsEngine,
-    Engine,
-    FilterListPreprocessor,
-    NetworkEngine,
-    RuleStorage,
-    setLogger,
-} from '../../src';
+import { setLogger } from '../../src/utils/logger';
+import { FilterListPreprocessor } from '../../src/filterlist/preprocessor';
+import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
+import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { Engine } from '../../src/engine';
+import { NetworkEngine } from '../../src/engine/network-engine';
+import { DnsEngine } from '../../src/engine/dns-engine';
 
 // Time: Tue May 14 2024
 // Env:

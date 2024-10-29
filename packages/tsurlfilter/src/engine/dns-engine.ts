@@ -3,7 +3,7 @@ import { NetworkRule } from '../rules/network-rule';
 import { HostRule } from '../rules/host-rule';
 import { fastHash } from '../utils/string-utils';
 import { NetworkEngine } from './network-engine';
-import { Request } from '../request';
+import { WebRequest } from '../web-request';
 import { DnsResult } from './dns-result';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { RequestType } from '../request-type';
@@ -75,7 +75,7 @@ export class DnsEngine {
         }
 
         const url = `http://${hostname}/`;
-        const request = new Request(url, url, RequestType.Document);
+        const request = new WebRequest(url, url, RequestType.Document);
         request.isHostnameRequest = true;
 
         const networkRule = this.networkEngine.match(request);

@@ -1,7 +1,8 @@
 import { OutputByteBuffer } from '@adguard/agtree';
 import { RuleSerializer } from '@adguard/agtree/serializer';
 import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
-import { FilterListPreprocessor, type PreprocessedFilterList } from '../../../src/filterlist/preprocessor';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
+import { PreprocessedFilterList } from '../../../src/filterlist/preprocessor/schema';
 
 // TODO: Add more tests
 

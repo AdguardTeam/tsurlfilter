@@ -1,11 +1,11 @@
 import { InputByteBuffer } from '@adguard/agtree';
 
-import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
 import { BufferReader } from '../../filterlist/reader/buffer-reader';
 import { getRuleSourceIndex, getRuleSourceText } from '../../filterlist/source-map';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type IFilter } from './filter';
+import { PreprocessedFilterList } from '../../filterlist/preprocessor/schema';
 
 /**
  * IFilterScanner describes a method that should return indexed network rules

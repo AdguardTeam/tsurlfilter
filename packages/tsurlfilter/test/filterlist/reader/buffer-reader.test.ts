@@ -1,6 +1,7 @@
 import { InputByteBuffer, RuleParser } from '@adguard/agtree';
-import { FilterListPreprocessor, PREPROCESSOR_AGTREE_OPTIONS } from '../../../src';
 import { BufferReader } from '../../../src/filterlist/reader/buffer-reader';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
+import { PREPROCESSOR_AGTREE_OPTIONS } from '../../../src/filterlist/preprocessor/preprocessor';
 
 describe('BufferReader Test', () => {
     it('works if reader gets lines', () => {

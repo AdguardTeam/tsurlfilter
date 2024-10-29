@@ -11,13 +11,13 @@ import {
     Filter,
 } from '../rules/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '../configuration/configuration';
-import { FilterListPreprocessor } from '../index';
 import {
     getFilterBinaryName,
     getFilterConversionMapName,
     getFilterSourceMapName,
     getIdFromFilterName,
 } from '../utils/resource-names';
+import { FilterListPreprocessor } from '../filterlist/preprocessor';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
