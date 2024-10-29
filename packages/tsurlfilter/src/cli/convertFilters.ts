@@ -9,15 +9,15 @@ import {
     METADATA_FILENAME,
     LAZY_METADATA_FILENAME,
     Filter,
-} from '../src/rules/declarative-converter';
-import { CompatibilityTypes, setConfiguration } from '../src/configuration';
-import { FilterListPreprocessor } from '../src';
+} from '../rules/declarative-converter';
+import { CompatibilityTypes, setConfiguration } from '../configuration/configuration';
+import { FilterListPreprocessor } from '../index';
 import {
     getFilterBinaryName,
     getFilterConversionMapName,
     getFilterSourceMapName,
     getIdFromFilterName,
-} from '../src/utils/resource-names';
+} from '../utils/resource-names';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
@@ -206,7 +206,7 @@ export const convertFilters = async (
             ),
             fs.promises.writeFile(
                 path.join(filtersDir, getFilterBinaryName(filterId)),
-                Buffer.concat(content.filterList),
+                Buffer.concat(content.filterList) as unknown as Uint8Array,
             ),
         ]);
 

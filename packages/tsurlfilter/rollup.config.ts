@@ -1,172 +1,141 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import nodePolyfills from 'rollup-plugin-polyfill-node';
-import camelCase from 'lodash/camelCase';
+// FIXME why this was needed
+// import nodePolyfills from 'rollup-plugin-polyfill-node';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
-import terser from '@rollup/plugin-terser';
-import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
+import { dts } from 'rollup-plugin-dts';
+import { type RollupOptions } from 'rollup';
 
-const DEFAULT_OUTPUT_PATH = 'dist';
+const DIST_DIR = 'dist';
 
-const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
-
-const libraryName = 'TSUrlFilter';
-
-const commonConfig = {
-    cache: false,
-    watch: {
-        include: 'src/**',
-    },
-    plugins: [
-        // Allow json resolution
-        json(),
-
-        // Compile TypeScript files
-        typescript({
-            tsconfig: 'tsconfig.build.json',
-        }),
-
-        // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
-        commonjs({
-            sourceMap: false,
-        }),
-        nodePolyfills(),
-
-        // Allow node_modules resolution, so you can use 'external' to control
-        // which external modules to include in the bundle
-        // https://github.com/rollup/rollup-plugin-node-resolve#usage
-        resolve({ preferBuiltins: false }),
-
-        cleanup({
-            comments: ['srcmaps'],
-        }),
-    ],
-};
-
-const commonExternal = [
-    '@adguard/agtree',
-    '@adguard/css-tokenizer',
-    '@adguard/scriptlets',
-    'is-ip',
-    'punycode/',
-    'tldts',
-    'is-cidr',
-    'cidr-tools',
-    'zod',
-    'commander',
+const commonPlugins = [
+    json(),
+    typescript({ tsconfig: 'tsconfig.build.json' }),
+    commonjs({ sourceMap: false }),
+    cleanup({ comments: ['srcmaps'] }),
 ];
 
-const esmConfig = {
-    input: [
-        'src/index.ts',
-        'src/request-type.ts',
-        'src/rules/simple-regex.ts',
-        'src/rules/network-rule-options.ts',
-    ],
+const cliConfig: RollupOptions = {
+    input: 'src/cli/index.ts',
     output: [
         {
-            dir: `${OUTPUT_PATH}/es`,
-            format: 'esm',
-            sourcemap: false,
-        },
-    ],
-    external: commonExternal,
-    ...commonConfig,
-};
-
-/**
- * Declarative converter should be built separately
- * because it has some regexp which are not supported in Safari browser
- * so it throws an error in safari-web-extension. AG-21568
- */
-const esmDeclarativeConverterConfig = {
-    input: 'src/rules/declarative-converter/index.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/es/declarative-converter.js`,
-            format: 'esm',
-            sourcemap: false,
-        },
-    ],
-    external: commonExternal,
-    ...commonConfig,
-};
-
-/**
- * UMD build is needed for the FiltersCompiler and DNS dashboard.
- *
- * TODO: should be removed. AG-21466
- */
-const umdConfig = {
-    input: 'src/index.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/tsurlfilter.umd.js`,
-            name: camelCase(libraryName),
-            format: 'umd',
-            sourcemap: false,
-        },
-        {
-            file: `${OUTPUT_PATH}/tsurlfilter.umd.min.js`,
-            name: camelCase(libraryName),
-            format: 'umd',
-            sourcemap: false,
-            plugins: [terser()],
-        },
-    ],
-    ...commonConfig,
-};
-
-const cliConfig = {
-    input: 'cli/index.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/cli.js`,
+            dir: `${DIST_DIR}/cjs`,
             format: 'cjs',
+            exports: 'named',
             sourcemap: false,
+            preserveModules: true,
+            preserveModulesRoot: 'src',
+        },
+        {
+            dir: `${DIST_DIR}/esm`,
+            entryFileNames: '[name].mjs',
+            format: 'esm',
+            sourcemap: false,
+            preserveModules: true,
+            preserveModulesRoot: 'src',
         },
     ],
-    external: [
-        'fs',
-        'path',
-        'commander',
-    ],
-    plugins: [
-        // Allow json resolution
-        json(),
-
-        // Compile TypeScript files
-        typescript({
-            tsconfig: 'tsconfig.build.json',
-        }),
-
-        // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
-        commonjs({
-            sourceMap: false,
-        }),
-
-        // Allow node_modules resolution, so you can use 'external' to control
-        // which external modules to include in the bundle
-        // https://github.com/rollup/rollup-plugin-node-resolve#usage
-        resolve({ preferBuiltins: false }),
-
-        cleanup({
-            comments: ['srcmaps'],
-        }),
-
-        preserveShebangs(),
-    ],
-
+    cache: false,
     watch: {
         include: 'cli/**',
     },
+    external: (id) => {
+        return (
+            /node_modules/.test(id)
+            // Added because when agtree is linked using 'yarn link', its ID does not contain 'node_modules'
+            || id === '@adguard/agtree'
+            || id.startsWith('@adguard/agtree/')
+        );
+    },
+    plugins: [
+        ...commonPlugins,
+        resolve({ preferBuiltins: true }),
+    ],
+};
+
+const mainConfig: RollupOptions = {
+    input: [
+        // from '@adguard/tsurlfilter'
+        'src/index.ts',
+        // from '@adguard/tsurlfilter/declarative-converter'
+        'src/rules/declarative-converter/index.ts',
+        // from '@adguard/tsurlfilter/request-type'
+        'src/request-type.ts',
+        // FIXME update in the browser extension
+        // from @adguard/tsurlfilter/simple-regex
+        'src/rules/simple-regex.ts',
+        // FIXME find where was used?
+        // path.resolve(__dirname, 'src/rules/network-rule-options.ts'),
+    ],
+    output: [
+        {
+            dir: `${DIST_DIR}/cjs`,
+            format: 'cjs',
+            exports: 'named',
+            sourcemap: false,
+            preserveModules: true,
+            preserveModulesRoot: 'src',
+            // banner,
+        },
+        {
+            dir: `${DIST_DIR}/esm`,
+            entryFileNames: '[name].mjs',
+            format: 'esm',
+            sourcemap: false,
+            preserveModules: true,
+            preserveModulesRoot: 'src',
+            // banner,
+        },
+    ],
+    cache: false,
+    watch: {
+        include: 'cli/**',
+    },
+    external: (id) => {
+        return (
+            /node_modules/.test(id)
+            // Added because when agtree is linked using 'yarn link', its ID does not contain 'node_modules'
+            || id === '@adguard/agtree'
+            || id.startsWith('@adguard/agtree/')
+        );
+    },
+    plugins: [
+        ...commonPlugins,
+        resolve({ preferBuiltins: false }),
+    ],
+};
+
+const typesConfig = {
+    input: {
+        // from '@adguard/tsurlfilter'
+        index: 'src/index.ts',
+        'cli/index': 'src/cli/index.ts',
+        // from '@adguard/tsurlfilter/declarative-converter'
+        'declarative-converter': 'src/rules/declarative-converter/index.ts',
+        // from '@adguard/tsurlfilter/request-type'
+        'request-type': 'src/request-type.ts',
+        // FIXME update in the browser extension
+        // from @adguard/tsurlfilter/simple-regex
+        'simple-regex': 'src/rules/simple-regex.ts',
+        // FIXME find where was used?
+        // path.resolve(__dirname, 'src/rules/network-rule-options.ts'),
+    },
+    output: {
+        dir: `${DIST_DIR}/types`,
+        format: 'es',
+        preserveModules: true,
+        preserveModulesRoot: 'src',
+        entryFileNames: '[name].d.ts',
+    },
+    plugins: [
+        dts(),
+    ],
 };
 
 export default [
-    esmConfig,
-    esmDeclarativeConverterConfig,
-    umdConfig,
+    mainConfig,
+    typesConfig,
     cliConfig,
 ];

@@ -22,7 +22,7 @@ import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
 import { type Request } from '../request';
 import { Pattern } from './pattern';
-import { config } from '../configuration';
+import { config } from '../configuration/configuration';
 import { EMPTY_STRING, WILDCARD } from '../common/constants';
 import { validateSelectorList } from './css/selector-list-validator';
 import { validateDeclarationList } from './css/declaration-list-validator';

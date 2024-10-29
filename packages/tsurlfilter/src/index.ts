@@ -1,4 +1,4 @@
-export * from './configuration';
+export * from './configuration/configuration';
 export * from './engine/cosmetic-engine/cosmetic-engine';
 export * from './engine/cosmetic-engine/cosmetic-result';
 export * from './engine/cosmetic-option';

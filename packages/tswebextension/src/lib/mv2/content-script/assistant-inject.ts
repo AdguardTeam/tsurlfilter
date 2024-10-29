@@ -1,3 +1,4 @@
+// FIXME assistants for mv2 and mv3 should be the same, and follow the same logic
 /**
  * @file
  * In this file we doing only lazy-load assistant and save it to the global

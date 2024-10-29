@@ -159,6 +159,7 @@ const backgroundMv3Config = {
     ],
 };
 
+// FIXME should be separate because of the preserve shebangs
 const cliConfig = {
     cache,
     input: 'src/cli/index.ts',
