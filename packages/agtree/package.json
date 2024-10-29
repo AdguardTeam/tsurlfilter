@@ -110,7 +110,6 @@
         "@typescript-eslint/eslint-plugin": "^5.60.1",
         "@typescript-eslint/parser": "^5.60.1",
         "benchmark": "^2.1.4",
-        "camelcase-keys": "^7.0.2",
         "consola": "^3.2.3",
         "console-table-printer": "^2.12.0",
         "date-fns": "^3.3.1",
@@ -144,6 +143,7 @@
         "typescript": "^5.0.4"
     },
     "dependencies": {
+        "camelcase-keys": "^7.0.2",
         "@adguard/css-tokenizer": "workspace:^",
         "clone-deep": "^4.0.1",
         "is-ip": "3.1.0",

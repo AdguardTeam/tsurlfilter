@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { CompatibilityTypes, setConfiguration } from '../src/configuration';
+import { CompatibilityTypes, setConfiguration } from '../src/configuration/configuration';
 import { type DeclarativeRule, DeclarativeFilterConverter, Filter } from '../src/rules/declarative-converter';
 import { FilterListPreprocessor } from '../src';
 

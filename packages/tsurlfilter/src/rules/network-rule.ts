@@ -20,7 +20,7 @@ import { type HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
 import { HeaderModifier, type HttpHeadersItem, type HttpHeaderMatcher } from '../modifiers/header-modifier';
 import { ToModifier } from '../modifiers/to-modifier';
 import { PermissionsModifier } from '../modifiers/permissions-modifier';
-import { CompatibilityTypes, isCompatibleWith } from '../configuration';
+import { CompatibilityTypes, isCompatibleWith } from '../configuration/configuration';
 import {
     MASK_ALLOWLIST,
     NETWORK_RULE_OPTIONS,

@@ -3,7 +3,7 @@ import escapeStringRegexp from 'escape-string-regexp';
 import { Engine } from '../../src/engine/engine';
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { config, setConfiguration } from '../../src/configuration';
+import { config, setConfiguration } from '../../src/configuration/configuration';
 import { CosmeticOption } from '../../src/engine/cosmetic-option';
 import { RequestType } from '../../src/request-type';
 import { Request } from '../../src/request';
