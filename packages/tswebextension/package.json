@@ -41,7 +41,7 @@
         "dist/types/src/lib/mv2/content-script/assistant-inject.d.ts"
       ],
       "core-storages": [
-        "dist/types/src/lib/common/storage/index.d.ts"
+        "dist/types/src/lib/common/storage/core/index.d.ts"
       ]
     }
   },
