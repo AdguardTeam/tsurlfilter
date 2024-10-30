@@ -2,7 +2,7 @@
  * @file Converter entry point
  */
 
-export { FilterListConverter } from './filter-list';
+// FIXME add an entry point to the convertor
+// used in the ios-webextension
 export { RawFilterListConverter } from './raw-filter-list';
-export { RawRuleConverter } from './raw-rule';
 export { RuleConverter } from './rule';

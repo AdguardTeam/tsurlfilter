@@ -6,7 +6,7 @@ import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
 import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { CosmeticRuleType, RuleCategory, type AnyRule } from '../../parser/common';
+import { CosmeticRuleType, RuleCategory, type AnyRule } from '../../nodes';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
 import { EMPTY, UBO_HTML_MASK } from '../../utils/constants';

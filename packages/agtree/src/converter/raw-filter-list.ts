@@ -5,10 +5,11 @@
  */
 
 import { createConversionResult, type ConversionResult } from './base-interfaces/conversion-result';
-import { ConverterBase } from './base-interfaces/converter-base';
-import { FilterListParser } from '../parser/filterlist';
+import { BaseConverter } from './base-interfaces/base-converter';
+import { FilterListParser } from '../parser/filterlist-parser';
 import { FilterListConverter } from './filter-list';
 import { defaultParserOptions } from '../parser/options';
+import { FilterListGenerator } from '../generator/filterlist-generator';
 
 /**
  * Adblock filter list converter class.
@@ -19,7 +20,7 @@ import { defaultParserOptions } from '../parser/options';
  *
  * @todo Implement `convertToUbo` and `convertToAbp`
  */
-export class RawFilterListConverter extends ConverterBase {
+export class RawFilterListConverter extends BaseConverter {
     /**
      * Converts an adblock filter list text to AdGuard format, if possible.
      *
@@ -51,6 +52,6 @@ export class RawFilterListConverter extends ConverterBase {
         }
 
         // Otherwise, serialize the filter list and return the result
-        return createConversionResult(FilterListParser.generate(conversionResult.result), true);
+        return createConversionResult(FilterListGenerator.generate(conversionResult.result), true);
     }
 }

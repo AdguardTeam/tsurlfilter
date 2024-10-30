@@ -1,6 +1,6 @@
 import { NetworkRuleConverter } from '../../../src/converter/network';
 import { RuleConversionError } from '../../../src/errors/rule-conversion-error';
-import { NetworkRuleParser } from '../../../src/parser/network';
+import { NetworkRuleParser } from '../../../src/parser/network/network-rule-parser';
 import '../../matchers/check-conversion';
 
 describe('NetworkRuleConverter', () => {

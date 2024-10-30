@@ -1,9 +1,20 @@
 import { sprintf } from 'sprintf-js';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type ScriptletInjectionRuleBody } from '../../../../src/parser/common';
-import { AdgScriptletInjectionBodyParser } from '../../../../src/parser/cosmetic/body/adg-scriptlet';
+import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
+import {
+    AdgScriptletInjectionBodyParser,
+} from '../../../../src/parser/cosmetic/body/adg-scriptlet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
+import {
+    AdgScriptletInjectionBodyGenerator,
+} from '../../../../src/generator/cosmetic/body/adg-scriptlet-injection-body-generator';
+import {
+    AdgScriptletInjectionBodySerializer,
+} from '../../../../src/serializer/cosmetic/body/adg-scriptlet-injection-body-serializer';
+import {
+    AdgScriptletInjectionBodyDeserializer,
+} from '../../../../src/deserializer/cosmetic/body/adg-scriptlet-injection-body-deserializer';
 
 describe('AdgScriptletInjectionBodyParser', () => {
     describe('AdgScriptletInjectionBodyParser.parse - valid cases', () => {
@@ -476,7 +487,7 @@ describe('AdgScriptletInjectionBodyParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(AdgScriptletInjectionBodyParser.generate(ruleNode)).toBe(expected);
+            expect(AdgScriptletInjectionBodyGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 
@@ -486,7 +497,12 @@ describe('AdgScriptletInjectionBodyParser', () => {
             '//scriptlet("scriptlet0")',
             '//scriptlet("scriptlet0", "arg0", "arg1")',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(AdgScriptletInjectionBodyParser);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                AdgScriptletInjectionBodyParser,
+                AdgScriptletInjectionBodyGenerator,
+                AdgScriptletInjectionBodySerializer,
+                AdgScriptletInjectionBodyDeserializer,
+            );
         });
     });
 });

@@ -280,11 +280,11 @@ and restore them later without parsing the data again.
 2. Once you have the output buffer, you can serialize the AST node to it:
 
     ```typescript
-    RuleParser.serialize(ruleNode, outBuffer);
+    RuleSerializer.serialize(ruleNode, outBuffer);
     ```
 
     It will write the serialized data to the end of the buffer. If needed, it will automatically resize the buffer.
-    Buffer internally uses 32 kilobytes chunks to store data.
+   Buffer internally uses 32 kilobytes chunks to store data.
 
 3. You can write the buffer data to a storage:
 
@@ -302,7 +302,7 @@ and restore them later without parsing the data again.
     ```typescript
     import { InputByteBuffer } from "@adguard/agtree";
 
-    const inBuffer = new InputByteBuffer(outBuffer.buffer);
+    const inBuffer = new InputByteBuffer(outBuffer.chunks);
     ```
 
 3. Once you have the input buffer, you can deserialize the AST node from it:
