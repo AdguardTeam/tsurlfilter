@@ -10,7 +10,7 @@ export class EmptyOrNegativeNumberOfRulesError extends Error {
     constructor(message: string) {
         super(message);
 
-        this.name = 'EmptyOrNegativeNumberOfRulesError';
+        this.name = this.constructor.name;
 
         // For proper work of the "instanceof" operator
         Object.setPrototypeOf(this, EmptyOrNegativeNumberOfRulesError.prototype);
