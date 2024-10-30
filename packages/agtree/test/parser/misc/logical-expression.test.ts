@@ -1,5 +1,8 @@
-import { type AnyExpressionNode } from '../../../src/parser/common';
-import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression';
+import { type AnyExpressionNode } from '../../../src/nodes';
+import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression-parser';
+import { LogicalExpressionGenerator } from '../../../src/generator/misc/logical-expression-generator';
+import { LogicalExpressionSerializer } from '../../../src/serializer/misc/logical-expression-serializer';
+import { LogicalExpressionDeserializer } from '../../../src/deserializer/misc/logical-expression-deserializer';
 
 describe('LogicalExpressionParser', () => {
     // TODO: Refactor to test.each
@@ -333,7 +336,7 @@ describe('LogicalExpressionParser', () => {
             const ast = LogicalExpressionParser.parse(source);
 
             if (ast) {
-                return LogicalExpressionParser.generate(ast);
+                return LogicalExpressionGenerator.generate(ast);
             }
 
             return null;
@@ -396,7 +399,7 @@ describe('LogicalExpressionParser', () => {
 
         // Invalid AST
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        expect(() => LogicalExpressionParser.generate(<any>{ type: 'Unknown' })).toThrowError(
+        expect(() => LogicalExpressionGenerator.generate(<any>{ type: 'Unknown' })).toThrowError(
             'Unexpected node type',
         );
     });
@@ -416,7 +419,12 @@ describe('LogicalExpressionParser', () => {
             // eslint-disable-next-line max-len
             '(adguard && !adguard_ext_safari) && (adguard_ext_android || (adguard_ext_chromium && (!adguard_ext_firefox)))',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(LogicalExpressionParser);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                LogicalExpressionParser,
+                LogicalExpressionGenerator,
+                LogicalExpressionSerializer,
+                LogicalExpressionDeserializer,
+            );
         });
     });
 });

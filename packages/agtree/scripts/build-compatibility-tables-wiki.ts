@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 /**
  * @file Script to generate compatibility tables for the wiki.
  */

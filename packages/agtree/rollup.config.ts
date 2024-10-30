@@ -1,29 +1,26 @@
 /**
  * @file Rollup configurations for generating AGTree builds.
- *
- * ! Please ALWAYS use the "pnpm build" command for building!
  */
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import externals from 'rollup-plugin-node-externals';
-import dtsPlugin from 'rollup-plugin-dts';
+// FIXME check agtree is working without this
+// import externals from 'rollup-plugin-node-externals';
 import alias from '@rollup/plugin-alias';
 import json from '@rollup/plugin-json';
-import replace from '@rollup/plugin-replace';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
+
+import { compatibilityTablePlugin } from './rollup.plugins';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 const ROOT_DIR = __dirname;
-const BASE_FILE_NAME = 'agtree';
 const BASE_NAME = 'AGTree';
 const PKG_FILE_NAME = 'package.json';
-const COMPATIBILITY_TABLE_FILENAME = 'compatibility-table-data.js';
 
-const distDir = path.join(ROOT_DIR, 'dist');
+const distDir = path.resolve(ROOT_DIR, 'dist');
 const pkgFileLocation = path.join(ROOT_DIR, PKG_FILE_NAME);
 
 // Read package.json
@@ -54,13 +51,9 @@ const banner = `/*
 
 // Common plugins for all types of builds
 export const commonPlugins = [
+    // FIXME check if this file is needed, if not remove it
     alias({
         entries: [
-            // Replace dynamic compatibility table data builder with the pre-built data file
-            {
-                find: './compatibility-table-data',
-                replacement: path.resolve(distDir, COMPATIBILITY_TABLE_FILENAME),
-            },
             // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
             // We need this because we import functions from the "semver" package directly,
             // otherwise it will cause a "circular dependency" warning during the build.
@@ -74,93 +67,51 @@ export const commonPlugins = [
             },
         ],
     }),
-    externals(),
     json({ preferConst: true }),
     resolve({ preferBuiltins: false }),
     commonjs({ sourceMap: false }),
-    typescript({
-        tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
-        compilerOptions: {
-            incremental: true,
-            declaration: true,
-            declarationDir: path.join(ROOT_DIR, 'dist/types'),
-        },
-        include: [path.join(ROOT_DIR, './src/**/*.ts')],
-        exclude: [path.join(ROOT_DIR, './node_modules'), path.join(ROOT_DIR, './test')],
-        outputToFilesystem: false,
-    }),
-    replace({
-        preventAssignment: true,
-        delimiters: ["'", "'"],
-        values: {
-            [path.join(distDir, COMPATIBILITY_TABLE_FILENAME)]: `'./${COMPATIBILITY_TABLE_FILENAME}'`,
-        },
-    }),
+    typescript(),
 ];
 
-const compatibilityTablesBanner = `/**
-* @file Compatibility tables data for AGTree
-*
-* This file is auto-generated from YAML files in the "compatibility-tables" directory.
-* It is optimized for better runtime usage and storage efficiency.
-*
-* We use "shared" section to share the same values between different map keys
-* to reduce the storage usage.
-*/`;
-
-const compatibilityTables = {
-    input: path.join(distDir, 'compatibility-table-data.json'),
+const main = {
+    input: [
+        'src/index.ts',
+        'src/parser/index.ts',
+        'src/generator/index.ts',
+        'src/serializer/index.ts',
+        'src/deserializer/index.ts',
+        'src/converter/index.ts',
+    ],
     output: [
         {
-            file: path.join(distDir, COMPATIBILITY_TABLE_FILENAME),
+            dir: `${distDir}/cjs`,
             format: 'cjs',
             exports: 'named',
             sourcemap: false,
-            banner: compatibilityTablesBanner,
-        },
-    ],
-    plugins: [json()],
-};
-
-const node = {
-    input: path.join(ROOT_DIR, 'src/index.ts'),
-    output: [
-        {
-            file: path.join(distDir, `${BASE_FILE_NAME}.js`),
-            format: 'cjs',
-            exports: 'auto',
-            sourcemap: false,
+            preserveModules: true,
+            preserveModulesRoot: 'src',
             banner,
         },
         {
-            file: path.join(distDir, `${BASE_FILE_NAME}.mjs`),
+            dir: `${distDir}/esm`,
+            entryFileNames: '[name].mjs',
             format: 'esm',
             sourcemap: false,
+            preserveModules: true,
+            preserveModulesRoot: 'src',
             banner,
         },
     ],
     external: [
-        path.resolve(distDir, COMPATIBILITY_TABLE_FILENAME),
-    ],
-    plugins: commonPlugins,
-};
-
-// Merge .d.ts files (requires `tsc` to be run first,
-// because it merges .d.ts files from `dist/types` directory)
-const dts = {
-    input: path.join(ROOT_DIR, 'dist/types/src/index.d.ts'),
-    output: [
-        {
-            file: path.join(distDir, `${BASE_FILE_NAME}.d.ts`),
-            format: 'es',
-            banner,
-        },
+        /node_modules/,
     ],
     plugins: [
-        externals(),
-        dtsPlugin(),
+        ...commonPlugins,
+        compatibilityTablePlugin(),
     ],
 };
 
 // Export build configs for Rollup
-export default [compatibilityTables, node, dts];
+export default [
+    main,
+];

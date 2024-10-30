@@ -1,8 +1,18 @@
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type ScriptletInjectionRuleBody } from '../../../../src/parser/common';
-import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/body/abp-snippet';
+import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
+import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/body/abp-snippet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import { EMPTY, SPACE } from '../../../../src/utils/constants';
+import {
+    AbpSnippetInjectionBodyGenerator,
+} from '../../../../src/generator/cosmetic/body/abp-snippet-injection-body-generator';
+import {
+    AbpSnippetInjectionBodySerializer,
+} from '../../../../src/serializer/cosmetic/body/abp-snippet-injection-body-serializer';
+import {
+    AbpSnippetInjectionBodyDeserializer,
+} from '../../../../src/deserializer/cosmetic/body/abp-snippet-injection-body-deserializer';
+import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common';
 
 describe('AbpSnippetInjectionBodyParser', () => {
     describe('AbpSnippetInjectionBodyParser.parse - valid cases', () => {
@@ -586,7 +596,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                 actual: EMPTY,
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        AbpSnippetInjectionBodyParser.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
+                        AbpSnippetInjectionBodyCommon.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
                         ...context.toTuple(context.getFullRange()),
                     );
                 },
@@ -596,7 +606,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                 actual: SPACE,
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        AbpSnippetInjectionBodyParser.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
+                        AbpSnippetInjectionBodyCommon.ERROR_MESSAGES.EMPTY_SCRIPTLET_CALL,
                         ...context.toTuple(context.getFullRange()),
                     );
                 },
@@ -679,7 +689,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(AbpSnippetInjectionBodyParser.generate(ruleNode)).toBe(expected);
+            expect(AbpSnippetInjectionBodyGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 
@@ -690,7 +700,12 @@ describe('AbpSnippetInjectionBodyParser', () => {
             'scriptlet0 arg0 arg1',
             'scriptlet0 arg00 arg01; scriptlet1; scriptlet2 arg20',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(AbpSnippetInjectionBodyParser);
+            await expect(input).toBeSerializedAndDeserializedProperly(
+                AbpSnippetInjectionBodyParser,
+                AbpSnippetInjectionBodyGenerator,
+                AbpSnippetInjectionBodySerializer,
+                AbpSnippetInjectionBodyDeserializer,
+            );
         });
     });
 });
