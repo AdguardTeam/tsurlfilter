@@ -18,7 +18,7 @@ export class UnavailableFilterSourceError extends Error {
     ) {
         super(message, { cause });
 
-        this.name = 'UnavailableFilterSourceError';
+        this.name = this.constructor.name;
         this.filterId = filterId;
 
         // For proper work of the "instanceof" operator
