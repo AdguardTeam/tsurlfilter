@@ -1,11 +1,12 @@
 import browser from 'webextension-polyfill';
 
+import { BrowserStorage } from '../../../../src/lib/common/storage/core';
 import { ExtensionStorage } from '../../../../src/lib/common/storage';
 
 describe('ExtensionStorage', () => {
     const key = 'test-key';
     const data = { foo: 'bar', baz: 42 };
-    const api = browser.storage.local;
+    const api = new BrowserStorage<typeof data>(browser.storage.local);
 
     it('should initialize the storage', async () => {
         const storage = new ExtensionStorage<typeof data>(key, api);

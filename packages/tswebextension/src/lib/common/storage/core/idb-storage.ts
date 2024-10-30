@@ -4,16 +4,17 @@
 
 import * as idb from 'idb';
 
-import { type ExtendedStorageInterface } from './interface';
+import { type ExtendedStorageInterface } from './storage-interface';
 
 import { logger } from '../../utils/logger';
-import { getErrorMessage } from '../../utils/error';
 
 /**
  * Provides a storage mechanism using IndexedDB. This class implements the
  * StorageInterface with asynchronous methods to interact with the database.
+ *
+ * @template Data The type of the value stored in the storage.
  */
-export class IDBStorage implements ExtendedStorageInterface<string, unknown, 'async'> {
+export class IDBStorage<Data = unknown> implements ExtendedStorageInterface<string, Data, 'async'> {
     public static readonly DEFAULT_STORE_NAME = 'defaultStore';
 
     public static readonly DEFAULT_IDB_VERSION = 1;
@@ -43,9 +44,9 @@ export class IDBStorage implements ExtendedStorageInterface<string, unknown, 'as
     /**
      * Constructs an instance of the IDBStorage class.
      *
-     * @param name The name of the database.
+     * @param [name=IDBStorage.DEFAULT_IDB_NAME] The name of the database.
      * @param [version=1] The version of the database.
-     * @param [store=DEFAULT_STORE_NAME] The name of the store.
+     * @param [store=IDBStorage.DEFAULT_STORE_NAME] The name of the store within the database.
      */
     constructor(
         name = IDBStorage.DEFAULT_IDB_NAME,
@@ -84,7 +85,7 @@ export class IDBStorage implements ExtendedStorageInterface<string, unknown, 'as
      * @param key The key of the value to retrieve.
      * @returns The value associated with the key.
      */
-    public async get(key: string): Promise<unknown> {
+    public async get(key: string): Promise<Data | undefined> {
         const db = await this.getOpenedDb();
         return db.get(this.store, key);
     }
@@ -128,7 +129,7 @@ export class IDBStorage implements ExtendedStorageInterface<string, unknown, 'as
      * });
      * ```
      */
-    public async setMultiple(data: Record<string, unknown>): Promise<boolean> {
+    public async setMultiple(data: Record<string, Data>): Promise<boolean> {
         const db = await this.getOpenedDb();
         const tx = db.transaction(this.store, 'readwrite');
 
@@ -136,7 +137,7 @@ export class IDBStorage implements ExtendedStorageInterface<string, unknown, 'as
             await Promise.all(Object.entries(data).map(([key, value]) => tx.store.put(value, key)));
             await tx.done;
         } catch (e) {
-            logger.error('Error while setting multiple keys in the storage:', getErrorMessage(e));
+            logger.error('Error while setting multiple keys in the storage:', e);
             tx.abort();
             return false;
         }
@@ -159,7 +160,7 @@ export class IDBStorage implements ExtendedStorageInterface<string, unknown, 'as
             await Promise.all(keys.map((key) => tx.store.delete(key)));
             await tx.done;
         } catch (e) {
-            logger.error('Error while removing multiple keys from the storage:', getErrorMessage(e));
+            logger.error('Error while removing multiple keys from the storage:', e);
             tx.abort();
             return false;
         }
@@ -172,9 +173,9 @@ export class IDBStorage implements ExtendedStorageInterface<string, unknown, 'as
      *
      * @returns Promise that resolves with the entire contents of the storage.
      */
-    public async entries(): Promise<Record<string, unknown>> {
+    public async entries(): Promise<Record<string, Data>> {
         const db = await this.getOpenedDb();
-        const entries: Record<string, unknown> = {};
+        const entries: Record<string, Data> = {};
         const tx = db.transaction(this.store, 'readonly');
 
         // eslint-disable-next-line no-restricted-syntax
@@ -195,6 +196,19 @@ export class IDBStorage implements ExtendedStorageInterface<string, unknown, 'as
         const db = await this.getOpenedDb();
         const idbKeys = await db.getAllKeys(this.store);
         return idbKeys.map((key) => key.toString());
+    }
+
+    /**
+     * Check if a key exists in the storage.
+     *
+     * @param key The key to check.
+     *
+     * @returns True if the key exists, false otherwise.
+     */
+    public async has(key: string): Promise<boolean> {
+        const db = await this.getOpenedDb();
+        const idbKey = await db.getKey(this.store, key);
+        return idbKey !== undefined;
     }
 
     /**

@@ -22,13 +22,9 @@ import {
     type MessagesHandlerMV3,
     FilterListPreprocessor,
     LF,
-    type PreprocessedFilterList,
 } from '@adguard/tswebextension/mv3';
 import { type Configuration, configurationValidator } from './configuration';
 import { RequestBlockingLogger } from './request-blocking-logger';
-import { FiltersStorage } from './storage/filters';
-import { logger } from '../utils/logger';
-import { getErrorMessage } from '../utils/error';
 
 /**
  * AdGuard API is filtering library, provided following features:
@@ -75,104 +71,6 @@ export class AdguardApi {
     }
 
     /**
-     * Helper function to get the path to the rulesets.
-     *
-     * @returns Path to the rulesets.
-     *
-     * @throws Error if the configuration is not set.
-     *
-     * @note During normal operation, error should not be thrown, because we always set the configuration
-     * before handling the updates.
-     */
-    private getRuleSetsPath(): string {
-        if (!this.configuration) {
-            throw new Error('Configuration is not set');
-        }
-
-        return this.configuration.assetsPath + AdguardApi.DECLARATIVE_RULES_PATH;
-    }
-
-    /**
-     * Syncs enabled filters with the extension storage.
-     *
-     * This method is needed to update the extension storage with the latest filters content.
-     *
-     * @returns Promise that resolves when the sync is finished.
-     */
-    private async syncEnabledFiltersWithStorage(): Promise<void> {
-        logger.info('Syncing enabled filters with the extension storage');
-
-        if (!this.configuration?.filters) {
-            logger.info('No filters are enabled, skipping the sync');
-            return;
-        }
-
-        const enabledRulesetIds = this.configuration.filters;
-
-        const filters: Record<number, PreprocessedFilterList> = {};
-        const checksums: Record<number, string> = {};
-
-        // Ruleset JSON files might be updated, so we need to update preprocessed filter list in the extension storage
-        for (const rulesetId of enabledRulesetIds) {
-            // Get up-to-date preprocessed filter list
-            try {
-                // eslint-disable-next-line no-await-in-loop
-                const [ruleSetChecksum, ruleSetChecksumStorage] = await Promise.all([
-                    TsWebExtension.getChecksum(rulesetId, this.getRuleSetsPath()),
-                    FiltersStorage.getChecksum(rulesetId),
-                ]);
-
-                if (ruleSetChecksum === ruleSetChecksumStorage) {
-                    logger.info(`Filter with id ${rulesetId} is up-to-date, skipping the update`);
-                    continue;
-                }
-
-                // eslint-disable-next-line no-await-in-loop
-                const preprocessed = await TsWebExtension.getPreprocessedFilterList(rulesetId, this.getRuleSetsPath());
-
-                filters[rulesetId] = preprocessed;
-
-                if (ruleSetChecksum) {
-                    checksums[rulesetId] = ruleSetChecksum;
-                }
-            } catch (e) {
-                logger.error(`Failed to update filter with id ${rulesetId}. Got error: ${getErrorMessage(e)}`);
-            }
-        }
-
-        if (Object.keys(filters).length > 0) {
-            await FiltersStorage.setMultipleFilters(filters);
-            await FiltersStorage.setMultipleChecksums(checksums);
-        }
-
-        logger.info(`Synced the following filters: ${enabledRulesetIds.join(', ')}`);
-    }
-
-    /**
-     * Loads filter content by filter id.
-     *
-     * @param filterId Filter identifier to load content for.
-     *
-     * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
-     * or null if the filter is not found.
-     *
-     * @throws Error if the filter content cannot be loaded.
-     */
-    private static loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
-        try {
-            const result = await FiltersStorage.getFilter(filterId);
-
-            if (!result) {
-                throw new Error(`Filter with id ${filterId} not found`);
-            }
-
-            return result;
-        } catch (e) {
-            throw new Error(`Failed to load filter content: ${e}`);
-        }
-    };
-
-    /**
      * Initializes AdGuard with specified {@link Configuration} and starts it immediately.
      *
      * @param configuration - Api {@link Configuration}.
@@ -184,9 +82,7 @@ export class AdguardApi {
 
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
-        await this.syncEnabledFiltersWithStorage();
-
-        await this.tswebextension.start(tsWebExtensionConfiguration, AdguardApi.loadFilterContent);
+        await this.tswebextension.start(tsWebExtensionConfiguration);
 
         return this.configuration;
     }
@@ -209,8 +105,6 @@ export class AdguardApi {
         this.configuration = configurationValidator.parse(configuration);
 
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
-
-        await this.syncEnabledFiltersWithStorage();
 
         await this.tswebextension.configure(tsWebExtensionConfiguration);
 

@@ -1,6 +1,7 @@
 /* eslint-disable jsdoc/require-jsdoc */
 import browser from 'webextension-polyfill';
 
+import { BrowserStorage } from '../../../../src/lib/common/storage/core';
 import { createExtensionStorageDecorator, ExtensionStorage } from '../../../../src/lib/common/storage';
 
 describe('createExtensionStorageDecorator', () => {
@@ -9,7 +10,7 @@ describe('createExtensionStorageDecorator', () => {
     let storage: ExtensionStorage<typeof data>;
 
     beforeAll(async () => {
-        storage = new ExtensionStorage(key, browser.storage.local);
+        storage = new ExtensionStorage(key, new BrowserStorage<typeof data>(browser.storage.local));
         await storage.init(data);
     });
 
@@ -33,7 +34,7 @@ describe('createExtensionStorageDecorator', () => {
         // Required for test runtime errors
         // @ts-ignore
         expect(() => fieldDecorator({}, { kind: 'method' })).toThrow(
-            'Class member is not auto accessor',
+            'Class member is not an accessor',
         );
     });
 

@@ -1,8 +1,9 @@
 import { debounce } from 'lodash-es';
-import browser, { type Storage, type Manifest } from 'webextension-polyfill';
+import browser, { type Manifest } from 'webextension-polyfill';
+import { type ExtendedStorageInterface } from './core/storage-interface';
 
 /**
- * API to store a persistent value with debounced synchronization to the specified web extension storage key.
+ * API to store a persistent value with debounced synchronization to the specified storage key.
  *
  * After the container is created, we initialize it asynchronously to get the actual value from the storage.
  * The Init method is guarded against multiple initializations to avoid unnecessary reads from the memory.
@@ -17,11 +18,9 @@ import browser, { type Storage, type Manifest } from 'webextension-polyfill';
  * It helps to avoid reading the data from the storage that is not related to the current instance.
  */
 export class PersistentValueContainer<Key extends string = string, Value = unknown> {
-    // TODO: delete after the migration to event-driven background.
-    // We do not recalculate this value because the background type cannot change at runtime.
     static #IS_BACKGROUND_PERSISTENT = PersistentValueContainer.#isBackgroundPersistent();
 
-    #api: Storage.StorageArea;
+    #storage: ExtendedStorageInterface<Key, Value, 'async'>; // Using the async StorageInterface
 
     #key: Key;
 
@@ -35,24 +34,22 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
     /**
      * Creates {@link PersistentValueContainer} instance.
      * @param key The key to use for storing the data.
-     * @param api Webextension storage API.
+     * @param storage The storage interface implementation.
      * @param debounceMs The debounce time in milliseconds to save the data to the storage.
      * Optional. Default is 300ms.
      */
     constructor(
         key: Key,
-        api: Storage.StorageArea,
+        storage: ExtendedStorageInterface<Key, Value, 'async'>, // Accepts a StorageInterface implementation
         debounceMs = 300,
     ) {
         this.#key = key;
-        this.#api = api;
+        this.#storage = storage;
 
-        /**
-         * TODO: remove this condition after the migration to event-driven background.
-         */
+        // If background is not persistent, use debounce for saving
         if (!PersistentValueContainer.#IS_BACKGROUND_PERSISTENT) {
             this.#save = debounce(() => {
-                this.#api.set({ [this.#key]: this.#value });
+                this.#storage.set(this.#key, this.#value); // Save the value to storage asynchronously
             }, debounceMs);
         }
     }
@@ -71,12 +68,9 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
         if (PersistentValueContainer.#IS_BACKGROUND_PERSISTENT) {
             this.#value = value;
         } else {
-            const storageData = await this.#api.get({
-                [this.#key]: value,
-            });
+            const storedValue = await this.#storage.get(this.#key);
 
-            // Since Value is unknown, we need to cast it to the correct type.
-            this.#value = storageData[this.#key] as Value;
+            this.#value = storedValue !== undefined ? storedValue : value; // Use stored value or fallback to default
         }
 
         this.#isInitialized = true;
@@ -89,7 +83,6 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
      */
     get(): Value {
         this.#checkIsInitialized();
-
         return this.#value;
     }
 
@@ -100,11 +93,12 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
      */
     set(value: Value): void {
         this.#checkIsInitialized();
-
         this.#value = value;
 
         if (this.#save) {
-            this.#save();
+            this.#save(); // Save using debounce
+        } else {
+            this.#storage.set(this.#key, this.#value); // Save directly if no debounce is needed
         }
     }
 

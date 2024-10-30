@@ -37,6 +37,7 @@ const config: Config = {
     ],
     setupFiles: [
         './setupTests.ts',
+        'fake-indexeddb/auto',
     ],
     moduleNameMapper: {
         '^@lib/(.*)$': '<rootDir>/src/lib/$1',

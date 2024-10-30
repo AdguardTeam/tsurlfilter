@@ -6,7 +6,6 @@ import {
     defaultFilteringLog,
     FilteringEventType,
     FilterListPreprocessor,
-    PreprocessedFilterList,
 } from '@adguard/tswebextension/mv3';
 import browser from 'webextension-polyfill';
 
@@ -59,23 +58,6 @@ let initializingPromise: Promise<void> | undefined;
 
 const tsWebExtensionMessageHandler = tsWebExtension.getMessageHandler();
 
-/**
- * Loads filter content by filter id.
- *
- * @param filterId Filter identifier to load content for.
- *
- * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
- * or null if the filter is not found.
- *
- * @throws Error if the filter content cannot be loaded.
- */
-const loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
-    console.debug(`[LOAD FILTER CONTENT] filterId: ${filterId}`);
-
-    // TODO: Add some more efficient way to load filter content
-    return TsWebExtension.getPreprocessedFilterList(filterId, config.ruleSetsPath);
-};
-
 const messageHandler = async (message: IMessage) => {
     const { type, data } = message;
     switch (type) {
@@ -116,7 +98,7 @@ const messageHandler = async (message: IMessage) => {
         }
         case Message.TurnOn: {
             try {
-                await tsWebExtension.start(config, loadFilterContent);
+                await tsWebExtension.start(config);
                 isStarted = true;
             } catch (e) {
                 console.log((e as Error).message);
@@ -179,7 +161,7 @@ const startIfNeed = async () => {
     }
 
     if (isStarted) {
-        await tsWebExtension.start(config, loadFilterContent);
+        await tsWebExtension.start(config);
     }
 
 };
