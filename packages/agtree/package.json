@@ -32,7 +32,7 @@
     "types": "dist/types/index.d.ts",
     "typesVersions": {
         "*": {
-            ".": ["dist/types/index.d.ts"],
+            "*": ["dist/types/index.d.ts"],
             "parser": ["dist/types/parser/index.d.ts"],
             "generator": ["dist/types/generator/index.d.ts"],
             "serializer": ["dist/types/serializer/index.d.ts"],
