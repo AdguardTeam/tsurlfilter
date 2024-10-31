@@ -1,4 +1,5 @@
-import { OutputByteBuffer, RuleParser } from '@adguard/agtree';
+import { OutputByteBuffer } from '@adguard/agtree';
+import { RuleSerializer } from '@adguard/agtree/serializer';
 import { BufferRuleList } from './buffer-rule-list';
 import { createAllowlistRuleNode } from '../rules/allowlist';
 
@@ -16,7 +17,7 @@ export const createAllowlistRuleList = (listId: number, domains: string[]): Buff
         const rule = createAllowlistRuleNode(domain);
 
         if (rule) {
-            RuleParser.serialize(rule, buffer);
+            RuleSerializer.serialize(rule, buffer);
         }
     });
 

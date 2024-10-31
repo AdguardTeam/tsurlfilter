@@ -7,12 +7,40 @@ import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
 import terser from '@rollup/plugin-terser';
 import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
+// import { builtinModules } from 'module';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
-const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
+const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH
+    ? `${process.env.PACKAGE_OUTPUT_PATH}/dist`
+    : DEFAULT_OUTPUT_PATH;
 
 const libraryName = 'TSUrlFilter';
+
+const externalPackages = [
+    '@adguard/agtree',
+    '@adguard/css-tokenizer',
+    '@adguard/scriptlets',
+    'is-ip',
+    'punycode/',
+    'tldts',
+    'is-cidr',
+    'cidr-tools',
+    'zod',
+    'commander',
+    'tslib', // Ensure tslib is included only once
+];
+
+const externalFunction = (id: string): boolean => {
+    if (typeof id !== 'string') {
+        return false;
+    }
+    return (
+        /node_modules/.test(id)
+        || externalPackages.some((pkg) => id === pkg || id.startsWith(`${pkg}/`))
+        // || builtinModules.includes(id)
+    );
+};
 
 const commonConfig = {
     cache: false,
@@ -45,19 +73,6 @@ const commonConfig = {
     ],
 };
 
-const commonExternal = [
-    '@adguard/agtree',
-    '@adguard/css-tokenizer',
-    '@adguard/scriptlets',
-    'is-ip',
-    'punycode/',
-    'tldts',
-    'is-cidr',
-    'cidr-tools',
-    'zod',
-    'commander',
-];
-
 const esmConfig = {
     input: [
         'src/index.ts',
@@ -72,7 +87,7 @@ const esmConfig = {
             sourcemap: false,
         },
     ],
-    external: commonExternal,
+    external: externalFunction,
     ...commonConfig,
 };
 
@@ -90,34 +105,10 @@ const esmDeclarativeConverterConfig = {
             sourcemap: false,
         },
     ],
-    external: commonExternal,
+    external: externalFunction,
     ...commonConfig,
 };
-
-/**
- * UMD build is needed for the FiltersCompiler and DNS dashboard.
- *
- * TODO: should be removed. AG-21466
- */
-const umdConfig = {
-    input: 'src/index.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/tsurlfilter.umd.js`,
-            name: camelCase(libraryName),
-            format: 'umd',
-            sourcemap: false,
-        },
-        {
-            file: `${OUTPUT_PATH}/tsurlfilter.umd.min.js`,
-            name: camelCase(libraryName),
-            format: 'umd',
-            sourcemap: false,
-            plugins: [terser()],
-        },
-    ],
-    ...commonConfig,
-};
+;
 
 const cliConfig = {
     input: 'cli/index.ts',
@@ -128,12 +119,7 @@ const cliConfig = {
             sourcemap: false,
         },
     ],
-    external: [
-        'fs',
-        'path',
-        'commander',
-        '@adguard/re2-wasm',
-    ],
+    external: externalFunction,
     plugins: [
         // Allow json resolution
         json(),
@@ -168,6 +154,5 @@ const cliConfig = {
 export default [
     esmConfig,
     esmDeclarativeConverterConfig,
-    umdConfig,
     cliConfig,
 ];

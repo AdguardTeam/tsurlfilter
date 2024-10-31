@@ -98,7 +98,7 @@
 /* eslint-enable jsdoc/no-multi-asterisks */
 
 import punycode from 'punycode/';
-import { redirects } from '@adguard/scriptlets';
+import { redirects } from '@adguard/scriptlets/redirects';
 
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';

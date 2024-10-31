@@ -1,10 +1,8 @@
-import {
-    OutputByteBuffer,
-    RuleCategory,
-    RuleConverter,
-    RuleParser,
-    defaultParserOptions,
-} from '@adguard/agtree';
+import { OutputByteBuffer, RuleCategory } from '@adguard/agtree';
+import { RuleConverter } from '@adguard/agtree/converter';
+import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
+import { RuleGenerator } from '@adguard/agtree/generator';
+import { RuleSerializer } from '@adguard/agtree/serializer';
 import { type FilterListConversionMap, type PreprocessedFilterList } from './schema';
 import { logger } from '../../utils/logger';
 import { getErrorMessage } from '../../common/error';
@@ -109,7 +107,7 @@ export class FilterListPreprocessor {
 
                         // In this case we should generate the rule text from the AST, because its converted,
                         // i.e. it's not the same as the original rule text.
-                        const convertedRuleText = RuleParser.generate(convertedRuleNode);
+                        const convertedRuleText = RuleGenerator.generate(convertedRuleNode);
                         rawFilterList.push(convertedRuleText);
                         rawFilterList.push(i === numberOfConvertedRules - 1 ? lineBreak : convertedRulesLineBreak);
 
@@ -119,7 +117,7 @@ export class FilterListPreprocessor {
                         conversionMap[outputOffset] = ruleText;
                         sourceMap[bufferOffset] = outputOffset;
 
-                        RuleParser.serialize(convertedRuleNode, convertedFilterList);
+                        RuleSerializer.serialize(convertedRuleNode, convertedFilterList);
 
                         outputOffset += convertedRuleText.length + (
                             i === numberOfConvertedRules - 1
@@ -137,7 +135,7 @@ export class FilterListPreprocessor {
                     // Store the converted rules and the mapping between the original and converted rules
                     sourceMap[bufferOffset] = outputOffset;
 
-                    RuleParser.serialize(ruleNode, convertedFilterList);
+                    RuleSerializer.serialize(ruleNode, convertedFilterList);
 
                     outputOffset += ruleText.length + lineBreakLength;
                 }
