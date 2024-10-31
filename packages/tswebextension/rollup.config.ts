@@ -47,6 +47,7 @@ const contentScriptConfig = {
         'webextension-polyfill',
         '@adguard/extended-css',
         '@adguard/tsurlfilter',
+        '@adguard/agtree',
         '@adguard/assistant',
         'tldts',
     ],
@@ -92,6 +93,7 @@ const contentScriptMv3Config = {
         'webextension-polyfill',
         '@adguard/extended-css',
         '@adguard/tsurlfilter',
+        '@adguard/agtree',
         '@adguard/assistant',
     ],
     watch: {
@@ -123,6 +125,7 @@ const backgroundMv2Config = {
         'zod',
         'webextension-polyfill',
         '@adguard/tsurlfilter',
+        '@adguard/agtree',
         '@adguard/scriptlets',
         'tldts',
         'bowser',
@@ -164,6 +167,7 @@ const backgroundMv3Config = {
     external: [
         'zod',
         '@adguard/tsurlfilter',
+        '@adguard/agtree',
         'deepmerge',
         'tldts',
         'webextension-polyfill',
