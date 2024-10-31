@@ -1028,9 +1028,6 @@ importers:
       '@adguard/scriptlets':
         specifier: ^1.12.1
         version: 1.12.1
-      camelcase-keys:
-        specifier: ^7.0.2
-        version: 7.0.2
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
