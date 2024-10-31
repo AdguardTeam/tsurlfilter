@@ -73,7 +73,8 @@
         }
     },
     "files": [
-        "dist/**"
+        "dist/**",
+        "!dist/build.txt"
     ],
     "engines": {
         "node": ">=18"
