@@ -1,5 +1,4 @@
-import { redirects } from '@adguard/scriptlets';
-import type { Redirects } from '@adguard/scriptlets';
+import { redirects } from '@adguard/scriptlets/redirects';
 import type { ResourcesService } from '../resources-service';
 
 import { redirectsCache } from './redirects-cache';
@@ -10,7 +9,7 @@ import { logger } from '../../../../common/utils/logger';
  * Service for working with redirects.
  */
 export class RedirectsService {
-    redirects: Redirects | null = null;
+    redirects: redirects.Redirects | null = null;
 
     /**
      * Creates {@link RedirectsService} instance.
