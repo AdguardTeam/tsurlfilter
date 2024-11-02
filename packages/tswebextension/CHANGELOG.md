@@ -8,11 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## Unreleased
+## [2.0.5] - 2024-11-02
 
 ### Changed
 
 - Updated `@adguard/agtree` to `v2.1.3`.
+- Updated `@adguard/tsurlfilter` to `v3.0.6`.
+
+[2.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.5
 
 ## [2.0.4] - 2024-10-16
 
