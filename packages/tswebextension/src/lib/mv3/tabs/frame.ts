@@ -98,7 +98,7 @@ export class Frame {
     /**
      * Frame rule. Needed in the case of allowlist rules for the tab.
      */
-    public frameRule?: NetworkRule;
+    public frameRule?: NetworkRule | null;
 
     /**
      * Parent document id.

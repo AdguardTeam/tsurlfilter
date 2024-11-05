@@ -245,9 +245,8 @@ export class CosmeticFrameProcessor {
 
         const mainFrameRule = DocumentApi.matchFrame(url);
 
-        if (mainFrameRule) {
-            tabsApi.updateFrameContext(tabId, frameId, { frameRule: mainFrameRule });
-        }
+        tabsApi.updateFrameContext(tabId, frameId, { frameRule: mainFrameRule });
+        tabsApi.setMainFrameRule(tabId, frameId, mainFrameRule);
 
         const result = engineApi.matchRequest({
             requestUrl: url,
