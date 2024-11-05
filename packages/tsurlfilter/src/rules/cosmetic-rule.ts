@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import { scriptlets, type IConfiguration } from '@adguard/scriptlets';
-import { validators } from '@adguard/scriptlets/validators';
+import { isValidScriptletName } from '@adguard/scriptlets/validators';
 import {
     type AnyCosmeticRule,
     COMMA_DOMAIN_LIST_SEPARATOR,
@@ -506,7 +506,7 @@ export class CosmeticRule implements rule.IRule {
                     }
 
                     // Check if the scriptlet name is valid
-                    if (!validators.isValidScriptletName(scriptletName)) {
+                    if (!isValidScriptletName(scriptletName)) {
                         throw new Error(`'${scriptletName}' is not a known scriptlet name`);
                     }
                     break;

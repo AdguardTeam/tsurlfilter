@@ -98,7 +98,7 @@
 /* eslint-enable jsdoc/no-multi-asterisks */
 
 import punycode from 'punycode/';
-import { redirects } from '@adguard/scriptlets/redirects';
+import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
@@ -323,7 +323,7 @@ export abstract class DeclarativeRuleConverter {
             }
             const advancedModifier = rule.getAdvancedModifier();
             const redirectTo = advancedModifier as RedirectModifier;
-            const filename = redirects.getRedirectFilename(redirectTo.getValue());
+            const filename = getRedirectFilename(redirectTo.getValue());
 
             return { extensionPath: `${resourcesPath}/${filename}` };
         }

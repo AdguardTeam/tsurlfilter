@@ -1,4 +1,4 @@
-import { validators } from '@adguard/scriptlets/validators';
+import { isRedirectResourceCompatibleWithAdg } from '@adguard/scriptlets/validators';
 import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
@@ -53,7 +53,7 @@ export class RedirectModifier implements IAdvancedModifier {
             throw new SyntaxError('Invalid $redirect rule, redirect value must not be empty');
         }
 
-        if (!validators.isRedirectResourceCompatibleWithAdg(redirectTitle)) {
+        if (!isRedirectResourceCompatibleWithAdg(redirectTitle)) {
             throw new SyntaxError('$redirect modifier is invalid');
         }
     }

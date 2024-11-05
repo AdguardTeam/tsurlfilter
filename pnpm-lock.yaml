@@ -1441,7 +1441,7 @@ packages:
   /@adguard/scriptlets@1.11.16:
     resolution: {integrity: sha512-E7lOVx1vgf1Pw3pGOH+bJFjluS99dGE3DZ+hqP1kn+6G1yHqHq4ofa7GnQRrVNMGJNmzOxbk6TiB5avubijhqA==}
     dependencies:
-      '@babel/runtime': 7.24.1
+      '@babel/runtime': 7.26.0
       js-yaml: 3.14.1
     dev: false
 
@@ -1449,7 +1449,7 @@ packages:
     resolution: {integrity: sha512-luAGl8hHEjKZfTFqWG8PBsif2wAPWNi0uuT+xzyBTk+IllHDYOLPSwyMKh2ru7nKCQJEOgMVwNoIrPB4zuuX1w==}
     dependencies:
       '@adguard/agtree': 2.1.2
-      '@babel/runtime': 7.24.1
+      '@babel/runtime': 7.26.0
       js-yaml: 3.14.1
     dev: false
 
@@ -1851,6 +1851,13 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.14.1
+
+  /@babel/runtime@7.26.0:
+    resolution: {integrity: sha512-FDSOghenHTiToteC/QRlv2q3DhPZ/oOXTBoirfWNx1Cx3TMVcGWQtMMmQcSvb/JjpNeGzx8Pq/b4fKEJuWm1sw==}
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      regenerator-runtime: 0.14.1
+    dev: false
 
   /@babel/template@7.24.0:
     resolution: {integrity: sha512-Bkf2q8lMB0AFpX0NFEqSbx1OkTHf0f+0j82mkw+ZpzBnkk7e9Ql0891vlfgi+kHwOk8tQjiQHpqh4LaSa0fKEA==}
@@ -4342,7 +4349,7 @@ packages:
       colorette: 2.0.20
       debug: 4.3.4
       pirates: 4.0.6
-      tslib: 2.6.2
+      tslib: 2.8.0
       typescript: 5.4.5
     transitivePeerDependencies:
       - '@swc/types'
