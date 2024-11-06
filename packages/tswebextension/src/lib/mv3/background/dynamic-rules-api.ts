@@ -30,37 +30,16 @@ export default class DynamicRulesApi {
     }
 
     /**
-     * The maximum number of dynamic rules (safe and unsafe) an extension can add.
+     * The maximum number of combined dynamic and session scoped rules an extension can add.
+     * TODO: Looks like it latest Chrome (v130) limit dynamic and session rulesets
+     * has theirs own quota. Maybe now we can move Quick Fixes rules to session ruleset.
+     * In Chrome, this limit is enforced for the combination of dynamic and session scoped rules.
+     * In Firefox, each ruleset has its own quota.
      *
-     * In Chrome before v120, this limit is enforced for the combination of dynamic and session scoped rules.
-     * In Firefox and Chrome (staring v121), each ruleset has its own quota.
-     *
-     * TODO: Maybe now we can move Quick Fixes rules to session ruleset.
-     *
-     * @returns Maximum number of dynamic rules.
+     * @returns Maximum number of combined dynamic and session rules.
      */
-    private static get MAX_NUMBER_OF_DYNAMIC_RULES(): number {
-        return browser.declarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES;
-    }
-
-    /**
-     * The maximum number of **unsafe** dynamic rules an extension can add.
-     *
-     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES}
-     *
-     * @returns Maximum number of dynamic **unsafe** rules.
-     */
-    private static get MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES(): number {
-        // TODO: remove following default value and ts-ignore comment
-        // when the value become available in webextension-polyfill
-        let num = 5000;
-        try {
-            // @ts-ignore
-            num = chrome.declarativeNetRequest.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES;
-        } catch (e) {
-            // do nothing
-        }
-        return num;
+    private static get MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES(): number {
+        return browser.declarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES;
     }
 
     /**
@@ -112,8 +91,7 @@ export default class DynamicRulesApi {
             enabledStaticRuleSets,
             {
                 resourcesPath,
-                maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES,
-                maxNumberOfUnsafeRules: DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES,
+                maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
                 maxNumberOfRegexpRules: DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
             },
         );

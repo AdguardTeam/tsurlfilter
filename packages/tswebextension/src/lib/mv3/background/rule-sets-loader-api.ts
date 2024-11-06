@@ -84,7 +84,6 @@ export default class RuleSetsLoaderApi {
         const {
             data: {
                 regexpRulesCount,
-                unsafeRulesCount,
                 rulesCount,
                 ruleSetHashMapRaw,
                 badFilterRulesRaw,
@@ -109,8 +108,6 @@ export default class RuleSetsLoaderApi {
         const ruleset = new RuleSet(
             ruleSetId,
             rulesCount,
-            // it is ok to set 0 since this method is used for static rulesets where unsafe rules are not used
-            unsafeRulesCount || 0,
             regexpRulesCount,
             ruleSetContentProvider,
             badFilterRules,
