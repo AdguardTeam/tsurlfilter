@@ -12,7 +12,7 @@ export class ResourcesPathError extends Error {
     constructor(message: string) {
         super(message);
 
-        this.name = this.constructor.name;
+        this.name = 'ResourcesPathError';
 
         // For proper work of the "instanceof" operator
         Object.setPrototypeOf(this, ResourcesPathError.prototype);

@@ -61,8 +61,7 @@ describe('RuleSet', () => {
         return new RuleSet(
             'ruleSetId',
             declarativeRules.length,
-            0,
-            declarativeRules.filter((d) => DeclarativeRulesConverter.isRegexRule(d)).length,
+            declarativeRules.filter((d) => d.condition.regexFilter).length,
             ruleSetContent,
             badFilterRules,
             rulesHashMap,
@@ -137,7 +136,6 @@ describe('RuleSet', () => {
         const {
             data: {
                 regexpRulesCount,
-                unsafeRulesCount,
                 rulesCount,
                 ruleSetHashMapRaw,
                 badFilterRulesRaw,
@@ -166,7 +164,6 @@ describe('RuleSet', () => {
         const deserializedRuleSet = new RuleSet(
             id,
             rulesCount,
-            unsafeRulesCount || 0,
             regexpRulesCount,
             ruleSetContentProvider,
             badFilterRules,

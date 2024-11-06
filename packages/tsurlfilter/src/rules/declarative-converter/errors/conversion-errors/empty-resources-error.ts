@@ -21,7 +21,7 @@ export class EmptyResourcesError extends InvalidDeclarativeRuleError {
     ) {
         super(message, networkRule, declarativeRule);
 
-        this.name = this.constructor.name;
+        this.name = 'EmptyResourcesError';
 
         // For proper work of the "instanceof" operator
         Object.setPrototypeOf(this, EmptyResourcesError.prototype);

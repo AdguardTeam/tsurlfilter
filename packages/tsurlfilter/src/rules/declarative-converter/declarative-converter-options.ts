@@ -8,17 +8,10 @@ export interface DeclarativeConverterOptions {
      * Should start with leading slash '/'.
      */
     resourcesPath?: string,
-
     /**
      * Maximum number of converted rules.
      */
     maxNumberOfRules?: number,
-
-    /**
-     * Maximum number of converted unsafe dynamic rules. AG-33779.
-     */
-    maxNumberOfUnsafeRules?: number,
-
     /**
      * Maximum number of converted rules with regexps.
      */
