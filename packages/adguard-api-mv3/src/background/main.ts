@@ -160,29 +160,23 @@ export class AdguardApi {
             allowlist = this.configuration.allowlist;
         }
 
-        const userrules: TsWebExtensionConfiguration['userrules'] = {
-            filterList: [],
-            rawFilterList: '',
-            conversionMap: {},
-            sourceMap: {},
-            trusted: true,
-        };
+        const userrules: TsWebExtensionConfiguration['userrules'] = Object.assign(
+            FilterListPreprocessor.createEmptyPreprocessedFilterList(),
+            { trusted: true },
+        );
 
         if (this.configuration.rules) {
             Object.assign(userrules, FilterListPreprocessor.preprocess(this.configuration.rules.join(LF)));
         }
 
-        const quickFixesRules: TsWebExtensionConfiguration['quickFixesRules'] = {
-            filterList: [],
-            sourceMap: {},
-            rawFilterList: '',
-            conversionMap: {},
-            trusted: true,
-        };
+        const quickFixesRules: TsWebExtensionConfiguration['quickFixesRules'] = Object.assign(
+            FilterListPreprocessor.createEmptyPreprocessedFilterList(),
+            { trusted: true },
+        );
 
         return {
             filtersPath: this.configuration.assetsPath,
-            ruleSetsPath: this.configuration.assetsPath + AdguardApi.DECLARATIVE_RULES_PATH,
+            ruleSetsPath: `${this.configuration.assetsPath}${AdguardApi.DECLARATIVE_RULES_PATH}`,
             customFilters: [],
             // This is needed only for filters developers.
             declarativeLogEnabled: false,

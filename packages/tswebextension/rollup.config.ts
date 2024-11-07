@@ -239,7 +239,25 @@ const mv3UtilsConfig = {
     watch: {
         include: 'src/lib/mv3/utils/get-filter-name.ts',
     },
-    external: ['path', 'fs-extra', 'commander'],
+    external: ['path', 'fs-extra', 'commander', 'lodash-es'],
+    plugins: [...commonPlugins],
+};
+
+const coreStoragesConfig = {
+    cache,
+    input: 'src/lib/common/storage/core/index.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/core-storages.js`,
+            // TODO: Replace via 'esm'
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    watch: {
+        include: 'src/lib/common/storage/core/index.ts',
+    },
+    external: ['idb', 'nanoid', 'superjson', 'webextension-polyfill'],
     plugins: [...commonPlugins],
 };
 
@@ -311,6 +329,7 @@ export default [
     contentScriptMv3Config,
     cliConfig,
     mv3UtilsConfig,
+    coreStoragesConfig,
     assistantInjectScriptConfig,
     gpcContentScriptConfig,
     hideDocumentReferrerContentScriptConfig,

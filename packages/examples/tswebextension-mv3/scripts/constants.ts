@@ -1,4 +1,5 @@
 import { Configuration } from '@adguard/tswebextension/mv3';
+import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 
 // TODO: can be used as common for examples/tswebextension-mv2 as well
@@ -11,20 +12,14 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     logLevel: LogLevel.Debug,
     customFilters: [],
     allowlist: [],
-    userrules: {
-        filterList: [],
-        sourceMap: {},
-        rawFilterList: '',
-        conversionMap: {},
-        trusted: true,
-    },
-    quickFixesRules: {
-        filterList: [],
-        sourceMap: {},
-        rawFilterList: '',
-        conversionMap: {},
-        trusted: true,
-    },
+    userrules: Object.assign(
+        FilterListPreprocessor.createEmptyPreprocessedFilterList(),
+        { trusted: true },
+    ),
+    quickFixesRules: Object.assign(
+        FilterListPreprocessor.createEmptyPreprocessedFilterList(),
+        { trusted: true },
+    ),
     verbose: true,
     filtersPath: 'filters',
     ruleSetsPath: 'filters/declarative',

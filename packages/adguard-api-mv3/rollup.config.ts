@@ -46,6 +46,8 @@ const backgroundConfig = {
         '@adguard/logger',
         '@adguard/tswebextension/mv3',
         'zod',
+        'nanoid',
+        'idb',
     ],
     plugins: [[
         json(),

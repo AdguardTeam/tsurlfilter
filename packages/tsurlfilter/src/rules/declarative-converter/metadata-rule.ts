@@ -33,7 +33,7 @@ type BaseMetadata = Record<string, unknown>;
  *
  * @template T Metadata type. Should extend {@link BaseMetadata}.
  */
-interface MetadataRule<T extends BaseMetadata> extends DeclarativeRule {
+export interface MetadataRule<T extends BaseMetadata> extends DeclarativeRule {
     /**
      * Metadata object.
      */

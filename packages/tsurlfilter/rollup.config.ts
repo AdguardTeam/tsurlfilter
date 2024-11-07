@@ -59,6 +59,7 @@ const commonExternal = [
     'zod',
     'zod-validation-error',
     'commander',
+    'crypto',
 ];
 
 const esmConfig = {
@@ -136,6 +137,7 @@ const cliConfig = {
         'path',
         'commander',
         '@adguard/re2-wasm',
+        'crypto',
     ],
     plugins: [
         // Allow json resolution

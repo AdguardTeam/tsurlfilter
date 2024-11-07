@@ -6,22 +6,42 @@ import {
     RuleSet,
     IndexedNetworkRuleWithHash,
     RulesHashMap,
-    type ByteRangeMapCollection,
-    BYTE_RANGE_MAP_RULE_SET_ID,
-    fetchAndDeserializeByteRangeMaps,
     RULESET_NAME_PREFIX,
     RuleSetByteRangeCategory,
+    MetadataRuleSet,
+    METADATA_RULESET_ID,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
+import { getErrorMessage, logger } from '../../common';
 
 const JSON_ARRAY_OPENING_BRACKET = '[';
 const JSON_ARRAY_CLOSING_BRACKET = ']';
 
 /**
- * RuleSetsLoaderApi can create {@link IRuleSet} from the provided rule set ID
- * with lazy loading (rule set contents will be loaded only after a request).
+ * RuleSetsLoaderApi is responsible for creating {@link IRuleSet} instances from provided rule set IDs and paths.
+ * It supports lazy loading, meaning the rule set contents are loaded only upon request.
+ *
+ * This class also manages a cache of metadata rule sets to optimize performance and reduce redundant fetches.
+ *
+ * The main functionalities include:
+ * - Initializing the rule sets loader to prepare it for fetching rule sets.
+ * - Fetching checksums of rule sets.
+ * - Fetching specific byte ranges of rule sets to minimize memory usage.
+ * - Creating new {@link IRuleSet} instances with lazy loading capabilities.
+ *
+ * @example
+ * ```typescript
+ * const loader = new RuleSetsLoaderApi('/path/to/rulesets');
+ * await loader.initialize();
+ * const ruleSet = await loader.createRuleSet('123', filters);
+ * ```
  */
 export class RuleSetsLoaderApi {
+    /**
+     * Cache of metadata rule sets.
+     */
+    private static metadataRulesetsCache: Record<string, MetadataRuleSet> = {};
+
     /**
      * Cache for already created rulesets. Needed to avoid multiple loading
      * of the same ruleset.
@@ -51,13 +71,6 @@ export class RuleSetsLoaderApi {
     private initializerPromise: Promise<void> | undefined;
 
     /**
-     * Byte range maps collection.
-     * This collection is used to fetch certain parts of the rule set files instead of the whole files
-     * and makes possible to use less memory.
-     */
-    private byteRangeMapsCollection: ByteRangeMapCollection;
-
-    /**
      * Creates new {@link RuleSetsLoaderApi}.
      *
      * @param ruleSetsPath Path to rule sets directory.
@@ -70,7 +83,23 @@ export class RuleSetsLoaderApi {
             RuleSetsLoaderApi.ruleSetsCache = new Map();
         }
         this.isInitialized = false;
-        this.byteRangeMapsCollection = {};
+    }
+
+    /**
+     * Helper method to get the rule set ID with the {@link RULESET_NAME_PREFIX} prefix.
+     *
+     * @param ruleSetId Rule set id. Can be a number or a string.
+     *
+     * @returns Rule set ID with the {@link RULESET_NAME_PREFIX} prefix.
+     */
+    public static getRuleSetId(ruleSetId: string | number): string {
+        let ruleSetIdStr = String(ruleSetId);
+
+        if (!ruleSetIdStr.startsWith(RULESET_NAME_PREFIX)) {
+            ruleSetIdStr = `${RULESET_NAME_PREFIX}${ruleSetIdStr}`;
+        }
+
+        return ruleSetIdStr;
     }
 
     /**
@@ -85,13 +114,28 @@ export class RuleSetsLoaderApi {
      * e.g. `123` -> `ruleset_123` or `foo` -> `ruleset_foo`.
      */
     private getRuleSetPath(ruleSetId: string | number): string {
-        let ruleSetIdStr = String(ruleSetId);
-
-        if (!ruleSetIdStr.startsWith(RULESET_NAME_PREFIX)) {
-            ruleSetIdStr = `${RULESET_NAME_PREFIX}${ruleSetIdStr}`;
-        }
+        const ruleSetIdStr = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
 
         return `${this.ruleSetsPath}/${ruleSetIdStr}/${ruleSetIdStr}.json`;
+    }
+
+    /**
+     * Gets the checksums of the rule sets.
+     *
+     * @param ruleSetId Rule set id.
+     *
+     * @returns Checksums of the rule sets.
+     *
+     * @throws If the rule sets loader is not initialized or the checksum for the specified rule set is not found.
+     */
+    public async getChecksum(ruleSetId: string | number): Promise<string | undefined> {
+        if (!this.isInitialized) {
+            await this.initialize();
+        }
+
+        const ruleSetIdStr = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
+
+        return RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]?.getChecksum(ruleSetIdStr);
     }
 
     /**
@@ -113,16 +157,22 @@ export class RuleSetsLoaderApi {
         }
 
         const initialize = async (): Promise<void> => {
-            const byteRangeMapsRulesetBaseName = `${RULESET_NAME_PREFIX}${BYTE_RANGE_MAP_RULE_SET_ID}`;
+            try {
+                if (!RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]) {
+                    const metadataRulesetPath = this.getRuleSetPath(METADATA_RULESET_ID);
+                    const rawMetadataRuleset = await fetchExtensionResourceText(
+                        browser.runtime.getURL(metadataRulesetPath),
+                    );
+                    // eslint-disable-next-line max-len
+                    RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath] = MetadataRuleSet.deserialize(rawMetadataRuleset);
+                }
 
-            this.byteRangeMapsCollection = await fetchAndDeserializeByteRangeMaps(
-                browser.runtime.getURL(
-                    this.getRuleSetPath(byteRangeMapsRulesetBaseName),
-                ),
-            );
-
-            this.isInitialized = true;
-            this.initializerPromise = undefined;
+                this.isInitialized = true;
+                this.initializerPromise = undefined;
+            } catch (error) {
+                logger.error('Failed to initialize RuleSetsLoaderApi. Got error:', getErrorMessage(error));
+                throw error;
+            }
         };
 
         this.initializerPromise = initialize();
@@ -141,8 +191,9 @@ export class RuleSetsLoaderApi {
      * @throws Error if the byte range map for the specified rule set is not found
      * or the byte range for the specified category is not found.
      */
+    // eslint-disable-next-line class-methods-use-this
     private getByteRange(rulesetId: string, category: RuleSetByteRangeCategory): ByteRange {
-        const byteRangeMap = this.byteRangeMapsCollection[rulesetId];
+        const byteRangeMap = RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]?.getByteRangeMap(rulesetId);
 
         if (!byteRangeMap) {
             throw new Error(`Byte range map for rule set ${rulesetId} not found`);
