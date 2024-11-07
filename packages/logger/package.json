@@ -1,6 +1,6 @@
 {
     "name": "@adguard/logger",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm build:types && pnpm build:txt",

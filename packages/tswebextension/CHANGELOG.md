@@ -5,9 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- TODO: manually add compare links for version changes -->
-<!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
-
 ## Unreleased
 
 ### Changed
@@ -16,16 +13,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This feature allows retrieving only specific parts of the ruleset `.json` file, saving memory
   and improving performance.
 - Renamed export `RULE_SET_NAME_PREFIX` to `RULESET_NAME_PREFIX`.
+- Updated [@adguard/agtree] to `v2.1.3`.
 
 ### Fixed
 
-- Correct export of `EXTENDED_CSS_VERSION` for mv3 version.
+- A rule from a disabled filter list disables another rule [AdguardBrowserExtension#3002].
+
+[AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
+
+## [2.4.0-alpha.6] - 2024-10-18
+
+### Fixed
+
+- Incorrect caching strategy for filters and rulesets.
+
+[2.4.0-alpha.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.6
+
+## [2.4.0-alpha.5] - 2024-10-17
+
+### Fixed
+
+- Allowlist determination for a new tab.
+
+[2.4.0-alpha.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.5
+
+## [2.4.0-alpha.4] - 2024-10-16
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.1.0-alpha.7`.
+
+### Fixed
+
+- Correct export of `EXTENDED_CSS_VERSION` for MV3 version.
+
+[2.4.0-alpha.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.4
 
 ## [2.4.0-alpha.3] - 2024-10-09
 
 ### Changed
 
-- Updated `@adguard/logger` to `v1.1.0`.
+- Updated [@adguard/logger] to `v1.1.0`.
 
 ### Fixed
 
@@ -44,8 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added new field to MV3 config: `quickFixesRules` which will be applied to
   the dynamic rules.
-- Updated `@adguard/tsurlfilter` to `v3.1.0-alpha.5`.
-- Updated `@adguard/scriptlets` to `v1.12.1`.
+- Updated [@adguard/tsurlfilter] to `v3.1.0-alpha.5`.
+- Updated [@adguard/scriptlets] to `v1.12.1`.
 
 ### Added
 
@@ -59,9 +87,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/agtree` to `v2.1.2`.
-- Updated `@adguard/tsurlfilter` to `v3.0.5`.
-- Updated `@adguard/scriptlets` to `v1.12.1`.
+- Updated [@adguard/agtree] to `v2.1.2`.
+- Updated [@adguard/tsurlfilter] to `v3.0.5`.
+- Updated [@adguard/scriptlets] to `v1.12.1`.
 
 [2.0.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.3
 
@@ -73,7 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   which represents a matched company from `AdguardTeam/companiesdb`'s `trackers.json` database in MV3.
   It allows to determinate the tracker category for the blocked request.
 - Inject scriptlets separately to avoid CSP issues in MV3.
-- Updated `@adguard/scriptlets` to `v1.11.27`.
+- Updated [@adguard/scriptlets] to `v1.11.27`.
 
 ### Fixed
 
@@ -86,8 +114,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v3.0.2`.
-- Updated `@adguard/scriptlets` to `v1.11.27`.
+- Updated [@adguard/tsurlfilter] to `v3.0.2`.
+- Updated [@adguard/scriptlets] to `v1.11.27`.
 
 [2.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.2
 
@@ -104,12 +132,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Stealth Mode support for MV3. New required `gpcScriptUrl` and `hideDocumentReferrerScriptUrl` configuration properties are provided to specify the path to stealth content scripts.
+- Stealth Mode support for MV3. New required `gpcScriptUrl` and `hideDocumentReferrerScriptUrl` configuration
+  properties are provided to specify the path to stealth content scripts.
 - Content Script for setting GPC signal bundled to separate module `@adguard/tswebextension/mv3/gpc`.
-- Content Script for hiding Document Referrer bundled to separate module `@adguard/tswebextension/mv3/hideDocumentReferrer`.
+- Content Script for hiding Document Referrer bundled
+  to separate module `@adguard/tswebextension/mv3/hideDocumentReferrer`.
 - Possibility to retrieve AST for dynamically generated rules via the `retrieveDynamicRuleNode` method.
 - Support for `$cookie` modifier in MV3 via `browser.cookies` API and content-script.
-- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100].
+- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`,
+  `1p-cookie` and `3p-cookie` [#100].
 - Export `EventChannel` utility class in MV3 build.
 
 ### Changed
@@ -120,9 +151,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configuration interface now expects an AGTree byte buffer instead of a raw filter list.
 - CSS hits counter uses rule index instead of rule text.
 - Filtering log events are simplified and now contain only the necessary information, not the entire rule.
-- Allowlist rule generation logic is moved to `@adguard/tsurlfilter` package.
-- Updated `@adguard/tsurlfilter` to `v3.0.0`.
-- Updated `@adguard/scriptlets` to `v1.11.6`.
+- Allowlist rule generation logic is moved to [@adguard/tsurlfilter] package.
+- Updated [@adguard/tsurlfilter] to `v3.0.0`.
+- Updated [@adguard/scriptlets] to `v1.11.6`.
 
 ### Fixed
 
@@ -149,8 +180,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.2.23`.
-- Updated `@adguard/scriptlets` to `v1.11.16`.
+- Updated [@adguard/tsurlfilter] to `v2.2.23`.
+- Updated [@adguard/scriptlets] to `v1.11.16`.
 
 [1.0.32]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.32
 
@@ -166,7 +197,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `@adguard/agtree` dependency now used consistently in the project.
+- [@adguard/agtree] dependency now used consistently in the project.
 
 [2.0.0-beta.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-beta.0
 
@@ -174,8 +205,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v3.0.0-alpha.1`.
-- Updated `@adguard/scriptlets` to `v1.11.6`.
+- Updated [@adguard/tsurlfilter] to `v3.0.0-alpha.1`.
+- Updated [@adguard/scriptlets] to `v1.11.6`.
 
 [2.0.0-alpha.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.0-alpha.2
 
@@ -191,7 +222,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.2.22`.
+- Updated [@adguard/tsurlfilter] to `v2.2.22`.
 
 [1.0.30]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.30
 
@@ -199,8 +230,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.2.21`.
-- Updated `@adguard/scriptlets` to `v1.11.6`.
+- Updated [@adguard/tsurlfilter] to `v2.2.21`.
+- Updated [@adguard/scriptlets] to `v1.11.6`.
 
 [1.0.29]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.29
 
@@ -225,19 +256,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.2.20`.
-- Updated `@adguard/scriptlets` to `v1.11.1`.
+- Updated [@adguard/tsurlfilter] to `v2.2.20`.
+- Updated [@adguard/scriptlets] to `v1.11.1`.
 
 [1.0.26]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.26
 
-## [1.0.15] - 2024-05-23
+## [1.0.25] - 2024-05-23
 
 ## Fixed
 
 - Extension injects scripts every time the extension's background event page wakes up [AdguardBrowserExtension#2792]
 
-[AdguardBrowserExtension#2792]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2792
 [1.0.25]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.25
+[AdguardBrowserExtension#2792]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2792
 
 ## [1.0.24] - 2024-04-15
 
@@ -265,21 +296,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [1.0.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.21
 
-
-[1.0.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.21
-
 ## [1.0.20] - 2024-03-28
 
 ### Changed
 
-- Analysis of $popup rules (in addition to the basic one) to determine
+- Analysis of `$popup` rules (in addition to the basic one) to determine
   the result of blocking a request [AdguardBrowserExtension#2620], [AdguardBrowserExtension#2728].
-- Updated `@adguard/tsurlfilter` to `v2.2.17`.
-- Updated `@adguard/scriptlets` to `v1.10.25`.
+- Updated [@adguard/tsurlfilter] to `v2.2.17`.
+- Updated [@adguard/scriptlets] to `v1.10.25`.
 
 [1.0.20]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.20
-[AdguardBrowserExtension#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
-[AdguardBrowserExtension#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
 
 ## [1.0.18] - 2024-03-25
 
@@ -302,25 +328,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `$popup` should not disable simple blocking rule [#2728].
+- `$popup` should not disable simple blocking rule [AdguardBrowserExtension#2728].
 
 [1.0.16]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.16
-[#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
+[AdguardBrowserExtension#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
 
 ## [1.0.15] - 2024-02-22
 
 ### Fixed
 
-- `$popup` modifier block other types of resources [#2723].
+- `$popup` modifier block other types of resources [AdguardBrowserExtension#2723].
 
 [1.0.15]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.15
-[#2723]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2723
+[AdguardBrowserExtension#2723]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2723
 
 ## [1.0.14] - 2024-02-13
 
 ### Changed
 
-- Filtering engine now uses the new `BufferRuleList` provided by `@adguard/tsurlfilter`
+- Filtering engine now uses the new `BufferRuleList` provided by [@adguard/tsurlfilter]
   to improve performance and memory usage.
 
 [1.0.14]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.14
@@ -334,8 +360,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.2.13`.
-- Updated `@adguard/scriptlets` to `v1.10.1`.
+- Updated [@adguard/tsurlfilter] to `v2.2.13`.
+- Updated [@adguard/scriptlets] to `v1.10.1`.
 
 ### Fixed
 
@@ -347,11 +373,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Applying of `$all` modifier rules [#2620].
-
-[#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
+- Applying of `$all` modifier rules [AdguardBrowserExtension#2620].
 
 [1.0.12]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.12
+[AdguardBrowserExtension#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
 
 ## [1.0.11] - 2024-02-06
 
@@ -387,8 +412,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `webNavigation.onCommitted` event handler to take into account Opera event
 firing bug.
-- Updated `@adguard/tsurlfilter` to `v2.2.9`.
-- Updated `@adguard/scriptlets` to `v1.9.105`.
+- Updated [@adguard/tsurlfilter] to `v2.2.9`.
+- Updated [@adguard/scriptlets] to `v1.9.105`.
 
 [1.0.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.8
 
@@ -397,11 +422,10 @@ firing bug.
 ### Changed
 
 - Stealth options that are applied to the document can now be disabled by a
-  `$stealth` rule. [#2648].
-
-[#2648]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2648
+  `$stealth` rule [AdguardBrowserExtension#2648].
 
 [1.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.6
+[AdguardBrowserExtension#2648]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2648
 
 ## [1.0.5] - 2023-12-08
 
@@ -416,11 +440,10 @@ mode toggle.
 
 ### Fixed
 
-- Session storage error in old browsers [#2636].
-
-[#2636]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2636
+- Session storage error in old browsers [AdguardBrowserExtension#2636].
 
 [1.0.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.4
+[AdguardBrowserExtension#2636]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2636
 
 ## [1.0.3] - 2023-12-08
 
@@ -434,32 +457,29 @@ mode toggle.
 
 ### Added
 
-- Library version number to the exports [#2237].
+- Library version number to the exports [AdguardBrowserExtension#2237].
 
 ### Changed
 
-- Updated `@adguard/extended-css` to `v2.0.56`.
-- Updated `@adguard/tsurlfilter` to `v2.2.8`.
+- Updated [@adguard/extended-css] to `v2.0.56`.
+- Updated [@adguard/tsurlfilter] to `v2.2.8`.
 
 ### Fixed
 
-- Remove referrer from the document.referrer [#1844].
-
-[#1844]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1844
-
-[#2237]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237
+- Remove referrer from the document.referrer [AdguardBrowserExtension#1844].
 
 [1.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.2
+[AdguardBrowserExtension#2237]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237
+[AdguardBrowserExtension#1844]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1844
 
 ## [1.0.1] - 2023-12-06
 
 ### Fixed
 
-- HTML ($$) rules break encoding on some websites [#2249].
-
-[#2249]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2249
+- HTML ($$) rules break encoding on some websites [AdguardBrowserExtension#2249].
 
 [1.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.1
+[AdguardBrowserExtension#2249]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2249
 
 ## [1.0.0] - 2023-12-01
 
@@ -492,16 +512,15 @@ mode toggle.
 ### Added
 
 - API `settings.debugScriptlets` property and `setDebugScriptlets()` method for
-its setting [#2584].
+its setting [AdguardBrowserExtension#2584].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.2.7`.
-- Updated `@adguard/scriptlets` to `v1.9.101`.
-
-[#2584]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
+- Updated [@adguard/tsurlfilter] to `v2.2.7`.
+- Updated [@adguard/scriptlets] to `v1.9.101`.
 
 [0.4.9]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.4.9
+[AdguardBrowserExtension#2584]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
 
 ## [0.4.8] - 2023-11-29
 
@@ -529,31 +548,29 @@ its setting [#2584].
 
 - Fix 'storage not initialized' error on extension install.
 
-[#99]: https://github.com/AdguardTeam/tsurlfilter/issues/99
-
 [0.4.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.4.6
+[#99]: https://github.com/AdguardTeam/tsurlfilter/issues/99
 
 ## [0.4.5] - 2023-11-15
 
 ### Added
 
-- Allowlist wildcard support [#2020].
+- Allowlist wildcard support [AdguardBrowserExtension#2020].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.2.6`.
-- Updated `@adguard/scriptlets` to `v1.9.96`.
-
-[#2020]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2020
+- Updated [@adguard/tsurlfilter] to `v2.2.6`.
+- Updated [@adguard/scriptlets] to `v1.9.96`.
 
 [0.4.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.4.5
+[AdguardBrowserExtension#2020]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2020
 
 ## [0.4.4] - 2023-11-13
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.2.5`.
-- Updated `@adguard/scriptlets` to `v1.9.91`.
+- Updated [@adguard/tsurlfilter] to `v2.2.5`.
+- Updated [@adguard/scriptlets] to `v1.9.91`.
 
 [0.4.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.4.4
 
@@ -561,20 +578,18 @@ its setting [#2584].
 
 ### Fixed
 
-- Ads displayed on the first visit on 'pikabu.ru' [#2571].
+- Ads displayed on the first visit on 'pikabu.ru' [AdguardBrowserExtension#2571].
 - Memory leaks associated with storing refs to old filter lists in context of frames.
 
 ### Added
 
 - Added new `ExtensionStorage`, `PersistentValueContainer`,
   `createExtensionStorageDecorator` interfaces and for restoring data in
-  event-driven background scripts [#2286].
-
-[#2571]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571
-
-[#2286]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2286
+  event-driven background scripts [AdguardBrowserExtension#2286].
 
 [0.4.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.4.3
+[AdguardBrowserExtension#2571]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571
+[AdguardBrowserExtension#2286]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2286
 
 ## [0.4.2] - 2023-10-17
 
@@ -589,8 +604,8 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.2.1`.
-- Updated `@adguard/scriptlets` to `v1.9.83`.
+- Updated [@adguard/tsurlfilter] to `v2.2.1`.
+- Updated [@adguard/scriptlets] to `v1.9.83`.
 
 [0.4.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.4.1
 
@@ -606,32 +621,29 @@ its setting [#2584].
 
 ### Fixed
 
-- AdGuard v4.2.168 is not working in the Firefox after update [#2501].
-
-[#2501]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2501
+- AdGuard v4.2.168 is not working in the Firefox after update [AdguardBrowserExtension#2501].
 
 [0.3.22]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.22
+[AdguardBrowserExtension#2501]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2501
 
 ## [0.3.21] - 2023-09-25
 
 ### Fixed
 
 - Incorrect logging and applying of `$removeheader` allowlist rules.
-- Proceed anyway is not working for more than two level domains [#2497].
-
-[#2497]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2497
+- Proceed anyway is not working for more than two level domains [AdguardBrowserExtension#2497].
 
 [0.3.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.21
+[AdguardBrowserExtension#2497]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2497
 
 ## [0.3.20] - 2023-09-19
 
 ### Added
 
-- CSP `trusted-types` directive modifying for response headers [#2068].
-
-[#2068]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2068
+- CSP `trusted-types` directive modifying for response headers [AdguardBrowserExtension#2068].
 
 [0.3.20]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.20
+[AdguardBrowserExtension#2068]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2068
 
 ## [0.3.19] - 2023-09-18
 
@@ -639,27 +651,23 @@ its setting [#2584].
 
 - `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published
   as filtering log events.
-- Fixed cosmetic rules injection into a cached subdocument [#2420],
-  [#2190], [#2328].
-
-[#2190]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2190
-
-[#2328]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2328
-
-[#2420]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2420
+- Fixed cosmetic rules injection into a cached subdocument [AdguardBrowserExtension#2420],
+  [AdguardBrowserExtension#2190], [AdguardBrowserExtension#2328].
 
 [0.3.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.19
+[AdguardBrowserExtension#2190]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2190
+[AdguardBrowserExtension#2328]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2328
+[AdguardBrowserExtension#2420]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2420
 
 ## [0.3.18] - 2023-09-13
 
 ### Fixed
 
 - Do not block a tab loading by `$popup` modifier rule on direct url navigation
-  [#2449].
-
-[#2449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2449
+  [AdguardBrowserExtension#2449].
 
 [0.3.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.18
+[AdguardBrowserExtension#2449]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2449
 
 ## [0.3.17] - 2023-09-13
 
@@ -670,22 +678,20 @@ its setting [#2584].
 ### Fixed
 
 - Tab title is now correctly updated on url change when the document does not
-  provide it itself [#2428].
+  provide it itself [AdguardBrowserExtension#2428].
 - Filter id for StealthApi to display Stealth Mode cookie events in the
-  Filtering Log properly [#2487].
-
-[#2428]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2428
-
-[#2487]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2487
+  Filtering Log properly [AdguardBrowserExtension#2487].
 
 [0.3.17]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.17
+[AdguardBrowserExtension#2428]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2428
+[AdguardBrowserExtension#2487]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2487
 
 ## [0.3.16] - 2023-09-05
 
 ### Fixed
 
 - Do not apply cosmetic rules to extension pages while fallback processing
-  [#2459].
+  [AdguardBrowserExtension#2459].
 
 [0.3.16]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.16
 
@@ -693,24 +699,22 @@ its setting [#2584].
 
 ### Fixed
 
-- Redirects are not included into tab's blocked requests count [#2443].
-
-[#2443]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
+- Redirects are not included into tab's blocked requests count [AdguardBrowserExtension#2443].
 
 [0.3.15]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.15
+[AdguardBrowserExtension#2443]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2443
 
 ## [0.3.14] - 2023-09-05
 
 ### Fixed
 
 - Domains from the allowlist are not properly escaped before being passed into
-  the regular expression rules [#2461].
+  the regular expression rules [AdguardBrowserExtension#2461].
 - Cosmetic rule false positive applying when tab context changed while injection
-  retry [#2459].
+  retry [AdguardBrowserExtension#2459].
 
-[#2459]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2459
-
-[#2461]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2461
+[AdguardBrowserExtension#2459]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2459
+[AdguardBrowserExtension#2461]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2461
 
 [0.3.14]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.14
 
@@ -718,8 +722,8 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.1.11`.
-- Updated `@adguard/scriptlets` to `v1.9.72`.
+- Updated [@adguard/tsurlfilter] to `v2.1.11`.
+- Updated [@adguard/scriptlets] to `v1.9.72`.
 
 [0.3.13]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.13
 
@@ -736,8 +740,8 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.1.10`.
-- Updated `@adguard/scriptlets` to `v1.9.70`.
+- Updated [@adguard/tsurlfilter] to `v2.1.10`.
+- Updated [@adguard/scriptlets] to `v1.9.70`.
 
 ### Fixed
 
@@ -762,7 +766,7 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.1.7`.
+- Updated [@adguard/tsurlfilter] to `v2.1.7`.
 
 [0.3.9]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.9
 
@@ -770,8 +774,8 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.1.6`.
-- Updated `@adguard/scriptlets` to `v1.9.62`.
+- Updated [@adguard/tsurlfilter] to `v2.1.6`.
+- Updated [@adguard/scriptlets] to `v1.9.62`.
 
 [0.3.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.8
 
@@ -779,10 +783,10 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.1.5`.
-- Updated `@adguard/scriptlets` to `v1.9.57`.
+- Updated [@adguard/tsurlfilter] to `v2.1.5`.
+- Updated [@adguard/scriptlets] to `v1.9.57`.
 
-## Fixed
+### Fixed
 
 - Duplicate `eventId` of filtering events.
 
@@ -792,7 +796,7 @@ its setting [#2584].
 
 ### Fixed
 
-- Rules with the `$popup` modifier were ignored and showed an incorrect dummy
+- Rules with the `$popup` modifier were ignored and showed an incorrect dummy.
   page instead of closing the tab.
 - In some cases, rules with the `$document` modifier did not show the dummy page.
 
@@ -802,7 +806,7 @@ its setting [#2584].
 
 ### Fixed
 
-- Cosmetic rule logging
+- Cosmetic rule logging.
 
 [0.3.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.5
 
@@ -822,7 +826,7 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.1.2`.
+- Updated [@adguard/tsurlfilter] to `v2.1.2`.
 
 [0.3.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.3
 
@@ -830,7 +834,7 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.1.1`.
+- Updated [@adguard/tsurlfilter] to `v2.1.1`.
 
 [0.3.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.2
 
@@ -855,7 +859,7 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v2.1.0`.
+- Updated [@adguard/tsurlfilter] to `v2.1.0`.
 
 [0.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.0
 
@@ -877,7 +881,7 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.37`.
+- Updated [@adguard/scriptlets] to `v1.9.37`.
 
 [0.2.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.2.6
 
@@ -970,8 +974,8 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/extended-css` to `v2.0.52`
-- Updated `@adguard/scriptlets` to `v1.9.7`
+- Updated [@adguard/extended-css] to `v2.0.52`.
+- Updated [@adguard/scriptlets] to `v1.9.7`.
 
 [0.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.1.3
 
@@ -999,7 +1003,7 @@ its setting [#2584].
 
 ### Changed
 
-- Updated tsurlfilter to v2.0.
+- Updated [@adguard/tsurlfilter] to `v2.0`.
 
 [0.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.1.0
 
@@ -1027,7 +1031,7 @@ its setting [#2584].
 
 ### Fixed
 
-- Executing of html and replace rules for Firefox
+- Executing of html and replace rules for Firefox.
 
 [0.0.66]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.66
 
@@ -1035,11 +1039,11 @@ its setting [#2584].
 
 ### Fixed
 
-- Executing of scriptlets rules for Firefox
+- Executing of scriptlets rules for Firefox.
 
 ### Added
 
-- Stricter checking for non local JS rules for Firefox AMO
+- Stricter checking for non local JS rules for Firefox AMO.
 
 [0.0.65]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.65
 
@@ -1047,11 +1051,11 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.1`
+- Updated [@adguard/scriptlets] to `v1.9.1`.
 
 ### Fixed
 
-- Cosmetic rules applying if CssHitsCounter is disabled
+- Cosmetic rules applying if CssHitsCounter is disabled.
 - Mark requests from navigation from address bar as first-party requests.
 
 [0.0.64]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.64
@@ -1060,7 +1064,7 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/extended-css` to `v2.0.51`
+- Updated [@adguard/extended-css] to `v2.0.51`.
 
 [0.0.63]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.63
 
@@ -1068,7 +1072,7 @@ its setting [#2584].
 
 ### Added
 
-- Added cosmetic rules injection in tabs opened before API initialization
+- Added cosmetic rules injection in tabs opened before API initialization.
 
 ### Fixed
 
@@ -1093,7 +1097,7 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/extended-css` to `v2.0.49`
+- Updated [@adguard/extended-css] to `v2.0.49`.
 
 [0.0.60]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.60
 
@@ -1101,7 +1105,7 @@ its setting [#2584].
 
 ### Changed
 
-- Updated `@adguard/extended-css` to `v2.0.45`
+- Updated [@adguard/extended-css] to `v2.0.45`.
 
 [0.0.59]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.59
 
@@ -1123,7 +1127,7 @@ its setting [#2584].
 
 ### Fixed
 
-- Fixed allowlist api rule generation and matching
+- Fixed allowlist api rule generation and matching.
 
 [0.0.57]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.57
 
@@ -1132,19 +1136,19 @@ its setting [#2584].
 ### Fixed
 
 - Fixed simultaneous increase of package numbers for packages tsurlfilter and
-  tswebextension in the branch epic
-- Fixed working with DNT-headers and GPC from stealth mode
-- Fixed js and css injection error handling
-- Fixed request events initialization
-- Fixed memory leaks in the tests
+  tswebextension in the branch epic.
+- Fixed working with DNT-headers and GPC from stealth mode.
+- Fixed js and css injection error handling.
+- Fixed request events initialization.
+- Fixed memory leaks in the tests.
 
 ### Removed
 
-- Previous url from tab's metadata
+- Previous url from tab's metadata.
 
 ### Changes
 
-- Merged changed from master branch
+- Merged changed from master branch.
 
 [0.0.56]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.56
 
@@ -1152,15 +1156,15 @@ its setting [#2584].
 
 ### Fixed
 
-- Allowlist rule priority
+- Allowlist rule priority.
 
 ### Added
 
-- Simple support of `$jsonprune`
+- Simple support of `$jsonprune`.
 
 ### Removed
 
-- Unused injectExtCss method in the CosmeticAPI
+- Unused injectExtCss method in the CosmeticAPI.
 
 [0.0.47]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.47
 
@@ -1168,11 +1172,11 @@ its setting [#2584].
 
 ### Fixed
 
-- Recovered work of the blocking scriptlets `click2load.html`
+- Recovered work of the blocking scriptlets `click2load.html`.
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.7.20`
+- Updated [@adguard/scriptlets] to `v1.7.20`.
 
 [0.0.45]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.45
 
@@ -1180,11 +1184,11 @@ its setting [#2584].
 
 ### Added
 
-- Merged changed from master branch
+- Merged changed from master branch.
 
 ### Removed
 
-- Support of $webrtc rules
+- Support of $webrtc rules.
 
 ### Fixed
 
@@ -1192,3 +1196,10 @@ its setting [#2584].
 - Request events initialization
 
 [0.0.44]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.0.44
+
+[@adguard/agtree]: ../agtree/CHANGELOG.md
+[@adguard/logger]: ../logger/CHANGELOG.md
+[@adguard/tsurlfilter]: ../tsurlfilter/CHANGELOG.md
+
+[@adguard/extended-css]: https://github.com/AdguardTeam/ExtendedCss/blob/master/CHANGELOG.md
+[@adguard/scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/CHANGELOG.md

@@ -425,6 +425,24 @@ export class NetworkRule implements rule.IRule {
         NetworkRule.OPTIONS.EXTENSION,
     ]);
 
+    /**
+     * Advanced option modifier names.
+     */
+    public static readonly ADVANCED_OPTIONS = new Set([
+        NetworkRule.OPTIONS.CSP,
+        NetworkRule.OPTIONS.REPLACE,
+        NetworkRule.OPTIONS.COOKIE,
+        NetworkRule.OPTIONS.REDIRECT,
+        NetworkRule.OPTIONS.REDIRECTRULE,
+        NetworkRule.OPTIONS.REMOVEPARAM,
+        NetworkRule.OPTIONS.REMOVEHEADER,
+        NetworkRule.OPTIONS.PERMISSIONS,
+        NetworkRule.OPTIONS.CLIENT,
+        NetworkRule.OPTIONS.DNSREWRITE,
+        NetworkRule.OPTIONS.DNSTYPE,
+        NetworkRule.OPTIONS.CTAG,
+    ]);
+
     // TODO: Remove .getText() completely
     private ruleText: string;
 

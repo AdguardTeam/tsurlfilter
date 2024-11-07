@@ -22,7 +22,7 @@ export enum FilteringEventType {
     ReplaceRuleApply = 'replaceRuleApply',
     ContentFilteringStart = 'contentFilteringStart',
     ContentFilteringFinish = 'contentFilteringFinish',
-    StealthAction = 'stealthAction', // TODO: Add in MV3
+    StealthAction = 'stealthAction',
     StealthAllowlistAction = 'stealthAllowlistAction', // TODO: Add in MV3
     JsInject = 'jsInject',
     CspReportBlocked = 'cspReportBlocked', // TODO: Add in MV3
