@@ -250,7 +250,7 @@ const coreStoragesConfig = {
         {
             file: `${OUTPUT_PATH}/core-storages.js`,
             // TODO: Replace via 'esm'
-            format: 'cjs',
+            format: 'esm',
             sourcemap: false,
         },
     ],
