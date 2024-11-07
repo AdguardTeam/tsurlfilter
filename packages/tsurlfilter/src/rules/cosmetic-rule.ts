@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import { scriptlets, type IConfiguration } from '@adguard/scriptlets';
+import { scriptlets, type Source } from '@adguard/scriptlets';
 import { isValidScriptletName } from '@adguard/scriptlets/validators';
 import {
     type AnyCosmeticRule,
@@ -40,8 +40,8 @@ interface InitScriptParams {
  * Get scriptlet data response type
  */
 export type ScriptletData = {
-    params: IConfiguration,
-    func: (source: IConfiguration, args: string[]) => void
+    params: Source,
+    func: (source: Source, args: string[]) => void
 };
 
 /**
@@ -696,7 +696,7 @@ export class CosmeticRule implements rule.IRule {
             return;
         }
 
-        const params: IConfiguration = {
+        const params: Source = {
             args: this.scriptletParams.args,
             engine: config.engine || EMPTY_STRING,
             name: this.scriptletParams.name,

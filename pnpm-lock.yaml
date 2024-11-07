@@ -1026,8 +1026,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       '@adguard/scriptlets':
-        specifier: ^1.12.1
-        version: 1.12.1
+        specifier: file:../../../scriptlets
+        version: file:../scriptlets
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1361,7 +1361,7 @@ packages:
     engines: {node: '>=14'}
     dependencies:
       '@adguard/ecss-tree': 1.0.8
-      '@adguard/scriptlets': 1.11.16
+      '@adguard/scriptlets': 1.12.1
       clone-deep: 4.0.1
       json5: 2.2.3
       semver: 7.6.0
@@ -1371,6 +1371,21 @@ packages:
 
   /@adguard/agtree@2.1.2:
     resolution: {integrity: sha512-4X7LsKMfQUo90TXVoZedHVjUS0zEDxAvMx0+JtYp2RwarmxVZYOIGygZPOoa6ihwUxUd3fmrsX0c6SQMldA+8Q==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@adguard/css-tokenizer': 1.1.1
+      clone-deep: 4.0.1
+      is-ip: 3.1.0
+      json5: 2.2.3
+      semver: 7.6.3
+      sprintf-js: 1.1.3
+      tldts: 5.7.112
+      xregexp: 5.1.1
+      zod: 3.21.4
+    dev: false
+
+  /@adguard/agtree@2.1.3:
+    resolution: {integrity: sha512-Kf429Mq1cBtgOPbCtZH1cNI50DxKuZaS8LnzxPZc8pW+ZPWbUu6LAVSZ87791Dz7RxV5K0MsQsP8Iiqq8VFdKQ==}
     engines: {node: '>=18'}
     dependencies:
       '@adguard/css-tokenizer': 1.1.1
@@ -1438,13 +1453,6 @@ packages:
     engines: {node: '>=10'}
     dev: false
 
-  /@adguard/scriptlets@1.11.16:
-    resolution: {integrity: sha512-E7lOVx1vgf1Pw3pGOH+bJFjluS99dGE3DZ+hqP1kn+6G1yHqHq4ofa7GnQRrVNMGJNmzOxbk6TiB5avubijhqA==}
-    dependencies:
-      '@babel/runtime': 7.26.0
-      js-yaml: 3.14.1
-    dev: false
-
   /@adguard/scriptlets@1.12.1:
     resolution: {integrity: sha512-luAGl8hHEjKZfTFqWG8PBsif2wAPWNi0uuT+xzyBTk+IllHDYOLPSwyMKh2ru7nKCQJEOgMVwNoIrPB4zuuX1w==}
     dependencies:
@@ -1458,7 +1466,7 @@ packages:
     engines: {node: '>=6.0.0'}
     dependencies:
       '@adguard/extended-css': 2.0.56
-      '@adguard/scriptlets': 1.11.16
+      '@adguard/scriptlets': 1.12.1
       ip6addr: 0.2.5
       is-cidr: 4.0.2
       is-ip: 3.1.0
@@ -1475,7 +1483,7 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
     dependencies:
-      '@adguard/scriptlets': 1.11.16
+      '@adguard/scriptlets': 1.12.1
       cidr-tools: 6.4.2
       commander: 9.4.1
       is-cidr: 4.0.2
@@ -1493,7 +1501,7 @@ packages:
     peerDependencies:
       '@adguard/re2-wasm': 1.2.0
     dependencies:
-      '@adguard/agtree': 2.1.2
+      '@adguard/agtree': 2.1.3
       '@adguard/css-tokenizer': 1.1.1
       '@adguard/re2-wasm': 1.2.0
       '@adguard/scriptlets': 1.12.1
@@ -3839,7 +3847,7 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@types/estree': 1.0.5
+      '@types/estree': 1.0.6
       estree-walker: 2.0.2
       picomatch: 2.3.1
       rollup: 4.13.0
@@ -13471,7 +13479,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.7.23)(@types/node@20.16.5)(typescript@5.4.5)
+      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@18.7.1)(typescript@4.7.4)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
@@ -19950,6 +19958,15 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+    dev: false
+
+  file:../scriptlets:
+    resolution: {directory: ../scriptlets, type: directory}
+    name: '@adguard/scriptlets'
+    dependencies:
+      '@adguard/agtree': 2.1.3
+      '@babel/runtime': 7.26.0
+      js-yaml: 3.14.1
     dev: false
 
   github.com/105th/jsdiff/2be2e7df90e8eebd99f0385c7b1dc16c2f4dcc1a:
