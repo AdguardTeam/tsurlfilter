@@ -1,7 +1,6 @@
 import browser from 'webextension-polyfill';
 import {
     Filter,
-    RULESET_NAME_PREFIX,
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
