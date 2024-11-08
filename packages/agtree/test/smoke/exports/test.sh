@@ -6,16 +6,15 @@ curr_path="test/smoke/exports"
 agtree="agtree.tgz"
 nm_path="node_modules"
 
-#FIXME uncomment
-## Define cleanup function
-#cleanup() {
-#    echo "Performing cleanup..."
-#    rm -f $agtree && rm -rf $nm_path
-#    echo "Cleanup complete"
-#}
-#
-## Set trap to execute the cleanup function on script exit
-#trap cleanup EXIT
+# Define cleanup function
+cleanup() {
+    echo "Performing cleanup..."
+    rm -f $agtree && rm -rf $nm_path
+    echo "Cleanup complete"
+}
+
+# Set trap to execute the cleanup function on script exit
+trap cleanup EXIT
 
 (cd ../../.. && pnpm pack && mv adguard-agtree-*.tgz "$curr_path/$agtree")
 

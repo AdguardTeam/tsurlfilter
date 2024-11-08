@@ -4,8 +4,7 @@
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-// FIXME check agtree is working without this
-// import externals from 'rollup-plugin-node-externals';
+import externals from 'rollup-plugin-node-externals';
 import alias from '@rollup/plugin-alias';
 import json from '@rollup/plugin-json';
 import path from 'node:path';
@@ -51,7 +50,7 @@ const banner = `/*
 
 // Common plugins for all types of builds
 export const commonPlugins = [
-    // FIXME check if this file is needed, if not remove it
+    externals(),
     alias({
         entries: [
             // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."

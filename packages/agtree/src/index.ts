@@ -75,7 +75,6 @@ export { FilterListDeserializer } from './deserializer/filterlist-deserializer';
 export { HintCommentParser } from './parser/comment/hint-comment-parser';
 export { HintParser } from './parser/comment/hint-parser';
 export { LogicalExpressionParser } from './parser/misc/logical-expression-parser';
-// FIXME: getKnownMetadataHeaders moved and removed export temporarily
 export { MetadataCommentParser } from './parser/comment/metadata-comment-parser';
 export { ModifierListParser } from './parser/misc/modifier-list';
 export { ModifierParser } from './parser/misc/modifier-parser';
@@ -161,8 +160,8 @@ export {
     isValidResourceType,
 } from './compatibility-tables';
 
-// FIXME consider removing from this path
-export { defaultParserOptions, type ParserOptions } from './parser/options';
+// // FIXME consider removing from this path
+// export { defaultParserOptions, type ParserOptions } from './parser/options';
 
 // Version
 export { AGTREE_VERSION } from './version';
