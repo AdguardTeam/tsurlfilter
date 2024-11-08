@@ -16,3 +16,4 @@ tsurlfilter.code-workspace
 
 # PNPM cache folder
 .pnpm-store
+!/packages/agtree/test-adguard-agtree-3.0.0.tgz
