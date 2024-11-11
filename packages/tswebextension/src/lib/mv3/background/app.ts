@@ -163,10 +163,16 @@ export class TsWebExtension implements AppInterface<
      *
      * @param filterIds Filter identifiers to sync.
      * @param ruleSetsPath Path to the rulesets.
+     * @param removeFilters Remove filters from the storage that are not in the filterIds list.
+     * It is used to avoid storing outdated filters.
      *
      * @returns Promise that resolves when the sync is finished.
      */
-    private static async syncFiltersWithStorage(filterIds: number[], ruleSetsPath: string): Promise<void> {
+    private static async syncFiltersWithStorage(
+        filterIds: number[],
+        ruleSetsPath: string,
+        removeFilters = true,
+    ): Promise<void> {
         logger.info('Syncing enabled filters with the extension storage');
 
         const filters: Record<number, PreprocessedFilterList> = {};
@@ -203,6 +209,19 @@ export class TsWebExtension implements AppInterface<
         if (Object.keys(filters).length > 0) {
             await FiltersStorage.setMultipleFilters(filters);
             await FiltersStorage.setMultipleChecksums(checksums);
+        }
+
+        if (removeFilters) {
+            const allFilters = await FiltersStorage.getFilterIds();
+            const filtersToRemove = Object.keys(allFilters)
+                .map(Number)
+                .filter((filterId) => !filterIds.includes(filterId));
+
+            if (filtersToRemove.length > 0) {
+                await FiltersStorage.removeMultipleFilters(filtersToRemove);
+
+                logger.info(`Removed the following filters: ${filtersToRemove.join(', ')}`);
+            }
         }
 
         logger.info(`Synced the following filters: ${filterIds.join(', ')}`);

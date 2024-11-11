@@ -69,6 +69,46 @@ export class FiltersStorage {
     }
 
     /**
+     * Removes multiple filter lists from {@link filtersIdbStorage} in batch.
+     *
+     * @param filterIds Filter ids.
+     *
+     * @throws Error, if transaction failed.
+     */
+    public static async removeMultipleFilters(filterIds: number[]): Promise<void> {
+        const keys = filterIds.map((filterId) => FiltersStorage.getKey(filterId, FiltersStorage.FILTER_KEY));
+
+        try {
+            const succeeded = await filtersIdbStorage.removeMultiple(keys);
+            if (!succeeded) {
+                throw new Error('Transaction failed');
+            }
+        } catch (e) {
+            logger.error('Failed to remove multiple filter data, got error:', e);
+            throw e;
+        }
+    }
+
+    /**
+     * Returns all filter ids from {@link filtersIdbStorage}.
+     *
+     * @returns Promise, resolved with filter ids.
+     *
+     * @throws Error, if DB operation failed.
+     */
+    public static async getFilterIds(): Promise<number[]> {
+        try {
+            const keys = await filtersIdbStorage.keys();
+            return keys
+                .filter((key) => key.startsWith(FiltersStorage.FILTER_KEY))
+                .map((key) => parseInt(key.split('_')[1], 10));
+        } catch (e) {
+            logger.error('Failed to get filter ids, got error:', e);
+            throw e;
+        }
+    }
+
+    /**
      * Returns specified filter list from cache or {@link filtersIdbStorage}.
      *
      * @param filterId Filter id.
@@ -113,6 +153,27 @@ export class FiltersStorage {
             }
         } catch (e) {
             logger.error('Failed to set multiple filter checksums, got error:', e);
+            throw e;
+        }
+    }
+
+    /**
+     * Removes multiple filter checksums from {@link filtersIdbStorage} in batch.
+     *
+     * @param filterIds Filter ids.
+     *
+     * @throws Error, if transaction failed.
+     */
+    static async removeMultipleChecksums(filterIds: number[]): Promise<void> {
+        const keys = filterIds.map((filterId) => FiltersStorage.getKey(filterId, FiltersStorage.CHECKSUM_KEY));
+
+        try {
+            const succeeded = await filtersIdbStorage.removeMultiple(keys);
+            if (!succeeded) {
+                throw new Error('Transaction failed');
+            }
+        } catch (e) {
+            logger.error('Failed to remove multiple filter checksums, got error:', e);
             throw e;
         }
     }
