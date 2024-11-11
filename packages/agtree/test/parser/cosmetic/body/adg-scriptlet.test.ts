@@ -14,7 +14,7 @@ import {
 } from '../../../../src/serializer/cosmetic/body/adg-scriptlet-injection-body-serializer';
 import {
     AdgScriptletInjectionBodyDeserializer,
-} from '../../../../src/deserializer/cosmetic/body/adg-scriptlet-injection-body-deserializer';
+} from '../../../../src/deserializer/cosmetic/scriptlet-body/adg-scriptlet-injection-body-deserializer';
 
 describe('AdgScriptletInjectionBodyParser', () => {
     describe('AdgScriptletInjectionBodyParser.parse - valid cases', () => {

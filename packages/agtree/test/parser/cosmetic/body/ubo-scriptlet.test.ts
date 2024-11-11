@@ -12,7 +12,7 @@ import {
 } from '../../../../src/serializer/cosmetic/body/ubo-scriptlet-injection-body-serializer';
 import {
     UboScriptletInjectionBodyDeserializer,
-} from '../../../../src/deserializer/cosmetic/body/ubo-scriptlet-injection-body-deserializer';
+} from '../../../../src/deserializer/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-deserializer';
 
 describe('UboScriptletInjectionBodyParser', () => {
     describe('UboScriptletInjectionBodyParser.parse - valid cases', () => {

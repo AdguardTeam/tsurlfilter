@@ -13,9 +13,9 @@ import {
     type DomainList,
     type ModifierList,
 } from '../../nodes';
-import { AbpSnippetInjectionBodyDeserializer } from './body/abp-snippet-injection-body-deserializer';
-import { UboScriptletInjectionBodyDeserializer } from './body/ubo-scriptlet-injection-body-deserializer';
-import { AdgScriptletInjectionBodyDeserializer } from './body/adg-scriptlet-injection-body-deserializer';
+import { AbpSnippetInjectionBodyDeserializer } from './scriptlet-body/abp-snippet-injection-body-deserializer';
+import { UboScriptletInjectionBodyDeserializer } from './scriptlet-body/ubo-scriptlet-injection-body-deserializer';
+import { AdgScriptletInjectionBodyDeserializer } from './scriptlet-body/adg-scriptlet-injection-body-deserializer';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseDeserializer } from '../base-deserializer';
