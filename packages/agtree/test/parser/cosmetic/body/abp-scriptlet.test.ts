@@ -11,7 +11,7 @@ import {
 } from '../../../../src/serializer/cosmetic/body/abp-snippet-injection-body-serializer';
 import {
     AbpSnippetInjectionBodyDeserializer,
-} from '../../../../src/deserializer/cosmetic/body/abp-snippet-injection-body-deserializer';
+} from '../../../../src/deserializer/cosmetic/scriptlet-body/abp-snippet-injection-body-deserializer';
 import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common';
 
 describe('AbpSnippetInjectionBodyParser', () => {
