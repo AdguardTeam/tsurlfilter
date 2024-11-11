@@ -6,20 +6,20 @@ import { IDBStorage } from './core/idb-storage';
 /**
  * The name of the IndexedDB database for AdGuard API.
  */
-const ADGUARD_API_IDB_NAME = 'tswebextensionIDB';
+const TSWEBEXTENSION_IDB_NAME = 'tswebextensionIDB';
 
 /**
  * The name of the filters database within the AdGuard API IndexedDB.
  */
-const ADGUARD_API_FILTERS_DB_NAME = 'filters';
+const TSWEBEXTENSION_FILTERS_DB_NAME = 'filters';
 
 /**
  * An instance of IDBStorage for storing filter data.
  */
 export const filtersIdbStorage = new IDBStorage(
-    ADGUARD_API_FILTERS_DB_NAME,
+    TSWEBEXTENSION_FILTERS_DB_NAME,
     IDBStorage.DEFAULT_IDB_VERSION,
-    ADGUARD_API_IDB_NAME,
+    TSWEBEXTENSION_IDB_NAME,
 );
 
 /**
