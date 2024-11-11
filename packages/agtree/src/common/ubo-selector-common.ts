@@ -1,5 +1,5 @@
 /**
- * Known uBO modifiers.
+ * Known uBO-specific pseudo-class names.
  */
 export const enum UboPseudoName {
     MatchesMedia = 'matches-media',
