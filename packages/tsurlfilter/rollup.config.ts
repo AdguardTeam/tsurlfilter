@@ -1,21 +1,17 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
-import camelCase from 'lodash/camelCase';
+
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
-import terser from '@rollup/plugin-terser';
 import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
-// import { builtinModules } from 'module';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
 const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH
     ? `${process.env.PACKAGE_OUTPUT_PATH}/dist`
     : DEFAULT_OUTPUT_PATH;
-
-const libraryName = 'TSUrlFilter';
 
 const externalPackages = [
     '@adguard/agtree',
@@ -38,7 +34,6 @@ const externalFunction = (id: string): boolean => {
     return (
         /node_modules/.test(id)
         || externalPackages.some((pkg) => id === pkg || id.startsWith(`${pkg}/`))
-        // || builtinModules.includes(id)
     );
 };
 
@@ -108,7 +103,6 @@ const esmDeclarativeConverterConfig = {
     external: externalFunction,
     ...commonConfig,
 };
-;
 
 const cliConfig = {
     input: 'cli/index.ts',
