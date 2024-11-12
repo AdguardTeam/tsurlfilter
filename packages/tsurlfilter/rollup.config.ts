@@ -24,7 +24,7 @@ const externalPackages = [
     'cidr-tools',
     'zod',
     'commander',
-    'tslib', // Ensure tslib is included only once
+    'tslib',
 ];
 
 const externalFunction = (id: string): boolean => {

@@ -1,6 +1,7 @@
 import path from 'path';
 import { type Plugin } from 'rollup';
 import { fileURLToPath } from 'url';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { stringify } from 'javascript-stringify';
 
 import * as data from './src/compatibility-tables/compatibility-table-data';

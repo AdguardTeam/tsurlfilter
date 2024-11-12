@@ -89,6 +89,5 @@ module.exports = {
                 fixMixedExportsWithInlineTypeSpecifier: true,
             },
         ],
-        'import/no-extraneous-dependencies': 'off',
     },
 };
