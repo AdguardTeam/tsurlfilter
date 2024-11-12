@@ -2,6 +2,8 @@ import browser from 'webextension-polyfill';
 import zod from 'zod';
 import {
     Filter,
+    METADATA_RULESET_ID,
+    RULESET_NAME_PREFIX,
     RuleSetByteRangeCategory,
     type IFilter,
     type IRuleSet,
@@ -213,9 +215,7 @@ export class TsWebExtension implements AppInterface<
 
         if (removeFilters) {
             const allFilters = await FiltersStorage.getFilterIds();
-            const filtersToRemove = Object.keys(allFilters)
-                .map(Number)
-                .filter((filterId) => !filterIds.includes(filterId));
+            const filtersToRemove = allFilters.filter((filterId) => !filterIds.includes(filterId));
 
             if (filtersToRemove.length > 0) {
                 await FiltersStorage.removeMultipleFilters(filtersToRemove);
@@ -751,7 +751,10 @@ export class TsWebExtension implements AppInterface<
 
         // Note: we cannot create rulesets only for enabled filters because we
         // need to get all rulesets' counters for checking limits on the client.
-        const manifestRuleSets = manifest.declarative_net_request.rule_resources;
+        // Note: we skip metadata ruleset, because it is not a real ruleset.
+        const manifestRuleSets = manifest.declarative_net_request.rule_resources
+            .filter(({ id }) => id !== `${RULESET_NAME_PREFIX}${METADATA_RULESET_ID}`);
+
         const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
             return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
         });
@@ -869,6 +872,29 @@ export class TsWebExtension implements AppInterface<
 
         return ruleSetsLoaderApi.getChecksum(ruleSetId);
     }
+
+    /**
+     * Retrieves the raw filter list.
+     *
+     * @param filterId Filter id.
+     * @param ruleSetsPath Path to the rule sets.
+     *
+     * @returns Raw filter list.
+     *
+     * @throws Error if rule sets path is not set.
+     */
+    public static getRawFilterList = async (
+        filterId: number,
+        ruleSetsPath: string,
+    ): Promise<string> => {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        const ruleSetId = RuleSetsLoaderApi.getRuleSetId(filterId);
+
+        return ruleSetsLoaderApi.getRawCategoryContent(
+            ruleSetId,
+            RuleSetByteRangeCategory.PreprocessedFilterListRaw,
+        );
+    };
 
     /**
      * Retrieves the preprocessed filter list.
