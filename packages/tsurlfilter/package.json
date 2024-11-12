@@ -95,7 +95,7 @@
   "dependencies": {
     "@adguard/agtree": "workspace:^",
     "@adguard/css-tokenizer": "workspace:^",
-    "@adguard/scriptlets": "file:../../../scriptlets",
+    "@adguard/scriptlets": "https://github.com/AdguardTeam/Scriptlets/raw/747265060c888b6b08fedefb16aefa1e83dbcdf7/tmp-adguard-scriptlets-2.0.0.tgz",
     "cidr-tools": "^6.4.1",
     "commander": "9.4.1",
     "is-cidr": "4.0.2",

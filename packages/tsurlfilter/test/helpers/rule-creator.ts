@@ -1,12 +1,10 @@
+import { type AnyCosmeticRule, type AnyRule, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import {
     defaultParserOptions,
-    type AnyCosmeticRule,
-    type AnyRule,
+    RuleParser,
     CosmeticRuleParser,
     NetworkRuleParser,
-    RuleParser,
-    type NetworkRule as NetworkRuleNode,
-} from '@adguard/agtree';
+} from '@adguard/agtree/parser';
 import { isString } from 'lodash';
 
 import {

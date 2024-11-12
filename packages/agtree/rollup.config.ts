@@ -80,6 +80,7 @@ const main = {
         'src/serializer/index.ts',
         'src/deserializer/index.ts',
         'src/converter/index.ts',
+        'src/utils/index.ts',
     ],
     output: [
         {
