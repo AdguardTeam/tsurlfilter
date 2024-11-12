@@ -22,7 +22,7 @@ Table of contents:
     - [Parsing single adblock rules](#parsing-single-adblock-rules)
     - [Generating adblock rules from AST](#generating-adblock-rules-from-ast)
     - [Parsing and generating complete filter lists](#parsing-and-generating-complete-filter-lists)
-- [Serializer / Deserializer](#serializer--deserializer)
+- [Serializer / Deserializer](#serializer--deserializer-api)
     - [Serialization](#serialization)
     - [Deserialization](#deserialization)
 
@@ -46,7 +46,7 @@ The idea is quite simple, we provide two *main* parser classes:
 - `FilterListParser`: parses a complete adblock filter list, you can pass any filter list to it. Technically, it is just
   a wrapper around `RuleParser`
 
-Each parser class has the following methods:
+Each parser class provides the following method:
 
 - `parse`: parses a raw data (string) and returns an AST (Abstract Syntax Tree) node (string &#8594; AST)
 
@@ -203,11 +203,13 @@ exact place in the rule where the error occurred.
 ## Generator API
 
 The generator API is available in the `@adguard/agtree/generator` entrypoint. You can import it like this:
-```
+
+```typescript
 import { RuleGenerator } from '@adguard/agtree/generator';
 ```
 
 The generator API provides the following method:
+
 - `generate`: serializes an AST node back to a string (AST &#8594; string)
 
 ### Generating adblock rules from AST
@@ -293,7 +295,7 @@ and restore them later without parsing the data again.
     ```
 
     It will write the serialized data to the end of the buffer. If needed, it will automatically resize the buffer.
-   Buffer internally uses 32 kilobytes chunks to store data.
+    Buffer internally uses 32 kilobytes chunks to store data.
 
 3. You can write the buffer data to a storage:
 

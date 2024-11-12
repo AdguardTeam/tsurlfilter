@@ -1,4 +1,5 @@
-import { InputByteBuffer, type AnyRule } from '@adguard/agtree';
+import { type AnyRule } from '@adguard/agtree';
+import { InputByteBuffer } from '@adguard/agtree/utils';
 import { RuleDeserializer } from '@adguard/agtree/deserializer';
 import { type FilterListSourceMap, getRuleSourceIndex } from './source-map';
 import { BufferReader } from './reader/buffer-reader';

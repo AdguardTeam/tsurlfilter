@@ -4,6 +4,7 @@
  */
 
 import path from 'path';
+// eslint-disable-next-line import/no-extraneous-dependencies
 import yaml from 'js-yaml';
 import { readFileSync, readdirSync } from 'fs';
 import { fileURLToPath } from 'url';

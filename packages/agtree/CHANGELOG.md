@@ -12,9 +12,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Changed
 
-- The API is separated across entry points: `@adguard/agtree/parser`, `@adguard/agtree/generator`, 
-  `@adguard/agtree/converter`, `@adguard/agtree/validator`, `@adguard/agtree/compatibility-tables`,
-  and `@adguard/agtree/utils`.
+<!-- markdownlint-disable MD013 -->
+- The API is separated across entry points: `@adguard/agtree/parser`, `@adguard/agtree/generator`, `@adguard/agtree/converter`, `@adguard/agtree/validator`, `@adguard/agtree/compatibility-tables`, and `@adguard/agtree/utils`.
 
 ## [2.1.3] - 2024-10-21
 
