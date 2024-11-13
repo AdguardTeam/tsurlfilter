@@ -11,7 +11,6 @@ import { BaseGenerator } from './base-generator';
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
- * It is a wrapper around `RuleParser` which parses each line separately.
  */
 export class FilterListGenerator extends BaseGenerator {
     /**

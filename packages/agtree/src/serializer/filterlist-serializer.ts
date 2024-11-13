@@ -9,7 +9,6 @@ import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
- * It is a wrapper around `RuleParser` which parses each line separately.
  */
 export class FilterListSerializer extends BaseSerializer {
     /**
