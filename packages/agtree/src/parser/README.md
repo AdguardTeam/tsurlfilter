@@ -313,7 +313,7 @@ and restore them later without parsing the data again.
     ```typescript
     import { InputByteBuffer } from "@adguard/agtree/utils";
 
-    const inBuffer = new InputByteBuffer(outBuffer.chunks);
+    const inBuffer = new InputByteBuffer(outBuffer.getChunks());
     ```
 
 3. Once you have the input buffer, you can deserialize the AST node from it:

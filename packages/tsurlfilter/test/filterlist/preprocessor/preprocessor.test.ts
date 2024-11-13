@@ -25,8 +25,7 @@ const makeSerializedFilterList = (rules: string[]): Uint8Array[] => {
         RuleSerializer.serialize(node, buffer);
     }
 
-    // TODO: Remove any cast
-    return (buffer as any).chunks;
+    return buffer.getChunks();
 };
 
 describe('FilterListPreprocessor', () => {

@@ -18,7 +18,7 @@ trap cleanup EXIT
 
 (cd ../../.. && pnpm pack && mv adguard-agtree-*.tgz "$curr_path/$agtree")
 
-# unzip to @adguard/tsurlfilter to node_modules
+# unzip to @adguard/agtree to node_modules
 agtree_node_modules=$nm_path"/@adguard/agtree"
 mkdir -p $agtree_node_modules
 tar -xzf $agtree --strip-components=1 -C $agtree_node_modules

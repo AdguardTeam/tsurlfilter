@@ -4,16 +4,27 @@ import {
     RuleGenerator,
     RuleDeserializer,
     modifiersCompatibilityTable,
-    SpecificPlatform
+    SpecificPlatform,
+    OutputByteBuffer,
+    AnyRule,
+    InputByteBuffer,
 } from '@adguard/agtree';
 import { ok } from 'assert';
 
-const ruleNode = RuleParser.parse('||example.com^');
+const ruleText = '||example.com^';
+const ruleNode = RuleParser.parse(ruleText);
 
-ok(ruleNode);
-ok(RuleSerializer);
-ok(RuleGenerator);
-ok(RuleDeserializer);
+const outBuffer = new OutputByteBuffer();
+RuleSerializer.serialize(ruleNode, outBuffer);
+
+const inBuffer = new InputByteBuffer(outBuffer.getChunks());
+
+const deserializedRuleNode = {} as AnyRule;
+RuleDeserializer.deserialize(inBuffer, deserializedRuleNode);
+
+const generatedRuleText = RuleGenerator.generate(deserializedRuleNode);
+
+ok(generatedRuleText === ruleText);
 
 const modifierData = modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AdgExtChrome);
 

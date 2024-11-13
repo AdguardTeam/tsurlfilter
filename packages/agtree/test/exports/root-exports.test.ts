@@ -18,7 +18,7 @@ describe('root exports', () => {
 
         RuleSerializer.serialize(ruleNode, outputByteBuffer);
 
-        const inputBuffer = new InputByteBuffer(outputByteBuffer.chunks);
+        const inputBuffer = new InputByteBuffer(outputByteBuffer.getChunks());
         const node: AnyNode = {};
         RuleDeserializer.deserialize(inputBuffer, node);
 

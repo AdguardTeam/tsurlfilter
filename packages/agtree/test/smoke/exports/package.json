@@ -5,7 +5,7 @@
   "license": "MIT",
   "author": "Adguard Software Ltd.",
   "scripts": {
-    "start": "tsc --noEmit",
+    "start": "tsc --noEmit && ts-node root-exports.ts && ts-node specific-exports.ts",
     "test": "./test.sh"
   }
 }

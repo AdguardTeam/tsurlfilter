@@ -21,6 +21,5 @@ export const createAllowlistRuleList = (listId: number, domains: string[]): Buff
         }
     });
 
-    // TODO (David): Remove any cast
-    return new BufferRuleList(listId, (buffer as any).chunks);
+    return new BufferRuleList(listId, buffer.getChunks());
 };

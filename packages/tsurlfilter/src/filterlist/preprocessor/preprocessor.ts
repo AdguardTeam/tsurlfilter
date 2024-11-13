@@ -156,8 +156,7 @@ export class FilterListPreprocessor {
         }
 
         return {
-            // TODO: Remove any type cast
-            filterList: (convertedFilterList as any).chunks,
+            filterList: convertedFilterList.getChunks(),
             rawFilterList: rawFilterList.join(EMPTY_STRING),
             conversionMap,
             sourceMap,
