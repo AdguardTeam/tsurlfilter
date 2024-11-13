@@ -40,8 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 It will be useful for customizing the manifest object before saving it to the file.
 For example, while bundling the manifest with the extension.
 - Two new options for `manifest` CLI command:
-  - `enable` option for specifying rulesets enabled by default
-  - `ruleset-prefix` option for specifying the prefix for ruleset IDs.
+    - `enable` option for specifying rulesets enabled by default
+    - `ruleset-prefix` option for specifying the prefix for ruleset IDs.
 
 ### Changed
 

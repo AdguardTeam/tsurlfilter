@@ -18,7 +18,9 @@
     "build:lib": "tsc --project tsconfig.lib.json",
     "clear": "rimraf ./dist",
     "test": "jest --coverage",
-    "lint": "eslint",
+    "lint": "pnpm lint:code && pnpm lint:types",
+    "lint:code": "eslint",
+    "lint:types": "tsc --noEmit",
     "increment": "pnpm version patch --no-git-tag-version",
     "increment:autodeploy": "node -r @swc-node/register tasks/auto-deploy-increment"
   },
