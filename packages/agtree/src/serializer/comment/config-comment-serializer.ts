@@ -13,7 +13,7 @@ import {
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
- * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.
+ * `ConfigCommentSerializer` is responsible for serializing inline AGLint configuration rules into a binary format.
  * Generally, the idea is inspired by ESLint inline configuration comments.
  *
  * @see {@link https://eslint.org/docs/latest/user-guide/configuring/rules#using-configuration-comments}

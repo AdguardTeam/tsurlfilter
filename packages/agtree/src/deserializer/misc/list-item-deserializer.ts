@@ -7,7 +7,10 @@ import { ListItemMarshallingMap } from '../../marshalling-utils/misc/list-item-c
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
- * Deserializes list item nodes from binary format.
+ * `ListItemDeserializer` is responsible for deserializing list item nodes from binary format.
+ *
+ * @example
+ * `app`, `domain`, `method`, `stealth-option`
  */
 export class ListItemDeserializer extends BaseDeserializer {
     /**

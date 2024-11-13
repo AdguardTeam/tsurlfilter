@@ -13,7 +13,7 @@ import { BaseGenerator } from '../../base-generator';
  */
 export class AdgScriptletInjectionBodyGenerator extends BaseGenerator {
     /**
-     * Error messages used by the parser.
+     * Error messages used by the generator.
      */
     public static readonly ERROR_MESSAGES = {
         NO_MULTIPLE_SCRIPTLET_CALLS: 'ADG syntaxes does not support multiple scriptlet calls within one single rule',
@@ -24,6 +24,7 @@ export class AdgScriptletInjectionBodyGenerator extends BaseGenerator {
      *
      * @param node Scriptlet injection rule body
      * @returns String representation of the rule body
+     * @throws Error if the scriptlet call has multiple parameters
      */
     public static generate(node: ScriptletInjectionRuleBody): string {
         const result: string[] = [];

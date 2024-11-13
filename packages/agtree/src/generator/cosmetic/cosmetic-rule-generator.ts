@@ -27,21 +27,11 @@ export const ERROR_MESSAGES = {
 };
 
 /**
- * `CosmeticRuleParser` is responsible for parsing cosmetic rules.
+ * `CosmeticRuleGenerator` is responsible for generating cosmetic rules from their AST representation.
  *
- * Where possible, it automatically detects the difference between supported syntaxes:
- *  - AdGuard
- *  - uBlock Origin
- *  - Adblock Plus
- *
- * If the syntax is common / cannot be determined, the parser gives `Common` syntax.
- *
- * Please note that syntactically correct rules are parsed even if they are not actually
- * compatible with the given adblocker. This is a completely natural behavior, meaningful
- * checking of compatibility is not done at the parser level.
+ * This class takes a parsed cosmetic rule Abstract Syntax Tree (AST) and converts it back into a raw string format.
+ * It handles the generation of the pattern, separator, uBO rule modifiers, and the rule body.
  */
-// TODO: Make raw body parsing optional
-// TODO: Split into smaller sections
 export class CosmeticRuleGenerator extends BaseGenerator {
     /**
      * Converts a cosmetic rule AST into a string.

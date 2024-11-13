@@ -7,15 +7,15 @@ import {
 } from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common';
 
 /**
- * `AbpSnippetInjectionBodyParser` is responsible for parsing the body of an Adblock Plus-style snippet rule.
+ * `AbpSnippetInjectionBodySerializer` is responsible for serializing the body of an Adblock Plus-style snippet rule.
  *
- * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
- * For example, it will parse this:
+ * Please note that the serializer will serialize any scriptlet rule if it is syntactically correct.
+ * For example, it will serialize this:
  * ```adblock
  * example.com#$#snippet0 arg0
  * ```
  *
- * but it didn't check if the scriptlet `snippet0` actually supported by any adblocker.
+ * but it doesn't check if the scriptlet `snippet0` is actually supported by any adblocker.
  *
  * @see {@link https://help.eyeo.com/adblockplus/snippet-filters-tutorial}
  */

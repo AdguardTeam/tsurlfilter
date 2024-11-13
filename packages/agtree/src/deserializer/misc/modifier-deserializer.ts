@@ -45,7 +45,7 @@ const getFrequentValuesDeserializationMaps = () => {
 };
 
 /**
- * `ModifierSerializer` is responsible for serializing modifiers.
+ * `ModifierDeserializer` is responsible for deserializing modifiers.
  *
  * @example
  * `match-case`, `~third-party`, `domain=example.com|~example.org`

@@ -7,15 +7,15 @@ import {
 } from '../../../marshalling-utils/cosmetic/body/adg-scriptlet-injection-body-common';
 
 /**
- * `AdgScriptletInjectionBodyParser` is responsible for parsing the body of an AdGuard-style scriptlet rule.
+ * `AdgScriptletInjectionBodySerializer` is responsible for serializing the body of an AdGuard-style scriptlet rule.
  *
- * Please note that the parser will parse any scriptlet rule if it is syntactically correct.
- * For example, it will parse this:
+ * Please note that the serializer will serialize any scriptlet rule if it is syntactically correct.
+ * For example, it will serialize this:
  * ```adblock
  * example.com#%#//scriptlet('scriptlet0', 'arg0')
  * ```
  *
- * but it didn't check if the scriptlet `scriptlet0` actually supported by any adblocker.
+ * but it doesn't check if the scriptlet `scriptlet0` is actually supported by any adblocker.
  *
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
  */

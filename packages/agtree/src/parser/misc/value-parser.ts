@@ -4,7 +4,7 @@ import { type Value } from '../../nodes';
 
 /**
  * Value parser.
- * This parser is very simple, it just exists to provide a consistent interface for parsing and generating values.
+ * This parser is very simple, it just exists to provide a consistent interface for parsing.
  */
 export class ValueParser extends BaseParser {
     /**

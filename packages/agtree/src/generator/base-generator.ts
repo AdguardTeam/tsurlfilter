@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /**
- * @file Base parser class.
+ * @file Base generator class.
  */
 import { NotImplementedError } from '../errors/not-implemented-error';
 import { type Node } from '../nodes';

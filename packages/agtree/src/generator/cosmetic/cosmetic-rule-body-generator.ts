@@ -27,11 +27,12 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
      * - '##.foo' → '.foo'
      * - 'example.com,example.org##.foo' → '.foo'
      * - 'example.com#%#//scriptlet('foo')' → '//scriptlet('foo')'
+     *
+     * @throws Error if the rule type is unknown
      */
     public static generate(node: AnyCosmeticRule): string {
         let result = EMPTY;
 
-        // Body
         switch (node.type) {
             case CosmeticRuleType.ElementHidingRule:
                 result = node.body.selectorList.value;

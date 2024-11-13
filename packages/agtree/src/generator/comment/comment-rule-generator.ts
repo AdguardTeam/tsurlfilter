@@ -9,60 +9,7 @@ import { ConfigCommentGenerator } from './config-comment-generator';
 import { SimpleCommentGenerator } from './simple-comment-generator';
 
 /**
- * `CommentParser` is responsible for parsing any comment-like adblock rules.
- *
- * @example
- * Example rules:
- *  - Adblock agent rules:
- *      - ```adblock
- *        [AdGuard]
- *        ```
- *      - ```adblock
- *        [Adblock Plus 2.0]
- *        ```
- *      - etc.
- *  - AdGuard hint rules:
- *      - ```adblock
- *        !+ NOT_OPTIMIZED
- *        ```
- *      - ```adblock
- *        !+ NOT_OPTIMIZED PLATFORM(windows)
- *        ```
- *      - etc.
- *  - Pre-processor rules:
- *      - ```adblock
- *        !#if (adguard)
- *        ```
- *      - ```adblock
- *        !#endif
- *        ```
- *      - etc.
- *  - Metadata rules:
- *      - ```adblock
- *        ! Title: My List
- *        ```
- *      - ```adblock
- *        ! Version: 2.0.150
- *        ```
- *      - etc.
- *  - AGLint inline config rules:
- *      - ```adblock
- *        ! aglint-enable some-rule
- *        ```
- *      - ```adblock
- *        ! aglint-disable some-rule
- *        ```
- *      - etc.
- *  - Simple comments:
- *      - Regular version:
- *        ```adblock
- *        ! This is just a comment
- *        ```
- *      - uBlock Origin / "hostlist" version:
- *        ```adblock
- *        # This is just a comment
- *        ```
- *      - etc.
+ * `CommentRuleGenerator` is responsible for generating any comment-like adblock rules.
  */
 export class CommentRuleGenerator extends BaseGenerator {
     /**

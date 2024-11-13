@@ -30,16 +30,7 @@ const getFrequentAgentsSerializationMap = () => {
 };
 
 /**
- * `AgentParser` is responsible for parsing single adblock agent elements.
- *
- * @example
- * If the adblock agent rule is
- * ```adblock
- * [Adblock Plus 2.0; AdGuard]
- * ```
- * then the adblock agents are `Adblock Plus 2.0` and `AdGuard`, and this
- * class is responsible for parsing them. The rule itself is parsed by
- * `AgentCommentSerializer`, which uses this class to parse single agents.
+ * `AgentSerializer` is responsible for serializing single adblock agent elements into a binary format.
  */
 export class AgentSerializer extends BaseSerializer {
     /**

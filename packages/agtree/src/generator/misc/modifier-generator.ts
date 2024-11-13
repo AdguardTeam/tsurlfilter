@@ -7,9 +7,9 @@ import { BaseGenerator } from '../base-generator';
  */
 export class ModifierGenerator extends BaseGenerator {
     /**
-     * Generates a string from a modifier (serializes it).
+     * Converts a modifier AST node to a string.
      *
-     * @param modifier Modifier to generate string from
+     * @param modifier Modifier AST node to convert
      * @returns String representation of the modifier
      */
     public static generate(modifier: Modifier): string {

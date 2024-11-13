@@ -124,7 +124,7 @@ console.log(conversionResult.result.map(RuleGenerator.generate).join('\n'));
 ### Examples of converting a filter list
 
 ```ts
-import { FilterListParser, FilterListConverter } from '@adguard/agtree/parser';
+import { FilterListParser } from '@adguard/agtree/parser';
 import { FilterListConverter } from '@adguard/agtree/converter';
 import { readFileSync, writeFileSync } from 'fs';
 

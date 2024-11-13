@@ -17,29 +17,17 @@ import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-ty
 import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
 
 /**
- * `HostRuleSerializer` is responsible for serializing hosts-like rules.
+ * `HostRuleDeserializer` is responsible for deserializing hosts-like rules.
  *
  * HostRule is a structure for simple host-level rules (i.e. /etc/hosts syntax).
  * It also supports "just domain" syntax. In this case, the IP will be set to 0.0.0.0.
- *
- * Rules syntax looks like this:
- * ```text
- * IP_address canonical_hostname [aliases...]
- * ```
- *
- * @example
- * `192.168.1.13 bar.mydomain.org bar` -- ipv4
- * `ff02::1 ip6-allnodes` -- ipv6
- * `::1 localhost ip6-localhost ip6-loopback` -- ipv6 aliases
- * `example.org` -- "just domain" syntax
- * @see {@link http://man7.org/linux/man-pages/man5/hosts.5.html}
  */
 export class HostRuleDeserializer extends BaseDeserializer {
     /**
-     * Deserializes a modifier node from binary format.
+     * Deserializes a host rule node from binary format.
      *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
+     * @param buffer Input byte buffer to read from.
+     * @param node Destination node to write to.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<HostRule>): void {
         buffer.assertUint8(BinaryTypeMarshallingMap.HostRuleNode);

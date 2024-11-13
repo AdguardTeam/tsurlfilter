@@ -16,8 +16,8 @@ import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';
 
 /**
- * Value map for binary deserialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent frequently used values.
+ * Set of known metadata headers. This helps to quickly identify and validate
+ * metadata headers in the comments.
  */
 const KNOWN_METADATA_HEADERS = new Set([
     'Checksum',

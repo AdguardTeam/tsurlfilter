@@ -22,12 +22,12 @@ const SEPARATOR_SERIALIZATION_MAP = new Map<string, number>([
 ]);
 
 /**
- * `DomainListParser` is responsible for parsing a domain list.
+ * `DomainListSerializer` is responsible for serializing a domain list.
  *
  * @example
  * - If the rule is `example.com,~example.net##.ads`, the domain list is `example.com,~example.net`.
  * - If the rule is `ads.js^$script,domains=example.com|~example.org`, the domain list is `example.com|~example.org`.
- * This parser is responsible for parsing these domain lists.
+ * This serializer is responsible for serializing these domain lists.
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_domains}
  */
 export class DomainListSerializer extends BaseSerializer {

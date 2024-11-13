@@ -13,6 +13,7 @@ export class AbpSnippetInjectionBodyGenerator extends BaseGenerator {
      *
      * @param node Scriptlet injection rule body
      * @returns String representation of the rule body
+     * @throws Error if the scriptlet call is empty
      */
     public static generate(node: ScriptletInjectionRuleBody): string {
         const result: string[] = [];

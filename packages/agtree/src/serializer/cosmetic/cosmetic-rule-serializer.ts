@@ -20,21 +20,12 @@ import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-ty
 import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
 
 /**
- * `CosmeticRuleParser` is responsible for parsing cosmetic rules.
+ * `CosmeticRuleSerializer` is responsible for serializing cosmetic rules into a binary format.
  *
- * Where possible, it automatically detects the difference between supported syntaxes:
- *  - AdGuard
- *  - uBlock Origin
- *  - Adblock Plus
- *
- * If the syntax is common / cannot be determined, the parser gives `Common` syntax.
- *
- * Please note that syntactically correct rules are parsed even if they are not actually
- * compatible with the given adblocker. This is a completely natural behavior, meaningful
- * checking of compatibility is not done at the parser level.
+ * This class takes a cosmetic rule Abstract Syntax Tree (AST) and converts it into a compact binary representation.
+ * It handles the serialization of different types of cosmetic rules, including element hiding, CSS injection,
+ * JavaScript injection, HTML filtering, and scriptlet injection rules.
  */
-// TODO: Make raw body parsing optional
-// TODO: Split into smaller sections
 export class CosmeticRuleSerializer extends BaseSerializer {
     /**
      * Serializes a cosmetic rule node to binary format.

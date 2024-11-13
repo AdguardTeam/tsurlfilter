@@ -8,9 +8,9 @@ import { SimpleCommentMarshallingMap } from '../../marshalling-utils/comment/sim
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
 /**
- * `SimpleCommentSerializer` is responsible for parsing simple comments.
+ * `SimpleCommentSerializer` is responsible for serializing simple comments.
  * Some comments have a special meaning in adblock syntax, like agent comments or hints,
- * but this parser is only responsible for parsing regular comments,
+ * but this serializer is only responsible for serializing regular comments,
  * whose only purpose is to provide some human-readable information.
  *
  * @example

@@ -27,7 +27,7 @@ export const enum NodeType {
 }
 
 /**
- * `LogicalExpressionParser` is responsible for parsing logical expressions.
+ * `LogicalExpressionSerializer` is responsible for serializing logical expressions.
  *
  * @example
  * From the following rule:

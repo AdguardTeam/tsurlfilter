@@ -13,10 +13,10 @@ import { ParameterListGenerator } from '../misc/parameter-list-generator';
  */
 export class HintGenerator extends BaseGenerator {
     /**
-     * Converts a single hint AST to a string.
+     * Generates a string representation of a hint.
      *
-     * @param hint Hint AST
-     * @returns Hint string
+     * @param hint Hint AST node
+     * @returns String representation of the hint
      */
     public static generate(hint: Hint): string {
         let result = EMPTY;

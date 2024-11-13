@@ -14,12 +14,12 @@ import { BinaryTypeMarshallingMap } from '../../../marshalling-utils/misc/binary
  */
 export class ScriptletBodySerializer extends BaseSerializer {
     /**
-     * Serializes a hint rule node to binary format.
+     * Serializes a scriptlet injection rule body node into a compact binary format.
      *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     * @param frequentScriptletArgs Map of frequently used scriptlet names / arguments
-     * and their serialization index (optional).
+     * @param node The ScriptletInjectionRuleBody node to serialize.
+     * @param buffer The OutputByteBuffer used for writing the binary data.
+     * @param frequentScriptletArgs An optional map of frequently used scriptlet names and their arguments,
+     * along with their corresponding serialization index.
      */
     public static serialize = (
         node: ScriptletInjectionRuleBody,

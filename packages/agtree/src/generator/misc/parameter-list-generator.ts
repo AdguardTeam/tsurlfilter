@@ -17,7 +17,6 @@ export class ParameterListGenerator extends BaseGenerator {
     public static generate(params: ParameterList, separator = COMMA): string {
         const collection: string[] = [];
 
-        // add parameters
         let i = 0;
         for (; i < params.children.length; i += 1) {
             const param = params.children[i];

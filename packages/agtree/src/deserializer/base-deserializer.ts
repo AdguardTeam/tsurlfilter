@@ -1,5 +1,5 @@
 /**
- * @file Base serializer class.
+ * @file Base deserializer class.
  */
 import { NotImplementedError } from '../errors/not-implemented-error';
 import { type Node } from '../nodes';
