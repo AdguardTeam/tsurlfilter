@@ -893,7 +893,7 @@ export class TsWebExtension implements AppInterface<
         return ruleSetsLoaderApi.getRawCategoryContent(
             ruleSetId,
             RuleSetByteRangeCategory.PreprocessedFilterListRaw,
-        );
+        ).then(JSON.parse);
     };
 
     /**
