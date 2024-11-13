@@ -164,20 +164,17 @@ export class TsWebExtension implements AppInterface<
      *
      * @param filterIds Filter identifiers to sync.
      * @param ruleSetsPath Path to the rulesets.
-     * @param removeFilters Remove filters from the storage that are not in the filterIds list.
-     * It is used to avoid storing outdated filters.
      *
      * @returns Promise that resolves when the sync is finished.
      */
-    private static async syncFiltersWithStorage(
-        filterIds: number[],
-        ruleSetsPath: string,
-        removeFilters = true,
-    ): Promise<void> {
+    private static async syncFiltersWithStorage(filterIds: number[], ruleSetsPath: string): Promise<void> {
         logger.info('Syncing enabled filters with the extension storage');
 
         const filters: Record<number, PreprocessedFilterList> = {};
         const checksums: Record<number, string> = {};
+
+        const unchanged: number[] = [];
+        const updated: number[] = [];
 
         // Ruleset JSON files might be updated, so we need to update preprocessed filter list in the extension storage
         for (const rulesetId of filterIds) {
@@ -190,7 +187,7 @@ export class TsWebExtension implements AppInterface<
                 ]);
 
                 if (ruleSetChecksum === ruleSetChecksumStorage) {
-                    logger.info(`Filter with id ${rulesetId} is up-to-date, skipping the update`);
+                    unchanged.push(rulesetId);
                     continue;
                 }
 
@@ -202,28 +199,30 @@ export class TsWebExtension implements AppInterface<
                 if (ruleSetChecksum) {
                     checksums[rulesetId] = ruleSetChecksum;
                 }
+
+                updated.push(rulesetId);
             } catch (e) {
                 logger.error(`Failed to update filter with id ${rulesetId}. Got error: ${getErrorMessage(e)}`);
             }
         }
 
-        if (Object.keys(filters).length > 0) {
+        if (updated.length > 0) {
             await FiltersStorage.setMultipleFilters(filters);
             await FiltersStorage.setMultipleChecksums(checksums);
         }
 
-        if (removeFilters) {
-            const allFilters = await FiltersStorage.getFilterIds();
-            const filtersToRemove = allFilters.filter((filterId) => !filterIds.includes(filterId));
+        const allFilters = await FiltersStorage.getFilterIds();
+        const removed = allFilters.filter((filterId) => !filterIds.includes(filterId));
 
-            if (filtersToRemove.length > 0) {
-                await FiltersStorage.removeMultipleFilters(filtersToRemove);
-
-                logger.info(`Removed the following filters: ${filtersToRemove.join(', ')}`);
-            }
+        if (removed.length > 0) {
+            await FiltersStorage.removeMultipleFilters(removed);
+            await FiltersStorage.removeMultipleChecksums(removed);
         }
 
-        logger.info(`Synced the following filters: ${filterIds.join(', ')}`);
+        logger.info(
+            // eslint-disable-next-line max-len
+            `Synced static rulesets with the extension storage. Updated filter IDs: ${updated.join(', ')}. Removed filter IDs: ${removed.join(', ')}. Unchanged filter IDs: ${unchanged.join(', ')}`,
+        );
     }
 
     /**
