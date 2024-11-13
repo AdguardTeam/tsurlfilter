@@ -10,7 +10,7 @@ import { RuleGenerator } from './rule-generator';
 import { BaseGenerator } from './base-generator';
 
 /**
- * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
+ * Generates a serialized filter list.
  */
 export class FilterListGenerator extends BaseGenerator {
     /**

@@ -8,7 +8,7 @@ import { FilterListNodeMarshallingMap } from '../marshalling-utils/filter-list-c
 import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
 /**
- * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).
+ * Serializes filter list nodes to binary format.
  */
 export class FilterListSerializer extends BaseSerializer {
     /**
