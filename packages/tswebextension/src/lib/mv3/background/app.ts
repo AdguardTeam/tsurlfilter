@@ -3,7 +3,6 @@ import zod from 'zod';
 import {
     Filter,
     METADATA_RULESET_ID,
-    RULESET_NAME_PREFIX,
     RuleSetByteRangeCategory,
     type IFilter,
     type IRuleSet,
@@ -753,7 +752,7 @@ export class TsWebExtension implements AppInterface<
         // need to get all rulesets' counters for checking limits on the client.
         // Note: we skip metadata ruleset, because it is not a real ruleset.
         const manifestRuleSets = manifest.declarative_net_request.rule_resources
-            .filter(({ id }) => id !== `${RULESET_NAME_PREFIX}${METADATA_RULESET_ID}`);
+            .filter(({ id }) => id !== RuleSetsLoaderApi.getRuleSetId(METADATA_RULESET_ID));
 
         const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
             return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
