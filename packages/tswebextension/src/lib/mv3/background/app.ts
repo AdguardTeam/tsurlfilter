@@ -158,9 +158,24 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
+     * Helper method to stringify filter ids.
+     *
+     * @param filterIds Filter identifiers to stringify.
+     *
+     * @returns Comma-separated string of filter ids or 'none' if the list is empty.
+     */
+    private static stringifyFilterIds(filterIds: number[]): string {
+        if (filterIds.length === 0) {
+            return 'none';
+        }
+
+        return filterIds.join(', ');
+    }
+
+    /**
      * Syncs specified filters with the extension storage.
      *
-     * This method is needed to update the extension storage with the latest filters content.
+     * This method updates the extension storage with the latest filter content.
      *
      * @param filterIds Filter identifiers to sync.
      * @param ruleSetsPath Path to the rulesets.
@@ -170,58 +185,67 @@ export class TsWebExtension implements AppInterface<
     private static async syncFiltersWithStorage(filterIds: number[], ruleSetsPath: string): Promise<void> {
         logger.info('Syncing enabled filters with the extension storage');
 
-        const filters: Record<number, PreprocessedFilterList> = {};
-        const checksums: Record<number, string> = {};
+        const filtersToSync: Record<number, PreprocessedFilterList> = {};
+        const checksumsToSync: Record<number, string> = {};
 
-        const unchanged: number[] = [];
-        const updated: number[] = [];
+        const filtersInStorage = new Set(await FiltersStorage.getFilterIds());
+        const filtersToRemove = Array.from(filtersInStorage).filter((id) => !filterIds.includes(id));
 
-        // Ruleset JSON files might be updated, so we need to update preprocessed filter list in the extension storage
-        for (const rulesetId of filterIds) {
-            // Get up-to-date preprocessed filter list
-            try {
-                // eslint-disable-next-line no-await-in-loop
-                const [ruleSetChecksum, ruleSetChecksumStorage] = await Promise.all([
-                    TsWebExtension.getChecksum(rulesetId, ruleSetsPath),
-                    FiltersStorage.getChecksum(rulesetId),
-                ]);
+        const syncStatus = {
+            unchanged: [] as number[],
+            added: [] as number[],
+            updated: [] as number[],
+        };
 
-                if (ruleSetChecksum === ruleSetChecksumStorage) {
-                    unchanged.push(rulesetId);
-                    continue;
+        // Process each filter ID to determine its status and update if needed
+        await Promise.all(
+            filterIds.map(async (filterId) => {
+                try {
+                    const [currentChecksum, storedChecksum] = await Promise.all([
+                        TsWebExtension.getChecksum(filterId, ruleSetsPath),
+                        FiltersStorage.getChecksum(filterId),
+                    ]);
+
+                    if (currentChecksum === storedChecksum) {
+                        syncStatus.unchanged.push(filterId);
+                        return;
+                    }
+
+                    const preprocessedFilter = await TsWebExtension.getPreprocessedFilterList(filterId, ruleSetsPath);
+                    filtersToSync[filterId] = preprocessedFilter;
+                    if (currentChecksum) {
+                        checksumsToSync[filterId] = currentChecksum;
+                    }
+
+                    if (filtersInStorage.has(filterId)) {
+                        syncStatus.updated.push(filterId);
+                    } else {
+                        syncStatus.added.push(filterId);
+                    }
+                } catch (error) {
+                    logger.error(`Failed to update filter with id ${filterId}. Error: ${getErrorMessage(error)}`);
                 }
+            }),
+        );
 
-                // eslint-disable-next-line no-await-in-loop
-                const preprocessed = await TsWebExtension.getPreprocessedFilterList(rulesetId, ruleSetsPath);
-
-                filters[rulesetId] = preprocessed;
-
-                if (ruleSetChecksum) {
-                    checksums[rulesetId] = ruleSetChecksum;
-                }
-
-                updated.push(rulesetId);
-            } catch (e) {
-                logger.error(`Failed to update filter with id ${rulesetId}. Got error: ${getErrorMessage(e)}`);
-            }
+        // Persist changes to storage
+        if (Object.keys(filtersToSync).length > 0) {
+            await Promise.all([
+                FiltersStorage.setMultipleFilters(filtersToSync),
+                FiltersStorage.setMultipleChecksums(checksumsToSync),
+            ]);
         }
 
-        if (updated.length > 0) {
-            await FiltersStorage.setMultipleFilters(filters);
-            await FiltersStorage.setMultipleChecksums(checksums);
-        }
-
-        const allFilters = await FiltersStorage.getFilterIds();
-        const removed = allFilters.filter((filterId) => !filterIds.includes(filterId));
-
-        if (removed.length > 0) {
-            await FiltersStorage.removeMultipleFilters(removed);
-            await FiltersStorage.removeMultipleChecksums(removed);
+        if (filtersToRemove.length > 0) {
+            await Promise.all([
+                FiltersStorage.removeMultipleFilters(filtersToRemove),
+                FiltersStorage.removeMultipleChecksums(filtersToRemove),
+            ]);
         }
 
         logger.info(
             // eslint-disable-next-line max-len
-            `Synced static rulesets with the extension storage. Updated filter IDs: ${updated.join(', ')}. Removed filter IDs: ${removed.join(', ')}. Unchanged filter IDs: ${unchanged.join(', ')}`,
+            `Synced static rulesets with the extension storage. Added: ${TsWebExtension.stringifyFilterIds(syncStatus.added)}. Updated: ${TsWebExtension.stringifyFilterIds(syncStatus.updated)}. Removed: ${TsWebExtension.stringifyFilterIds(filtersToRemove)}. Unchanged: ${TsWebExtension.stringifyFilterIds(syncStatus.unchanged)}`,
         );
     }
 
