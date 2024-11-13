@@ -3,6 +3,9 @@ import type { CommentRule } from '../../nodes';
 import { EMPTY } from '../../utils/constants';
 import { ValueGenerator } from '../misc/value-generator';
 
+/**
+ * Simple comment generator.
+ */
 export class SimpleCommentGenerator extends BaseGenerator {
     /**
      * Converts a comment rule node to a string.

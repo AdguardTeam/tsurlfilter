@@ -9,6 +9,9 @@ import {
 } from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common';
 import { BinaryTypeMarshallingMap } from '../../../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Serializer for scriptlet injection rule body nodes.
+ */
 export class ScriptletBodySerializer extends BaseSerializer {
     /**
      * Serializes a hint rule node to binary format.

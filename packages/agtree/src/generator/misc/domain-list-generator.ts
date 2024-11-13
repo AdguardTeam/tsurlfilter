@@ -2,6 +2,9 @@ import type { DomainList } from '../../nodes';
 import { BaseGenerator } from '../base-generator';
 import { ListItemsGenerator } from './list-items-generator';
 
+/**
+ * Domain list generator.
+ */
 export class DomainListGenerator extends BaseGenerator {
     /**
      * Converts a domain list node to a string.

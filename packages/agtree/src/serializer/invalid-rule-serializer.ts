@@ -7,6 +7,9 @@ import { InvalidRuleErrorNodeSerializer } from './invalid-rule-error-node-serial
 import { InvalidRuleMarshallingMap } from '../marshalling-utils/invalid-rule-common';
 import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Serializer for invalid rule nodes.
+ */
 export class InvalidRuleSerializer extends BaseSerializer {
     /**
      * Serializes an invalid rule node to binary format.

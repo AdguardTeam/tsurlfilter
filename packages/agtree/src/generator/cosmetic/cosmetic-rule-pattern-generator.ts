@@ -10,6 +10,9 @@ import { BaseGenerator } from '../base-generator';
 import { ModifierListGenerator } from '../misc/modifier-list-generator';
 import { DomainListGenerator } from '../misc/domain-list-generator';
 
+/**
+ * Cosmetic rule pattern generator.
+ */
 export class CosmeticRulePatternGenerator extends BaseGenerator {
     /**
      * Generates the rule pattern from the AST.

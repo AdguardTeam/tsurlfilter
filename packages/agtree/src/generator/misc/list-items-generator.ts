@@ -1,6 +1,9 @@
 import { type ListItem, type ListItemNodeType } from '../../nodes';
 import { EMPTY, NEGATION_MARKER } from '../../utils/constants';
 
+/**
+ * Utility class for generating string representations of list items.
+ */
 export class ListItemsGenerator {
     /**
      * Generates a string representation of a list item.

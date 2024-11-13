@@ -7,6 +7,9 @@ import { QUOTE_SET } from '../../utils/quotes';
 import { ParameterListParser } from './parameter-list-parser';
 import { type ParameterList } from '../../nodes';
 
+/**
+ * Parser for uBO-specific parameter lists.
+ */
 export class UboParameterListParser extends ParameterListParser {
     /**
      * Parses an "uBO-specific parameter list".

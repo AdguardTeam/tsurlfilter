@@ -12,6 +12,9 @@ import { ValueGenerator } from '../misc/value-generator';
 import { ParameterListGenerator } from '../misc/parameter-list-generator';
 import { LogicalExpressionGenerator } from '../misc/logical-expression-generator';
 
+/**
+ * Pre-processor comment generator.
+ */
 export class PreProcessorCommentGenerator extends BaseGenerator {
     /**
      * Converts a pre-processor comment node to a string.

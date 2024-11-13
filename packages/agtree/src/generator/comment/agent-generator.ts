@@ -3,6 +3,10 @@ import type { Agent } from '../../nodes';
 import { EMPTY, SPACE } from '../../utils/constants';
 import { isUndefined } from '../../utils/type-guards';
 
+/**
+ * Generator for adblock agent nodes.
+ * This class is responsible for converting adblock agent nodes into their string representation.
+ */
 export class AgentGenerator extends BaseGenerator {
     /**
      * Converts an adblock agent node to a string.

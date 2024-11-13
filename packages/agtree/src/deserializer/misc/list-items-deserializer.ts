@@ -3,6 +3,10 @@ import { type ListItem, type ListItemNodeType } from '../../nodes';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ListItemDeserializer } from './list-item-deserializer';
 
+/**
+ * Deserializes lists of items from binary format.
+ * Converts binary data to structured item nodes.
+ */
 export class ListItemsDeserializer {
     /**
      * Deserializes a list of items from binary format.

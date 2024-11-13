@@ -4,6 +4,9 @@ import { BaseGenerator } from '../../base-generator';
 import { ParameterListGenerator } from '../../misc/parameter-list-generator';
 import { AbpSnippetInjectionBodyCommon } from '../../../common/abp-snippet-injection-body-common';
 
+/**
+ * Adblock Plus snippet injection body generator.
+ */
 export class AbpSnippetInjectionBodyGenerator extends BaseGenerator {
     /**
      * Generates a string representation of the Adblock Plus-style snippet call body.

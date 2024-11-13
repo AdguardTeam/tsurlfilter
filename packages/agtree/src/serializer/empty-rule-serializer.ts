@@ -6,6 +6,9 @@ import { NULL } from '../utils/constants';
 import { EmptyRuleMarshallingMap } from '../marshalling-utils/empty-rule-common';
 import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Serializer for empty rule nodes.
+ */
 export class EmptyRuleSerializer extends BaseSerializer {
     /**
      * Serializes an empty rule node to binary format.

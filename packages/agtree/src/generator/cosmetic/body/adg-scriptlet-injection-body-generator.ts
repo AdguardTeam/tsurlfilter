@@ -8,6 +8,9 @@ import {
 import { ParameterListGenerator } from '../../misc/parameter-list-generator';
 import { BaseGenerator } from '../../base-generator';
 
+/**
+ * AdGuard scriptlet injection body generator.
+ */
 export class AdgScriptletInjectionBodyGenerator extends BaseGenerator {
     /**
      * Error messages used by the parser.

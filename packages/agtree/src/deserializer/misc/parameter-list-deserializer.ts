@@ -7,6 +7,10 @@ import { ParameterListNodeMarshallingMap } from '../../marshalling-utils/misc/pa
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Deserializes binary data into parameter list nodes.
+ * Optionally uses a map of frequent values for optimization.
+ */
 export class ParameterListDeserializer extends BaseDeserializer {
     /**
      * Deserializes a parameter list node from binary format.

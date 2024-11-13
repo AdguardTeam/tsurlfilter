@@ -1,6 +1,9 @@
 import type { Value } from '../../nodes';
 import { BaseGenerator } from '../base-generator';
 
+/**
+ * Generator for value nodes.
+ */
 export class ValueGenerator extends BaseGenerator {
     /**
      * Converts a value node to a string.

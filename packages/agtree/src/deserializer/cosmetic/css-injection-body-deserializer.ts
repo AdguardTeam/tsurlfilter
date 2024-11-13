@@ -7,6 +7,9 @@ import { CssInjectionRuleMarshallingMap } from '../../marshalling-utils/cosmetic
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Deserializes CSS injection rule body nodes from binary format.
+ */
 export class CssInjectionBodyDeserializer extends BaseDeserializer {
     /**
      * Deserializes CSS injection rule body node from binary format.

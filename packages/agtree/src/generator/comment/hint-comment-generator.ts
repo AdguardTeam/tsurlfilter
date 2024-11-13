@@ -3,6 +3,9 @@ import type { HintCommentRule } from '../../nodes';
 import { HINT_MARKER, SPACE } from '../../utils/constants';
 import { HintGenerator } from './hint-generator';
 
+/**
+ * Hint comment generator.
+ */
 export class HintCommentGenerator extends BaseGenerator {
     /**
      * Converts a hint rule node to a raw string.

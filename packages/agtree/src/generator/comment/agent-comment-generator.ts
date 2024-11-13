@@ -8,6 +8,9 @@ import {
 import { BaseGenerator } from '../base-generator';
 import { AgentGenerator } from './agent-generator';
 
+/**
+ * Generator for agent comment rules.
+ */
 export class AgentCommentGenerator extends BaseGenerator {
     /**
      * Converts an adblock agent AST to a string.

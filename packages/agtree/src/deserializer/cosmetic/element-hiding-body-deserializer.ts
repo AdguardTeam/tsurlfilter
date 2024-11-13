@@ -7,6 +7,10 @@ import { ElementHidingRuleMarshallingMap } from '../../marshalling-utils/cosmeti
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Deserializes element hiding rule body nodes from binary data.
+ * Populates the provided node with the deserialized data.
+ */
 export class ElementHidingBodyDeserializer extends BaseDeserializer {
     /**
      * Deserializes an element hiding rule body node from binary format.

@@ -2,6 +2,9 @@ import { BaseGenerator } from '../base-generator';
 import { type AnyExpressionNode, OperatorValue } from '../../nodes';
 import { NodeType } from '../../parser/misc/logical-expression-parser';
 
+/**
+ * Generator for logical expression nodes.
+ */
 export class LogicalExpressionGenerator extends BaseGenerator {
     /**
      * Generates a string representation of the logical expression (serialization).

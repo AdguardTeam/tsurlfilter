@@ -5,6 +5,9 @@ import { CommentRuleGenerator } from './comment';
 import { CosmeticRuleGenerator } from './cosmetic';
 import { HostRuleGenerator, NetworkRuleGenerator } from './network';
 
+/**
+ * RuleGenerator is responsible for converting adblock rule ASTs to their string representation.
+ */
 export class RuleGenerator extends BaseGenerator {
     /**
      * Converts a rule AST to a string.

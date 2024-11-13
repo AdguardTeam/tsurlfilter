@@ -14,6 +14,9 @@ import { AbpSnippetInjectionBodyGenerator } from './body/abp-snippet-injection-b
 import { UboScriptletInjectionBodyGenerator } from './body/ubo-scriptlet-injection-body-generator';
 import { UboPseudoName } from '../../common/ubo-selector-common';
 
+/**
+ * Cosmetic rule body generator.
+ */
 export class CosmeticRuleBodyGenerator extends BaseGenerator {
     /**
      * Generates the rule body from the node.

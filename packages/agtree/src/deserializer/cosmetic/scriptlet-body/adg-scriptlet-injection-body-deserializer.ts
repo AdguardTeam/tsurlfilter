@@ -21,6 +21,11 @@ const getFrequentAdgScriptletArgsDeserializationMap = () => {
     return frequentAdgScriptletArgsDeserializationMap;
 };
 
+/**
+ * Deserializer for AdGuard scriptlet injection body nodes.
+ * Converts binary data into a structured scriptlet call body node specific to AdGuard,
+ * using a predefined deserialization map for frequently used scriptlet arguments.
+ */
 export class AdgScriptletInjectionBodyDeserializer extends BaseDeserializer {
     /**
      * Deserializes a scriptlet call body node from binary format.

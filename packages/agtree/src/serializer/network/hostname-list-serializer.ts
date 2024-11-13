@@ -7,6 +7,9 @@ import { ValueSerializer } from '../misc/value-serializer';
 import { HostnameListNodeMarshallingMap } from '../../marshalling-utils/misc/hostname-list-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Serializer for hostname list nodes.
+ */
 export class HostnameListSerializer extends BaseSerializer {
     /**
      * Serializes a hostname list node to binary format.

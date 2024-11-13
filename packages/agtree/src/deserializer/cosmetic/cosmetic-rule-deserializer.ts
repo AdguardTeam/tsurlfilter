@@ -57,6 +57,12 @@ const COSMETIC_RULE_TYPE_DESERIALIZATION_MAP = new Map<BinaryTypeMarshallingMap,
     [BinaryTypeMarshallingMap.HtmlFilteringRule, CosmeticRuleType.HtmlFilteringRule],
 ]);
 
+/**
+ * Deserializer for cosmetic rules.
+ * Converts binary data into structured cosmetic rule nodes, supporting various types
+ * like element hiding, CSS injection, scriptlet injection, JavaScript injection, and HTML filtering.
+ * Handles rule type, syntax, exceptions, separators, modifiers, and domain lists.
+ */
 export class CosmeticRuleDeserializer extends BaseDeserializer {
     /**
      * Deserializes a cosmetic rule node from binary format.

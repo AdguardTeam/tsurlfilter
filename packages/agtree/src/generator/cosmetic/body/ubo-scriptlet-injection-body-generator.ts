@@ -8,6 +8,9 @@ import {
 } from '../../../utils/constants';
 import { ParameterListGenerator } from '../../misc/parameter-list-generator';
 
+/**
+ * uBlock scriptlet injection body generator.
+ */
 export class UboScriptletInjectionBodyGenerator extends BaseGenerator {
     /**
      * Error messages used by the parser.

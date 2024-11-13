@@ -10,6 +10,9 @@ import {
 } from '../../utils/constants';
 import { type UboSelector } from '../../nodes';
 
+/**
+ * UBO selector generator.
+ */
 export class UboSelectorGenerator extends BaseGenerator {
     /**
      * Serializes a uBO selector node to a string.

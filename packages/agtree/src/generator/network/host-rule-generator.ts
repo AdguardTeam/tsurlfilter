@@ -2,6 +2,9 @@ import type { HostRule } from '../../nodes';
 import { EMPTY, HASHMARK, SPACE } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
 
+/**
+ * Generator for host rule nodes.
+ */
 export class HostRuleGenerator extends BaseGenerator {
     /**
      * Converts a host rule node to a raw string.

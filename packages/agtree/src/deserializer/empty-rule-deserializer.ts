@@ -7,6 +7,10 @@ import { EmptyRuleMarshallingMap } from '../marshalling-utils/empty-rule-common'
 import { AdblockSyntax } from '../utils/adblockers';
 import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Deserializer for empty rule nodes.
+ * This class handles the deserialization of empty rule nodes from binary format.
+ */
 export class EmptyRuleDeserializer extends BaseDeserializer {
     /**
      * Deserializes an empty rule node from binary format.

@@ -7,6 +7,9 @@ import { HostnameListNodeMarshallingMap } from '../../marshalling-utils/misc/hos
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Deserializes hostname list nodes from binary format.
+ */
 export class HostnameListDeserializer extends BaseDeserializer {
     /**
      * Deserializes a hostname list node from binary format.

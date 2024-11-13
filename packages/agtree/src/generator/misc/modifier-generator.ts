@@ -2,6 +2,9 @@ import type { Modifier } from '../../nodes';
 import { EMPTY, MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
 
+/**
+ * Generator for modifier nodes.
+ */
 export class ModifierGenerator extends BaseGenerator {
     /**
      * Generates a string from a modifier (serializes it).

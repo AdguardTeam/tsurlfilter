@@ -21,12 +21,15 @@ export const getFrequentPlatformsDeserializationMap = () => {
     return frequentUboScriptletArgsDeserializationMap;
 };
 
+/**
+ * Deserializes uBlock Origin scriptlet injection body nodes from binary data.
+ */
 export class UboScriptletInjectionBodyDeserializer extends BaseDeserializer {
     /**
      * Deserializes a scriptlet call body node from binary format.
      *
      * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
+     * @param node Destination node to populate with deserialized data.
      * @throws If the binary data is malformed.
      */
     public static deserialize(buffer: InputByteBuffer, node: Partial<ScriptletInjectionRuleBody>): void {

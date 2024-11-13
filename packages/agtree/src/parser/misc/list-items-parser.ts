@@ -16,6 +16,9 @@ export const LIST_PARSE_ERROR_PREFIX = {
     NO_WHITESPACE_AFTER_NEGATION: 'Exception marker cannot be followed by whitespace',
 };
 
+/**
+ * Parser for list items in modifiers.
+ */
 export class ListItemsParser {
     /**
      * Parses a `raw` modifier value which may be represented as a list of items separated by `separator`.

@@ -6,6 +6,9 @@ import { NULL } from '../../utils/constants';
 import { ListItemMarshallingMap } from '../../marshalling-utils/misc/list-item-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Serializer for list item nodes.
+ */
 export class ListItemSerializer extends BaseSerializer {
     /**
      * Serializes a list item to binary format.

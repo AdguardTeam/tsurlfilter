@@ -7,6 +7,9 @@ import { BaseSerializer } from '../base-serializer';
 import { CssInjectionRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/css-injection-body-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Serializer for CSS injection rule body nodes.
+ */
 export class CssInjectionBodySerializer extends BaseSerializer {
     /**
      * Serializes a CSS injection rule body node to binary format.

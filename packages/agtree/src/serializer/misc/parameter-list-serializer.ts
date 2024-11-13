@@ -7,6 +7,9 @@ import { BaseSerializer } from '../base-serializer';
 import { ParameterListNodeMarshallingMap } from '../../marshalling-utils/misc/parameter-list-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Serializer for parameter list nodes.
+ */
 export class ParameterListSerializer extends BaseSerializer {
     /**
      * Serializes a parameter list node to binary format.

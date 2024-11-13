@@ -3,6 +3,9 @@ import { COLON, EMPTY, SPACE } from '../../utils/constants';
 import { ValueGenerator } from '../misc/value-generator';
 import { BaseGenerator } from '../base-generator';
 
+/**
+ * Metadata comment generator.
+ */
 export class MetadataCommentGenerator extends BaseGenerator {
     /**
      * Converts a metadata comment rule node to a string.

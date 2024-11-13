@@ -5,6 +5,9 @@ import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
 import { ValueParser } from './value-parser';
 
+/**
+ * Parser for parameter lists.
+ */
 export class ParameterListParser extends BaseParser {
     /**
      * Parses a raw parameter list.

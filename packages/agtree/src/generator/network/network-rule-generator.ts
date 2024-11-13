@@ -3,6 +3,9 @@ import { EMPTY, NETWORK_RULE_EXCEPTION_MARKER, NETWORK_RULE_SEPARATOR } from '..
 import { BaseGenerator } from '../base-generator';
 import { ModifierListGenerator } from '../misc/modifier-list-generator';
 
+/**
+ * Generator for network rule nodes.
+ */
 export class NetworkRuleGenerator extends BaseGenerator {
     /**
      * Converts a network rule (basic rule) AST to a string.

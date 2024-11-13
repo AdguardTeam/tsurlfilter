@@ -3,6 +3,9 @@ import { COMMA, EMPTY, SPACE } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
 import { ValueGenerator } from './value-generator';
 
+/**
+ * Generator for parameter list nodes.
+ */
 export class ParameterListGenerator extends BaseGenerator {
     /**
      * Converts a parameter list AST to a string.

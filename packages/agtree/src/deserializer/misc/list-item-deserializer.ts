@@ -6,14 +6,17 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ListItemMarshallingMap } from '../../marshalling-utils/misc/list-item-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
-export class ListItemDeserializer extends BaseDeserializer {
 /**
- * Deserializes a list item from binary format.
- *
- * @param buffer Input byte buffer.
- * @param node Partial list item to deserialize.
- * @template T Type of the list item.
+ * Deserializes list item nodes from binary format.
  */
+export class ListItemDeserializer extends BaseDeserializer {
+    /**
+     * Deserializes a list item from binary format.
+     *
+     * @param buffer Input byte buffer.
+     * @param node Partial list item to deserialize.
+     * @template T Type of the list item.
+     */
     public static deserialize = <T extends ListItemNodeType>(
         buffer: InputByteBuffer,
         node: Partial<ListItem<T>>,

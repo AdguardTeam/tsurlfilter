@@ -3,6 +3,9 @@ import type { ConfigCommentRule } from '../../nodes';
 import { COMMA, EMPTY, SPACE } from '../../utils/constants';
 import { ParameterListGenerator } from '../misc/parameter-list-generator';
 
+/**
+ * Converts inline configuration comment nodes to their string format.
+ */
 export class ConfigCommentGenerator extends BaseGenerator {
     /**
      * Converts an inline configuration comment node to a string.

@@ -2,6 +2,9 @@ import { type ListItem, type ListItemNodeType } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ListItemSerializer } from './list-item-serializer';
 
+/**
+ * Serializer for list items.
+ */
 export class ListItemsSerializer {
     /**
      * Serializes a list of items to binary format.

@@ -7,6 +7,9 @@ import { NULL } from '../../utils/constants';
 import { ElementHidingRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/element-hiding-body-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Serializer for element hiding rule body nodes.
+ */
 export class ElementHidingBodySerializer extends BaseSerializer {
     /**
      * Serializes an element hiding rule body node to binary format.

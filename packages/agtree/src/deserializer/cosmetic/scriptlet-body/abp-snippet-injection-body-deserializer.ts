@@ -21,6 +21,10 @@ const getFrequentAbpSnippetArgsDeserializationMap = () => {
     return frequentAbpSnippetArgsDeserializationMap;
 };
 
+/**
+ * Deserializer for ABP snippet injection rule body nodes.
+ * Converts binary data into a structured format using a map of frequently used arguments.
+ */
 export class AbpSnippetInjectionBodyDeserializer extends BaseDeserializer {
     /**
      * Deserializes a scriptlet call body node from binary format.

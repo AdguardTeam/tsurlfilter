@@ -7,6 +7,10 @@ import { type InputByteBuffer } from '../utils/input-byte-buffer';
 import { FilterListNodeMarshallingMap } from '../marshalling-utils/filter-list-common';
 import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Deserializer for filter lists.
+ * Converts binary data into filter list nodes.
+ */
 export class FilterListDeserializer extends BaseDeserializer {
     /**
      * Deserializes a filter list node from binary format.

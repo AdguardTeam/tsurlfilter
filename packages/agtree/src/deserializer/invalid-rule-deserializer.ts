@@ -7,6 +7,10 @@ import { type InputByteBuffer } from '../utils/input-byte-buffer';
 import { InvalidRuleMarshallingMap } from '../marshalling-utils/invalid-rule-common';
 import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
 
+/**
+ * Deserializer for invalid rule nodes.
+ * Converts binary data into invalid rule nodes.
+ */
 export class InvalidRuleDeserializer extends BaseDeserializer {
     /**
      * Deserializes an invalid rule node from binary format.

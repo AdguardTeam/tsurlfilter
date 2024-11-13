@@ -8,6 +8,9 @@ import {
 import { BaseGenerator } from '../base-generator';
 import { ParameterListGenerator } from '../misc/parameter-list-generator';
 
+/**
+ * Hint generator.
+ */
 export class HintGenerator extends BaseGenerator {
     /**
      * Converts a single hint AST to a string.
