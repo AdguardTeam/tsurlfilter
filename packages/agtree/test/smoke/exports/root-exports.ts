@@ -30,4 +30,4 @@ const modifierData = modifiersCompatibilityTable.getSingle('third-party', Specif
 
 ok(modifierData);
 
-console.log('Smoke test passed');
+console.log('Smoke test passed in root-exports.ts');

@@ -5,7 +5,6 @@ import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import externals from 'rollup-plugin-node-externals';
-import alias from '@rollup/plugin-alias';
 import json from '@rollup/plugin-json';
 import path from 'node:path';
 import { readFileSync } from 'node:fs';
@@ -51,21 +50,6 @@ const banner = `/*
 // Common plugins for all types of builds
 export const commonPlugins = [
     externals(),
-    alias({
-        entries: [
-            // Add ".js" extension to all imports of the "semver" package, eg "semver/functions/..."
-            // We need this because we import functions from the "semver" package directly,
-            // otherwise it will cause a "circular dependency" warning during the build.
-            // See https://github.com/npm/node-semver/issues/381
-            // Rollup detects "semver" as an external dependency, so it doesn't add the ".js"
-            // extension by default, and we need to do it manually here, otherwise the ESM
-            // build will fail with "Cannot find module" error.
-            {
-                find: /semver\/(.*)(?<!\.js)$/,
-                replacement: 'semver/$1.js',
-            },
-        ],
-    }),
     json({ preferConst: true }),
     resolve({ preferBuiltins: false }),
     commonjs({ sourceMap: false }),
@@ -73,6 +57,7 @@ export const commonPlugins = [
 ];
 
 const main = {
+    cache: false,
     input: [
         'src/index.ts',
         'src/parser/index.ts',
@@ -84,26 +69,14 @@ const main = {
     ],
     output: [
         {
-            dir: `${distDir}/cjs`,
-            format: 'cjs',
-            exports: 'named',
-            sourcemap: false,
-            preserveModules: true,
-            preserveModulesRoot: 'src',
-            banner,
-        },
-        {
-            dir: `${distDir}/esm`,
-            entryFileNames: '[name].mjs',
+            dir: `${distDir}`,
+            // entryFileNames: '[name].mjs',
             format: 'esm',
             sourcemap: false,
             preserveModules: true,
             preserveModulesRoot: 'src',
             banner,
         },
-    ],
-    external: [
-        /node_modules/,
     ],
     plugins: [
         ...commonPlugins,

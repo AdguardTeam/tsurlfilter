@@ -22,3 +22,5 @@ const generatedRuleText = RuleGenerator.generate(deserializedRuleNode);
 ok(generatedRuleText === ruleText);
 
 ok(CosmeticRuleGenerator);
+
+console.log('Smoke test passed in specific-exports.ts');

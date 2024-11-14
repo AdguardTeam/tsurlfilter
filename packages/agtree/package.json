@@ -27,69 +27,38 @@
     },
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree#readme",
     "sideEffects": false,
-    "main": "dist/cjs/index.js",
-    "module": "dist/esm/index.mjs",
+    "type": "module",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
     "types": "dist/types/index.d.ts",
-    "typesVersions": {
-        "*": {
-            "*": [
-                "dist/types/index.d.ts"
-            ],
-            "parser": [
-                "dist/types/parser/index.d.ts"
-            ],
-            "generator": [
-                "dist/types/generator/index.d.ts"
-            ],
-            "serializer": [
-                "dist/types/serializer/index.d.ts"
-            ],
-            "deserializer": [
-                "dist/types/deserializer/index.d.ts"
-            ],
-            "converter": [
-                "dist/types/converter/index.d.ts"
-            ],
-            "utils": [
-                "dist/types/utils/index.d.ts"
-            ]
-        }
-    },
     "exports": {
         ".": {
             "types": "./dist/types/index.d.ts",
-            "import": "./dist/esm/index.mjs",
-            "require": "./dist/cjs/index.js"
+            "import": "./dist/index.js"
         },
         "./parser": {
             "types": "./dist/types/parser/index.d.ts",
-            "import": "./dist/esm/parser/index.mjs",
-            "require": "./dist/cjs/parser/index.js"
+            "import": "./dist/parser/index.js"
         },
         "./generator": {
             "types": "./dist/types/generator/index.d.ts",
-            "import": "./dist/esm/generator/index.mjs",
-            "require": "./dist/cjs/generator/index.js"
+            "import": "./dist/generator/index.js"
         },
         "./serializer": {
             "types": "./dist/types/serializer/index.d.ts",
-            "import": "./dist/esm/serializer/index.mjs",
-            "require": "./dist/cjs/serializer/index.js"
+            "import": "./dist/serializer/index.js"
         },
         "./deserializer": {
             "types": "./dist/types/deserializer/index.d.ts",
-            "import": "./dist/esm/deserializer/index.mjs",
-            "require": "./dist/cjs/deserializer/index.js"
+            "import": "./dist/deserializer/index.js"
         },
         "./converter": {
             "types": "./dist/types/converter/index.d.ts",
-            "import": "./dist/esm/converter/index.mjs",
-            "require": "./dist/cjs/converter/index.js"
+            "import": "./dist/converter/index.js"
         },
         "./utils": {
             "types": "./dist/types/utils/index.d.ts",
-            "import": "./dist/esm/utils/index.mjs",
-            "require": "./dist/cjs/utils/index.js"
+            "import": "./dist/utils/index.js"
         }
     },
     "files": [
@@ -100,8 +69,8 @@
         "node": ">=18"
     },
     "scripts": {
-        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables-wiki && pnpm rollup --config rollup.config.ts --configPlugin typescript && pnpm build-types",
-        "build-rollup": "pnpm rimraf dist && pnpm rollup --config rollup.config.ts --configPlugin typescript --bundleConfigAsCjs",
+        "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables-wiki && pnpm build-rollup && pnpm build-types",
+        "build-rollup": "rollup --config rollup.config.ts --configPlugin typescript",
         "build-types": "tsc --project tsconfig.build.json",
         "build-txt": "tsx scripts/build-txt.ts",
         "build-compatibility-tables-wiki": "tsx scripts/build-compatibility-tables-wiki.ts",
@@ -114,7 +83,7 @@
         "lint:ts": "eslint . --cache --ext .ts",
         "precommit": "pnpm check-types && pnpm lint && pnpm test",
         "test": "jest --runInBand",
-        "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/cjs && pnpm test) && (cd test/smoke/typescript && pnpm test)"
+        "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)"
     },
     "dependencies": {
         "@adguard/css-tokenizer": "workspace:^",
@@ -129,7 +98,6 @@
         "zod": "3.21.4"
     },
     "devDependencies": {
-        "@rollup/plugin-alias": "^5.1.1",
         "@rollup/plugin-commonjs": "^28.0.1",
         "@rollup/plugin-json": "^6.1.0",
         "@rollup/plugin-node-resolve": "^15.3.0",
@@ -173,7 +141,7 @@
         "prettier": "^3.3.2",
         "regenerator-runtime": "^0.14.0",
         "rimraf": "^5.0.1",
-        "rollup": "^4.24.0",
+        "rollup": "^4.26.0",
         "rollup-plugin-node-externals": "^7.1.3",
         "systeminformation": "^5.22.0",
         "ts-node": "^10.9.2",
