@@ -10,7 +10,7 @@ const DIST_FOLDER_NAME = 'dist';
 const OUTPUT_FILE_NAME = 'build.txt';
 const PKG_FILE_NAME = 'package.json';
 
-// eslint-disable-next-line no-underscore-dangle,@typescript-eslint/naming-convention
+// eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 // Computed constants
