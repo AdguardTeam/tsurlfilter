@@ -10,11 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### Added
-
-- Optional property `maxNumberOfUnsafeRules` to `DeclarativeConverterOptions`
-  for unsafe rules (only for dynamic rulesets).
-
 ### Changed
 
 - Updated [@adguard/agtree] to `v2.1.3`.

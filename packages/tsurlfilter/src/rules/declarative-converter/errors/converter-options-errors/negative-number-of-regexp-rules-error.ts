@@ -1,7 +1,7 @@
 /**
  * Describes error when maximum number of rules is less than 0.
  */
-export class NegativeNumberOfRulesError extends Error {
+export class NegativeNumberOfRegexpRulesError extends Error {
     /**
      * Describes error when maximum number of rules is less than 0.
      *
@@ -10,9 +10,9 @@ export class NegativeNumberOfRulesError extends Error {
     constructor(message: string) {
         super(message);
 
-        this.name = this.constructor.name;
+        this.name = 'NegativeNumberOfRegexpRulesError';
 
         // For proper work of the "instanceof" operator
-        Object.setPrototypeOf(this, NegativeNumberOfRulesError.prototype);
+        Object.setPrototypeOf(this, NegativeNumberOfRegexpRulesError.prototype);
     }
 }

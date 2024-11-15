@@ -22,7 +22,7 @@ export class UnsupportedModifierError extends Error {
     ) {
         super(message);
 
-        this.name = this.constructor.name;
+        this.name = 'UnsupportedModifierError';
         this.networkRule = networkRule;
 
         // For proper work of the "instanceof" operator

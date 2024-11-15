@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3020]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3020
 
 - A rule from a disabled filter list disables another rule [AdguardBrowserExtension#3002].
+- Matching of `companyCategoryName` for subdomains.
 
 [AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
 

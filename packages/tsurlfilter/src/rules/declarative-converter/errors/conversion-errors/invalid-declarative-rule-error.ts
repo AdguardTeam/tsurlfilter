@@ -28,7 +28,7 @@ export abstract class InvalidDeclarativeRuleError extends Error {
     ) {
         super(message);
 
-        this.name = this.constructor.name;
+        this.name = 'InvalidDeclarativeRuleError';
         this.networkRule = networkRule;
         this.declarativeRule = declarativeRule;
 

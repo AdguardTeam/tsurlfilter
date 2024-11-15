@@ -518,7 +518,7 @@ Converts a list of IFilters to a single rule set or to a list of rule sets. See 
  * @throws Error {@link UnavailableFilterSourceError} if filter content
  * is not available OR some of {@link ResourcesPathError},
  * {@link EmptyOrNegativeNumberOfRulesError},
- * {@link NegativeNumberOfRulesError}
+ * {@link NegativeNumberOfRegexpRulesError}.
  * @see {@link DeclarativeFilterConverter#checkConverterOptions}
  * for details.
  *
@@ -546,7 +546,7 @@ convertStaticRuleSet(
  * @throws Error {@link UnavailableFilterSourceError} if filter content
  * is not available OR some of {@link ResourcesPathError},
  * {@link EmptyOrNegativeNumberOfRulesError},
- * {@link NegativeNumberOfRulesError}.
+ * {@link NegativeNumberOfRegexpRulesError}.
  * @see {@link DeclarativeFilterConverter#checkConverterOptions}
  * for details.
  *

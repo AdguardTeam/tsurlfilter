@@ -27,7 +27,7 @@ export class UnsupportedRegexpError extends InvalidDeclarativeRuleError {
     ) {
         super(message, networkRule, declarativeRule);
 
-        this.name = this.constructor.name;
+        this.name = 'UnsupportedRegexpError';
 
         this.reason = reason;
 

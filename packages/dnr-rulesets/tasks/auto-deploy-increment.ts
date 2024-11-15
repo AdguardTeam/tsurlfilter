@@ -56,4 +56,4 @@ function updateVersion(version: string): string {
 }
 
 packageJson.version = updateVersion(version);
-fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 2));
+fs.writeFileSync('package.json', JSON.stringify(packageJson, null, 4));
