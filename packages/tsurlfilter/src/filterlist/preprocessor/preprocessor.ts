@@ -142,7 +142,9 @@ export class FilterListPreprocessor {
                     outputOffset += ruleText.length + lineBreakLength;
                 }
             } catch (error: unknown) {
-                logger.error(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
+                // If error level is used, an error will be thrown in browser extension (AG-37460),
+                // that's why info level is used
+                logger.info(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
 
                 // Add invalid rules as is to the converted filter list,
                 // but not to the output byte buffer / source map.
