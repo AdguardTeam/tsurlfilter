@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- When you open not allowlisted website on allowlisted website tab it will be treated as allowlisted [AdguardBrowserExtension#3020].
+- Once allowlisted tab considers all following websites in the tab as allowlisted [AdguardBrowserExtension#3020].
 
 [AdguardBrowserExtension#3020]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3020
 
