@@ -1,4 +1,7 @@
-import { version } from '../package.json';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json');
 
 export const TSURLFILTER_VERSION = version;
 

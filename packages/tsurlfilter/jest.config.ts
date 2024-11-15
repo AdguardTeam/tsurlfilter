@@ -6,11 +6,12 @@ const transformedModules = [
 
 const config: Config = {
     transform: {
-        '.+\\.(js|ts)$': '@swc/jest',
+        '.+\\.(js|ts)$': ['@swc/jest', {}],
     },
     transformIgnorePatterns: [
         `/node_modules/(?!(${transformedModules.join('|')}))/`,
     ],
+    extensionsToTreatAsEsm: ['.ts'],
     testEnvironment: 'node',
     testRegex: '(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$',
     moduleFileExtensions: ['js', 'ts'],

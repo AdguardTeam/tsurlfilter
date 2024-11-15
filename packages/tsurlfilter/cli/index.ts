@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 import { program } from 'commander';
 
-import { version } from '../package.json';
+import { createRequire } from 'module';
 
 import { convertFilters } from './convertFilters';
+
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json');
 
 export const DEFAULT_DEST_RULE_SETS_DIR = 'build/ruleSets';
 

@@ -5,7 +5,7 @@ import {
     CosmeticRuleParser,
     NetworkRuleParser,
 } from '@adguard/agtree/parser';
-import { isString } from 'lodash';
+import isString from 'lodash/isString';
 
 import {
     CosmeticRule,
