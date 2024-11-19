@@ -11,6 +11,7 @@ import type { EngineApi } from '../engine-api';
 import type { DocumentApi } from '../document-api';
 import type { TabsApi } from './tabs-api';
 import { MAIN_FRAME_ID } from '../../../common/constants';
+import { appContext } from '../context';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -100,6 +101,18 @@ export class TabsCosmeticInjector {
                 return;
             }
 
+            // TODO: Instead of this, it’s better to use the runtime.onStartup and runtime.onInstalled
+            // events to inject cosmetics once during the extension's initialization
+            // and browser startup without flags.
+            // However, this would require big refactoring of the extension.
+            /**
+             * This condition prevents applying cosmetic rules to the tab multiple times.
+             * Applying them once after the extension's initialization is sufficient.
+             */
+            if (appContext.cosmeticsInjectedOnStartup) {
+                return;
+            }
+
             const cosmeticOption = frame.matchingResult.getCosmeticOption();
 
             frame.cosmeticResult = this.engineApi.getCosmeticResult(frameUrl, cosmeticOption);
@@ -109,6 +122,8 @@ export class TabsCosmeticInjector {
             CosmeticApi.applyFrameCssRules(frameId, tabId);
 
             CosmeticApi.applyFrameJsRules(frameId, tabId);
+
+            appContext.cosmeticsInjectedOnStartup = true;
 
             CosmeticApi.logScriptRules({
                 url: frameUrl,
