@@ -123,21 +123,21 @@ Table of content:
       - [set()](#set)
       - [remove()](#remove)
       - [setMultiple()](#setmultiple)
-    - [removeMultiple()](#removemultiple)
-    - [entries()](#entries)
-    - [keys()](#keys)
-    - [has()](#has)
-    - [clear()](#clear)
+      - [removeMultiple()](#removemultiple)
+      - [entries()](#entries)
+      - [keys()](#keys)
+      - [has()](#has)
+      - [clear()](#clear)
     - [BrowserStorage](#browserstorage)
-    - [Constructor](#constructor)
+      - [Constructor](#constructor)
     - [IDBStorage](#idbstorage)
-    - [Constructor](#constructor-1)
+      - [Constructor](#constructor-1)
     - [HybridStorage](#hybridstorage)
-    - [Constructor](#constructor-2)
-    - [Methods](#methods-2)
-      - [serialize()](#serialize)
-      - [deserialize()](#deserialize)
-      - [isIDBSupported()](#isidbsupported)
+      - [Constructor](#constructor-2)
+      - [Methods](#methods-2)
+        - [serialize()](#serialize)
+        - [deserialize()](#deserialize)
+        - [isIDBSupported()](#isidbsupported)
   - [Development](#development)
 
 ## Browser support
@@ -921,31 +921,31 @@ type: `async (data: Record<string, Data>): Promise<boolean>`
 
 Saves multiple items to the storage.
 
-### removeMultiple()
+#### removeMultiple()
 
 type: `async (keys: string[]): Promise<boolean>`
 
 Removes multiple items from the storage.
 
-### entries()
+#### entries()
 
 type: `async (): Promise<Record<string, Data>>`
 
 Returns all items from the storage.
 
-### keys()
+#### keys()
 
 type: `async (): Promise<string[]>`
 
 Returns all keys from the storage.
 
-### has()
+#### has()
 
 type: `async (key: string): Promise<boolean>`
 
 Checks if the storage contains an item with the specified key.
 
-### clear()
+#### clear()
 
 type: `async (): Promise<void>`
 
@@ -955,7 +955,7 @@ Removes all items from the storage.
 
 Wrapper around Storage Area API.
 
-### Constructor
+#### Constructor
 
 type: `(storage: StorageArea) => BrowserStorage`
 
@@ -965,7 +965,7 @@ Creates a new instance of the BrowserStorage class.
 
 Wrapper around IndexedDB.
 
-### Constructor
+#### Constructor
 
 type:
 
@@ -983,7 +983,7 @@ Creates a new instance of the IDBStorage class.
 
 Hybrid storage primarily uses IndexedDB, but if it is not available, it falls back to the Storage Area API.
 
-### Constructor
+#### Constructor
 
 type:
 
@@ -993,11 +993,11 @@ constructor(fallbackStorage: StorageArea): HybridStorage
 
 Creates a new instance of the HybridStorage class.
 
-### Methods
+#### Methods
 
 In addition to the common methods, the HybridStorage class provides the following methods.
 
-#### serialize()
+##### serialize()
 
 type: `(object: SuperJSONValue) => SuperJSONResult`
 
@@ -1007,14 +1007,14 @@ It is used to serialize data before saving it to the fallback storage,
 because the Storage Area API does not support saving complex objects,
 e.g. typed arrays, like `Uint8Array`.
 
-#### deserialize()
+##### deserialize()
 
 type: `<T = unknown>(payload: SuperJSONResult) => T`
 
 Static method that deserializes an object with SuperJSON.
 It is similar to the `serialize` method, but in the opposite direction.
 
-#### isIDBSupported()
+##### isIDBSupported()
 
 type: `() => boolean`
 
