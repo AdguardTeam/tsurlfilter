@@ -15,8 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A rule from a disabled filter list disables another rule [AdguardBrowserExtension#3002].
 - Matching of `companyCategoryName` for subdomains.
+- Memory leak caused by multiple script injections on the same pages after a service worker or event page restart [AdguardBrowserExtension#2594].
 
 [AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
+[AdguardBrowserExtension#2594]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594
 
 ## [2.4.0-alpha.6] - 2024-10-18
 
