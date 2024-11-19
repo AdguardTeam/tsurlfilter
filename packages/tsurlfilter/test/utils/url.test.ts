@@ -31,4 +31,11 @@ describe('Query parameters', () => {
         expect(utils.cleanUrlParamByRegExp('http://example.com?test=1&test=2', /test.*/, true)).toEqual('http://example.com?test=1&test=2');
         expect(utils.cleanUrlParamByRegExp('http://example.com?test=1&test=2', /test=1/, true)).toEqual('http://example.com?test=1');
     });
+
+    it('handles properly encoded params', () => {
+        expect(utils.cleanUrlParamByRegExp('http://example.com?$test', /\$test.*/)).toEqual('http://example.com');
+        expect(utils.cleanUrlParamByRegExp('http://example.com?%24test', /\$test.*/)).toEqual('http://example.com');
+        expect(utils.cleanUrlParamByRegExp('http://example.com?$test', /\$test.*/, true)).toEqual('http://example.com?$test');
+        expect(utils.cleanUrlParamByRegExp('http://example.com?%24test', /\$test.*/, true)).toEqual('http://example.com?%24test');
+    });
 });

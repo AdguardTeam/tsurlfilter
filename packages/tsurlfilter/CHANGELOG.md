@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated [@adguard/agtree] to `v2.1.3`.
 
+### Fixed
+
+- URI encoded `$removeparam` value is not removed in MV3 [AdguardBrowserExtension#3014].
+- `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
+
+[AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
+[AdguardBrowserExtension#3015]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3015
+
 ## [3.1.0-alpha.7] - 2024-10-16
 
 ### Fixed

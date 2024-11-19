@@ -340,7 +340,11 @@ export abstract class DeclarativeRuleConverter {
             return {
                 transform: {
                     queryTransform: {
-                        removeParams: DeclarativeRuleConverter.toASCII([value]),
+                        /**
+                         * In case if param is encoded URI we need to decode it first:
+                         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014.
+                         */
+                        removeParams: [decodeURIComponent(value)],
                     },
                 },
             };
