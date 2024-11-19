@@ -145,8 +145,8 @@ other:
 # TODO: remove the branch-overrides after release/v3.1 is merged into master
 branch-overrides:
   -
-    ^(release\/v3\.1.+|(?!release\/v3\.1).*)$:
-      # for branches other than 'release-v3.1' no build should be run
+    ^(stable\/dnr-rulesets.+|(?!stable\/dnr-rulesets).*)$:
+      # for branches other than 'stable/dnr-rulesets' no build should be run
       stages:
         - Build:
             - SkipBuild
