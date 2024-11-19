@@ -12,4 +12,6 @@ export class MockAppContext implements AppContext {
     configuration: ConfigurationMV2Context | undefined = undefined;
 
     startTimeMs: number | undefined = undefined;
+
+    cosmeticsInjectedOnStartup: boolean = false;
 }
