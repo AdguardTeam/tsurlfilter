@@ -47,6 +47,8 @@ export class TabsCosmeticInjector {
                 logger.error(promise.reason);
             }
         });
+
+        appContext.cosmeticsInjectedOnStartup = true;
     }
 
     /**
@@ -122,8 +124,6 @@ export class TabsCosmeticInjector {
             CosmeticApi.applyFrameCssRules(frameId, tabId);
 
             CosmeticApi.applyFrameJsRules(frameId, tabId);
-
-            appContext.cosmeticsInjectedOnStartup = true;
 
             CosmeticApi.logScriptRules({
                 url: frameUrl,
