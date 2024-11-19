@@ -84,7 +84,7 @@ export class TabsCosmeticInjector {
                 parentDocumentId,
                 documentId,
             });
-            
+
             // TODO: Instead of this, it’s better to use the runtime.onStartup and runtime.onInstalled
             // events to inject cosmetics once during the extension's initialization
             // and browser startup without flags.
