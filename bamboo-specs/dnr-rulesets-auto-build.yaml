@@ -39,9 +39,9 @@ Build:
 
             BRANCH="${bamboo.planRepository.branchName}"
 
-            # Deploy package from "release/v3.1" branch only
-            # TODO: replace "release/v3.1" to "master" branch after merge
-            if [ $BRANCH != "release/v3.1" ]
+            # Deploy package from "stable/dnr-rulesets" branch only
+            # TODO: replace "stable/dnr-rulesets" to "master" branch after merge
+            if [ $BRANCH != "stable/dnr-rulesets" ]
             then
               echo "deployment is not supported on branch ${BRANCH}, skipping"
               exit 0;
@@ -97,7 +97,7 @@ Build:
 
             # TODO: remove the checking after release/v3.1 is merged into master
             BRANCH="${bamboo.planRepository.branchName}"
-            if [ $BRANCH != "release/v3.1" ]
+            if [ $BRANCH != "stable/dnr-rulesets" ]
             then
               echo "nothing to clean on branch ${BRANCH}, skipping"
               exit 0;
