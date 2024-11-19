@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## Unreleased
+## [3.1.0-alpha.8] - 2024-11-19
 
 ### Added
 
@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Declarative converter adds each necessary information to the ruleset `.json` file,
   other files are not needed anymore (like raw `.txt` files, `metadata.json` files, etc).
 - Updated [@adguard/agtree] to `v2.1.3`.
+
+[3.1.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.8
 
 ## [3.1.0-alpha.7] - 2024-10-16
 
