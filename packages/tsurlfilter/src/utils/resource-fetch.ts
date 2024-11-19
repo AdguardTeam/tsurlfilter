@@ -7,6 +7,8 @@ import { type ByteRange } from './byte-range';
  * @param [range] Optional byte range to specify in the HTTP request.
  *
  * @returns A promise that resolves to the fetched content as a string.
+ *
+ * @throws If the request fails.
  */
 export const fetchExtensionResourceText = async (url: string, range?: ByteRange): Promise<string> => {
     const headers = range ? { Range: `bytes=${range.start}-${range.end}` } : undefined;
