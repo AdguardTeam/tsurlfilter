@@ -31,6 +31,8 @@ export class TabsCosmeticInjector {
                 logger.error('[tswebextension.processOpenTabs]: cannot inject cosmetic to open tab: ', promise.reason);
             }
         });
+
+        appContext.cosmeticsInjectedOnStartup = true;
     }
 
     /**
@@ -82,7 +84,7 @@ export class TabsCosmeticInjector {
                 parentDocumentId,
                 documentId,
             });
-
+            
             // TODO: Instead of this, it’s better to use the runtime.onStartup and runtime.onInstalled
             // events to inject cosmetics once during the extension's initialization
             // and browser startup without flags.
@@ -102,8 +104,6 @@ export class TabsCosmeticInjector {
                 CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
                 CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
             ]).catch((e) => logger.error(e));
-
-            appContext.cosmeticsInjectedOnStartup = true;
 
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.cosmeticResult) {
