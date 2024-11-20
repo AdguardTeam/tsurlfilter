@@ -33,6 +33,12 @@ export class AppContext {
      */
     @sessionDecorator(SessionStorageKey.StartTimeMs)
     accessor startTimeMs: number | undefined;
+
+    /**
+     * Flag that indicates that cosmetics were injected on startup.
+     */
+    @sessionDecorator(SessionStorageKey.CosmeticsInjectedOnStartup)
+    accessor cosmeticsInjectedOnStartup!: boolean;
 }
 
 export const appContext = new AppContext();
