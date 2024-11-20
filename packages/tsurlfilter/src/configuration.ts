@@ -1,9 +1,6 @@
-import { createRequire } from 'module';
+import * as pkgJSON from '../package.json';
 
-const require = createRequire(import.meta.url);
-const { version } = require('../package.json');
-
-export const TSURLFILTER_VERSION = version;
+export const TSURLFILTER_VERSION = pkgJSON.version;
 
 /**
  * Compatibility types are used to configure engine for better support of different libraries

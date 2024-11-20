@@ -5,7 +5,6 @@ import nodePolyfills from 'rollup-plugin-polyfill-node';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
-import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
@@ -25,6 +24,7 @@ const externalPackages = [
     'zod',
     'commander',
     'tslib',
+    'module'
 ];
 
 const externalFunction = (id: string): boolean => {
@@ -109,7 +109,7 @@ const cliConfig = {
     output: [
         {
             file: `${OUTPUT_PATH}/cli.js`,
-            format: 'cjs',
+            format: 'esm',
             sourcemap: false,
         },
     ],
@@ -123,11 +123,6 @@ const cliConfig = {
             tsconfig: 'tsconfig.build.json',
         }),
 
-        // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
-        commonjs({
-            sourceMap: false,
-        }),
-
         // Allow node_modules resolution, so you can use 'external' to control
         // which external modules to include in the bundle
         // https://github.com/rollup/rollup-plugin-node-resolve#usage
@@ -136,8 +131,6 @@ const cliConfig = {
         cleanup({
             comments: ['srcmaps'],
         }),
-
-        preserveShebangs(),
     ],
 
     watch: {

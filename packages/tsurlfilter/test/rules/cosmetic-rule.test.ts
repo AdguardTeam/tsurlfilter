@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
 import { type Source } from '@adguard/scriptlets';
 import { CosmeticRuleType } from '@adguard/agtree';
+import { jest } from '@jest/globals';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';

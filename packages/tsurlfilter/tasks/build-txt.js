@@ -1,20 +1,25 @@
 /* eslint-disable @typescript-eslint/no-var-requires,@typescript-eslint/explicit-function-return-type */
-const fs = require('fs');
-const path = require('path');
+import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+
+const require = createRequire(import.meta.url);
 const { version } = require('../package.json');
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const PATH = '../dist';
 const FILENAME = 'build.txt';
 
 const main = () => {
     const content = `version=${version}`;
-    const dir = path.resolve(__dirname, PATH);
+    const dir = resolve(__dirname, PATH);
 
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir);
+    if (!existsSync(dir)) {
+        mkdirSync(dir);
     }
 
-    fs.writeFileSync(path.resolve(__dirname, PATH, FILENAME), content);
+    writeFileSync(resolve(__dirname, PATH, FILENAME), content);
 };
 
 main();

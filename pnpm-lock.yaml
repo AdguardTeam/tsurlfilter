@@ -1050,6 +1050,9 @@ importers:
         specifier: 3.21.4
         version: 3.21.4
     devDependencies:
+      '@jest/globals':
+        specifier: ^29.7.0
+        version: 29.7.0
       '@rollup/plugin-alias':
         specifier: ^5.1.1
         version: 5.1.1(rollup@4.24.3)
@@ -1155,9 +1158,6 @@ importers:
       rollup-plugin-polyfill-node:
         specifier: ^0.13.0
         version: 0.13.0(rollup@4.24.3)
-      rollup-plugin-preserve-shebangs:
-        specifier: ^0.2.0
-        version: 0.2.0(rollup@4.24.3)
       tldts-core:
         specifier: ^6.1.13
         version: 6.1.13
@@ -17476,15 +17476,6 @@ packages:
     dependencies:
       magic-string: 0.25.9
       rollup: 3.29.4
-    dev: true
-
-  /rollup-plugin-preserve-shebangs@0.2.0(rollup@4.24.3):
-    resolution: {integrity: sha512-OEyTIfZwUJ7yUAVAbegac/bNvp1WJzgZcQNCFprWX42wwwOqlJwrev9lUmzZdYVgCWct+03xUPvZg4RfgkM9oQ==}
-    peerDependencies:
-      rollup: '*'
-    dependencies:
-      magic-string: 0.25.9
-      rollup: 4.24.3
     dev: true
 
   /rollup-pluginutils@2.8.2:

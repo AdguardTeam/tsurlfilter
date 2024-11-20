@@ -57,7 +57,7 @@ export class Engine {
         this.ruleStorage = ruleStorage;
         this.networkEngine = new NetworkEngine(ruleStorage, skipStorageScan);
         this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);
-        this.resultCache = new LRUMap<string, MatchingResult>(Engine.REQUEST_CACHE_SIZE);
+        this.resultCache = new LRUMap(Engine.REQUEST_CACHE_SIZE);
     }
 
     /**
