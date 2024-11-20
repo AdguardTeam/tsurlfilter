@@ -8,11 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
 
-## [2.0.7] - 2024-11-19
+## [2.0.7] - 2024-11-20
 
 ### Fixed
 
-- Memory leak caused by multiple script injections on the same pages after a service worker or event page restart [AdguardBrowserExtension#2594].
+- Memory leak caused by multiple script injections on the same pages
+  after an event page in Firefox restarts in MV2 [AdguardBrowserExtension#2594].
 
 [AdguardBrowserExtension#2594]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594
 
