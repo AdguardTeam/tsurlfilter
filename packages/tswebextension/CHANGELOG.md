@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
 
+## [2.0.7] - 2024-11-20
+
+### Fixed
+
+- Memory leak caused by multiple script injections on the same pages
+  after an event page in Firefox restarts in MV2 [AdguardBrowserExtension#2594].
+
+[2.0.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.7
+
 ## [2.4.0-alpha.7] - 2024-11-20
 
 ### Fixed
@@ -27,6 +36,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [2.4.0-alpha.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.6
 [AdguardBrowserExtension#2594]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594
+
+## [2.0.6] - 2024-11-19
+
+- Updated `@adguard/tsurlfilter` to `v3.0.7`.
+
+[2.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.6
+
+## [2.0.5] - 2024-11-02
+
+### Changed
+
+- Updated `@adguard/agtree` to `v2.1.3`.
+- Updated `@adguard/tsurlfilter` to `v3.0.6`.
+
+[2.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.5
 
 ## [2.4.0-alpha.6] - 2024-10-18
 
@@ -55,6 +79,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Correct export of `EXTENDED_CSS_VERSION` for MV3 version.
 
 [2.4.0-alpha.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.4
+
+## [2.0.4] - 2024-10-16
+
+### Fixed
+
+- Not unique `eventId` on `ApplyPermissionsRule` filtering log events.
+
+[2.0.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.4
 
 ## [2.4.0-alpha.3] - 2024-10-09
 

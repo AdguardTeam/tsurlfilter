@@ -20,7 +20,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
 
 [AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
+
+## [3.0.7] - 2024-11-19
+
+### Fixed
+
+- `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
+
 [AdguardBrowserExtension#3015]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3015
+[3.0.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.7
+
+## [3.0.6] - 2024-11-02
+
+### Changed
+
+- Updated `@adguard/agtree` to `v2.1.3`.
+
+[3.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.6
 
 ## [3.1.0-alpha.7] - 2024-10-16
 
