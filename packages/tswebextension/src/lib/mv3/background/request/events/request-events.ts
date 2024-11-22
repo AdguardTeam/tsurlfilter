@@ -18,11 +18,22 @@ type ChromiumBrowser = typeof browser & {
     }
 };
 
-type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
+export enum DocumentLifecycle {
+    prerender = 'prerender',
+    active = 'active',
+    cached = 'cached',
+    pending_deletion = 'pending_deletion',
+}
+
+export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
     /**
      * The UUID of the document making the request.
      */
     documentId?: string;
+    /**
+     *  The document lifecycle of the frame.
+     */
+    documentLifecycle?: DocumentLifecycle
 };
 
 /**
@@ -157,6 +168,7 @@ export class RequestEvents {
             requestId,
             type,
             tabId,
+            documentLifecycle,
             parentFrameId,
             originUrl,
             initiator,
@@ -187,6 +199,7 @@ export class RequestEvents {
         const { requestType, contentType } = getRequestType(type);
 
         const isDocumentRequest = requestType === RequestType.Document;
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.prerender;
 
         // Pre-rendered documents can have a frame ID other than zero
         frameId = isDocumentRequest ? MAIN_FRAME_ID : frameId;
@@ -210,13 +223,21 @@ export class RequestEvents {
             tabId,
         };
 
-        const referrerUrl = originUrl
+        // We rely on browser-provided values as the source of truth
+        let referrerUrl = originUrl
             || initiator
+            || '';
+
+        // When the request is not a prerender and referrerUrl is missing,
+        // we obtain the referrerUrl from the current tab
+        // to accurately determine if the request is third-party.
+        if (!referrerUrl && isPrerenderRequest) {
             // Comparison of the requested url with the tab frame url in case of
             // a navigation change from the browser address bar.
-            || tabsApi.getTabMainFrame(tabId)?.url
+            referrerUrl = tabsApi.getTabMainFrame(tabId)?.url
             || tabsApi.getTabFrame(tabId, requestFrameId)?.url
             || url;
+        }
 
         // Retrieve the rest part of the request context for record all fields.
         const context = {
@@ -224,7 +245,8 @@ export class RequestEvents {
             eventId: nanoid(),
             state: RequestContextState.BeforeRequest,
             timestamp: timeStamp,
-            thirdParty: isThirdPartyRequest(url, referrerUrl),
+            // Prerender requests are considered first-party
+            thirdParty: isPrerenderRequest ? false : isThirdPartyRequest(url, referrerUrl),
             referrerUrl,
             contentType,
             method: method as HTTPMethod,

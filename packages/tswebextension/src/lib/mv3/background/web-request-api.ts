@@ -145,7 +145,11 @@ import {
     isExtensionUrl,
     isHttpOrWsRequest,
 } from '../../common/utils/url';
-import { RequestEvents } from './request/events/request-events';
+import {
+    RequestEvents,
+    DocumentLifecycle,
+    type OnBeforeRequestDetailsType,
+} from './request/events/request-events';
 import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { engineApi } from './engine-api';
@@ -239,11 +243,12 @@ export class WebRequestApi {
     /**
      * On before request event handler. This is the earliest event in the chain of the web request events.
      *
-     * @param details Request details.
-     * @param details.context Request context.
+     * @param requestData - Object containing request context and details.
+     * @param requestData.context - Request context.
+     * @param requestData.details - Details of the web request.
      */
     private static onBeforeRequest(
-        { context }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
+        { context, details }: RequestData<OnBeforeRequestDetailsType>,
     ): void {
         if (!context) {
             return;
@@ -299,7 +304,7 @@ export class WebRequestApi {
         let frameRule;
         if (requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(referrerUrl);
-        } else {
+        } else if (details.documentLifecycle !== DocumentLifecycle.prerender) {
             frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
