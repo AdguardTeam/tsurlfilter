@@ -18,7 +18,7 @@ export class UnavailableRuleSetSourceError extends Error {
     ) {
         super(message, { cause });
 
-        this.name = 'UnavailableRuleSetSourceError';
+        this.name = this.constructor.name;
         this.ruleSetId = ruleSetId;
 
         // For proper work of the "instanceof" operator

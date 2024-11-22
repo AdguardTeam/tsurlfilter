@@ -21,11 +21,9 @@ export class TooManyRegexpRulesError extends Error {
      * Describes an error when the maximum number of regexp rules is reached.
      *
      * @param message Message of error.
-     * @param excludedRulesIds List of excluded source (important!)
-     * {@link Source} rules ids.
+     * @param excludedRulesIds List of excluded source (important!) {@link Source} rules ids.
      * @param numberOfMaximumRules Number of maximum rules.
-     * @param numberOfExcludedDeclarativeRules Number of excluded declarative
-     * rules.
+     * @param numberOfExcludedDeclarativeRules Number of excluded declarative rules.
      */
     constructor(
         message: string,
@@ -35,7 +33,7 @@ export class TooManyRegexpRulesError extends Error {
     ) {
         super(message);
 
-        this.name = 'TooManyRegexpRulesError';
+        this.name = this.constructor.name;
         this.excludedRulesIds = excludedRulesIds;
         this.numberOfMaximumRules = numberOfMaximumRules;
         this.numberOfExcludedDeclarativeRules = numberOfExcludedDeclarativeRules;

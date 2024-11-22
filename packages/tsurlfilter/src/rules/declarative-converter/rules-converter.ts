@@ -90,7 +90,7 @@
  */
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
-import type { DeclarativeRule } from './declarative-rule';
+import { RuleActionType, type DeclarativeRule } from './declarative-rule';
 import { type ConvertedRules } from './converted-result';
 import { RegularRulesConverter } from './grouped-rules-converters/regular-converter';
 import { RemoveParamRulesConverter } from './grouped-rules-converters/remove-param-converter';
@@ -98,7 +98,12 @@ import { RemoveHeaderRulesConverter } from './grouped-rules-converters/remove-he
 import { CspRulesConverter } from './grouped-rules-converters/csp-converter';
 import { type Source } from './source-map';
 import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
-import { type LimitationError, TooManyRulesError, TooManyRegexpRulesError } from './errors/limitation-errors';
+import {
+    type LimitationError,
+    TooManyRulesError,
+    TooManyRegexpRulesError,
+    TooManyUnsafeRulesError,
+} from './errors/limitation-errors';
 import { BadFilterRulesConverter } from './grouped-rules-converters/bad-filter-converter';
 import { DeclarativeRulesGrouper, type GroupedRules, RulesGroup } from './rules-grouper';
 import { type DeclarativeConverterOptions } from './declarative-converter-options';
@@ -116,6 +121,18 @@ export class DeclarativeRulesConverter {
      * The declarative identifier of a rule must be a natural number.
      */
     static readonly START_DECLARATIVE_RULE_ID = 1;
+
+    /**
+     * List of declarative rule actions which are considered safe.
+     *
+     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#safe_rules}
+     */
+    static readonly SAFE_RULE_ACTIONS: ReadonlySet<RuleActionType> = new Set([
+        RuleActionType.BLOCK,
+        RuleActionType.ALLOW,
+        RuleActionType.ALLOW_ALL_REQUESTS,
+        RuleActionType.UPGRADE_SCHEME,
+    ]);
 
     /**
      * Describes for which group of rules which converter should be used.
@@ -182,6 +199,7 @@ export class DeclarativeRulesConverter {
         converted = this.checkLimitations(
             converted,
             options?.maxNumberOfRules,
+            options?.maxNumberOfUnsafeRules,
             options?.maxNumberOfRegexpRules,
         );
 
@@ -255,11 +273,64 @@ export class DeclarativeRulesConverter {
     }
 
     /**
+     * Checks whether the declarative rule is safe.
+     *
+     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#safe_rules}
+     *
+     * @param rule Declarative rule to check.
+     *
+     * @returns True if the rule is safe, otherwise false.
+     */
+    public static isSafeRule(rule: DeclarativeRule): boolean {
+        return this.SAFE_RULE_ACTIONS.has(rule.action.type);
+    }
+
+    /**
+     * Checks whether the declarative rule is regex.
+     *
+     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-regexFilter}
+     *
+     * @param rule Declarative rule to check.
+     *
+     * @returns True if the rule is regex, otherwise false.
+     */
+    public static isRegexRule(rule: DeclarativeRule): boolean {
+        return rule.condition.regexFilter !== undefined;
+    }
+
+    /**
+     * Removes sources and errors associated with a truncated rule.
+     *
+     * @param ruleId The ID of the truncated rule.
+     * @param sourcesIndex The index of sources.
+     * @param errorsIndex The index of errors.
+     * @param excludedRulesIds The list of excluded rule IDs.
+     */
+    private static removeTruncatedRuleSourcesAndErrors(
+        ruleId: number,
+        sourcesIndex: Map<number, Source[]>,
+        errorsIndex: Map<number, ConversionError[]>,
+        excludedRulesIds: number[],
+    ): void {
+        // Removing a source for a truncated rule
+        const sources = sourcesIndex.get(ruleId) || [];
+        const sourcesRulesIds = sources.map(({ sourceRuleIndex }) => sourceRuleIndex);
+        sourcesIndex.set(ruleId, []);
+
+        // Removing an error for a truncated rule
+        errorsIndex.set(ruleId, []);
+
+        // Note: be sure, that sourceRulesIds are not too much to overflow stack.
+        excludedRulesIds.push(...sourcesRulesIds);
+    }
+
+    /**
      * Check that declarative rules matches the specified constraints and
      * cuts rules if needed as from list also from source map.
      *
      * @param converted Converted rules, errors, sourcemap and counters.
      * @param maxNumberOfRules Maximum number of converted rules.
+     * @param maxNumberOfUnsafeRules Maximum number of converted unsafe rules.
      * @param maxNumberOfRegexpRules Maximum number of converted regexp rules.
      *
      * @returns Transformed converted rules with modified (if abbreviated)
@@ -268,6 +339,7 @@ export class DeclarativeRulesConverter {
     private static checkLimitations(
         converted: ConvertedRules,
         maxNumberOfRules?: number,
+        maxNumberOfUnsafeRules?: number,
         maxNumberOfRegexpRules?: number,
     ): ConvertedRules {
         const limitations: LimitationError[] = [];
@@ -319,40 +391,72 @@ export class DeclarativeRulesConverter {
         });
 
         // Checks and, if necessary, trims the maximum number of rules
-        if (maxNumberOfRules && declarativeRules.length > maxNumberOfRules) {
+        if (maxNumberOfRules && declarativeRules.length > 0) {
             const filteredRules: DeclarativeRule[] = [];
             const excludedRulesIds: number[] = [];
 
+            let unsafeRulesCounter = 0;
+
             for (let i = 0; i < declarativeRules.length; i += 1) {
                 const rule = declarativeRules[i];
+
+                if (maxNumberOfUnsafeRules && !this.isSafeRule(rule)) {
+                    unsafeRulesCounter += 1;
+
+                    if (unsafeRulesCounter > maxNumberOfUnsafeRules) {
+                        this.removeTruncatedRuleSourcesAndErrors(
+                            rule.id,
+                            sourcesIndex,
+                            convertedRulesErrorsIndex,
+                            excludedRulesIds,
+                        );
+
+                        continue;
+                    }
+                }
 
                 if (i < maxNumberOfRules) {
                     filteredRules.push(rule);
                     continue;
                 }
 
-                // Removing an source for a truncated rule
-                const sources = sourcesIndex.get(rule.id) || [];
-                const sourcesRulesIds = sources.map(({ sourceRuleIndex }) => sourceRuleIndex);
-                sourcesIndex.set(rule.id, []);
-
-                // Removing an error for a truncated rule
-                convertedRulesErrorsIndex.set(rule.id, []);
-
-                // Note: be sure, that sourceRulesIds are not too much to overflow stack.
-                excludedRulesIds.push(...sourcesRulesIds);
+                this.removeTruncatedRuleSourcesAndErrors(
+                    rule.id,
+                    sourcesIndex,
+                    convertedRulesErrorsIndex,
+                    excludedRulesIds,
+                );
             }
 
-            const msg = 'After conversion, too many declarative rules remain: '
-                + `${declarativeRules.length} exceeds `
-                + `the limit provided - ${maxNumberOfRules}`;
-            const err = new TooManyRulesError(
-                msg,
-                excludedRulesIds,
-                maxNumberOfRules,
-                declarativeRules.length - maxNumberOfRules,
-            );
-            limitations.push(err);
+            if (
+                maxNumberOfUnsafeRules
+                && unsafeRulesCounter > maxNumberOfUnsafeRules
+            ) {
+                const msg = 'After conversion, too many unsafe rules remain: '
+                    + `${unsafeRulesCounter} exceeds `
+                    + `the limit provided - ${maxNumberOfUnsafeRules}`;
+                const err = new TooManyUnsafeRulesError(
+                    msg,
+                    excludedRulesIds,
+                    maxNumberOfUnsafeRules,
+                    unsafeRulesCounter - maxNumberOfUnsafeRules,
+                );
+                limitations.push(err);
+            }
+
+            if (declarativeRules.length > maxNumberOfRules) {
+                const msg = 'After conversion, too many declarative rules remain: '
+                    + `${declarativeRules.length} exceeds `
+                    + `the limit provided - ${maxNumberOfRules}`;
+                const err = new TooManyRulesError(
+                    msg,
+                    excludedRulesIds,
+                    maxNumberOfRules,
+                    declarativeRules.length - maxNumberOfRules,
+                );
+
+                limitations.push(err);
+            }
 
             declarativeRules = filteredRules;
         }
@@ -365,22 +469,17 @@ export class DeclarativeRulesConverter {
 
             for (let i = 0; i < declarativeRules.length; i += 1) {
                 const rule = declarativeRules[i];
-                const isRegexp = rule.condition.regexFilter !== undefined;
 
-                if (isRegexp) {
+                if (this.isRegexRule(rule)) {
                     regexpRulesCounter += 1;
 
                     if (regexpRulesCounter > maxNumberOfRegexpRules) {
-                        // Removing an source for a truncated rule
-                        const sources = sourcesIndex.get(rule.id) || [];
-                        const sourcesRulesIds = sources.map(({ sourceRuleIndex }) => sourceRuleIndex);
-                        sourcesIndex.set(rule.id, []);
-
-                        // Removing an error for a truncated rule
-                        convertedRulesErrorsIndex.set(rule.id, []);
-
-                        // Note: be sure, that sourceRulesIds are not too much to overflow stack.
-                        excludedRulesIds.push(...sourcesRulesIds);
+                        this.removeTruncatedRuleSourcesAndErrors(
+                            rule.id,
+                            sourcesIndex,
+                            convertedRulesErrorsIndex,
+                            excludedRulesIds,
+                        );
 
                         continue;
                     }

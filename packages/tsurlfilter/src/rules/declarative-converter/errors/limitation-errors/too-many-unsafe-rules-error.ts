@@ -1,7 +1,7 @@
 /**
- * Describes an error when the maximum number of rules is reached.
+ * Describes an error when the maximum number of unsafe rules is reached.
  */
-export class TooManyRulesError extends Error {
+export class TooManyUnsafeRulesError extends Error {
     /**
      * List of excluded source (important!) {@link Source} rules ids.
      */
@@ -18,7 +18,7 @@ export class TooManyRulesError extends Error {
     numberOfExcludedDeclarativeRules: number;
 
     /**
-     * Describes an error when the maximum number of rules is reached.
+     * Describes an error when the maximum number of unsafe rules is reached.
      *
      * @param message Message of error.
      * @param excludedRulesIds List of excluded source (important!) {@link Source} rules ids.
@@ -39,6 +39,6 @@ export class TooManyRulesError extends Error {
         this.numberOfExcludedDeclarativeRules = numberOfExcludedDeclarativeRules;
 
         // For proper work of the "instanceof" operator
-        Object.setPrototypeOf(this, TooManyRulesError.prototype);
+        Object.setPrototypeOf(this, TooManyUnsafeRulesError.prototype);
     }
 }
