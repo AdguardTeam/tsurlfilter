@@ -1,6 +1,6 @@
 {
   "name": "@adguard/api-mv3",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "This is a TypeScript library that implements AdGuard's extension API for MV3",
   "main": "dist/adguard-api.js",
   "files": [
@@ -37,7 +37,7 @@
   "license": "GPL-3.0-only",
   "dependencies": {
     "@adguard/logger": "1.1.0",
-    "@adguard/tswebextension": "2.4.0-alpha.5",
+    "@adguard/tswebextension": "2.4.0-alpha.7",
     "zod": "3.22.4"
   },
   "devDependencies": {
