@@ -31,6 +31,8 @@ export class TabsCosmeticInjector {
                 logger.error('[tswebextension.processOpenTabs]: cannot inject cosmetic to open tab: ', promise.reason);
             }
         });
+
+        appContext.cosmeticsInjectedOnStartup = true;
     }
 
     /**
@@ -102,8 +104,6 @@ export class TabsCosmeticInjector {
                 CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
                 CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
             ]).catch((e) => logger.error(e));
-
-            appContext.cosmeticsInjectedOnStartup = true;
 
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.cosmeticResult) {
