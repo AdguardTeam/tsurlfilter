@@ -285,6 +285,7 @@ export class WebRequestApi {
             });
         }
 
+        // Fixme: Should we log a prerender requests or not?
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.SendRequest,
             data: {
