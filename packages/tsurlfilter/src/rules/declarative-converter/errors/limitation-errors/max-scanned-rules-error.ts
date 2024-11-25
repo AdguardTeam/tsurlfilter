@@ -19,7 +19,7 @@ export class MaxScannedRulesError extends Error {
     constructor(message: string, lineIndex: number) {
         super(message);
 
-        this.name = 'MaxScannedRulesError';
+        this.name = this.constructor.name;
         this.lineIndex = lineIndex;
 
         // For proper work of the "instanceof" operator
