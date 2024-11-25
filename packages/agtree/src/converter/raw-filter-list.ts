@@ -51,6 +51,6 @@ export class RawFilterListConverter extends ConverterBase {
         }
 
         // Otherwise, serialize the filter list and return the result
-        return createConversionResult(FilterListParser.generate(conversionResult.result), true);
+        return createConversionResult(FilterListParser.generate(conversionResult.result, false, tolerant), true);
     }
 }

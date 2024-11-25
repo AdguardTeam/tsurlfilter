@@ -81,8 +81,14 @@ export class RuleFactory {
                     return null;
             }
         } catch (e) {
-            const ruleText = RuleParser.generate(node);
-            const msg = `"${getErrorMessage(e)}" in the rule: "${ruleText}"`;
+            let msg = `"${getErrorMessage(e)}" in the rule: `;
+
+            try {
+                msg += `"${RuleParser.generate(node)}"`;
+            } catch (generateError) {
+                msg += `"${JSON.stringify(node)}" (generate error: ${getErrorMessage(generateError)})`;
+            }
+
             if (silent) {
                 logger.info(`Error: ${msg}`);
             } else {

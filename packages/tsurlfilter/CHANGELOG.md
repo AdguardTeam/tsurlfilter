@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## [3.0.8] - 2024-11-25
+
+### Changed
+
+- Error throwing for empty modifier list in network rules.
+- Updated `@adguard/agtree` to `v2.1.4`.
+
+### Fixed
+
+- Handling missing children data in the deserializer for certain nodes.
+
+[3.0.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.8
+
 ## [3.0.7] - 2024-11-19
 
 ### Fixed

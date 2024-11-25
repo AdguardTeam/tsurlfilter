@@ -872,6 +872,18 @@ describe('NetworkRuleParser', () => {
         );
     });
 
+    describe('empty modifiers should throw errors', () => {
+        test.each([
+            '||example.com$',
+            '||example.com$ ',
+            '||example.com^$  ',
+        ])('should throw error for empty modifiers in "%s"', (input) => {
+            expect(() => NetworkRuleParser.parse(input)).toThrowError(
+                'Empty modifiers are not allowed',
+            );
+        });
+    });
+
     describe('parser options should work as expected', () => {
         // TODO: Add template for test.each
         test.each([
@@ -939,7 +951,6 @@ describe('NetworkRuleParser', () => {
         expect(parseAndGenerate('||example.com')).toEqual('||example.com');
         expect(parseAndGenerate('@@||example.com')).toEqual('@@||example.com');
         expect(parseAndGenerate('||example.com$third-party')).toEqual('||example.com$third-party');
-        expect(parseAndGenerate('||example.com$')).toEqual('||example.com');
         expect(parseAndGenerate('/regex-pattern/')).toEqual('/regex-pattern/');
         expect(parseAndGenerate('/regex-pattern/$script')).toEqual('/regex-pattern/$script');
         expect(parseAndGenerate('@@/regex-pattern/$script')).toEqual('@@/regex-pattern/$script');
@@ -966,6 +977,7 @@ describe('NetworkRuleParser', () => {
             '@@||example.com^$script,third-party',
             '/ads.js^$script',
             '@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i',
+            '||example.com^', // without modificators
         ])("should serialize and deserialize '%p'", async (input) => {
             await expect(input).toBeSerializedAndDeserializedProperly(NetworkRuleParser);
         });
