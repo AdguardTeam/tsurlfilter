@@ -285,27 +285,31 @@ export class WebRequestApi {
             });
         }
 
-        // Fixme: Should we log a prerender requests or not?
-        defaultFilteringLog.publishEvent({
-            type: FilteringEventType.SendRequest,
-            data: {
-                tabId,
-                eventId,
-                requestUrl,
-                requestDomain: getDomain(requestUrl),
-                frameUrl: referrerUrl,
-                frameDomain: getDomain(referrerUrl),
-                requestType: contentType,
-                timestamp,
-                requestThirdParty: thirdParty,
-                method,
-            },
-        });
+        // Check if the request is visible to the user (not in prerender phase)
+        const isVisibleRequest = details.documentLifecycle !== DocumentLifecycle.prerender;
+
+        if (isVisibleRequest) {
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.SendRequest,
+                data: {
+                    tabId,
+                    eventId,
+                    requestUrl,
+                    requestDomain: getDomain(requestUrl),
+                    frameUrl: referrerUrl,
+                    frameDomain: getDomain(referrerUrl),
+                    requestType: contentType,
+                    timestamp,
+                    requestThirdParty: thirdParty,
+                    method,
+                },
+            });
+        }
 
         let frameRule;
         if (requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(referrerUrl);
-        } else if (details.documentLifecycle !== DocumentLifecycle.prerender) {
+        } else if (isVisibleRequest) {
             frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
