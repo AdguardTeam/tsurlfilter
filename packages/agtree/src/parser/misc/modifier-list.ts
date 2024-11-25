@@ -126,6 +126,9 @@ export class ModifierListParser extends ParserBase {
         buffer.writeUint8(BinaryTypeMap.ModifierListNode);
 
         const count = node.children.length;
+        // If there are no children, we do not write any data related to them, to avoid using unnecessary storage,
+        // but children is a required field, so during deserialization we should initialize it as an empty array,
+        // if there are no children in the binary data.
         if (count) {
             buffer.writeUint8(ModifierListNodeSerializationMap.Children);
             // note: we store the count, because re-construction of the array is faster if we know the length
@@ -187,6 +190,11 @@ export class ModifierListParser extends ParserBase {
                     throw new Error(`Invalid property: ${prop}.`);
             }
             prop = buffer.readUint8();
+        }
+        // Maybe children are not present in the binary data,
+        // in this case, we should initialize it as an empty array.
+        if (!node.children) {
+            node.children = [];
         }
     }
 }
