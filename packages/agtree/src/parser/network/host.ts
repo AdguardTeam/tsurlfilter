@@ -235,6 +235,9 @@ export class HostRuleParser extends ParserBase {
         }
 
         const count = node.children.length;
+        // If there are no children, we do not write any data related to them, to avoid using unnecessary storage,
+        // but children is a required field, so during deserialization we should initialize it as an empty array,
+        // if there are no children in the binary data.
         if (count) {
             // note: we store the count, because re-construction of the array is faster if we know the length
             if (count > UINT16_MAX) {
@@ -285,6 +288,11 @@ export class HostRuleParser extends ParserBase {
             }
 
             prop = buffer.readUint8();
+        }
+        // Maybe children are not present in the binary data,
+        // in this case, we should initialize it as an empty array.
+        if (!node.children) {
+            node.children = [];
         }
     }
 
