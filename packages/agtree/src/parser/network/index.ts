@@ -105,11 +105,22 @@ export class NetworkRuleParser extends ParserBase {
         // Parse modifiers (if any)
         let modifiers: ModifierList | undefined;
 
+        // Get a last non-whitespace index
+        const lastNonWsIndex = StringUtils.skipWSBack(raw);
+
         // Find start and end index of the modifiers
         const modifiersStart = separatorIndex + 1;
-        const modifiersEnd = StringUtils.skipWSBack(raw) + 1;
+        const modifiersEnd = lastNonWsIndex + 1;
 
         if (separatorIndex !== -1) {
+            // Check for empty modifiers
+            if (separatorIndex === lastNonWsIndex) {
+                throw new AdblockSyntaxError(
+                    'Empty modifiers are not allowed',
+                    baseOffset + separatorIndex,
+                    baseOffset + raw.length,
+                );
+            }
             modifiers = ModifierListParser.parse(
                 raw.slice(modifiersStart, modifiersEnd),
                 options,

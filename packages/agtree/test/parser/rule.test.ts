@@ -892,6 +892,20 @@ describe('RuleParser', () => {
                     15,
                 ),
             },
+            {
+                options: {
+                    ...defaultParserOptions,
+                    // throw on invalid rules
+                    tolerant: false,
+                },
+                // missing closing parenthesis - the rule is invalid
+                actual: '||example.com^$',
+                expected: new AdblockSyntaxError(
+                    'Empty modifiers are not allowed',
+                    14,
+                    15,
+                ),
+            },
         ])('parser options should work for $actual', ({ options, actual, expected }) => {
             const fn = jest.fn(() => RuleParser.parse(actual, options));
 
