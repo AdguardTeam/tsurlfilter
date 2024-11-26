@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.0-alpha.7] - 2024-11-19
+## [2.4.0-alpha.7] - 2024-11-26
 
 ### Added
 
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This feature allows retrieving only specific parts of the ruleset `.json` file, saving memory
   and improving performance.
 - Renamed export `RULE_SET_NAME_PREFIX` to `RULESET_NAME_PREFIX`.
-- Updated [@adguard/agtree] to `v2.1.3`.
+- Updated [@adguard/agtree] to `v2.1.4`.
 
 ### Fixed
 
