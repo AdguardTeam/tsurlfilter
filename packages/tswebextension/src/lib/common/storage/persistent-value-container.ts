@@ -26,8 +26,7 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
 
     #value!: Value;
 
-    // TODO: make required after the migration to event-driven background.
-    #save?: () => void;
+    #save!: () => void;
 
     #isInitialized = false;
 
@@ -46,12 +45,14 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
         this.#key = key;
         this.#storage = storage;
 
-        // If background is not persistent, use debounce for saving
-        if (!PersistentValueContainer.#IS_BACKGROUND_PERSISTENT) {
-            this.#save = debounce(() => {
-                this.#storage.set(this.#key, this.#value); // Save the value to storage asynchronously
+        // Configure the #save method to decide dynamically between debounce or direct call
+        this.#save = PersistentValueContainer.#IS_BACKGROUND_PERSISTENT
+            ? (): void => {
+                this.#storage.set(this.#key, this.#value); // Save directly
+            }
+            : debounce(() => {
+                this.#storage.set(this.#key, this.#value); // Save using debounce
             }, debounceMs);
-        }
     }
 
     /**
@@ -95,11 +96,7 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
         this.#checkIsInitialized();
         this.#value = value;
 
-        if (this.#save) {
-            this.#save(); // Save using debounce
-        } else {
-            this.#storage.set(this.#key, this.#value); // Save directly if no debounce is needed
-        }
+        this.#save();
     }
 
     /**
