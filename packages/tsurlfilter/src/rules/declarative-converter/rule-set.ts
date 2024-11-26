@@ -99,13 +99,6 @@ export interface IRuleSet {
     getUnsafeRulesCount(): number;
 
     /**
-     * Number of converted declarative unsafe rules.
-     *
-     * @returns Number of converted declarative unsafe rules.
-     */
-    getUnsafeRulesCount(): number;
-
-    /**
      * Number of converted declarative regexp rules.
      *
      * @returns Number of converted declarative regexp rules.
