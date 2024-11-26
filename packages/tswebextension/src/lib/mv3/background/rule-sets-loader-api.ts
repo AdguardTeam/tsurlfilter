@@ -114,9 +114,9 @@ export class RuleSetsLoaderApi {
      * e.g. `123` -> `ruleset_123` or `foo` -> `ruleset_foo`.
      */
     private getRuleSetPath(ruleSetId: string | number): string {
-        const ruleSetIdStr = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
+        const ruleSetIdWithPrefix = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
 
-        return `${this.ruleSetsPath}/${ruleSetIdStr}/${ruleSetIdStr}.json`;
+        return `${this.ruleSetsPath}/${ruleSetIdWithPrefix}/${ruleSetIdWithPrefix}.json`;
     }
 
     /**
@@ -133,9 +133,9 @@ export class RuleSetsLoaderApi {
             await this.initialize();
         }
 
-        const ruleSetIdStr = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
+        const ruleSetIdWithPrefix = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
 
-        return RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]?.getChecksum(ruleSetIdStr);
+        return RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]?.getChecksum(ruleSetIdWithPrefix);
     }
 
     /**
