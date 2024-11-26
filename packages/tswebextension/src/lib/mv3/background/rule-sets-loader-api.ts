@@ -77,12 +77,12 @@ export class RuleSetsLoaderApi {
      */
     constructor(ruleSetsPath: string) {
         this.ruleSetsPath = ruleSetsPath;
+        this.isInitialized = false;
 
         if (RuleSetsLoaderApi.ruleSetsCachePath !== ruleSetsPath) {
             RuleSetsLoaderApi.ruleSetsCachePath = ruleSetsPath;
             RuleSetsLoaderApi.ruleSetsCache = new Map();
         }
-        this.isInitialized = false;
     }
 
     /**
