@@ -18,9 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated [@adguard/agtree] to `v2.1.3`.
+- We throw error for empty modifier list in network rules.
 
 ### Fixed
 
+- Handling missing children data in the deserializer for certain nodes.
 - URI encoded `$removeparam` value is not removed in MV3 [AdguardBrowserExtension#3014].
 - `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
 

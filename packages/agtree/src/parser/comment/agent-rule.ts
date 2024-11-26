@@ -200,6 +200,9 @@ export class AgentCommentRuleParser extends ParserBase {
         buffer.writeUint8(BinaryTypeMap.AgentRuleNode);
 
         const count = node.children.length;
+        // If there are no children, we do not write any data related to them, to avoid using unnecessary storage,
+        // but children is a required field, so during deserialization we should initialize it as an empty array,
+        // if there are no children in the binary data.
         if (count) {
             buffer.writeUint8(AgentRuleSerializationMap.Children);
 
@@ -266,6 +269,11 @@ export class AgentCommentRuleParser extends ParserBase {
             }
 
             prop = buffer.readUint8();
+        }
+        // Maybe children are not present in the binary data,
+        // in this case, we should initialize it as an empty array.
+        if (!node.children) {
+            node.children = [];
         }
     }
 }
