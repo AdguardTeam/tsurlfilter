@@ -30,14 +30,37 @@ export default class DynamicRulesApi {
     }
 
     /**
-     * The maximum number of combined dynamic and session scoped rules an extension can add.
-     * In Chrome, this limit is enforced for the combination of dynamic and session scoped rules.
-     * In Firefox, each ruleset has its own quota.
+     * The maximum number of dynamic rules (safe and unsafe) an extension can add.
      *
-     * @returns Maximum number of combined dynamic and session rules.
+     * In Chrome before v120, this limit is enforced for the combination of dynamic and session scoped rules.
+     * In Firefox and Chrome (staring v121), each ruleset has its own quota.
+     *
+     * TODO: Maybe now we can move Quick Fixes rules to session ruleset.
+     *
+     * @returns Maximum number of dynamic rules.
      */
-    private static get MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES(): number {
-        return browser.declarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES;
+    private static get MAX_NUMBER_OF_DYNAMIC_RULES(): number {
+        return browser.declarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES;
+    }
+
+    /**
+     * The maximum number of **unsafe** dynamic rules an extension can add.
+     *
+     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES}
+     *
+     * @returns Maximum number of dynamic **unsafe** rules.
+     */
+    private static get MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES(): number {
+        // TODO: remove following default value and ts-ignore comment
+        // when the value become available in webextension-polyfill
+        let num = 5000;
+        try {
+            // @ts-ignore
+            num = chrome.declarativeNetRequest.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES;
+        } catch (e) {
+            // do nothing
+        }
+        return num;
     }
 
     /**
@@ -54,7 +77,7 @@ export default class DynamicRulesApi {
      * @param allowlistRules Filter with allowlist rules.
      * @param userRules Filter with user rules.
      * @param customFilters List of custom filters.
-     * @param staticRuleSets List of enabled static rule sets to apply
+     * @param enabledStaticRuleSets List of enabled static rule sets to apply
      * $badfilter rules from dynamic rules to static.
      * @param resourcesPath String path to web accessible resources,
      * relative to the extension root dir. Should start with leading slash '/'.
@@ -71,7 +94,7 @@ export default class DynamicRulesApi {
         allowlistRules: IFilter,
         userRules: IFilter,
         customFilters: IFilter[],
-        staticRuleSets: IRuleSet[],
+        enabledStaticRuleSets: IRuleSet[],
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
@@ -83,13 +106,14 @@ export default class DynamicRulesApi {
 
         // Create filter and convert into single rule set
         const converter = new DeclarativeFilterConverter();
+
         const conversionResult = await converter.convertDynamicRuleSets(
             filterList,
-            // TODO: (AG-34651) Pass only enabled rulesets
-            staticRuleSets,
+            enabledStaticRuleSets,
             {
                 resourcesPath,
-                maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES,
+                maxNumberOfRules: DynamicRulesApi.MAX_NUMBER_OF_DYNAMIC_RULES,
+                maxNumberOfUnsafeRules: DynamicRulesApi.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES,
                 maxNumberOfRegexpRules: DynamicRulesApi.MAX_NUMBER_OF_REGEX_RULES,
             },
         );
@@ -114,7 +138,7 @@ export default class DynamicRulesApi {
             // Because in other case, when we will re-enable filter - maybe it
             // will contains already disabled rules?
             // Undoes all previously applied changes.
-            await this.cancelAllStaticRulesUpdates(staticRuleSets);
+            await this.cancelAllStaticRulesUpdates(enabledStaticRuleSets);
         }
 
         return conversionResult;

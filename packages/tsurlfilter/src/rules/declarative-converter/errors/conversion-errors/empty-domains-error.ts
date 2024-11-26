@@ -21,7 +21,7 @@ export class EmptyDomainsError extends InvalidDeclarativeRuleError {
     ) {
         super(message, networkRule, declarativeRule);
 
-        this.name = 'EmptyDomainsError';
+        this.name = this.constructor.name;
 
         // For proper work of the "instanceof" operator
         Object.setPrototypeOf(this, EmptyDomainsError.prototype);

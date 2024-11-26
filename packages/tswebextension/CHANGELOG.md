@@ -5,8 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- TODO: manually add compare links for version changes -->
-<!-- e.g. [0.1.2]: https://github.com/AdguardTeam/tsurlfilter/compare/tswebextension-v0.1.1...tswebextension-v0.1.2 -->
+## Unreleased
+
+### Changed
+
+- Updated [@adguard/agtree] to `v2.1.3`.
+
+### Fixed
+
+- A rule from a disabled filter list disables another rule [AdguardBrowserExtension#3002].
+- Matching of `companyCategoryName` for subdomains.
+
+[AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
+
+## [2.0.7] - 2024-11-20
+
+### Fixed
+
+- Memory leak caused by multiple script injections on the same pages
+  after an event page in Firefox restarts in MV2 [AdguardBrowserExtension#2594].
+
+[2.0.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.7
+
+## [2.4.0-alpha.7] - 2024-11-20
+
+### Fixed
+
+- Memory leak caused by multiple script injections on the same pages
+  after a service worker or event page restart [AdguardBrowserExtension#2594].
+
+[2.4.0-alpha.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.6
+[AdguardBrowserExtension#2594]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594
+
+## [2.0.6] - 2024-11-19
+
+- Updated `@adguard/tsurlfilter` to `v3.0.7`.
+
+[2.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.6
+
+## [2.0.5] - 2024-11-02
+
+### Changed
+
+- Updated `@adguard/agtree` to `v2.1.3`.
+- Updated `@adguard/tsurlfilter` to `v3.0.6`.
+
+[2.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.5
 
 ## Unreleased
 
@@ -39,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Allowlist determination for a new tab
+- Allowlist determination for a new tab.
 
 [2.4.0-alpha.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.5
 
@@ -54,6 +98,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Correct export of `EXTENDED_CSS_VERSION` for MV3 version.
 
 [2.4.0-alpha.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.4
+
+## [2.0.4] - 2024-10-16
+
+### Fixed
+
+- Not unique `eventId` on `ApplyPermissionsRule` filtering log events.
+
+[2.0.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.4
 
 ## [2.4.0-alpha.3] - 2024-10-09
 
@@ -138,12 +190,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Stealth Mode support for MV3. New required `gpcScriptUrl` and `hideDocumentReferrerScriptUrl` configuration properties are provided to specify the path to stealth content scripts.
+- Stealth Mode support for MV3. New required `gpcScriptUrl` and `hideDocumentReferrerScriptUrl` configuration
+  properties are provided to specify the path to stealth content scripts.
 - Content Script for setting GPC signal bundled to separate module `@adguard/tswebextension/mv3/gpc`.
-- Content Script for hiding Document Referrer bundled to separate module `@adguard/tswebextension/mv3/hideDocumentReferrer`.
+- Content Script for hiding Document Referrer bundled
+  to separate module `@adguard/tswebextension/mv3/hideDocumentReferrer`.
 - Possibility to retrieve AST for dynamically generated rules via the `retrieveDynamicRuleNode` method.
 - Support for `$cookie` modifier in MV3 via `browser.cookies` API and content-script.
-- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`, `1p-cookie` and `3p-cookie` [#100].
+- Support for disabling specific `$stealth` options: `searchqueries`, `donottrack`, `referrer`, `xclientdata`,
+  `1p-cookie` and `3p-cookie` [#100].
 - Export `EventChannel` utility class in MV3 build.
 
 ### Changed
@@ -656,8 +711,6 @@ its setting [AdguardBrowserExtension#2584].
   as filtering log events.
 - Fixed cosmetic rules injection into a cached subdocument [AdguardBrowserExtension#2420],
   [AdguardBrowserExtension#2190], [AdguardBrowserExtension#2328].
-
-<!-- FIXME: max-len -->
 
 [0.3.19]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.3.19
 [AdguardBrowserExtension#2190]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2190

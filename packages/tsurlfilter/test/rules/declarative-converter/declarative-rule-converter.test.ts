@@ -864,6 +864,33 @@ describe('DeclarativeRuleConverter', () => {
                 },
             });
         });
+
+        it('converts uri encoded params', async () => {
+            const filterId = 0;
+            const rule = '||example.com$removeparam=%24param';
+            const filter = await createScannedFilter(filterId, [rule]);
+
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toEqual({
+                id: expect.any(Number),
+                priority: 1,
+                action: {
+                    type: 'redirect',
+                    redirect: {
+                        transform: {
+                            queryTransform: {
+                                removeParams: ['$param'],
+                            },
+                        },
+                    },
+                },
+                condition: {
+                    urlFilter: '||example.com',
+                    resourceTypes: documentResourceTypes,
+                },
+            });
+        });
     });
 
     it('ignores rules with single one modifier enabled - popup', async () => {

@@ -1,6 +1,21 @@
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
+import { type WebRequest } from 'webextension-polyfill';
+
 import type { SettingsConfigMV3 } from '../configuration';
 import { searchEngineDomains } from './searchEngineDomains';
 import { logger } from '../../../common/utils/logger';
+import { type StealthConfig } from '../../../common/configuration';
+import { requestContextStorage, type RequestContext } from '../request';
+import { StealthActions } from '../../../common/stealth-actions';
+import {
+    findHeaderByName,
+    getDomain,
+    hasHeader,
+    hasHeaderByName,
+} from '../../../common/utils';
+import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
+import { appContext } from '../app-context';
 
 /**
  * Reserved stealth rule ids for the DNR.
@@ -21,6 +36,18 @@ enum StealthContentScriptId {
 }
 
 /**
+ * Extracted stealth setting from {@link SettingsConfigMV3} which can be used
+ * in MV3 and which will be returned as a result of the configuration, because
+ * during the configuration settings can because during the installation of the
+ * DNR rules, something may go wrong and the rule is not created - in this case,
+ * we will return the current configuration status unchanged.
+ */
+export type StealthConfigurationResult = Pick<
+    StealthConfig,
+    'hideReferrer' | 'blockWebRTC' | 'blockChromeClientData' | 'sendDoNotTrack' | 'hideSearchQueries'
+>;
+
+/**
  * Stealth service module.
  */
 export class StealthService {
@@ -34,6 +61,26 @@ export class StealthService {
      * Regular scope means that the setting is applied to the both incognito and regular windows.
      */
     private static readonly SETTING_SCOPE = 'regular';
+
+    /**
+     * Stealth headers.
+     */
+    private static readonly HEADERS: Record<string, WebRequest.HttpHeadersItemType> = {
+        REFERRER: {
+            name: 'Referer',
+        },
+        X_CLIENT_DATA: {
+            name: 'X-Client-Data',
+        },
+        DO_NOT_TRACK: {
+            name: 'DNT',
+            value: '1',
+        },
+        GLOBAL_PRIVACY_CONTROL: {
+            name: 'Sec-GPC',
+            value: '1',
+        },
+    };
 
     /**
      * Types of resources to apply the stealth declarative network rules.
@@ -59,10 +106,213 @@ export class StealthService {
     }
 
     /**
-     * Applies the stealth options from the settings configuration.
-     * @param settingsConfig Settings configuration.
+     * Temporary flag that used to identify is stealth allowlist implemented or not.
+     * It's used to identify should we check for allowlist rule in order
+     * to publish `StealthAllowlistAction` event.
+     *
+     * TODO: After adding stealth allowlist we should remove it.
      */
-    public static async applySettings(settingsConfig: SettingsConfigMV3): Promise<void> {
+    private static readonly IS_ALLOWLIST_IMPLEMENTED = false;
+
+    /**
+     * Temporary flag that used to identify is stealth `Hide Referrer`
+     * and `Hide Search Queries` checkboxes is presented or not.
+     *
+     * TODO: After reverting that checkboxes we should remove it (AG-34765).
+     */
+    private static readonly IS_REFERRER_CHECKBOX_PRESENT = false;
+
+    /**
+     * Applies stealth actions to request headers and publishes filtering log event.
+     *
+     * @param context Request context.
+     */
+    public static onBeforeSendHeaders(context: RequestContext): void {
+        const settings = appContext.configuration?.settings;
+
+        if (!settings || !settings.stealthModeEnabled) {
+            return;
+        }
+
+        let stealthActions = StealthActions.None;
+
+        const {
+            requestUrl,
+            requestHeaders,
+            matchingResult,
+            requestType,
+            tabId,
+            eventId,
+            referrerUrl,
+            contentType,
+            timestamp,
+            requestId,
+        } = context;
+
+        if (!requestHeaders || matchingResult?.documentRule) {
+            return;
+        }
+
+        /**
+         * Regarding stealth rule modifier, stealth options can be disabled on two occasions:
+         * - stealth modifier does not have specific values, thus disabling stealth entirely
+         * - stealth modifier has specific options to disable.
+         */
+        const stealthDisablingRule = matchingResult?.getStealthRule();
+        if (StealthService.IS_ALLOWLIST_IMPLEMENTED && stealthDisablingRule) {
+            // $stealth rule without options is not being published to the filtering log
+            // to conform with desktop application behavior
+            return;
+        }
+
+        const {
+            hideReferrer,
+            hideSearchQueries,
+            blockChromeClientData,
+            sendDoNotTrack,
+        } = settings.stealth;
+
+        const headersToRemove = new Set<string>();
+        const headersToAdd: WebRequest.HttpHeaders = [];
+
+        // Collect applied allowlist rules in a set to only publish
+        // one filtering event per applied allowlist rule
+        const appliedAllowlistRules = new Set<NetworkRule>();
+
+        // Removes `Referrer` header if present
+        if (StealthService.IS_REFERRER_CHECKBOX_PRESENT && hideReferrer) {
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.HideReferrer);
+            if (StealthService.IS_ALLOWLIST_IMPLEMENTED && disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else if (hasHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER.name)) {
+                stealthActions |= StealthActions.HideReferrer;
+                headersToRemove.add(
+                    StealthService.HEADERS.REFERRER.name.toLowerCase(),
+                );
+            }
+        }
+
+        // Removes `Referrer` header in case of search engine is referrer
+        const isMainFrame = requestType === RequestType.Document;
+        if (StealthService.IS_REFERRER_CHECKBOX_PRESENT && isMainFrame && hideSearchQueries) {
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.HideSearchQueries);
+            if (StealthService.IS_ALLOWLIST_IMPLEMENTED && disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else if (
+                hasHeaderByName(requestHeaders, StealthService.HEADERS.REFERRER.name)
+                && StealthService.isSearchEngine(requestUrl)
+            ) {
+                stealthActions |= StealthActions.HideSearchQueries;
+                headersToRemove.add(
+                    StealthService.HEADERS.REFERRER.name.toLowerCase(),
+                );
+            }
+        }
+
+        // Removes `X-Client-Data` header if present
+        if (blockChromeClientData) {
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.XClientData);
+            if (StealthService.IS_ALLOWLIST_IMPLEMENTED && disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else if (hasHeaderByName(requestHeaders, StealthService.HEADERS.X_CLIENT_DATA.name)) {
+                stealthActions |= StealthActions.BlockChromeClientData;
+                headersToRemove.add(
+                    StealthService.HEADERS.X_CLIENT_DATA.name.toLowerCase(),
+                );
+            }
+        }
+
+        // Adds `Do-Not-Track (DNT)` and `Global-Privacy-Control (Sec-GPC)` headers if not present
+        if (sendDoNotTrack) {
+            const disablingRule = matchingResult?.getStealthRule(StealthOptionName.DoNotTrack);
+            if (StealthService.IS_ALLOWLIST_IMPLEMENTED && disablingRule) {
+                appliedAllowlistRules.add(disablingRule);
+            } else {
+                let headerAdded = false;
+
+                if (!hasHeader(requestHeaders, StealthService.HEADERS.DO_NOT_TRACK)) {
+                    headersToAdd.push(StealthService.HEADERS.DO_NOT_TRACK);
+                    headerAdded = true;
+                }
+
+                if (!hasHeader(requestHeaders, StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL)) {
+                    headersToAdd.push(StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL);
+                    headerAdded = true;
+                }
+
+                if (headerAdded) {
+                    stealthActions |= StealthActions.SendDoNotTrack;
+                }
+            }
+        }
+
+        // Removing headers
+        let newRequestHeaders = requestHeaders;
+        if (headersToRemove.size > 0) {
+            newRequestHeaders = requestHeaders.filter((header) => {
+                return !headersToRemove.has(header.name.toLowerCase());
+            });
+        }
+
+        // Adding headers
+        for (const header of headersToAdd) {
+            const foundHeader = findHeaderByName(newRequestHeaders, header.name);
+            if (foundHeader) {
+                foundHeader.value = header.value;
+            } else {
+                newRequestHeaders.push(header);
+            }
+        }
+
+        requestContextStorage.update(requestId, {
+            requestHeaders: newRequestHeaders,
+        });
+
+        if (appliedAllowlistRules.size > 0) {
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.StealthAllowlistAction,
+                data: {
+                    tabId,
+                    eventId,
+                    rules: Array.from(appliedAllowlistRules).map((rule) => ({
+                        filterId: rule.getFilterListId(),
+                        ruleIndex: rule.getIndex(),
+                        isAllowlist: rule.isAllowlist(),
+                        isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                        isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                        isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                        isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                        advancedModifier: rule.getAdvancedModifierValue(),
+                    })),
+                    requestUrl,
+                    frameUrl: referrerUrl,
+                    requestType: contentType,
+                    timestamp,
+                },
+            });
+        }
+
+        if (stealthActions > 0) {
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.StealthAction,
+                data: {
+                    tabId,
+                    eventId,
+                    stealthActions,
+                },
+            });
+        }
+    }
+
+    /**
+     * Applies the stealth options from the settings configuration.
+     *
+     * @param settingsConfig Settings configuration.
+     *
+     * @returns Partial stealth configuration with boolean status of applied
+     * changes.
+     */
+    public static async applySettings(settingsConfig: SettingsConfigMV3): Promise<StealthConfigurationResult> {
         const {
             stealthModeEnabled,
             stealth,
@@ -70,54 +320,75 @@ export class StealthService {
             hideDocumentReferrerScriptUrl,
         } = settingsConfig;
 
-        const result = await Promise.allSettled([
-            StealthService.setHideReferrer(stealthModeEnabled && stealth.hideReferrer),
-            StealthService.setDisableWebRTC(stealthModeEnabled && stealth.blockWebRTC),
-            StealthService.setBlockChromeClientData(stealthModeEnabled && stealth.blockChromeClientData),
-            StealthService.setSendDoNotTrack(
-                stealthModeEnabled && stealth.sendDoNotTrack,
-                gpcScriptUrl,
-            ),
-            StealthService.setHideSearchQueries(
-                stealthModeEnabled && stealth.hideSearchQueries,
-                hideDocumentReferrerScriptUrl,
-            ),
+        // "Syntax sugar" to fit into 120 max characters per line.
+        const enabled = stealthModeEnabled;
+
+        const [
+            hideReferrer,
+            blockWebRTC,
+            blockChromeClientData,
+            sendDoNotTrack,
+            hideSearchQueries,
+        ] = await Promise.all([
+            StealthService.setHideReferrer(enabled && stealth.hideReferrer),
+            StealthService.setDisableWebRTC(enabled && stealth.blockWebRTC),
+            StealthService.setBlockChromeClientData(enabled && stealth.blockChromeClientData),
+            StealthService.setSendDoNotTrack(enabled && stealth.sendDoNotTrack, gpcScriptUrl),
+            StealthService.setHideSearchQueries(enabled && stealth.hideSearchQueries, hideDocumentReferrerScriptUrl),
         ]);
 
-        // FIXME: dispatch event/message to display error in extension UI
-        // or update ConfigurationResult record in `app.ts`
-        result.forEach((promise) => {
-            if (promise.status === 'rejected') {
-                logger.error('[tswebextension.applySettings]: error on applying stealth settings: ', promise.reason);
-            }
-        });
+        return {
+            hideReferrer,
+            blockWebRTC,
+            blockChromeClientData,
+            sendDoNotTrack,
+            hideSearchQueries,
+        };
     }
 
     /**
      * Set the referrer header to be hidden.
      *
      * @param isReferrerHidden Flag that determines if the referrer should be hidden.
-     * @returns Promise that resolves when the referrer setting is set.
+     *
+     * @returns Promise that resolves with current state of the referrer header.
      */
-    public static async setHideReferrer(isReferrerHidden: boolean): Promise<void> {
+    public static async setHideReferrer(isReferrerHidden: boolean): Promise<boolean> {
         if (!isReferrerHidden) {
-            return StealthService.removeSessionRule(StealthRuleId.HideReferrer);
+            try {
+                await StealthService.removeSessionRule(StealthRuleId.HideReferrer);
+
+                return isReferrerHidden;
+            } catch (e) {
+                // eslint-disable-next-line max-len
+                logger.error('[tswebextension.setHideReferrer]: error on removing the stealth rule "hide-referrer": ', e);
+
+                return !isReferrerHidden;
+            }
         }
 
-        return StealthService.setSessionRule({
-            id: StealthRuleId.HideReferrer,
-            action: {
-                type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-                requestHeaders: [{
-                    header: 'Referer',
-                    operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
-                }],
-            },
-            condition: {
-                urlFilter: '*',
-                resourceTypes: StealthService.RESOURCE_TYPES,
-            },
-        });
+        try {
+            await StealthService.setSessionRule({
+                id: StealthRuleId.HideReferrer,
+                action: {
+                    type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+                    requestHeaders: [{
+                        header: StealthService.HEADERS.REFERRER.name,
+                        operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
+                    }],
+                },
+                condition: {
+                    urlFilter: '*',
+                    resourceTypes: StealthService.RESOURCE_TYPES,
+                },
+            });
+
+            return isReferrerHidden;
+        } catch (e) {
+            logger.error('[tswebextension.setHideReferrer]: error on setting the stealth rule $referrer: ', e);
+
+            return !isReferrerHidden;
+        }
     }
 
     /**
@@ -125,27 +396,46 @@ export class StealthService {
      * `X-Client-Data` header from every request.
      *
      * @param isBlockChromeClientData Flag that determines if the `X-Client-Data` header is removed.
-     * @returns Promise that resolves when the rule is set or removed.
+     *
+     * @returns Promise that resolves with current state of the referrer header.
      */
-    public static async setBlockChromeClientData(isBlockChromeClientData: boolean): Promise<void> {
+    public static async setBlockChromeClientData(isBlockChromeClientData: boolean): Promise<boolean> {
         if (!isBlockChromeClientData) {
-            return StealthService.removeSessionRule(StealthRuleId.BlockChromeClientData);
+            try {
+                await StealthService.removeSessionRule(StealthRuleId.BlockChromeClientData);
+
+                return isBlockChromeClientData;
+            } catch (e) {
+                // eslint-disable-next-line max-len
+                logger.error('[tswebextension.setBlockChromeClientData]: error on removing the stealth rule $xclientdata: ', e);
+
+                return !isBlockChromeClientData;
+            }
         }
 
-        return StealthService.setSessionRule({
-            id: StealthRuleId.BlockChromeClientData,
-            action: {
-                type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-                requestHeaders: [{
-                    header: 'X-Client-Data',
-                    operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
-                }],
-            },
-            condition: {
-                urlFilter: '*',
-                resourceTypes: StealthService.RESOURCE_TYPES,
-            },
-        });
+        try {
+            await StealthService.setSessionRule({
+                id: StealthRuleId.BlockChromeClientData,
+                action: {
+                    type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+                    requestHeaders: [{
+                        header: StealthService.HEADERS.X_CLIENT_DATA.name,
+                        operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
+                    }],
+                },
+                condition: {
+                    urlFilter: '*',
+                    resourceTypes: StealthService.RESOURCE_TYPES,
+                },
+            });
+
+            return isBlockChromeClientData;
+        } catch (e) {
+            // eslint-disable-next-line max-len
+            logger.error('[tswebextension.setBlockChromeClientData]: error on setting the stealth rule $xclientdata: ', e);
+
+            return !isBlockChromeClientData;
+        }
     }
 
     /**
@@ -154,52 +444,68 @@ export class StealthService {
      *
      * @param isSendDoNotTrack Flag that determines if the `Do Not Track` and `Global Privacy Control` signals is set.
      * @param gpcScriptUrl Path to content script for injecting GPC signal.
-     * @returns Promise that resolves when the rule is set or removed.
+     *
+     * @returns Promise that resolves with current state of the referrer header.
      */
     public static async setSendDoNotTrack(
         isSendDoNotTrack: boolean,
         gpcScriptUrl: string,
-    ): Promise<void> {
+    ): Promise<boolean> {
         if (!isSendDoNotTrack) {
-            await Promise.all([
-                StealthService.removeSessionRule(StealthRuleId.SendDoNotTrack),
-                StealthService.removeContentScript(StealthContentScriptId.Gpc),
-            ]);
-            return;
+            try {
+                await Promise.all([
+                    StealthService.removeSessionRule(StealthRuleId.SendDoNotTrack),
+                    StealthService.removeContentScript(StealthContentScriptId.Gpc),
+                ]);
+
+                return isSendDoNotTrack;
+            } catch (e) {
+                logger.error('[tswebextension.setSendDoNotTrack]: error on removing the stealth rule $donottrack: ', e);
+
+                return !isSendDoNotTrack;
+            }
         }
 
-        await Promise.all([
-            StealthService.setSessionRule({
-                id: StealthRuleId.SendDoNotTrack,
-                action: {
-                    type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-                    requestHeaders: [{
-                        header: 'DNT',
-                        operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                        value: '1',
-                    }, {
-                        header: 'Sec-GPC',
-                        operation: chrome.declarativeNetRequest.HeaderOperation.SET,
-                        value: '1',
-                    }],
-                },
-                condition: {
-                    urlFilter: '*',
-                    resourceTypes: StealthService.RESOURCE_TYPES,
-                },
-            }),
-            StealthService.setContentScript({
-                id: StealthContentScriptId.Gpc,
-                js: [gpcScriptUrl],
-                world: 'MAIN',
-                runAt: 'document_start',
-                matches: [
-                    'http://*/*',
-                    'https://*/*',
-                ],
-                persistAcrossSessions: false,
-            }),
-        ]);
+        try {
+            await Promise.all([
+                StealthService.setSessionRule({
+                    id: StealthRuleId.SendDoNotTrack,
+                    action: {
+                        type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+                        requestHeaders: [{
+                            header: StealthService.HEADERS.DO_NOT_TRACK.name,
+                            value: StealthService.HEADERS.DO_NOT_TRACK.value,
+                            operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+                        }, {
+                            header: StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL.name,
+                            value: StealthService.HEADERS.GLOBAL_PRIVACY_CONTROL.value,
+                            operation: chrome.declarativeNetRequest.HeaderOperation.SET,
+                        }],
+                    },
+                    condition: {
+                        urlFilter: '*',
+                        resourceTypes: StealthService.RESOURCE_TYPES,
+                    },
+                }),
+                StealthService.setContentScript({
+                    id: StealthContentScriptId.Gpc,
+                    js: [gpcScriptUrl],
+                    world: 'MAIN',
+                    runAt: 'document_start',
+                    matches: [
+                        'http://*/*',
+                        'https://*/*',
+                    ],
+                    persistAcrossSessions: false,
+                }),
+            ]);
+
+            return isSendDoNotTrack;
+        } catch (e) {
+            logger.error('[tswebextension.setSendDoNotTrack]: error on setting the stealth rule $donottrack: ', e);
+
+            return !isSendDoNotTrack;
+        }
     }
 
     /**
@@ -208,48 +514,66 @@ export class StealthService {
      *
      * @param isHideSearchQueries Flag that determines if the search queries should be hidden.
      * @param hideDocumentReferrerScriptUrl Path to content script for hiding the document referrer.
-     * @returns Promise that resolves when the rule is set or removed.
+     *
+     * @returns Promise that resolves with current state of the referrer header.
      */
     public static async setHideSearchQueries(
         isHideSearchQueries: boolean,
         hideDocumentReferrerScriptUrl: string,
-    ): Promise<void> {
+    ): Promise<boolean> {
         if (!isHideSearchQueries) {
-            await Promise.all([
-                StealthService.removeSessionRule(StealthRuleId.HideSearchQueries),
-                StealthService.removeContentScript(StealthContentScriptId.DocumentReferrer),
-            ]);
-            return;
+            try {
+                await Promise.all([
+                    StealthService.removeSessionRule(StealthRuleId.HideSearchQueries),
+                    StealthService.removeContentScript(StealthContentScriptId.DocumentReferrer),
+                ]);
+
+                return isHideSearchQueries;
+            } catch (e) {
+                // eslint-disable-next-line max-len
+                logger.error('[tswebextension.setHideSearchQueries]: error on removing the stealth rule $searchqueries: ', e);
+
+                return !isHideSearchQueries;
+            }
         }
 
-        await Promise.all([
-            StealthService.setSessionRule({
-                id: StealthRuleId.HideSearchQueries,
-                action: {
-                    type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-                    requestHeaders: [{
-                        header: 'Referer',
-                        operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
-                    }],
-                },
-                condition: {
-                    urlFilter: '*',
-                    resourceTypes: StealthService.RESOURCE_TYPES,
-                    initiatorDomains: searchEngineDomains,
-                },
-            }),
-            StealthService.setContentScript({
-                id: StealthContentScriptId.DocumentReferrer,
-                js: [hideDocumentReferrerScriptUrl],
-                world: 'MAIN',
-                runAt: 'document_start',
-                matches: [
-                    'http://*/*',
-                    'https://*/*',
-                ],
-                persistAcrossSessions: false,
-            }),
-        ]);
+        try {
+            await Promise.all([
+                StealthService.setSessionRule({
+                    id: StealthRuleId.HideSearchQueries,
+                    action: {
+                        type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
+                        requestHeaders: [{
+                            header: StealthService.HEADERS.REFERRER.name,
+                            operation: chrome.declarativeNetRequest.HeaderOperation.REMOVE,
+                        }],
+                    },
+                    condition: {
+                        urlFilter: '*',
+                        resourceTypes: StealthService.RESOURCE_TYPES,
+                        initiatorDomains: searchEngineDomains,
+                    },
+                }),
+                StealthService.setContentScript({
+                    id: StealthContentScriptId.DocumentReferrer,
+                    js: [hideDocumentReferrerScriptUrl],
+                    world: 'MAIN',
+                    runAt: 'document_start',
+                    matches: [
+                        'http://*/*',
+                        'https://*/*',
+                    ],
+                    persistAcrossSessions: false,
+                }),
+            ]);
+
+            return isHideSearchQueries;
+        } catch (e) {
+            // eslint-disable-next-line max-len
+            logger.error('[tswebextension.setHideSearchQueries]: error on setting the stealth rule $searchqueries: ', e);
+
+            return !isHideSearchQueries;
+        }
     }
 
     /**
@@ -257,10 +581,12 @@ export class StealthService {
      * otherwise restore default policy.
      *
      * @param isWebRTCDisabled Flag that determines if the WebRTC should be disabled.
+     *
      * @throws Error if the permissions are not granted, but required to set the WebRTC policy.
-     * @returns Promise that resolves when the WebRTC policy is set or restored.
+     *
+     * @returns Promise that resolves with current state of the referrer header.
      */
-    public static async setDisableWebRTC(isWebRTCDisabled: boolean): Promise<void> {
+    public static async setDisableWebRTC(isWebRTCDisabled: boolean): Promise<boolean> {
         const isPermissionGranted = await chrome.permissions.contains({
             permissions: StealthService.REQUIRED_PERMISSIONS,
         });
@@ -268,21 +594,34 @@ export class StealthService {
         if (!isPermissionGranted) {
             // If the option is disabled, do nothing.
             if (!isWebRTCDisabled) {
-                return;
+                return isWebRTCDisabled;
             }
 
-            // Otherwise, throw an error.
-            throw new Error(
-                `Permissions are not granted: ${StealthService.REQUIRED_PERMISSIONS.join(', ')}`,
-            );
+            logger.error(`Permissions are not granted: ${StealthService.REQUIRED_PERMISSIONS.join(', ')}`);
+
+            return !isWebRTCDisabled;
         }
 
-        const setting = chrome.privacy.network.webRTCIPHandlingPolicy;
+        try {
+            const setting = chrome.privacy.network.webRTCIPHandlingPolicy;
 
-        if (isWebRTCDisabled) {
-            await StealthService.setSetting(setting, 'disable_non_proxied_udp');
-        } else {
-            await StealthService.clearSetting(setting);
+            if (isWebRTCDisabled) {
+                await StealthService.setSetting(setting, 'disable_non_proxied_udp');
+            } else {
+                await StealthService.clearSetting(setting);
+            }
+
+            return isWebRTCDisabled;
+        } catch (e) {
+            logger.error('[tswebextension.setDisableWebRTC]: error on setting the WebRTC policy ($webrtc): ', e);
+
+            /**
+             * Edge case: If error ocurred while applying WebRTC
+             * setting, it means that other extension might be
+             * blocking it, we should return false as a indicator
+             * of that WebRTC can not be enabled.
+             */
+            return false;
         }
     }
 
@@ -449,5 +788,16 @@ export class StealthService {
         contentScriptIds.forEach(async (id) => {
             await StealthService.removeContentScript(id);
         });
+    }
+
+    /**
+     * Is url search engine.
+     *
+     * @param url Url for check.
+     * @returns True if url is search engine.
+     */
+    private static isSearchEngine(url: string): boolean {
+        const domain = getDomain(url);
+        return searchEngineDomains.some((searchEngine) => searchEngine === domain);
     }
 }

@@ -30,7 +30,7 @@ export class FailedEnableRuleSetsError extends Error {
     ) {
         super(message, { cause });
 
-        this.name = 'FailedEnableRuleSetsError';
+        this.name = this.constructor.name;
 
         this.enableRulesetIds = enableRulesetIds;
         this.disableRulesetIds = disableRulesetIds;
