@@ -682,7 +682,8 @@ export class RuleSet implements IRuleSet {
             await this.loadContent();
         } catch (e) {
             const id = this.getId();
-            const msg = `Cannot serialize ruleset '${id}' because of not available source`;
+            // eslint-disable-next-line max-len
+            const msg = `Cannot serialize ruleset '${id}' because of not available source, got error: ${getErrorMessage(e)}`;
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
 
