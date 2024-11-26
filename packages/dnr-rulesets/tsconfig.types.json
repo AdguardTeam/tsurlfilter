@@ -2,8 +2,10 @@
     "$schema": "https://json.schemastore.org/tsconfig",
     "extends": "./tsconfig.base.json",
     "compilerOptions": {
-      "rootDir": "src",
-      "declaration": true,
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
     },
-    "include": ["src/lib/index.ts"],
+    "include": [
+        "src"
+    ]
 }

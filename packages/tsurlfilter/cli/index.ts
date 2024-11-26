@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { program } from 'commander';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 import { createRequire } from 'module';
 
@@ -34,7 +36,9 @@ async function main() {
     await program.parseAsync(process.argv);
 }
 
-const isRunningViaCli = require.main === module;
+const modulePath = path.resolve(fileURLToPath(import.meta.url));
+const procArgPath = path.resolve(process.argv[1]);
+const isRunningViaCli = modulePath === procArgPath;
 
 if (isRunningViaCli) {
     main();

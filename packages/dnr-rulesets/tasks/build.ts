@@ -122,7 +122,10 @@ const build = async (): Promise<void> => {
         FILTERS_DIR,
         RESOURCES_DIR,
         DEST_RULE_SETS_DIR,
-        true,
+        {
+            debug: true,
+            prettifyJson: false,
+        },
     );
 
     await createTxt();
