@@ -329,7 +329,7 @@ export class RuleSetsLoaderApi {
      *
      * @returns New {@link IRuleSet}.
      *
-     * @throws If {@link RuleSetsLoaderApi.initialize} was not called before and it fails.
+     * @throws If initialization fails or the rule set with the provided ID is not found.
      */
     public async createRuleSet(
         ruleSetId: string,
