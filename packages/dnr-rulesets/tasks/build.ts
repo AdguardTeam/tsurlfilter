@@ -87,7 +87,7 @@ const startDownload = async (): Promise<void> => {
     );
 
     const filters = await getUrlsOfFiltersResources(metadata);
-    await Promise.all(filters.map(filter => downloadFilter(filter, FILTERS_DIR)));
+    await Promise.all(filters.map((filter) => downloadFilter(filter, FILTERS_DIR)));
 };
 
 /**
@@ -138,7 +138,10 @@ const build = async (): Promise<void> => {
         FILTERS_DIR,
         RESOURCES_DIR,
         DEST_RULE_SETS_DIR,
-        true,
+        {
+            debug: true,
+            prettifyJson: false,
+        },
     );
 
     await removeTxtFiles(FILTERS_DIR);

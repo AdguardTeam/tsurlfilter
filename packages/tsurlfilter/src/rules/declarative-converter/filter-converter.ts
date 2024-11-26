@@ -104,7 +104,7 @@ import { DeclarativeRulesConverter } from './rules-converter';
 import {
     ResourcesPathError,
     EmptyOrNegativeNumberOfRulesError,
-    NegativeNumberOfRegexpRulesError,
+    NegativeNumberOfRulesError,
 } from './errors/converter-options-errors';
 import type { ConversionResult } from './conversion-result';
 import type { DeclarativeConverterOptions } from './declarative-converter-options';
@@ -129,7 +129,7 @@ interface IFilterConverter {
      * @throws Error {@link UnavailableFilterSourceError} if filter content
      * is not available OR some of {@link ResourcesPathError},
      * {@link EmptyOrNegativeNumberOfRulesError},
-     * {@link NegativeNumberOfRegexpRulesError}.
+     * {@link NegativeNumberOfRulesError}.
      * @see {@link DeclarativeFilterConverter#checkConverterOptions}
      * for details.
      *
@@ -155,7 +155,7 @@ interface IFilterConverter {
      * @throws Error {@link UnavailableFilterSourceError} if filter content
      * is not available OR some of {@link ResourcesPathError},
      * {@link EmptyOrNegativeNumberOfRulesError},
-     * {@link NegativeNumberOfRegexpRulesError}.
+     * {@link NegativeNumberOfRulesError}.
      * @see {@link DeclarativeFilterConverter#checkConverterOptions}
      * for details.
      *
@@ -197,13 +197,14 @@ export class DeclarativeFilterConverter implements IFilterConverter {
      * start with a slash or it ends with a slash
      * OR an {@link EmptyOrNegativeNumberOfRulesError} if maximum number of
      * rules is equal or less than 0.
-     * OR an {@link NegativeNumberOfRegexpRulesError} if maximum number of
+     * OR an {@link NegativeNumberOfRulesError} if maximum number of
      * regexp rules is less than 0.
      */
     private static checkConverterOptions(options: DeclarativeConverterOptions): void {
         const {
             resourcesPath,
             maxNumberOfRules,
+            maxNumberOfUnsafeRules,
             maxNumberOfRegexpRules,
         } = options;
 
@@ -231,9 +232,14 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             throw new EmptyOrNegativeNumberOfRulesError(msg);
         }
 
+        if (maxNumberOfUnsafeRules && maxNumberOfUnsafeRules < 0) {
+            const msg = 'Maximum number of unsafe rules cannot be less than 0';
+            throw new NegativeNumberOfRulesError(msg);
+        }
+
         if (maxNumberOfRegexpRules && maxNumberOfRegexpRules < 0) {
             const msg = 'Maximum number of regexp rules cannot be less than 0';
-            throw new NegativeNumberOfRegexpRulesError(msg);
+            throw new NegativeNumberOfRulesError(msg);
         }
     }
 
@@ -245,6 +251,10 @@ export class DeclarativeFilterConverter implements IFilterConverter {
     ): Promise<ConversionResult> {
         if (options) {
             DeclarativeFilterConverter.checkConverterOptions(options);
+        }
+
+        if (options?.maxNumberOfUnsafeRules !== undefined) {
+            throw new Error('Static rulesets do not require the maximum number of unsafe rules');
         }
 
         const { errors, filters } = await NetworkRulesScanner.scanRules([filter]);
@@ -397,10 +407,18 @@ export class DeclarativeFilterConverter implements IFilterConverter {
 
         const rulesHashMap = new RulesHashMap(listOfRulesWithHash);
 
+        // calculate number of unsafe rules only for dynamic rules
+        const unsafeRulesCount = DeclarativeFilterConverter.COMBINED_RULESET_ID === ruleSetId
+            ? declarativeRules.filter((r) => !DeclarativeRulesConverter.isSafeRule(r)).length
+            : 0;
+
+        const regexRulesCount = declarativeRules.filter((r) => DeclarativeRulesConverter.isRegexRule(r)).length;
+
         const ruleSet = new RuleSet(
             ruleSetId,
             declarativeRules.length,
-            declarativeRules.filter((d) => d.condition.regexFilter).length,
+            unsafeRulesCount,
+            regexRulesCount,
             ruleSetContent,
             badFilterRules,
             rulesHashMap,

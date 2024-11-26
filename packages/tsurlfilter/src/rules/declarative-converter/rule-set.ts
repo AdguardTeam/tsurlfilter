@@ -92,6 +92,20 @@ export interface IRuleSet {
     getRulesCount(): number;
 
     /**
+     * Number of converted declarative unsafe rules.
+     *
+     * @returns Number of converted declarative unsafe rules.
+     */
+    getUnsafeRulesCount(): number;
+
+    /**
+     * Number of converted declarative unsafe rules.
+     *
+     * @returns Number of converted declarative unsafe rules.
+     */
+    getUnsafeRulesCount(): number;
+
+    /**
      * Number of converted declarative regexp rules.
      *
      * @returns Number of converted declarative regexp rules.
@@ -190,6 +204,7 @@ type SerializedRuleSetLazyData = zod.infer<typeof serializedRuleSetLazyDataValid
 
 const serializedRuleSetDataValidator = zod.strictObject({
     regexpRulesCount: zod.number(),
+    unsafeRulesCount: zod.number().optional(),
     rulesCount: zod.number(),
     ruleSetHashMapRaw: zod.string(),
     badFilterRulesRaw: zod.string().array(),
@@ -248,10 +263,16 @@ export class RuleSet implements IRuleSet {
 
     /**
      * Number of converted declarative rules.
+     *
      * This is needed for the lazy version of the rule set,
      * when content not loaded.
      */
     private readonly rulesCount: number = 0;
+
+    /**
+     * Converted declarative unsafe rules.
+     */
+    private readonly unsafeRulesCount: number = 0;
 
     /**
      * Converted declarative regexp rules.
@@ -303,6 +324,7 @@ export class RuleSet implements IRuleSet {
      *
      * @param id Id of rule set.
      * @param rulesCount Number of rules.
+     * @param unsafeRulesCount Number of unsafe rules.
      * @param regexpRulesCount Number of regexp rules.
      * @param ruleSetContentProvider Rule set content provider.
      * @param badFilterRules List of rules with $badfilter modifier.
@@ -311,6 +333,7 @@ export class RuleSet implements IRuleSet {
     constructor(
         id: string,
         rulesCount: number,
+        unsafeRulesCount: number,
         regexpRulesCount: number,
         ruleSetContentProvider: RuleSetContentProvider,
         badFilterRules: IndexedNetworkRuleWithHash[],
@@ -318,6 +341,7 @@ export class RuleSet implements IRuleSet {
     ) {
         this.id = id;
         this.rulesCount = rulesCount;
+        this.unsafeRulesCount = unsafeRulesCount;
         this.regexpRulesCount = regexpRulesCount;
         this.ruleSetContentProvider = ruleSetContentProvider;
         this.badFilterRules = badFilterRules;
@@ -327,6 +351,11 @@ export class RuleSet implements IRuleSet {
     /** @inheritdoc */
     public getRulesCount(): number {
         return this.rulesCount || this.declarativeRules.length;
+    }
+
+    /** @inheritdoc */
+    public getUnsafeRulesCount(): number {
+        return this.unsafeRulesCount;
     }
 
     /** @inheritdoc */
@@ -604,6 +633,7 @@ export class RuleSet implements IRuleSet {
     private getSerializedRuleSetData(): SerializedRuleSetData {
         return {
             regexpRulesCount: this.regexpRulesCount,
+            unsafeRulesCount: this.unsafeRulesCount,
             rulesCount: this.rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
             // TODO: Remove .getText() completely

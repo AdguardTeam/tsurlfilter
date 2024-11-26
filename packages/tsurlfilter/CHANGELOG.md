@@ -18,11 +18,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Byte range maps. This feature allows retrieving only specific parts of the ruleset `.json` file, saving memory
   and improving performance.
 
+### Added
+
+- Optional property `maxNumberOfUnsafeRules` to `DeclarativeConverterOptions`
+  for unsafe rules (only for dynamic rulesets).
+
 ### Changed
 
 - Declarative converter adds each necessary information to the ruleset `.json` file,
   other files are not needed anymore (like raw `.txt` files, `metadata.json` files, etc).
 - Updated [@adguard/agtree] to `v2.1.3`.
+- We throw error for empty modifier list in network rules.
+
+### Fixed
+
+- Handling missing children data in the deserializer for certain nodes.
+- URI encoded `$removeparam` value is not removed in MV3 [AdguardBrowserExtension#3014].
+- `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
+
+[AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
+
+## [3.0.7] - 2024-11-19
+
+### Fixed
+
+- `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
+
+[AdguardBrowserExtension#3015]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3015
+[3.0.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.7
+
+## [3.0.6] - 2024-11-02
+
+### Changed
+
+- Updated `@adguard/agtree` to `v2.1.3`.
+
+[3.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.6
 
 [3.1.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.8
 

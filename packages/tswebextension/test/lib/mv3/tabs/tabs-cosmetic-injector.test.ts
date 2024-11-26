@@ -7,14 +7,12 @@ import { TabsCosmeticInjector } from '../../../../src/lib/mv3/tabs/tabs-cosmetic
 import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
+import { appContext } from '../../../../src/lib/mv3/background/app-context';
 
 jest.mock('@lib/mv3/background/engine-api');
 jest.mock('../../../../src/lib/mv3/background/app-context');
 
 describe('TabsCosmeticInjector', () => {
-    beforeAll(async () => {
-    });
-
     beforeEach(() => {
         jest.spyOn(CosmeticApi, 'applyCssByTabAndFrame');
         jest.spyOn(CosmeticApi, 'applyJsByTabAndFrame');
@@ -27,6 +25,7 @@ describe('TabsCosmeticInjector', () => {
 
     afterEach(() => {
         jest.resetAllMocks();
+        jest.resetModules();
     });
 
     describe('processOpenTabs method', () => {
@@ -91,6 +90,8 @@ describe('TabsCosmeticInjector', () => {
         });
 
         it('should not apply cosmetic rules for main frames with blank urls', async () => {
+            // setting manually since resetAllMocks does not work
+            appContext.cosmeticsInjectedOnStartup = false;
             const tabId = 1;
             const frameId = 1;
             const frameUrl = 'about:blank';
