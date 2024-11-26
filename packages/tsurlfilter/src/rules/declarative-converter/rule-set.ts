@@ -170,7 +170,7 @@ export interface IRuleSet {
     /**
      * Serializes rule set to a single file.
      *
-     * @param prettyPrint Whether to pretty print the output.
+     * @param prettyPrint Whether to pretty print the output. Default is `true`.
      *
      * @returns An object with serialized rule set and byte range map.
      *
@@ -671,7 +671,7 @@ export class RuleSet implements IRuleSet {
      * which can be used to extract specific parts of the file without
      * loading the whole file into memory.
      *
-     * @param prettyPrint Whether to pretty print the output.
+     * @param prettyPrint Whether to pretty print the output. Default is `true`.
      *
      * @returns An object with serialized rule set and byte range map.
      *
