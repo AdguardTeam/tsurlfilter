@@ -300,6 +300,10 @@ export class WebRequestApi {
         });
 
         let frameRule;
+        /**
+         * For Document/SubDocument requests, match frameRule using DocumentApi
+         * to properly handle document-level filtering rules.
+         */
         if (requestType === RequestType.SubDocument || requestType === RequestType.Document) {
             frameRule = DocumentApi.matchFrame(referrerUrl || requestUrl);
         }
