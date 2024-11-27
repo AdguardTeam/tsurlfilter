@@ -285,10 +285,10 @@ export class WebRequestApi {
             });
         }
 
-        // Check if the request is visible to the user (not in prerender phase)
-        const isVisibleRequest = details.documentLifecycle !== DocumentLifecycle.prerender;
+        // Check prerender request
+        const isPrerenderRequest = details.documentLifecycle === DocumentLifecycle.prerender;
 
-        if (isVisibleRequest) {
+        if (!isPrerenderRequest) {
             defaultFilteringLog.publishEvent({
                 type: FilteringEventType.SendRequest,
                 data: {
@@ -309,7 +309,8 @@ export class WebRequestApi {
         let frameRule;
         if (requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(referrerUrl);
-        } else if (isVisibleRequest) {
+        // Don't apply tab frameRule to prerender requests
+        } else if (!isPrerenderRequest) {
             frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
