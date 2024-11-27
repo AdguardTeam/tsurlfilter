@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## Unreleased
+## Unreleased <!-- release/v3.1 -->
 
 ### Added
 
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated [@adguard/agtree] to `v2.1.3`.
+- Updated [@adguard/agtree] to `v2.1.4`.
 - We throw error for empty modifier list in network rules.
 
 ### Fixed
@@ -27,6 +27,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
 
 [AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
+
+## Unreleased <!-- master -->
+
+### Changed
+
+- Updated `@adguard/agtree` to `v2.2.0` which improves the bundle size and performance.
+
+## [3.0.8] - 2024-11-25
+
+### Changed
+
+- Error throwing for empty modifier list in network rules.
+- Updated `@adguard/agtree` to `v2.1.4`.
+
+### Fixed
+
+- Handling missing children data in the deserializer for certain nodes.
+
+[3.0.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.8
 
 ## [3.0.7] - 2024-11-19
 
