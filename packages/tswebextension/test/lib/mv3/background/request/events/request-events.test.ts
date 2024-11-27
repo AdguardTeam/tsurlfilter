@@ -34,7 +34,6 @@ describe('Request Events', () => {
             ...commonRequestData,
             // Tab id will be not the same with the current opened tab.
             tabId: 2,
-            thirdParty: false,
             documentLifecycle: DocumentLifecycle.prerender,
             timeStamp: timestamp,
         };
@@ -52,12 +51,16 @@ describe('Request Events', () => {
 
         browser.webRequest.onBeforeRequest.dispatch(requestDetails);
 
-        // First prerender request
+        /**
+         * Verify prerender request handling:
+         * 1. Maintains isolation with separate tabId
+         * 2. Marked as first-party due to prerender context.
+         */
         expect(listener).toHaveBeenNthCalledWith(1, expect.objectContaining({
             details: expect.objectContaining({
                 tabId: 2,
                 url: 'https://example.com/',
-                // Prepender request isn't third party
+                // Prerender requests are considered first-party
                 thirdParty: false,
             }),
             context: expect.objectContaining({
@@ -67,10 +70,15 @@ describe('Request Events', () => {
             }),
         }));
 
-        // Second is real navigation request
+        /**
+         * Verify active navigation request handling:
+         * 1. Uses actual navigation tabId
+         * 2. Includes origin/referrer information
+         * 3. Correctly identifies third-party status based on domains
+         *    (example.com vs testcases.adguard.com).
+         */
         expect(listener).toHaveBeenNthCalledWith(2, expect.objectContaining({
             details: expect.objectContaining({
-                // Get frame url if is active request
                 originUrl: 'https://testcases.adguard.com',
                 url: 'https://example.com/',
                 tabId: 1,
@@ -78,7 +86,6 @@ describe('Request Events', () => {
             context: expect.objectContaining({
                 requestUrl: 'https://example.com/',
                 referrerUrl: 'https://testcases.adguard.com',
-                // Real navigation request is third party
                 thirdParty: true,
             }),
         }));
