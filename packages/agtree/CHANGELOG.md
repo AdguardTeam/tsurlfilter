@@ -15,15 +15,6 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Fixed missing children data in the deserializer for certain nodes.
 - Add error messages for rules parsing errors.
 
-## [2.1.3] - 2024-10-21
-
-### Fixed
-
-- Optimized performance of parsing uBlock filter parameters [AdguardBrowserExtension#2962].
-
-[AdguardBrowserExtension#2962]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2962
-[2.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.1.3
-
 ## [2.2.0] - 2024-11-27
 
 ### Removed
