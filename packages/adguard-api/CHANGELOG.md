@@ -44,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- listId -1 not found in the storage.
+- `listId` -1 not found in the storage.
 
 ### Changed
 
@@ -210,8 +210,8 @@ obsoleted filters ids.
 ### Changed
 
 - [BREAKING CHANGE] rename API configuration fields:
-  - whitelist -> allowlist
-  - blacklist -> blocklist.
+    - whitelist -> allowlist
+    - blacklist -> blocklist.
 
 ### Removed
 
