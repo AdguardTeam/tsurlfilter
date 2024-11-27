@@ -57,7 +57,7 @@ Build:
             npx lerna run test --scope @adguard/dnr-rulesets
 
             # Set date to package version
-            npx lerna run increment:autodeploy --scope @adguard/dnr-rulesets
+            npx lerna run increment:auto-deploy --scope @adguard/dnr-rulesets
 
             # Build dnr rulesets
             # since updated tgz file should not be committed
