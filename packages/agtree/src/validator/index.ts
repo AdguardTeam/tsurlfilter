@@ -128,7 +128,7 @@ const validateForSpecificSyntax = (
             throw new Error(`${SOURCE_DATA_ERROR_PREFIX.NO_VALUE_FORMAT_FOR_ASSIGNABLE}: '${modifierName}'`);
         }
 
-        return validateValue(modifier, specificBlockerData.valueFormat);
+        return validateValue(modifier, specificBlockerData.valueFormat, specificBlockerData.valueFormatFlags);
     }
 
     if (modifier?.value) {

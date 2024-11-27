@@ -24,6 +24,41 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [AdguardBrowserExtension#2962]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2962
 [2.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.1.3
 
+## [2.2.0] - 2024-11-27
+
+### Removed
+
+- `xregexp` library as a runtime dependency. It remains a development dependency for processing YAML files,
+  enabling enhanced readability and maintainability of regex patterns through free-spacing mode and inline comments.
+  However, xregexp is no longer bundled with the library to significantly reduce memory usage and bundle size,
+  improving overall performance.
+  The library now uses native ECMAScript regex patterns at runtime, ensuring compatibility
+  without the additional overhead of xregexp. Related to [AdguardBrowserExtension#3037].
+
+[2.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.2.0
+[AdguardBrowserExtension#3037]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3037
+
+## [2.1.4] - 2024-11-25
+
+### Added
+
+- Error messages for rules parsing errors.
+
+### Fixed
+
+- Missing children data in the deserializer for certain nodes.
+
+[2.1.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.1.4
+
+## [2.1.3] - 2024-10-21
+
+### Fixed
+
+- Optimized performance of parsing uBlock filter parameters [AdguardBrowserExtension#2962].
+
+[AdguardBrowserExtension#2962]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2962
+[2.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.1.3
+
 ## [2.1.2] - 2024-09-19
 
 ### Fixed

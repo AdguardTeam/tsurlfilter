@@ -3,7 +3,6 @@
  */
 
 import zod from 'zod';
-import XRegExp from 'xregexp';
 
 import { zodToCamelCase } from '../utils/zod-camelcase';
 import {
@@ -13,13 +12,20 @@ import {
     nonEmptyStringSchema,
 } from './base';
 import { getErrorMessage } from '../../utils/error';
+import { EMPTY } from '../../utils/constants';
 
 /**
  * Known validators that don't need to be validated as regex.
  */
-const KNOWN_VALIDATORS = new Set([
+export const KNOWN_VALIDATORS: ReadonlySet<string> = new Set([
+    'csp_value',
     'domain',
+    'permissions_value',
+    'pipe_separated_apps',
+    'pipe_separated_denyallow_domains',
     'pipe_separated_domains',
+    'pipe_separated_methods',
+    'pipe_separated_stealth_options',
     'regexp',
     'url',
 ]);
@@ -78,6 +84,11 @@ export const modifierDataSchema = zodToCamelCase(baseCompatibilityDataSchema.ext
      * Its value can be a regex pattern or a known validator name (e.g. `domain`, `pipe_separated_domains`, etc.).
      */
     value_format: nonEmptyStringSchema.nullable().default(null),
+
+    /**
+     * Describes the flags for the `value_format` regex pattern.
+     */
+    value_format_flags: nonEmptyStringSchema.nullable().default(null),
 }).superRefine((data, ctx) => {
     // TODO: find something better, for now we can't add refine logic to the base schema:
     // https://github.com/colinhacks/zod/issues/454#issuecomment-848370721
@@ -102,18 +113,29 @@ export const modifierDataSchema = zodToCamelCase(baseCompatibilityDataSchema.ext
 
         // if it is a known validator, we don't need to validate it further
         if (KNOWN_VALIDATORS.has(valueFormat)) {
+            if (data.value_format_flags) {
+                ctx.addIssue({
+                    code: zod.ZodIssueCode.custom,
+                    message: 'value_format_flags are not allowed for known validators',
+                });
+            }
             return;
         }
 
         // otherwise, we need to validate it as a regex
         try {
-            XRegExp(valueFormat);
+            new RegExp(valueFormat, data.value_format_flags ?? EMPTY);
         } catch (error: unknown) {
             ctx.addIssue({
                 code: zod.ZodIssueCode.custom,
                 message: getErrorMessage(error),
             });
         }
+    } else if (data.value_format_flags) {
+        ctx.addIssue({
+            code: zod.ZodIssueCode.custom,
+            message: 'value_format is required for value_format_flags',
+        });
     }
 }));
 
