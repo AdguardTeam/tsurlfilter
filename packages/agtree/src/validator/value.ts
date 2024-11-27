@@ -1,5 +1,3 @@
-import XRegExp from 'xregexp';
-
 import {
     type Modifier,
     type AppList,
@@ -41,6 +39,7 @@ import {
     VALIDATION_ERROR_PREFIX,
 } from './constants';
 import { defaultParserOptions } from '../parser/options';
+import { isString } from '../utils/type-guards';
 
 /**
  * Represents the possible list parsers.
@@ -699,10 +698,15 @@ const isCustomValueFormatValidator = (valueFormat: string): valueFormat is Custo
  *
  * @param modifier Modifier AST node.
  * @param valueFormat Value format for the modifier.
+ * @param valueFormatFlags Optional; RegExp flags for the value format.
  *
  * @returns Validation result.
  */
-export const validateValue = (modifier: Modifier, valueFormat: string): ValidationResult => {
+export const validateValue = (
+    modifier: Modifier,
+    valueFormat: string,
+    valueFormatFlags?: string | null,
+): ValidationResult => {
     if (isCustomValueFormatValidator(valueFormat)) {
         const validator = CUSTOM_VALUE_FORMAT_MAP[valueFormat];
         return validator(modifier);
@@ -714,14 +718,18 @@ export const validateValue = (modifier: Modifier, valueFormat: string): Validati
         return getValueRequiredValidationResult(modifierName);
     }
 
-    let xRegExp;
+    let regExp: RegExp;
     try {
-        xRegExp = XRegExp(valueFormat);
+        if (isString(valueFormatFlags)) {
+            regExp = new RegExp(valueFormat, valueFormatFlags);
+        } else {
+            regExp = new RegExp(valueFormat);
+        }
     } catch (e) {
         throw new Error(`${SOURCE_DATA_ERROR_PREFIX.INVALID_VALUE_FORMAT_REGEXP}: '${modifierName}'`);
     }
 
-    const isValid = xRegExp.test(modifier.value?.value);
+    const isValid = regExp.test(modifier.value?.value);
     if (!isValid) {
         return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`);
     }
