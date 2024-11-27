@@ -32,6 +32,7 @@ describe('Request Events', () => {
 
         const prerenderRequestDetails: OnBeforeRequestDetailsType = {
             ...commonRequestData,
+            originUrl: undefined,
             // Tab id will be not the same with the current opened tab.
             tabId: 2,
             documentLifecycle: DocumentLifecycle.prerender,
@@ -52,21 +53,19 @@ describe('Request Events', () => {
         browser.webRequest.onBeforeRequest.dispatch(requestDetails);
 
         /**
-         * Verify prerender request handling:
-         * 1. Maintains isolation with separate tabId
-         * 2. Marked as first-party due to prerender context.
+         * Verify prerender request handling.
          */
         expect(listener).toHaveBeenNthCalledWith(1, expect.objectContaining({
             details: expect.objectContaining({
                 tabId: 2,
                 url: 'https://example.com/',
-                // Prerender requests are considered first-party
-                thirdParty: false,
+                documentLifecycle: 'prerender',
             }),
             context: expect.objectContaining({
                 tabId: 2,
                 requestUrl: 'https://example.com/',
-                thirdParty: false,
+                referrerUrl: '',
+                thirdParty: true,
             }),
         }));
 

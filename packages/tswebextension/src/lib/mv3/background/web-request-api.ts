@@ -147,7 +147,6 @@ import {
 } from '../../common/utils/url';
 import {
     RequestEvents,
-    DocumentLifecycle,
     type OnBeforeRequestDetailsType,
 } from './request/events/request-events';
 import { type RequestData } from './request/events/request-event';
@@ -245,10 +244,9 @@ export class WebRequestApi {
      *
      * @param requestData - Object containing request context and details.
      * @param requestData.context - Request context.
-     * @param requestData.details - Details of the web request.
      */
     private static onBeforeRequest(
-        { context, details }: RequestData<OnBeforeRequestDetailsType>,
+        { context }: RequestData<OnBeforeRequestDetailsType>,
     ): void {
         if (!context) {
             return;
@@ -285,33 +283,25 @@ export class WebRequestApi {
             });
         }
 
-        // Check prerender request
-        const isPrerenderRequest = details.documentLifecycle === DocumentLifecycle.prerender;
-
-        if (!isPrerenderRequest) {
-            defaultFilteringLog.publishEvent({
-                type: FilteringEventType.SendRequest,
-                data: {
-                    tabId,
-                    eventId,
-                    requestUrl,
-                    requestDomain: getDomain(requestUrl),
-                    frameUrl: referrerUrl,
-                    frameDomain: getDomain(referrerUrl),
-                    requestType: contentType,
-                    timestamp,
-                    requestThirdParty: thirdParty,
-                    method,
-                },
-            });
-        }
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.SendRequest,
+            data: {
+                tabId,
+                eventId,
+                requestUrl,
+                requestDomain: getDomain(requestUrl),
+                frameUrl: referrerUrl,
+                frameDomain: getDomain(referrerUrl),
+                requestType: contentType,
+                timestamp,
+                requestThirdParty: thirdParty,
+                method,
+            },
+        });
 
         let frameRule;
-        if (requestType === RequestType.SubDocument) {
-            frameRule = DocumentApi.matchFrame(referrerUrl);
-        // Don't apply tab frameRule to prerender requests
-        } else if (!isPrerenderRequest) {
-            frameRule = tabsApi.getTabFrameRule(tabId);
+        if (requestType === RequestType.SubDocument || requestType === RequestType.Document) {
+            frameRule = DocumentApi.matchFrame(referrerUrl || requestUrl);
         }
 
         const result = engineApi.matchRequest({

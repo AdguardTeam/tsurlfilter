@@ -168,12 +168,12 @@ export class RequestEvents {
             requestId,
             type,
             tabId,
-            documentLifecycle,
             parentFrameId,
             originUrl,
             initiator,
             method,
             timeStamp,
+            documentLifecycle,
         } = details;
 
         let { url, frameId } = details;
@@ -211,10 +211,12 @@ export class RequestEvents {
             requestFrameId = 0;
         }
 
-        // To mark requests started via navigation from the address bar (real
-        // request or pre-render, it does not matter) as first-party requests,
-        // we get only part of the request context to record only the tab and
-        // frame information before calculating the request referrer.
+        /*
+         * To mark requests started via navigation from the address bar (real
+         * request or pre-render, it does not matter) as first-party requests,
+         * we get only part of the request context to record only the tab and
+         * frame information before calculating the request referrer.
+         */
         const tabFrameRequestContext: TabFrameRequestContext = {
             requestUrl: url,
             requestType,
@@ -228,10 +230,13 @@ export class RequestEvents {
             || initiator
             || '';
 
-        // When the request is not a prerender and referrerUrl is missing,
-        // we obtain the referrerUrl from the current tab
-        // to accurately determine if the request is third-party.
-        if (!referrerUrl && isPrerenderRequest) {
+        /**
+         * If the request is neither a prerender nor a document request,
+         * and the referrerUrl is not provided, we retrieve the referrerUrl
+         * from the current tab. This helps in accurately determining
+         * whether the request is third-party.
+         */
+        if (!referrerUrl && !isPrerenderRequest && !isDocumentRequest) {
             // Comparison of the requested url with the tab frame url in case of
             // a navigation change from the browser address bar.
             referrerUrl = tabsApi.getTabMainFrame(tabId)?.url
@@ -245,8 +250,7 @@ export class RequestEvents {
             eventId: nanoid(),
             state: RequestContextState.BeforeRequest,
             timestamp: timeStamp,
-            // Prerender requests are considered first-party
-            thirdParty: isPrerenderRequest ? false : isThirdPartyRequest(url, referrerUrl),
+            thirdParty: isThirdPartyRequest(url, referrerUrl),
             referrerUrl,
             contentType,
             method: method as HTTPMethod,
