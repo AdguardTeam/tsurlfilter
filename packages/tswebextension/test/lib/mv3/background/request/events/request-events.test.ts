@@ -47,7 +47,6 @@ describe('Request Events', () => {
         const requestDetails: OnBeforeRequestDetailsType = {
             ...commonRequestData,
             timeStamp: timestamp,
-         
             documentLifecycle: DocumentLifecycle.active,
         };
 
