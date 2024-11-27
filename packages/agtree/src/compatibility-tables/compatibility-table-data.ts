@@ -3,10 +3,15 @@
  * @file Provides compatibility table data loading.
  */
 
+import zod from 'zod';
 import path from 'path';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import yaml from 'js-yaml';
 import { readFileSync, readdirSync } from 'fs';
+// Note: we use XRegExp as a dev dependency, but we do not include this compatibility table data loader
+// in the production build, so it is safe to ignore ESLint warning here.
+// eslint-disable-next-line import/no-extraneous-dependencies
+import XRegExp from 'xregexp';
 
 import { type CompatibilityTable, type CompatibilityTableRow } from './types';
 import {
@@ -18,8 +23,10 @@ import {
     type ModifierDataSchema,
     type RedirectDataSchema,
     type ScriptletDataSchema,
+    KNOWN_VALIDATORS,
 } from './schemas';
 import { deepFreeze } from '../utils/deep-freeze';
+import { EMPTY } from '../utils/constants';
 
 /**
  * Gets all `.yml` files from a directory.
@@ -139,7 +146,64 @@ const getCompatibilityTableData = <T extends BaseCompatibilityDataSchema>(
  * @returns Compatibility table data for modifiers.
  */
 const getModifiersCompatibilityTableData = (dir: string) => {
-    return getCompatibilityTableData<ModifierDataSchema>(dir, baseFileSchema(modifierDataSchema));
+    const valueFormatPreprocessorSchema = zod.object({
+        value_format: zod.optional(zod.string()),
+        value_format_flags: zod.optional(zod.string()),
+    }).passthrough().transform((data) => {
+        const {
+            value_format: valueFormat,
+            value_format_flags: valueFormatFlags,
+        } = data;
+
+        if (!valueFormat) {
+            return data;
+        }
+
+        const valueFormatTrimmed = valueFormat.trim();
+
+        // If it is a known validator, we don't need to validate it further
+        if (!valueFormatTrimmed && KNOWN_VALIDATORS.has(valueFormatTrimmed)) {
+            return data;
+        }
+
+        // Create an XRegExp pattern from the value format, then convert it to a native RegExp pattern
+        const xRegExpPattern = XRegExp(valueFormatTrimmed);
+        const regExpPattern = new RegExp(xRegExpPattern.source, xRegExpPattern.flags);
+
+        // If any flags are present in the pattern, we need to combine them with the existing flags
+
+        // Note: we need 'value_format_flags' because RegExp constructor doesn't support flags in the pattern,
+        // they should be passed as a separate argument, and perhaps this is the most convenient way to do it
+
+        // Note: do not use 'regExpPattern.toString()' because it will include the slashes and flags and
+        // you cannot create the equivalent RegExp object from it again
+        if (regExpPattern.flags) {
+            // 1. Get existing flags from 'value_format_flags'
+            const flags: Set<string> = new Set();
+
+            if (valueFormatFlags) {
+                valueFormatFlags.split(EMPTY).forEach((flag) => flags.add(flag));
+            }
+
+            // 2. Add flags from the RegExp pattern
+            regExpPattern.flags.split(EMPTY).forEach((flag) => flags.add(flag));
+
+            // 3. Update 'value_format_flags' with the combined flags
+            // eslint-disable-next-line no-param-reassign
+            data.value_format_flags = Array.from(flags).join(EMPTY);
+        }
+
+        // eslint-disable-next-line no-param-reassign
+        data.value_format = regExpPattern.source;
+
+        return data;
+    });
+
+    const combinedSchema = valueFormatPreprocessorSchema.pipe(modifierDataSchema);
+
+    const data = getCompatibilityTableData<ModifierDataSchema>(dir, baseFileSchema(combinedSchema));
+
+    return data;
 };
 
 /**

@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
+## [2.2.0] - 2024-11-27
+
+### Removed
+
+- `xregexp` library as a runtime dependency. It remains a development dependency for processing YAML files,
+  enabling enhanced readability and maintainability of regex patterns through free-spacing mode and inline comments.
+  However, xregexp is no longer bundled with the library to significantly reduce memory usage and bundle size,
+  improving overall performance.
+  The library now uses native ECMAScript regex patterns at runtime, ensuring compatibility
+  without the additional overhead of xregexp. Related to [AdguardBrowserExtension#3037].
+
+[2.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.2.0
+[AdguardBrowserExtension#3037]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3037
+
 ## [2.1.4] - 2024-11-25
 
 ### Added
