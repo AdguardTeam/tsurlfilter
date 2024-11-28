@@ -306,6 +306,8 @@ export class WebRequestApi {
          */
         if (requestType === RequestType.SubDocument || requestType === RequestType.Document) {
             frameRule = DocumentApi.matchFrame(referrerUrl || requestUrl);
+        } else {
+            frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
         const result = engineApi.matchRequest({
