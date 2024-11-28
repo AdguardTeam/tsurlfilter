@@ -242,8 +242,8 @@ export class WebRequestApi {
     /**
      * On before request event handler. This is the earliest event in the chain of the web request events.
      *
-     * @param requestData - Object containing request context and details.
-     * @param requestData.context - Request context.
+     * @param requestData Object containing request context and details.
+     * @param requestData.context Request context.
      */
     private static onBeforeRequest(
         { context }: RequestData<OnBeforeRequestDetailsType>,
