@@ -64,8 +64,8 @@ describe('Request Events', () => {
             context: expect.objectContaining({
                 tabId: 2,
                 requestUrl: 'https://example.com/',
-                referrerUrl: '',
-                thirdParty: true,
+                referrerUrl: 'https://example.com/',
+                thirdParty: false,
             }),
         }));
 
