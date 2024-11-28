@@ -4,15 +4,14 @@
   "description": "Sample extension with tswebextension on manifest V3",
   "author": "Adguard Software Ltd.",
   "license": "GPL-3.0",
+  "type": "module",
   "scripts": {
     "build": "pnpm build:precompile-rules && pnpm build:extension",
-    "build:extension": "node -r @swc-node/register ./scripts/build",
-    "build:tsurl": "cd ../../tsurlfilter && pnpm build",
-    "build:tsweb": "cd ../../tswebextension && pnpm build",
-    "build:precompile-rules": "node -r @swc-node/register ./scripts/precompile-rules.ts",
+    "build:extension": "tsx ./scripts/build",
+    "build:precompile-rules": "tsx ./scripts/precompile-rules.ts",
     "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts' && tsc --noEmit",
     "tswebextension": "tswebextension",
-    "test": "rimraf tmp && cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 node -r @swc-node/register ./scripts/browser-test/index.ts",
+    "test": "rimraf tmp && cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 tsx ./scripts/browser-test/index.ts",
     "clean": "rimraf build && rimraf extension/filters"
   },
   "dependencies": {
@@ -39,7 +38,7 @@
     "copy-webpack-plugin": "^10.0.0",
     "cross-env": "^7.0.3",
     "css-loader": "^6.7.1",
-    "eslint": "8.56.0",
+    "eslint": "8.57.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-plugin-import": "^2.28.0",
     "eslint-plugin-react": "^7.29.4",
@@ -49,6 +48,7 @@
     "rimraf": "^6.0.1",
     "style-loader": "^3.3.1",
     "swc-loader": "^0.2.3",
+    "tsx": "^4.19.2",
     "typescript": "5.4.3",
     "webpack": "^5.64.2"
   }
