@@ -210,6 +210,19 @@ describe('Converter integration tests', () => {
                     actual: 'example.org#?##case26:remove()',
                     expected: ['example.org#$?##case26 { remove: true; }'],
                 },
+                // {remove: true;}
+                {
+                    actual: 'ekoteka.pl###popUpModal { remove: true; }',
+                    expected: ['ekoteka.pl#$?##popUpModal { remove: true; }'],
+                },
+                {
+                    actual: 'aftonbladet.se##.jwplayer:has(.svp-sponsor-label) {remove: true;}',
+                    expected: ['aftonbladet.se#$?#.jwplayer:has(.svp-sponsor-label) {remove: true;}'],
+                },
+                {
+                    actual: 'example.org###case26 { remove: true; }',
+                    expected: ['example.org#$?##case26 { remove: true; }'],
+                },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
@@ -657,6 +670,12 @@ describe('Converter integration tests', () => {
                     actual: '#?#.banner',
                     expected: ['#?#.banner'],
                     shouldConvert: false,
+                },
+                // should add ExtCss separator if the rule contains ExtCss pseudo-property
+                {
+                    actual: '##.banner { remove: true; }',
+                    expected: ['#$?#.banner { remove: true; }'],
+                    shouldConvert: true,
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
