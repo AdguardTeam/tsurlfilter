@@ -40,6 +40,14 @@ export class ElementHidingRuleConverter extends RuleConverterBase {
                 : CosmeticRuleSeparator.ExtendedElementHiding;
         }
 
+        // Change the separator if the rule contains ExtendedCSS pseudo-properties
+        // such ad `{ remove: true; }`
+        if(stream.hasAnySelectorExtendedCssPseudoProperties()){
+            convertedSeparator = rule.exception
+                ? CosmeticRuleSeparator.AdgExtendedCssInjectionException
+                : CosmeticRuleSeparator.AdgExtendedCssInjection;
+        }
+
         // Check if the rule needs to be converted
         if (
             !(rule.syntax === AdblockSyntax.Common || rule.syntax === AdblockSyntax.Adg)
