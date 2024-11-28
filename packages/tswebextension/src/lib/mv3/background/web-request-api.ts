@@ -301,11 +301,13 @@ export class WebRequestApi {
 
         let frameRule;
         /**
-         * For Document/SubDocument requests, match frameRule using DocumentApi
-         * to properly handle document-level filtering rules.
+         * Determine frameRule for Document/SubDocument requests using DocumentApi.
+         * The referrerUrl is calculated in {@link RequestEvents.handleOnBeforeRequest} before this point.
+         * This ensures correct application of document-level filtering rules,
+         * which is important for handling prerender requests.
          */
-        if (requestType === RequestType.SubDocument || requestType === RequestType.Document) {
-            frameRule = DocumentApi.matchFrame(referrerUrl || requestUrl);
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            frameRule = DocumentApi.matchFrame(referrerUrl);
         } else {
             frameRule = tabsApi.getTabFrameRule(tabId);
         }

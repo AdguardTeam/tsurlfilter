@@ -231,14 +231,18 @@ export class RequestEvents {
             || '';
 
         /**
-         * If the request is neither a prerender nor a document request,
-         * and the referrerUrl is not provided, we retrieve the referrerUrl
-         * from the current tab. This helps in accurately determining
-         * whether the request is third-party.
+         * For requests without a referrer, we need to determine the appropriate referrer URL.
+         * - For prerendered document requests, use the request URL itself
+         * - Otherwise, try to get the referrer from either:
+         *   1. The tab's main frame URL
+         *   2. The specific frame URL
+         *   3. Fallback to the request URL.
          */
-        if (!referrerUrl && !isPrerenderRequest && !isDocumentRequest) {
-            // Comparison of the requested url with the tab frame url in case of
-            // a navigation change from the browser address bar.
+        if (!referrerUrl && isPrerenderRequest && isDocumentRequest) {
+            referrerUrl = url;
+        }
+        if (!referrerUrl) {
+            // Try to get referrer from tab state during address bar navigation
             referrerUrl = tabsApi.getTabMainFrame(tabId)?.url
             || tabsApi.getTabFrame(tabId, requestFrameId)?.url
             || url;
