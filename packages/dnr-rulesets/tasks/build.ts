@@ -87,7 +87,7 @@ const startDownload = async (): Promise<void> => {
     );
 
     const filters = await getUrlsOfFiltersResources(metadata);
-    await Promise.all(filters.map(filter => downloadFilter(filter, FILTERS_DIR)));
+    await Promise.all(filters.map((filter) => downloadFilter(filter, FILTERS_DIR)));
 };
 
 /**

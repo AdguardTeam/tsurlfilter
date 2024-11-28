@@ -39,9 +39,9 @@ Build:
 
             BRANCH="${bamboo.planRepository.branchName}"
 
-            # Deploy package from "release/v3.1" branch only
-            # TODO: replace "release/v3.1" to "master" branch after merge
-            if [ $BRANCH != "release/v3.1" ]
+            # Deploy package from "stable/dnr-rulesets" branch only
+            # TODO: replace "stable/dnr-rulesets" to "master" branch after merge
+            if [ $BRANCH != "stable/dnr-rulesets" ]
             then
               echo "deployment is not supported on branch ${BRANCH}, skipping"
               exit 0;
@@ -57,7 +57,7 @@ Build:
             npx lerna run test --scope @adguard/dnr-rulesets
 
             # Set date to package version
-            npx lerna run increment:autodeploy --scope @adguard/dnr-rulesets
+            npx lerna run increment:auto-deploy --scope @adguard/dnr-rulesets
 
             # Build dnr rulesets
             # since updated tgz file should not be committed
@@ -97,7 +97,7 @@ Build:
 
             # TODO: remove the checking after release/v3.1 is merged into master
             BRANCH="${bamboo.planRepository.branchName}"
-            if [ $BRANCH != "release/v3.1" ]
+            if [ $BRANCH != "stable/dnr-rulesets" ]
             then
               echo "nothing to clean on branch ${BRANCH}, skipping"
               exit 0;
@@ -145,8 +145,8 @@ other:
 # TODO: remove the branch-overrides after release/v3.1 is merged into master
 branch-overrides:
   -
-    ^(release\/v3\.1.+|(?!release\/v3\.1).*)$:
-      # for branches other than 'release-v3.1' no build should be run
+    ^(stable\/dnr-rulesets.+|(?!stable\/dnr-rulesets).*)$:
+      # for branches other than 'stable/dnr-rulesets' no build should be run
       stages:
         - Build:
             - SkipBuild

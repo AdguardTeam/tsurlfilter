@@ -69,5 +69,10 @@ export class HintCommentDeserializer extends BaseDeserializer {
 
             prop = buffer.readUint8();
         }
+        // Maybe children are not present in the binary data,
+        // in this case, we should initialize it as an empty array.
+        if (!node.children) {
+            node.children = [];
+        }
     }
 }

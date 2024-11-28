@@ -8,6 +8,7 @@ import { MAIN_FRAME_ID } from '../../common/constants';
 import { CosmeticApi } from '../background/cosmetic-api';
 import { CosmeticFrameProcessor } from '../background/cosmetic-frame-processor';
 import { ContentType } from '../../common';
+import { appContext } from '../background/app-context';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -30,6 +31,8 @@ export class TabsCosmeticInjector {
                 logger.error('[tswebextension.processOpenTabs]: cannot inject cosmetic to open tab: ', promise.reason);
             }
         });
+
+        appContext.cosmeticsInjectedOnStartup = true;
     }
 
     /**
@@ -81,6 +84,18 @@ export class TabsCosmeticInjector {
                 parentDocumentId,
                 documentId,
             });
+
+            // TODO: Instead of this, it’s better to use the runtime.onStartup and runtime.onInstalled
+            // events to inject cosmetics once during the extension's initialization
+            // and browser startup without flags.
+            // However, this would require big refactoring of the extension.
+            /**
+             * This condition prevents applying cosmetic rules to the tab multiple times.
+             * Applying them once after the extension's initialization is enough.
+             */
+            if (appContext.cosmeticsInjectedOnStartup) {
+                return;
+            }
 
             // Note: this is an async function, but we will not await it because
             // events do not support async listeners.

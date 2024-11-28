@@ -26,6 +26,9 @@ export class ModifierListSerializer extends BaseSerializer {
         buffer.writeUint8(BinaryTypeMarshallingMap.ModifierListNode);
 
         const count = node.children.length;
+        // If there are no children, we do not write any data related to them, to avoid using unnecessary storage,
+        // but children is a required field, so during deserialization we should initialize it as an empty array,
+        // if there are no children in the binary data.
         if (count) {
             buffer.writeUint8(ModifierListNodeMarshallingMap.Children);
             // note: we store the count, because re-construction of the array is faster if we know the length

@@ -7,12 +7,14 @@ export const enum SessionStorageKey {
     IsAppStarted = 'isAppStarted',
     Configuration = 'configuration',
     StartTimeMs = 'startTimeMs',
+    CosmeticsInjectedOnStartup = 'cosmeticsInjectedOnStartup',
 }
 
 export type SessionStorageSchema = {
     [SessionStorageKey.IsAppStarted]: boolean,
     [SessionStorageKey.Configuration]: ConfigurationMV3Context | undefined,
     [SessionStorageKey.StartTimeMs]: number | undefined,
+    [SessionStorageKey.CosmeticsInjectedOnStartup]: boolean,
 };
 
 /**
@@ -25,6 +27,7 @@ export class ExtSessionStorage extends ExtensionStorage<SessionStorageSchema> {
         isAppStarted: false,
         configuration: undefined,
         startTimeMs: undefined,
+        cosmeticsInjectedOnStartup: false,
     };
 
     /**

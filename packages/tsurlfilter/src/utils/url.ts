@@ -64,19 +64,23 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
 
     const split = splitUrl(url);
 
+    /**
+     * We are checking both regular param and decoded param, in case if regexp
+     * contains decoded params and url contains encoded params:
+     * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3015
+     */
     let modifiedQuery;
     if (invert) {
         modifiedQuery = split.query
             .split('&')
-            .filter((x) => x)
-            .filter((x) => x && x.match(regExp))
+            .filter((x) => x && (x.match(regExp) || decodeURIComponent(x).match(regExp)))
             .join('&');
     } else {
         modifiedQuery = split.query
             .split('&')
             .filter((x) => {
                 const test = x.includes('=') ? x : `${x}=`;
-                return !test.match(regExp);
+                return !test.match(regExp) && !decodeURIComponent(test).match(regExp);
             })
             .join('&');
     }

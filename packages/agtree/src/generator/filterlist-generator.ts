@@ -19,9 +19,11 @@ export class FilterListGenerator extends BaseGenerator {
      * @param ast AST to generate
      * @param preferRaw If `true`, then the parser will use `raws.text` property of each rule
      * if it is available. Default is `false`.
+     * @param tolerant If `true`, errors during rule generation will be logged to the console and invalid rules
+     * will be skipped. If `false`, an error will be thrown on the first invalid rule. Default is `true`.
      * @returns Serialized filter list
      */
-    public static generate(ast: FilterList, preferRaw = false): string {
+    public static generate(ast: FilterList, preferRaw = false, tolerant = true): string {
         let result = EMPTY;
 
         for (let i = 0; i < ast.children.length; i += 1) {
@@ -30,7 +32,16 @@ export class FilterListGenerator extends BaseGenerator {
             if (preferRaw && rule.raws?.text) {
                 result += rule.raws.text;
             } else {
-                result += RuleGenerator.generate(rule);
+                try {
+                    result += RuleGenerator.generate(rule);
+                } catch (error: unknown) {
+                    if (tolerant) {
+                        // eslint-disable-next-line no-console
+                        console.error(`Error when generating: ${error}`);
+                    } else {
+                        throw new Error(String(error));
+                    }
+                }
             }
 
             switch (rule.raws?.nl) {
