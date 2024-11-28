@@ -387,7 +387,7 @@ export class TabsApi {
     }
 
     /**
-     * Sets main frame rule for the tab.
+     * Sets main frame rule for the tab context and for the frame context.
      *
      * @param tabId Tab ID.
      * @param frameId Frame ID.
