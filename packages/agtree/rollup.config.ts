@@ -70,7 +70,6 @@ const main = {
     output: [
         {
             dir: `${distDir}`,
-            // entryFileNames: '[name].mjs',
             format: 'esm',
             sourcemap: false,
             preserveModules: true,
