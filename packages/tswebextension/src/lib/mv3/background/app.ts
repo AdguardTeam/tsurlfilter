@@ -1,17 +1,11 @@
 import browser from 'webextension-polyfill';
-import zod from 'zod';
 import {
     Filter,
     METADATA_RULESET_ID,
-    RuleSetByteRangeCategory,
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import {
-    FilterListPreprocessor,
-    preprocessedFilterListValidator,
-    type PreprocessedFilterList,
-} from '@adguard/tsurlfilter';
+import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
@@ -20,7 +14,7 @@ import { appContext } from './app-context';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
-import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
+import FiltersApi, { type LoadFilterContent, type UpdateStaticFiltersResult } from './filters-api';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { engineApi } from './engine-api';
@@ -42,7 +36,6 @@ import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
-import { FiltersStorage } from '../../common/storage/filters';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -64,26 +57,6 @@ export type {
     ConversionResult,
     FailedEnableRuleSetsError,
 };
-
-const loadFilterContentValidator = zod.function()
-    .args(zod.number())
-    .returns(
-        zod.promise(
-            preprocessedFilterListValidator,
-        ),
-    );
-
-/**
- * Lazy load filter content.
- *
- * @param filterId Filter identifier to load content for.
- *
- * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
- * or null if the filter is not found.
- *
- * @throws Error if the filter content cannot be loaded.
- */
-export type LoadFilterContent = zod.infer<typeof loadFilterContentValidator>;
 
 /**
  * The TsWebExtension class is a facade for working with the Chrome
@@ -156,122 +129,6 @@ export class TsWebExtension implements AppInterface<
     constructor(webAccessibleResourcesPath?: string) {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
     }
-
-    /**
-     * Helper method to stringify filter ids.
-     *
-     * @param filterIds Filter identifiers to stringify.
-     *
-     * @returns Comma-separated string of filter ids or 'none' if the list is empty.
-     */
-    private static stringifyFilterIds(filterIds: number[]): string {
-        if (filterIds.length === 0) {
-            return 'none';
-        }
-
-        return filterIds.join(', ');
-    }
-
-    /**
-     * Syncs specified filters with the extension storage.
-     *
-     * This method updates the extension storage with the latest filter content.
-     *
-     * @param filterIds Filter identifiers to sync.
-     * @param ruleSetsPath Path to the rulesets.
-     *
-     * @returns Promise that resolves when the sync is finished.
-     */
-    private static async syncFiltersWithStorage(filterIds: number[], ruleSetsPath: string): Promise<void> {
-        logger.info('Syncing enabled filters with the extension storage');
-
-        const filtersToSync: Record<number, PreprocessedFilterList> = {};
-        const checksumsToSync: Record<number, string> = {};
-
-        const filtersInStorage = new Set(await FiltersStorage.getFilterIds());
-        const filtersToRemove = Array.from(filtersInStorage).filter((id) => !filterIds.includes(id));
-
-        const syncStatus = {
-            unchanged: [] as number[],
-            added: [] as number[],
-            updated: [] as number[],
-        };
-
-        // Process each filter ID to determine its status and update if needed
-        await Promise.all(
-            filterIds.map(async (filterId) => {
-                try {
-                    const [currentChecksum, storedChecksum] = await Promise.all([
-                        TsWebExtension.getChecksum(filterId, ruleSetsPath),
-                        FiltersStorage.getChecksum(filterId),
-                    ]);
-
-                    if (currentChecksum === storedChecksum) {
-                        syncStatus.unchanged.push(filterId);
-                        return;
-                    }
-
-                    const preprocessedFilter = await TsWebExtension.getPreprocessedFilterList(filterId, ruleSetsPath);
-                    filtersToSync[filterId] = preprocessedFilter;
-                    if (currentChecksum) {
-                        checksumsToSync[filterId] = currentChecksum;
-                    }
-
-                    if (filtersInStorage.has(filterId)) {
-                        syncStatus.updated.push(filterId);
-                    } else {
-                        syncStatus.added.push(filterId);
-                    }
-                } catch (error) {
-                    logger.error(`Failed to update filter with id ${filterId}. Error: ${getErrorMessage(error)}`);
-                }
-            }),
-        );
-
-        // Persist changes to storage
-        if (Object.keys(filtersToSync).length > 0) {
-            await Promise.all([
-                FiltersStorage.setMultipleFilters(filtersToSync),
-                FiltersStorage.setMultipleChecksums(checksumsToSync),
-            ]);
-        }
-
-        if (filtersToRemove.length > 0) {
-            await Promise.all([
-                FiltersStorage.removeMultipleFilters(filtersToRemove),
-                FiltersStorage.removeMultipleChecksums(filtersToRemove),
-            ]);
-        }
-
-        logger.info(
-            // eslint-disable-next-line max-len
-            `Synced static rulesets with the extension storage. Added: ${TsWebExtension.stringifyFilterIds(syncStatus.added)}. Updated: ${TsWebExtension.stringifyFilterIds(syncStatus.updated)}. Removed: ${TsWebExtension.stringifyFilterIds(filtersToRemove)}. Unchanged: ${TsWebExtension.stringifyFilterIds(syncStatus.unchanged)}`,
-        );
-    }
-
-    /**
-     * Loads filter content by filter id.
-     *
-     * @param filterId Filter identifier to load content for.
-     *
-     * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
-     * or null if the filter is not found.
-     *
-     * @throws Error if the filter content cannot be loaded.
-     */
-    private static loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
-        try {
-            const result = await FiltersStorage.getFilter(filterId);
-
-            if (!result) {
-                throw new Error(`Filter with id ${filterId} not found`);
-            }
-
-            return result;
-        } catch (e) {
-            throw new Error(`Failed to load filter content: ${e}`);
-        }
-    };
 
     /**
      * Starts the configuration process, keeping the promise to prevent multiple
@@ -412,7 +269,7 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        await TsWebExtension.syncFiltersWithStorage(config.staticFiltersIds, config.ruleSetsPath);
+        await FiltersApi.syncFiltersWithStorage(config.staticFiltersIds, config.ruleSetsPath);
 
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
@@ -439,7 +296,7 @@ export class TsWebExtension implements AppInterface<
                 customFilters,
                 filtersIdsToEnable,
                 filtersIdsToDisable,
-            } = await TsWebExtension.getFiltersUpdateInfo(configuration, TsWebExtension.loadFilterContent);
+            } = await TsWebExtension.getFiltersUpdateInfo(configuration, FiltersApi.loadFilterContent);
 
             // Update list of enabled static filters
             res.staticFiltersStatus = await FiltersApi.updateFiltering(
@@ -878,81 +735,4 @@ export class TsWebExtension implements AppInterface<
     public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
         return engineApi.retrieveDynamicRuleNode(filterId, ruleIndex);
     }
-
-    /**
-     * Gets the checksums of the rule sets.
-     *
-     * @param ruleSetId Rule set id.
-     * @param ruleSetsPath Path to the rule sets.
-     *
-     * @returns Checksums of the rule sets.
-     *
-     * @throws If the rule sets loader is not initialized or the checksum for the specified rule set is not found.
-     */
-    public static getChecksum(ruleSetId: string | number, ruleSetsPath: string): Promise<string | undefined> {
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
-
-        return ruleSetsLoaderApi.getChecksum(ruleSetId);
-    }
-
-    /**
-     * Retrieves the raw filter list.
-     *
-     * @param filterId Filter id.
-     * @param ruleSetsPath Path to the rule sets.
-     *
-     * @returns Raw filter list.
-     *
-     * @throws Error if rule sets path is not set.
-     */
-    public static getRawFilterList = async (
-        filterId: number,
-        ruleSetsPath: string,
-    ): Promise<string> => {
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
-        const ruleSetId = RuleSetsLoaderApi.getRuleSetId(filterId);
-
-        return ruleSetsLoaderApi.getRawCategoryContent(
-            ruleSetId,
-            RuleSetByteRangeCategory.PreprocessedFilterListRaw,
-        ).then(JSON.parse);
-    };
-
-    /**
-     * Retrieves the preprocessed filter list.
-     *
-     * @param filterId Filter id.
-     * @param ruleSetsPath Path to the rule sets.
-     *
-     * @returns Preprocessed filter list.
-     *
-     * @throws Error if rule sets path is not set.
-     *
-     * @note You can learn more about the preprocessed filter list in
-     * {@link https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#preprocessedfilterlist-interface|tsurlfilter documentation}.
-     */
-    public static getPreprocessedFilterList = async (
-        filterId: number,
-        ruleSetsPath: string,
-    ): Promise<PreprocessedFilterList> => {
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
-        const ruleSetId = RuleSetsLoaderApi.getRuleSetId(filterId);
-
-        const [rawFilterList, conversionMap] = await Promise.all([
-            ruleSetsLoaderApi.getRawCategoryContent(
-                ruleSetId,
-                RuleSetByteRangeCategory.PreprocessedFilterListRaw,
-            ).then(JSON.parse),
-
-            ruleSetsLoaderApi.getRawCategoryContent(
-                ruleSetId,
-                RuleSetByteRangeCategory.PreprocessedFilterListConversionMap,
-            ).then(JSON.parse),
-        ]);
-
-        return FilterListPreprocessor.preprocessLightweight({
-            rawFilterList,
-            conversionMap,
-        });
-    };
 }
