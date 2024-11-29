@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
+## Unreleased <!-- release/v3.1 -->
+
+### Changed
+
+- Updated [@adguard/agtree] to `v2.1.4`.
+- We throw error for empty modifier list in network rules.
+
 ## [3.1.0-alpha.8] - 2024-11-26
 
 ### Added
@@ -23,13 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional property `maxNumberOfUnsafeRules` to `DeclarativeConverterOptions`
   for unsafe rules (only for dynamic rulesets).
 
-### Changed
-
-- Declarative converter adds each necessary information to the ruleset `.json` file,
-  other files are not needed anymore (like raw `.txt` files, `metadata.json` files, etc).
-- Updated [@adguard/agtree] to `v2.1.4`.
-- We throw error for empty modifier list in network rules.
-
 ### Fixed
 
 - Handling missing children data in the deserializer for certain nodes.
@@ -38,6 +38,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [3.1.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.8
 [AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
+
+## Unreleased <!-- master -->
+
+### Changed
+
+- Updated `@adguard/agtree` to `v2.2.0` which improves the bundle size and performance.
+
+## [3.0.8] - 2024-11-25
+
+### Changed
+
+- Error throwing for empty modifier list in network rules.
+- Updated `@adguard/agtree` to `v2.1.4`.
+
+### Fixed
+
+- Handling missing children data in the deserializer for certain nodes.
+
+[3.0.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.8
 
 ## [3.0.7] - 2024-11-19
 
