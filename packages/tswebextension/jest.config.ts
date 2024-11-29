@@ -8,6 +8,7 @@ const config: Config = {
     transform: {
         '.+\\.(js|ts)': '@swc/jest',
     },
+    extensionsToTreatAsEsm: ['.ts'],
     transformIgnorePatterns: [
         `/node_modules/(?!(${transformedModules.join('|')}))/`,
         '.*\\.json',

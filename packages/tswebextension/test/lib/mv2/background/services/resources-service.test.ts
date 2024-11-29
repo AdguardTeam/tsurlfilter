@@ -1,4 +1,5 @@
 import browser from 'sinon-chrome';
+import { jest } from '@jest/globals';
 
 import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
 

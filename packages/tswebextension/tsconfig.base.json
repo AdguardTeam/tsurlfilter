@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "target": "es2022",
         "module": "es2022",
         "lib": ["esnext", "dom"],
@@ -8,6 +8,7 @@
         "allowJs": true,
         "resolveJsonModule": true,
         "esModuleInterop": true, // This will set allowSyntheticDefaultImports to true
+        "allowSyntheticDefaultImports": true,
         "typeRoots": [
             "./types",
             "node_modules/@types",

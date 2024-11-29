@@ -8,7 +8,7 @@
         "jest.config.ts",
         "setupTests.ts",
         "tasks",
-        ".eslintrc.js",
+        ".eslintrc.cjs",
         "src/lib/mv3/.eslintrc.js"
     ],
     "compilerOptions": {

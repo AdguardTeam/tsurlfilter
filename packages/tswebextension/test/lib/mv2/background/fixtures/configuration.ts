@@ -1,6 +1,9 @@
+import { jest } from '@jest/globals';
+
 import { type ConfigurationMV2 } from '../../../../../src/lib';
 import { LF } from '../../../../../src/lib/common/constants';
 
+// @ts-ignore
 const { FilterListPreprocessor } = jest.requireActual('@adguard/tsurlfilter');
 
 export const getConfigurationMv2Fixture = (): ConfigurationMV2 => ({

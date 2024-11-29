@@ -1,4 +1,6 @@
 import browser from 'webextension-polyfill';
+import { jest } from '@jest/globals';
+
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../../../src/lib/common/constants';
 
@@ -9,7 +11,9 @@ describe('DynamicRulesApi', () => {
         it('prioritizes rules in next order: quick fixes -> allowlist -> userrules -> custom filters', async () => {
             // Manually create the mock structure for browser.declarativeNetRequest
             const mockDeclarativeNetRequest = {
+                // @ts-ignore
                 getDynamicRules: jest.fn().mockResolvedValue([]),
+                // @ts-ignore
                 updateDynamicRules: jest.fn().mockResolvedValue({}),
                 MAX_NUMBER_OF_DYNAMIC_RULES: 1,
                 MAX_NUMBER_OF_REGEX_RULES: 0,

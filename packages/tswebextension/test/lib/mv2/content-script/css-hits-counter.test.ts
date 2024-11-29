@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { jest } from '@jest/globals';
 
 import { CssHitsCounter } from '../../../../src/lib';
 

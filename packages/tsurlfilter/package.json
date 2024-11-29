@@ -17,6 +17,22 @@
       "import": "./dist/es/index.js",
       "require": "./dist/tsurlfilter.umd.js"
     },
+    "./es/declarative-converter": {
+      "import": "./dist/es/declarative-converter.js",
+      "types": "./dist/types/src/rules/declarative-converter/index.d.ts"
+    },
+    "./es/request-type": {
+      "import": "./dist/es/request-type.js",
+      "types": "./dist/types/src/request-type.d.ts"
+    },
+    "./es/network-rule-options": {
+      "import": "./dist/es/network-rule-options.js",
+      "types": "./dist/types/src/rules/network-rule-options.d.ts"
+    },
+    "./es/simple-regex": {
+      "import": "./dist/es/simple-regex.js",
+      "types": "./dist/types/src/rules/simple-regex.d.ts"
+    },
     "./es/*": "./dist/es/*.js",
     "./umd": "./dist/tsurlfilter.umd.js",
     "./cli": "./dist/cli.js"

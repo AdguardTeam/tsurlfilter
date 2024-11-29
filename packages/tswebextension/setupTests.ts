@@ -1,11 +1,13 @@
 import browser from 'sinon-chrome';
 import { TextEncoder, TextDecoder } from 'util';
+import { jest } from '@jest/globals';
 
 global.chrome = {
     ...browser,
-    // @ts-ignore
     scripting: {
+        // @ts-ignore
         insertCSS: jest.fn(),
+        // @ts-ignore
         executeScript: jest.fn(),
     },
 };
