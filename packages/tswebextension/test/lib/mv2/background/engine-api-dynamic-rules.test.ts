@@ -2,14 +2,14 @@ import { defaultParserOptions, type ParserOptions, RuleParser } from '@adguard/a
 
 import { extendConfig, type RecursivePartial } from '../../../helpers/config-extend';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
-import { type ConfigurationMV2 } from '../../../../src/lib';
+import { type ConfigurationMV2, extSessionStorage } from '../../../../src/lib';
 import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../src/lib/mv2/background/context';
 import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 import { ALLOWLIST_FILTER_ID } from '../../../../src/lib/common/constants';
 
-jest.mock('@lib/mv2/background/context');
+vi.mock('../../../../src/lib/mv2/background/context');
 
 /**
  * AGTree parser options to use in tests.
@@ -38,6 +38,11 @@ describe('EngineApi.retrieveDynamicRuleNode', () => {
 
         return api;
     };
+
+    beforeAll(() => {
+        extSessionStorage.init();
+        appContext.startTimeMs = Date.now();
+    });
 
     it('should return allowlist rules if allowlist is enabled and has rules', async () => {
         const api = await createAndStartEngineApi({

@@ -1,7 +1,7 @@
 import { remove } from 'lodash-es';
-import { WebRequest } from 'webextension-polyfill';
-import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
-import HttpHeaders = WebRequest.HttpHeaders;
+import browser from 'webextension-polyfill';
+import HttpHeadersItemType = browser.WebRequest.HttpHeadersItemType;
+import HttpHeaders = browser.WebRequest.HttpHeaders;
 
 /**
  * Finds a header object by its name (case-insensitive).

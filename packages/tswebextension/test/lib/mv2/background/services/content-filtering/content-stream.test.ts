@@ -1,5 +1,7 @@
-import { TextEncoder, TextDecoder } from 'text-encoding';
+// FIXME remove
+// import { TextEncoder, TextDecoder } from 'text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
+import TextEncoding from 'text-encoding';
 
 import { MockStreamFilter } from './mock-stream-filter';
 import { MockFilteringLog } from '../../../../common/mocks';
@@ -14,7 +16,9 @@ import {
 import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
 import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
 
-jest.mock('../../../../../../src/lib/common/utils/logger');
+const { TextEncoder, TextDecoder } = TextEncoding;
+
+vi.mock('../../../../../../src/lib/common/utils/logger');
 
 describe('Content stream', () => {
     const textEncoderUtf8 = new TextEncoder();
@@ -308,8 +312,8 @@ describe('Content stream', () => {
 
         stream.setCharset(DEFAULT_CHARSET);
 
-        const spyDisconnect = jest.spyOn(mockFilter, 'disconnect').mockImplementation();
-        const spyWrite = jest.spyOn(mockFilter, 'write').mockImplementation();
+        const spyDisconnect = vi.spyOn(mockFilter, 'disconnect').mockImplementation();
+        const spyWrite = vi.spyOn(mockFilter, 'write').mockImplementation();
 
         const data = textEncoderUtf8.encode('qwerty');
         mockFilter.send(data);

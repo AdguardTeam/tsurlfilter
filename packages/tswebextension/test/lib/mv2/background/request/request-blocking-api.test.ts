@@ -10,7 +10,7 @@ import {
 } from '../../../../../src/lib';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 
-jest.mock('@lib/mv2/background/api');
+vi.mock('../../../../../src/lib/mv2/background/api');
 
 /**
  * Returns simple data object for {@link RequestBlockingApi.getBlockingResponse} method
@@ -61,7 +61,7 @@ describe('Request Blocking Api - shouldCollapseElement', () => {
             matchingResult = new MatchingResult([rule], null);
         }
 
-        jest.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
+        vi.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
     };
 
     it('element Should be collapsed', () => {
@@ -121,21 +121,21 @@ describe('Request Blocking Api - getBlockingResponse', () => {
     };
 
     beforeEach(() => {
-        jest.spyOn(documentBlockingService, 'getDocumentBlockingResponse')
+        vi.spyOn(documentBlockingService, 'getDocumentBlockingResponse')
             .mockReturnValue(mockedBlockingPageResponse);
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     describe('tab is new', () => {
         beforeEach(() => {
-            jest.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(true);
+            vi.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(true);
         });
 
         afterEach(() => {
-            jest.resetAllMocks();
+            vi.resetAllMocks();
         });
 
         it('the popup modifier, document request - close tab', () => {
@@ -290,11 +290,11 @@ describe('Request Blocking Api - getBlockingResponse', () => {
 
     describe('tab is not new', () => {
         beforeEach(() => {
-            jest.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(false);
+            vi.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(false);
         });
 
         afterEach(() => {
-            jest.resetAllMocks();
+            vi.resetAllMocks();
         });
 
         it('just popup modifier, document request - do not close tab, undefined is returned', () => {

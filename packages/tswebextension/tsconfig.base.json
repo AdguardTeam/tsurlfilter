@@ -7,12 +7,14 @@
         "strict": true,
         "allowJs": true,
         "resolveJsonModule": true,
-        "esModuleInterop": true, // This will set allowSyntheticDefaultImports to true
+        "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
         "typeRoots": [
             "./types",
             "node_modules/@types",
-            "node_modules/chrome-types"
+            "node_modules/chrome-types",
+            "node_modules", // FIXME: this helps to find vitest/globals, or remove lines above
         ],
+        "types": ["vitest/globals"],
     }
 }

@@ -1,3 +1,4 @@
+import { describe } from 'vitest';
 import { HTTPMethod } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 

@@ -1,5 +1,6 @@
+import { describe, it, expect } from 'vitest';
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 
 import { createCosmeticRule } from '../../../../../../helpers/rule-creator';

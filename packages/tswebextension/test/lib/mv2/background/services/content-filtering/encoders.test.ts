@@ -1,4 +1,7 @@
-import { TextEncoder, TextDecoder } from 'text-encoding';
+// import { TextEncoder, TextDecoder } from 'text-encoding';
+import TextEncoding from 'text-encoding';
+
+const { TextEncoder, TextDecoder } = TextEncoding;
 
 describe('Encoders', () => {
     const message = 'test 123';

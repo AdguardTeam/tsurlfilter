@@ -6,10 +6,11 @@
         "rollup.config.ts",
         "jest-environment-jsdom.ts",
         "jest.config.ts",
-        "setupTests.ts",
         "tasks",
         ".eslintrc.cjs",
-        "src/lib/mv3/.eslintrc.js"
+        "src/lib/mv3/.eslintrc.js",
+        "vitest.config.ts",
+        "vitest.setup.ts",
     ],
     "compilerOptions": {
         "baseUrl": ".",

@@ -7,7 +7,7 @@ import { type CompaniesDbMin } from './schema';
  * but we need the same relative path (to dist file) since the data will be replaced after the build,
  * so it should be 'require' instead of 'import'.
  */
-const { rawCompaniesDb } = require('./trackers-min');
+import { rawCompaniesDb } from './trackers-min'; // FIXME make sure that this file is not bundled into index.mv3.ts
 
 /**
  * Service for working with companies database.
