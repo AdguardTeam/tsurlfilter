@@ -312,8 +312,8 @@ describe('Content stream', () => {
 
         stream.setCharset(DEFAULT_CHARSET);
 
-        const spyDisconnect = vi.spyOn(mockFilter, 'disconnect').mockImplementation();
-        const spyWrite = vi.spyOn(mockFilter, 'write').mockImplementation();
+        const spyDisconnect = vi.spyOn(mockFilter, 'disconnect');
+        const spyWrite = vi.spyOn(mockFilter, 'write');
 
         const data = textEncoderUtf8.encode('qwerty');
         mockFilter.send(data);

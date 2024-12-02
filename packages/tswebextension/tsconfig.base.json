@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "moduleResolution": "bundler",
+         "moduleResolution": "bundler", // Remove this line
         "target": "es2022",
         "module": "es2022",
         "lib": ["esnext", "dom"],
@@ -12,9 +12,7 @@
         "typeRoots": [
             "./types",
             "node_modules/@types",
-            "node_modules/chrome-types",
-            "node_modules", // FIXME: this helps to find vitest/globals, or remove lines above
-        ],
-        "types": ["vitest/globals"],
+            "node_modules/chrome-types"
+        ]
     }
 }

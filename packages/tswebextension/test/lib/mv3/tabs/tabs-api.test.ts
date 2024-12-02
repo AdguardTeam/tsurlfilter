@@ -201,7 +201,7 @@ describe('TabsApi', () => {
 
             browser.tabs.query.resolves([{ id: tabId } as TabInfo]);
 
-            const spy = vi.spyOn(tabsApi, 'updateTabMainFrameRule').mockImplementation();
+            const spy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
 
             await tabsApi.updateCurrentTabsMainFrameRules();
 
