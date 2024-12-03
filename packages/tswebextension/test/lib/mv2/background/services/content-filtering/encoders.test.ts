@@ -1,4 +1,3 @@
-// import { TextEncoder, TextDecoder } from 'text-encoding';
 import TextEncoding from 'text-encoding';
 
 const { TextEncoder, TextDecoder } = TextEncoding;

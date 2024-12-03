@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-         "moduleResolution": "bundler", // Remove this line
+         "moduleResolution": "bundler",
         "target": "es2022",
         "module": "es2022",
         "lib": ["esnext", "dom"],

@@ -1,5 +1,3 @@
-// FIXME remove
-// import { TextEncoder, TextDecoder } from 'text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
 import TextEncoding from 'text-encoding';
 

@@ -1,5 +1,3 @@
-// FIXME remove
-// import { TextEncoder, TextDecoder } from 'text-encoding';
 import TextEncoding from 'text-encoding';
 import { type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
