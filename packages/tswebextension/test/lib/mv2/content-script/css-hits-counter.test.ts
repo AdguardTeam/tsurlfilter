@@ -2,8 +2,6 @@
  * @vitest-environment jsdom
  */
 
-// import { jest } from '@jest/globals';
-
 import { CssHitsCounter } from '../../../../src/lib';
 
 describe('CssHitsCounter', () => {

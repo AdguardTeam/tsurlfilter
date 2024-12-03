@@ -62,7 +62,7 @@ module.exports = {
         'jsdoc/tag-lines': 'off',
         'jsdoc/require-throws': 'error',
         'jsdoc/check-tag-names': ['error', {
-            definedTags: ['jest-environment', 'vitest-environment'],
+            definedTags: ['vitest-environment'],
         }],
         'jsdoc/require-jsdoc': [
             'error',

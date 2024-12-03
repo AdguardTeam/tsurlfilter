@@ -3,8 +3,6 @@
     "include": [
         "src",
         "rollup.config.ts",
-        "jest-environment-jsdom.ts",
-        "jest.config.ts",
         "tasks",
         ".eslintrc.cjs",
         "src/lib/mv3/.eslintrc.js",

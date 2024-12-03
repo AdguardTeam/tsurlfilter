@@ -1,5 +1,4 @@
 import browser from 'webextension-polyfill';
-// import { jest } from '@jest/globals';
 
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../../../src/lib/common/constants';
