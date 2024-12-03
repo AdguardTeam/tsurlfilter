@@ -145,7 +145,7 @@ const cliConfig = {
     output: [
         {
             file: `${OUTPUT_PATH}/cli.js`,
-            format: 'cjs',
+            format: 'esm',
             sourcemap: false,
         },
     ],
@@ -171,8 +171,7 @@ const mv3UtilsConfig = {
     output: [
         {
             file: `${OUTPUT_PATH}/mv3-utils.js`,
-            // TODO: Replace via 'esm'
-            format: 'cjs',
+            format: 'esm',
             sourcemap: false,
         },
     ],
