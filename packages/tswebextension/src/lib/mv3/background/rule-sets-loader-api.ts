@@ -1,16 +1,16 @@
 import { RuleParser } from '@adguard/agtree';
-import { type ByteRange, fetchExtensionResourceText } from '@adguard/tsurlfilter';
+import { fetchExtensionResourceText } from '@adguard/tsurlfilter';
 import {
     type IFilter,
     type IRuleSet,
     RuleSet,
     IndexedNetworkRuleWithHash,
     RulesHashMap,
-    RULESET_NAME_PREFIX,
     RuleSetByteRangeCategory,
     MetadataRuleSet,
     METADATA_RULESET_ID,
 } from '@adguard/tsurlfilter/es/declarative-converter';
+import { getRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import browser from 'webextension-polyfill';
 import { getErrorMessage, logger } from '../../common';
 
@@ -86,40 +86,6 @@ export class RuleSetsLoaderApi {
     }
 
     /**
-     * Helper method to get the rule set ID with the {@link RULESET_NAME_PREFIX} prefix.
-     *
-     * @param ruleSetId Rule set id. Can be a number or a string.
-     *
-     * @returns Rule set ID with the {@link RULESET_NAME_PREFIX} prefix.
-     */
-    public static getRuleSetId(ruleSetId: string | number): string {
-        let ruleSetIdStr = String(ruleSetId);
-
-        if (!ruleSetIdStr.startsWith(RULESET_NAME_PREFIX)) {
-            ruleSetIdStr = `${RULESET_NAME_PREFIX}${ruleSetIdStr}`;
-        }
-
-        return ruleSetIdStr;
-    }
-
-    /**
-     * Helper method to get the path to the rule set file.
-     *
-     * @param ruleSetId Rule set id. Can be a number or a string.
-     *
-     * @returns Path to the rule set file.
-     *
-     * @note This is just a path, not a URL. To get a URL, use {@link browser.runtime.getURL}.
-     * @note Rule set ID automatically gets a {@link RULESET_NAME_PREFIX} prefix if it doesn't have it,
-     * e.g. `123` -> `ruleset_123` or `foo` -> `ruleset_foo`.
-     */
-    private getRuleSetPath(ruleSetId: string | number): string {
-        const ruleSetIdWithPrefix = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
-
-        return `${this.ruleSetsPath}/${ruleSetIdWithPrefix}/${ruleSetIdWithPrefix}.json`;
-    }
-
-    /**
      * Gets the checksums of the rule sets.
      *
      * @param ruleSetId Rule set id.
@@ -133,7 +99,7 @@ export class RuleSetsLoaderApi {
             await this.initialize();
         }
 
-        const ruleSetIdWithPrefix = RuleSetsLoaderApi.getRuleSetId(ruleSetId);
+        const ruleSetIdWithPrefix = getRuleSetId(ruleSetId);
 
         return RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]?.getChecksum(ruleSetIdWithPrefix);
     }
@@ -159,7 +125,7 @@ export class RuleSetsLoaderApi {
         const initialize = async (): Promise<void> => {
             try {
                 if (!RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]) {
-                    const metadataRulesetPath = this.getRuleSetPath(METADATA_RULESET_ID);
+                    const metadataRulesetPath = getRuleSetPath(METADATA_RULESET_ID, this.ruleSetsPath);
                     const rawMetadataRuleset = await fetchExtensionResourceText(
                         browser.runtime.getURL(metadataRulesetPath),
                     );
@@ -181,34 +147,6 @@ export class RuleSetsLoaderApi {
     }
 
     /**
-     * Gets the byte range for the specified rule set and category.
-     *
-     * @param rulesetId Rule set id.
-     * @param category Byte range category, see {@link RuleSetByteRangeCategory}.
-     *
-     * @returns Byte range for the specified rule set and category.
-     *
-     * @throws Error if the byte range map for the specified rule set is not found
-     * or the byte range for the specified category is not found.
-     */
-    // eslint-disable-next-line class-methods-use-this
-    private getByteRange(rulesetId: string, category: RuleSetByteRangeCategory): ByteRange {
-        const byteRangeMap = RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath]?.getByteRangeMap(rulesetId);
-
-        if (!byteRangeMap) {
-            throw new Error(`Byte range map for rule set ${rulesetId} not found`);
-        }
-
-        const range = byteRangeMap[category];
-
-        if (!range) {
-            throw new Error(`Byte range for category ${category} not found in rule set ${rulesetId}`);
-        }
-
-        return range;
-    }
-
-    /**
      * Fetches the declarative rules without metadata rule from the rule set file.
      *
      * @param ruleSetId Rule set id.
@@ -222,7 +160,7 @@ export class RuleSetsLoaderApi {
             await this.initialize();
         }
 
-        const ruleSetPath = this.getRuleSetPath(ruleSetId);
+        const ruleSetPath = getRuleSetPath(ruleSetId, this.ruleSetsPath);
 
         // The ruleset file contains rules stored in a JSON array with the following structure:
         // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
@@ -244,8 +182,9 @@ export class RuleSetsLoaderApi {
         // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
         //                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-        const metadataRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.DeclarativeMetadata);
-        const fullRange = this.getByteRange(ruleSetId, RuleSetByteRangeCategory.Full);
+        const metadataRuleset = RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath];
+        const metadataRange = metadataRuleset.getByteRange(ruleSetId, RuleSetByteRangeCategory.DeclarativeMetadata);
+        const fullRange = metadataRuleset.getByteRange(ruleSetId, RuleSetByteRangeCategory.Full);
 
         // After the metadata rule, there may be a comma or a closing bracket.
         // During fetching, `metadataRange.end` points to the last character of the metadata rule:
@@ -312,8 +251,9 @@ export class RuleSetsLoaderApi {
             await this.initialize();
         }
 
-        const ruleSetPath = this.getRuleSetPath(rulesetId);
-        const range = this.getByteRange(rulesetId, category);
+        const ruleSetPath = getRuleSetPath(rulesetId, this.ruleSetsPath);
+        const metadataRuleset = RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath];
+        const range = metadataRuleset.getByteRange(rulesetId, category);
 
         return fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath), range);
     }

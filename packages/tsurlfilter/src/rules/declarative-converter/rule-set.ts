@@ -17,11 +17,6 @@ import { createMetadataRule } from './metadata-rule';
 import { type ByteRangeMap } from './metadata-ruleset';
 
 /**
- * Prefix for ruleset name.
- */
-export const RULESET_NAME_PREFIX = 'ruleset_';
-
-/**
  * The OriginalSource contains the text of the original rule and the filter
  * identifier of that rule.
  */

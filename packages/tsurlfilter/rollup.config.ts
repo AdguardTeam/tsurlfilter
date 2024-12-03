@@ -98,6 +98,19 @@ const esmDeclarativeConverterConfig = {
     ...commonConfig,
 };
 
+const esmDeclarativeConverterUtilsConfig = {
+    input: 'src/rules/declarative-converter-utils/index.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/es/declarative-converter-utils.js`,
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    external: commonExternal,
+    ...commonConfig,
+};
+
 /**
  * UMD build is needed for the FiltersCompiler and DNS dashboard.
  *
@@ -173,6 +186,7 @@ const cliConfig = {
 export default [
     esmConfig,
     esmDeclarativeConverterConfig,
+    esmDeclarativeConverterUtilsConfig,
     umdConfig,
     cliConfig,
 ];

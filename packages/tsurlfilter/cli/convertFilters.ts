@@ -15,6 +15,7 @@ import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 import { generateMD5Hash } from '../src/utils/checksum';
 import { MetadataRuleSet } from '../src/rules/declarative-converter/metadata-ruleset';
+import { getRuleSetId, getRuleSetPath } from '../src/rules/declarative-converter-utils';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
@@ -189,13 +190,14 @@ export const convertFilters = async (
         const ruleSet = convertedRuleSets[i];
         const id = ruleSet.getId();
 
-        const ruleSetDir = `${destRuleSetsPath}/${id}`;
+        const ruleSetDir = path.join(destRuleSetsPath, getRuleSetId(id));
         ensureDirSync(ruleSetDir);
 
         // eslint-disable-next-line no-await-in-loop
         const { result, byteRangeMap } = await ruleSet.serializeCompact(prettifyJson);
+        const ruleSetPath = getRuleSetPath(id, destRuleSetsPath);
         // eslint-disable-next-line no-await-in-loop
-        await fs.promises.writeFile(`${ruleSetDir}/${id}.json`, result);
+        await fs.promises.writeFile(ruleSetPath, result);
 
         metadataRuleSet.setByteRangeMap(id, byteRangeMap);
         metadataRuleSet.setChecksum(id, generateMD5Hash(result));
@@ -203,20 +205,21 @@ export const convertFilters = async (
         console.log('===============================================');
         console.info(`Rule set with id ${id} and all rule set info`);
         console.info('(counters, source map, filter list) was saved');
-        console.info(`to ${destRuleSetsDir}/${id}`);
+        console.info(`to ${ruleSetPath}`);
         console.log('===============================================');
     }
 
     const metadataRulesetId = metadataRuleSet.getId();
-    const metadataRulesetDir = `${destRuleSetsPath}/${metadataRulesetId}`;
+    const metadataRulesetDir = path.join(destRuleSetsPath, getRuleSetId(metadataRulesetId));
     ensureDirSync(metadataRulesetDir);
 
+    const metadataRuleSetPath = getRuleSetPath(metadataRulesetId, destRuleSetsPath);
     await fs.promises.writeFile(
-        `${metadataRulesetDir}/${metadataRulesetId}.json`,
+        metadataRuleSetPath,
         metadataRuleSet.serialize(prettifyJson),
     );
 
     console.log('===============================================');
-    console.info(`Metadata ruleset saved to ${metadataRulesetDir}`);
+    console.info(`Metadata ruleset saved to ${metadataRuleSetPath}`);
     console.log('===============================================');
 };

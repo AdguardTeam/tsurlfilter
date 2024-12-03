@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 import { serializeJson } from '../../utils/misc';
-import { byteRangeValidator } from '../../utils/byte-range';
+import { type ByteRange, byteRangeValidator } from '../../utils/byte-range';
 import { isNonEmptyArray } from '../../utils/guards';
+import { getRuleSetId } from '../declarative-converter-utils';
 
-import { RULESET_NAME_PREFIX } from './rule-set';
 import { createMetadataRule, type MetadataRule } from './metadata-rule';
 
 /**
@@ -97,7 +97,7 @@ export class MetadataRuleSet {
     // Note: we prefer `instance.getId()` over `MetadataRuleSet.getId(instance)` for consistency.
     // eslint-disable-next-line class-methods-use-this
     public getId(): string {
-        return `${RULESET_NAME_PREFIX}${METADATA_RULESET_ID}`;
+        return getRuleSetId(METADATA_RULESET_ID);
     }
 
     /**
@@ -129,6 +129,33 @@ export class MetadataRuleSet {
      */
     public getByteRangeMap(ruleSetId: string): ByteRangeMap | undefined {
         return this.metadataRule.metadata.byteRangeMapsCollection[ruleSetId];
+    }
+
+    /**
+     * Gets the byte range for the specified rule set and category.
+     *
+     * @param rulesetId Rule set id.
+     * @param category Byte range category, see {@link RuleSetByteRangeCategory}.
+     *
+     * @returns Byte range for the specified rule set and category.
+     *
+     * @throws Error if the byte range map for the specified rule set is not found
+     * or the byte range for the specified category is not found.
+     */
+    public getByteRange(rulesetId: string, category: string): ByteRange {
+        const byteRangeMap = this.getByteRangeMap(rulesetId);
+
+        if (!byteRangeMap) {
+            throw new Error(`Byte range map for rule set ${rulesetId} not found`);
+        }
+
+        const range = byteRangeMap[category];
+
+        if (!range) {
+            throw new Error(`Byte range for category ${category} not found in rule set ${rulesetId}`);
+        }
+
+        return range;
     }
 
     /**

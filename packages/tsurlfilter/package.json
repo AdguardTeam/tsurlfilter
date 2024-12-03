@@ -40,6 +40,9 @@
       "es/declarative-converter": [
         "dist/types/src/rules/declarative-converter/index.d.ts"
       ],
+      "es/declarative-converter-utils": [
+        "dist/types/src/rules/declarative-converter-utils/index.d.ts"
+      ],
       "cli": [
         "dist/types/cli/index.d.ts"
       ]

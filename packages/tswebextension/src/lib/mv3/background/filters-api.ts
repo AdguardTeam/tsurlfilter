@@ -12,6 +12,7 @@ import {
     type PreprocessedFilterList,
     preprocessedFilterListValidator,
 } from '@adguard/tsurlfilter';
+import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { FiltersStorage } from '../../common/storage/filters';
 import { getErrorMessage } from '../../common/error';
@@ -285,7 +286,7 @@ export default class FiltersApi {
         ruleSetsPath: string,
     ): Promise<string> => {
         const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
-        const ruleSetId = RuleSetsLoaderApi.getRuleSetId(filterId);
+        const ruleSetId = getRuleSetId(filterId);
 
         return ruleSetsLoaderApi.getRawCategoryContent(
             ruleSetId,
@@ -311,7 +312,7 @@ export default class FiltersApi {
         ruleSetsPath: string,
     ): Promise<PreprocessedFilterList> => {
         const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
-        const ruleSetId = RuleSetsLoaderApi.getRuleSetId(filterId);
+        const ruleSetId = getRuleSetId(filterId);
 
         const [rawFilterList, conversionMap] = await Promise.all([
             ruleSetsLoaderApi.getRawCategoryContent(

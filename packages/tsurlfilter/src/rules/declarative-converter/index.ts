@@ -11,3 +11,4 @@ export * from './errors/conversion-errors';
 export * from './errors/converter-options-errors';
 export * from './errors/limitation-errors';
 export * from './errors/unavailable-sources-errors';
+export { RULESET_NAME_PREFIX } from '../../common/constants';
