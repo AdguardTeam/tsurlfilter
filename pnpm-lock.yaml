@@ -1228,8 +1228,8 @@ importers:
         specifier: ^4.3.70
         version: 4.3.70
       '@adguard/extended-css':
-        specifier: ^2.0.56
-        version: link:../../../extended-css
+        specifier: ^2.0.59
+        version: 2.0.59
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
@@ -1445,6 +1445,11 @@ packages:
   /@adguard/extended-css@2.0.56:
     resolution: {integrity: sha512-RMPRGZ80kM6KiKRR0K2DUOD0+2CiadBk+G6zYBrRmzk4lD71Cipv2b9/rRy9Fdh41ipoApZsQdbJZozXFsM8RA==}
     engines: {node: '>=14'}
+    dev: false
+
+  /@adguard/extended-css@2.0.59:
+    resolution: {integrity: sha512-rh+rITfPS82JyzSd43fBUdKlLm77YFJkO9uT1PgJAA6BdW0Ufkn2Ab83VrTNWdk+X+ULikdMQVX+SPDWa0eNWA==}
+    engines: {node: '>=16'}
     dev: false
 
   /@adguard/filters-downloader@2.2.0:
@@ -14839,7 +14844,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@20.16.5)(typescript@5.6.2)
+      ts-node: 10.9.2(@swc/core@1.7.23)(@types/node@20.16.5)(typescript@5.4.5)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color

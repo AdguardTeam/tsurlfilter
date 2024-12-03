@@ -90,7 +90,7 @@
   "dependencies": {
     "@adguard/agtree": "workspace:^",
     "@adguard/assistant": "^4.3.70",
-    "@adguard/extended-css": "^2.0.56",
+    "@adguard/extended-css": "^2.0.59",
     "@adguard/logger": "workspace:^",
     "@adguard/scriptlets": "^2.0.1",
     "@adguard/tsurlfilter": "workspace:^",
