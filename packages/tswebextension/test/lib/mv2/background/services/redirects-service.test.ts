@@ -6,7 +6,7 @@ vi.mock('../../../../../src/lib/mv2/background/services/resources-service', asyn
 });
 
 describe('RedirectsService', () => {
-    let resourcesService: any;
+    let resourcesService: ResourcesService;
     let redirectsService: RedirectsService;
 
     beforeEach(async () => {

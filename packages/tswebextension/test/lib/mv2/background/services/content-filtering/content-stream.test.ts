@@ -1,5 +1,5 @@
+import { TextEncoder, TextDecoder } from 'text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
-import TextEncoding from 'text-encoding';
 
 import { MockStreamFilter } from './mock-stream-filter';
 import { MockFilteringLog } from '../../../../common/mocks';
@@ -13,8 +13,6 @@ import {
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
 import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
 import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
-
-const { TextEncoder, TextDecoder } = TextEncoding;
 
 vi.mock('../../../../../../src/lib/common/utils/logger');
 

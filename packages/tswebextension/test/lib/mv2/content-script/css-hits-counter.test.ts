@@ -58,7 +58,7 @@ describe('CssHitsCounter', () => {
 
         /**
          * Mock mutation observer class.
-         * In case original class doesn't work properly in jest jsdom environment.
+         * In case original class doesn't work properly in vitest jsdom environment.
          */
         window.MutationObserver = class {
             private callback: MutationCallback;

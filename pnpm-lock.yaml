@@ -12,7 +12,7 @@ importers:
   .:
     devDependencies:
       lerna:
-        specifier: ^8.1.8
+        specifier: 8.1.8
         version: 8.1.8
 
   packages/adguard-api:
@@ -3641,7 +3641,7 @@ packages:
     engines: {node: ^14.17.0 || ^16.13.0 || >=18.0.0}
     dependencies:
       '@npmcli/name-from-folder': 2.0.0
-      glob: 10.3.10
+      glob: 10.4.5
       minimatch: 9.0.4
       read-package-json-fast: 3.0.2
     dev: true
@@ -3675,7 +3675,7 @@ packages:
     engines: {node: ^16.14.0 || >=18.0.0}
     dependencies:
       '@npmcli/git': 5.0.4
-      glob: 10.3.10
+      glob: 10.4.5
       hosted-git-info: 7.0.2
       json-parse-even-better-errors: 3.0.2
       normalize-package-data: 6.0.2
@@ -4188,7 +4188,7 @@ packages:
       estree-walker: 2.0.2
       fdir: 6.4.2(picomatch@4.0.2)
       is-reference: 1.2.1
-      magic-string: 0.30.8
+      magic-string: 0.30.14
       picomatch: 4.0.2
       rollup: 4.28.0
     dev: true
@@ -9383,7 +9383,7 @@ packages:
     dependencies:
       '@npmcli/fs': 3.1.1
       fs-minipass: 3.0.3
-      glob: 10.3.10
+      glob: 10.4.5
       lru-cache: 10.4.3
       minipass: 7.1.2
       minipass-collect: 2.0.1
@@ -15222,7 +15222,7 @@ packages:
       pretty-format: 29.7.0
       slash: 3.0.0
       strip-json-comments: 3.1.1
-      ts-node: 10.9.2(@swc/core@1.4.8)(@types/node@18.19.64)(typescript@5.6.3)
+      ts-node: 10.9.2(@swc/core@1.7.23)(@types/node@20.16.5)(typescript@5.4.5)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
@@ -17065,7 +17065,7 @@ packages:
     dependencies:
       env-paths: 2.2.1
       exponential-backoff: 3.1.1
-      glob: 10.3.10
+      glob: 10.4.5
       graceful-fs: 4.2.11
       make-fetch-happen: 13.0.0
       nopt: 7.2.1

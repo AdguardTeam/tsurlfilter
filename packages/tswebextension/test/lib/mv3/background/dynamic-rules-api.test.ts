@@ -10,9 +10,7 @@ describe('DynamicRulesApi', () => {
         it('prioritizes rules in next order: quick fixes -> allowlist -> userrules -> custom filters', async () => {
             // Manually create the mock structure for browser.declarativeNetRequest
             const mockDeclarativeNetRequest = {
-                // @ts-ignore
                 getDynamicRules: vi.fn().mockResolvedValue([]),
-                // @ts-ignore
                 updateDynamicRules: vi.fn().mockResolvedValue({}),
                 MAX_NUMBER_OF_DYNAMIC_RULES: 1,
                 MAX_NUMBER_OF_REGEX_RULES: 0,

@@ -1,12 +1,6 @@
 import { getHostname, getDomain } from 'tldts';
 
 import { type CompaniesDbMin } from './schema';
-
-/**
- * IMPORTANT: if 'import' is used, the path will be resolved to the actual file in the bundled index.mv3.ts
- * but we need the same relative path (to dist file) since the data will be replaced after the build,
- * so it should be 'require' instead of 'import'.
- */
 import { rawCompaniesDb } from './trackers-min';
 
 /**

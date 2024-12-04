@@ -7,9 +7,13 @@
         ".eslintrc.cjs",
         "src/lib/mv3/.eslintrc.js",
         "vitest.config.ts",
-        "vitest.setup.ts"
+        "vitest.setup.ts",
     ],
-    "exclude": ["test", "**/*.test.ts", "**/*.spec.ts"],
+    "exclude": [
+        "test",
+        "**/*.test.ts",
+        "**/*.spec.ts"
+    ],
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {

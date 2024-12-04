@@ -102,7 +102,6 @@ const backgroundConfig = {
     input: {
         index: 'src/lib/mv2/background/index.ts',
         'index.mv3': 'src/lib/mv3/background/index.ts',
-        'trackers-min': 'src/lib/common/companies-db-service/trackers-min.ts',
     },
     output: [
         {
@@ -114,6 +113,7 @@ const backgroundConfig = {
                 'text-encoding-polyfill': [
                     'node_modules/text-encoding',
                 ],
+                'trackers-min': ['src/lib/common/companies-db-service/trackers-min.ts'],
             },
         },
     ],

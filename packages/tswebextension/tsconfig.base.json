@@ -7,8 +7,8 @@
         "strict": true,
         "allowJs": true,
         "resolveJsonModule": true,
-        "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true, // This will set allowSyntheticDefaultImports to true
+        "skipLibCheck": true,
         "typeRoots": [
             "./types",
             "node_modules/@types",
