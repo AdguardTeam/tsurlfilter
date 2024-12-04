@@ -13,9 +13,9 @@ import { type LocalScriptRules, localScriptRulesService } from './services/local
 import { RequestEvents } from './request';
 import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
-import type { AppContext } from './context';
+import type { AppContext } from './app-context';
 import type { StealthApi } from './stealth-api';
-import type { TabsApi } from './tabs';
+import type { TabsApi } from './tabs/tabs-api';
 import type { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
 import type { EngineApi } from './engine-api';
 import type { RedirectsService } from './services/redirects/redirects-service';

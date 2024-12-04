@@ -1,17 +1,15 @@
 import browser, { type Tabs } from 'webextension-polyfill';
-import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
 import { logger } from '../../../common/utils/logger';
 import { ContentType } from '../../../common/request-type';
 import { CosmeticApi } from '../cosmetic-api';
+import { CosmeticFrameProcessor } from '../cosmetic-frame-processor';
 import { Frame } from './frame';
 import { TabContext } from './tab-context';
-import type { EngineApi } from '../engine-api';
 import type { DocumentApi } from '../document-api';
 import type { TabsApi } from './tabs-api';
 import { MAIN_FRAME_ID } from '../../../common/constants';
-import { appContext } from '../context';
+import { appContext } from '../app-context';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -25,7 +23,6 @@ export class TabsCosmeticInjector {
      * @param tabsApi  Tabs API.
      */
     constructor(
-        private readonly engineApi: EngineApi,
         private readonly documentApi: DocumentApi,
         private readonly tabsApi: TabsApi,
     ) {}
@@ -62,18 +59,12 @@ export class TabsCosmeticInjector {
             return;
         }
 
-        const { url } = tab;
-
-        const tabContext = new TabContext(tab, this.documentApi);
-
+        const tabContext = TabContext.createNewTabContext(tab, this.documentApi);
         const tabId = tab.id;
 
         this.tabsApi.context.set(tabId, tabContext);
 
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
-        if (url && isHttpRequest(url)) {
-            tabContext.mainFrameRule = this.documentApi.matchFrame(url);
-        }
+        this.tabsApi.updateTabMainFrameRule(tabId);
 
         const frames = await browser.webNavigation.getAllFrames({ tabId });
 
@@ -81,27 +72,39 @@ export class TabsCosmeticInjector {
             return;
         }
 
-        frames.forEach(({ frameId, url: frameUrl }) => {
-            const frame = new Frame(frameUrl);
+        const currentTime = Date.now();
 
-            tabContext.frames.set(frameId, frame);
+        frames.forEach((frameDetails) => {
+            const {
+                url,
+                frameId,
+                // FIXME (Slava): supported by chrome 106+ so increase minimal supported browser version
+                // FIXME (Slava): check firefox
+                // @ts-ignore
+                parentDocumentId,
+                // FIXME (Slava): supported by chrome 106+ so increase minimal supported browser version
+                // FIXME (Slava): check firefox
+                // @ts-ignore
+                documentId,
+            } = frameDetails;
 
-            if (!isHttpOrWsRequest(frameUrl)) {
-                return;
-            }
+            this.tabsApi.setFrameContext(tabId, frameId, new Frame({
+                tabId,
+                frameId,
+                url,
+                timeStamp: currentTime,
+                parentDocumentId,
+                documentId,
+            }));
 
-            const isDocumentFrame = frameId === MAIN_FRAME_ID;
-
-            frame.matchingResult = this.engineApi.matchRequest({
-                requestUrl: frameUrl,
-                frameUrl,
-                requestType: isDocumentFrame ? RequestType.Document : RequestType.SubDocument,
-                frameRule: tabContext.mainFrameRule,
+            CosmeticFrameProcessor.handleFrame({
+                tabId,
+                frameId,
+                url,
+                timeStamp: currentTime,
+                parentDocumentId,
+                documentId,
             });
-
-            if (!frame.matchingResult) {
-                return;
-            }
 
             // TODO: Instead of this, it’s better to use the runtime.onStartup and runtime.onInstalled
             // events to inject cosmetics once during the extension's initialization
@@ -109,28 +112,33 @@ export class TabsCosmeticInjector {
             // However, this would require big refactoring of the extension.
             /**
              * This condition prevents applying cosmetic rules to the tab multiple times.
-             * Applying them once after the extension's initialization is sufficient.
+             * Applying them once after the extension's initialization is enough.
              */
             if (appContext.cosmeticsInjectedOnStartup) {
                 return;
             }
 
-            const cosmeticOption = frame.matchingResult.getCosmeticOption();
+            // Note: this is an async function, but we will not await it because
+            // events do not support async listeners.
+            Promise.all([
+                CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
+                CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+            ]).catch((e) => logger.error(e));
 
-            frame.cosmeticResult = this.engineApi.getCosmeticResult(frameUrl, cosmeticOption);
+            const frameContext = this.tabsApi.getFrameContext(tabId, frameId);
+            if (!frameContext?.cosmeticResult) {
+                // eslint-disable-next-line max-len
+                logger.debug(`[tswebextension.processOpenTab]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                return;
+            }
 
-            const { cosmeticResult } = frame;
-
-            CosmeticApi.applyFrameCssRules(frameId, tabId);
-
-            CosmeticApi.applyFrameJsRules(frameId, tabId);
-
+            const isMainFrame = frameId === MAIN_FRAME_ID;
             CosmeticApi.logScriptRules({
-                url: frameUrl,
+                url,
                 tabId,
-                cosmeticResult,
-                timestamp: Date.now(),
-                contentType: isDocumentFrame
+                cosmeticResult: frameContext.cosmeticResult,
+                timestamp: currentTime,
+                contentType: isMainFrame
                     ? ContentType.Document
                     : ContentType.Subdocument,
             });

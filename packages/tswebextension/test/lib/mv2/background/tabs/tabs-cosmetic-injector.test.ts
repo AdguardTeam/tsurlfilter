@@ -4,7 +4,7 @@ import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 import { extSessionStorage, TabsApi, TabsCosmeticInjector } from '../../../../../src/lib';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
-import { appContext } from '../../../../../src/lib/mv2/background/context';
+import { appContext } from '../../../../../src/lib/mv2/background/app-context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';
@@ -31,7 +31,7 @@ describe('TabsCosmeticInjector', () => {
         engineApi = new EngineApi(allowlist, appContext, stealthApi);
         const documentApi = new DocumentApi(allowlist, engineApi);
         const tabsApi = new TabsApi(documentApi);
-        tabCosmeticInjector = new TabsCosmeticInjector(engineApi, documentApi, tabsApi);
+        tabCosmeticInjector = new TabsCosmeticInjector(documentApi, tabsApi);
     });
 
     afterEach(() => {
@@ -71,8 +71,8 @@ describe('TabsCosmeticInjector', () => {
 
             await tabCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyFrameCssRules).toBeCalledWith(frameId, tabId);
-            expect(CosmeticApi.applyFrameJsRules).toBeCalledWith(frameId, tabId);
+            expect(CosmeticApi.applyCssByTabAndFrame).toBeCalledWith(frameId, tabId);
+            expect(CosmeticApi.applyJsByTabAndFrame).toBeCalledWith(frameId, tabId);
             expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 
@@ -83,8 +83,8 @@ describe('TabsCosmeticInjector', () => {
 
             await tabCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyFrameCssRules).not.toBeCalled();
-            expect(CosmeticApi.applyFrameJsRules).not.toBeCalled();
+            expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
+            expect(CosmeticApi.applyJsByTabAndFrame).not.toBeCalled();
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
 
@@ -98,8 +98,8 @@ describe('TabsCosmeticInjector', () => {
 
             await tabCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyFrameCssRules).not.toBeCalled();
-            expect(CosmeticApi.applyFrameJsRules).not.toBeCalled();
+            expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
+            expect(CosmeticApi.applyJsByTabAndFrame).not.toBeCalled();
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
     });
