@@ -18,7 +18,6 @@ export class TabsCosmeticInjector {
     /**
      * Create instance of TabsCosmeticInjector.
      *
-     * @param engineApi Engine API.
      * @param documentApi  Document API.
      * @param tabsApi  Tabs API.
      */
