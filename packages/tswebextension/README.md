@@ -5,7 +5,7 @@ TypeScript library that wraps webextension api for tsurlfilter library.
 Table of content:
 
 - [TSWebExtension](#tswebextension)
-  - [Browser support](#browser-support)
+  - [Browser compatibility](#browser-compatibility)
   - [Install](#install)
   - [Usage](#usage)
   - [CLI](#cli)
@@ -26,8 +26,8 @@ Table of content:
         - [content](#content-1)
       - [filtersPath (MV3 only)](#filterspath-mv3-only)
       - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
-      - [declarativeLogEnabled (MV3 only)](#extended-filtering-log-enabled-mv3-only)
-      - [quickFixesRules (MV3 only)](#quick-fixes-rules-mv3-only)
+      - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
+      - [quickFixesRules (MV3 only)](#quickfixesrules-mv3-only)
       - [allowlist](#allowlist)
       - [trustedDomains](#trusteddomains)
       - [userrules (MV2)](#userrules-mv2)
@@ -113,12 +113,16 @@ Table of content:
       - [publishEvent()](#publishevent)
   - [Development](#development)
 
-## Browser support
+## Browser compatibility
 
-|                |manifest v2   |manifest v3  |
-|----------------|--------------|-------------|
-| Chrome         | ✅           | 🚧           |
-| Firefox        | ✅           | 🚧           |
+<!-- FIXME: check minimal supported browser versions to the table -->
+<!-- e.g. 106 for chrome-mv2 -->
+| Browser                     | Version |
+|-----------------------------|---------|
+| Chromium-based browsers MV2 | 79      |
+| Chromium-based browsers MV3 | 121     |
+| Firefox                     | 78      |
+| Firefox Mobile              | 113     |
 
 ## Install
 
@@ -137,7 +141,7 @@ Before running compiled app, load the web accessible resources for redirect rule
 via built-in cli:
 
 ```sh
- tswebextension war [path]
+tswebextension war [path]
 ```
 
 or integrate loading in your build pipeline:
@@ -146,9 +150,9 @@ or integrate loading in your build pipeline:
 import { copyWar, DEFAULT_WAR_PATH } from '@adguard/tswebextension/cli';
 
 const build = async () => {
-  ...
-  await copyWar(DEFAULT_WAR_PATH);
-  ...
+    ...
+    await copyWar(DEFAULT_WAR_PATH);
+    ...
 };
 ```
 
@@ -158,18 +162,18 @@ If path is not defined, the resources will be loaded to `build/war` relative to 
 
 The console interface provides useful tools for building extensions.
 
-```
+```text
 Usage: tswebextension [options] [command]
 
 CLI to some development utils
 
 Options:
-  -V, --version     output the version number
-  -h, --help        display help for command
+    -V, --version     output the version number
+    -h, --help        display help for command
 
 Commands:
-  war [path]        Downloads web accessible resources for redirect rules
-  help [command]    display help for command
+    war [path]        Downloads web accessible resources for redirect rules
+    help [command]    display help for command
 ```
 
 ## API
@@ -812,7 +816,7 @@ Event channel for [filtering log events](#filtering-log-api-mv2-only).
 
 type:
 
-```
+```ts
 <T extends FilteringEventType>(type: T, listener: FilteringLogListener<ExtractedFilteringLogEvent<T>>) => void
 ```
 
@@ -822,7 +826,7 @@ Registers a listener for the specified filtering event type.
 
 type:
 
-```
+```ts
 <T extends FilteringLogEvent>(event: T) => void
 ```
 
@@ -849,7 +853,7 @@ npx lerna run --scope=@adguard/tswebextension build
 
 Lint source code
 
-```
+```sh
 npx lerna run --scope=@adguard/tswebextension lint
 ```
 
