@@ -615,7 +615,7 @@ export class WebRequestApi {
          * If the request is a subdocument request in Firefox, try injecting frame cosmetic result into frame,
          * because {@link WebRequestApi.onCommitted} can be not triggered.
          */
-        if (isFirefox || requestType === RequestType.SubDocument) {
+        if (isFirefox && requestType === RequestType.SubDocument) {
             // FIXME (Slava): cleanup
             // WebRequestApi.injectCosmetic({
             //     frameId,
@@ -625,8 +625,6 @@ export class WebRequestApi {
             // });
 
             const {
-                frameId,
-                tabId,
                 timeStamp,
                 url,
             } = details;
@@ -636,7 +634,7 @@ export class WebRequestApi {
                 frameId,
                 url,
                 timeStamp,
-                parentDocumentId: this.calcParentDocumentId(details),
+                parentDocumentId: WebRequestApi.calcParentDocumentId(details),
             });
         }
 
@@ -780,7 +778,7 @@ export class WebRequestApi {
             frameId,
             url,
             timeStamp,
-            parentDocumentId: this.calcParentDocumentId(details),
+            parentDocumentId: WebRequestApi.calcParentDocumentId(details),
         });
     }
 
