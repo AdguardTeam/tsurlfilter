@@ -845,7 +845,7 @@ Run build
 npx lerna run --scope=@adguard/tswebextension build
 ```
 
-> Note that during the build simplified [companiesdb] data — `trackers-min.js` — is to be updated.
+> Note that during the build simplified [companiesdb] data — `trackers-min.ts` — is to be updated.
 
 Lint source code
 

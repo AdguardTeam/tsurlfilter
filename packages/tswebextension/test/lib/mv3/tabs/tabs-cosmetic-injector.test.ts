@@ -8,24 +8,30 @@ import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
 import { appContext } from '../../../../src/lib/mv3/background/app-context';
+import { extSessionStorage } from '../../../../src/lib/mv3/background/ext-session-storage';
 
-jest.mock('@lib/mv3/background/engine-api');
-jest.mock('../../../../src/lib/mv3/background/app-context');
+vi.mock('../../../../src/lib/mv3/background/engine-api');
+vi.mock('../../../../src/lib/mv3/background/app-context');
 
 describe('TabsCosmeticInjector', () => {
+    beforeAll(async () => {
+        await extSessionStorage.init();
+        appContext.startTimeMs = Date.now();
+    });
+
     beforeEach(() => {
-        jest.spyOn(CosmeticApi, 'applyCssByTabAndFrame');
-        jest.spyOn(CosmeticApi, 'applyJsByTabAndFrame');
-        jest.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
-        jest.spyOn(CosmeticApi, 'logScriptRules');
-        jest.spyOn(ScriptingApi, 'insertCSS');
-        jest.spyOn(ScriptingApi, 'executeScript');
-        jest.spyOn(ScriptingApi, 'executeScriptlet');
+        vi.spyOn(CosmeticApi, 'applyCssByTabAndFrame');
+        vi.spyOn(CosmeticApi, 'applyJsByTabAndFrame');
+        vi.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
+        vi.spyOn(CosmeticApi, 'logScriptRules');
+        vi.spyOn(ScriptingApi, 'insertCSS');
+        vi.spyOn(ScriptingApi, 'executeScript');
+        vi.spyOn(ScriptingApi, 'executeScriptlet');
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
-        jest.resetModules();
+        vi.resetAllMocks();
+        vi.resetModules();
     });
 
     describe('processOpenTabs method', () => {
@@ -43,7 +49,7 @@ describe('TabsCosmeticInjector', () => {
             chrome.webNavigation.getAllFrames.resolves([{ frameId, url }]);
 
             const matchingResult = {} as MatchingResult;
-            matchingResult.getCosmeticOption = jest.fn();
+            matchingResult.getCosmeticOption = vi.fn();
 
             const cosmeticResult = new CosmeticResult();
             cosmeticResult.JS.append((
@@ -53,9 +59,9 @@ describe('TabsCosmeticInjector', () => {
                 createCosmeticRule('##h1', 1)
             ));
 
-            jest.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
-            jest.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
-            jest.spyOn(Date, 'now').mockReturnValue(timestamp);
+            vi.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
+            vi.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
+            vi.spyOn(Date, 'now').mockReturnValue(timestamp);
 
             await TabsCosmeticInjector.processOpenTabs();
 

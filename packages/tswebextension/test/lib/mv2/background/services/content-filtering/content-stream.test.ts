@@ -14,7 +14,7 @@ import {
 import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
 import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
 
-jest.mock('../../../../../../src/lib/common/utils/logger');
+vi.mock('../../../../../../src/lib/common/utils/logger');
 
 describe('Content stream', () => {
     const textEncoderUtf8 = new TextEncoder();
@@ -308,8 +308,8 @@ describe('Content stream', () => {
 
         stream.setCharset(DEFAULT_CHARSET);
 
-        const spyDisconnect = jest.spyOn(mockFilter, 'disconnect').mockImplementation();
-        const spyWrite = jest.spyOn(mockFilter, 'write').mockImplementation();
+        const spyDisconnect = vi.spyOn(mockFilter, 'disconnect');
+        const spyWrite = vi.spyOn(mockFilter, 'write');
 
         const data = textEncoderUtf8.encode('qwerty');
         mockFilter.send(data);

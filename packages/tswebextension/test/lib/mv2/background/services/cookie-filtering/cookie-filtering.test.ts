@@ -24,12 +24,12 @@ import {
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 
-jest.mock('@lib/common/utils/logger');
-jest.mock('@lib/common/cookie-filtering/browser-cookie-api');
-jest.mock('@lib/mv2/background/engine-api');
+vi.mock('../../../../../../src/lib/common/utils/logger');
+vi.mock('../../../../../../src/lib/common/cookie-filtering/browser-cookie-api');
+vi.mock('../../../../../../src/lib/mv2/background/engine-api');
 
-BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);
-BrowserCookieApi.prototype.modifyCookie = jest.fn().mockImplementation(() => true);
+BrowserCookieApi.prototype.removeCookie = vi.fn().mockImplementation(() => true);
+BrowserCookieApi.prototype.modifyCookie = vi.fn().mockImplementation(() => true);
 
 type SimulatedHeader = {
     name: string,
@@ -315,7 +315,7 @@ describe('Cookie filtering', () => {
 
         browser.tabs.onCreated.dispatch({ id: 0, url: 'https://example.org' });
 
-        jest.spyOn(engineApi, 'matchRequest').mockImplementationOnce(() => new MatchingResult(rules, null));
+        vi.spyOn(engineApi, 'matchRequest').mockImplementationOnce(() => new MatchingResult(rules, null));
 
         expect(cookieFiltering.getBlockingRules(context.referrerUrl, context.tabId, context.frameId)).toHaveLength(2);
 

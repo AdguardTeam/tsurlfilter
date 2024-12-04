@@ -15,7 +15,7 @@ describe('Request Event', () => {
 
         expect(browser.webRequest.onBeforeRequest.addListener.calledOnce);
 
-        const noop = jest.fn();
+        const noop = vi.fn();
 
         event.addListener(noop);
 
@@ -32,8 +32,8 @@ describe('Request Event', () => {
             ['blocking', 'requestBody'],
         );
 
-        const firstCallback = jest.fn();
-        const secondCallback = jest.fn();
+        const firstCallback = vi.fn();
+        const secondCallback = vi.fn();
 
         event.addListener(firstCallback);
         event.addListener(secondCallback);
@@ -56,8 +56,8 @@ describe('Request Event', () => {
             ['blocking', 'requestBody'],
         );
 
-        const blockingCallback = jest.fn(() => ({ cancel: true }));
-        const noop = jest.fn();
+        const blockingCallback = vi.fn(() => ({ cancel: true }));
+        const noop = vi.fn();
 
         event.addListener(blockingCallback);
         event.addListener(noop);

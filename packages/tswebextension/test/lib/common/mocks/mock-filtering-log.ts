@@ -7,7 +7,7 @@ import { EventChannel } from '../../../../src/lib/common/utils/channels';
 export class MockFilteringLog implements FilteringLogInterface {
     onLogEvent = new EventChannel<FilteringLogEvent>();
 
-    addEventListener = jest.fn();
+    addEventListener = vi.fn();
 
-    publishEvent = jest.fn();
+    publishEvent = vi.fn();
 }

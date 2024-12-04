@@ -20,12 +20,12 @@ import { appContext } from '../../../../../src/lib/mv2/background/context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
 import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
 
-jest.mock('@lib/mv2/background/allowlist');
-jest.mock('@lib/mv2/background/engine-api');
-jest.mock('@lib/mv2/background/document-api');
-jest.mock('@lib/mv2/background/stealth-api');
-jest.mock('@lib/mv2/background/context');
-jest.mock('@lib/mv2/background/tabs/tab-context');
+vi.mock('../../../../../src/lib/mv2/background/allowlist');
+vi.mock('../../../../../src/lib/mv2/background/engine-api');
+vi.mock('../../../../../src/lib/mv2/background/document-api');
+vi.mock('../../../../../src/lib/mv2/background/stealth-api');
+vi.mock('../../../../../src/lib/mv2/background/context');
+vi.mock('../../../../../src/lib/mv2/background/tabs/tab-context');
 
 describe('TabsApi', () => {
     let tabsApi: TabsApi;
@@ -39,7 +39,7 @@ describe('TabsApi', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     const createTestTabContext = (): TabContext => {
@@ -225,9 +225,9 @@ describe('TabsApi', () => {
 
             const tabContext = {
                 info: { url },
-                incrementBlockedRequestCount: jest.fn(),
+                incrementBlockedRequestCount: vi.fn(),
             } as unknown as TabContext;
-            const tabContextIncrement = jest.spyOn(tabContext, 'incrementBlockedRequestCount');
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
 
             tabsApi.context.set(tabId, tabContext);
             tabsApi.incrementTabBlockedRequestCount(tabId, url);
@@ -242,9 +242,9 @@ describe('TabsApi', () => {
 
             const tabContext = {
                 info: { url: originUrl },
-                incrementBlockedRequestCount: jest.fn(),
+                incrementBlockedRequestCount: vi.fn(),
             } as unknown as TabContext;
-            const tabContextIncrement = jest.spyOn(tabContext, 'incrementBlockedRequestCount');
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
 
             tabsApi.context.set(tabId, tabContext);
             tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
@@ -269,7 +269,7 @@ describe('TabsApi', () => {
 
             const mainFrameRule = {} as NetworkRule;
 
-            jest.spyOn(documentApi, 'matchFrame').mockImplementationOnce(() => mainFrameRule);
+            vi.spyOn(documentApi, 'matchFrame').mockImplementationOnce(() => mainFrameRule);
 
             tabsApi.updateTabMainFrameRule(tabId);
 
@@ -289,7 +289,7 @@ describe('TabsApi', () => {
 
             browser.tabs.query.resolves([{ id: tabId } as TabInfo]);
 
-            const spy = jest.spyOn(tabsApi, 'updateTabMainFrameRule').mockImplementation();
+            const spy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
 
             await tabsApi.updateCurrentTabsMainFrameRules();
 

@@ -4,10 +4,10 @@ import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../src/lib/mv2/background/context';
 import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 
-jest.mock('@lib/mv2/background/allowlist');
-jest.mock('@lib/mv2/background/engine-api');
-jest.mock('@lib/mv2/background/stealth-api');
-jest.mock('@lib/mv2/background/context');
+vi.mock('../../../../src/lib/mv2/background/allowlist');
+vi.mock('../../../../src/lib/mv2/background/engine-api');
+vi.mock('../../../../src/lib/mv2/background/stealth-api');
+vi.mock('../../../../src/lib/mv2/background/context');
 
 describe('Document Api', () => {
     let documentApi: DocumentApi;
@@ -21,7 +21,7 @@ describe('Document Api', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     describe('matchFrame method', () => {

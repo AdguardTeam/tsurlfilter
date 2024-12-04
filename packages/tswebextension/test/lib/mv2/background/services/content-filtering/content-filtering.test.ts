@@ -1,5 +1,5 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 import {
     MatchingResult,
@@ -42,11 +42,11 @@ describe('Content filtering', () => {
     };
 
     beforeEach(() => {
-        jest.spyOn(ContentStream.prototype, 'init').mockImplementation(jest.fn);
+        vi.spyOn(ContentStream.prototype, 'init').mockImplementation(vi.fn);
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('checks html rules', () => {

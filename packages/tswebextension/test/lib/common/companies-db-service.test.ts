@@ -1,6 +1,6 @@
 import { companiesDbService } from '../../../src/lib/common/companies-db-service';
 
-jest.mock('../../../src/lib/common/companies-db-service/trackers-min', () => ({
+vi.mock('../../../src/lib/common/companies-db-service/trackers-min', () => ({
     rawCompaniesDb: {
         timeUpdated: '2024-09-01T00:00:00Z',
         categories: {

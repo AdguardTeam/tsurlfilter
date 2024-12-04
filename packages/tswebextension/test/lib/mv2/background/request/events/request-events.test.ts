@@ -38,7 +38,7 @@ describe('Request Events', () => {
     it('onBeforeRequest with prerender request', async () => {
         RequestEvents.init();
 
-        const listener = jest.fn();
+        const listener = vi.fn();
 
         RequestEvents.onBeforeRequest.addListener(listener);
 
@@ -60,7 +60,7 @@ describe('Request Events', () => {
             thirdParty: false,
         };
 
-        jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
+        vi.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
 
         browser.webRequest.onBeforeRequest.dispatch(prerenderRequestDetails);
 
@@ -252,7 +252,7 @@ describe('Request Events', () => {
         test(testName, () => {
             RequestEvents.init();
 
-            const listener = jest.fn();
+            const listener = vi.fn();
 
             testEventChannel.addListener(listener);
 
@@ -261,7 +261,7 @@ describe('Request Events', () => {
             details.timeStamp = timestamp;
             context.timestamp = timestamp;
 
-            jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
+            vi.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
 
             browserEventChannel.dispatch(details);
 

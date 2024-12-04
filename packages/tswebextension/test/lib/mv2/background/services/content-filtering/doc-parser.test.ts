@@ -1,5 +1,5 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 
 import { DocumentParser } from '../../../../../../src/lib/mv2/background/services/content-filtering/doc-parser';
