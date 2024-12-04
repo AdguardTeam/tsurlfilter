@@ -1,5 +1,5 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
@@ -8,7 +8,7 @@ import { getNetworkRuleFields } from '../background/helpers/rule-fields';
 import { CookieController } from '../../../../src/lib';
 
 describe('Cookie Controller Tests', () => {
-    const onAppliedCallback = jest.fn(() => {});
+    const onAppliedCallback = vi.fn(() => {});
 
     beforeEach(() => {
         onAppliedCallback.mockClear();

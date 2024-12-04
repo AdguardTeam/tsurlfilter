@@ -3,7 +3,7 @@ import { getConfigurationMv2Fixture } from '../fixtures/configuration';
 import { DocumentBlockingService } from '../../../../../src/lib/mv2/background/services/document-blocking-service';
 import { type ConfigurationMV2, tabsApi } from '../../../../../src/lib';
 
-jest.mock('../../../../../src/lib/mv2/background/api');
+vi.mock('../../../../../src/lib/mv2/background/api');
 
 describe('DocumentBlockingService', () => {
     let documentBlockingService: DocumentBlockingService;
@@ -13,7 +13,7 @@ describe('DocumentBlockingService', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should not block URLs from trusted domains', () => {
