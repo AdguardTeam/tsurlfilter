@@ -1,5 +1,5 @@
 export const rawCompaniesDb = {
-	"timeUpdated": "2024-11-25T10:05:10.515Z",
+	"timeUpdated": "2024-12-02T10:05:07.723Z",
 	"categories": {
 		"0": "audio_video_player",
 		"1": "comments",
@@ -679,6 +679,7 @@ export const rawCompaniesDb = {
 		"anametrix.net": 6,
 		"ancestrycdn.com": 9,
 		"ancoraplatform.com": 6,
+		"android.com": 101,
 		"anetwork.ir": 4,
 		"aniview.com": 4,
 		"a-ads.com": 4,

@@ -1,7 +1,8 @@
 import { type ConfigurationMV2 } from '../../../../../src/lib';
 import { LF } from '../../../../../src/lib/common/constants';
 
-const { FilterListPreprocessor } = jest.requireActual('@adguard/tsurlfilter');
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+const { FilterListPreprocessor } = await vi.importActual<typeof import('@adguard/tsurlfilter')>('@adguard/tsurlfilter');
 
 export const getConfigurationMv2Fixture = (): ConfigurationMV2 => ({
     filters: [

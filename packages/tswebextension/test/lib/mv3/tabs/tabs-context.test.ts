@@ -4,7 +4,7 @@ import { Frame } from '../../../../src/lib/mv3/tabs/frame';
 import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
 import { Frames } from '../../../../src/lib/mv3/tabs/frames';
 
-jest.mock('@lib/mv3/background/engine-api');
+vi.mock('../../../../src/lib/mv3/background/engine-api');
 
 describe('TabContext', () => {
     let tabInfo: TabInfo;
@@ -21,7 +21,7 @@ describe('TabContext', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     describe('constructor', () => {

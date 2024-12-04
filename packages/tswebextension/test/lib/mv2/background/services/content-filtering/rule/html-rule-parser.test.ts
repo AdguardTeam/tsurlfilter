@@ -1,5 +1,5 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 
 import { createCosmeticRule } from '../../../../../../helpers/rule-creator';

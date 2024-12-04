@@ -7,6 +7,7 @@ import {
     RequestType,
     StealthOptionName,
 } from '@adguard/tsurlfilter';
+import { minify } from 'terser';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
@@ -249,15 +250,14 @@ describe('Stealth service', () => {
             });
         });
 
-        it('checks global GPC value in the navigator', () => {
+        it('checks global GPC value in the navigator', async () => {
             appContext.configuration.settings.stealth.sendDoNotTrack = true;
             const service = new StealthService(appContext, filteringLog);
 
             // Here we check that the function is written correctly in the
             // string, to avoid changing its form to a lambda function, for
             // example.
-            const funcTxt = service.getSetDomSignalScript()
-                .replaceAll('() => true', '()=>true');
+            const funcTxt = service.getSetDomSignalScript();
 
             const expectedFuncTxt = `;(function setDomSignal() {
                 try {
@@ -274,12 +274,7 @@ describe('Stealth service', () => {
                 }
               })();`;
 
-            // Compare line-with-line to make sure that formatting does not
-            // affect the result.
-            const funcLines = funcTxt.split('\n').map((l) => l.trim());
-            const expectedFuncLines = expectedFuncTxt.split('\n').map((l) => l.trim());
-
-            expect(funcLines).toEqual(expectedFuncLines);
+            expect((await minify(funcTxt)).code).toBe((await minify(expectedFuncTxt)).code);
         });
     });
 });

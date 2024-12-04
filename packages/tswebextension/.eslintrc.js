@@ -6,11 +6,15 @@ module.exports = {
     parser: '@typescript-eslint/parser',
     parserOptions: {
         tsconfigRootDir: path.join(__dirname),
-        project: 'tsconfig.json',
+        project: [
+            './tsconfig.json',
+            './tsconfig.test.json',
+        ],
     },
     plugins: [
         'import',
         '@typescript-eslint',
+        '@vitest',
     ],
     extends: [
         'airbnb-base',
@@ -61,7 +65,7 @@ module.exports = {
         'jsdoc/tag-lines': 'off',
         'jsdoc/require-throws': 'error',
         'jsdoc/check-tag-names': ['error', {
-            definedTags: ['jest-environment'],
+            definedTags: ['vitest-environment'],
         }],
         'jsdoc/require-jsdoc': [
             'error',
