@@ -1,24 +1,17 @@
 import browser from 'sinon-chrome';
 import type { ExtensionTypes } from 'webextension-polyfill';
-import type {
-    CosmeticResult,
-    MatchingResult,
-    NetworkRule,
-} from '@adguard/tsurlfilter';
+import type { NetworkRule } from '@adguard/tsurlfilter';
 
-import {
-    Frame,
-    TabContext,
-    type TabFrameRequestContext,
-    type TabInfo,
-    TabsApi,
-} from '../../../../../src/lib';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
-import { appContext } from '../../../../../src/lib/mv2/background/context';
+import { appContext } from '../../../../../src/lib/mv2/background/app-context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
 import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
+import { TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';
+import { TabContext, type TabInfo } from '../../../../../src/lib/mv2/background/tabs/tab-context';
+import { Frame } from '../../../../../src/lib/mv2/background/tabs/frame';
+import { Frames } from '../../../../../src/lib/mv2/background/tabs/frames';
 
 jest.mock('@lib/mv2/background/allowlist');
 jest.mock('@lib/mv2/background/engine-api');
@@ -89,13 +82,21 @@ describe('TabsApi', () => {
 
     describe('getTabFrame and getTabMainFrame methods', () => {
         it('should return frame for the tab context', () => {
+            const url = 'https://example.com';
             const tabId = 1;
-
-            const tabContext = { frames: new Map() } as TabContext;
-
             const frameId = MAIN_FRAME_ID;
+            const timeStamp = Date.now();
+            const parentDocumentId = '1';
 
-            const frame = new Frame('example.com');
+            const tabContext = { frames: new Frames() } as TabContext;
+
+            const frame = new Frame({
+                url,
+                tabId,
+                frameId,
+                timeStamp,
+                parentDocumentId,
+            });
 
             tabContext.frames.set(frameId, frame);
 
@@ -107,80 +108,6 @@ describe('TabsApi', () => {
 
         it('should return null if tab frame is not found', () => {
             expect(tabsApi.getTabFrame(1, 1)).toBeNull();
-        });
-    });
-
-    describe('handleFrameRequest method', () => {
-        it('should handle frame request for the tab context', () => {
-            const tabId = 1;
-
-            const tabContext = createTestTabContext();
-
-            tabsApi.context.set(tabId, tabContext);
-
-            const frameRequestContext = { tabId } as TabFrameRequestContext;
-
-            tabsApi.handleFrameRequest(frameRequestContext);
-
-            expect(TabContext.prototype.handleFrameRequest).toBeCalledWith(frameRequestContext);
-        });
-
-        it('should not handle frame request if tab context is not found', () => {
-            const frameRequestContext = { tabId: 1 } as TabFrameRequestContext;
-
-            tabsApi.handleFrameRequest(frameRequestContext);
-
-            expect(TabContext.prototype.handleFrameRequest).not.toBeCalled();
-        });
-    });
-
-    describe('handleFrameCosmeticResult method', () => {
-        it('should handle cosmetic result for the tab context', () => {
-            const tabId = 1;
-            const frameId = 1;
-
-            const tabContext = createTestTabContext();
-
-            tabsApi.context.set(tabId, tabContext);
-
-            const cosmeticResult = {} as CosmeticResult;
-
-            tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
-
-            expect(TabContext.prototype.handleFrameCosmeticResult).toBeCalledWith(frameId, cosmeticResult);
-        });
-
-        it('should not handle cosmetic result if tab context is not found', () => {
-            const cosmeticResult = {} as CosmeticResult;
-
-            tabsApi.handleFrameCosmeticResult(1, 0, cosmeticResult);
-
-            expect(TabContext.prototype.handleFrameCosmeticResult).not.toBeCalled();
-        });
-    });
-
-    describe('handleFrameMatchingResult method', () => {
-        it('should handle matching result for the tab context', () => {
-            const tabId = 1;
-            const frameId = 1;
-
-            const tabContext = createTestTabContext();
-
-            tabsApi.context.set(tabId, tabContext);
-
-            const matchingResult = {} as MatchingResult;
-
-            tabsApi.handleFrameMatchingResult(tabId, frameId, matchingResult);
-
-            expect(TabContext.prototype.handleFrameMatchingResult).toBeCalledWith(frameId, matchingResult);
-        });
-
-        it('should not handle matching result if tab context is not found', () => {
-            const matchingResult = {} as MatchingResult;
-
-            tabsApi.handleFrameMatchingResult(1, 0, matchingResult);
-
-            expect(TabContext.prototype.handleFrameMatchingResult).not.toBeCalled();
         });
     });
 
@@ -326,7 +253,7 @@ describe('TabsApi', () => {
                 matchAboutBlank: true,
             };
 
-            await TabsApi.injectScript(code, tabId, frameId);
+            await TabsApi.injectScript(tabId, frameId, code);
 
             expect(browser.tabs.executeScript.calledOnceWith(tabId, injectDetails)).toBe(true);
         });
@@ -346,26 +273,9 @@ describe('TabsApi', () => {
                 cssOrigin: 'user',
             };
 
-            await TabsApi.injectCss(code, tabId, frameId);
+            await TabsApi.injectCss(tabId, frameId, code);
 
             expect(browser.tabs.insertCSS.calledOnceWith(tabId, injectDetails)).toBe(true);
-        });
-    });
-
-    describe('handleTabNavigation', () => {
-        it('should not handle non http requests', () => {
-            const tabId = 1;
-
-            const tabContext = createTestTabContext();
-
-            tabsApi.context.set(tabId, tabContext);
-            tabsApi.context.set(tabId, tabContext);
-
-            tabsApi.handleTabNavigation(1, 'chrome://new-tab-page/');
-            expect(TabContext.prototype.updateMainFrameData).not.toBeCalled();
-
-            tabsApi.handleTabNavigation(1, 'https://example.org');
-            expect(TabContext.prototype.updateMainFrameData).toBeCalled();
         });
     });
 });

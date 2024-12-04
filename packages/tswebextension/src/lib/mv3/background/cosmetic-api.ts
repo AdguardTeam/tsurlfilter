@@ -59,6 +59,7 @@ type LogJsRulesParams = {
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi extends CosmeticApiCommon {
+    // FIXME (Slava): move following properties to CosmeticApiCommon
     private static readonly ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
 
     private static readonly INJECT_HIT_START = " content: 'adguard";

@@ -71,7 +71,7 @@ describe('cosmetic api', () => {
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getElemhideCosmeticResult(actual);
-                expect(CosmeticApi.getCssText(cosmeticResult, false)).toEqual(expected);
+                expect(CosmeticApi.getCssText(cosmeticResult)).toEqual(expected);
             });
         });
 
@@ -103,7 +103,7 @@ describe('cosmetic api', () => {
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getCssCosmeticResult(actual);
-                expect(CosmeticApi.getCssText(cosmeticResult, false)).toEqual(expected);
+                expect(CosmeticApi.getCssText(cosmeticResult)).toEqual(expected);
             });
         });
 
@@ -138,7 +138,7 @@ describe('cosmetic api', () => {
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getElemhideCosmeticResult(actual);
-                expect(CosmeticApi.getCssText(cosmeticResult, true)).toEqual(expected);
+                expect(CosmeticApi.getCssText(cosmeticResult)).toEqual(expected);
             });
         });
 
@@ -173,7 +173,7 @@ describe('cosmetic api', () => {
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getCssCosmeticResult(actual);
-                const exp = CosmeticApi.getCssText(cosmeticResult, true);
+                const exp = CosmeticApi.getCssText(cosmeticResult);
                 expect(exp).toEqual(expected);
             });
         });
