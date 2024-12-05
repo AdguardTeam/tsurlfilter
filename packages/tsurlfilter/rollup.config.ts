@@ -9,7 +9,7 @@ import cleanup from 'rollup-plugin-cleanup';
 const DEFAULT_OUTPUT_PATH = 'dist';
 
 const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH
-    ? `${process.env.PACKAGE_OUTPUT_PATH}/dist`
+    ? `${process.env.PACKAGE_OUTPUT_PATH}/${DEFAULT_OUTPUT_PATH}`
     : DEFAULT_OUTPUT_PATH;
 
 const externalPackages = [

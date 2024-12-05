@@ -5,7 +5,9 @@ import cleanup from 'rollup-plugin-cleanup';
 import commonjs from '@rollup/plugin-commonjs';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
-const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
+const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH
+    ? `${process.env.PACKAGE_OUTPUT_PATH}/${DEFAULT_OUTPUT_PATH}`
+    : DEFAULT_OUTPUT_PATH;
 
 const cache = false;
 
