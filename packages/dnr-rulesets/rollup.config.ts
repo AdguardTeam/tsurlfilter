@@ -16,7 +16,7 @@ const mainConfig = {
     input: entryPoints,
     output: [
         {
-            dir: `${DIST_DIR}`,
+            dir: DIST_DIR,
             format: 'esm',
             exports: 'named',
             preserveModules: true,

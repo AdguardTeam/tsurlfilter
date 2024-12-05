@@ -69,7 +69,7 @@ const main = {
     ],
     output: [
         {
-            dir: `${distDir}`,
+            dir: distDir,
             format: 'esm',
             sourcemap: false,
             preserveModules: true,
