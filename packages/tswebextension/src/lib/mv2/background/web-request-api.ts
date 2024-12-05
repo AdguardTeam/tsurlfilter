@@ -180,6 +180,7 @@ import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 import { logger } from '../../common/utils/logger';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
+
 import { removeHeadersService } from './services/remove-headers-service';
 import { Assistant } from './assistant';
 import { CosmeticApi } from './cosmetic-api';
@@ -190,6 +191,7 @@ import { ContentFiltering } from './services/content-filtering/content-filtering
 import { cspService } from './services/csp-service';
 import { permissionsPolicyService } from './services/permissions-policy-service';
 import { TrustedTypesService } from './services/trusted-types-service';
+
 import {
     hideRequestInitiatorElement,
     RequestEvents,
