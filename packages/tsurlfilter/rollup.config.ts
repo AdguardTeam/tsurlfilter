@@ -1,18 +1,41 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
-import camelCase from 'lodash/camelCase';
+
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
-import terser from '@rollup/plugin-terser';
-import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
-const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
+const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH
+    ? `${process.env.PACKAGE_OUTPUT_PATH}/${DEFAULT_OUTPUT_PATH}`
+    : DEFAULT_OUTPUT_PATH;
 
-const libraryName = 'TSUrlFilter';
+const externalPackages = [
+    '@adguard/agtree',
+    '@adguard/css-tokenizer',
+    '@adguard/scriptlets',
+    'is-ip',
+    'punycode/',
+    'tldts',
+    'is-cidr',
+    'cidr-tools',
+    'zod',
+    'commander',
+    'tslib',
+    'module'
+];
+
+const externalFunction = (id: string): boolean => {
+    if (typeof id !== 'string') {
+        return false;
+    }
+    return (
+        /node_modules/.test(id)
+        || externalPackages.some((pkg) => id === pkg || id.startsWith(`${pkg}/`))
+    );
+};
 
 const commonConfig = {
     cache: false,
@@ -45,19 +68,6 @@ const commonConfig = {
     ],
 };
 
-const commonExternal = [
-    '@adguard/agtree',
-    '@adguard/css-tokenizer',
-    '@adguard/scriptlets',
-    'is-ip',
-    'punycode/',
-    'tldts',
-    'is-cidr',
-    'cidr-tools',
-    'zod',
-    'commander',
-];
-
 const esmConfig = {
     input: [
         'src/index.ts',
@@ -72,7 +82,7 @@ const esmConfig = {
             sourcemap: false,
         },
     ],
-    external: commonExternal,
+    external: externalFunction,
     ...commonConfig,
 };
 
@@ -90,32 +100,7 @@ const esmDeclarativeConverterConfig = {
             sourcemap: false,
         },
     ],
-    external: commonExternal,
-    ...commonConfig,
-};
-
-/**
- * UMD build is needed for the FiltersCompiler and DNS dashboard.
- *
- * TODO: should be removed. AG-21466
- */
-const umdConfig = {
-    input: 'src/index.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/tsurlfilter.umd.js`,
-            name: camelCase(libraryName),
-            format: 'umd',
-            sourcemap: false,
-        },
-        {
-            file: `${OUTPUT_PATH}/tsurlfilter.umd.min.js`,
-            name: camelCase(libraryName),
-            format: 'umd',
-            sourcemap: false,
-            plugins: [terser()],
-        },
-    ],
+    external: externalFunction,
     ...commonConfig,
 };
 
@@ -124,16 +109,11 @@ const cliConfig = {
     output: [
         {
             file: `${OUTPUT_PATH}/cli.js`,
-            format: 'cjs',
+            format: 'esm',
             sourcemap: false,
         },
     ],
-    external: [
-        'fs',
-        'path',
-        'commander',
-        '@adguard/re2-wasm',
-    ],
+    external: externalFunction,
     plugins: [
         // Allow json resolution
         json(),
@@ -141,11 +121,6 @@ const cliConfig = {
         // Compile TypeScript files
         typescript({
             tsconfig: 'tsconfig.build.json',
-        }),
-
-        // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
-        commonjs({
-            sourceMap: false,
         }),
 
         // Allow node_modules resolution, so you can use 'external' to control
@@ -156,8 +131,6 @@ const cliConfig = {
         cleanup({
             comments: ['srcmaps'],
         }),
-
-        preserveShebangs(),
     ],
 
     watch: {
@@ -168,6 +141,5 @@ const cliConfig = {
 export default [
     esmConfig,
     esmDeclarativeConverterConfig,
-    umdConfig,
     cliConfig,
 ];

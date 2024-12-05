@@ -10,7 +10,7 @@ import {
     CosmeticRuleType,
     type HtmlFilteringRule,
     RuleCategory,
-} from '../../parser/common';
+} from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';

@@ -11,6 +11,7 @@ const config: Config = {
     transformIgnorePatterns: [
         `/node_modules/(?!(${transformedModules.join('|')}))/`,
     ],
+    extensionsToTreatAsEsm: ['.ts'],
     testEnvironment: 'node',
     testRegex: '(/__tests__/.*|\\.(test|spec))\\.(ts|tsx|js)$',
     moduleFileExtensions: ['js', 'ts'],

@@ -1,5 +1,5 @@
-import { AppListParser } from '../../../src/parser/misc/app-list';
-import { ListNodeType, ListItemNodeType } from '../../../src/parser/common';
+import { AppListParser } from '../../../src/parser/misc/app-list-parser';
+import { ListNodeType, ListItemNodeType } from '../../../src/nodes';
 import { EMPTY } from '../../../src/utils/constants';
 
 describe('AppListParser', () => {

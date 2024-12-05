@@ -1,4 +1,6 @@
-import { InputByteBuffer, RuleParser, type AnyRule } from '@adguard/agtree';
+import { type AnyRule } from '@adguard/agtree';
+import { InputByteBuffer } from '@adguard/agtree/utils';
+import { RuleDeserializer } from '@adguard/agtree/deserializer';
 import { type FilterListSourceMap, getRuleSourceIndex } from './source-map';
 import { BufferReader } from './reader/buffer-reader';
 import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
@@ -122,7 +124,7 @@ export class BufferRuleList implements IRuleList {
         try {
             const ruleNode: AnyRule = {} as AnyRule;
             const copy = this.rulesBuffer.createCopyWithOffset(ruleIdx);
-            RuleParser.deserialize(copy, ruleNode);
+            RuleDeserializer.deserialize(copy, ruleNode);
             return ruleNode;
         } catch (e) {
             // fall through

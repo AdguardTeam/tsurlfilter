@@ -1,6 +1,9 @@
 /* eslint-disable no-console */
 import path from 'path';
 import { copy } from 'fs-extra';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 const REDIRECTS_CONFIG_PATH = 'redirects.yml';
 const REDIRECTS_RESOURCES_SRC_PATH = 'redirect-files';

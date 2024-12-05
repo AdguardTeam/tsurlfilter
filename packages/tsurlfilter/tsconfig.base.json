@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "es5",
-    "module":"es2015",
+    "moduleResolution": "Bundler",
+    "target": "ESNext",
+    "module":"Preserve",
     "lib": ["esnext", "dom"],
     "strict": true,
     "allowSyntheticDefaultImports": true,
