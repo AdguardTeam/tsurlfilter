@@ -5,7 +5,7 @@
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0",
     "scripts": {
-        "build": "rimraf build && node -r @swc-node/register ./scripts/build/index.ts",
+        "build": "rimraf build && tsx ./scripts/build/index.ts",
         "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'"
     },
     "dependencies": {
@@ -34,6 +34,7 @@
         "rimraf": "^5.0.5",
         "stream-browserify": "^3.0.0",
         "swc-loader": "^0.2.3",
+        "tsx": "^4.19.2",
         "vm-browserify": "^1.1.2",
         "webpack": "^5.64.2"
     }

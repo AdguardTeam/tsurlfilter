@@ -1,5 +1,7 @@
-import fs from 'fs';
-import path from 'path';
+/* eslint-disable @typescript-eslint/naming-convention,no-underscore-dangle */
+import fs from 'node:fs';
+import path, { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { type CompaniesDbMin } from '../src/lib/common/companies-db-service/schema';
 
@@ -14,6 +16,10 @@ const DEST_DIR = '../src/lib/common/companies-db-service';
  * Output file name.
  */
 const COMPANIES_DB_OUTPUT_FILE = 'trackers-min.ts';
+
+// Define __filename and __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const outputDirPath = path.resolve(__dirname, DEST_DIR);
 const outputFilePath = path.resolve(outputDirPath, COMPANIES_DB_OUTPUT_FILE);
@@ -134,7 +140,7 @@ export async function downloadCompaniesDb(dest: string): Promise<void> {
 
 (async (): Promise<void> => {
     if (!fs.existsSync(outputDirPath)) {
-        fs.mkdirSync(outputDirPath);
+        fs.mkdirSync(outputDirPath, { recursive: true });
     }
 
     await downloadCompaniesDb(outputFilePath);

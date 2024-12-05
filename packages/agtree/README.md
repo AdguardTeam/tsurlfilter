@@ -39,7 +39,7 @@ You can install the library using
 - [PNPM][pnpm-pkg-manager-url]: `pnpm add @adguard/agtree`
 
 > [!IMPORTANT]
-> AGTree requires Node.js version 18 or higher.
+> AGTree is an ESM-only package and requires Node.js version 18 or higher.
 
 [yarn-pkg-manager-url]: https://yarnpkg.com/en/docs/install
 [npm-pkg-manager-url]: https://www.npmjs.com/get-npm

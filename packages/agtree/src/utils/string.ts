@@ -26,6 +26,9 @@ export const DOUBLE_QUOTE_MARKER = '"';
 export type NewLineType = 'lf' | 'crlf' | 'cr';
 export type NewLineSplit = [string, NewLineType | null][];
 
+/**
+ * Utility functions for string manipulation.
+ */
 export class StringUtils {
     /**
      * Finds the first occurrence of a character that:

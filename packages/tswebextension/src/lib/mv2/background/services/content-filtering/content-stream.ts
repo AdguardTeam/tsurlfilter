@@ -1,4 +1,4 @@
-import { TextEncoder, TextDecoder } from 'text-encoding';
+import TextEncoding from 'text-encoding';
 import { type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 
@@ -15,6 +15,8 @@ import { type RequestContext } from '../../request';
 import { type ContentStringFilterInterface } from './content-string-filter';
 import { FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
 import { logger } from '../../../../common/utils/logger';
+
+const { TextEncoder, TextDecoder } = TextEncoding;
 
 /**
  * Content Stream Filter class.

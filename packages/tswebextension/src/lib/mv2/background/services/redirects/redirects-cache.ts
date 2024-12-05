@@ -1,4 +1,4 @@
-import { LRUMap } from 'lru_map';
+import LRUMap from 'lru_map';
 
 /**
  * RedirectsCache is used for new type of blocking redirects, like click2load.html.
@@ -9,7 +9,7 @@ class RedirectsCache {
     /**
      * Instance or LRUMap.
      */
-    cache = new LRUMap(100);
+    cache = new LRUMap.LRUMap(100);
 
     /**
      * Adds url to the cache.

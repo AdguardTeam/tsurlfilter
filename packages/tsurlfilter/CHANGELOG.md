@@ -17,8 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated [@adguard/agtree] to `v2.1.4`.
+- Updated [@adguard/agtree] to `v3.0.0`.
 - We throw error for empty modifier list in network rules.
+- Updated [@adguard/scriptlets] to `v2.0.1`
 
 ### Fixed
 

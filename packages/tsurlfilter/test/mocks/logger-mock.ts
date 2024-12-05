@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { type ILogger } from '../../src';
 
 export class LoggerMock implements ILogger {

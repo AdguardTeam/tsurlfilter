@@ -1,11 +1,16 @@
-import path from 'path';
-import fs from 'fs';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { Configuration } from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import packageJson from '../../package.json';
 import { getIdFromFilterName } from '@adguard/tsurlfilter';
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
 const POPUP_PATH = path.join(__dirname, '../../extension/pages/popup');

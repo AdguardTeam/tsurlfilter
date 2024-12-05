@@ -1,5 +1,5 @@
 import { type ScriptletData } from '@adguard/tsurlfilter';
-import { type IConfiguration } from '@adguard/scriptlets';
+import { type Source } from '@adguard/scriptlets';
 
 import { appContext } from './app-context';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
@@ -152,7 +152,7 @@ export class ScriptingApi {
             return;
         }
 
-        const params: IConfiguration = {
+        const params: Source = {
             ...scriptletData.params,
             uniqueId: String(appContext.startTimeMs),
             verbose: appContext.configuration?.settings.debugScriptlets || false,

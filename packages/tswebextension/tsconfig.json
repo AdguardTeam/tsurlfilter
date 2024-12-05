@@ -4,10 +4,10 @@
         "src",
         "rollup.config.ts",
         "tasks",
-        ".eslintrc.js",
+        ".eslintrc.cjs",
         "src/lib/mv3/.eslintrc.js",
         "vitest.config.ts",
-        "vitest.setup.ts"
+        "vitest.setup.ts",
     ],
     "exclude": [
         "test",

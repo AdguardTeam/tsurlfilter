@@ -3,11 +3,11 @@
  */
 
 import { RuleConverter } from './rule';
-import { type AnyRule, type FilterList } from '../parser/common';
+import { type AnyRule, type FilterList } from '../nodes';
 import { clone } from '../utils/clone';
 import { MultiValueMap } from '../utils/multi-value-map';
 import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';
-import { ConverterBase } from './base-interfaces/converter-base';
+import { BaseConverter } from './base-interfaces/base-converter';
 
 /**
  * Adblock filter list converter class
@@ -19,7 +19,7 @@ import { ConverterBase } from './base-interfaces/converter-base';
  * @todo Implement tolerant mode, which will allow to convert a filter list
  * even if some of its rules are invalid
  */
-export class FilterListConverter extends ConverterBase {
+export class FilterListConverter extends BaseConverter {
     /**
      * Converts an adblock filter list to AdGuard format, if possible.
      *

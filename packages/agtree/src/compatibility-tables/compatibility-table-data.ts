@@ -1,4 +1,4 @@
-/* eslint-disable no-bitwise */
+/* eslint-disable no-bitwise,@typescript-eslint/naming-convention,no-underscore-dangle */
 /**
  * @file Provides compatibility table data loading.
  */
@@ -27,6 +27,8 @@ import {
 } from './schemas';
 import { deepFreeze } from '../utils/deep-freeze';
 import { EMPTY } from '../utils/constants';
+
+const localDirname = path.dirname(new URL(import.meta.url).pathname);
 
 /**
  * Gets all `.yml` files from a directory.
@@ -232,19 +234,19 @@ const getScriptletsCompatibilityTableData = (dir: string) => {
  * Compatibility table data for scriptlets.
  */
 export const scriptletsCompatibilityTableData = getScriptletsCompatibilityTableData(
-    path.join(__dirname, './scriptlets'),
+    path.resolve(localDirname, './scriptlets'),
 );
 
 /**
  * Compatibility table data for redirects.
  */
 export const redirectsCompatibilityTableData = getRedirectsCompatibilityTableData(
-    path.join(__dirname, './redirects'),
+    path.resolve(localDirname, './redirects'),
 );
 
 /**
  * Compatibility table data for modifiers.
  */
 export const modifiersCompatibilityTableData = getModifiersCompatibilityTableData(
-    path.join(__dirname, './modifiers'),
+    path.resolve(localDirname, './modifiers'),
 );

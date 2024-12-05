@@ -3,7 +3,11 @@
  */
 
 // Parser
-export { RuleParser } from './parser/rule';
+export { RuleParser } from './parser/rule-parser';
+export { RuleSerializer } from './serializer/rule-serializer';
+export { RuleDeserializer } from './deserializer/rule-deserializer';
+export { RuleGenerator } from './generator/rule-generator';
+
 export {
     type Agent,
     type AgentCommentRule,
@@ -54,29 +58,31 @@ export {
     type HostnameList,
     type HostRule,
     type AnyNetworkRule,
-} from './parser/common';
+} from './nodes';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
-export { AgentCommentRuleParser } from './parser/comment/agent-rule';
-export { AgentParser } from './parser/comment/agent';
-export { CommentRuleParser } from './parser/comment';
-export { ConfigCommentRuleParser } from './parser/comment/inline-config';
-export { CosmeticRuleParser } from './parser/cosmetic';
-export { AppListParser } from './parser/misc/app-list';
-export { DomainListParser } from './parser/misc/domain-list';
-export { MethodListParser } from './parser/misc/method-list';
-export { StealthOptionListParser } from './parser/misc/stealth-option-list';
-export { FilterListParser } from './parser/filterlist';
-export { HintCommentRuleParser } from './parser/comment/hint-rule';
-export { HintParser } from './parser/comment/hint';
-export { LogicalExpressionParser } from './parser/misc/logical-expression';
-export { MetadataCommentRuleParser, KNOWN_METADATA_HEADERS } from './parser/comment/metadata';
+export { AgentCommentParser } from './parser/comment/agent-comment-parser';
+export { AgentParser } from './parser/comment/agent-parser';
+export { CommentParser } from './parser/comment/comment-parser';
+export { ConfigCommentParser } from './parser/comment/config-comment-parser';
+export { CosmeticRuleParser } from './parser/cosmetic/cosmetic-rule-parser';
+export { AppListParser } from './parser/misc/app-list-parser';
+export { DomainListParser } from './parser/misc/domain-list-parser';
+export { MethodListParser } from './parser/misc/method-list-parser';
+export { StealthOptionListParser } from './parser/misc/stealth-option-list-parser';
+export { FilterListParser } from './parser/filterlist-parser';
+export { FilterListSerializer } from './serializer/filterlist-serializer';
+export { FilterListDeserializer } from './deserializer/filterlist-deserializer';
+export { HintCommentParser } from './parser/comment/hint-comment-parser';
+export { HintParser } from './parser/comment/hint-parser';
+export { LogicalExpressionParser } from './parser/misc/logical-expression-parser';
+export { MetadataCommentParser } from './parser/comment/metadata-comment-parser';
 export { ModifierListParser } from './parser/misc/modifier-list';
-export { ModifierParser } from './parser/misc/modifier';
-export { NetworkRuleParser } from './parser/network';
+export { ModifierParser } from './parser/misc/modifier-parser';
+export { NetworkRuleParser } from './parser/network/network-rule-parser';
 export { NotImplementedError } from './errors/not-implemented-error';
-export { ParameterListParser } from './parser/misc/parameter-list';
-export { HostRuleParser } from './parser/network/host';
-export { PreProcessorCommentRuleParser } from './parser/comment/preprocessor';
+export { ParameterListParser } from './parser/misc/parameter-list-parser';
+export { HostRuleParser } from './parser/network/host-rule-parser';
+export { PreProcessorCommentParser } from './parser/comment/preprocessor-parser';
 export { RuleConversionError } from './errors/rule-conversion-error';
 export { BinarySchemaMismatchError } from './errors/binary-schema-mismatch-error';
 
@@ -154,7 +160,6 @@ export {
     isValidResourceType,
 } from './compatibility-tables';
 
-export { defaultParserOptions, type ParserOptions } from './parser/options';
-
 // Version
 export { AGTREE_VERSION } from './version';
+export { getSyntaxSerializationMap } from './marshalling-utils/syntax-serialization-map';

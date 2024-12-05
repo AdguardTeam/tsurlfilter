@@ -2,9 +2,8 @@ import { z as zod } from 'zod';
 import { LogLevel } from '@adguard/logger';
 
 import { filterListChunksValidator, filterListSourceMapValidator } from '@adguard/tsurlfilter';
-import { version } from '../../../package.json';
-
-export const TSWEBEXTENSION_VERSION = version;
+import extCssPackageJson from '@adguard/extended-css/package.json';
+import packageJson from '../../../package.json';
 
 /**
  * Re-export needed to print the library version on the extension About page.
@@ -12,7 +11,9 @@ export const TSWEBEXTENSION_VERSION = version;
  * environment runtime errors, like call `window.console`, which is not available
  * in the service worker in MV3. And also to avoid bundle size getting larger.
  */
-export { version as EXTENDED_CSS_VERSION } from '@adguard/extended-css/package.json';
+
+export const TSWEBEXTENSION_VERSION = packageJson.version;
+export const EXTENDED_CSS_VERSION = extCssPackageJson.version;
 
 /**
  * Stealth mode configuration schema.

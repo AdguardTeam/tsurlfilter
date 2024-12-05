@@ -4,19 +4,27 @@
 import zod from 'zod';
 
 import { getErrorMessage } from '../../src/utils/error';
-import { type Node } from '../../src/parser/common';
-import { type ParserBase } from '../../src/parser/interface';
+import { type Node } from '../../src/nodes';
+import { type BaseParser } from '../../src/parser/base-parser';
 import { OutputByteBuffer } from '../../src/utils/output-byte-buffer';
 import { SimpleStorage } from '../helpers/simple-storage';
 import { InputByteBuffer } from '../../src/utils/input-byte-buffer';
 import { defaultParserOptions } from '../../src/parser/options';
+import { type BaseGenerator } from '../../src/generator/base-generator';
+import { type BaseSerializer } from '../../src/serializer/base-serializer';
+import { type BaseDeserializer } from '../../src/deserializer/base-deserializer';
 
 // Extend Jest's global namespace with the custom matcher
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace jest {
         interface Matchers<R> {
-            toBeSerializedAndDeserializedProperly(parser: ParserBase): Promise<R>;
+            toBeSerializedAndDeserializedProperly(
+                parser: BaseParser,
+                generator: BaseGenerator,
+                serializer: BaseSerializer,
+                deserializer: BaseDeserializer,
+            ): Promise<R>;
         }
     }
 }
@@ -38,11 +46,17 @@ expect.extend({
      *
      * @param received Received parameter from expect()
      * @param parser Parser class to use
+     * @param generator Generator class to use
+     * @param serializer Serializer class to use
+     * @param deserializer Deserializer class to use
      * @returns Jest matcher result
      */
     async toBeSerializedAndDeserializedProperly(
         received: unknown,
-        parser: typeof ParserBase,
+        parser: typeof BaseParser,
+        generator: typeof BaseGenerator,
+        serializer: typeof BaseSerializer,
+        deserializer: typeof BaseDeserializer,
     ): Promise<jest.CustomMatcherResult> {
         try {
             // Validate the received parameter
@@ -97,7 +111,7 @@ expect.extend({
             const outputBuffer = new OutputByteBuffer();
 
             try {
-                parser.serialize(originalNode, outputBuffer);
+                serializer.serialize(originalNode, outputBuffer);
             } catch (error: unknown) {
                 throw new Error(`Failed to serialize '${received}', got error: '${getErrorMessage(error)}')`);
             }
@@ -110,7 +124,7 @@ expect.extend({
             const deserializedNode: Node = {} as Node;
 
             try {
-                parser.deserialize(inputBuffer, deserializedNode);
+                deserializer.deserialize(inputBuffer, deserializedNode);
             } catch (error: unknown) {
                 throw new Error(`Failed to deserialize '${received}', got error: '${getErrorMessage(error)}'`);
             }
@@ -119,7 +133,7 @@ expect.extend({
             expect(deserializedNode).toEqual(expectedNode);
 
             // Generated strings should be equal as well
-            expect(parser.generate(deserializedNode)).toEqual(parser.generate(expectedNode));
+            expect(generator.generate(deserializedNode)).toEqual(generator.generate(expectedNode));
 
             return {
                 pass: true,

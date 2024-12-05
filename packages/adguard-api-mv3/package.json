@@ -37,7 +37,7 @@
   "license": "GPL-3.0-only",
   "dependencies": {
     "@adguard/logger": "1.1.0",
-    "@adguard/tswebextension": "2.4.0-alpha.7",
+    "@adguard/tswebextension": "3.0.0-alpha.0",
     "zod": "3.22.4"
   },
   "devDependencies": {

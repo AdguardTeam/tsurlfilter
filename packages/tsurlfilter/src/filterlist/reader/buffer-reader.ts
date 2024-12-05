@@ -1,4 +1,5 @@
-import { type AnyRule, type InputByteBuffer, RuleParser } from '@adguard/agtree';
+import { type AnyRule, type InputByteBuffer } from '@adguard/agtree';
+import { RuleDeserializer } from '@adguard/agtree/deserializer';
 import { type IReader } from './reader';
 
 /**
@@ -37,7 +38,7 @@ export class BufferReader implements IReader {
         }
 
         let ruleNode: AnyRule;
-        RuleParser.deserialize(this.buffer, ruleNode = {} as AnyRule);
+        RuleDeserializer.deserialize(this.buffer, ruleNode = {} as AnyRule);
 
         this.currentIndex = this.buffer.currentOffset;
 

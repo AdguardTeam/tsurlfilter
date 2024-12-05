@@ -1,6 +1,6 @@
-import { version } from '../package.json';
+import * as pkgJSON from '../package.json';
 
-export const TSURLFILTER_VERSION = version;
+export const TSURLFILTER_VERSION = pkgJSON.version;
 
 /**
  * Compatibility types are used to configure engine for better support of different libraries

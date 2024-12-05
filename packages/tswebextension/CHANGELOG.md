@@ -9,7 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated [@adguard/agtree] to `v2.1.3`.
+- Updated [@adguard/agtree] to `v3.0.0`.
+- Updated [@adguard/scriptlets] to `v2.0.1`.
+- Updated [@adguard/tsurlfilter] to `v3.1.0-alpha.7`
+- Updated [@adguard/extended-css] to `v2.0.59`
 
 ### Fixed
 

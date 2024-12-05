@@ -1,28 +1,10 @@
 /* eslint-disable no-param-reassign */
-import { MODIFIERS_SEPARATOR, NULL, UINT16_MAX } from '../../utils/constants';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
+import { MODIFIERS_SEPARATOR } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
-import { BinaryTypeMap, type Modifier, type ModifierList } from '../common';
-import { ParserBase } from '../interface';
+import { type ModifierList } from '../../nodes';
+import { BaseParser } from '../base-parser';
 import { defaultParserOptions } from '../options';
-import { ModifierParser } from './modifier';
-import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-
-/**
- * Property map for binary serialization. This helps to reduce the size of the serialized data,
- * as it allows us to use a single byte to represent a property.
- *
- * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION}!
- *
- * @note Only 256 values can be represented this way.
- */
-const enum ModifierListNodeSerializationMap {
-    Children = 1,
-    Start,
-    End,
-}
+import { ModifierParser } from './modifier-parser';
 
 /**
  * `ModifierListParser` is responsible for parsing modifier lists. Please note that the name is not
@@ -32,7 +14,7 @@ const enum ModifierListNodeSerializationMap {
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#non-basic-rules-modifiers}
  * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#options}
  */
-export class ModifierListParser extends ParserBase {
+export class ModifierListParser extends BaseParser {
     /**
      * Parses the cosmetic rule modifiers, eg. `third-party,domain=example.com|~example.org`.
      *
@@ -100,101 +82,5 @@ export class ModifierListParser extends ParserBase {
         }
 
         return result;
-    }
-
-    /**
-     * Converts a modifier list AST to a string.
-     *
-     * @param ast Modifier list AST
-     * @returns Raw string
-     */
-    public static generate(ast: ModifierList): string {
-        const result = ast.children
-            .map(ModifierParser.generate)
-            .join(MODIFIERS_SEPARATOR);
-
-        return result;
-    }
-
-    /**
-     * Serializes a modifier list node to binary format.
-     *
-     * @param node Node to serialize.
-     * @param buffer ByteBuffer for writing binary data.
-     */
-    public static serialize(node: ModifierList, buffer: OutputByteBuffer): void {
-        buffer.writeUint8(BinaryTypeMap.ModifierListNode);
-
-        const count = node.children.length;
-        // If there are no children, we do not write any data related to them, to avoid using unnecessary storage,
-        // but children is a required field, so during deserialization we should initialize it as an empty array,
-        // if there are no children in the binary data.
-        if (count) {
-            buffer.writeUint8(ModifierListNodeSerializationMap.Children);
-            // note: we store the count, because re-construction of the array is faster if we know the length
-            if (count > UINT16_MAX) {
-                throw new Error(`Too many modifiers: ${count}, the limit is ${UINT16_MAX}`);
-            }
-            buffer.writeUint16(count);
-
-            for (let i = 0; i < count; i += 1) {
-                ModifierParser.serialize(node.children[i], buffer);
-            }
-        }
-
-        if (!isUndefined(node.start)) {
-            buffer.writeUint8(ModifierListNodeSerializationMap.Start);
-            buffer.writeUint32(node.start);
-        }
-
-        if (!isUndefined(node.end)) {
-            buffer.writeUint8(ModifierListNodeSerializationMap.End);
-            buffer.writeUint32(node.end);
-        }
-
-        buffer.writeUint8(NULL);
-    }
-
-    /**
-     * Deserializes a modifier list node from binary format.
-     *
-     * @param buffer ByteBuffer for reading binary data.
-     * @param node Destination node.
-     */
-    public static deserialize(buffer: InputByteBuffer, node: ModifierList): void {
-        buffer.assertUint8(BinaryTypeMap.ModifierListNode);
-
-        node.type = 'ModifierList';
-
-        let prop = buffer.readUint8();
-        while (prop !== NULL) {
-            switch (prop) {
-                case ModifierListNodeSerializationMap.Children:
-                    node.children = new Array(buffer.readUint16());
-
-                    // read children
-                    for (let i = 0; i < node.children.length; i += 1) {
-                        ModifierParser.deserialize(buffer, node.children[i] = {} as Modifier);
-                    }
-                    break;
-
-                case ModifierListNodeSerializationMap.Start:
-                    node.start = buffer.readUint32();
-                    break;
-
-                case ModifierListNodeSerializationMap.End:
-                    node.end = buffer.readUint32();
-                    break;
-
-                default:
-                    throw new Error(`Invalid property: ${prop}.`);
-            }
-            prop = buffer.readUint8();
-        }
-        // Maybe children are not present in the binary data,
-        // in this case, we should initialize it as an empty array.
-        if (!node.children) {
-            node.children = [];
-        }
     }
 }
