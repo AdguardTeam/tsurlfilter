@@ -14,7 +14,7 @@ import {
 } from '@adguard/tsurlfilter';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
-import { FiltersStorage } from '../../common/storage/filters';
+import { FiltersStorage, type PreprocessedFilterListWithChecksum } from '../../common/storage/filters';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 
@@ -183,9 +183,7 @@ export default class FiltersApi {
     public static async syncFiltersWithStorage(filterIds: number[], ruleSetsPath: string): Promise<void> {
         logger.info('Syncing enabled filters with the extension storage');
 
-        const filtersToSync: Record<number, PreprocessedFilterList> = {};
-        const checksumsToSync: Record<number, string> = {};
-
+        const filtersToSync: Record<number, PreprocessedFilterListWithChecksum> = {};
         const filtersInStorage = new Set(await FiltersStorage.getFilterIds());
         const filtersToRemove = Array.from(filtersInStorage).filter((id) => !filterIds.includes(id));
 
@@ -209,11 +207,16 @@ export default class FiltersApi {
                         return;
                     }
 
-                    const preprocessedFilter = await FiltersApi.getPreprocessedFilterList(filterId, ruleSetsPath);
-                    filtersToSync[filterId] = preprocessedFilter;
-                    if (currentChecksum) {
-                        checksumsToSync[filterId] = currentChecksum;
+                    if (currentChecksum === undefined) {
+                        logger.error(`Failed to get checksum for filter with id ${filterId}`);
+                        return;
                     }
+
+                    const preprocessedFilter = await FiltersApi.getPreprocessedFilterList(filterId, ruleSetsPath);
+                    filtersToSync[filterId] = {
+                        ...preprocessedFilter,
+                        checksum: currentChecksum,
+                    };
 
                     if (filtersInStorage.has(filterId)) {
                         syncStatus.updated.push(filterId);
@@ -228,17 +231,11 @@ export default class FiltersApi {
 
         // Persist changes to storage
         if (Object.keys(filtersToSync).length > 0) {
-            await Promise.all([
-                FiltersStorage.setMultipleFilters(filtersToSync),
-                FiltersStorage.setMultipleChecksums(checksumsToSync),
-            ]);
+            await FiltersStorage.setMultipleFilters(filtersToSync);
         }
 
         if (filtersToRemove.length > 0) {
-            await Promise.all([
-                FiltersStorage.removeMultipleFilters(filtersToRemove),
-                FiltersStorage.removeMultipleChecksums(filtersToRemove),
-            ]);
+            await FiltersStorage.removeMultipleFilters(filtersToRemove);
         }
 
         logger.info(

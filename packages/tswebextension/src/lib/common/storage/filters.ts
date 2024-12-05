@@ -1,5 +1,4 @@
-import { z } from 'zod';
-import { type PreprocessedFilterList, preprocessedFilterListValidator } from '@adguard/tsurlfilter';
+import { type PreprocessedFilterList } from '@adguard/tsurlfilter';
 import { logger } from '../utils/logger';
 import { IDBStorage } from './core/idb-storage';
 
@@ -23,24 +22,106 @@ export const filtersIdbStorage = new IDBStorage(
 );
 
 /**
+ * Preprocessed filter list extended with checksum.
+ */
+export type PreprocessedFilterListWithChecksum = PreprocessedFilterList & { checksum: string };
+
+/**
  * Provides a storage for filter lists.
  * It is built on top of {@link filtersIdbStorage}.
  */
 export class FiltersStorage {
-    private static readonly FILTER_KEY = 'filter';
+    private static readonly KEY_COMBINER = '_';
 
-    private static readonly CHECKSUM_KEY = 'checksum';
+    private static readonly KEY_FILTER_LIST = 'filterList';
+
+    private static readonly KEY_RAW_FILTER_LIST = 'rawFilterList';
+
+    private static readonly KEY_CONVERSION_MAP = 'conversionMap';
+
+    private static readonly KEY_SOURCE_MAP = 'sourceMap';
+
+    private static readonly KEY_CHECKSUM = 'checksum';
 
     /**
      * Returns key with prefix.
+     * Key format: <prefix>_<filterId>, e.g. `filterList_1`.
      *
      * @param filterId Filter id.
-     * @param key Key.
+     * @param keyPrefix Key prefix.
      *
      * @returns Key with prefix.
      */
-    private static getKey(filterId: number | string, key: string): string {
-        return `${key}_${filterId}`;
+    private static getKey(filterId: number | string, keyPrefix: string): string {
+        return `${keyPrefix}${FiltersStorage.KEY_COMBINER}${filterId}`;
+    }
+
+    /**
+     * Gets the binary serialized filter list from the storage.
+     *
+     * @param filterId Filter id.
+     * @returns Promise, resolved with binary serialized filter list or undefined if not found.
+     */
+    public static async getFilterList(
+        filterId: number,
+    ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_FILTER_LIST] | undefined> {
+        return filtersIdbStorage.get(
+            FiltersStorage.getKey(filterId, FiltersStorage.KEY_FILTER_LIST),
+        ) as Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_FILTER_LIST] | undefined>;
+    }
+
+    /**
+     * Gets the raw filter list from the storage.
+     *
+     * @param filterId Filter id.
+     * @returns Promise, resolved with raw filter list or undefined if not found.
+     */
+    public static async getRawFilterList(
+        filterId: number,
+    ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_RAW_FILTER_LIST] | undefined> {
+        return filtersIdbStorage.get(
+            FiltersStorage.getKey(filterId, FiltersStorage.KEY_RAW_FILTER_LIST),
+        ) as Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_RAW_FILTER_LIST] | undefined>;
+    }
+
+    /**
+     * Gets the conversion map from the storage.
+     *
+     * @param filterId Filter id.
+     * @returns Promise, resolved with conversion map or undefined if not found.
+     */
+    public static async getConversionMap(
+        filterId: number,
+    ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_CONVERSION_MAP] | undefined> {
+        return filtersIdbStorage.get(
+            FiltersStorage.getKey(filterId, FiltersStorage.KEY_CONVERSION_MAP),
+        ) as Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_CONVERSION_MAP] | undefined>;
+    }
+
+    /**
+     * Gets the source map from the storage.
+     *
+     * @param filterId Filter id.
+     * @returns Promise, resolved with source map or undefined if not found.
+     */
+    public static async getSourceMap(
+        filterId: number,
+    ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_SOURCE_MAP] | undefined> {
+        return filtersIdbStorage.get(
+            FiltersStorage.getKey(filterId, FiltersStorage.KEY_SOURCE_MAP),
+        ) as Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_SOURCE_MAP] | undefined>;
+    }
+
+    /**
+     * Gets the checksum from the storage.
+     *
+     * @param filterId Filter id.
+     * @returns Promise, resolved with checksum or undefined if not found.
+     */
+    public static async getChecksum(filterId: number): Promise<string | undefined> {
+        return filtersIdbStorage.get(
+            FiltersStorage.getKey(filterId, FiltersStorage.KEY_CHECKSUM),
+        ) as Promise<string | undefined>;
     }
 
     /**
@@ -50,11 +131,13 @@ export class FiltersStorage {
      *
      * @throws Error, if transaction failed.
      */
-    public static async setMultipleFilters(filters: Record<number, PreprocessedFilterList>): Promise<void> {
-        const data: Record<string, PreprocessedFilterList> = {};
+    public static async setMultipleFilters(filters: Record<number, PreprocessedFilterListWithChecksum>): Promise<void> {
+        const data: Record<string, unknown> = {};
 
         for (const [filterId, filter] of Object.entries(filters)) {
-            data[FiltersStorage.getKey(filterId, FiltersStorage.FILTER_KEY)] = filter;
+            for (const [key, value] of Object.entries(filter)) {
+                data[FiltersStorage.getKey(filterId, key)] = value;
+            }
         }
 
         try {
@@ -76,7 +159,15 @@ export class FiltersStorage {
      * @throws Error, if transaction failed.
      */
     public static async removeMultipleFilters(filterIds: number[]): Promise<void> {
-        const keys = filterIds.map((filterId) => FiltersStorage.getKey(filterId, FiltersStorage.FILTER_KEY));
+        const keys = filterIds.map((filterId) => {
+            return [
+                FiltersStorage.getKey(filterId, FiltersStorage.KEY_FILTER_LIST),
+                FiltersStorage.getKey(filterId, FiltersStorage.KEY_RAW_FILTER_LIST),
+                FiltersStorage.getKey(filterId, FiltersStorage.KEY_CONVERSION_MAP),
+                FiltersStorage.getKey(filterId, FiltersStorage.KEY_SOURCE_MAP),
+                FiltersStorage.getKey(filterId, FiltersStorage.KEY_CHECKSUM),
+            ];
+        }).flat();
 
         try {
             const succeeded = await filtersIdbStorage.removeMultiple(keys);
@@ -100,8 +191,8 @@ export class FiltersStorage {
         try {
             const keys = await filtersIdbStorage.keys();
             return keys
-                .filter((key) => key.startsWith(FiltersStorage.FILTER_KEY))
-                .map((key) => parseInt(key.split('_')[1], 10));
+                .filter((key) => key.startsWith(FiltersStorage.KEY_CHECKSUM))
+                .map((key) => parseInt(key.split(FiltersStorage.KEY_COMBINER)[1], 10));
         } catch (e) {
             logger.error('Failed to get filter ids, got error:', e);
             throw e;
@@ -117,87 +208,42 @@ export class FiltersStorage {
      *
      * @throws Error, if DB operation failed or returned data is not valid.
      */
-    static async getFilter(filterId: number): Promise<PreprocessedFilterList | null> {
+    static async getFilter(filterId: number): Promise<PreprocessedFilterListWithChecksum | undefined> {
         try {
-            const filter = await filtersIdbStorage.get(FiltersStorage.getKey(filterId, FiltersStorage.FILTER_KEY));
+            const data = await Promise.all([
+                FiltersStorage.getFilterList(filterId),
+                FiltersStorage.getRawFilterList(filterId),
+                FiltersStorage.getConversionMap(filterId),
+                FiltersStorage.getSourceMap(filterId),
+                FiltersStorage.getChecksum(filterId),
+            ]);
 
-            if (!filter) {
-                return null;
+            // eslint-disable-next-line prefer-const
+            let [filterList, rawFilterList, conversionMap, sourceMap, checksum] = data;
+
+            // If any of the data is missing, return undefined
+            if (filterList === undefined || rawFilterList === undefined || checksum === undefined) {
+                return undefined;
             }
 
-            return preprocessedFilterListValidator.parse(filter);
+            // If conversionMap or sourceMap is missing, set it to empty object
+            if (conversionMap === undefined) {
+                conversionMap = {};
+            }
+
+            if (sourceMap === undefined) {
+                sourceMap = {};
+            }
+
+            return {
+                filterList,
+                rawFilterList,
+                conversionMap,
+                sourceMap,
+                checksum,
+            };
         } catch (e) {
             logger.error(`Failed to get filter data for filter id ${filterId}, got error:`, e);
-            throw e;
-        }
-    }
-
-    /**
-     * Sets multiple filter checksums to {@link filtersIdbStorage} in batch.
-     *
-     * @param checksums Record with filter id as a key and checksum as a value.
-     *
-     * @throws Error, if transaction failed.
-     */
-    static async setMultipleChecksums(checksums: Record<number, string>): Promise<void> {
-        const data: Record<string, string> = {};
-
-        for (const [filterId, checksum] of Object.entries(checksums)) {
-            data[FiltersStorage.getKey(filterId, FiltersStorage.CHECKSUM_KEY)] = checksum;
-        }
-
-        try {
-            const succeeded = await filtersIdbStorage.setMultiple(data);
-            if (!succeeded) {
-                throw new Error('Transaction failed');
-            }
-        } catch (e) {
-            logger.error('Failed to set multiple filter checksums, got error:', e);
-            throw e;
-        }
-    }
-
-    /**
-     * Removes multiple filter checksums from {@link filtersIdbStorage} in batch.
-     *
-     * @param filterIds Filter ids.
-     *
-     * @throws Error, if transaction failed.
-     */
-    static async removeMultipleChecksums(filterIds: number[]): Promise<void> {
-        const keys = filterIds.map((filterId) => FiltersStorage.getKey(filterId, FiltersStorage.CHECKSUM_KEY));
-
-        try {
-            const succeeded = await filtersIdbStorage.removeMultiple(keys);
-            if (!succeeded) {
-                throw new Error('Transaction failed');
-            }
-        } catch (e) {
-            logger.error('Failed to remove multiple filter checksums, got error:', e);
-            throw e;
-        }
-    }
-
-    /**
-     * Returns specified filter checksum from cache or {@link filtersIdbStorage}.
-     *
-     * @param filterId Filter id.
-     *
-     * @returns Promise, resolved with checksum.
-     *
-     * @throws Error, if DB operation failed or returned data is not valid.
-     */
-    static async getChecksum(filterId: number): Promise<string | null> {
-        try {
-            const checksum = await filtersIdbStorage.get(FiltersStorage.getKey(filterId, FiltersStorage.CHECKSUM_KEY));
-
-            if (!checksum) {
-                return null;
-            }
-
-            return z.string().parse(checksum);
-        } catch (e) {
-            logger.error(`Failed to get filter checksum for filter id ${filterId}, got error:`, e);
             throw e;
         }
     }
