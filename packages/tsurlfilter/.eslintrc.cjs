@@ -20,7 +20,6 @@ module.exports = {
     ignorePatterns: [
         'dist',
         'coverage',
-        '.eslintrc.js',
     ],
     rules: {
         indent: 'off',
