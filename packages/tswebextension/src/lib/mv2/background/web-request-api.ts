@@ -975,24 +975,10 @@ export class WebRequestApi {
         details: WebNavigation.OnCompletedDetailsType | WebNavigation.OnErrorOccurredDetailsType,
     ): void {
         const { tabId, frameId } = details;
-        const tabContext = tabsApi.getTabContext(tabId);
 
-        if (!tabContext) {
-            return;
-        }
-
-        /**
-         * On creation of an empty iframe with subsequent url assignment,
-         * WebNavigation.onCompleted of the frame could fire before WebRequest.onCommitted,
-         * removing the frame context with it's matching and cosmetic results before it could be applied.
-         *
-         * TODO add the ability to prolong request and tab/frame contexts lives if it was not yet consumed
-         * at webRequest or webNavigation events, i.e
-         *   - keep requestContext, if webRequest.onCommitted has not been fired,
-         *   - keep tab context if webNavigation.omCompleted has not been fired,
-         * etc.
-         */
-        setTimeout(() => tabContext.frames.delete(frameId), FRAME_DELETION_TIMEOUT_MS);
+        setTimeout(() => {
+            tabsApi.deleteFrameContext(tabId, frameId, FRAME_DELETION_TIMEOUT_MS);
+        }, FRAME_DELETION_TIMEOUT_MS);
     }
 
     /**
