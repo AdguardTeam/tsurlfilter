@@ -728,12 +728,25 @@ export class WebRequestApi {
     //     CosmeticApi.applyFrameJsRules(frameId, tabId);
     // }
 
-    // FIXME (Slava): jsdoc
+    /**
+     * Generates a "synthetic document id" for Firefox.
+     *
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     *
+     * @returns ID as a string based on tab and frame IDs.
+     */
     private static generateIdForFirefox(tabId: number, frameId: number): string {
         return `${tabId}-${frameId}`;
     }
 
-    // FIXME (Slava): jsdoc
+    /**
+     * Calculates parent document ID for the specified details.
+     *
+     * @param details Event details.
+     *
+     * @returns Parent document ID.
+     */
     private static calcParentDocumentId(
         details: WebNavigation.OnBeforeNavigateDetailsType | WebRequest.OnCompletedDetailsType,
     ): string | undefined {
@@ -765,6 +778,7 @@ export class WebRequestApi {
      */
     private static onBeforeNavigate(details: WebNavigation.OnBeforeNavigateDetailsType): void {
         // FIXME (Slava): remove
+        // eslint-disable-next-line no-console
         console.log('onBeforeNavigate. details:', details);
         const {
             frameId,
@@ -790,6 +804,8 @@ export class WebRequestApi {
      * @param details Event details.
      */
     private static onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
+        // FIXME (Slava): remove
+        // eslint-disable-next-line no-console
         console.log('onCommitted. details:', details);
         // debugger;
         const {
