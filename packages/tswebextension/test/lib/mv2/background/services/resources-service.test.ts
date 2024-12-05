@@ -2,7 +2,7 @@ import browser from 'sinon-chrome';
 
 import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
 
-global.fetch = jest.fn(() => {
+global.fetch = vi.fn(() => {
     return Promise.resolve({
         text: () => Promise.resolve('test response'),
     } as unknown as Response);

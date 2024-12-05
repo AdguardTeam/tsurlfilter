@@ -9,7 +9,7 @@ describe('IDBStorage', () => {
 
     afterEach(async () => {
         await storage.clear();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('set and get', async () => {

@@ -2,8 +2,6 @@ import browser from 'webextension-polyfill';
 
 import { BrowserStorage } from '../../../../../src/lib/common/storage/core/browser-storage';
 
-jest.mock('webextension-polyfill');
-
 describe('BrowserStorage', () => {
     let storage: BrowserStorage<any>;
 
@@ -13,7 +11,7 @@ describe('BrowserStorage', () => {
 
     afterEach(async () => {
         await storage.clear();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('set and get', async () => {
@@ -88,7 +86,7 @@ describe('BrowserStorage', () => {
         }
 
         // Simulate an error in browser.storage.local.set
-        const mock = jest.spyOn(descriptor.value, 'set').mockRejectedValueOnce(
+        const mock = vi.spyOn(descriptor.value, 'set').mockRejectedValueOnce(
             new Error('Error while setting multiple keys in the storage'),
         );
 

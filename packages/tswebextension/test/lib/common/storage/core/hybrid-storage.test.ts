@@ -5,12 +5,14 @@ import { HybridStorage } from '../../../../../src/lib/common/storage/core/hybrid
 import { IDBStorage } from '../../../../../src/lib/common/storage/core/idb-storage';
 import { BrowserStorage } from '../../../../../src/lib/common/storage/core/browser-storage';
 
+vi.mock('idb', { spy: true });
+
 describe('HybridStorage', () => {
     let storage: HybridStorage<any>;
 
     afterEach(async () => {
         await storage.clear();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('When IndexedDB is supported', () => {
@@ -138,7 +140,7 @@ describe('HybridStorage', () => {
 
         beforeEach(() => {
             // Mock idb.openDB to throw an error, simulating that IndexedDB is not supported
-            jest.spyOn(idb, 'openDB').mockImplementation(() => {
+            vi.spyOn(idb, 'openDB').mockImplementation(() => {
                 throw new Error('IndexedDB not supported');
             });
 

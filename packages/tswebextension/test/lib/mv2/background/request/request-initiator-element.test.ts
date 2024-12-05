@@ -7,11 +7,11 @@ import { BACKGROUND_TAB_ID } from '../../../../../src/lib/common/constants';
 
 describe('Request Initiator Element', () => {
     beforeEach(() => {
-        jest.spyOn(CosmeticApi, 'injectCss');
+        vi.spyOn(CosmeticApi, 'injectCss');
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('hides subdocument with third party src', () => {

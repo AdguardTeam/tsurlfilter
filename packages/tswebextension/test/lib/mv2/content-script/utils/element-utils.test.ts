@@ -1,5 +1,5 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 
 import { ElementUtils } from '../../../../../src/lib/common/content-script/utils/element-utils';

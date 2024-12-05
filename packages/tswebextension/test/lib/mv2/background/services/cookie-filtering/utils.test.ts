@@ -4,7 +4,7 @@ import { ParsedCookie } from '../../../../../../src/lib/common/cookie-filtering/
 
 const TEST_URL = 'https://test.com/url';
 
-jest.mock('@lib/common/utils/logger');
+vi.mock('../../../../../../src/lib/common/utils/logger');
 
 describe('Cookie utils - Set-Cookie headers parsing', () => {
     it('checks parse simple', () => {

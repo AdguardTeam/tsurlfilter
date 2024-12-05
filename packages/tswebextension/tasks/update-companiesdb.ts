@@ -13,7 +13,7 @@ const DEST_DIR = '../src/lib/common/companies-db-service';
 /**
  * Output file name.
  */
-const COMPANIES_DB_OUTPUT_FILE = 'trackers-min.js';
+const COMPANIES_DB_OUTPUT_FILE = 'trackers-min.ts';
 
 const outputDirPath = path.resolve(__dirname, DEST_DIR);
 const outputFilePath = path.resolve(outputDirPath, COMPANIES_DB_OUTPUT_FILE);
