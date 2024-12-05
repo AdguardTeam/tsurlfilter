@@ -119,39 +119,6 @@ export class CosmeticFrameProcessor {
     static SAME_FRAME_THRESHOLD_MS = 100;
 
     /**
-     * Check if recalculation should be skipped.
-     * If the time passed between two events is less than the threshold,
-     * we consider it part of the same frame and do not recalculate.
-     * Additionally, we check if the URL has changed.
-     *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     * @param url Url.
-     * @param timeStamp Event timestamp.
-     * @returns True if recalculation should be skipped.
-     */
-    private static shouldSkipRecalculation(
-        tabId: number,
-        frameId: number,
-        url: string,
-        timeStamp: number,
-    ): boolean {
-        const frameContext = tabsApi.getFrameContext(tabId, frameId);
-        if (!frameContext) {
-            return false;
-        }
-
-        // do not skip recalculation if the URL has changed
-        if (frameContext.url !== url) {
-            return false;
-        }
-
-        const timeDiff = Math.abs(frameContext.timeStamp - timeStamp);
-
-        return timeDiff < CosmeticFrameProcessor.SAME_FRAME_THRESHOLD_MS;
-    }
-
-    /**
      * Handle sub frame without url.
      * @param props Handle sub frame without url props.
      */
@@ -333,10 +300,6 @@ export class CosmeticFrameProcessor {
             parentDocumentId,
             documentId,
         } = props;
-
-        if (this.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {
-            return;
-        }
 
         // set in the beginning to let other events know that cosmetic result will be calculated in this event to
         // avoid double calculation
