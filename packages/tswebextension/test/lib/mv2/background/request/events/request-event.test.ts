@@ -1,4 +1,3 @@
-import { describe } from 'vitest';
 import browser from 'sinon-chrome';
 
 import { RequestEvent } from '../../../../../../src/lib';
