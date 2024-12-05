@@ -25,8 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Handling missing children data in the deserializer for certain nodes.
 - URI encoded `$removeparam` value is not removed in MV3 [AdguardBrowserExtension#3014].
 - `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
+- `$popup,third-party` modifiers cause document blocking [AdguardBrowserExtension#3012].
 
 [AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
+[AdguardBrowserExtension#3012]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3012
 
 ## Unreleased <!-- master -->
 
