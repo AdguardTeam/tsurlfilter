@@ -1,4 +1,5 @@
-import { InputByteBuffer, RuleParser } from '@adguard/agtree';
+import { RuleParser } from '@adguard/agtree';
+import { InputByteBuffer } from '@adguard/agtree/utils';
 import { FilterListPreprocessor, PREPROCESSOR_AGTREE_OPTIONS } from '../../../src';
 import { BufferReader } from '../../../src/filterlist/reader/buffer-reader';
 

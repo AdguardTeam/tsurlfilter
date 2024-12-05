@@ -1,12 +1,14 @@
 import {
-    defaultParserOptions,
     type AnyCosmeticRule,
     type AnyRule,
+    type NetworkRule as NetworkRuleNode,
+} from '@adguard/agtree';
+import {
+    defaultParserOptions,
     CosmeticRuleParser,
     NetworkRuleParser,
     RuleParser,
-    type NetworkRule as NetworkRuleNode,
-} from '@adguard/agtree';
+} from '@adguard/agtree/parser';
 import {
     CosmeticRule,
     type IRule,

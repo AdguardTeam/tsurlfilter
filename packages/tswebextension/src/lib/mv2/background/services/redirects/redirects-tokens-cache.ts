@@ -1,4 +1,4 @@
-import { LRUMap } from 'lru_map';
+import LRUMap from 'lru_map';
 import { nanoid } from 'nanoid';
 
 /**
@@ -7,7 +7,7 @@ import { nanoid } from 'nanoid';
  * "click to load".
  */
 class RedirectsTokensCache {
-    cache = new LRUMap(1000);
+    cache = new LRUMap.LRUMap(1000);
 
     /**
      * Generates random unblock token for url and saves it to cache.

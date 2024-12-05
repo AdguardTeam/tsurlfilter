@@ -1,23 +1,22 @@
 /**
  * @file Custom Jest matcher to check proper rule conversion
  */
-
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { z } from 'zod';
 
-import { type ConverterBase } from '../../src/converter/base-interfaces/converter-base';
-import { RuleParser } from '../../src/parser/rule';
+import { type BaseConverter } from '../../src/converter/base-interfaces/base-converter';
+import { RuleParser } from '../../src/parser/rule-parser';
 import { everyRefsAreDifferent } from '../helpers/refs';
 import { getErrorMessage } from '../../src/utils/error';
-import { type AnyRule } from '../../src/parser/common';
+import { type AnyRule } from '../../src/nodes';
 import { type NodeConversionResult } from '../../src/converter/base-interfaces/conversion-result';
+import { RuleGenerator } from '../../src/generator';
 
 // Extend Jest's global namespace with the custom matcher
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace jest {
         interface Matchers<R> {
-            toBeConvertedProperly(converter: ConverterBase, method: string): R;
+            toBeConvertedProperly(converter: BaseConverter, method: string): R;
         }
     }
 }
@@ -59,7 +58,7 @@ expect.extend({
      * @returns Jest matcher result
      */
     // eslint-disable-next-line max-len
-    toBeConvertedProperly(received: unknown, converter: ConverterBase, method: string): jest.CustomMatcherResult {
+    toBeConvertedProperly(received: unknown, converter: BaseConverter, method: string): jest.CustomMatcherResult {
         // Validate the received parameter with the zod schema
         let receivedParsed: ReceivedSchema;
 
@@ -176,7 +175,7 @@ expect.extend({
         }
 
         // Finally, we should compare the stringified versions of the nodes
-        expect(conversionResult.result.map(RuleParser.generate)).toEqual(receivedParsed.expected);
+        expect(conversionResult.result.map(RuleGenerator.generate)).toEqual(receivedParsed.expected);
 
         return {
             pass: true,

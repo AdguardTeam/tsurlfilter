@@ -1,4 +1,4 @@
-import { defaultParserOptions, type ParserOptions, RuleParser } from '@adguard/agtree';
+import { defaultParserOptions, type ParserOptions, RuleParser } from '@adguard/agtree/parser';
 
 import { extendConfig, type RecursivePartial } from '../../../helpers/config-extend';
 import { getConfigurationMv2Fixture } from './fixtures/configuration';

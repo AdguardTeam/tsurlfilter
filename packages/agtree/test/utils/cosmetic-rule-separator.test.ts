@@ -1,4 +1,4 @@
-import { CosmeticRuleSeparator } from '../../src/parser/common';
+import { CosmeticRuleSeparator } from '../../src/nodes';
 import { EMPTY, SPACE } from '../../src/utils/constants';
 import {
     type CosmeticRuleSeparatorFinderResult,
