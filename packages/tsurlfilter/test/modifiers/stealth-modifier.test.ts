@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { StealthModifier, StealthOptionName } from '../../src/modifiers/stealth-modifier';
 import { LoggerMock } from '../mocks';
 import { setLogger } from '../../src';

@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 import { program } from 'commander';
-import { fileURLToPath } from 'url';
-import path from 'path';
 
 import { copyWar } from './copyWar';
 
@@ -25,8 +23,7 @@ async function main(): Promise<void> {
     await program.parseAsync(process.argv);
 }
 
-const currentFilePath = fileURLToPath(import.meta.url);
-const isRunningViaCli = path.resolve(process.argv[1]) === path.resolve(currentFilePath);
+const isRunningViaCli = require.main === module;
 
 if (isRunningViaCli) {
     main();

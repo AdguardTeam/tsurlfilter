@@ -1,4 +1,5 @@
-import { Redirects } from '@adguard/scriptlets/redirects';
+import { redirects } from '@adguard/scriptlets';
+import type { Redirects } from '@adguard/scriptlets';
 import type { ResourcesService } from '../resources-service';
 
 import { redirectsCache } from './redirects-cache';
@@ -26,7 +27,7 @@ export class RedirectsService {
         try {
             const rawYaml = await this.resourcesService.loadResource('redirects.yml');
 
-            this.redirects = new Redirects(rawYaml);
+            this.redirects = new redirects.Redirects(rawYaml);
         } catch (e) {
             throw new Error((e as Error).message);
         }

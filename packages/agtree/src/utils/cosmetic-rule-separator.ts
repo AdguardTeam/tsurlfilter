@@ -2,7 +2,7 @@
  * @file Cosmetic rule separator finder and categorizer
  */
 
-import { CosmeticRuleSeparator } from '../nodes';
+import { CosmeticRuleSeparator } from '../parser/common';
 import { AT_SIGN, SPACE } from './constants';
 
 export interface CosmeticRuleSeparatorFinderResult {

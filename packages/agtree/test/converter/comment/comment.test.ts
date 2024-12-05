@@ -1,6 +1,6 @@
 import { CommentRuleConverter } from '../../../src/converter/comment';
-import { CommentParser } from '../../../src/parser/comment/comment-parser';
-import { type CommentRule } from '../../../src/nodes';
+import { CommentRuleParser } from '../../../src/parser/comment';
+import { type CommentRule } from '../../../src/parser/common';
 import '../../matchers/check-conversion';
 
 describe('CommentRuleConverter', () => {
@@ -69,7 +69,7 @@ describe('CommentRuleConverter', () => {
     describe('convertToUbo', () => {
         // TODO: We should implement this later
         expect(() => CommentRuleConverter.convertToUbo(
-            CommentParser.parse('! this is a comment') as CommentRule,
+            CommentRuleParser.parse('! this is a comment') as CommentRule,
         )).toThrowError(
             'Not implemented',
         );
@@ -78,7 +78,7 @@ describe('CommentRuleConverter', () => {
     describe('convertToAbp', () => {
         // TODO: We should implement this later
         expect(() => CommentRuleConverter.convertToAbp(
-            CommentParser.parse('! this is a comment') as CommentRule,
+            CommentRuleParser.parse('! this is a comment') as CommentRule,
         )).toThrowError(
             'Not implemented',
         );

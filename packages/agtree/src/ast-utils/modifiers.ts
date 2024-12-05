@@ -2,7 +2,7 @@
  * @file Utility functions for working with modifier nodes
  */
 
-import { type Modifier, type ModifierList } from '../nodes';
+import { type Modifier, type ModifierList } from '../parser/common';
 import { isUndefined } from '../utils/type-guards';
 import { clone } from '../utils/clone';
 

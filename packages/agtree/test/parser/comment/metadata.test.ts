@@ -1,43 +1,40 @@
-import { MetadataCommentParser } from '../../../src/parser/comment/metadata-comment-parser';
+import { MetadataCommentRuleParser } from '../../../src/parser/comment/metadata';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { MetadataCommentGenerator } from '../../../src/generator/comment/metadata-comment-generator';
-import { MetadataCommentSerializer } from '../../../src/serializer/comment/metadata-comment-serializer';
-import { MetadataCommentDeserializer } from '../../../src/deserializer/comment/metadata-comment-deserializer';
 
 describe('MetadataCommentRuleParser', () => {
     test('parse', () => {
         // TODO: Refactor to test.each
-        expect(MetadataCommentParser.parse(EMPTY)).toBeNull();
-        expect(MetadataCommentParser.parse(SPACE)).toBeNull();
+        expect(MetadataCommentRuleParser.parse(EMPTY)).toBeNull();
+        expect(MetadataCommentRuleParser.parse(SPACE)).toBeNull();
 
         // Missing comment marker
-        expect(MetadataCommentParser.parse('a:b')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('a:b')).toBeNull();
 
         // Missing colon
-        expect(MetadataCommentParser.parse('!')).toBeNull();
-        expect(MetadataCommentParser.parse('!##')).toBeNull();
-        expect(MetadataCommentParser.parse('##')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('!')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('!##')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('##')).toBeNull();
 
         // Not a known metadata header
-        expect(MetadataCommentParser.parse('!aaa:bbb')).toBeNull();
-        expect(MetadataCommentParser.parse('! aaa: bbb')).toBeNull();
-        expect(MetadataCommentParser.parse('!aaa:bbb:ccc')).toBeNull();
-        expect(MetadataCommentParser.parse('! aaa: bbb: ccc')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('!aaa:bbb')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('! aaa: bbb')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('!aaa:bbb:ccc')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('! aaa: bbb: ccc')).toBeNull();
 
         // Invalid syntax
-        expect(MetadataCommentParser.parse('!:::')).toBeNull();
-        expect(MetadataCommentParser.parse('! : : :')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('!:::')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('! : : :')).toBeNull();
 
         // Starts like a valid metadata header, but the valid title is followed by
         // an unexpected character
-        expect(MetadataCommentParser.parse('! Title a:')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('! Title a:')).toBeNull();
 
         // Starts like a valid metadata header, but hasn't a value
-        expect(MetadataCommentParser.parse('! Title:')).toBeNull();
-        expect(MetadataCommentParser.parse('! Title:  ')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('! Title:')).toBeNull();
+        expect(MetadataCommentRuleParser.parse('! Title:  ')).toBeNull();
 
-        expect(MetadataCommentParser.parse('! Title: FilterList Title')).toMatchObject({
+        expect(MetadataCommentRuleParser.parse('! Title: FilterList Title')).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 25,
@@ -63,7 +60,7 @@ describe('MetadataCommentRuleParser', () => {
             },
         });
 
-        expect(MetadataCommentParser.parse('# Title: FilterList Title')).toMatchObject({
+        expect(MetadataCommentRuleParser.parse('# Title: FilterList Title')).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 25,
@@ -89,7 +86,7 @@ describe('MetadataCommentRuleParser', () => {
             },
         });
 
-        expect(MetadataCommentParser.parse('! title: FilterList Title')).toMatchObject({
+        expect(MetadataCommentRuleParser.parse('! title: FilterList Title')).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 25,
@@ -115,7 +112,7 @@ describe('MetadataCommentRuleParser', () => {
             },
         });
 
-        expect(MetadataCommentParser.parse('!    title:    Filter   ')).toMatchObject({
+        expect(MetadataCommentRuleParser.parse('!    title:    Filter   ')).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
             end: 24,
@@ -142,7 +139,7 @@ describe('MetadataCommentRuleParser', () => {
         });
 
         expect(
-            MetadataCommentParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
+            MetadataCommentRuleParser.parse('! Homepage: https://github.com/AdguardTeam/some-repo/wiki'),
         ).toMatchObject({
             type: 'MetadataCommentRule',
             start: 0,
@@ -198,17 +195,17 @@ describe('MetadataCommentRuleParser', () => {
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
             expect(
-                MetadataCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+                MetadataCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
             ).toEqual(expected);
         });
     });
 
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
-            const ast = MetadataCommentParser.parse(raw);
+            const ast = MetadataCommentRuleParser.parse(raw);
 
             if (ast) {
-                return MetadataCommentGenerator.generate(ast);
+                return MetadataCommentRuleParser.generate(ast);
             }
 
             return null;
@@ -235,12 +232,7 @@ describe('MetadataCommentRuleParser', () => {
             '# Title: Filter',
             '! Homepage: https://github.com/AdguardTeam/some-repo/wiki',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                MetadataCommentParser,
-                MetadataCommentGenerator,
-                MetadataCommentSerializer,
-                MetadataCommentDeserializer,
-            );
+            await expect(input).toBeSerializedAndDeserializedProperly(MetadataCommentRuleParser);
         });
     });
 });

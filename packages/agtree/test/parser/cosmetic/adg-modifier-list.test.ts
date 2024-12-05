@@ -2,13 +2,12 @@ import { sprintf } from 'sprintf-js';
 
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/nodes';
+import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/parser/common';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
-import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
+import { DomainListParser } from '../../../src/parser/misc/domain-list';
+import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic';
 import { CLOSE_SQUARE_BRACKET, DOLLAR_SIGN } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid usage of AdGuard modifier list', () => {
@@ -230,7 +229,7 @@ describe('CosmeticRuleParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
+            expect(CosmeticRuleParser.generate(ruleNode)).toBe(expected);
         });
     });
 });

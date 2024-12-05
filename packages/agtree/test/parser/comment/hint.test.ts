@@ -1,29 +1,26 @@
-import { HintCommentParser } from '../../../src/parser/comment/hint-comment-parser';
+import { HintCommentRuleParser } from '../../../src/parser/comment/hint-rule';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { HintCommentGenerator } from '../../../src/generator/comment/hint-comment-generator';
-import { HintCommentSerializer } from '../../../src/serializer/comment/hint-comment-serializer';
-import { HintCommentDeserializer } from '../../../src/deserializer/comment/hint-comment-deserializer';
 
-describe('HintCommentParser', () => {
+describe('HintCommentRuleParser', () => {
     test('isHintRule', () => {
         // TODO: Refactor to test.each
-        expect(HintCommentParser.isHintRule(EMPTY)).toBeFalsy();
-        expect(HintCommentParser.isHintRule(SPACE)).toBeFalsy();
-        expect(HintCommentParser.isHintRule('! comment')).toBeFalsy();
-        expect(HintCommentParser.isHintRule('# comment')).toBeFalsy();
-        expect(HintCommentParser.isHintRule('#+')).toBeFalsy();
-        expect(HintCommentParser.isHintRule('#+ HINT_NAME1(PARAMS) HINT_NAME2(PARAMS)')).toBeFalsy();
+        expect(HintCommentRuleParser.isHintRule(EMPTY)).toBeFalsy();
+        expect(HintCommentRuleParser.isHintRule(SPACE)).toBeFalsy();
+        expect(HintCommentRuleParser.isHintRule('! comment')).toBeFalsy();
+        expect(HintCommentRuleParser.isHintRule('# comment')).toBeFalsy();
+        expect(HintCommentRuleParser.isHintRule('#+')).toBeFalsy();
+        expect(HintCommentRuleParser.isHintRule('#+ HINT_NAME1(PARAMS) HINT_NAME2(PARAMS)')).toBeFalsy();
 
-        expect(HintCommentParser.isHintRule('!+NOT_OPTIMIZED')).toBeTruthy();
-        expect(HintCommentParser.isHintRule('!+ NOT_OPTIMIZED')).toBeTruthy();
-        expect(HintCommentParser.isHintRule('!+ HINT_NAME1(PARAMS) HINT_NAME2(PARAMS)')).toBeTruthy();
+        expect(HintCommentRuleParser.isHintRule('!+NOT_OPTIMIZED')).toBeTruthy();
+        expect(HintCommentRuleParser.isHintRule('!+ NOT_OPTIMIZED')).toBeTruthy();
+        expect(HintCommentRuleParser.isHintRule('!+ HINT_NAME1(PARAMS) HINT_NAME2(PARAMS)')).toBeTruthy();
     });
 
     test('parse', () => {
         // TODO: Refactor to test.each
         // Without parameters
-        expect(HintCommentParser.parse('!+NOT_OPTIMIZED')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+NOT_OPTIMIZED')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 15,
@@ -44,7 +41,7 @@ describe('HintCommentParser', () => {
             ],
         });
 
-        expect(HintCommentParser.parse('!+ NOT_OPTIMIZED')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ NOT_OPTIMIZED')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 16,
@@ -66,7 +63,7 @@ describe('HintCommentParser', () => {
         });
 
         // Multiple, without parameters
-        expect(HintCommentParser.parse('!+ HINT_NAME1 HINT_NAME2')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME1 HINT_NAME2')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 24,
@@ -99,7 +96,7 @@ describe('HintCommentParser', () => {
         });
 
         // Without parameters, but with empty parameter list ()
-        expect(HintCommentParser.parse('!+ HINT_NAME1()')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME1()')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 15,
@@ -126,7 +123,7 @@ describe('HintCommentParser', () => {
             ],
         });
 
-        expect(HintCommentParser.parse('!+ HINT_NAME1(     )')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME1(     )')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 20,
@@ -155,7 +152,7 @@ describe('HintCommentParser', () => {
             ],
         });
 
-        expect(HintCommentParser.parse('!+ HINT_NAME1() HINT_NAME2()')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME1() HINT_NAME2()')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 28,
@@ -200,7 +197,7 @@ describe('HintCommentParser', () => {
         });
 
         // Variadic
-        expect(HintCommentParser.parse('!+ HINT_NAME1(param0, param1) HINT_NAME2()')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME1(param0, param1) HINT_NAME2()')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 42,
@@ -257,7 +254,7 @@ describe('HintCommentParser', () => {
             ],
         });
 
-        expect(HintCommentParser.parse('!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)')).toMatchObject(
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME1(param0, param1) HINT_NAME2(param0)')).toMatchObject(
             {
                 type: 'HintCommentRule',
                 start: 0,
@@ -324,7 +321,7 @@ describe('HintCommentParser', () => {
         );
 
         // Skipped parameters
-        expect(HintCommentParser.parse('!+ HINT_NAME(param0, , param1)')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME(param0, , param1)')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 30,
@@ -365,7 +362,7 @@ describe('HintCommentParser', () => {
             ],
         });
 
-        expect(HintCommentParser.parse('!+ HINT_NAME(param0,    , param1)')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME(param0,    , param1)')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 33,
@@ -406,7 +403,7 @@ describe('HintCommentParser', () => {
             ],
         });
 
-        expect(HintCommentParser.parse('!+ HINT_NAME(param0, , , )')).toMatchObject(
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME(param0, , , )')).toMatchObject(
             {
                 type: 'HintCommentRule',
                 start: 0,
@@ -445,7 +442,7 @@ describe('HintCommentParser', () => {
             },
         );
 
-        expect(HintCommentParser.parse('!+ HINT_NAME( , , , )')).toMatchObject(
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME( , , , )')).toMatchObject(
             {
                 type: 'HintCommentRule',
                 start: 0,
@@ -479,7 +476,7 @@ describe('HintCommentParser', () => {
             },
         );
 
-        expect(HintCommentParser.parse('!+ HINT_NAME(,,,)')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME(,,,)')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 17,
@@ -512,7 +509,7 @@ describe('HintCommentParser', () => {
         });
 
         // Spaces
-        expect(HintCommentParser.parse('!+ HINT_NAME(    p0  ,   p1 ,   p2 ,     p3)')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME(    p0  ,   p1 ,   p2 ,     p3)')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 44,
@@ -564,7 +561,7 @@ describe('HintCommentParser', () => {
             ],
         });
 
-        expect(HintCommentParser.parse('!+ HINT_NAME(hello world, hello   world)')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ HINT_NAME(hello world, hello   world)')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 40,
@@ -604,7 +601,7 @@ describe('HintCommentParser', () => {
             ],
         });
 
-        expect(HintCommentParser.parse('!+ hint_name(hello world, hello   world)')).toMatchObject({
+        expect(HintCommentRuleParser.parse('!+ hint_name(hello world, hello   world)')).toMatchObject({
             type: 'HintCommentRule',
             start: 0,
             end: 40,
@@ -645,26 +642,26 @@ describe('HintCommentParser', () => {
         });
 
         // HintRuleParser.parse() will throw an error
-        expect(() => HintCommentParser.parse('!+')).toThrowError('Empty hint rule');
+        expect(() => HintCommentRuleParser.parse('!+')).toThrowError('Empty hint rule');
 
         // HintParser.parse() will throw an error
-        expect(() => HintCommentParser.parse('!+ ')).toThrowError('Empty hint name');
+        expect(() => HintCommentRuleParser.parse('!+ ')).toThrowError('Empty hint name');
 
-        expect(() => HintCommentParser.parse('!++')).toThrowError(
+        expect(() => HintCommentRuleParser.parse('!++')).toThrowError(
             'Invalid character "+" in hint name: "+"',
         );
 
-        expect(() => HintCommentParser.parse('!+ (arg0)')).toThrowError('Empty hint name');
+        expect(() => HintCommentRuleParser.parse('!+ (arg0)')).toThrowError('Empty hint name');
 
         // Missing parentheses
-        expect(() => HintCommentParser.parse('!+ HINT_NAME(')).toThrowError(/^Missing closing parenthesis/);
+        expect(() => HintCommentRuleParser.parse('!+ HINT_NAME(')).toThrowError(/^Missing closing parenthesis/);
 
-        expect(() => HintCommentParser.parse('!+ HINT_NAME)')).toThrowError(
+        expect(() => HintCommentRuleParser.parse('!+ HINT_NAME)')).toThrowError(
             'Invalid character ")" in hint name: ")"',
         );
 
         // Nesting isn't supported
-        expect(() => HintCommentParser.parse('!+ HINT_NAME1(HINT_NAME2(PARAM0))')).toThrowError(
+        expect(() => HintCommentRuleParser.parse('!+ HINT_NAME1(HINT_NAME2(PARAM0))')).toThrowError(
             'Invalid hint: nested parentheses are not allowed',
         );
     });
@@ -723,17 +720,17 @@ describe('HintCommentParser', () => {
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
             expect(
-                HintCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+                HintCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
             ).toEqual(expected);
         });
     });
 
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
-            const ast = HintCommentParser.parse(raw);
+            const ast = HintCommentRuleParser.parse(raw);
 
             if (ast) {
-                return HintCommentGenerator.generate(ast);
+                return HintCommentRuleParser.generate(ast);
             }
 
             return null;
@@ -774,12 +771,7 @@ describe('HintCommentParser', () => {
             '!+ NOT_OPTIMIZED PLATFORM(, , ,)',
             '!+ NOT_OPTIMIZED PLATFORM(windows) NOT_PLATFORM(mac, ios)',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                HintCommentParser,
-                HintCommentGenerator,
-                HintCommentSerializer,
-                HintCommentDeserializer,
-            );
+            await expect(input).toBeSerializedAndDeserializedProperly(HintCommentRuleParser);
         });
     });
 });

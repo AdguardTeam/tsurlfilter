@@ -4,15 +4,15 @@
     "src/**/*.ts",
     "cli/**/*.ts",
     "test/**/*.ts",
-    ".eslintrc.cjs",
+    ".eslintrc.js",
     "rollup.config.ts",
     "jest.config.ts",
-    "tasks/**/*.ts"
+    "tasks/generate-examples.ts"
   ],
   "ts-node": {
     "swc": true,
     "compilerOptions": {
-      "module":"esnext",
+      "module":"CommonJS",
     }
   }
 }

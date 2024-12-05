@@ -1,5 +1,5 @@
 import { RuleCategorizer } from '../../src/utils/categorizer';
-import { CosmeticRuleType } from '../../src/nodes';
+import { CosmeticRuleType } from '../../src/parser/common';
 
 describe('RuleCategorizer', () => {
     describe('getCosmeticRuleType', () => {

@@ -1,9 +1,9 @@
 /* eslint-disable max-classes-per-file */
-import { scriptlets, type Source } from '@adguard/scriptlets';
-import { isValidScriptletName } from '@adguard/scriptlets/validators';
+import scriptlets, { type IConfiguration } from '@adguard/scriptlets';
 import {
     type AnyCosmeticRule,
     COMMA_DOMAIN_LIST_SEPARATOR,
+    CosmeticRuleParser,
     type CosmeticRuleSeparator,
     CosmeticRuleSeparatorUtils,
     CosmeticRuleType,
@@ -15,7 +15,6 @@ import {
     QuoteType,
 } from '@adguard/agtree';
 
-import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 import * as rule from './rule';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import { getRelativeUrl } from '../utils/url';
@@ -40,8 +39,8 @@ interface InitScriptParams {
  * Get scriptlet data response type
  */
 export type ScriptletData = {
-    params: Source,
-    func: (source: Source, args: string[]) => void
+    params: IConfiguration,
+    func: (source: scriptlets.IConfiguration, args: string[]) => void
 };
 
 /**
@@ -506,7 +505,7 @@ export class CosmeticRule implements rule.IRule {
                     }
 
                     // Check if the scriptlet name is valid
-                    if (!isValidScriptletName(scriptletName)) {
+                    if (!scriptlets.isValidScriptletName(scriptletName)) {
                         throw new Error(`'${scriptletName}' is not a known scriptlet name`);
                     }
                     break;
@@ -554,7 +553,7 @@ export class CosmeticRule implements rule.IRule {
      * Depending on the rule type, the content might be transformed in
      * one of the helper classes, or kept as string when it's appropriate.
      *
-     * @param node AST node of the cosmetic rule.
+     * @param inputRule Original rule text.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
@@ -570,7 +569,7 @@ export class CosmeticRule implements rule.IRule {
         this.type = node.type;
         this.isScriptlet = node.type === CosmeticRuleType.ScriptletInjectionRule;
 
-        this.content = CosmeticRuleBodyGenerator.generate(node);
+        this.content = CosmeticRuleParser.generateBody(node);
 
         // Store the scriptlet parameters. They will be used later, when we initialize the scriptlet,
         // but at this point we need to store them in order to avoid double parsing
@@ -696,7 +695,7 @@ export class CosmeticRule implements rule.IRule {
             return;
         }
 
-        const params: Source = {
+        const params: scriptlets.IConfiguration = {
             args: this.scriptletParams.args,
             engine: config.engine || EMPTY_STRING,
             name: this.scriptletParams.name,

@@ -1,44 +1,41 @@
-import { AgentCommentParser } from '../../../src/parser/comment/agent-comment-parser';
+import { AgentCommentRuleParser } from '../../../src/parser/comment/agent-rule';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { AgentCommentGenerator } from '../../../src/generator/comment/agent-comment-generator';
-import { AgentCommentSerializer } from '../../../src/serializer/comment/agent-comment-serializer';
-import { AgentCommentDeserializer } from '../../../src/deserializer/comment/agent-comment-deserializer';
 
-describe('AgentCommentParser', () => {
+describe('AgentCommentRuleParser', () => {
     test('isAgent', () => {
         // TODO: Refactor to test.each
         // Invalid
-        expect(AgentCommentParser.isAgentRule(EMPTY)).toBeFalsy();
-        expect(AgentCommentParser.isAgentRule(SPACE)).toBeFalsy();
-        expect(AgentCommentParser.isAgentRule('[')).toBeFalsy();
+        expect(AgentCommentRuleParser.isAgentRule(EMPTY)).toBeFalsy();
+        expect(AgentCommentRuleParser.isAgentRule(SPACE)).toBeFalsy();
+        expect(AgentCommentRuleParser.isAgentRule('[')).toBeFalsy();
 
         // Cosmetic rule modifiers
-        expect(AgentCommentParser.isAgentRule('[$path=/test]example.org##.ad')).toBeFalsy();
-        expect(AgentCommentParser.isAgentRule('[$path=/test]##.ad')).toBeFalsy();
+        expect(AgentCommentRuleParser.isAgentRule('[$path=/test]example.org##.ad')).toBeFalsy();
+        expect(AgentCommentRuleParser.isAgentRule('[$path=/test]##.ad')).toBeFalsy();
 
         // Special case: starts with [ and ends with ] but not an agent
-        expect(AgentCommentParser.isAgentRule('[$path=/test]##.ad[a="b"]')).toBeFalsy();
+        expect(AgentCommentRuleParser.isAgentRule('[$path=/test]##.ad[a="b"]')).toBeFalsy();
 
         // Empty agent
-        expect(AgentCommentParser.isAgentRule('[]')).toBeTruthy();
-        expect(AgentCommentParser.isAgentRule('[ ]')).toBeTruthy();
+        expect(AgentCommentRuleParser.isAgentRule('[]')).toBeTruthy();
+        expect(AgentCommentRuleParser.isAgentRule('[ ]')).toBeTruthy();
 
         // Agents
-        expect(AgentCommentParser.isAgentRule('[Adblock Plus 2.0]')).toBeTruthy();
-        expect(AgentCommentParser.isAgentRule('[Adblock Plus 3.1; AdGuard 1.0]')).toBeTruthy();
+        expect(AgentCommentRuleParser.isAgentRule('[Adblock Plus 2.0]')).toBeTruthy();
+        expect(AgentCommentRuleParser.isAgentRule('[Adblock Plus 3.1; AdGuard 1.0]')).toBeTruthy();
     });
 
     test('parse', () => {
-        expect(AgentCommentParser.parse('##[class="ad"]')).toBeNull();
+        expect(AgentCommentRuleParser.parse('##[class="ad"]')).toBeNull();
 
         // Empty agents
-        expect(AgentCommentParser.parse(EMPTY)).toBeNull();
-        expect(AgentCommentParser.parse(SPACE)).toBeNull();
+        expect(AgentCommentRuleParser.parse(EMPTY)).toBeNull();
+        expect(AgentCommentRuleParser.parse(SPACE)).toBeNull();
 
         // Valid agents
-        expect(AgentCommentParser.parse('[AdBlock]')).toMatchObject({
+        expect(AgentCommentRuleParser.parse('[AdBlock]')).toMatchObject({
             type: 'AgentCommentRule',
             start: 0,
             end: 9,
@@ -60,7 +57,7 @@ describe('AgentCommentParser', () => {
             ],
         });
 
-        expect(AgentCommentParser.parse('[AdGuard]')).toMatchObject({
+        expect(AgentCommentRuleParser.parse('[AdGuard]')).toMatchObject({
             type: 'AgentCommentRule',
             start: 0,
             end: 9,
@@ -82,7 +79,7 @@ describe('AgentCommentParser', () => {
             ],
         });
 
-        expect(AgentCommentParser.parse('[uBlock]')).toMatchObject({
+        expect(AgentCommentRuleParser.parse('[uBlock]')).toMatchObject({
             type: 'AgentCommentRule',
             start: 0,
             end: 8,
@@ -104,7 +101,7 @@ describe('AgentCommentParser', () => {
             ],
         });
 
-        expect(AgentCommentParser.parse('[uBlock Origin]')).toMatchObject(
+        expect(AgentCommentRuleParser.parse('[uBlock Origin]')).toMatchObject(
             {
                 type: 'AgentCommentRule',
                 start: 0,
@@ -128,7 +125,7 @@ describe('AgentCommentParser', () => {
             },
         );
 
-        expect(AgentCommentParser.parse('[Adblock Plus 2.0]')).toMatchObject(
+        expect(AgentCommentRuleParser.parse('[Adblock Plus 2.0]')).toMatchObject(
             {
                 type: 'AgentCommentRule',
                 start: 0,
@@ -158,7 +155,7 @@ describe('AgentCommentParser', () => {
             },
         );
 
-        expect(AgentCommentParser.parse('[uBlock Origin 1.0.0]')).toMatchObject({
+        expect(AgentCommentRuleParser.parse('[uBlock Origin 1.0.0]')).toMatchObject({
             type: 'AgentCommentRule',
             start: 0,
             end: 21,
@@ -186,7 +183,7 @@ describe('AgentCommentParser', () => {
             ],
         });
 
-        expect(AgentCommentParser.parse('[Adblock Plus 2.0; AdGuard]')).toMatchObject({
+        expect(AgentCommentRuleParser.parse('[Adblock Plus 2.0; AdGuard]')).toMatchObject({
             type: 'AgentCommentRule',
             start: 0,
             end: 27,
@@ -226,7 +223,7 @@ describe('AgentCommentParser', () => {
             ],
         });
 
-        expect(AgentCommentParser.parse('[Adblock Plus 2.0; AdGuard 1.0.1.10]')).toMatchObject(
+        expect(AgentCommentRuleParser.parse('[Adblock Plus 2.0; AdGuard 1.0.1.10]')).toMatchObject(
             {
                 type: 'AgentCommentRule',
                 start: 0,
@@ -275,7 +272,7 @@ describe('AgentCommentParser', () => {
         );
 
         expect(
-            AgentCommentParser.parse('[Adblock Plus 3.1; AdGuard 1.4; uBlock Origin 1.0.15.0]'),
+            AgentCommentRuleParser.parse('[Adblock Plus 3.1; AdGuard 1.4; uBlock Origin 1.0.15.0]'),
         ).toMatchObject({
             type: 'AgentCommentRule',
             start: 0,
@@ -341,7 +338,7 @@ describe('AgentCommentParser', () => {
         });
 
         expect(
-            AgentCommentParser.parse('[Adblock Plus 3.1 ; AdGuard  1.4 ;   uBlock Origin    1.0.15.0    ]'),
+            AgentCommentRuleParser.parse('[Adblock Plus 3.1 ; AdGuard  1.4 ;   uBlock Origin    1.0.15.0    ]'),
         ).toMatchObject({
             type: 'AgentCommentRule',
             start: 0,
@@ -407,18 +404,18 @@ describe('AgentCommentParser', () => {
         });
 
         // AgentParser not called in the following case
-        expect(() => AgentCommentParser.parse('[]')).toThrowError('Empty agent list');
+        expect(() => AgentCommentRuleParser.parse('[]')).toThrowError('Empty agent list');
 
         // AgentParser called in these cases
-        expect(() => AgentCommentParser.parse('[ ]')).toThrowError('Agent name cannot be empty');
-        expect(() => AgentCommentParser.parse('[  ]')).toThrowError('Agent name cannot be empty');
-        expect(() => AgentCommentParser.parse('[;]')).toThrowError('Agent name cannot be empty');
-        expect(() => AgentCommentParser.parse('[ ; ]')).toThrowError('Agent name cannot be empty');
-        expect(() => AgentCommentParser.parse('[;;]')).toThrowError('Agent name cannot be empty');
-        expect(() => AgentCommentParser.parse('[ ;; ]')).toThrowError('Agent name cannot be empty');
-        expect(() => AgentCommentParser.parse('[ ; ; ]')).toThrowError('Agent name cannot be empty');
-        expect(() => AgentCommentParser.parse('[2.0]')).toThrowError('Agent name cannot be empty');
-        expect(() => AgentCommentParser.parse('[Adblock Plus 2.0 3.1]')).toThrowError(
+        expect(() => AgentCommentRuleParser.parse('[ ]')).toThrowError('Agent name cannot be empty');
+        expect(() => AgentCommentRuleParser.parse('[  ]')).toThrowError('Agent name cannot be empty');
+        expect(() => AgentCommentRuleParser.parse('[;]')).toThrowError('Agent name cannot be empty');
+        expect(() => AgentCommentRuleParser.parse('[ ; ]')).toThrowError('Agent name cannot be empty');
+        expect(() => AgentCommentRuleParser.parse('[;;]')).toThrowError('Agent name cannot be empty');
+        expect(() => AgentCommentRuleParser.parse('[ ;; ]')).toThrowError('Agent name cannot be empty');
+        expect(() => AgentCommentRuleParser.parse('[ ; ; ]')).toThrowError('Agent name cannot be empty');
+        expect(() => AgentCommentRuleParser.parse('[2.0]')).toThrowError('Agent name cannot be empty');
+        expect(() => AgentCommentRuleParser.parse('[Adblock Plus 2.0 3.1]')).toThrowError(
             'Duplicated versions are not allowed',
         );
     });
@@ -461,17 +458,17 @@ describe('AgentCommentParser', () => {
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
             expect(
-                AgentCommentParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
+                AgentCommentRuleParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }),
             ).toEqual(expected);
         });
     });
 
     test('generate', () => {
         const parseAndGenerate = (raw: string) => {
-            const ast = AgentCommentParser.parse(raw);
+            const ast = AgentCommentRuleParser.parse(raw);
 
             if (ast) {
-                return AgentCommentGenerator.generate(ast);
+                return AgentCommentRuleParser.generate(ast);
             }
 
             return null;
@@ -498,12 +495,7 @@ describe('AgentCommentParser', () => {
             ['[abp 2.0]', '[ABP 2.0]'],
             ['[abp 3.1; adguard]', '[ABP 3.1; AdGuard]'],
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                AgentCommentParser,
-                AgentCommentGenerator,
-                AgentCommentSerializer,
-                AgentCommentDeserializer,
-            );
+            await expect(input).toBeSerializedAndDeserializedProperly(AgentCommentRuleParser);
         });
     });
 });

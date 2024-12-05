@@ -8,7 +8,7 @@ import {
     CosmeticRuleType,
     type ModifierList,
     RuleCategory,
-} from '../../nodes';
+} from '../../parser/common';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { HtmlRuleConverter } from './html';
 import { ScriptletRuleConverter } from './scriptlet';

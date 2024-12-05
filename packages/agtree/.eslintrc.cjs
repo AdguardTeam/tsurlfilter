@@ -59,14 +59,6 @@ module.exports = {
         'no-new': 'off',
         'jsdoc/require-param-type': 'off',
         'jsdoc/require-returns-type': 'off',
-        'jsdoc/require-jsdoc': [
-            'error',
-            {
-                require: {
-                    ClassDeclaration: true,
-                },
-            },
-        ],
         'jsdoc/tag-lines': [
             'warn',
             'any',

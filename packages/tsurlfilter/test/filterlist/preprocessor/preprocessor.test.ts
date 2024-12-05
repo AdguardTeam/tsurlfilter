@@ -1,6 +1,4 @@
-import { OutputByteBuffer } from '@adguard/agtree';
-import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
-import { RuleSerializer } from '@adguard/agtree/serializer';
+import { OutputByteBuffer, RuleParser, defaultParserOptions } from '@adguard/agtree';
 import { FilterListPreprocessor, type PreprocessedFilterList } from '../../../src/filterlist/preprocessor';
 
 // TODO: Add more tests
@@ -22,10 +20,11 @@ const makeSerializedFilterList = (rules: string[]): Uint8Array[] => {
             parseHostRules: false,
         });
 
-        RuleSerializer.serialize(node, buffer);
+        RuleParser.serialize(node, buffer);
     }
 
-    return buffer.getChunks();
+    // TODO: Remove any cast
+    return (buffer as any).chunks;
 };
 
 describe('FilterListPreprocessor', () => {

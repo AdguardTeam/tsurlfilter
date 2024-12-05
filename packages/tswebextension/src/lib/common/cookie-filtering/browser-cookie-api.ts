@@ -1,11 +1,10 @@
 /* eslint-disable class-methods-use-this */
-import browser from 'webextension-polyfill';
+import browser, { Cookies } from 'webextension-polyfill';
 import { getDomain } from 'tldts';
 
 import { logger } from '../utils/logger';
 import { type ParsedCookie } from './parsed-cookie';
 
-import Cookies = browser.Cookies;
 import SetDetailsType = Cookies.SetDetailsType;
 import SameSiteStatus = Cookies.SameSiteStatus;
 

@@ -8,7 +8,7 @@ import {
     type NetworkRule,
     RuleCategory,
     NetworkRuleType,
-} from '../nodes';
+} from '../parser/common';
 import { AdblockSyntax } from '../utils/adblockers';
 import { clone } from '../utils/clone';
 

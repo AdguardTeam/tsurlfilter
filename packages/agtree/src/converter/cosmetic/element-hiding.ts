@@ -2,7 +2,7 @@
  * @file Element hiding rule converter
  */
 
-import { CosmeticRuleSeparator, type ElementHidingRule } from '../../nodes';
+import { CosmeticRuleSeparator, type ElementHidingRule } from '../../parser/common';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { CssSelectorConverter } from '../css';
 import { AdblockSyntax } from '../../utils/adblockers';

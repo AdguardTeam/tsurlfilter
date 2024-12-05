@@ -1,6 +1,6 @@
-import { RuleParser } from '../../../src/parser/rule-parser';
+import { RuleParser } from '../../../src/parser/rule';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
-import { type ScriptletInjectionRule } from '../../../src/nodes';
+import { type ScriptletInjectionRule } from '../../../src/parser/common';
 import '../../matchers/check-conversion';
 
 describe('Scriptlet conversion', () => {

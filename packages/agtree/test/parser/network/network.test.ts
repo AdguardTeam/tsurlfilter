@@ -1,10 +1,7 @@
-import { NetworkRuleParser } from '../../../src/parser/network/network-rule-parser';
+import { NetworkRuleParser } from '../../../src/parser/network';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/nodes';
+import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/parser/common';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { NetworkRuleGenerator } from '../../../src/generator/network';
-import { NetworkRuleSerializer } from '../../../src/serializer/network/network-rule-serializer';
-import { NetworkRuleDeserializer } from '../../../src/deserializer/network/network-rule-deserializer';
 
 describe('NetworkRuleParser', () => {
     test('parse', () => {
@@ -943,7 +940,7 @@ describe('NetworkRuleParser', () => {
             const ast = NetworkRuleParser.parse(raw);
 
             if (ast) {
-                return NetworkRuleGenerator.generate(ast);
+                return NetworkRuleParser.generate(ast);
             }
 
             return null;
@@ -982,12 +979,7 @@ describe('NetworkRuleParser', () => {
             '@@||example.org^$replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/v\\$1<\\/VAST>/i',
             '||example.com^', // without modificators
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                NetworkRuleParser,
-                NetworkRuleGenerator,
-                NetworkRuleSerializer,
-                NetworkRuleDeserializer,
-            );
+            await expect(input).toBeSerializedAndDeserializedProperly(NetworkRuleParser);
         });
     });
 });

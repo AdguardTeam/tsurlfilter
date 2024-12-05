@@ -1,5 +1,4 @@
 import browser from 'webextension-polyfill';
-
 import { ExtensionStorage, createExtensionStorageDecorator } from '../../common/storage';
 import type { ConfigurationMV2Context } from './configuration';
 import { MemoryStorage } from '../../common/memory-storage';

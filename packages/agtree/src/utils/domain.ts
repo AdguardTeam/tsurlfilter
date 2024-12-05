@@ -22,9 +22,6 @@ export const WILDCARD_TLD = DOT + WILDCARD;
  */
 export const WILDCARD_SUBDOMAIN = WILDCARD + DOT;
 
-/**
- * Utility functions for domain and hostname validation.
- */
 export class DomainUtils {
     /**
      * Check if the input is a valid domain or hostname.

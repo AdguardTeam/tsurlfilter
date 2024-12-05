@@ -1,12 +1,7 @@
 /* eslint-disable max-len */
-import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
+import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
-import { CosmeticRulePatternGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-pattern-generator';
-import { CosmeticRuleBodyGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-body-generator';
-import { CosmeticRuleSerializer } from '../../../src/serializer/cosmetic/cosmetic-rule-serializer';
-import { CosmeticRuleDeserializer } from '../../../src/deserializer/cosmetic/cosmetic-rule-deserializer';
 
 describe('CosmeticRuleParser - general tests', () => {
     describe('CosmeticRuleParser.isCosmetic', () => {
@@ -110,7 +105,7 @@ describe('CosmeticRuleParser - general tests', () => {
             const ast = CosmeticRuleParser.parse(rule);
 
             if (ast) {
-                expect(CosmeticRulePatternGenerator.generate(ast)).toEqual(expected);
+                expect(CosmeticRuleParser.generatePattern(ast)).toEqual(expected);
             } else {
                 throw new Error(`Failed to parse '${rule}'`);
             }
@@ -144,7 +139,7 @@ describe('CosmeticRuleParser - general tests', () => {
             const ast = CosmeticRuleParser.parse(rule);
 
             if (ast) {
-                expect(CosmeticRuleBodyGenerator.generate(ast)).toEqual(expected);
+                expect(CosmeticRuleParser.generateBody(ast)).toEqual(expected);
             } else {
                 throw new Error(`Failed to parse '${rule}'`);
             }
@@ -201,12 +196,7 @@ describe('CosmeticRuleParser - general tests', () => {
             '##:matches-path(/foo/bar) .foo',
             'example.com,~example.org##:matches-path(/foo/bar) .foo',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                CosmeticRuleParser,
-                CosmeticRuleGenerator,
-                CosmeticRuleSerializer,
-                CosmeticRuleDeserializer,
-            );
+            await expect(input).toBeSerializedAndDeserializedProperly(CosmeticRuleParser);
         });
     });
 });

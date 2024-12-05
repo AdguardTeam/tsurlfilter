@@ -2,7 +2,7 @@
  * @file Utility functions for working with filter list nodes
  */
 
-import { type AnyRule, type FilterList } from '../nodes';
+import { type AnyRule, type FilterList } from '../parser/common';
 import { clone } from '../utils/clone';
 
 /**

@@ -6,11 +6,10 @@ import {
     AdgCssInjectionParser,
     ERROR_MESSAGES as ADG_CSS_INJ_ERROR_MESSAGES,
     REMOVE_VALUE,
-} from '../../../src/parser/css/adg-css-injection-parser';
+} from '../../../src/parser/css/adg-css-injection';
 import { ERROR_MESSAGES as CSS_TOKEN_STREAM_ERROR_MESSAGES, END_OF_INPUT } from '../../../src/parser/css/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { type CssInjectionRuleBody } from '../../../src/nodes';
-import { AdgCssInjectionGenerator } from '../../../src/generator/css/adg-css-injection-generator';
+import { type CssInjectionRuleBody } from '../../../src/parser/common';
 
 describe('AdgCssInjectionParser', () => {
     describe('AdgCssInjectionParser.parse - valid', () => {
@@ -377,7 +376,7 @@ describe('AdgCssInjectionParser', () => {
                 expected: '@media ((min-width: 400px) and (max-width: 700px)) { div:has(> section[advert]) { padding-top: 0 !important; padding-bottom: 0 !important; } }',
             },
         ])('should generate input: \'$actual\'', ({ actual, expected }) => {
-            expect(AdgCssInjectionGenerator.generate(AdgCssInjectionParser.parse(actual))).toBe(expected);
+            expect(AdgCssInjectionParser.generate(AdgCssInjectionParser.parse(actual))).toBe(expected);
         });
     });
 });

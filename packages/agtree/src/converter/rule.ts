@@ -6,7 +6,7 @@
  * the corresponding "sub-converter".
  */
 
-import { type AnyRule, RuleCategory, NetworkRuleType } from '../nodes';
+import { type AnyRule, RuleCategory, NetworkRuleType } from '../parser/common';
 import { CommentRuleConverter } from './comment';
 import { CosmeticRuleConverter } from './cosmetic';
 import { NetworkRuleConverter } from './network';

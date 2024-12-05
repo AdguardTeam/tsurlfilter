@@ -23,10 +23,10 @@ Table of contents:
 
 ## Converter API
 
-The converter API is available by the `@adguard/agtree/converter` entrypoint:
+The converter API is available in the `@adguard/agtree` package:
 
 ```ts
-import { RuleConverter, FilterListConverter } from '@adguard/agtree/converter';
+import { RuleConverter, FilterListConverter } from '@adguard/agtree';
 ```
 
 The idea is quite simple, we provide two converter classes:
@@ -98,9 +98,7 @@ In this section we will show some examples of using the converter API.
 ### Examples of converting a single rule
 
 ```ts
-import { RuleParser } from '@adguard/agtree/parser';
-import { RuleConverter } from '@adguard/agtree/converter';
-import { RuleGenerator } from '@adguard/agtree/generator';
+import { RuleParser, RuleConverter } from '@adguard/agtree';
 
 const rawRuleToConvert = 'example.com#$#abp-snippet0 arg00 arg01; abp-snippet1 arg10 arg11';
 
@@ -118,14 +116,13 @@ const conversionResult = RuleConverter.convertToAdg(ruleNode);
 
 // You can simply serialize the rule nodes, then print them to the console
 // this way:
-console.log(conversionResult.result.map(RuleGenerator.generate).join('\n'));
+console.log(conversionResult.result.map(RuleParser.generate).join('\n'));
 ```
 
 ### Examples of converting a filter list
 
 ```ts
-import { FilterListParser } from '@adguard/agtree/parser';
-import { FilterListConverter } from '@adguard/agtree/converter';
+import { FilterListParser, FilterListConverter } from '@adguard/agtree';
 import { readFileSync, writeFileSync } from 'fs';
 
 const filterListToConvert = `[Adblock Plus 3.1]

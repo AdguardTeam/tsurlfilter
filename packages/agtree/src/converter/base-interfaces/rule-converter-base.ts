@@ -9,14 +9,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { NotImplementedError } from '../../errors/not-implemented-error';
-import { type Node } from '../../nodes';
+import { type Node } from '../../parser/common';
 import { type NodeConversionResult } from './conversion-result';
-import { BaseConverter } from './base-converter';
+import { ConverterBase } from './converter-base';
 
 /**
  * Basic class for rule converters
  */
-export class RuleConverterBase extends BaseConverter {
+export class RuleConverterBase extends ConverterBase {
     /**
      * Converts an adblock filtering rule to AdGuard format, if possible.
      *

@@ -1,9 +1,6 @@
 import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
-import { type ModifierList } from '../../../src/nodes';
+import { type ModifierList } from '../../../src/parser/common';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { ModifierListGenerator } from '../../../src/generator/misc/modifier-list-generator';
-import { ModifierListSerializer } from '../../../src/serializer/misc/modifier-list-serializer';
-import { ModifierListDeserializer } from '../../../src/deserializer/misc/modifier-list-deserializer';
 
 describe('ModifierListParser', () => {
     test('parse', () => {
@@ -703,7 +700,7 @@ describe('ModifierListParser', () => {
             const ast = ModifierListParser.parse(raw);
 
             if (ast) {
-                return ModifierListGenerator.generate(ast);
+                return ModifierListParser.generate(ast);
             }
 
             return null;
@@ -774,12 +771,7 @@ describe('ModifierListParser', () => {
             'path=/\\/(sub1|sub2)\\/page\\.html/,replace=/(<VAST[\\s\\S]*?>)[\\s\\S]*<\\/VAST>/\\$1<\\/VAST>/i',
             'foo=你好,bar=世界',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                ModifierListParser,
-                ModifierListGenerator,
-                ModifierListSerializer,
-                ModifierListDeserializer,
-            );
+            await expect(input).toBeSerializedAndDeserializedProperly(ModifierListParser);
         });
     });
 });

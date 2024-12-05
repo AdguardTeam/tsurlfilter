@@ -4,14 +4,11 @@ import {
     CommentRuleType,
     CosmeticRuleType,
     RuleCategory,
-} from '../../src/nodes';
+} from '../../src/parser/common';
 import { type ParserOptions } from '../../src/parser/options';
-import { RuleParser } from '../../src/parser/rule-parser';
+import { RuleParser } from '../../src/parser/rule';
 import { AdblockSyntax } from '../../src/utils/adblockers';
 import { defaultParserOptions } from '../../src/parser/options';
-import { RuleGenerator } from '../../src/generator';
-import { RuleSerializer } from '../../src/serializer/rule-serializer';
-import { RuleDeserializer } from '../../src/deserializer/rule-deserializer';
 
 describe('RuleParser', () => {
     test('parse', () => {
@@ -933,7 +930,7 @@ describe('RuleParser', () => {
             const ast = RuleParser.parse(raw);
 
             if (ast) {
-                return RuleGenerator.generate(ast);
+                return RuleParser.generate(ast);
             }
 
             return null;
@@ -1309,12 +1306,7 @@ describe('RuleParser', () => {
             '##:matches-path(/foo/bar) .foo',
             'example.com,~example.org##:matches-path(/foo/bar) .foo',
         ])("should serialize and deserialize '%p'", async (input) => {
-            await expect(input).toBeSerializedAndDeserializedProperly(
-                RuleParser,
-                RuleGenerator,
-                RuleSerializer,
-                RuleDeserializer,
-            );
+            await expect(input).toBeSerializedAndDeserializedProperly(RuleParser);
         });
     });
 });

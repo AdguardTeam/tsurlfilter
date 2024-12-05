@@ -2,7 +2,7 @@
  * @file Comment rule converter
  */
 
-import { type AnyCommentRule, CommentMarker, CommentRuleType } from '../../nodes';
+import { type AnyCommentRule, CommentMarker, CommentRuleType } from '../../parser/common';
 import { SPACE } from '../../utils/constants';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { clone } from '../../utils/clone';

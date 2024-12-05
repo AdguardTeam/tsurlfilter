@@ -1,6 +1,6 @@
-import browser from 'webextension-polyfill';
+import { WebRequest } from 'webextension-polyfill';
 
-import HttpHeadersItemType = browser.WebRequest.HttpHeadersItemType;
+import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
 import { ParsedCookie } from './parsed-cookie';
 import { logger } from '../utils/logger';
 
