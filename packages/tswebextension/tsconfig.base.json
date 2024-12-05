@@ -1,9 +1,12 @@
 {
     "compilerOptions": {
-         "moduleResolution": "bundler",
+        "moduleResolution": "bundler",
         "target": "es2022",
         "module": "es2022",
-        "lib": ["esnext", "dom"],
+        "lib": [
+            "esnext",
+            "dom"
+        ],
         "strict": true,
         "allowJs": true,
         "resolveJsonModule": true,

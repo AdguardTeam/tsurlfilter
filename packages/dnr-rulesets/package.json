@@ -46,7 +46,7 @@
         "@swc/jest": "^0.2.36",
         "@types/fs-extra": "^11.0.4",
         "@types/jest": "^29.5.12",
-        "@types/lodash-es": "^4.17.9",
+        "@types/lodash-es": "^4.17.12",
         "@types/node": "^20.14.2",
         "axios": "^1.7.2",
         "eslint": "^9.8.0",
