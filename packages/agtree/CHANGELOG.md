@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - The API is separated across entry points: `@adguard/agtree/parser`, `@adguard/agtree/generator`,
   `@adguard/agtree/converter`, `@adguard/agtree/validator`, `@adguard/agtree/compatibility-tables`,
   and `@adguard/agtree/utils`.
+- Switched to a pure ESM package.
 
 ### Fixed
 
