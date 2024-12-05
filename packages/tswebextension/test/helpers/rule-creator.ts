@@ -4,7 +4,8 @@ import {
     type NetworkRule as NetworkRuleNode,
 } from '@adguard/agtree';
 import {
-    defaultParserOptions, CosmeticRuleParser,
+    defaultParserOptions,
+    CosmeticRuleParser,
     NetworkRuleParser,
     RuleParser,
 } from '@adguard/agtree/parser';
