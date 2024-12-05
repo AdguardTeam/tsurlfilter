@@ -60,9 +60,7 @@ export class TabsCosmeticInjector {
 
         const tabContext = TabContext.createNewTabContext(tab, this.documentApi);
         const tabId = tab.id;
-
         this.tabsApi.context.set(tabId, tabContext);
-
         this.tabsApi.updateTabMainFrameRule(tabId);
 
         const frames = await browser.webNavigation.getAllFrames({ tabId });
