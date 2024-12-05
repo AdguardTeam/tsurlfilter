@@ -9,4 +9,3 @@ node_modules
 
 # Release file for npm.
 *.tgz
-!/test-adguard-agtree-3.0.0.tgz
