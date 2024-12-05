@@ -7,7 +7,7 @@
     ".eslintrc.cjs",
     "rollup.config.ts",
     "jest.config.ts",
-    "tasks/generate-examples.ts"
+    "tasks/**/*.ts"
   ],
   "ts-node": {
     "swc": true,

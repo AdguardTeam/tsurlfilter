@@ -85,7 +85,7 @@
         "check-types": "pnpm lint:tsc",
         "prebuild": "rimraf dist && pnpm build:types",
         "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript --bundleConfigAsCjs && pnpm postbuild",
-        "postbuild": "node tasks/build-txt",
+        "postbuild": "tsx tasks/build-txt.ts",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "docs": "typedoc src --out docs",
         "start": "rollup -c rollup.config.ts -w",

@@ -1,17 +1,20 @@
-/* eslint-disable @typescript-eslint/no-var-requires,@typescript-eslint/explicit-function-return-type */
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import {
+    existsSync,
+    mkdirSync,
+    readFileSync,
+    writeFileSync,
+} from 'fs';
 import { resolve, dirname } from 'path';
-import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
 
-const require = createRequire(import.meta.url);
-const { version } = require('../package.json');
-
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
 const PATH = '../dist';
 const FILENAME = 'build.txt';
 
 const main = () => {
+    const { version } = JSON.parse(readFileSync(resolve(__dirname, '../package.json'), 'utf-8'));
     const content = `version=${version}`;
     const dir = resolve(__dirname, PATH);
 

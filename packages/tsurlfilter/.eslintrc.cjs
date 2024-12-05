@@ -20,7 +20,6 @@ module.exports = {
     ignorePatterns: [
         'dist',
         'coverage',
-        'build-txt.js',
         '.eslintrc.js',
     ],
     rules: {
