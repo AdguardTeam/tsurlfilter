@@ -665,8 +665,8 @@ export class WebRequestApi {
      */
     private static async injectCosmetic(
         details: WebNavigation.OnCommittedDetailsType
-            | WebNavigation.OnDOMContentLoadedDetailsType
-            | WebRequest.OnCompletedDetailsType,
+        | WebNavigation.OnDOMContentLoadedDetailsType
+        | WebRequest.OnCompletedDetailsType,
     ): Promise<void> {
         const {
             tabId,
@@ -783,9 +783,19 @@ export class WebRequestApi {
         WebRequestApi.injectCosmetic(details);
     }
 
+    /**
+     * Checks whether the frame is an assistant frame.
+     *
+     * @param tabId Tab id.
+     * @param details Event details.
+     *
+     * @returns True if the frame is an assistant frame, false otherwise.
+     */
     private static async isAssistantFrame(
         tabId: number,
-        details: WebNavigation.OnDOMContentLoadedDetailsType,
+        details: WebNavigation.OnCommittedDetailsType
+        | WebNavigation.OnDOMContentLoadedDetailsType
+        | WebRequest.OnCompletedDetailsType,
     ): Promise<boolean> {
         const tabContext = tabsApi.getTabContext(tabId);
 
