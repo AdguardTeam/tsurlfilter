@@ -264,7 +264,6 @@ export class WebRequestApi {
             frameId,
             eventId,
             contentType,
-            // matchingResult,
             timestamp,
             thirdParty,
         } = context;
