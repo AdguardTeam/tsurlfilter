@@ -15,9 +15,9 @@ import {
 import { validateValue } from './value';
 import { clone } from '../utils/clone';
 import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
-import { GenericPlatform } from '../compatibility-tables/platforms';
+import { GenericPlatform, type GenericPlatformType } from '../compatibility-tables/platforms';
 
-const convertSyntaxToGenericPlatform = (syntax: AdblockSyntaxType): GenericPlatform => {
+const convertSyntaxToGenericPlatform = (syntax: AdblockSyntaxType): GenericPlatformType => {
     switch (syntax) {
         case AdblockSyntax.Adg:
             return GenericPlatform.AdgAny;

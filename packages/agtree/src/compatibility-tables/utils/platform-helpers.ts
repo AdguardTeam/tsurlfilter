@@ -3,7 +3,12 @@
  * @file Provides platform mapping and helper functions.
  */
 
-import { GenericPlatform, SpecificPlatform, type SpecificPlatformType } from '../platforms';
+import {
+    GenericPlatform,
+    type GenericPlatformType,
+    SpecificPlatform,
+    type SpecificPlatformType,
+} from '../platforms';
 
 /**
  * Map of specific platforms string names to their corresponding enum values.
@@ -45,7 +50,7 @@ export const SPECIFIC_PLATFORM_MAP_REVERSE: Map<SpecificPlatformType, string> = 
 /**
  * Map of generic platforms string names to their corresponding enum values.
  */
-export const GENERIC_PLATFORM_MAP: Map<string, GenericPlatform> = new Map([
+export const GENERIC_PLATFORM_MAP: Map<string, GenericPlatformType> = new Map([
     ['adg_os_any', GenericPlatform.AdgOsAny],
     ['adg_safari_any', GenericPlatform.AdgSafariAny],
     ['adg_ext_chromium', GenericPlatform.AdgExtChromium],
@@ -83,7 +88,7 @@ export const isGenericPlatform = (platform: number): boolean => {
  * @returns Specific or generic platform enum value.
  * @throws Error if the platform is unknown.
  */
-export const getPlatformId = (platform: string): SpecificPlatformType | GenericPlatform => {
+export const getPlatformId = (platform: string): SpecificPlatformType | GenericPlatformType => {
     const specificPlatform = SPECIFIC_PLATFORM_MAP.get(platform);
 
     if (specificPlatform) {

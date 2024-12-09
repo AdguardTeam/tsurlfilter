@@ -37,23 +37,54 @@ export const SpecificPlatform = {
 
 export type SpecificPlatformType = typeof SpecificPlatform[keyof typeof SpecificPlatform];
 
+const AdgOsAny = SpecificPlatform.AdgOsWindows
+    | SpecificPlatform.AdgOsMac
+    | SpecificPlatform.AdgOsAndroid;
+
+const AdgSafariAny = SpecificPlatform.AdgCbSafari | SpecificPlatform.AdgCbIos;
+
+const AdgExtChromium = SpecificPlatform.AdgExtChrome
+    | SpecificPlatform.AdgExtOpera
+    | SpecificPlatform.AdgExtEdge;
+
+const AdgExtAny = AdgExtChromium | SpecificPlatform.AdgExtFirefox;
+
+const AdgAny = AdgExtAny | AdgOsAny | AdgSafariAny | SpecificPlatform.AdgCbAndroid;
+
+const UboExtChromium = SpecificPlatform.UboExtChrome
+    | SpecificPlatform.UboExtOpera
+    | SpecificPlatform.UboExtEdge;
+
+const UboExtAny = UboExtChromium | SpecificPlatform.UboExtFirefox;
+
+const UboAny = UboExtAny;
+
+const AbpExtChromium = SpecificPlatform.AbpExtChrome
+    | SpecificPlatform.AbpExtOpera
+    | SpecificPlatform.AbpExtEdge;
+
+const AbpExtAny = AbpExtChromium | SpecificPlatform.AbpExtFirefox;
+
+const AbpAny = AbpExtAny;
+
+const Any = AdgAny | UboAny | AbpAny;
+
 /**
  * List of generic platforms (combinations of specific platforms).
  */
-export enum GenericPlatform {
-    AdgOsAny = SpecificPlatform.AdgOsWindows | SpecificPlatform.AdgOsMac | SpecificPlatform.AdgOsAndroid,
-    AdgSafariAny = SpecificPlatform.AdgCbSafari | SpecificPlatform.AdgCbIos,
-    AdgExtChromium = SpecificPlatform.AdgExtChrome | SpecificPlatform.AdgExtOpera | SpecificPlatform.AdgExtEdge,
-    AdgExtAny = AdgExtChromium | SpecificPlatform.AdgExtFirefox,
-    AdgAny = AdgExtAny | AdgOsAny | AdgSafariAny | SpecificPlatform.AdgCbAndroid,
+export const GenericPlatform = {
+    AdgOsAny,
+    AdgSafariAny,
+    AdgExtChromium,
+    AdgExtAny,
+    AdgAny,
+    UboExtChromium,
+    UboExtAny,
+    UboAny,
+    AbpExtChromium,
+    AbpExtAny,
+    AbpAny,
+    Any,
+} as const;
 
-    UboExtChromium = SpecificPlatform.UboExtChrome | SpecificPlatform.UboExtOpera | SpecificPlatform.UboExtEdge,
-    UboExtAny = UboExtChromium | SpecificPlatform.UboExtFirefox,
-    UboAny = UboExtAny,
-
-    AbpExtChromium = SpecificPlatform.AbpExtChrome | SpecificPlatform.AbpExtOpera | SpecificPlatform.AbpExtEdge,
-    AbpExtAny = AbpExtChromium | SpecificPlatform.AbpExtFirefox,
-    AbpAny = AbpExtAny,
-
-    Any = AdgAny | UboAny | AbpAny,
-}
+export type GenericPlatformType = typeof GenericPlatform[keyof typeof GenericPlatform];
