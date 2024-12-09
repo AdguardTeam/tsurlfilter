@@ -3,12 +3,12 @@
  * @file Provides platform mapping and helper functions.
  */
 
-import { GenericPlatform, SpecificPlatform } from '../platforms';
+import { GenericPlatform, SpecificPlatform, type SpecificPlatformType } from '../platforms';
 
 /**
  * Map of specific platforms string names to their corresponding enum values.
  */
-export const SPECIFIC_PLATFORM_MAP: Map<string, SpecificPlatform> = new Map([
+export const SPECIFIC_PLATFORM_MAP: Map<string, SpecificPlatformType> = new Map([
     ['adg_os_windows', SpecificPlatform.AdgOsWindows],
     ['adg_os_mac', SpecificPlatform.AdgOsMac],
     ['adg_os_android', SpecificPlatform.AdgOsAndroid],
@@ -38,7 +38,7 @@ export const SPECIFIC_PLATFORM_MAP: Map<string, SpecificPlatform> = new Map([
  *
  * @note Reverse of {@link SPECIFIC_PLATFORM_MAP}.
  */
-export const SPECIFIC_PLATFORM_MAP_REVERSE: Map<SpecificPlatform, string> = new Map(
+export const SPECIFIC_PLATFORM_MAP_REVERSE: Map<SpecificPlatformType, string> = new Map(
     [...SPECIFIC_PLATFORM_MAP].map(([key, value]) => [value, key]),
 );
 
@@ -83,7 +83,7 @@ export const isGenericPlatform = (platform: number): boolean => {
  * @returns Specific or generic platform enum value.
  * @throws Error if the platform is unknown.
  */
-export const getPlatformId = (platform: string): SpecificPlatform | GenericPlatform => {
+export const getPlatformId = (platform: string): SpecificPlatformType | GenericPlatform => {
     const specificPlatform = SPECIFIC_PLATFORM_MAP.get(platform);
 
     if (specificPlatform) {
@@ -107,7 +107,7 @@ export const getPlatformId = (platform: string): SpecificPlatform | GenericPlatf
  * @returns Specific platform string name, e.g., 'adg_os_windows'.
  * @throws Error if the platform is unknown.
  */
-export const getSpecificPlatformName = (platform: SpecificPlatform): string => {
+export const getSpecificPlatformName = (platform: SpecificPlatformType): string => {
     const specificPlatform = SPECIFIC_PLATFORM_MAP_REVERSE.get(platform);
 
     if (!specificPlatform) {
