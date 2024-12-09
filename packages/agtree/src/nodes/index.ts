@@ -1208,10 +1208,12 @@ export interface JsInjectionRule extends CosmeticRule {
 /**
  * Represents the different types of network rules.
  */
-export enum NetworkRuleType {
-    NetworkRule = 'NetworkRule',
-    HostRule = 'HostRule',
-}
+export const NetworkRuleType = {
+    NetworkRule: 'NetworkRule',
+    HostRule: 'HostRule',
+} as const;
+
+export type NetworkRuleTypeType = typeof NetworkRuleType[keyof typeof NetworkRuleType];
 
 /**
  * Represents the common properties of network rules
@@ -1225,7 +1227,7 @@ export interface NetworkRuleBase extends RuleBase {
     /**
      * Type of the network rule.
      */
-    type: NetworkRuleType;
+    type: NetworkRuleTypeType;
 
     /**
      * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
@@ -1241,7 +1243,7 @@ export interface NetworkRule extends NetworkRuleBase {
     /**
      * Type of the node.
      */
-    type: NetworkRuleType.NetworkRule;
+    type: typeof NetworkRuleType.NetworkRule;
 
     /**
      * If the rule is an exception rule. If the rule begins with `@@`, it means that it is an exception rule.
@@ -1315,7 +1317,7 @@ export interface HostRule extends NetworkRuleBase {
     /**
      * Type of the node.
      */
-    type: NetworkRuleType.HostRule;
+    type: typeof NetworkRuleType.HostRule;
 
     /**
      * IP address. It can be an IPv4 or IPv6 address.
