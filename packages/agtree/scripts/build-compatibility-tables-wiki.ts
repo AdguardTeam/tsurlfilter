@@ -68,7 +68,7 @@ const getNameWithAliases = (
  */
 const getFirstCompatibleEntityFromRow = <T extends BaseCompatibilityDataSchema>(
     row: RowByProduct<T>,
-    syntax: AdblockSyntax.Adg | AdblockSyntax.Ubo | AdblockSyntax.Abp,
+    syntax: typeof AdblockSyntax.Adg | typeof AdblockSyntax.Ubo | typeof AdblockSyntax.Abp,
     compatibility: SpecificPlatform | GenericPlatform,
 ): CompatibilityEntityData => {
     const productRow: ProductRecords<T> = row[syntax];

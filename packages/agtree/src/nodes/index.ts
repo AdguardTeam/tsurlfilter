@@ -1,4 +1,4 @@
-import { type AdblockSyntax } from '../utils/adblockers';
+import { type AdblockSyntaxType } from '../utils/adblockers';
 import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '../utils/constants';
 
 /**
@@ -386,7 +386,7 @@ export interface RuleBase extends Node {
      * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
      * we should use `AdblockSyntax.Common` as the value.
      */
-    syntax: AdblockSyntax;
+    syntax: AdblockSyntaxType;
 
     /**
      * Category of the adblock rule
@@ -646,7 +646,7 @@ export interface Agent extends Node {
     /**
      * Needed for network rules modifier validation.
      */
-    syntax: AdblockSyntax;
+    syntax: AdblockSyntaxType;
 }
 
 /**
@@ -720,7 +720,7 @@ export interface HintCommentRule extends RuleBase {
     /**
      * Currently only AdGuard supports hints.
      */
-    syntax: AdblockSyntax;
+    syntax: AdblockSyntaxType;
 
     /**
      * List of hints.
@@ -1223,7 +1223,7 @@ export interface NetworkRuleBase extends RuleBase {
      * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
      * we should use `AdblockSyntax.Common` as the value.
      */
-    syntax: AdblockSyntax;
+    syntax: AdblockSyntaxType;
 }
 
 /**
