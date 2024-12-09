@@ -58,6 +58,7 @@ export {
     type HostnameList,
     type HostRule,
     type AnyNetworkRule,
+    type CosmeticRuleTypeType,
 } from './nodes';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
 export { AgentCommentParser } from './parser/comment/agent-comment-parser';
