@@ -3,7 +3,6 @@
  */
 
 import type zod from 'zod';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import camelCaseKeys from 'camelcase-keys';
 import { type CamelCasedPropertiesDeep } from 'type-fest';
 

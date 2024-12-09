@@ -1,16 +1,13 @@
-import { fileURLToPath } from 'node:url';
-
 import resolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
 import commonjs from '@rollup/plugin-commonjs';
-import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
-const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
-
-const COMPANIESDB_TRACKERS_FILE = 'src/lib/common/companies-db-service/trackers-min.js';
+const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH
+    ? `${process.env.PACKAGE_OUTPUT_PATH}/${DEFAULT_OUTPUT_PATH}`
+    : DEFAULT_OUTPUT_PATH;
 
 const cache = false;
 
@@ -47,6 +44,7 @@ const contentScriptConfig = {
         'webextension-polyfill',
         '@adguard/extended-css',
         '@adguard/tsurlfilter',
+        '@adguard/agtree',
         '@adguard/assistant',
         'tldts',
     ],
@@ -92,6 +90,7 @@ const contentScriptMv3Config = {
         'webextension-polyfill',
         '@adguard/extended-css',
         '@adguard/tsurlfilter',
+        '@adguard/agtree',
         '@adguard/assistant',
     ],
     watch: {
@@ -100,9 +99,12 @@ const contentScriptMv3Config = {
     plugins: commonPlugins,
 };
 
-const backgroundMv2Config = {
+const backgroundConfig = {
     cache,
-    input: ['src/lib/mv2/background/index.ts'],
+    input: {
+        index: 'src/lib/mv2/background/index.ts',
+        'index.mv3': 'src/lib/mv3/background/index.ts',
+    },
     output: [
         {
             dir: OUTPUT_PATH,
@@ -113,16 +115,18 @@ const backgroundMv2Config = {
                 'text-encoding-polyfill': [
                     'node_modules/text-encoding',
                 ],
+                'trackers-min': ['src/lib/common/companies-db-service/trackers-min.ts'],
             },
         },
     ],
     watch: {
-        include: 'src/lib/mv2/background/**',
+        include: 'src/**',
     },
     external: [
         'zod',
         'webextension-polyfill',
         '@adguard/tsurlfilter',
+        '@adguard/agtree',
         '@adguard/scriptlets',
         'tldts',
         'bowser',
@@ -130,71 +134,10 @@ const backgroundMv2Config = {
         'nanoid',
         'lru_map',
         'lodash-es',
-        /**
-         * Define empty 'trackers-min' file as external
-         * separate module (which should be build separately @see {@link companiesDbTrackersMin})
-         * so it will be replaced with real data after the build.
-         */
-        fileURLToPath(
-            new URL(
-                COMPANIESDB_TRACKERS_FILE,
-                import.meta.url,
-            ),
-        ),
     ],
     plugins: [
         ...commonPlugins,
         commonjs(),
-    ],
-};
-
-const backgroundMv3Config = {
-    cache,
-    input: ['src/lib/mv3/background/index.ts'],
-    output: [
-        {
-            file: `${OUTPUT_PATH}/index.mv3.js`,
-            format: 'esm',
-            sourcemap: false,
-        },
-    ],
-    watch: {
-        include: 'src/lib/mv3/background/**',
-    },
-    external: [
-        'zod',
-        '@adguard/tsurlfilter',
-        'deepmerge',
-        'tldts',
-        'webextension-polyfill',
-        /**
-         * Define empty 'trackers-min' file as external
-         * separate module (which should be build separately @see {@link companiesDbTrackersMin})
-         * so it will be replaced with real data after the build.
-         */
-        fileURLToPath(
-            new URL(
-                COMPANIESDB_TRACKERS_FILE,
-                import.meta.url,
-            ),
-        ),
-    ],
-    plugins: [
-        ...commonPlugins,
-        commonjs(),
-    ],
-};
-
-/**
- * Separate config for companies-db trackers-min data.
- */
-const companiesDbTrackersMin = {
-    input: COMPANIESDB_TRACKERS_FILE,
-    output: [
-        {
-            file: `${OUTPUT_PATH}/trackers-min.js`,
-            sourcemap: false,
-        },
     ],
 };
 
@@ -204,7 +147,7 @@ const cliConfig = {
     output: [
         {
             file: `${OUTPUT_PATH}/cli.js`,
-            format: 'cjs',
+            format: 'esm',
             sourcemap: false,
         },
     ],
@@ -221,7 +164,6 @@ const cliConfig = {
     plugins: [
         ...commonPlugins,
         commonjs(),
-        preserveShebangs(),
     ],
 };
 
@@ -231,8 +173,7 @@ const mv3UtilsConfig = {
     output: [
         {
             file: `${OUTPUT_PATH}/mv3-utils.js`,
-            // TODO: Replace via 'esm'
-            format: 'cjs',
+            format: 'esm',
             sourcemap: false,
         },
     ],
@@ -303,9 +244,7 @@ const hideDocumentReferrerContentScriptConfig = {
 // TODO: Remove index files from 'src/lib', 'src/lib/mv2', 'src/lib/mv3' because
 // they are not participating in the build process and not specified as entry points.
 export default [
-    backgroundMv2Config,
-    backgroundMv3Config,
-    companiesDbTrackersMin,
+    backgroundConfig,
     contentScriptConfig,
     cssHitsCounterConfig,
     contentScriptMv3Config,

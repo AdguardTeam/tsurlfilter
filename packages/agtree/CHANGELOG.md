@@ -10,6 +10,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## Unreleased
 
+### Changed
+
+- The API is separated across entry points: `@adguard/agtree/parser`, `@adguard/agtree/generator`,
+  `@adguard/agtree/converter`, `@adguard/agtree/validator`, `@adguard/agtree/compatibility-tables`,
+  and `@adguard/agtree/utils`.
+
 ### Fixed
 
 - Fixed missing children data in the deserializer for certain nodes.

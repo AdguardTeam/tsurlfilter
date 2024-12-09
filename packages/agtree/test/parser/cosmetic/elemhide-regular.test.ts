@@ -1,8 +1,9 @@
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/parser/common';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic';
+import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/nodes';
+import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid element hiding rules', () => {
@@ -157,7 +158,7 @@ describe('CosmeticRuleParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(CosmeticRuleParser.generate(ruleNode)).toBe(expected);
+            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 });

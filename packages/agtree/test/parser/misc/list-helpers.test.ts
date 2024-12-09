@@ -1,7 +1,7 @@
-import { ListItemNodeType, type CommaSeparator, type PipeSeparator } from '../../../src/parser/common';
-import { LIST_PARSE_ERROR_PREFIX, parseListItems } from '../../../src/parser/misc/list-helpers';
+import { ListItemNodeType, type CommaSeparator, type PipeSeparator } from '../../../src/nodes';
 import { defaultParserOptions } from '../../../src/parser/options';
 import { COMMA_DOMAIN_LIST_SEPARATOR, PIPE } from '../../../src/utils/constants';
+import { LIST_PARSE_ERROR_PREFIX, ListItemsParser } from '../../../src/parser/misc/list-items-parser';
 
 /**
  * Checks that common function `parseListItems()` throws an error with the `expected` message.
@@ -15,7 +15,7 @@ const expectToThrowWhileParse = (
     expected: string,
     separator: CommaSeparator | PipeSeparator = PIPE,
 ): void => {
-    expect(() => parseListItems(actual, defaultParserOptions, 0, separator)).toThrowError(expected);
+    expect(() => ListItemsParser.parse(actual, defaultParserOptions, 0, separator)).toThrowError(expected);
 };
 
 describe('common parseListItems', () => {
@@ -79,7 +79,7 @@ describe('common parseListItems', () => {
                 ],
             },
         ])('$actual', ({ actual, expected }) => {
-            expect(parseListItems(actual, defaultParserOptions, 0, PIPE)).toEqual(expected);
+            expect(ListItemsParser.parse(actual, defaultParserOptions, 0, PIPE)).toEqual(expected);
         });
     });
 
@@ -232,7 +232,7 @@ describe('common parseListItems', () => {
             },
         ])('isLocIncluded should work for $actual', ({ actual, expected }) => {
             expect(
-                parseListItems(actual, { ...defaultParserOptions, isLocIncluded: false }, 0, PIPE),
+                ListItemsParser.parse(actual, { ...defaultParserOptions, isLocIncluded: false }, 0, PIPE),
             ).toEqual(expected);
         });
     });

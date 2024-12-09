@@ -1,7 +1,7 @@
 import browser from 'sinon-chrome';
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 
-import { TabsApi, TabsCosmeticInjector } from '../../../../../src/lib';
+import { extSessionStorage, TabsApi, TabsCosmeticInjector } from '../../../../../src/lib';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../../src/lib/mv2/background/context';
@@ -10,16 +10,21 @@ import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api'
 import { CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 
-jest.mock('@lib/mv2/background/engine-api');
-jest.mock('@lib/mv2/background/allowlist');
-jest.mock('@lib/mv2/background/cosmetic-api');
-jest.mock('@lib/mv2/background/context');
-jest.mock('@lib/mv2/background/stealth-api');
-jest.mock('@lib/mv2/background/document-api');
+vi.mock('../../../../../src/lib/mv2/background/engine-api');
+vi.mock('../../../../../src/lib/mv2/background/allowlist');
+vi.mock('../../../../../src/lib/mv2/background/cosmetic-api');
+vi.mock('../../../../../src/lib/mv2/background/context');
+vi.mock('../../../../../src/lib/mv2/background/stealth-api');
+vi.mock('../../../../../src/lib/mv2/background/document-api');
 
 describe('TabsCosmeticInjector', () => {
     let tabCosmeticInjector: TabsCosmeticInjector;
     let engineApi: EngineApi;
+
+    beforeAll(() => {
+        extSessionStorage.init();
+        appContext.startTimeMs = Date.now();
+    });
 
     beforeEach(() => {
         const allowlist = new Allowlist();
@@ -30,7 +35,7 @@ describe('TabsCosmeticInjector', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     describe('processOpenTabs method', () => {
@@ -48,13 +53,13 @@ describe('TabsCosmeticInjector', () => {
             browser.webNavigation.getAllFrames.resolves([{ frameId, url }]);
 
             const matchingResult = {} as MatchingResult;
-            matchingResult.getCosmeticOption = jest.fn();
+            matchingResult.getCosmeticOption = vi.fn();
 
             const cosmeticResult = {} as CosmeticResult;
 
-            jest.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
-            jest.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
-            jest.spyOn(Date, 'now').mockReturnValue(timestamp);
+            vi.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
+            vi.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
+            vi.spyOn(Date, 'now').mockReturnValue(timestamp);
 
             const expectedLogParams = {
                 url,

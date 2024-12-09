@@ -4,6 +4,6 @@
     "extension/**/*.ts",
     "extension/**/*.tsx",
     "scripts/**/*.ts",
-    ".eslintrc.js"
+    ".eslintrc.cjs"
   ]
 }

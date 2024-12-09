@@ -4,8 +4,9 @@
     "description": "Sample extension based on @adguard/api-mv3",
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0",
+    "type": "module",
     "scripts": {
-        "build": "node -r @swc-node/register ./scripts/build/index.ts",
+        "build": "node --loader @swc-node/register/esm ./scripts/build/index.ts",
         "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'"
     },
     "dependencies": {

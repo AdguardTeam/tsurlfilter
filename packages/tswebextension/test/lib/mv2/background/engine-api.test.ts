@@ -1,5 +1,6 @@
 import browser from 'sinon-chrome';
 import { type CosmeticOption, Engine, CosmeticResult } from '@adguard/tsurlfilter';
+
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 import { type MatchQuery } from '../../../../src/lib/common/interfaces';
 import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
@@ -7,10 +8,10 @@ import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../src/lib/mv2/background/context';
 import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 
-jest.mock('@adguard/tsurlfilter');
-jest.mock('@lib/mv2/background/allowlist');
-jest.mock('@lib/mv2/background/context');
-jest.mock('@lib/mv2/background/stealth-api');
+vi.mock('@adguard/tsurlfilter');
+vi.mock('../../../../src/lib/mv2/background/allowlist');
+vi.mock('../../../../src/lib/mv2/background/context');
+vi.mock('../../../../src/lib/mv2/background/stealth-api');
 
 describe('Engine Api', () => {
     let engineApi: EngineApi;
@@ -25,7 +26,7 @@ describe('Engine Api', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.restoreAllMocks();
     });
 
     afterAll(() => {
@@ -39,7 +40,7 @@ describe('Engine Api', () => {
     };
 
     const setFilteringEnabled = (enabled: boolean): void => {
-        jest.spyOn(engineApi, 'isFilteringEnabled', 'get').mockReturnValue(enabled);
+        vi.spyOn(engineApi, 'isFilteringEnabled', 'get').mockReturnValue(enabled);
     };
 
     describe('startEngine method', () => {

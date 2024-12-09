@@ -1,5 +1,5 @@
 import { HostRuleParser, type HostRule as HostRuleNode } from '@adguard/agtree';
-import { isString } from 'lodash';
+import isString from 'lodash/isString';
 
 import { HostRule as HostRuleOriginal } from '../../src/rules/host-rule';
 

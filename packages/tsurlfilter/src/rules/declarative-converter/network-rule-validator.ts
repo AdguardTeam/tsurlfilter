@@ -111,14 +111,14 @@ export class NetworkRuleDeclarativeValidator {
     }
 
     /**
-     * Checks if the specified modifier is the only one the rule has, then throws error.
+     * Checks if the specified modifier is included in rule explicitly.
      *
      * @param r Network rule.
      * @param name Modifier's name.
      *
      * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
      */
-    private static checkNotOnlyOneModifier(r: NetworkRule, name: string): UnsupportedModifierError | null {
+    private static checkHasModifierExplicitlyFn(r: NetworkRule, name: string): UnsupportedModifierError | null {
         let nameToCheck = name;
 
         // Remove leading dollar sign, if any
@@ -128,9 +128,9 @@ export class NetworkRuleDeclarativeValidator {
 
         // Get all used modifier names from the network rule
         const optionNames = r.getUsedOptionNames();
-        if (optionNames.size === 1 && optionNames.has(nameToCheck)) {
+        if (optionNames.has(nameToCheck)) {
             return new UnsupportedModifierError(
-                `Network rule with only one enabled modifier ${name} is not supported`,
+                `Network rule with explicitly enabled ${name} modifier is not supported`,
                 r,
             );
         }
@@ -296,8 +296,8 @@ export class NetworkRuleDeclarativeValidator {
         Jsinject: { name: '$jsinject', customChecks: [NetworkRuleDeclarativeValidator.checkDocumentAllowlistFn] },
         Urlblock: { name: '$urlblock', customChecks: [NetworkRuleDeclarativeValidator.checkDocumentAllowlistFn] },
         Content: { name: '$content', customChecks: [NetworkRuleDeclarativeValidator.checkDocumentAllowlistFn] },
-        // $popup is not supported in MV3, but rule with $all modifier includes $popup, so we should to skip it.
-        Popup: { name: '$popup', customChecks: [NetworkRuleDeclarativeValidator.checkNotOnlyOneModifier] },
+        // $popup is not supported in MV3, but rule with $all modifier includes $popup, so we should skip it.
+        Popup: { name: '$popup', customChecks: [NetworkRuleDeclarativeValidator.checkHasModifierExplicitlyFn] },
         Csp: { name: '$csp', customChecks: [NetworkRuleDeclarativeValidator.checkAllowRulesFn] },
         Redirect: {
             // $redirect and $redirect-rule modifiers are falling under this option
