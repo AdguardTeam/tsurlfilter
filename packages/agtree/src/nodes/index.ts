@@ -141,14 +141,16 @@ export type ListItemNodeTypeType = typeof ListItemNodeType[keyof typeof ListItem
 /**
  * Represents possible comment types.
  */
-export enum CommentRuleType {
-    AgentCommentRule = 'AgentCommentRule',
-    CommentRule = 'CommentRule',
-    ConfigCommentRule = 'ConfigCommentRule',
-    HintCommentRule = 'HintCommentRule',
-    MetadataCommentRule = 'MetadataCommentRule',
-    PreProcessorCommentRule = 'PreProcessorCommentRule',
-}
+export const CommentRuleType = {
+    AgentCommentRule: 'AgentCommentRule',
+    CommentRule: 'CommentRule',
+    ConfigCommentRule: 'ConfigCommentRule',
+    HintCommentRule: 'HintCommentRule',
+    MetadataCommentRule: 'MetadataCommentRule',
+    PreProcessorCommentRule: 'PreProcessorCommentRule',
+} as const;
+
+export type CommentRuleTypeType = typeof CommentRuleType[keyof typeof CommentRuleType];
 
 /**
  * Represents possible cosmetic rule types.
@@ -469,7 +471,7 @@ export interface EmptyRule extends RuleBase {
  */
 export interface CommentBase extends RuleBase {
     category: typeof RuleCategory.Comment;
-    type: CommentRuleType;
+    type: CommentRuleTypeType;
 }
 
 /**
@@ -485,7 +487,7 @@ export interface CommentBase extends RuleBase {
  *     ```
  */
 export interface CommentRule extends CommentBase {
-    type: CommentRuleType.CommentRule;
+    type: typeof CommentRuleType.CommentRule;
 
     /**
      * Comment marker.
@@ -517,7 +519,7 @@ export interface CommentRule extends CommentBase {
  * the name of the header is `Title`, and the value is `My List`.
  */
 export interface MetadataCommentRule extends CommentBase {
-    type: CommentRuleType.MetadataCommentRule;
+    type: typeof CommentRuleType.MetadataCommentRule;
 
     /**
      * Comment marker.
@@ -563,7 +565,7 @@ export interface ConfigNode extends Node {
  */
 export interface ConfigCommentRule extends CommentBase {
     category: typeof RuleCategory.Comment;
-    type: CommentRuleType.ConfigCommentRule;
+    type: typeof CommentRuleType.ConfigCommentRule;
 
     /**
      * The marker for the comment. It can be `!` or `#`. It is always the first non-whitespace character in the comment.
@@ -617,7 +619,7 @@ export interface ConfigCommentRule extends CommentBase {
  */
 export interface PreProcessorCommentRule extends CommentBase {
     category: typeof RuleCategory.Comment;
-    type: CommentRuleType.PreProcessorCommentRule;
+    type: typeof CommentRuleType.PreProcessorCommentRule;
 
     /**
      * Name of the directive
@@ -667,7 +669,7 @@ export interface Agent extends Node {
 export interface AgentCommentRule extends RuleBase {
     category: typeof RuleCategory.Comment;
 
-    type: CommentRuleType.AgentCommentRule;
+    type: typeof CommentRuleType.AgentCommentRule;
 
     /**
      * Agent list.
@@ -719,7 +721,7 @@ export interface Hint extends Node {
 export interface HintCommentRule extends RuleBase {
     category: typeof RuleCategory.Comment;
 
-    type: CommentRuleType.HintCommentRule;
+    type: typeof CommentRuleType.HintCommentRule;
 
     /**
      * Currently only AdGuard supports hints.
