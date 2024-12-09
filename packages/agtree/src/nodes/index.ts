@@ -155,13 +155,15 @@ export type CommentRuleTypeType = typeof CommentRuleType[keyof typeof CommentRul
 /**
  * Represents possible cosmetic rule types.
  */
-export enum CosmeticRuleType {
-    ElementHidingRule = 'ElementHidingRule',
-    CssInjectionRule = 'CssInjectionRule',
-    ScriptletInjectionRule = 'ScriptletInjectionRule',
-    HtmlFilteringRule = 'HtmlFilteringRule',
-    JsInjectionRule = 'JsInjectionRule',
-}
+export const CosmeticRuleType = {
+    ElementHidingRule: 'ElementHidingRule',
+    CssInjectionRule: 'CssInjectionRule',
+    ScriptletInjectionRule: 'ScriptletInjectionRule',
+    HtmlFilteringRule: 'HtmlFilteringRule',
+    JsInjectionRule: 'JsInjectionRule',
+} as const;
+
+export type CosmeticRuleTypeType = typeof CosmeticRuleType[keyof typeof CosmeticRuleType];
 
 /**
  * Represents possible cosmetic rule separators.
@@ -1040,7 +1042,7 @@ export interface HtmlFilteringRuleBody extends Node {
  */
 export interface CosmeticRule extends RuleBase {
     category: typeof RuleCategory.Cosmetic;
-    type: CosmeticRuleType;
+    type: CosmeticRuleTypeType;
 
     /**
      * List of modifiers (optional)
@@ -1094,7 +1096,7 @@ export interface CosmeticRule extends RuleBase {
  *   ```
  */
 export interface ElementHidingRule extends CosmeticRule {
-    type: CosmeticRuleType.ElementHidingRule;
+    type: typeof CosmeticRuleType.ElementHidingRule;
     body: ElementHidingRuleBody;
 }
 
@@ -1124,7 +1126,7 @@ export interface ElementHidingRule extends CosmeticRule {
  *    ```
  */
 export interface CssInjectionRule extends CosmeticRule {
-    type: CosmeticRuleType.CssInjectionRule;
+    type: typeof CosmeticRuleType.CssInjectionRule;
     body: CssInjectionRuleBody;
 }
 
@@ -1159,7 +1161,7 @@ export interface CssInjectionRule extends CosmeticRule {
  *    ```
  */
 export interface ScriptletInjectionRule extends CosmeticRule {
-    type: CosmeticRuleType.ScriptletInjectionRule;
+    type: typeof CosmeticRuleType.ScriptletInjectionRule;
     body: ScriptletInjectionRuleBody;
 }
 
@@ -1183,7 +1185,7 @@ export interface ScriptletInjectionRule extends CosmeticRule {
  *    ```
  */
 export interface HtmlFilteringRule extends CosmeticRule {
-    type: CosmeticRuleType.HtmlFilteringRule;
+    type: typeof CosmeticRuleType.HtmlFilteringRule;
     body: Value;
 }
 
@@ -1199,7 +1201,7 @@ export interface HtmlFilteringRule extends CosmeticRule {
  *    ```
  */
 export interface JsInjectionRule extends CosmeticRule {
-    type: CosmeticRuleType.JsInjectionRule;
+    type: typeof CosmeticRuleType.JsInjectionRule;
     body: Value;
 }
 
