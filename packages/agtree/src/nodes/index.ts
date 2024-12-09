@@ -83,33 +83,35 @@ export const enum CommentMarker {
  * Represents the main categories that an adblock rule can belong to.
  * Of course, these include additional subcategories.
  */
-export enum RuleCategory {
+export const RuleCategory = {
     /**
      * Empty "rules" that are only containing whitespaces. These rules are handled just for convenience.
      */
-    Empty = 'Empty',
+    Empty: 'Empty',
 
     /**
      * Syntactically invalid rules (tolerant mode only).
      */
-    Invalid = 'Invalid',
+    Invalid: 'Invalid',
 
     /**
      * Comment rules, such as comment rules, metadata rules, preprocessor rules, etc.
      */
-    Comment = 'Comment',
+    Comment: 'Comment',
 
     /**
      * Cosmetic rules, such as element hiding rules, CSS rules, scriptlet rules, HTML rules, and JS rules.
      */
-    Cosmetic = 'Cosmetic',
+    Cosmetic: 'Cosmetic',
 
     /**
      * Network rules, such as basic network rules, header remover network rules, redirect network rules,
      * response header filtering rules, etc.
      */
-    Network = 'Network',
-}
+    Network: 'Network',
+} as const;
+
+export type RuleCategoryType = typeof RuleCategory[keyof typeof RuleCategory];
 
 /**
  * Represents similar types of modifiers values
@@ -391,7 +393,7 @@ export interface RuleBase extends Node {
     /**
      * Category of the adblock rule
      */
-    category: RuleCategory;
+    category: RuleCategoryType;
 
     /**
      * Raw data of the rule
@@ -432,7 +434,7 @@ export interface InvalidRule extends RuleBase {
     /**
      * Category of the adblock rule
      */
-    category: RuleCategory.Invalid;
+    category: typeof RuleCategory.Invalid;
 
     /**
      * Raw rule text
@@ -457,14 +459,14 @@ export interface EmptyRule extends RuleBase {
     /**
      * Category of the adblock rule
      */
-    category: RuleCategory.Empty;
+    category: typeof RuleCategory.Empty;
 }
 
 /**
  * Represents the basic comment rule interface.
  */
 export interface CommentBase extends RuleBase {
-    category: RuleCategory.Comment;
+    category: typeof RuleCategory.Comment;
     type: CommentRuleType;
 }
 
@@ -558,7 +560,7 @@ export interface ConfigNode extends Node {
  * then the command is `aglint-disable` and its params is `["some-rule", "another-rule"]`.
  */
 export interface ConfigCommentRule extends CommentBase {
-    category: RuleCategory.Comment;
+    category: typeof RuleCategory.Comment;
     type: CommentRuleType.ConfigCommentRule;
 
     /**
@@ -612,7 +614,7 @@ export interface ConfigCommentRule extends CommentBase {
  * the general syntax.
  */
 export interface PreProcessorCommentRule extends CommentBase {
-    category: RuleCategory.Comment;
+    category: typeof RuleCategory.Comment;
     type: CommentRuleType.PreProcessorCommentRule;
 
     /**
@@ -661,7 +663,7 @@ export interface Agent extends Node {
  *   ```
  */
 export interface AgentCommentRule extends RuleBase {
-    category: RuleCategory.Comment;
+    category: typeof RuleCategory.Comment;
 
     type: CommentRuleType.AgentCommentRule;
 
@@ -713,7 +715,7 @@ export interface Hint extends Node {
  * then there are two hint members: `NOT_OPTIMIZED` and `PLATFORM`.
  */
 export interface HintCommentRule extends RuleBase {
-    category: RuleCategory.Comment;
+    category: typeof RuleCategory.Comment;
 
     type: CommentRuleType.HintCommentRule;
 
@@ -1033,7 +1035,7 @@ export interface HtmlFilteringRuleBody extends Node {
  * all other properties can be defined at this level.
  */
 export interface CosmeticRule extends RuleBase {
-    category: RuleCategory.Cosmetic;
+    category: typeof RuleCategory.Cosmetic;
     type: CosmeticRuleType;
 
     /**
@@ -1212,7 +1214,7 @@ export interface NetworkRuleBase extends RuleBase {
     /**
      * Category of the adblock rule.
      */
-    category: RuleCategory.Network;
+    category: typeof RuleCategory.Network;
 
     /**
      * Type of the network rule.
