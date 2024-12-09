@@ -19,10 +19,10 @@ type ChromiumBrowser = typeof browser & {
 };
 
 export enum DocumentLifecycle {
-    prerender = 'prerender',
-    active = 'active',
-    cached = 'cached',
-    pending_deletion = 'pending_deletion',
+    Prerender = 'prerender',
+    Active = 'active',
+    Cached = 'cached',
+    Pending_deletion = 'pending_deletion',
 }
 
 export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
@@ -199,7 +199,7 @@ export class RequestEvents {
         const { requestType, contentType } = getRequestType(type);
 
         const isDocumentRequest = requestType === RequestType.Document;
-        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.prerender;
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
 
         // Pre-rendered documents can have a frame ID other than zero
         frameId = isDocumentRequest ? MAIN_FRAME_ID : frameId;

@@ -1,4 +1,5 @@
 import browser from 'sinon-chrome';
+import { describe, it, expect, vi } from 'vitest';
 import { type WebRequest } from 'webextension-polyfill';
 import { HTTPMethod } from '@adguard/tsurlfilter';
 import {
@@ -24,7 +25,7 @@ describe('Request Events', () => {
     it('onBeforeRequest with prerender request', async () => {
         RequestEvents.init();
 
-        const listener = jest.fn();
+        const listener = vi.fn();
 
         RequestEvents.onBeforeRequest.addListener(listener);
 
@@ -35,11 +36,11 @@ describe('Request Events', () => {
             originUrl: undefined,
             // Tab id will be not the same with the current opened tab.
             tabId: 2,
-            documentLifecycle: DocumentLifecycle.prerender,
+            documentLifecycle: DocumentLifecycle.Prerender,
             timeStamp: timestamp,
         };
 
-        jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
+        vi.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
 
         browser.webRequest.onBeforeRequest.dispatch(prerenderRequestDetails);
 
@@ -47,7 +48,7 @@ describe('Request Events', () => {
         const requestDetails: OnBeforeRequestDetailsType = {
             ...commonRequestData,
             timeStamp: timestamp,
-            documentLifecycle: DocumentLifecycle.active,
+            documentLifecycle: DocumentLifecycle.Active,
         };
 
         browser.webRequest.onBeforeRequest.dispatch(requestDetails);
