@@ -128,13 +128,15 @@ export const enum ListNodeType {
 /**
  * Represents child items for {@link ListNodeType}.
  */
-export enum ListItemNodeType {
-    Unknown = 'Unknown',
-    App = 'App',
-    Domain = 'Domain',
-    Method = 'Method',
-    StealthOption = 'StealthOption',
-}
+export const ListItemNodeType = {
+    Unknown: 'Unknown',
+    App: 'App',
+    Domain: 'Domain',
+    Method: 'Method',
+    StealthOption: 'StealthOption',
+} as const;
+
+export type ListItemNodeTypeType = typeof ListItemNodeType[keyof typeof ListItemNodeType];
 
 /**
  * Represents possible comment types.
@@ -805,7 +807,7 @@ export type DomainListSeparator = CommaSeparator | PipeSeparator;
  * Common interface for a list item of $app, $denyallow, $domain, $method
  * which have similar syntax.
  */
-export interface ListItem<T extends ListItemNodeType> extends Node {
+export interface ListItem<T extends ListItemNodeTypeType> extends Node {
     type: T;
 
     /**
@@ -825,22 +827,22 @@ export interface ListItem<T extends ListItemNodeType> extends Node {
 /**
  * Represents an element of the app list — $app.
  */
-export type App = ListItem<ListItemNodeType.App>;
+export type App = ListItem<typeof ListItemNodeType.App>;
 
 /**
  * Represents an element of the domain list — $domain, $denyallow.
  */
-export type Domain = ListItem<ListItemNodeType.Domain>;
+export type Domain = ListItem<typeof ListItemNodeType.Domain>;
 
 /**
  * Represents an element of the method list — $method.
  */
-export type Method = ListItem<ListItemNodeType.Method>;
+export type Method = ListItem<typeof ListItemNodeType.Method>;
 
 /**
  * Represents an element of the stealth option list — $stealth.
  */
-export type StealthOption = ListItem<ListItemNodeType.StealthOption>;
+export type StealthOption = ListItem<typeof ListItemNodeType.StealthOption>;
 
 /**
  * Represents any list item.
