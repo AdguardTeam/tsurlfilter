@@ -264,6 +264,7 @@ export class WebRequestApi {
             frameId,
             eventId,
             contentType,
+            // matchingResult,
             timestamp,
             thirdParty,
         } = context;
@@ -300,13 +301,20 @@ export class WebRequestApi {
         });
 
         let frameRule;
+        let frameUrl = referrerUrl;
+
         /**
-         * Determine frameRule for Document/SubDocument requests using DocumentApi.
+         * Determine frameRule for different request types:
+         * - For Document requests, use DocumentApi to match against requestUrl and update frameUrl
+         * - For SubDocument requests, use DocumentApi to match against referrerUrl
+         * - For all other requests, get the frame rule from tabsApi.
+         *
          * The referrerUrl is calculated in {@link RequestEvents.handleOnBeforeRequest} before this point.
-         * This ensures correct application of document-level filtering rules,
-         * which is important for handling prerender requests.
          */
-        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+        if (requestType === RequestType.Document) {
+            frameRule = DocumentApi.matchFrame(requestUrl);
+            frameUrl = requestUrl;
+        } else if (requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(referrerUrl);
         } else {
             frameRule = tabsApi.getTabFrameRule(tabId);
@@ -314,7 +322,7 @@ export class WebRequestApi {
 
         const result = engineApi.matchRequest({
             requestUrl,
-            frameUrl: referrerUrl,
+            frameUrl,
             requestType,
             frameRule,
             method,
@@ -322,6 +330,28 @@ export class WebRequestApi {
 
         if (!result) {
             return;
+        }
+
+        let basicResult = result.getBasicResult();
+        let popupRule = result.getPopupRule();
+
+        // If there is a popup rule, we need to recalculate the frame rule using the referrer URL
+        if (popupRule) {
+            frameRule = DocumentApi.matchFrame(referrerUrl);
+
+            const updatedResult = engineApi.matchRequest({
+                requestUrl,
+                frameUrl: referrerUrl,
+                requestType,
+                frameRule,
+                method,
+            });
+
+            if (!updatedResult) {
+                return;
+            }
+            basicResult = updatedResult?.getBasicResult();
+            popupRule = updatedResult?.getPopupRule();
         }
 
         // Save matching result to the request context
@@ -338,11 +368,9 @@ export class WebRequestApi {
             });
         }
 
-        const basicResult = result.getBasicResult();
-
         const response = RequestBlockingApi.getBlockingResponse({
             rule: basicResult,
-            popupRule: result.getPopupRule(),
+            popupRule,
             eventId,
             requestId,
             requestUrl,
