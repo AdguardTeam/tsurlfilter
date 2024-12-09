@@ -1243,8 +1243,8 @@ importers:
         specifier: workspace:^
         version: link:../logger
       '@adguard/scriptlets':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: file:test-adguard-scriptlets-2.1.0.tgz
+        version: file:packages/tswebextension/test-adguard-scriptlets-2.1.0.tgz
       '@adguard/tsurlfilter':
         specifier: workspace:^
         version: link:../tsurlfilter
@@ -4150,7 +4150,7 @@ packages:
       estree-walker: 2.0.2
       fdir: 6.4.2(picomatch@4.0.2)
       is-reference: 1.2.1
-      magic-string: 0.30.14
+      magic-string: 0.30.8
       picomatch: 4.0.2
       rollup: 4.24.3
     dev: true
@@ -21846,6 +21846,15 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+    dev: false
+
+  file:packages/tswebextension/test-adguard-scriptlets-2.1.0.tgz:
+    resolution: {integrity: sha512-Rq2KeZz13AIXSeG/LEeR7T2rVAMai9rrLEz4nbLxjF7qBJmF4Am4z8B757aH17njr8gZmSd+yY0YsTJUySMICQ==, tarball: file:packages/tswebextension/test-adguard-scriptlets-2.1.0.tgz}
+    name: '@adguard/scriptlets'
+    version: 2.1.0
+    dependencies:
+      '@adguard/agtree': link:packages/agtree
+      js-yaml: 3.14.1
     dev: false
 
   github.com/105th/jsdiff/2be2e7df90e8eebd99f0385c7b1dc16c2f4dcc1a:
