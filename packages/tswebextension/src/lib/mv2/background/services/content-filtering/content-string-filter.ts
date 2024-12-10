@@ -9,6 +9,7 @@ import { type RuleInfo } from '../../../../common/content-script/rule-info';
 import { FilteringEventType, type FilteringLog } from '../../../../common/filtering-log';
 import { nanoid } from '../../../../common/utils/nanoid';
 import { getDomain } from '../../../../common/utils/url';
+import { nanoid } from '../../../../common/utils';
 
 import type { RequestContext } from '../../request';
 import { documentParser } from './doc-parser';
