@@ -799,6 +799,7 @@ export class WebRequestApi {
         return isAssistant;
     }
 
+    // FIXME (Slava): update comment
     /**
      * On DOM content loaded web navigation event handler.
      *
@@ -811,7 +812,27 @@ export class WebRequestApi {
      * @see https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1046
      * @param details Event details.
      */
-    private static async onDomContentLoaded(details: WebNavigation.OnDOMContentLoadedDetailsType): Promise<void> {
+    private static onDomContentLoaded(details: WebNavigation.OnDOMContentLoadedDetailsType): void {
+        const {
+            tabId,
+            frameId,
+            // FIXME (Slava): supported by chrome 106+ so increase minimal supported browser version
+            // FIXME (Slava): documentId is not supported by firefox, figure out something
+            // @ts-ignore
+            documentId,
+        } = details;
+
+        // This is necessary mainly to update documentId
+        tabsApi.updateFrameContext(
+            tabId,
+            frameId,
+            {
+                documentId: isFirefox
+                    ? WebRequestApi.generateIdForFirefox(tabId, frameId)
+                    : documentId,
+            },
+        );
+
         WebRequestApi.injectCosmetic(details);
     }
 
