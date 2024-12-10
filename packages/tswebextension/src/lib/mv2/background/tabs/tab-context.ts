@@ -27,15 +27,33 @@ export type TabInfo = Tabs.Tab & {
     createdAtMs?: number,
 };
 
-// FIXME (Slava): add jsdoc for properties
 /**
  * Request context data related to the frame.
  */
 export type FrameRequestContext = {
+    /**
+     * Frame id.
+     */
     frameId: number;
+
+    /**
+     * Request id.
+     */
     requestId: string;
+
+    /**
+     * Request url.
+     */
     requestUrl: string;
+
+    /**
+     * Request type.
+     */
     requestType: RequestType;
+
+    /**
+     * Whether the request is a redirect with removed parameters.
+     */
     isRemoveparamRedirect?: boolean;
 };
 

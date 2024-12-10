@@ -1,6 +1,6 @@
 import { type Frame } from './frame';
 
-// FIXME (Slava): can be moved to common
+// FIXME (Slava, in another pr): can be moved to common
 
 /**
  * Wrapper around a map for frames.
