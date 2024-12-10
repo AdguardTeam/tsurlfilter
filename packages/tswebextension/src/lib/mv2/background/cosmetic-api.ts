@@ -20,31 +20,62 @@ import { nanoid } from '../nanoid';
 
 import type { ContentType } from '../../common/request-type';
 
-// FIXME (Slava): add jsdoc for properties
 /**
  * Params for applying cosmetic rules.
  */
 export type ApplyCosmeticRulesParams = {
+    /**
+     * Tab id.
+     */
     tabId: number,
+
+    /**
+     * Frame id.
+     */
     frameId: number,
+
+    /**
+     * Frame url.
+     */
     url?: string,
+
+    /**
+     * Frame cosmetic result.
+     */
     cosmeticResult: CosmeticResult,
 };
 
-// FIXME (Slava): add jsdoc for properties
 /**
  * Information for logging js rules.
  */
 type LogJsRulesParams = {
+    /**
+     * Tab id.
+     */
     tabId: number,
+
+    /**
+     * Cosmetic result.
+     */
     cosmeticResult: CosmeticResult,
+
+    /**
+     * Url.
+     */
     url: string,
+
+    /**
+     * Content type.
+     */
     contentType: ContentType,
+
+    /**
+     * Timestamp.
+     */
     timestamp: number,
 };
 
-// FIXME (Slava): remove if not needed
-// FIXME (Slava): move the common part to the common file
+// FIXME (Slava, in another pr): maybe move the common part to the common file
 /**
  * Script text and scriptlets.
  */
@@ -77,7 +108,7 @@ export type ContentScriptCosmeticData = {
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi extends CosmeticApiCommon {
-    // FIXME (Slava): move following properties to CosmeticApiCommon
+    // FIXME (Slava, in another pr): move following properties to CosmeticApiCommon
     private static readonly ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
 
     private static readonly INJECT_HIT_START = " content: 'adguard";
