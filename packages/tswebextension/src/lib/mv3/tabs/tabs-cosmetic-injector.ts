@@ -3,7 +3,7 @@ import browser, { type Tabs } from 'webextension-polyfill';
 import { Frame } from './frame';
 import { TabContext } from './tab-context';
 import { tabsApi } from './tabs-api';
-import { logger } from '../../common/utils/logger';
+import { logger } from '../../common/utils';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { CosmeticApi } from '../background/cosmetic-api';
 import { CosmeticFrameProcessor } from '../background/cosmetic-frame-processor';

@@ -1,5 +1,5 @@
 import { MAIN_FRAME_ID } from '../../../common/constants';
-import { isEmptySrcFrame } from '../../../common/utils/is-empty-src-frame';
+import { isEmptySrcFrame } from '../../../common/utils';
 
 /**
  * Checks if iframe has same source as main frame or if src is about:blank, javascript:, etc.

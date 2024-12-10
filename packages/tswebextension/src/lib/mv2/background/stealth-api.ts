@@ -14,7 +14,7 @@ import { appContext, type AppContext } from './app-context';
 import { defaultFilteringLog, type FilteringLogInterface } from '../../common/filtering-log';
 import { type StealthConfig } from '../../common/configuration';
 import { getErrorMessage } from '../../common/error';
-import { logger } from '../../common/utils/logger';
+import { logger } from '../../common/utils';
 import { StealthActions } from '../../common/stealth-actions';
 
 /**

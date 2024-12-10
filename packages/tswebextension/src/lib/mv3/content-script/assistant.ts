@@ -3,7 +3,7 @@ import browser from 'webextension-polyfill';
 
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
-import { logger } from '../../common/utils/logger';
+import { logger } from '../../common/utils';
 import { type Message } from '../../common/message';
 
 // Simple type guard for message object with 'type' field.

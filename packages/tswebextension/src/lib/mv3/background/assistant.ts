@@ -1,5 +1,5 @@
 import { MessagesApi } from './messages-api';
-import { EventChannel } from '../../common/utils/channels';
+import { EventChannel } from '../../common/utils';
 import { MessageType } from '../../common/message-constants';
 
 /**
