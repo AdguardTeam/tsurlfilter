@@ -18,11 +18,11 @@ import {
 } from '../../common/message';
 import { MessageType } from '../../common/message-constants';
 import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
+import { nanoid } from '../../common/utils';
 import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import { ContentType } from '../../common/request-type';
 import { appContext } from './app-context';
 import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
-import { nanoid } from '../nanoid';
 import type { TabsApi } from '../tabs/tabs-api';
 
 export type MessagesHandlerMV3 = (

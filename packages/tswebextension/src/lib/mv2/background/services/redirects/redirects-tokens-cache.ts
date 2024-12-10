@@ -1,6 +1,5 @@
 import { LRUMap } from 'lru_map';
-import { nanoid } from 'nanoid';
-
+import { nanoid } from '../../../../common/utils';
 /**
  * Used for new type of redirects, i.e.: click2load.html.
  * This tokens are transferred to redirect and used later to unblock page after user clicked button

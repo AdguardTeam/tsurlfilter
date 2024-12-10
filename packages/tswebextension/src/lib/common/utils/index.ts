@@ -9,3 +9,4 @@ export {
     removeHeader,
 } from './headers';
 export { isEmptySrcFrame } from './is-empty-src-frame';
+export { nanoid } from './nanoid';

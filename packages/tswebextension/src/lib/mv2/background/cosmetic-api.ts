@@ -4,6 +4,7 @@ import {
 } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
+// TODO: set up linter to fix imports order
 import { appContext } from './app-context';
 import { getDomain } from '../../common/utils/url';
 import { USER_FILTER_ID } from '../../common/constants';
@@ -15,9 +16,8 @@ import { engineApi, tabsApi } from './api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
-// TODO: set up linter to fix imports order
-import { nanoid } from '../nanoid';
 
 import type { ContentType } from '../../common/request-type';
 
