@@ -6,7 +6,7 @@ import { nanoid } from '../../../../common/utils';
  * "click to load".
  */
 class RedirectsTokensCache {
-    cache = new LRUMap.LRUMap(1000);
+    cache = new LRUMap(1000);
 
     /**
      * Generates random unblock token for url and saves it to cache.
