@@ -97,6 +97,8 @@ export class TabsCosmeticInjector {
                 return;
             }
 
+            // TODO: Can be moved to CosmeticApi.injectCosmetic() like in MV2
+            // since it is used not only here.
             // Note: this is an async function, but we will not await it because
             // events do not support async listeners.
             Promise.all([
