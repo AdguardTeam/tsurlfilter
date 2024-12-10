@@ -392,6 +392,21 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Injects cosmetic rules to the specified tab and frame.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     */
+    public static injectCosmetic(tabId: number, frameId: number): void {
+        // Note: this is an async function, but we will not await it
+        // because events (where it is used) do not support async listeners.
+        Promise.all([
+            CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
+            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+        ]).catch((e) => logger.error(e));
+    }
+
+    /**
      * Injects both js and scriptlet rules to specified tab and frame in MV2.
      *
      * Please note that a separate method is used for scriptlet rules injection in MV3,
