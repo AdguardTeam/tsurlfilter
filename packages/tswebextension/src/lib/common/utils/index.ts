@@ -14,7 +14,7 @@ export {
     isThirdPartyRequest,
 } from './url';
 
-export { logger, LogLevel, stringifyObjectWithoutKeys } from './logger';
+export { logger, stringifyObjectWithoutKeys } from './logger';
 
 export {
     findHeaderByName,
