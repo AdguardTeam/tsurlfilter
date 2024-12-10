@@ -1,5 +1,5 @@
 import { type AllowlistConfiguration, Allowlist as CommonAllowlist } from '../../common/allowlist';
-import { getUpperLevelDomain } from '../../common/utils/url';
+import { getUpperLevelDomain } from '../../common/utils';
 
 /**
  * The allowlist is used to exclude certain websites from filtering.

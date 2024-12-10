@@ -144,7 +144,8 @@ import {
     getDomain,
     isExtensionUrl,
     isHttpOrWsRequest,
-} from '../../common/utils/url';
+    logger,
+} from '../../common/utils';
 import { RequestEvents } from './request/events/request-events';
 import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
@@ -156,7 +157,6 @@ import { CosmeticApi } from './cosmetic-api';
 import { getErrorMessage } from '../../common/error';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { logger } from '../../common/utils/logger';
 import { RequestBlockingApi } from './request/request-blocking-api';
 import { companiesDbService } from '../../common/companies-db-service';
 import { CspService } from './services/csp-service';

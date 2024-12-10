@@ -11,7 +11,7 @@ import CookieUtils from '../../services/cookie-filtering/utils';
 import { getRequestType } from '../../../../common/request-type';
 import { MAIN_FRAME_ID } from '../../../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
-import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
+import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils';
 
 const MAX_URL_LENGTH = 1024 * 16;
 

@@ -3,7 +3,7 @@ import {
     hasHeaderByName,
     hasHeader,
     removeHeader,
-} from '../../../../src/lib/common/utils/headers';
+} from '../../../../src/lib/common/utils';
 
 describe('Headers utils', () => {
     it('finds header by name', () => {

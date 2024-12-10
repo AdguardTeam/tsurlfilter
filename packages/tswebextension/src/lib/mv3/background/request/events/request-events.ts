@@ -6,8 +6,7 @@ import { RequestEvent, type RequestData } from './request-event';
 import { tabsApi, type TabFrameRequestContext } from '../../../tabs/tabs-api';
 import { getRequestType } from '../../../../common/request-type';
 import { MAIN_FRAME_ID } from '../../../../common/constants';
-import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
-import { nanoid } from '../../../../common/utils';
+import { isHttpRequest, isThirdPartyRequest, nanoid } from '../../../../common/utils';
 
 const MAX_URL_LENGTH = 1024 * 16;
 

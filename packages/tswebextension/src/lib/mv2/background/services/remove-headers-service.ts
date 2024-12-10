@@ -1,10 +1,14 @@
 import { type WebRequest } from 'webextension-polyfill';
 import { NetworkRuleOption, type NetworkRule, type RemoveHeaderModifier } from '@adguard/tsurlfilter';
 
-import { removeHeader, findHeaderByName, nanoid } from '../../../common/utils';
+import {
+    findHeaderByName,
+    getDomain,
+    nanoid,
+    removeHeader,
+} from '../../../common/utils';
 import { type RequestContext, requestContextStorage } from '../request';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
-import { getDomain } from '../../../common/utils/url';
 
 /**
  * Headers filtering service module.

@@ -173,9 +173,12 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { tabsApi, engineApi, documentApi } from './api';
 import { Frame } from './tabs/frame';
-import { findHeaderByName } from '../../common/utils';
-import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
-import { logger } from '../../common/utils/logger';
+import {
+    findHeaderByName,
+    isHttpOrWsRequest,
+    getDomain,
+    logger,
+} from '../../common/utils';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 

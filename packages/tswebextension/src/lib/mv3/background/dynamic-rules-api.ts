@@ -7,7 +7,7 @@ import {
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
-import { logger } from '../../common/utils/logger';
+import { logger } from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
 
 export type { ConversionResult };
