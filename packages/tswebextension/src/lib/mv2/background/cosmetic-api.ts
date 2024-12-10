@@ -414,8 +414,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
+     * @param tries Number of tries for the injection in case of failure.
      */
-    public static async applyJsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+    public static async applyJsByTabAndFrame(tabId: number, frameId: number, tries = 0): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         const scriptText = frameContext?.preparedCosmeticResult?.scriptText;
@@ -427,7 +428,13 @@ export class CosmeticApi extends CosmeticApiCommon {
         try {
             await CosmeticApi.injectScript(tabId, frameId, scriptText);
         } catch (e) {
-            logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+            if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
+                setTimeout(() => {
+                    CosmeticApi.applyJsByTabAndFrame(tabId, frameId, tries + 1);
+                }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+            } else {
+                logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+            }
         }
     }
 
@@ -462,11 +469,12 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
+     * @param tries Number of tries for the injection in case of failure.
      */
-    public static async applyCssByTabAndFrame(tabId: number, frameId: number): Promise<void> {
-        const requestContext = tabsApi.getFrameContext(tabId, frameId);
+    public static async applyCssByTabAndFrame(tabId: number, frameId: number, tries = 0): Promise<void> {
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        const cssText = requestContext?.preparedCosmeticResult?.cssText;
+        const cssText = frameContext?.preparedCosmeticResult?.cssText;
         if (!cssText) {
             return;
         }
@@ -474,12 +482,13 @@ export class CosmeticApi extends CosmeticApiCommon {
         try {
             await CosmeticApi.injectCss(tabId, frameId, cssText);
         } catch (e) {
-            logger.debug(
-                '[applyCssByTabAndFrame] error occurred during injection',
-                getErrorMessage(e),
-                'with request context:',
-                requestContext,
-            );
+            if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
+                setTimeout(() => {
+                    CosmeticApi.applyJsByTabAndFrame(tabId, frameId, tries + 1);
+                }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
+            } else {
+                logger.debug('[applyCssByTabAndFrame] error occurred during injection', getErrorMessage(e));
+            }
         }
     }
 
