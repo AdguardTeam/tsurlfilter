@@ -679,12 +679,7 @@ export class WebRequestApi {
             return;
         }
 
-        // Note: this is an async function, but we will not await it because
-        // events do not support async listeners.
-        Promise.all([
-            CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
-            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
-        ]).catch((e) => logger.error(e));
+        CosmeticApi.injectCosmetic(tabId, frameId);
     }
 
     /**
