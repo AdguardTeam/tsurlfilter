@@ -1,5 +1,5 @@
 export const rawCompaniesDb = {
-	"timeUpdated": "2024-12-02T10:05:07.723Z",
+	"timeUpdated": "2024-12-09T10:05:12.984Z",
 	"categories": {
 		"0": "audio_video_player",
 		"1": "comments",
@@ -3174,6 +3174,7 @@ export const rawCompaniesDb = {
 		"mrskincash.com": 3,
 		"a-msedge.net": 8,
 		"b-msedge.net": 8,
+		"dual-s-msedge.net": 8,
 		"e-msedge.net": 8,
 		"k-msedge.net": 8,
 		"l-msedge.net": 8,
@@ -3620,6 +3621,7 @@ export const rawCompaniesDb = {
 		"tr.prospecteye.com": 4,
 		"prosperent.com": 4,
 		"prostor-lite.ru": 4,
+		"reports.proton.me": 2,
 		"providesupport.com": 2,
 		"proximic.com": 4,
 		"proxistore.com": 4,
