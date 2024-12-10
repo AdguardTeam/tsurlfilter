@@ -4,6 +4,7 @@ import { requestContextStorage } from '../request';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { nanoid } from '../../../common/utils/nanoid';
 import { getDomain } from '../../../common/utils/url';
+import { nanoid } from '../../../common/utils';
 
 /**
  * Params filtering service module.
