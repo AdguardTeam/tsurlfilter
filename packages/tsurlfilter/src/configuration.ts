@@ -1,7 +1,3 @@
-import * as pkgJSON from '../package.json';
-
-export const TSURLFILTER_VERSION = pkgJSON.version;
-
 /**
  * Compatibility types are used to configure engine for better support of different libraries
  * For example:
@@ -78,10 +74,6 @@ class Configuration implements IConfiguration {
         this.compatibility = config.compatibility;
     }
 }
-
-type Partial<T> = {
-    [P in keyof T]?: T[P];
-};
 
 // eslint-disable-next-line import/no-mutable-exports
 export let config = new Configuration();

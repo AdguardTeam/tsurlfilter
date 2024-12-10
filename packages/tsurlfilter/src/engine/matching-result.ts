@@ -2,7 +2,7 @@ import { type CookieModifier } from '../modifiers/cookie-modifier';
 import { type HttpHeadersItem } from '../modifiers/header-modifier';
 import { type RedirectModifier } from '../modifiers/redirect-modifier';
 import { StealthOptionName, STEALTH_MODE_FILTER_ID } from '../modifiers/stealth-modifier';
-import { RequestType } from '../request-type';
+import { RequestTypes } from '../request';
 import { type NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { logger } from '../utils/logger';
 
@@ -209,7 +209,7 @@ export class MatchingResult {
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
                 // This check needed to split $all rules from $popup rules
-                && (rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
+                && (rule.getPermittedRequestTypes() & RequestTypes.Document) !== RequestTypes.Document) {
                 this.popupRule = rule;
                 continue;
             }
@@ -542,7 +542,7 @@ export class MatchingResult {
      * @returns `true` if the rule is sub document rule.
      */
     private static isSubDocumentRule(rule: NetworkRule): boolean {
-        return (rule.getPermittedRequestTypes() & RequestType.SubDocument) === RequestType.SubDocument;
+        return (rule.getPermittedRequestTypes() & RequestTypes.SubDocument) === RequestTypes.SubDocument;
     }
 
     /**

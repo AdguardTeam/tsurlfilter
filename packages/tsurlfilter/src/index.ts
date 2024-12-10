@@ -1,38 +1,107 @@
-export * from './configuration';
-export * from './engine/cosmetic-engine/cosmetic-engine';
-export * from './engine/cosmetic-engine/cosmetic-result';
-export * from './engine/cosmetic-option';
-export * from './engine/network-engine';
-export * from './engine/dns-engine';
-export * from './engine/dns-result';
-export * from './engine/engine';
-export * from './engine/matching-result';
-export * from './filterlist/buffer-rule-list';
-export * from './filterlist/preprocessor';
-export * from './filterlist/rule-list';
-export * from './filterlist/rule-storage';
-export * from './filterlist/source-map';
-export * from './request';
-export * from './request-type';
-export * from './rules/cosmetic-rule';
-export * from './rules/network-rule';
-export * from './rules/host-rule';
-export * from './rules/rule';
-export * from './rules/rule-factory';
-export * from './rules/simple-regex';
-export * from './modifiers/remove-header-modifier';
-export * from './modifiers/remove-param-modifier';
-export * from './modifiers/cookie-modifier';
-export * from './modifiers/replace-modifier';
-export { PERMISSIONS_POLICY_HEADER_NAME } from './modifiers/permissions-modifier';
-export { CSP_HEADER_NAME } from './modifiers/csp-modifier';
-export * from './utils/logger';
-export * from './utils/url';
-export * from './utils/string-utils';
-export * from './utils/bit-utils';
-export * from './utils/resource-names';
-export { createAllowlistRuleList } from './filterlist/allowlist-creator';
-export { RuleSyntaxUtils } from './utils/rule-syntax-utils';
-export { HTTPMethod } from './modifiers/method-modifier';
-export { StealthOptionName, STEALTH_MODE_FILTER_ID } from './modifiers/stealth-modifier';
-export { NETWORK_RULE_OPTIONS, OPTIONS_DELIMITER } from './rules/network-rule-options';
+export {
+    CompatibilityTypes,
+    type IConfiguration,
+    config,
+    isCompatibleWith,
+    setConfiguration,
+} from './configuration';
+
+export {
+    CosmeticEngine,
+    CosmeticResult,
+    CosmeticOption,
+    NetworkEngine,
+    DnsEngine,
+    DnsResult,
+    Engine,
+    MatchingResult,
+} from './engine';
+
+export {
+    BufferRuleList,
+    PREPROCESSOR_AGTREE_OPTIONS,
+    FilterListPreprocessor,
+    filterListConversionMapValidator,
+    type FilterListConversionMap,
+    filterListChunksValidator,
+    preprocessedFilterListValidator,
+    type PreprocessedFilterList,
+    LIST_ID_MAX_VALUE,
+    type IRuleList,
+    RuleStorage,
+    filterListSourceMapValidator,
+    type FilterListSourceMap,
+    getRuleSourceText,
+    getRuleSourceIndex,
+    createAllowlistRuleList,
+} from './filterlist';
+
+export { Request, type RequestType, RequestTypes } from './request';
+
+export {
+    type ScriptletData,
+    type ScriptletsProps,
+    CosmeticRule,
+    NetworkRuleOption,
+    NetworkRuleGroupOptions,
+    NetworkRule,
+    HostRule,
+    RULE_INDEX_NONE,
+    type IRule,
+    IndexedRule,
+    IndexedStorageRule,
+    RuleFactory,
+    SimpleRegex,
+    NETWORK_RULE_OPTIONS,
+    OPTIONS_DELIMITER,
+    MASK_ALLOWLIST,
+    NOT_MARK,
+    ESCAPE_CHARACTER,
+} from './rules';
+
+export {
+    RemoveHeaderModifier,
+    RemoveParamModifier,
+    CookieModifier,
+    ReplaceModifier,
+    PermissionsModifier,
+    PERMISSIONS_POLICY_HEADER_NAME,
+    CspModifier,
+    CSP_HEADER_NAME,
+    MethodModifier,
+    HTTPMethod,
+    StealthModifier,
+    StealthOptionName,
+    STEALTH_MODE_FILTER_ID,
+} from './modifiers';
+
+export {
+    type ILogger,
+    logger,
+    setLogger,
+    cleanUrlParamByRegExp,
+    getRelativeUrl,
+    isHttpOrWsRequest,
+    splitByDelimiterWithEscapeCharacter,
+    startsAtIndexWith,
+    hasUnquotedSubstring,
+    fastHash,
+    indexOfAny,
+    replaceAll,
+    stringArraysEquals,
+    stringArraysHaveIntersection,
+    hasSpaces,
+    isString,
+    unescapeChar,
+    findNextLineBreakIndex,
+    getBitCount, countEnabledBits,
+    getFilterName,
+    getFilterBinaryName,
+    getFilterConversionMapName,
+    getFilterSourceMapName,
+    getIdFromFilterName,
+    RuleSyntaxUtils,
+} from './utils';
+
+// Export version.
+export { TSURLFILTER_VERSION } from './version';

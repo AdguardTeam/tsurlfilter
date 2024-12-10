@@ -1,9 +1,7 @@
-/* eslint-disable no-await-in-loop */
-/* eslint-disable no-promise-executor-return */
 import LRUMap from 'lru_map';
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
-import { Request } from '../request';
+import { Request, RequestTypes } from '../request';
 import { MatchingResult } from './matching-result';
 import { NetworkRule } from '../rules/network-rule';
 import { type RuleStorage } from '../filterlist/rule-storage';
@@ -12,7 +10,6 @@ import { type CosmeticOption } from './cosmetic-option';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { type IndexedStorageRule } from '../rules/rule';
 import { CosmeticRule } from '../rules/cosmetic-rule';
-import { RequestType } from '../request-type';
 
 /**
  * Engine represents the filtering engine with all the loaded rules
@@ -92,6 +89,7 @@ export class Engine {
                  * Rules creation is rather slow operation so we should
                  * use setTimeout calls to give UI thread some time.
                  */
+                // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
                 await new Promise((resolve) => setTimeout(resolve, 1));
             }
 
@@ -139,7 +137,7 @@ export class Engine {
      * @param frameUrl
      */
     matchFrame(frameUrl: string): NetworkRule | null {
-        const sourceRequest = new Request(frameUrl, '', RequestType.Document);
+        const sourceRequest = new Request(frameUrl, '', RequestTypes.Document);
         let sourceRules = this.networkEngine.matchAll(sourceRequest);
 
         sourceRules = MatchingResult.removeBadfilterRules(sourceRules);

@@ -1,9 +1,9 @@
 /**
- * RequestType is the request types enumeration.
+ * RequestTypes is the request types enumeration.
  * Important: the enumeration is marked as const to avoid side effects when
  * importing it into an extension.
  */
-export const RequestType = {
+export const RequestTypes = {
     /** No value is set. Syntax sugar to simplify code. */
     NotSet: 0,
     /** main frame */
@@ -34,6 +34,4 @@ export const RequestType = {
     Other: 4096, // 1 << 12
 } as const;
 
-// intentionally naming the variable the same as the type
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export type RequestType = typeof RequestType[keyof typeof RequestType];
+export type RequestType = typeof RequestTypes[keyof typeof RequestTypes];

@@ -34,7 +34,7 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
     return rawFilterList.search(new RegExp(`^${escapeStringRegexp(rule)}$`, 'm'));
 };
 
-const createRequest = (url: string) => new Request(url, null, RequestType.Document);
+const createRequest = (url: string) => new Request(url, null, RequestTypes.Document);
 
 describe('Test cosmetic engine', () => {
     const specificRuleContent = 'banner_specific';

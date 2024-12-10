@@ -1,9 +1,9 @@
 import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
 
-import * as rule from './rule';
+import { RULE_INDEX_NONE, type IRule } from './rule';
 import { SimpleRegex } from './simple-regex';
-import { type Request } from '../request';
+import { type Request, RequestType, RequestTypes } from '../request';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
 import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
 import { type IAdvancedModifier } from '../modifiers/advanced-modifier';
@@ -27,7 +27,6 @@ import {
     NOT_MARK,
     OPTIONS_DELIMITER,
 } from './network-rule-options';
-import { RequestType } from '../request-type';
 import { ClientModifier } from '../modifiers/dns/client-modifier';
 import { DnsRewriteModifier } from '../modifiers/dns/dnsrewrite-modifier';
 import { DnsTypeModifier } from '../modifiers/dns/dnstype-modifier';
@@ -202,7 +201,7 @@ export enum NetworkRuleGroupOptions {
  * Basic network filtering rule.
  * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
  */
-export class NetworkRule implements rule.IRule {
+export class NetworkRule implements IRule {
     private readonly ruleIndex: number;
 
     private readonly filterListId: number;
@@ -230,12 +229,12 @@ export class NetworkRule implements rule.IRule {
     /**
      * Flag with all permitted request types.
      */
-    private permittedRequestTypes: RequestType = RequestType.NotSet;
+    private permittedRequestTypes: RequestType = RequestTypes.NotSet;
 
     /**
      * Flag with all restricted request types.
      */
-    private restrictedRequestTypes: RequestType = RequestType.NotSet;
+    private restrictedRequestTypes: RequestType = RequestTypes.NotSet;
 
     /**
      * Rule Advanced modifier
@@ -640,7 +639,7 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * Flag with all permitted request types.
-     * The value {@link RequestType.NotSet} here means "all request types are allowed".
+     * The value {@link RequestTypes.NotSet} here means "all request types are allowed".
      */
     getPermittedRequestTypes(): RequestType {
         return this.permittedRequestTypes;
@@ -648,7 +647,7 @@ export class NetworkRule implements rule.IRule {
 
     /**
      * Flag with all restricted request types.
-     * The value {@link RequestType.NotSet} here means "no type of request is restricted".
+     * The value {@link RequestTypes.NotSet} here means "no type of request is restricted".
      */
     getRestrictedRequestTypes(): RequestType {
         return this.restrictedRequestTypes;
@@ -792,7 +791,7 @@ export class NetworkRule implements rule.IRule {
 
         const { domainModifier } = this;
 
-        const isDocumentType = request.requestType === RequestType.Document;
+        const isDocumentType = request.requestType === RequestTypes.Document;
 
         const hasOnlyExcludedDomains = !domainModifier.hasPermittedDomains()
             && domainModifier.hasRestrictedDomains();
@@ -929,13 +928,13 @@ export class NetworkRule implements rule.IRule {
      * @param requestType - request type to check.
      */
     private matchRequestType(requestType: RequestType): boolean {
-        if (this.permittedRequestTypes !== RequestType.NotSet) {
+        if (this.permittedRequestTypes !== RequestTypes.NotSet) {
             if ((this.permittedRequestTypes & requestType) !== requestType) {
                 return false;
             }
         }
 
-        if (this.restrictedRequestTypes !== RequestType.NotSet) {
+        if (this.restrictedRequestTypes !== RequestTypes.NotSet) {
             if ((this.restrictedRequestTypes & requestType) === requestType) {
                 return false;
             }
@@ -949,10 +948,10 @@ export class NetworkRule implements rule.IRule {
      * we only allow it to target other content types if the rule has an explicit content-type modifier.
      */
     private matchRequestTypeExplicit(requestType: RequestType): boolean {
-        if (this.permittedRequestTypes === RequestType.NotSet
-            && this.restrictedRequestTypes === RequestType.NotSet
-            && requestType !== RequestType.Document
-            && requestType !== RequestType.SubDocument) {
+        if (this.permittedRequestTypes === RequestTypes.NotSet
+            && this.restrictedRequestTypes === RequestTypes.NotSet
+            && requestType !== RequestTypes.Document
+            && requestType !== RequestTypes.SubDocument) {
             return false;
         }
 
@@ -1055,7 +1054,7 @@ export class NetworkRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
+    constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         // TODO: Remove this completely
         this.ruleText = RuleGenerator.generate(node);
@@ -1381,54 +1380,54 @@ export class NetworkRule implements rule.IRule {
             // $elemhide
             case OPTIONS.ELEMHIDE:
                 this.setOptionEnabled(NetworkRuleOption.Elemhide, true);
-                this.setRequestType(RequestType.Document, true);
-                this.setRequestType(RequestType.SubDocument, true);
+                this.setRequestType(RequestTypes.Document, true);
+                this.setRequestType(RequestTypes.SubDocument, true);
                 break;
             // $generichide
             case OPTIONS.GENERICHIDE:
                 this.setOptionEnabled(NetworkRuleOption.Generichide, true);
-                this.setRequestType(RequestType.Document, true);
-                this.setRequestType(RequestType.SubDocument, true);
+                this.setRequestType(RequestTypes.Document, true);
+                this.setRequestType(RequestTypes.SubDocument, true);
                 break;
             // $specifichide
             case OPTIONS.SPECIFICHIDE:
                 this.setOptionEnabled(NetworkRuleOption.Specifichide, true);
-                this.setRequestType(RequestType.Document, true);
-                this.setRequestType(RequestType.SubDocument, true);
+                this.setRequestType(RequestTypes.Document, true);
+                this.setRequestType(RequestTypes.SubDocument, true);
                 break;
             // $genericblock
             case OPTIONS.GENERICBLOCK:
                 this.setOptionEnabled(NetworkRuleOption.Genericblock, true);
-                this.setRequestType(RequestType.Document, true);
-                this.setRequestType(RequestType.SubDocument, true);
+                this.setRequestType(RequestTypes.Document, true);
+                this.setRequestType(RequestTypes.SubDocument, true);
                 break;
             // $jsinject
             case OPTIONS.JSINJECT:
                 this.setOptionEnabled(NetworkRuleOption.Jsinject, true);
-                this.setRequestType(RequestType.Document, true);
-                this.setRequestType(RequestType.SubDocument, true);
+                this.setRequestType(RequestTypes.Document, true);
+                this.setRequestType(RequestTypes.SubDocument, true);
                 break;
             // $urlblock
             case OPTIONS.URLBLOCK:
                 this.setOptionEnabled(NetworkRuleOption.Urlblock, true);
-                this.setRequestType(RequestType.Document, true);
-                this.setRequestType(RequestType.SubDocument, true);
+                this.setRequestType(RequestTypes.Document, true);
+                this.setRequestType(RequestTypes.SubDocument, true);
                 break;
             // $content
             case OPTIONS.CONTENT:
                 this.setOptionEnabled(NetworkRuleOption.Content, true);
-                this.setRequestType(RequestType.Document, true);
-                this.setRequestType(RequestType.SubDocument, true);
+                this.setRequestType(RequestTypes.Document, true);
+                this.setRequestType(RequestTypes.SubDocument, true);
                 break;
             // $document, $doc / $~document, $~doc
             case OPTIONS.DOCUMENT:
             case OPTIONS.DOC:
                 if (exception) {
-                    this.setRequestType(RequestType.Document, false);
+                    this.setRequestType(RequestTypes.Document, false);
                     break;
                 }
 
-                this.setRequestType(RequestType.Document, true);
+                this.setRequestType(RequestTypes.Document, true);
                 // In the case of allowlist rules $document implicitly includes
                 // all these modifiers: `$content`, `$elemhide`, `$jsinject`,
                 // `$urlblock`.
@@ -1451,47 +1450,47 @@ export class NetworkRule implements rule.IRule {
             // Content type options
             // $script, $~script
             case OPTIONS.SCRIPT:
-                this.setRequestType(RequestType.Script, !exception);
+                this.setRequestType(RequestTypes.Script, !exception);
                 break;
             // $stylesheet, $~stylesheet
             case OPTIONS.STYLESHEET:
-                this.setRequestType(RequestType.Stylesheet, !exception);
+                this.setRequestType(RequestTypes.Stylesheet, !exception);
                 break;
             // $subdocument, $~subdocument
             case OPTIONS.SUBDOCUMENT:
-                this.setRequestType(RequestType.SubDocument, !exception);
+                this.setRequestType(RequestTypes.SubDocument, !exception);
                 break;
             // $object, $~object
             case OPTIONS.OBJECT:
-                this.setRequestType(RequestType.Object, !exception);
+                this.setRequestType(RequestTypes.Object, !exception);
                 break;
             // $image, $~image
             case OPTIONS.IMAGE:
-                this.setRequestType(RequestType.Image, !exception);
+                this.setRequestType(RequestTypes.Image, !exception);
                 break;
             // $xmlhttprequest, $~xmlhttprequest
             case OPTIONS.XMLHTTPREQUEST:
-                this.setRequestType(RequestType.XmlHttpRequest, !exception);
+                this.setRequestType(RequestTypes.XmlHttpRequest, !exception);
                 break;
             // $media, $~media
             case OPTIONS.MEDIA:
-                this.setRequestType(RequestType.Media, !exception);
+                this.setRequestType(RequestTypes.Media, !exception);
                 break;
             // $font, $~font
             case OPTIONS.FONT:
-                this.setRequestType(RequestType.Font, !exception);
+                this.setRequestType(RequestTypes.Font, !exception);
                 break;
             // $websocket, $~websocket
             case OPTIONS.WEBSOCKET:
-                this.setRequestType(RequestType.WebSocket, !exception);
+                this.setRequestType(RequestTypes.WebSocket, !exception);
                 break;
             // $other, $~other
             case OPTIONS.OTHER:
-                this.setRequestType(RequestType.Other, !exception);
+                this.setRequestType(RequestTypes.Other, !exception);
                 break;
             // $ping, $~ping
             case OPTIONS.PING:
-                this.setRequestType(RequestType.Ping, !exception);
+                this.setRequestType(RequestTypes.Ping, !exception);
                 break;
             // Special modifiers
             // $badfilter
@@ -1631,7 +1630,7 @@ export class NetworkRule implements rule.IRule {
                     throw new SyntaxError('Rule with $all modifier can not be allowlist rule');
                 }
                 // Set all request types
-                Object.values(RequestType).forEach((type) => {
+                Object.values(RequestTypes).forEach((type) => {
                     this.setRequestType(type, true);
                 });
                 this.setOptionEnabled(NetworkRuleOption.Popup, true);
@@ -1704,7 +1703,7 @@ export class NetworkRule implements rule.IRule {
             this.priorityWeight += 1;
         }
 
-        if (this.restrictedRequestTypes !== RequestType.NotSet) {
+        if (this.restrictedRequestTypes !== RequestTypes.NotSet) {
             this.priorityWeight += 1;
         }
 
@@ -1726,7 +1725,7 @@ export class NetworkRule implements rule.IRule {
          * Learn more about it here:
          * https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-2
          */
-        if (this.permittedRequestTypes !== RequestType.NotSet) {
+        if (this.permittedRequestTypes !== RequestTypes.NotSet) {
             const numberOfPermittedRequestTypes = getBitCount(this.permittedRequestTypes);
             // More permitted request types mean less priority weight.
             const relativeWeight = NetworkRule.CategoryTwoWeight / numberOfPermittedRequestTypes;

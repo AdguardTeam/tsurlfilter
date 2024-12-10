@@ -40,14 +40,14 @@ describe('Trie Lookup Table Tests', () => {
         fillLookupTable(table, ruleStorage);
         expect(table.getRulesCount()).toBe(4);
 
-        expect(table.matchAll(new Request('http://other.com/', '', RequestType.Document))).toHaveLength(0);
-        expect(table.matchAll(new Request('http://example.com/path', '', RequestType.Document))).toHaveLength(0);
+        expect(table.matchAll(new Request('http://other.com/', '', RequestTypes.Document))).toHaveLength(0);
+        expect(table.matchAll(new Request('http://example.com/path', '', RequestTypes.Document))).toHaveLength(0);
 
-        expect(table.matchAll(new Request('http://example.com/path/one', '', RequestType.Document))).toHaveLength(1);
-        expect(table.matchAll(new Request('http://example.com/path/two', '', RequestType.Document))).toHaveLength(1);
-        expect(table.matchAll(new Request('http://example.com/path/three', '', RequestType.Document))).toHaveLength(1);
+        expect(table.matchAll(new Request('http://example.com/path/one', '', RequestTypes.Document))).toHaveLength(1);
+        expect(table.matchAll(new Request('http://example.com/path/two', '', RequestTypes.Document))).toHaveLength(1);
+        expect(table.matchAll(new Request('http://example.com/path/three', '', RequestTypes.Document))).toHaveLength(1);
         expect(
-            table.matchAll(new Request('http://example.com/path/three/one', '', RequestType.Document)),
+            table.matchAll(new Request('http://example.com/path/three/one', '', RequestTypes.Document)),
         ).toHaveLength(2);
     });
 });

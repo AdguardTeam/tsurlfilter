@@ -505,57 +505,57 @@ describe('NetworkRule constructor', () => {
         const rule = createNetworkRule(`||example.org^$${name}`, 0);
         if (permitted) {
             expect(rule.getPermittedRequestTypes()).toEqual(requestType);
-            expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.NotSet);
+            expect(rule.getRestrictedRequestTypes()).toEqual(RequestTypes.NotSet);
         } else {
             expect(rule.getRestrictedRequestTypes()).toEqual(requestType);
-            expect(rule.getPermittedRequestTypes()).toEqual(RequestType.NotSet);
+            expect(rule.getPermittedRequestTypes()).toEqual(RequestTypes.NotSet);
         }
     }
 
     it('works when type modifiers are parsed properly', () => {
-        checkRequestType('script', RequestType.Script, true);
-        checkRequestType('~script', RequestType.Script, false);
+        checkRequestType('script', RequestTypes.Script, true);
+        checkRequestType('~script', RequestTypes.Script, false);
 
-        checkRequestType('stylesheet', RequestType.Stylesheet, true);
-        checkRequestType('~stylesheet', RequestType.Stylesheet, false);
+        checkRequestType('stylesheet', RequestTypes.Stylesheet, true);
+        checkRequestType('~stylesheet', RequestTypes.Stylesheet, false);
 
-        checkRequestType('subdocument', RequestType.SubDocument, true);
-        checkRequestType('~subdocument', RequestType.SubDocument, false);
+        checkRequestType('subdocument', RequestTypes.SubDocument, true);
+        checkRequestType('~subdocument', RequestTypes.SubDocument, false);
 
-        checkRequestType('object', RequestType.Object, true);
-        checkRequestType('~object', RequestType.Object, false);
+        checkRequestType('object', RequestTypes.Object, true);
+        checkRequestType('~object', RequestTypes.Object, false);
 
-        checkRequestType('image', RequestType.Image, true);
-        checkRequestType('~image', RequestType.Image, false);
+        checkRequestType('image', RequestTypes.Image, true);
+        checkRequestType('~image', RequestTypes.Image, false);
 
-        checkRequestType('xmlhttprequest', RequestType.XmlHttpRequest, true);
-        checkRequestType('~xmlhttprequest', RequestType.XmlHttpRequest, false);
+        checkRequestType('xmlhttprequest', RequestTypes.XmlHttpRequest, true);
+        checkRequestType('~xmlhttprequest', RequestTypes.XmlHttpRequest, false);
 
-        checkRequestType('media', RequestType.Media, true);
-        checkRequestType('~media', RequestType.Media, false);
+        checkRequestType('media', RequestTypes.Media, true);
+        checkRequestType('~media', RequestTypes.Media, false);
 
-        checkRequestType('font', RequestType.Font, true);
-        checkRequestType('~font', RequestType.Font, false);
+        checkRequestType('font', RequestTypes.Font, true);
+        checkRequestType('~font', RequestTypes.Font, false);
 
-        checkRequestType('websocket', RequestType.WebSocket, true);
-        checkRequestType('~websocket', RequestType.WebSocket, false);
+        checkRequestType('websocket', RequestTypes.WebSocket, true);
+        checkRequestType('~websocket', RequestTypes.WebSocket, false);
 
-        checkRequestType('other', RequestType.Other, true);
-        checkRequestType('~other', RequestType.Other, false);
+        checkRequestType('other', RequestTypes.Other, true);
+        checkRequestType('~other', RequestTypes.Other, false);
 
-        checkRequestType('ping', RequestType.Ping, true);
-        checkRequestType('~ping', RequestType.Ping, false);
+        checkRequestType('ping', RequestTypes.Ping, true);
+        checkRequestType('~ping', RequestTypes.Ping, false);
 
-        checkRequestType('document', RequestType.Document, true);
-        checkRequestType('~document', RequestType.Document, false);
+        checkRequestType('document', RequestTypes.Document, true);
+        checkRequestType('~document', RequestTypes.Document, false);
 
         const rule = createNetworkRule('||example.org^$all', 0);
         const allRequestTypes = Object.values(RequestType)
             .reduce((prevValue: number, curValue: number) => {
                 return prevValue | curValue;
-            }, RequestType.Document);
+            }, RequestTypes.Document);
         expect(rule.getPermittedRequestTypes()).toEqual(allRequestTypes);
-        expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.NotSet);
+        expect(rule.getRestrictedRequestTypes()).toEqual(RequestTypes.NotSet);
     });
 
     function assertBadfilterNegates(rule: string, badfilter: string, expected: boolean): void {
@@ -623,31 +623,31 @@ describe('NetworkRule constructor', () => {
     it('works if document modifier works properly', () => {
         let rule = createNetworkRule('||example.org^$document', -1);
         expect(rule).toBeTruthy();
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestTypes.Document);
 
         rule = createNetworkRule('@@||example.org^$document', -1);
         expect(rule).toBeTruthy();
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestTypes.Document);
 
         rule = createNetworkRule('||example.org^$document,script', -1);
         expect(rule).toBeTruthy();
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document | RequestType.Script);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestTypes.Document | RequestTypes.Script);
 
         rule = createNetworkRule('||example.org^$document,popup', -1);
         expect(rule).toBeTruthy();
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestTypes.Document);
 
         rule = createNetworkRule('||example.org^$document,replace=/test/test2/', -1);
         expect(rule).toBeTruthy();
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestTypes.Document);
 
         rule = createNetworkRule('||example.org^$document,removeparam=p', -1);
         expect(rule).toBeTruthy();
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestTypes.Document);
 
         rule = createNetworkRule('||example.org^$~document', -1);
         expect(rule).toBeTruthy();
-        expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.Document);
+        expect(rule.getRestrictedRequestTypes()).toEqual(RequestTypes.Document);
     });
 
     it('works if all modifier works properly', () => {
@@ -657,81 +657,81 @@ describe('NetworkRule constructor', () => {
         const allRequestTypes = Object.values(RequestType)
             .reduce((prevValue: number, curValue: number) => {
                 return prevValue | curValue;
-            }, RequestType.Document);
+            }, RequestTypes.Document);
         expect(rule.getPermittedRequestTypes()).toEqual(allRequestTypes);
     });
 
     it('works if doc modifier alias works properly', () => {
         let rule = createNetworkRule('||example.org^$doc', -1);
         expect(rule).toBeTruthy();
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Document);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestTypes.Document);
 
         rule = createNetworkRule('||example.org^$~doc', -1);
         expect(rule).toBeTruthy();
-        expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.Document);
+        expect(rule.getRestrictedRequestTypes()).toEqual(RequestTypes.Document);
     });
 
     it('works if popup modifier works properly with other request type modifiers', () => {
         let rule = createNetworkRule('||example.org^$popup', -1);
         expect(rule).toBeTruthy();
         expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.NotSet);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestTypes.NotSet);
 
         rule = createNetworkRule('||example.org^$script,image,popup', -1);
         expect(rule).toBeTruthy();
         expect(rule.isOptionEnabled(NetworkRuleOption.Popup));
-        expect(rule.getPermittedRequestTypes()).toEqual(RequestType.Script | RequestType.Image);
+        expect(rule.getPermittedRequestTypes()).toEqual(RequestTypes.Script | RequestTypes.Image);
     });
 });
 
 describe('NetworkRule.match', () => {
     it('works when it matches simple rules properly', () => {
         const rule = createNetworkRule('||example.org^', 0);
-        const request = new Request('https://example.org/', null, RequestType.Other);
+        const request = new Request('https://example.org/', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(true);
     });
 
     it('works when it matches regex rules properly', () => {
         const rule = createNetworkRule('/example\\.org/', 0);
-        const request = new Request('https://example.org/', null, RequestType.Other);
+        const request = new Request('https://example.org/', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(true);
     });
 
     it('works when $match-case is applied properly', () => {
         // Rule's url has upper case characters
         let rule = createNetworkRule('||example.org/PATH$match-case', 0);
-        let request = new Request('https://example.org/path', null, RequestType.Other);
+        let request = new Request('https://example.org/path', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(false);
 
         rule = createNetworkRule('||example.org/PATH$match-case', 0);
-        request = new Request('https://example.org/PATH', null, RequestType.Other);
+        request = new Request('https://example.org/PATH', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(true);
 
         // Rule's url have upper case characters
         rule = createNetworkRule('||example.org/path$match-case', 0);
-        request = new Request('https://example.org/PATH', null, RequestType.Other);
+        request = new Request('https://example.org/PATH', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(false);
 
         rule = createNetworkRule('||example.org/path$match-case', 0);
-        request = new Request('https://example.org/path', null, RequestType.Other);
+        request = new Request('https://example.org/path', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(true);
 
         // Rule's short url has upper case characters
         rule = createNetworkRule('/FILE.js$match-case', 0);
-        request = new Request('https://example.org/file.js', null, RequestType.Other);
+        request = new Request('https://example.org/file.js', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(false);
 
         rule = createNetworkRule('/FILE.js$match-case', 0);
-        request = new Request('https://example.org/FILE.js', null, RequestType.Other);
+        request = new Request('https://example.org/FILE.js', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(true);
 
         // Rule's short url doesn't have upper case characters
         rule = createNetworkRule('/file.js$match-case', 0);
-        request = new Request('https://example.org/FILE.js', null, RequestType.Other);
+        request = new Request('https://example.org/FILE.js', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(false);
 
         rule = createNetworkRule('/file.js$match-case', 0);
-        request = new Request('https://example.org/file.js', null, RequestType.Other);
+        request = new Request('https://example.org/file.js', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(true);
     });
 
@@ -742,29 +742,29 @@ describe('NetworkRule.match', () => {
         rule = createNetworkRule('||example.org^$third-party', 0);
 
         // First-party 1
-        request = new Request('https://example.org/', null, RequestType.Other);
+        request = new Request('https://example.org/', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(false);
 
         // First-party 2
-        request = new Request('https://sub.example.org/', 'https://example.org/', RequestType.Other);
+        request = new Request('https://sub.example.org/', 'https://example.org/', RequestTypes.Other);
         expect(rule.match(request)).toEqual(false);
 
         // Third-party
-        request = new Request('https://example.org/', 'https://example.com', RequestType.Other);
+        request = new Request('https://example.org/', 'https://example.com', RequestTypes.Other);
         expect(rule.match(request)).toEqual(true);
 
         rule = createNetworkRule('||example.org^$first-party', 0);
 
         // First-party 1
-        request = new Request('https://example.org/', null, RequestType.Other);
+        request = new Request('https://example.org/', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(true);
 
         // First-party 2
-        request = new Request('https://sub.example.org/', 'https://example.org/', RequestType.Other);
+        request = new Request('https://sub.example.org/', 'https://example.org/', RequestTypes.Other);
         expect(rule.match(request)).toEqual(true);
 
         // Third-party
-        request = new Request('https://example.org/', 'https://example.com', RequestType.Other);
+        request = new Request('https://example.org/', 'https://example.com', RequestTypes.Other);
         expect(rule.match(request)).toEqual(false);
     });
 
@@ -774,35 +774,35 @@ describe('NetworkRule.match', () => {
 
         // Just one permitted domain
         rule = createNetworkRule('||example.org^$domain=example.org', 0);
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Script);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Script);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', 'https://subdomain.example.org/', RequestType.Script);
+        request = new Request('https://example.org/', 'https://subdomain.example.org/', RequestTypes.Script);
         expect(rule.match(request)).toEqual(true);
 
         // One permitted, subdomain restricted
         rule = createNetworkRule('||example.org^$domain=example.org|~subdomain.example.org', 0);
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Script);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Script);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', 'https://subdomain.example.org/', RequestType.Script);
+        request = new Request('https://example.org/', 'https://subdomain.example.org/', RequestTypes.Script);
         expect(rule.match(request)).toEqual(false);
 
         // One restricted
         rule = createNetworkRule('||example.org^$domain=~example.org', 0);
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Script);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Script);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', 'https://subdomain.example.org/', RequestType.Script);
+        request = new Request('https://example.org/', 'https://subdomain.example.org/', RequestTypes.Script);
         expect(rule.match(request)).toEqual(false);
     });
 
@@ -814,28 +814,28 @@ describe('NetworkRule.match', () => {
             // rule only with excluded domains
             rule = createNetworkRule('||example.*^$domain=~example.org|~example.com', 0);
 
-            request = new Request('https://example.org', null, RequestType.Document);
+            request = new Request('https://example.org', null, RequestTypes.Document);
             expect(rule.match(request)).toBeFalsy();
 
-            request = new Request('https://example.com', null, RequestType.Document);
+            request = new Request('https://example.com', null, RequestTypes.Document);
             expect(rule.match(request)).toBeFalsy();
 
-            request = new Request('https://example.eu', null, RequestType.Document);
+            request = new Request('https://example.eu', null, RequestTypes.Document);
             expect(rule.match(request)).toBeTruthy();
 
             // rule with permitted and excluded domains
             rule = createNetworkRule('||example.*^$domain=example.org|~example.com', 0);
 
-            request = new Request('https://example.org', null, RequestType.Document);
+            request = new Request('https://example.org', null, RequestTypes.Document);
             expect(rule.match(request)).toBeFalsy();
 
-            request = new Request('https://example.com', null, RequestType.Document);
+            request = new Request('https://example.com', null, RequestTypes.Document);
             expect(rule.match(request)).toBeFalsy();
 
-            request = new Request('https://example.com', 'https://example.org', RequestType.Document);
+            request = new Request('https://example.com', 'https://example.org', RequestTypes.Document);
             expect(rule.match(request)).toBeTruthy();
 
-            request = new Request('https://example.com', 'https://example.com', RequestType.Document);
+            request = new Request('https://example.com', 'https://example.com', RequestTypes.Document);
             expect(rule.match(request)).toBeFalsy();
         });
 
@@ -844,13 +844,13 @@ describe('NetworkRule.match', () => {
 
             const rule = createNetworkRule('||example.*^$domain=~example.com', 0);
 
-            request = new Request('https://example.com', null, RequestType.Document);
+            request = new Request('https://example.com', null, RequestTypes.Document);
             expect(rule.match(request)).toBeFalsy();
 
-            request = new Request('https://example.com', null, RequestType.Script);
+            request = new Request('https://example.com', null, RequestTypes.Script);
             expect(rule.match(request)).toBeTruthy();
 
-            request = new Request('https://example.org', 'https://example.com', RequestType.Script);
+            request = new Request('https://example.org', 'https://example.com', RequestTypes.Script);
             expect(rule.match(request)).toBeFalsy();
         });
 
@@ -858,10 +858,10 @@ describe('NetworkRule.match', () => {
             let request;
             const rule = createNetworkRule('com$domain=example.com', 0);
 
-            request = new Request('https://example.com', null, RequestType.Document);
+            request = new Request('https://example.com', null, RequestTypes.Document);
             expect(rule.match(request)).toBeTruthy();
 
-            request = new Request('https://example.org/com', null, RequestType.Document);
+            request = new Request('https://example.org/com', null, RequestTypes.Document);
             expect(rule.match(request)).toBeFalsy();
         });
     });
@@ -871,39 +871,39 @@ describe('NetworkRule.match', () => {
         let request: Request;
 
         rule = createNetworkRule('||example.org^$removeparam=p', 0);
-        request = new Request('https://example.org/', null, RequestType.Document);
+        request = new Request('https://example.org/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(true);
-        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        request = new Request('https://example.org/', null, RequestTypes.SubDocument);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', null, RequestType.Image);
+        request = new Request('https://example.org/', null, RequestTypes.Image);
         expect(rule.match(request)).toEqual(false);
 
         rule = createNetworkRule('||example.org^$removeparam=p,script', 0);
-        request = new Request('https://example.org/', null, RequestType.Document);
+        request = new Request('https://example.org/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(false);
-        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        request = new Request('https://example.org/', null, RequestTypes.SubDocument);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Image);
+        request = new Request('https://example.org/', null, RequestTypes.Image);
         expect(rule.match(request)).toEqual(false);
 
         rule = createNetworkRule('||example.org^$removeparam=p,~script', 0);
-        request = new Request('https://example.org/', null, RequestType.Document);
+        request = new Request('https://example.org/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(true);
-        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        request = new Request('https://example.org/', null, RequestTypes.SubDocument);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', null, RequestType.Image);
+        request = new Request('https://example.org/', null, RequestTypes.Image);
         expect(rule.match(request)).toEqual(true);
     });
 
@@ -912,45 +912,45 @@ describe('NetworkRule.match', () => {
         let request: Request;
 
         rule = createNetworkRule('||example.org^$permissions=accelerometer=()', 0);
-        request = new Request('https://example.org/', null, RequestType.Document);
+        request = new Request('https://example.org/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(true);
-        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        request = new Request('https://example.org/', null, RequestTypes.SubDocument);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', null, RequestType.Image);
+        request = new Request('https://example.org/', null, RequestTypes.Image);
         expect(rule.match(request)).toEqual(false);
 
         rule = createNetworkRule('||example.org^$permissions=accelerometer=(),script', 0);
-        request = new Request('https://example.org/', null, RequestType.Document);
+        request = new Request('https://example.org/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(false);
-        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        request = new Request('https://example.org/', null, RequestTypes.SubDocument);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Image);
+        request = new Request('https://example.org/', null, RequestTypes.Image);
         expect(rule.match(request)).toEqual(false);
 
         rule = createNetworkRule('||example.org^$permissions=accelerometer=(),~script', 0);
-        request = new Request('https://example.org/', null, RequestType.Document);
+        request = new Request('https://example.org/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(true);
-        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        request = new Request('https://example.org/', null, RequestTypes.SubDocument);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', null, RequestType.Image);
+        request = new Request('https://example.org/', null, RequestTypes.Image);
         expect(rule.match(request)).toEqual(true);
     });
 
     it('works when $domain in uppercase', () => {
         const rule = createNetworkRule('$domain=ExaMple.com', 0);
-        const request = new Request('https://example.com/', null, RequestType.Document);
+        const request = new Request('https://example.com/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(true);
     });
 
@@ -959,38 +959,38 @@ describe('NetworkRule.match', () => {
         let request: Request;
 
         rule = createNetworkRule('/some.png$denyallow=example.ru|example.uk', 0);
-        request = new Request('https://example.ru/some.png', 'https://example.com', RequestType.Image);
+        request = new Request('https://example.ru/some.png', 'https://example.com', RequestTypes.Image);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.uk/some.png', 'https://example.org', RequestType.Image);
+        request = new Request('https://example.uk/some.png', 'https://example.org', RequestTypes.Image);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.us/some.png', 'https://example.com', RequestType.Image);
+        request = new Request('https://example.us/some.png', 'https://example.com', RequestTypes.Image);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.ua/some.png', 'https://example.org', RequestType.Image);
+        request = new Request('https://example.ua/some.png', 'https://example.org', RequestTypes.Image);
         expect(rule.match(request)).toEqual(true);
 
         // with $domain modifier
         rule = createNetworkRule('/some$domain=example.com|example.org,denyallow=example.ru|example.uk', 0);
-        request = new Request('https://example.ru/some', 'https://example.com', RequestType.Image);
+        request = new Request('https://example.ru/some', 'https://example.com', RequestTypes.Image);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.uk/some', 'https://example.org', RequestType.Image);
+        request = new Request('https://example.uk/some', 'https://example.org', RequestTypes.Image);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.us/some', 'https://example.com', RequestType.Image);
+        request = new Request('https://example.us/some', 'https://example.com', RequestTypes.Image);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.ua/some', 'https://example.org', RequestType.Image);
+        request = new Request('https://example.ua/some', 'https://example.org', RequestTypes.Image);
         expect(rule.match(request)).toEqual(true);
 
         // exception rule
         rule = createNetworkRule('@@/some$domain=example.com,denyallow=example.org', 0);
-        request = new Request('https://example.net/some', 'https://example.com', RequestType.Image);
+        request = new Request('https://example.net/some', 'https://example.com', RequestTypes.Image);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/some', 'https://example.com', RequestType.Image);
+        request = new Request('https://example.org/some', 'https://example.com', RequestTypes.Image);
         expect(rule.match(request)).toEqual(false);
     });
 
@@ -1000,27 +1000,27 @@ describe('NetworkRule.match', () => {
 
         // Wide rule
         rule = createNetworkRule('$domain=example.org', 0);
-        request = new Request('https://example.com/', 'https://example.org/', RequestType.Script);
+        request = new Request('https://example.com/', 'https://example.org/', RequestTypes.Script);
         expect(rule.match(request)).toEqual(true);
 
         // Match request url host
         rule = createNetworkRule('$domain=example.org', 0);
-        request = new Request('https://example.org/', 'https://example.com/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.com/', RequestTypes.Document);
         expect(rule.match(request)).toEqual(true);
 
         // Document or Subdocument only
         rule = createNetworkRule('$domain=example.org', 0);
-        request = new Request('https://example.org/', 'https://example.com/', RequestType.Image);
+        request = new Request('https://example.org/', 'https://example.com/', RequestTypes.Image);
         expect(rule.match(request)).toEqual(false);
 
         // Not matching domain specific patterns
         rule = createNetworkRule('||example.org/path$domain=example.org', 0);
-        request = new Request('https://example.org/path', 'https://example.com/', RequestType.Document);
+        request = new Request('https://example.org/path', 'https://example.com/', RequestTypes.Document);
         expect(rule.match(request)).toEqual(false);
 
         // Match any domain pattern
         rule = createNetworkRule('path$domain=example.org', 0);
-        request = new Request('https://example.org/path', 'https://example.com/', RequestType.Document);
+        request = new Request('https://example.org/path', 'https://example.com/', RequestTypes.Document);
         expect(rule.match(request)).toEqual(true);
     });
 
@@ -1032,41 +1032,41 @@ describe('NetworkRule.match', () => {
         expect(rule.getPermittedDomains()).toHaveLength(1);
         expect(rule.getRestrictedDomains()).toHaveLength(1);
 
-        request = new Request('https://test.ru/', 'https://google.com/', RequestType.Document);
+        request = new Request('https://test.ru/', 'https://google.com/', RequestTypes.Document);
         expect(rule.match(request)).toBeTruthy();
 
-        request = new Request('https://test.ru/', 'https://www.google.com/', RequestType.Document);
+        request = new Request('https://test.ru/', 'https://www.google.com/', RequestTypes.Document);
         expect(rule.match(request)).toBeTruthy();
 
-        request = new Request('https://test.ru/', 'https://www.google.de/', RequestType.Document);
+        request = new Request('https://test.ru/', 'https://www.google.de/', RequestTypes.Document);
         expect(rule.match(request)).toBeTruthy();
 
-        request = new Request('https://test.ru/', 'https://www.google.co.uk/', RequestType.Document);
+        request = new Request('https://test.ru/', 'https://www.google.co.uk/', RequestTypes.Document);
         expect(rule.match(request)).toBeTruthy();
 
-        request = new Request('https://test.ru/', 'https://google.co.uk/', RequestType.Document);
+        request = new Request('https://test.ru/', 'https://google.co.uk/', RequestTypes.Document);
         expect(rule.match(request)).toBeTruthy();
 
         // non-existent tld
-        request = new Request('https://test.ru/', 'https://google.uk.eu/', RequestType.Document);
+        request = new Request('https://test.ru/', 'https://google.uk.eu/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
-        request = new Request('https://test.ru/', 'https://nigma.ru/', RequestType.Document);
+        request = new Request('https://test.ru/', 'https://nigma.ru/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
-        request = new Request('https://test.ru/', 'https://nigma.com/', RequestType.Document);
+        request = new Request('https://test.ru/', 'https://nigma.com/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
-        request = new Request('https://test.ru/', 'https://www.nigma.ru/', RequestType.Document);
+        request = new Request('https://test.ru/', 'https://www.nigma.ru/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
-        request = new Request('https://test.ru/', 'https://adguard.ru/', RequestType.Document);
+        request = new Request('https://test.ru/', 'https://adguard.ru/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
     });
 
     it('works when $domain modifier is applied properly - regexp', () => {
         let request: Request;
-        const requestType: RequestType = RequestType.Script;
+        const requestType: RequestType = RequestTypes.Script;
 
         const rule = createNetworkRule(String.raw`||test.ru^$domain=/\.(io\|com)/|~/good\.(org\|com)/`, 0);
         expect(rule.getPermittedDomains()).toHaveLength(1);
@@ -1085,7 +1085,7 @@ describe('NetworkRule.match', () => {
 
     it('matches by $domain modifier with mixed type values', () => {
         let request: Request;
-        const requestType: RequestType = RequestType.Script;
+        const requestType: RequestType = RequestTypes.Script;
         const rule = createNetworkRule(String.raw`||test.ru^$domain=/\.(io\|com)/|evil.*|ads.net|~/jwt\.io/|~evil.gov`, 0);
         expect(rule.getPermittedDomains()).toHaveLength(3);
         expect(rule.getRestrictedDomains()).toHaveLength(2);
@@ -1119,38 +1119,38 @@ describe('NetworkRule.match', () => {
 
         // $script
         rule = createNetworkRule('||example.org^$script', 0);
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Document);
+        request = new Request('https://example.org/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(false);
 
         // $script and $stylesheet
         rule = createNetworkRule('||example.org^$script,stylesheet', 0);
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Stylesheet);
+        request = new Request('https://example.org/', null, RequestTypes.Stylesheet);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Document);
+        request = new Request('https://example.org/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(false);
 
         // Everything except $script and $stylesheet
         rule = createNetworkRule('||example.org^$~script,~stylesheet', 0);
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', null, RequestType.Stylesheet);
+        request = new Request('https://example.org/', null, RequestTypes.Stylesheet);
         expect(rule.match(request)).toEqual(false);
 
-        request = new Request('https://example.org/', null, RequestType.Document);
+        request = new Request('https://example.org/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(true);
     });
 
     it('works when content type ping is applied properly', () => {
         const rule = createNetworkRule('||example.org^$ping', 0);
-        const request = new Request('https://example.org/', null, RequestType.Ping);
+        const request = new Request('https://example.org/', null, RequestTypes.Ping);
         expect(rule.match(request)).toEqual(true);
     });
 
@@ -1159,7 +1159,7 @@ describe('NetworkRule.match', () => {
         let request: Request;
 
         rule = createNetworkRule('||example.org^$ctag=device_pc', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.clientTags = ['device_pc'];
@@ -1172,7 +1172,7 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toBeFalsy();
 
         rule = createNetworkRule('||example.org^$ctag=device_phone|device_pc', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.clientTags = ['device_pc'];
@@ -1185,7 +1185,7 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toBeTruthy();
 
         rule = createNetworkRule('||example.org^$ctag=~device_phone|device_pc', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.clientTags = ['device_pc'];
@@ -1203,7 +1203,7 @@ describe('NetworkRule.match', () => {
         let request: Request;
 
         rule = createNetworkRule('||example.org^$dnstype=TXT|AAAA', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.dnsType = 'AAAA';
@@ -1213,7 +1213,7 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toBeFalsy();
 
         rule = createNetworkRule('||example.org^$dnstype=~TXT|~AAAA', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.dnsType = 'AAAA';
@@ -1227,40 +1227,40 @@ describe('NetworkRule.match', () => {
         let request: Request;
         const rule = createNetworkRule('||example.org^$all', 0);
 
-        request = new Request('https://example.org/', null, RequestType.Document);
+        request = new Request('https://example.org/', null, RequestTypes.Document);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        request = new Request('https://example.org/', null, RequestTypes.SubDocument);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Script);
+        request = new Request('https://example.org/', null, RequestTypes.Script);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Stylesheet);
+        request = new Request('https://example.org/', null, RequestTypes.Stylesheet);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Object);
+        request = new Request('https://example.org/', null, RequestTypes.Object);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Image);
+        request = new Request('https://example.org/', null, RequestTypes.Image);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.XmlHttpRequest);
+        request = new Request('https://example.org/', null, RequestTypes.XmlHttpRequest);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Media);
+        request = new Request('https://example.org/', null, RequestTypes.Media);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Font);
+        request = new Request('https://example.org/', null, RequestTypes.Font);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.WebSocket);
+        request = new Request('https://example.org/', null, RequestTypes.WebSocket);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Ping);
+        request = new Request('https://example.org/', null, RequestTypes.Ping);
         expect(rule.match(request)).toEqual(true);
 
-        request = new Request('https://example.org/', null, RequestType.Other);
+        request = new Request('https://example.org/', null, RequestTypes.Other);
         expect(rule.match(request)).toEqual(true);
     });
 
@@ -1269,7 +1269,7 @@ describe('NetworkRule.match', () => {
         let request: Request;
 
         rule = createNetworkRule('||example.org^$client=name', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.clientIP = '127.0.0.1';
@@ -1281,7 +1281,7 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toBeFalsy();
 
         rule = createNetworkRule("||example.org^$client=~'Frank\\'s laptop'", 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.clientName = "Frank's phone";
@@ -1291,7 +1291,7 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toBeFalsy();
 
         rule = createNetworkRule('||example.org^$client=127.0.0.1', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.clientIP = '127.0.0.1';
@@ -1301,7 +1301,7 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toBeFalsy();
 
         rule = createNetworkRule('||example.org^$client=127.0.0.0/8', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.clientIP = '127.1.1.1';
@@ -1311,7 +1311,7 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toBeFalsy();
 
         rule = createNetworkRule('||example.org^$client=2001::c0:ffee', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.clientIP = '2001::c0:ffee';
@@ -1321,7 +1321,7 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toBeFalsy();
 
         rule = createNetworkRule('||example.org^$client=2001::0:00c0:ffee/112', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Document);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Document);
         expect(rule.match(request)).toBeFalsy();
 
         request.clientIP = '2001::0:c0:0';
@@ -1334,7 +1334,7 @@ describe('NetworkRule.match', () => {
     it('applies $method modifier properly', () => {
         // Correctly matches method that is specified in permitted methods list
         let rule = createNetworkRule('||example.org^$method=get|delete', 0);
-        let request = new Request('https://example.org/', 'https://example.org/', RequestType.Script, HTTPMethod.GET);
+        let request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Script, HTTPMethod.GET);
         expect(rule.match(request)).toBeTruthy();
 
         request.method = HTTPMethod.DELETE;
@@ -1345,7 +1345,7 @@ describe('NetworkRule.match', () => {
 
         // Correctly matches method that is not present in restricted methods list
         rule = createNetworkRule('@@||example.org^$method=~get|~head', 0);
-        request = new Request('https://example.org/', 'https://example.org/', RequestType.Script, HTTPMethod.POST);
+        request = new Request('https://example.org/', 'https://example.org/', RequestTypes.Script, HTTPMethod.POST);
         expect(rule.match(request)).toBeTruthy();
 
         request.method = HTTPMethod.PUT;
@@ -1368,29 +1368,29 @@ describe('NetworkRule.match', () => {
 
         // Correctly matches domain that is specified in permitted domains list
         rule = createNetworkRule('/ads^$to=evil.com', 0);
-        request = new Request('https://evil.com/ads', 'https://example.org/', RequestType.Script);
+        request = new Request('https://evil.com/ads', 'https://example.org/', RequestTypes.Script);
         expect(rule.match(request)).toBeTruthy();
-        request = new Request('https://good.com/ads', 'https://example.org/', RequestType.Script);
+        request = new Request('https://good.com/ads', 'https://example.org/', RequestTypes.Script);
         expect(rule.match(request)).toBeFalsy();
 
         // Correctly matches subdomain that is specified in permitted domains list
         rule = createNetworkRule('/ads^$to=sub.evil.com', 0);
-        request = new Request('https://sub.evil.com/ads', 'https://example.org/', RequestType.Image);
+        request = new Request('https://sub.evil.com/ads', 'https://example.org/', RequestTypes.Image);
         expect(rule.match(request)).toBeTruthy();
 
         // Inverted value excludes subdomain from matching
         rule = createNetworkRule('/ads^$to=evil.com|~sub.one.evil.com', 0);
 
-        request = new Request('https://evil.com/ads', 'https://example.org/', RequestType.Script);
+        request = new Request('https://evil.com/ads', 'https://example.org/', RequestTypes.Script);
         expect(rule.match(request)).toBeTruthy();
 
-        request = new Request('https://one.evil.com/ads', 'https://example.org/', RequestType.Script);
+        request = new Request('https://one.evil.com/ads', 'https://example.org/', RequestTypes.Script);
         expect(rule.match(request)).toBeTruthy();
 
-        request = new Request('https://sub.one.evil.com/ads', 'https://example.org/', RequestType.Script);
+        request = new Request('https://sub.one.evil.com/ads', 'https://example.org/', RequestTypes.Script);
         expect(rule.match(request)).toBeFalsy();
 
-        request = new Request('https://sub.two.evil.com/ads', 'https://example.org/', RequestType.Script);
+        request = new Request('https://sub.two.evil.com/ads', 'https://example.org/', RequestTypes.Script);
         expect(rule.match(request)).toBeTruthy();
     });
 });

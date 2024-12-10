@@ -228,7 +228,7 @@ describe('Element hiding rules constructor', () => {
 describe('CosmeticRule match', () => {
     const createRequest = (url: string, sourceUrl?: string): Request => {
         const source = sourceUrl || url;
-        return new Request(url, source, RequestType.Document);
+        return new Request(url, source, RequestTypes.Document);
     };
 
     it('works if it matches wide rules', () => {

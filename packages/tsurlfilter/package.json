@@ -2,64 +2,63 @@
     "name": "@adguard/tsurlfilter",
     "version": "3.1.0-alpha.7",
     "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
-    "main": "dist/es/index.js",
-    "module": "dist/es/index.js",
-    "iife": "dist/tsurlfilter.iife.js",
-    "types": "dist/types/src/index.d.ts",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
     "type": "module",
+    "types": "dist/types/index.d.ts",
+    "sideEffects": false,
     "files": [
         "dist",
         "!dist/build.txt"
     ],
     "exports": {
         ".": {
-            "types": "./dist/types/src/index.d.ts",
-            "import": "./dist/es/index.js",
-            "require": "./dist/tsurlfilter.umd.js"
+            "types": "./dist/types/index.d.ts",
+            "import": "./dist/index.js"
         },
-        "./es/declarative-converter": {
-            "import": "./dist/es/declarative-converter.js",
-            "types": "./dist/types/src/rules/declarative-converter/index.d.ts"
+        "./configuration": {
+            "import": "./dist/configuration.js",
+            "types": "./dist/types/configuration/index.d.ts"
         },
-        "./es/request-type": {
-            "import": "./dist/es/request-type.js",
-            "types": "./dist/types/src/request-type.d.ts"
+        "./engine": {
+            "import": "./dist/engine.js",
+            "types": "./dist/types/engine/index.d.ts"
         },
-        "./es/network-rule-options": {
-            "import": "./dist/es/network-rule-options.js",
-            "types": "./dist/types/src/rules/network-rule-options.d.ts"
+        "./dns-engine": {
+            "import": "./dist/engine/dns-engine.js",
+            "types": "./dist/types/engine/dns-engine/index.d.ts"
         },
-        "./es/simple-regex": {
-            "import": "./dist/es/simple-regex.js",
-            "types": "./dist/types/src/rules/simple-regex.d.ts"
+        "./filterlist": {
+            "import": "./dist/filterlist.js",
+            "types": "./dist/types/filterlist/index.d.ts"
         },
-        "./es/*": "./dist/es/*.js",
-        "./umd": "./dist/tsurlfilter.umd.js",
-        "./cli": "./dist/cli.js"
-    },
-    "typesVersions": {
-        "*": {
-            "*": [
-                "dist/types/src/index.d.ts"
-            ],
-            "es/request-type": [
-                "dist/types/src/request-type.d.ts"
-            ],
-            "es/cosmetic-rule-marker": [
-                "dist/types/src/rules/cosmetic-rule-marker.d.ts"
-            ],
-            "es/network-rule-options": [
-                "dist/types/src/rules/network-rule-options.d.ts"
-            ],
-            "es/simple-regex": [
-                "dist/types/src/rules/simple-regex.d.ts"
-            ],
-            "es/declarative-converter": [
-                "dist/types/src/rules/declarative-converter/index.d.ts"
-            ],
-            "cli": [
-                "dist/types/cli/index.d.ts"
-            ]
+        "./request": {
+            "import": "./dist/request.js",
+            "types": "./dist/types/request/index.d.ts"
+        },
+        "./rules": {
+            "import": "./dist/rules.js",
+            "types": "./dist/types/rules/index.d.ts"
+        },
+        "./declarative-converter": {
+            "import": "./dist/rules/declarative-converter.js",
+            "types": "./dist/types/rules/declarative-converter/index.d.ts"
+        },
+        "./modifiers": {
+            "import": "./dist/modifiers.js",
+            "types": "./dist/types/modifiers/index.d.ts"
+        },
+        "./utils": {
+            "import": "./dist/utils.js",
+            "types": "./dist/types/utils/index.d.ts"
+        },
+        "./version": {
+            "import": "./dist/version.js",
+            "types": "./dist/types/version/index.d.ts"
+        },
+        "./cli": {
+            "import": "./dist/cli.js",
+            "types": "./dist/types/cli/index.d.ts"
         }
     },
     "bin": {
@@ -73,7 +72,7 @@
     },
     "license": "GPL-3.0-only",
     "engines": {
-        "node": ">=6.0.0"
+        "node": ">=18"
     },
     "bugs": {
         "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
@@ -84,7 +83,7 @@
         "lint:tsc": "tsc --noEmit -p test/tsconfig.tests.json",
         "check-types": "pnpm lint:tsc",
         "prebuild": "rimraf dist && pnpm build:types",
-        "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript --bundleConfigAsCjs && pnpm postbuild",
+        "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm postbuild",
         "postbuild": "tsx tasks/build-txt.ts",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "docs": "typedoc src --out docs",
@@ -125,7 +124,6 @@
     "devDependencies": {
         "@jest/globals": "^29.7.0",
         "@rollup/plugin-alias": "^5.1.1",
-        "@rollup/plugin-commonjs": "^28.0.1",
         "@rollup/plugin-json": "^6.1.0",
         "@rollup/plugin-node-resolve": "^15.3.0",
         "@rollup/plugin-terser": "^0.4.4",

@@ -8,7 +8,7 @@
 
 import { z as zod } from 'zod';
 
-import { RequestType } from '../../request-type';
+import { RequestTypes } from '../../request';
 import { HTTPMethod } from '../../modifiers/method-modifier';
 
 /**
@@ -219,18 +219,18 @@ export type DeclarativeRule = zod.infer<typeof DeclarativeRuleValidator>;
  * Map request types to declarative types.
  */
 export const DECLARATIVE_RESOURCE_TYPES_MAP = {
-    [ResourceType.MainFrame]: RequestType.Document,
-    [ResourceType.SubFrame]: RequestType.SubDocument,
-    [ResourceType.Stylesheet]: RequestType.Stylesheet,
-    [ResourceType.Script]: RequestType.Script,
-    [ResourceType.Image]: RequestType.Image,
-    [ResourceType.Font]: RequestType.Font,
-    [ResourceType.Object]: RequestType.Object,
-    [ResourceType.XmlHttpRequest]: RequestType.XmlHttpRequest,
-    [ResourceType.Ping]: RequestType.Ping,
+    [ResourceType.MainFrame]: RequestTypes.Document,
+    [ResourceType.SubFrame]: RequestTypes.SubDocument,
+    [ResourceType.Stylesheet]: RequestTypes.Stylesheet,
+    [ResourceType.Script]: RequestTypes.Script,
+    [ResourceType.Image]: RequestTypes.Image,
+    [ResourceType.Font]: RequestTypes.Font,
+    [ResourceType.Object]: RequestTypes.Object,
+    [ResourceType.XmlHttpRequest]: RequestTypes.XmlHttpRequest,
+    [ResourceType.Ping]: RequestTypes.Ping,
     // TODO: what should match this resource type?
-    // [ResourceType.CSP_REPORT]: RequestType.Document,
-    [ResourceType.Media]: RequestType.Media,
-    [ResourceType.WebSocket]: RequestType.WebSocket,
-    [ResourceType.Other]: RequestType.Other,
+    // [ResourceType.CSP_REPORT]: RequestTypes.Document,
+    [ResourceType.Media]: RequestTypes.Media,
+    [ResourceType.WebSocket]: RequestTypes.WebSocket,
+    [ResourceType.Other]: RequestTypes.Other,
 };

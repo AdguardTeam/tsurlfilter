@@ -102,7 +102,7 @@ import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
-import { type RequestType } from '../../../request-type';
+import { type RequestType } from '../../../request';
 import {
     DECLARATIVE_REQUEST_METHOD_MAP,
     DECLARATIVE_RESOURCE_TYPES_MAP,

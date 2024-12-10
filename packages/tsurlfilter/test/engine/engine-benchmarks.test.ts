@@ -146,24 +146,24 @@ function testGetRequestType(requestType: string): RequestType {
         case 'document':
             // Consider document requests as sub_document. This is because the request
             // dataset does not contain sub_frame or main_frame but only 'document'.
-            return RequestType.SubDocument;
+            return RequestTypes.SubDocument;
         case 'stylesheet':
-            return RequestType.Stylesheet;
+            return RequestTypes.Stylesheet;
         case 'font':
-            return RequestType.Font;
+            return RequestTypes.Font;
         case 'image':
-            return RequestType.Image;
+            return RequestTypes.Image;
         case 'media':
-            return RequestType.Media;
+            return RequestTypes.Media;
         case 'script':
-            return RequestType.Script;
+            return RequestTypes.Script;
         case 'xhr':
         case 'fetch':
-            return RequestType.XmlHttpRequest;
+            return RequestTypes.XmlHttpRequest;
         case 'websocket':
-            return RequestType.WebSocket;
+            return RequestTypes.WebSocket;
         default:
-            return RequestType.Other;
+            return RequestTypes.Other;
     }
 }
 
@@ -454,7 +454,7 @@ describe('Benchmarks', () => {
         console.log(`Engine memory: ${formatMemory(engineUsageMem)}`);
 
         const totalMatches = runEngine(requests, (request) => {
-            if (request.requestType !== RequestType.SubDocument) {
+            if (request.requestType !== RequestTypes.SubDocument) {
                 return false;
             }
 

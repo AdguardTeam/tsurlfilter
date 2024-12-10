@@ -9,7 +9,7 @@ import { RequestType } from '../../src/request-type';
 import { Request } from '../../src/request';
 import { FilterListPreprocessor, getRuleSourceIndex } from '../../src';
 
-const createRequest = (url: string): Request => new Request(url, null, RequestType.Document);
+const createRequest = (url: string): Request => new Request(url, null, RequestTypes.Document);
 
 /**
  * Helper function to get the rule index from the raw filter list by the rule text.
@@ -30,7 +30,7 @@ describe('Engine Tests', () => {
 
         expect(engine.getRulesCount()).toBe(1);
 
-        let request = new Request('https://example.org', '', RequestType.Document);
+        let request = new Request('https://example.org', '', RequestTypes.Document);
         let result = engine.matchRequest(request);
 
         expect(result.basicRule).toBeNull();
@@ -40,7 +40,7 @@ describe('Engine Tests', () => {
         expect(result.cookieRules).toBeNull();
         expect(result.stealthRules).toBeNull();
 
-        request = new Request('https://example.org', 'https://example.org', RequestType.Document);
+        request = new Request('https://example.org', 'https://example.org', RequestTypes.Document);
         result = engine.matchRequest(request);
 
         expect(result.basicRule).toBeNull();
@@ -59,7 +59,7 @@ describe('Engine Tests', () => {
 
         expect(engine.getRulesCount()).toBe(1);
 
-        const request = new Request('https://example.org', '', RequestType.Document);
+        const request = new Request('https://example.org', '', RequestTypes.Document);
         const result = engine.matchRequest(request);
 
         expect(result.basicRule).not.toBeNull();
@@ -131,7 +131,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const list = new BufferRuleList(1, preprocessed.filterList, false, false, false, preprocessed.sourceMap);
         const engine = new Engine(new RuleStorage([list]));
 
-        const request = new Request('https://example.org', '', RequestType.Document);
+        const request = new Request('https://example.org', '', RequestTypes.Document);
         const result = engine.matchRequest(request);
 
         expect(result.basicRule).toBeNull();
@@ -175,7 +175,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const request = new Request(
             'https://example.org/fuckadblock.min.js',
             'https://example.org/url.html',
-            RequestType.Script,
+            RequestTypes.Script,
         );
         const result = engine.matchRequest(request);
 
@@ -196,7 +196,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
         const request = new Request(
             'http://ya.ru/',
             null,
-            RequestType.Image,
+            RequestTypes.Image,
         );
         const result = engine.matchRequest(request);
 
@@ -214,14 +214,14 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
         let request = new Request(
             'http://ya.ru/',
             null,
-            RequestType.Image,
+            RequestTypes.Image,
         );
         expect(engine.matchRequest(request).getBasicResult()).toBeNull();
 
         request = new Request(
             'http://ya.ru/',
             null,
-            RequestType.Media,
+            RequestTypes.Media,
         );
         expect(engine.matchRequest(request).getBasicResult()).not.toBeNull();
     });
@@ -237,7 +237,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
         const request = new Request(
             'http://ya.ru/',
             null,
-            RequestType.Image,
+            RequestTypes.Image,
         );
         const basicResult = engine.matchRequest(request).getBasicResult();
         expect(basicResult).not.toBeNull();
@@ -257,14 +257,14 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
         let request = new Request(
             'http://ya.ru/',
             null,
-            RequestType.Image,
+            RequestTypes.Image,
         );
         expect(engine.matchRequest(request).getBasicResult()).toBeNull();
 
         request = new Request(
             'http://ya.ru/',
             null,
-            RequestType.Media,
+            RequestTypes.Media,
         );
         expect(engine.matchRequest(request).getBasicResult()).toBeNull();
     });
@@ -282,14 +282,14 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
         let request = new Request(
             'http://ya.ru/',
             null,
-            RequestType.Image,
+            RequestTypes.Image,
         );
         expect(engine.matchRequest(request).getBasicResult()).toBeNull();
 
         request = new Request(
             'http://ya.ru/',
             null,
-            RequestType.Media,
+            RequestTypes.Media,
         );
         expect(engine.matchRequest(request).getBasicResult()).not.toBeNull();
     });
@@ -307,7 +307,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
         let request = new Request(
             'https://example.org/script.js',
             null,
-            RequestType.Script,
+            RequestTypes.Script,
         );
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
@@ -316,7 +316,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
         request = new Request(
             'https://example.org/index.js',
             null,
-            RequestType.Script,
+            RequestTypes.Script,
         );
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
@@ -336,7 +336,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
         let request = new Request(
             'https://example.org/script.js',
             null,
-            RequestType.Script,
+            RequestTypes.Script,
         );
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
@@ -349,7 +349,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
         request = new Request(
             'https://example.org/index.js',
             null,
-            RequestType.Script,
+            RequestTypes.Script,
         );
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
@@ -357,7 +357,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
         request = new Request(
             'https://example.org/script.js?unblock',
             null,
-            RequestType.Script,
+            RequestTypes.Script,
         );
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
@@ -378,16 +378,16 @@ describe('TestEngineMatchRequest - document modifier', () => {
 
         const engine = new Engine(new RuleStorage([baseRuleList]));
 
-        let request = new Request('http://example.org/', null, RequestType.Document);
+        let request = new Request('http://example.org/', null, RequestTypes.Document);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(documentBlockingRuleText);
 
-        request = new Request('http://other.org/', null, RequestType.Document);
+        request = new Request('http://other.org/', null, RequestTypes.Document);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
 
-        request = new Request('http://example.org/', null, RequestType.Image);
+        request = new Request('http://example.org/', null, RequestTypes.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
     });
@@ -400,17 +400,17 @@ describe('TestEngineMatchRequest - document modifier', () => {
 
         const engine = new Engine(new RuleStorage([baseRuleList]));
 
-        let request = new Request('http://example.org/', null, RequestType.Document);
+        let request = new Request('http://example.org/', null, RequestTypes.Document);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(documentBlockingRuleText);
 
-        request = new Request('http://example.org/', null, RequestType.Script);
+        request = new Request('http://example.org/', null, RequestTypes.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(documentBlockingRuleText);
 
-        request = new Request('http://example.org/', null, RequestType.Image);
+        request = new Request('http://example.org/', null, RequestTypes.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
     });
@@ -425,16 +425,16 @@ describe('TestEngineMatchRequest - all modifier', () => {
 
         const engine = new Engine(new RuleStorage([baseRuleList]));
 
-        let request = new Request('http://example.org/', null, RequestType.Document);
+        let request = new Request('http://example.org/', null, RequestTypes.Document);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(allBlockingRuleText);
 
-        request = new Request('http://other.org/', null, RequestType.Document);
+        request = new Request('http://other.org/', null, RequestTypes.Document);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
 
-        request = new Request('http://example.org/', null, RequestType.Image);
+        request = new Request('http://example.org/', null, RequestTypes.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()!.getText()).toBe(allBlockingRuleText);
     });
@@ -452,28 +452,28 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         const engine = new Engine(new RuleStorage([baseRuleList]));
 
         // Tests matching an XMLHttpRequest; expects to match the basic blocking rule
-        let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
+        let request = new Request('http://example.org/', 'http://example.com/', RequestTypes.XmlHttpRequest);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
         expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching a script request; expects to match the basic blocking rule
-        request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
+        request = new Request('http://example.org/', 'http://example.com/', RequestTypes.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
         expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching an image request; expects to match the basic blocking rule
-        request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
+        request = new Request('http://example.org/', 'http://example.com/', RequestTypes.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
         expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching a document request; expects to match the popup blocking rule
-        request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
+        request = new Request('http://example.org/', 'http://example.com/', RequestTypes.Document);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
@@ -491,28 +491,28 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         const engine = new Engine(new RuleStorage([baseRuleList]));
 
         // Tests matching an XMLHttpRequest; expects to match the all-encompassing blocking rule
-        let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
+        let request = new Request('http://example.org/', 'http://example.com/', RequestTypes.XmlHttpRequest);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
         expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching a script request; expects to match the all-encompassing blocking rule
-        request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
+        request = new Request('http://example.org/', 'http://example.com/', RequestTypes.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
         expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching an image request; expects to match the all-encompassing blocking rule
-        request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
+        request = new Request('http://example.org/', 'http://example.com/', RequestTypes.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
         expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
 
         // Tests matching a document request; expects to match the popup blocking rule
-        request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
+        request = new Request('http://example.org/', 'http://example.com/', RequestTypes.Document);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
@@ -735,7 +735,7 @@ describe('$urlblock modifier', () => {
         expect(frameRule).not.toBeNull();
         expect(frameRule!.getText()).toBe(urlblock);
 
-        const request = new Request('http://example.com/image.png', 'http://example.org', RequestType.Image);
+        const request = new Request('http://example.com/image.png', 'http://example.org', RequestTypes.Image);
         const result = engine.matchRequest(request, frameRule).getBasicResult();
         expect(result).toBeTruthy();
         expect(result?.getText()).toEqual(important);
@@ -753,11 +753,11 @@ describe('$badfilter modifier', () => {
 
         expect(engine.getRulesCount()).toBe(2);
 
-        let request = new Request('https://example.com', 'https://example.com', RequestType.Script);
+        let request = new Request('https://example.com', 'https://example.com', RequestTypes.Script);
         let result = engine.matchRequest(request);
         expect(result.basicRule).toBeNull();
 
-        request = new Request('https://example.org', 'https://example.org', RequestType.Script);
+        request = new Request('https://example.org', 'https://example.org', RequestTypes.Script);
         result = engine.matchRequest(request);
         expect(result.basicRule).not.toBeNull();
     });
@@ -784,7 +784,7 @@ describe('$genericblock modifier', () => {
         const result = engine.matchRequest(new Request(
             'https://example.org',
             'https://domain.com',
-            RequestType.Script,
+            RequestTypes.Script,
         ), frameRule);
 
         expect(result.basicRule).toBeNull();
@@ -946,7 +946,7 @@ describe('$specifichide modifier', () => {
         ].join('\n'));
         const list = new BufferRuleList(1, processed.filterList, false, false, false, processed.sourceMap);
         const engine = new Engine(new RuleStorage([list]));
-        const request = new Request('http://example.org', '', RequestType.Document);
+        const request = new Request('http://example.org', '', RequestTypes.Document);
         const result = engine.matchRequest(request);
         const cosmeticResult = engine.getCosmeticResult(createRequest('http://example.org'), result.getCosmeticOption());
         expect(cosmeticResult).toBeTruthy();
@@ -987,7 +987,7 @@ describe('Stealth cookie rules', () => {
             stealthCookieRule,
         ].join('\n')).filterList);
         let engine = new Engine(new RuleStorage([list]));
-        let request = new Request('http://example.org', '', RequestType.Document);
+        let request = new Request('http://example.org', '', RequestTypes.Document);
         let result = engine.matchRequest(request);
         let cookieRules = result.getCookieRules();
         expect(cookieRules[0].getText()).toBe(stealthCookieRule);
@@ -998,7 +998,7 @@ describe('Stealth cookie rules', () => {
             allowlistRule,
         ].join('\n')).filterList);
         engine = new Engine(new RuleStorage([list]));
-        request = new Request('http://example.org', '', RequestType.Document);
+        request = new Request('http://example.org', '', RequestTypes.Document);
         result = engine.matchRequest(request);
         cookieRules = result.getCookieRules();
         expect(cookieRules[0].getText()).toBe(allowlistRule);

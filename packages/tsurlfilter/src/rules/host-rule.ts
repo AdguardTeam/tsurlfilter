@@ -1,6 +1,6 @@
 import { type HostRule as HostRuleNode } from '@adguard/agtree';
 
-import * as rule from './rule';
+import { RULE_INDEX_NONE, type IRule } from './rule';
 
 /**
  * Implements a host rule.
@@ -20,7 +20,7 @@ import * as rule from './rule';
  * * `::1 localhost ip6-localhost ip6-loopback` -- ipv6 aliases
  * * `example.org` -- "just domain" syntax
  */
-export class HostRule implements rule.IRule {
+export class HostRule implements IRule {
     private readonly ruleIndex: number;
 
     private readonly filterListId: number;
@@ -41,7 +41,7 @@ export class HostRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(node: HostRuleNode, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
+    constructor(node: HostRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 

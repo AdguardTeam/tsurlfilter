@@ -35,22 +35,22 @@ describe('Sequence-scan Lookup Table Tests', () => {
         fillLookupTable(table, ruleStorage);
         expect(table.getRulesCount()).toBe(4);
 
-        expect(table.matchAll(new Request('http://other.com/', '', RequestType.Document))).toHaveLength(0);
-        expect(table.matchAll(new Request('http://other.com/path', '', RequestType.Document))).toHaveLength(1);
-        expect(table.matchAll(new Request('http://example.net/path', '', RequestType.Document))).toHaveLength(2);
-        expect(table.matchAll(new Request('http://example.com/path', '', RequestType.Document))).toHaveLength(2);
+        expect(table.matchAll(new Request('http://other.com/', '', RequestTypes.Document))).toHaveLength(0);
+        expect(table.matchAll(new Request('http://other.com/path', '', RequestTypes.Document))).toHaveLength(1);
+        expect(table.matchAll(new Request('http://example.net/path', '', RequestTypes.Document))).toHaveLength(2);
+        expect(table.matchAll(new Request('http://example.com/path', '', RequestTypes.Document))).toHaveLength(2);
 
         expect(
-            table.matchAll(new Request('http://example.com/path', 'http://example.com', RequestType.Document)),
+            table.matchAll(new Request('http://example.com/path', 'http://example.com', RequestTypes.Document)),
         ).toHaveLength(2);
         expect(
-            table.matchAll(new Request('http://example.org/path', 'http://example.org', RequestType.Document)),
+            table.matchAll(new Request('http://example.org/path', 'http://example.org', RequestTypes.Document)),
         ).toHaveLength(2);
         expect(
-            table.matchAll(new Request('http://test.com/path', 'http://example.org', RequestType.Document)),
+            table.matchAll(new Request('http://test.com/path', 'http://example.org', RequestTypes.Document)),
         ).toHaveLength(1);
         expect(
-            table.matchAll(new Request('http://test.com/path', 'http://sub.example.org', RequestType.Document)),
+            table.matchAll(new Request('http://test.com/path', 'http://sub.example.org', RequestTypes.Document)),
         ).toHaveLength(1);
     });
 });

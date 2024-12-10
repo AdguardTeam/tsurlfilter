@@ -1,5 +1,4 @@
 import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
 
 import typescript from '@rollup/plugin-typescript';
@@ -8,6 +7,7 @@ import cleanup from 'rollup-plugin-cleanup';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
+// FIXME: Check, if it is needed to use PACKAGE_OUTPUT_PATH?
 const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH
     ? `${process.env.PACKAGE_OUTPUT_PATH}/${DEFAULT_OUTPUT_PATH}`
     : DEFAULT_OUTPUT_PATH;
@@ -24,7 +24,7 @@ const externalPackages = [
     'zod',
     'commander',
     'tslib',
-    'module'
+    'module',
 ];
 
 const externalFunction = (id: string): boolean => {
@@ -51,10 +51,6 @@ const commonConfig = {
             tsconfig: 'tsconfig.build.json',
         }),
 
-        // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
-        commonjs({
-            sourceMap: false,
-        }),
         nodePolyfills(),
 
         // Allow node_modules resolution, so you can use 'external' to control
@@ -68,43 +64,42 @@ const commonConfig = {
     ],
 };
 
-const esmConfig = {
+const library = {
     input: [
         'src/index.ts',
-        'src/request-type.ts',
-        'src/rules/simple-regex.ts',
-        'src/rules/network-rule-options.ts',
+        'src/configuration.ts',
+        'src/engine/index.ts',
+        /**
+         * Separate dns-engine from the main bundle for dns-website.
+         */
+        'src/engine/dns-engine.ts',
+        'src/filterlist/index.ts',
+        'src/request/index.ts',
+        'src/rules/index.ts',
+        /**
+         * Declarative converter should be built separately,
+         * because it has some regexp which are not supported in Safari browser
+         * so it throws an error in safari-web-extension. AG-21568
+         */
+        'src/rules/declarative-converter/index.ts',
+        'src/modifiers/index.ts',
+        'src/utils/index.ts',
+        'src/version.ts',
     ],
     output: [
         {
-            dir: `${OUTPUT_PATH}/es`,
+            dir: OUTPUT_PATH,
             format: 'esm',
             sourcemap: false,
+            preserveModules: true,
+            preserveModulesRoot: 'src',
         },
     ],
     external: externalFunction,
     ...commonConfig,
 };
 
-/**
- * Declarative converter should be built separately
- * because it has some regexp which are not supported in Safari browser
- * so it throws an error in safari-web-extension. AG-21568
- */
-const esmDeclarativeConverterConfig = {
-    input: 'src/rules/declarative-converter/index.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/es/declarative-converter.js`,
-            format: 'esm',
-            sourcemap: false,
-        },
-    ],
-    external: externalFunction,
-    ...commonConfig,
-};
-
-const cliConfig = {
+const cli = {
     input: 'cli/index.ts',
     output: [
         {
@@ -139,7 +134,6 @@ const cliConfig = {
 };
 
 export default [
-    esmConfig,
-    esmDeclarativeConverterConfig,
-    cliConfig,
+    library,
+    cli,
 ];
