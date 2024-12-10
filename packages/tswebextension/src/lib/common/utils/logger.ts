@@ -1,7 +1,5 @@
 import { Logger } from '@adguard/logger';
 
-export { LogLevel } from '@adguard/logger';
-
 /**
  * Export logger implementation.
  */
