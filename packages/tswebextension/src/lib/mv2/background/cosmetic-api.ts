@@ -1,5 +1,4 @@
 /* eslint-disable jsdoc/require-returns */
-import { nanoid } from 'nanoid';
 import {
     type CosmeticResult,
     type CosmeticRule,
@@ -18,6 +17,7 @@ import { engineApi, tabsApi } from './api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 
 import type { ContentType } from '../../common/request-type';

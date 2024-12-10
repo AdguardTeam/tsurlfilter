@@ -1,5 +1,4 @@
 /* eslint-disable class-methods-use-this */
-import { nanoid } from 'nanoid';
 import browser, { type Runtime } from 'webextension-polyfill';
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
@@ -23,6 +22,7 @@ import { FilteringEventType, type FilteringLog } from '../../common/filtering-lo
 import { MessageType } from '../../common/message-constants';
 import { ContentType } from '../../common/request-type';
 import { getDomain } from '../../common/utils/url';
+import { nanoid } from '../../common/utils';
 
 export type MessageHandlerMV2 = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
 

@@ -15,8 +15,8 @@ import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { ScriptingApi } from './scripting-api';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { getDomain } from '../../common/utils/url';
+import { nanoid } from '../../common/utils';
 import { type ContentType } from '../../common/request-type';
-import { nanoid } from '../nanoid';
 
 export type ContentScriptCosmeticData = {
     /**
