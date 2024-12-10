@@ -59,14 +59,6 @@ export type ContentScriptCosmeticData = {
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi extends CosmeticApiCommon {
-    private static readonly ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
-
-    private static readonly INJECT_HIT_START = " content: 'adguard";
-
-    private static readonly HIT_SEP = encodeURIComponent(';');
-
-    private static readonly HIT_END = "' !important; }";
-
     // Timeout for cosmetic injection retry on failure.
     private static readonly INJECTION_RETRY_TIMEOUT_MS = 10;
 
