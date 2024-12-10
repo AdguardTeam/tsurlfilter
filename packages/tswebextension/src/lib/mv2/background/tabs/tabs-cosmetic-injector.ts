@@ -1,6 +1,6 @@
 import browser, { type Tabs } from 'webextension-polyfill';
 
-import { logger } from '../../../common/utils/logger';
+import { logger } from '../../../common/utils';
 import { ContentType } from '../../../common/request-type';
 import { CosmeticApi } from '../cosmetic-api';
 import { CosmeticFrameProcessor } from '../cosmetic-frame-processor';

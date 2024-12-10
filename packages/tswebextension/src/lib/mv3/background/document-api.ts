@@ -1,6 +1,6 @@
 import type { NetworkRule } from '@adguard/tsurlfilter';
 
-import { getDomain, getUpperLevelDomain } from '../../common/utils/url';
+import { getDomain, getUpperLevelDomain } from '../../common/utils';
 import { allowlistApi, AllowlistApi } from './allowlist-api';
 import { engineApi } from './engine-api';
 

@@ -6,11 +6,10 @@ import {
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 
-import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { extSessionStorage } from './ext-session-storage';
 import { appContext } from './app-context';
-import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
+import { logger, LogLevel, stringifyObjectWithoutKeys } from '../../common/utils';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';

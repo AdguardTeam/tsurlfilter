@@ -8,14 +8,16 @@ import { CosmeticRuleType } from '@adguard/agtree';
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
-import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
+import {
+    createFrameMatchQuery,
+    getDomain,
+    logger,
+    nanoid,
+} from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
-import { logger } from '../../common/utils/logger';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { ScriptingApi } from './scripting-api';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { getDomain } from '../../common/utils/url';
-import { nanoid } from '../../common/utils';
 import { type ContentType } from '../../common/request-type';
 
 export type ContentScriptCosmeticData = {

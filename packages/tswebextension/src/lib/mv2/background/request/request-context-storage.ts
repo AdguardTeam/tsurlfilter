@@ -1,8 +1,7 @@
 import type { WebRequest } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, HTTPMethod } from '@adguard/tsurlfilter';
 
-import { logger } from '../../../common/utils/logger';
-import { nanoid } from '../../../common/utils';
+import { logger, nanoid } from '../../../common/utils';
 import type { ContentType } from '../../../common/request-type';
 import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
 import type { TabFrameRequestContext } from '../tabs/tabs-api';
