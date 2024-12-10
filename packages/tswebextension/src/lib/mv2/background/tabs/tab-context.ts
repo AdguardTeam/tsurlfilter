@@ -9,7 +9,7 @@ import { Frames } from './frames';
 import type { DocumentApi } from '../document-api';
 import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { MAIN_FRAME_ID } from '../../../common/constants';
-import { isHttpOrWsRequest } from '../../../common/utils';
+import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.
