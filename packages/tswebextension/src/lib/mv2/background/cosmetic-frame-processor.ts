@@ -174,17 +174,23 @@ export class CosmeticFrameProcessor {
 
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
-        const { scriptText } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult, url);
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
+        const { scriptText } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, result);
+
+        let combinedScriptText = '';
+        if (stealthScriptText.length > 0) {
+            combinedScriptText += `${stealthScriptText}\n`;
+        }
+        combinedScriptText += scriptText;
 
         tabsApi.updateFrameContext(tabId, frameId, {
             mainFrameUrl,
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptText: `${stealthScriptText}\n${scriptText}`,
+                scriptText: combinedScriptText,
                 cssText,
             },
         });
@@ -226,16 +232,22 @@ export class CosmeticFrameProcessor {
 
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
-        const { scriptText } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult, url);
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
+        const { scriptText } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, result);
+
+        let combinedScriptText = '';
+        if (stealthScriptText.length > 0) {
+            combinedScriptText += `${stealthScriptText}\n`;
+        }
+        combinedScriptText += scriptText;
 
         tabsApi.updateFrameContext(tabId, frameId, {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptText: `${stealthScriptText}\n${scriptText}`,
+                scriptText: combinedScriptText,
                 cssText,
             },
         });
