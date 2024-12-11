@@ -1,10 +1,6 @@
 import browser from 'sinon-chrome';
 import type { ExtensionTypes } from 'webextension-polyfill';
-import type {
-    CosmeticResult,
-    MatchingResult,
-    NetworkRule,
-} from '@adguard/tsurlfilter';
+import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 
 import {
     Frame,
