@@ -201,6 +201,7 @@ import {
 import { stealthApi } from './stealth-api';
 import { SanitizeApi } from './sanitize-api';
 import { isFirefox, isOpera } from './utils/browser-detector';
+import { Assistant } from './assistant';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
