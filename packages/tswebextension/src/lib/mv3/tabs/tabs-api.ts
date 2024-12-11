@@ -400,7 +400,11 @@ export class TabsApi {
             tabContext.mainFrameRule = frameRule;
         }
 
-        this.updateFrameContext(tabId, frameId, { frameRule });
+        if (frameRule) {
+            this.updateFrameContext(tabId, frameId, { frameRule });
+        } else {
+            this.updateFrameContext(tabId, frameId, { frameRule: undefined });
+        }
     }
 
     /**

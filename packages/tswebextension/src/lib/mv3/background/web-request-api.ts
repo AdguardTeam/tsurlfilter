@@ -304,14 +304,16 @@ export class WebRequestApi {
 
         /**
          * Determine frameRule for different request types:
-         * - For Document requests, use DocumentApi to match against requestUrl and update frameUrl
-         * - For SubDocument requests, use DocumentApi to match against referrerUrl
-         * - For all other requests, get the frame rule from tabsApi.
+         * - for Document requests, use DocumentApi to match against requestUrl and update frameUrl;
+         * - for SubDocument requests, use DocumentApi to match against referrerUrl;
+         * - for all other requests, get the frame rule from tabsApi.
          *
          * The referrerUrl is calculated in {@link RequestEvents.handleOnBeforeRequest} before this point.
          */
         if (requestType === RequestType.Document) {
             frameRule = DocumentApi.matchFrame(requestUrl);
+            // We suppose that all document request are first party requests and
+            // that's why we set frameUrl to requestUrl.
             frameUrl = requestUrl;
         } else if (requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(referrerUrl);
@@ -319,7 +321,7 @@ export class WebRequestApi {
             frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
-        const result = engineApi.matchRequest({
+        const matchingResult = engineApi.matchRequest({
             requestUrl,
             frameUrl,
             requestType,
@@ -327,36 +329,12 @@ export class WebRequestApi {
             method,
         });
 
-        if (!result) {
+        if (!matchingResult) {
             return;
         }
 
-        let basicResult = result.getBasicResult();
-        let popupRule = result.getPopupRule();
-
-        // If there is a popup rule, we need to recalculate the frame rule using the referrer URL
-        if (popupRule) {
-            frameRule = DocumentApi.matchFrame(referrerUrl);
-
-            const updatedResult = engineApi.matchRequest({
-                requestUrl,
-                frameUrl: referrerUrl,
-                requestType,
-                frameRule,
-                method,
-            });
-
-            if (!updatedResult) {
-                return;
-            }
-            basicResult = updatedResult?.getBasicResult();
-            popupRule = updatedResult?.getPopupRule();
-        }
-
-        // Save matching result to the request context
-        requestContextStorage.update(requestId, {
-            matchingResult: result,
-        });
+        // Save matching result to the request context.
+        requestContextStorage.update(requestId, { matchingResult });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             CosmeticFrameProcessor.precalculateCosmetics({
@@ -368,8 +346,8 @@ export class WebRequestApi {
         }
 
         const response = RequestBlockingApi.getBlockingResponse({
-            rule: basicResult,
-            popupRule,
+            rule: matchingResult.getBasicResult(),
+            popupRule: matchingResult.getPopupRule(),
             eventId,
             requestId,
             requestUrl,
