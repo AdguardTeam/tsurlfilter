@@ -42,7 +42,7 @@ export class ElementHidingRuleConverter extends RuleConverterBase {
 
         // Change the separator if the rule contains ExtendedCSS pseudo-properties
         // such ad `{ remove: true; }`
-        if (stream.hasAnySelectorExtendedCssPseudoProperties()) {
+        if(stream.hasAnySelectorExtendedCssPseudoProperties()){
             convertedSeparator = rule.exception
                 ? CosmeticRuleSeparator.AdgExtendedCssInjectionException
                 : CosmeticRuleSeparator.AdgExtendedCssInjection;
