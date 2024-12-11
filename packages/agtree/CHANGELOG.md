@@ -12,10 +12,10 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Added
 
-- Support for `ABP's` css injection rules [FiltersCompiler#236].
+- Support for `ABP's` css injection rules [tsurlfilter#143].
 
 [2.2.1]: ttps://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.2.1
-[FiltersCompiler#236]: https://github.com/AdguardTeam/FiltersCompiler/issues/236
+[tsurlfilter#143]: https://github.com/AdguardTeam/tsurlfilter/issues/143
 
 ## [2.2.0] - 2024-11-27
 
