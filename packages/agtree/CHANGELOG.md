@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
+## [2.2.1] - 2024-13-12
+
+### Added
+
+- Support for `ABP's` css injection rules [FiltersCompiler#236].
+
+[2.2.1]: ttps://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.2.1
+[FiltersCompiler#236]: https://github.com/AdguardTeam/FiltersCompiler/issues/236
+
 ## [2.2.0] - 2024-11-27
 
 ### Removed
