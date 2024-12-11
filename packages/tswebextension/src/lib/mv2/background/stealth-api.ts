@@ -4,8 +4,7 @@ import {
     BufferRuleList,
     STEALTH_MODE_FILTER_ID,
     StealthOptionName,
-    type NetworkRule,
-    type MatchingResult,
+    type NetworkRule, type MatchingResult,
     FilterListPreprocessor,
 } from '@adguard/tsurlfilter';
 

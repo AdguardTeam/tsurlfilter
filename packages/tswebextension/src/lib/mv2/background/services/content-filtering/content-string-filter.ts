@@ -1,4 +1,8 @@
-import { type NetworkRule, type ReplaceModifier, type CosmeticRule } from '@adguard/tsurlfilter';
+import {
+    type NetworkRule,
+    type ReplaceModifier,
+    type CosmeticRule,
+} from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
 import { type RuleInfo } from '../../../../common/content-script/rule-info';

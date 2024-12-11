@@ -1,7 +1,11 @@
 /* eslint-disable jsdoc/require-returns */
-import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
+import {
+    type CosmeticResult,
+    type CosmeticRule,
+} from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
+// TODO: set up linter to fix imports order
 import { appContext } from './context';
 import {
     createFrameMatchQuery,

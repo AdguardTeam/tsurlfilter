@@ -5,7 +5,10 @@ import type { Tabs } from 'webextension-polyfill';
 
 import { identity } from 'lodash-es';
 import { Frame } from './frame';
-import { type FilteringLog, defaultFilteringLog } from '../../common/filtering-log';
+import {
+    type FilteringLog,
+    defaultFilteringLog,
+} from '../../common/filtering-log';
 import { isHttpOrWsRequest } from '../../common/utils';
 import { DocumentApi } from '../background/document-api';
 import { MAIN_FRAME_ID } from '../../common/constants';

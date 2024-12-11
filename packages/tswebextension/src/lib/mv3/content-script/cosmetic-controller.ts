@@ -1,4 +1,8 @@
-import { type IAffectedElement, type ExtCssConfiguration, ExtendedCss } from '@adguard/extended-css';
+import {
+    type IAffectedElement,
+    type ExtCssConfiguration,
+    ExtendedCss,
+} from '@adguard/extended-css';
 
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 import { MessageType } from '../../common/message-constants';

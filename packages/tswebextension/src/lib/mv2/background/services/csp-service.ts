@@ -2,7 +2,10 @@ import { getDomain } from 'tldts';
 import { NetworkRuleOption, CSP_HEADER_NAME } from '@adguard/tsurlfilter';
 
 import { ContentType } from '../../../common/request-type';
-import { type RequestContext, requestContextStorage } from '../request/request-context-storage';
+import {
+    type RequestContext,
+    requestContextStorage,
+} from '../request/request-context-storage';
 import { RequestBlockingApi } from '../request/request-blocking-api';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { nanoid } from '../../../common/utils';

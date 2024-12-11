@@ -3,7 +3,11 @@ import { LogLevel } from '@adguard/logger';
 
 import { type AnyRule } from '@adguard/agtree';
 import { WebRequestApi } from './web-request-api';
-import { type ConfigurationMV2, type ConfigurationMV2Context, configurationMV2Validator } from './configuration';
+import {
+    type ConfigurationMV2,
+    type ConfigurationMV2Context,
+    configurationMV2Validator,
+} from './configuration';
 import { Assistant } from './assistant';
 import { type LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
 import { RequestEvents } from './request';

@@ -1,7 +1,11 @@
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { Frame, TabContext, type TabInfo } from '../../../../../src/lib';
+import {
+    Frame,
+    TabContext,
+    type TabInfo,
+} from '../../../../../src/lib';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';

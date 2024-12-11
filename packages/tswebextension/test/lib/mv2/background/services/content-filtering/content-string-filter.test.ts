@@ -1,4 +1,7 @@
-import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
+import {
+    HTTPMethod,
+    RequestType,
+} from '@adguard/tsurlfilter';
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
 import { RequestContextState } from '../../../../../../src/lib';
 import {
