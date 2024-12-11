@@ -4,13 +4,10 @@ import { type WebRequest } from 'webextension-polyfill';
 
 import type { SettingsConfigMV3 } from '../configuration';
 import { searchEngineDomains } from './searchEngineDomains';
-import {
-    findHeaderByName,
-    getDomain,
-    hasHeader,
-    hasHeaderByName,
-    logger,
-} from '../../../common/utils';
+import { getDomain } from '../../../common/utils/url';
+import { logger } from '../../../common/utils/logger';
+import { findHeaderByName, hasHeader, hasHeaderByName } from '../../../common/utils/headers';
+
 import { type StealthConfig } from '../../../common/configuration';
 import { requestContextStorage, type RequestContext } from '../request';
 import { StealthActions } from '../../../common/stealth-actions';

@@ -21,7 +21,8 @@ import {
 import { FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import { MessageType } from '../../common/message-constants';
 import { ContentType } from '../../common/request-type';
-import { getDomain, nanoid } from '../../common/utils';
+import { nanoid } from '../../common/utils/nanoid';
+import { getDomain } from '../../common/utils/url';
 
 export type MessageHandlerMV2 = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
 

@@ -1,12 +1,9 @@
 import { type WebRequest } from 'webextension-polyfill';
 import { NetworkRuleOption, type NetworkRule, type RemoveHeaderModifier } from '@adguard/tsurlfilter';
 
-import {
-    findHeaderByName,
-    getDomain,
-    nanoid,
-    removeHeader,
-} from '../../../common/utils';
+import { findHeaderByName, removeHeader } from '../../../common/utils/headers';
+import { getDomain } from '../../../common/utils/url';
+import { nanoid } from '../../../common/utils/nanoid';
 import { type RequestContext, requestContextStorage } from '../request';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 

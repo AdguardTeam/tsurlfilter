@@ -140,12 +140,8 @@
 import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
 
 import { RequestType } from '@adguard/tsurlfilter';
-import {
-    getDomain,
-    isExtensionUrl,
-    isHttpOrWsRequest,
-    logger,
-} from '../../common/utils';
+import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
+import { logger } from '../../common/utils/logger';
 import { RequestEvents } from './request/events/request-events';
 import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';

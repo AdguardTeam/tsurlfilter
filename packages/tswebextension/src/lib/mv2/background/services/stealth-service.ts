@@ -2,12 +2,8 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
 import { type WebRequest } from 'webextension-polyfill';
 
-import {
-    findHeaderByName,
-    getHost,
-    isThirdPartyRequest,
-    removeHeader,
-} from '../../../common/utils';
+import { findHeaderByName, removeHeader } from '../../../common/utils/headers';
+import { getHost, isThirdPartyRequest } from '../../../common/utils/url';
 import {
     FilteringEventType,
     type FilteringLogInterface,

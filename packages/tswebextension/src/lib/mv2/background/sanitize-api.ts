@@ -1,7 +1,8 @@
 import { type WebRequest } from 'webextension-polyfill';
 
 import { type RequestContext } from './request';
-import { removeHeader, isExtensionUrl } from '../../common/utils';
+import { removeHeader } from '../../common/utils/headers';
+import { isExtensionUrl } from '../../common/utils/url';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
 
 /**

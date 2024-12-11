@@ -6,12 +6,10 @@ import { CosmeticRuleType } from '@adguard/agtree';
 
 // TODO: set up linter to fix imports order
 import { appContext } from './app-context';
-import {
-    createFrameMatchQuery,
-    getDomain,
-    logger,
-    nanoid,
-} from '../../common/utils';
+import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils/nanoid';
+import { getDomain } from '../../common/utils/url';
+import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { USER_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { buildScriptText } from './injection-helper';
