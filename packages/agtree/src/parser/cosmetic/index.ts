@@ -167,6 +167,7 @@ export const ERROR_MESSAGES = {
 };
 
 const ADG_CSS_INJECTION_PATTERN = /^(?:.+){(?:.+)}$/;
+const ABP_CSS_INJECTION_PATTERN = /\{[^}]*\}/;
 
 /**
  * `CosmeticRuleParser` is responsible for parsing cosmetic rules.
@@ -535,6 +536,18 @@ export class CosmeticRuleParser extends ParserBase {
             };
         };
 
+        const parseAbpCssInjection = (): Pick<CssInjectionRule, RestProps> | null => {
+            if (!ABP_CSS_INJECTION_PATTERN.test(rawBody)) {
+                return null;
+            }
+
+            return {
+                syntax: AdblockSyntax.Abp,
+                type: CosmeticRuleType.CssInjectionRule,
+                body: AdgCssInjectionParser.parse(rawBody, options, baseOffset + bodyStart),
+            };
+        };
+
         const parseAbpSnippetInjection = (): Pick<ScriptletInjectionRule, RestProps> | null => {
             if (!options.parseAbpSpecificRules) {
                 throw new AdblockSyntaxError(
@@ -687,8 +700,20 @@ export class CosmeticRuleParser extends ParserBase {
         // the next function is called, and so on.
         // If all functions return null, an error should be thrown.
         const separatorMap = {
-            '##': [parseUboHtmlFiltering, parseUboScriptletInjection, parseUboCssInjection, parseElementHiding],
-            '#@#': [parseUboHtmlFiltering, parseUboScriptletInjection, parseUboCssInjection, parseElementHiding],
+            '##': [
+                parseAbpCssInjection,
+                parseUboHtmlFiltering,
+                parseUboScriptletInjection,
+                parseUboCssInjection,
+                parseElementHiding,
+            ],
+            '#@#': [
+                parseAbpCssInjection,
+                parseUboHtmlFiltering,
+                parseUboScriptletInjection,
+                parseUboCssInjection,
+                parseElementHiding,
+            ],
 
             '#?#': [parseUboCssInjection, parseElementHiding],
             '#@?#': [parseUboCssInjection, parseElementHiding],
@@ -772,7 +797,6 @@ export class CosmeticRuleParser extends ParserBase {
      */
     public static generateBody(node: AnyCosmeticRule): string {
         let result = EMPTY;
-
         // Body
         switch (node.type) {
             case CosmeticRuleType.ElementHidingRule:
@@ -780,7 +804,7 @@ export class CosmeticRuleParser extends ParserBase {
                 break;
 
             case CosmeticRuleType.CssInjectionRule:
-                if (node.syntax === AdblockSyntax.Adg) {
+                if (node.syntax === AdblockSyntax.Adg || node.syntax === AdblockSyntax.Abp) {
                     result = AdgCssInjectionParser.generate(node.body);
                 } else if (node.syntax === AdblockSyntax.Ubo) {
                     if (node.body.mediaQueryList) {
