@@ -1,5 +1,11 @@
-import path from 'path';
+import path from 'node:path';
 import { ConfigurationMV2 } from '@adguard/tswebextension';
+import { fileURLToPath } from 'node:url';
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const __filename = fileURLToPath(import.meta.url);
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const __dirname = path.dirname(__filename);
 
 import { BuildOutput } from '../constants';
 
