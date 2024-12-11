@@ -613,7 +613,7 @@ export class StealthService {
             logger.error('[tswebextension.setDisableWebRTC]: error on setting the WebRTC policy ($webrtc): ', e);
 
             /**
-             * Edge case: If error ocurred while applying WebRTC
+             * Edge case: If error occurred while applying WebRTC
              * setting, it means that other extension might be
              * blocking it, we should return false as a indicator
              * of that WebRTC can not be enabled.
