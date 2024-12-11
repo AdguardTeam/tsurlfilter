@@ -35,7 +35,10 @@
         },
         "./es/*": "./dist/es/*.js",
         "./umd": "./dist/tsurlfilter.umd.js",
-        "./cli": "./dist/cli.js"
+        "./cli": {
+            "import": "./dist/cli.js",
+            "types": "./dist/types/cli/index.d.ts"
+        }
     },
     "typesVersions": {
         "*": {

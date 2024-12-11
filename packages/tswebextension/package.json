@@ -6,48 +6,52 @@
   "main": "dist/index.js",
   "typings": "dist/types/src/lib/mv2/background/index.d.ts",
   "exports": {
-    ".": "./dist/index.js",
-    "./mv3": "./dist/index.mv3.js",
-    "./mv3/utils": "./dist/mv3-utils.js",
-    "./mv3/gpc": "./dist/gpc.js",
-    "./mv3/hideDocumentReferrer": "./dist/hideDocumentReferrer.js",
-    "./mv3/content-script": "./dist/content-script.mv3.js",
-    "./content-script": "./dist/content-script.js",
-    "./content-script/css-hits-counter": "./dist/css-hits-counter.js",
-    "./cli": "./dist/cli.js",
-    "./assistant-inject": "./dist/assistant-inject.js"
-  },
-  "typesVersions": {
-    "*": {
-      "mv3": [
-        "dist/types/src/lib/mv3/background/index.d.ts"
-      ],
-      "mv3/utils": [
-        "dist/types/src/lib/mv3/utils/get-filter-name.d.ts"
-      ],
-      "mv3/content-script": [
-        "dist/types/src/lib/mv3/content-script/index.d.ts"
-      ],
-      "content-script": [
-        "dist/types/src/lib/mv2/content-script/index.d.ts"
-      ],
-      "content-script/css-hits-counter": [
-        "dist/types/src/lib/common/content-script/css-hits-counter.d.ts"
-      ],
-      "cli": [
-        "dist/types/src/cli/index.d.ts"
-      ],
-      "assistant-inject": [
-        "dist/types/src/lib/mv2/content-script/assistant-inject.d.ts"
-      ]
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./mv3": {
+      "types": "./dist/types/index.mv3.d.ts",
+      "default": "./dist/index.mv3.js"
+    },
+    "./mv3/utils": {
+      "types": "./dist/types/mv3-utils.d.ts",
+      "default": "./dist/mv3-utils.js"
+    },
+    "./mv3/gpc": {
+      "types": "./dist/types/gpc.d.ts",
+      "default": "./dist/gpc.js"
+    },
+    "./mv3/hide-document-referrer": {
+      "types": "./dist/types/hide-document-referrer.d.ts",
+      "default": "./dist/hide-document-referrer.js"
+    },
+    "./mv3/content-script": {
+      "types": "./dist/types/content-script.mv3.d.ts",
+      "default": "./dist/content-script.mv3.js"
+    },
+    "./content-script": {
+      "types": "./dist/types/content-script.d.ts",
+      "default": "./dist/content-script.js"
+    },
+    "./content-script/css-hits-counter": {
+      "types": "./dist/types/css-hits-counter.d.ts",
+      "default": "./dist/css-hits-counter.js"
+    },
+    "./cli": {
+      "types": "./dist/types/cli.d.ts",
+      "default": "./dist/cli.js"
+    },
+    "./assistant-inject": {
+      "types": "./dist/types/assistant-inject.d.ts",
+      "default": "./dist/assistant-inject.js"
     }
   },
   "bin": {
     "tswebextension": "dist/cli.js"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "author": "Adguard Software Ltd.",
   "repository": {
@@ -57,7 +61,7 @@
   },
   "license": "GPL-3.0-only",
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=18.0.0"
   },
   "bugs": {
     "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
@@ -75,7 +79,8 @@
     "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc -w",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:smoke": "cd test/builders/rollup-ts && pnpm test",
+    "test:smoke": "pnpm run test:smoke:exports && (cd test/builders/rollup-ts && pnpm test)",
+    "test:smoke:exports": "./test/smoke/exports/test.sh",
     "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",
     "report-coverage": "cat ./coverage/lcov.info | coveralls",
     "precommit": "lint-staged",
@@ -100,7 +105,7 @@
     "fs-extra": "11.1.1",
     "lodash-es": "^4.17.21",
     "lru_map": "0.4.1",
-    "nanoid": "4.0.2",
+    "nanoid": "^5.0.9",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2",
     "tldts": "^6.0.8",
     "tslib": "2.5.3",
@@ -114,8 +119,8 @@
     "@rollup/plugin-swc": "^0.4.0",
     "@rollup/plugin-typescript": "^12.1.1",
     "@swc-node/register": "^1.10.9",
-    "@swc/core": "^1.9.3",
-    "@types/chrome": "^0.0.272",
+    "@swc/core": "^1.10.1",
+    "@types/chrome": "^0.0.287",
     "@types/fs-extra": "^11.0.1",
     "@types/lodash-es": "^4.17.9",
     "@types/node": "^20.14.2",
@@ -137,6 +142,8 @@
     "rimraf": "5.0.1",
     "rollup": "^4.28.0",
     "rollup-plugin-cleanup": "^3.2.1",
+    "rollup-plugin-dts": "^6.0.2",
+    "rollup-plugin-node-externals": "^7.1.3",
     "sinon-chrome": "^3.0.1",
     "terser": "^5.21.0",
     "ts-node": "^10.9.1",

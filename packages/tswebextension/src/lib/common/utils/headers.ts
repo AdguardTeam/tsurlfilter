@@ -1,7 +1,8 @@
 import { remove } from 'lodash-es';
-import browser from 'webextension-polyfill';
-import HttpHeadersItemType = browser.WebRequest.HttpHeadersItemType;
-import HttpHeaders = browser.WebRequest.HttpHeaders;
+import type { WebRequest } from 'webextension-polyfill';
+
+type HttpHeadersItemType = WebRequest.HttpHeadersItemType;
+type HttpHeaders = WebRequest.HttpHeaders;
 
 /**
  * Finds a header object by its name (case-insensitive).
@@ -47,5 +48,5 @@ export function hasHeader(headers: HttpHeaders, header: HttpHeadersItemType): bo
  */
 export function removeHeader(headers: HttpHeaders, headerName: string): boolean {
     const targetName = headerName.toLowerCase();
-    return remove(headers, (header) => header.name.toLowerCase() === targetName).length > 0;
+    return remove(headers, (header: HttpHeadersItemType) => header.name.toLowerCase() === targetName).length > 0;
 }
