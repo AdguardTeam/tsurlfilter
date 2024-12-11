@@ -665,8 +665,18 @@ describe('Converter integration tests', () => {
                 },
                 {
                     actual: '##.banner { remove: true; }',
-                    expected: ['#$?.banner { remove: true; }'],
+                    expected: ['#$?#.banner { remove: true; }'],
                     shouldConvert: true,
+                },
+                {
+                    actual: '##div[foo="yay{"]',
+                    expected: ['##div[foo="yay{"]'],
+                    shouldConvert: false,
+                },
+                {
+                    actual: '##div[foo="yay{"][href="yay}"]',
+                    expected: ['##div[foo="yay{"][href="yay}"]'],
+                    shouldConvert: false,
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
