@@ -1,5 +1,4 @@
 import { type WebRequest } from 'webextension-polyfill';
-import { nanoid } from 'nanoid';
 import {
     type NetworkRule,
     HTTPMethod,
@@ -13,6 +12,7 @@ import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 import { type AppContext } from '../../../../../src/lib/mv2/background/context';
 import { ContentType } from '../../../../../src/lib/common/request-type';
+import { nanoid } from '../../../../../src/lib/common/utils/nanoid';
 import { StealthService } from '../../../../../src/lib/mv2/background/services/stealth-service';
 import { StealthActions } from '../../../../../src/lib/common/stealth-actions';
 import { type RequestContext, RequestContextState } from '../../../../../src/lib';

@@ -1,8 +1,8 @@
-import { nanoid } from 'nanoid';
 import { NetworkRuleOption, type NetworkRule, type RemoveParamModifier } from '@adguard/tsurlfilter';
 
 import { requestContextStorage } from '../request';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
+import { nanoid } from '../../../common/utils/nanoid';
 import { getDomain } from '../../../common/utils/url';
 
 /**

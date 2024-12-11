@@ -8,7 +8,7 @@ import {
 import { requestContextStorage, type RequestContext } from '../request';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { ContentType } from '../../../common/request-type';
-import { nanoid } from '../../nanoid';
+import { nanoid } from '../../../common/utils/nanoid';
 
 /**
  * Permissions Policy service.

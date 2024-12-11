@@ -12,6 +12,26 @@ export class CosmeticApiCommon {
     protected static readonly CSS_SELECTORS_PER_LINE = 50;
 
     /**
+     * Element hiding CSS style beginning.
+     */
+    protected static readonly ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
+
+    /**
+     * CSS style declaration for hit stats.
+     */
+    protected static readonly INJECT_HIT_START = " content: 'adguard";
+
+    /**
+     * Separator for hit stats.
+     */
+    protected static readonly HIT_SEP = encodeURIComponent(';');
+
+    /**
+     * Element hiding CSS style ending.
+     */
+    protected static readonly HIT_END = "' !important; }";
+
+    /**
      * Builds stylesheets from rules.
      * If `groupElemhideSelectors` is set,
      * element hiding selector are to be combined into selector lists of {@link CosmeticApi.CSS_SELECTORS_PER_LINE}.
