@@ -9,3 +9,8 @@ export * from './request-type';
 export * from './error';
 export * from './constants';
 export * from './storage';
+
+// TODO: used in adguard-api so maybe worth adding a new entry point for common utils
+// so it could be imported from '@adguard/tswebextension/utils'
+export { type EventChannelListener, EventChannel } from './utils/channels';
+export { isHttpRequest, getDomain } from './utils/url';
