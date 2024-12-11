@@ -8,14 +8,6 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
-## Unreleased
-
-### Added
-
-- Conversion ABP's `remove:true;` rules to AdGuard syntax. [FiltersCompiler#236]
-
-[FiltersCompiler#236]: https://github.com/AdguardTeam/FiltersCompiler/issues/236
-
 ## [2.2.0] - 2024-11-27
 
 ### Removed
