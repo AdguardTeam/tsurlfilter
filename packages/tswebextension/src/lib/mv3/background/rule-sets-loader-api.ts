@@ -13,6 +13,7 @@ import {
 import { getRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import browser from 'webextension-polyfill';
 import { getErrorMessage, logger } from '../../common';
+import { type RuleSetsCache } from './rule-sets-cache';
 
 const JSON_ARRAY_OPENING_BRACKET = '[';
 const JSON_ARRAY_CLOSING_BRACKET = ']';
@@ -46,7 +47,7 @@ export class RuleSetsLoaderApi {
      * Cache for already created rulesets. Needed to avoid multiple loading
      * of the same ruleset.
      */
-    private static ruleSetsCache: Map<string, IRuleSet>;
+    private static ruleSetsCacheMap: Map<string, RuleSetsCache> = new Map();
 
     /**
      * Path to rule sets cache directory to invalidate it when path changes.
@@ -74,14 +75,14 @@ export class RuleSetsLoaderApi {
      * Creates new {@link RuleSetsLoaderApi}.
      *
      * @param ruleSetsPath Path to rule sets directory.
+     * @param ruleSetsCache Cache for already created rulesets.
      */
-    constructor(ruleSetsPath: string) {
+    constructor(ruleSetsPath: string, ruleSetsCache: RuleSetsCache) {
         this.ruleSetsPath = ruleSetsPath;
         this.isInitialized = false;
 
-        if (RuleSetsLoaderApi.ruleSetsCachePath !== ruleSetsPath) {
-            RuleSetsLoaderApi.ruleSetsCachePath = ruleSetsPath;
-            RuleSetsLoaderApi.ruleSetsCache = new Map();
+        if (!RuleSetsLoaderApi.ruleSetsCacheMap.has(ruleSetsPath)) {
+            RuleSetsLoaderApi.ruleSetsCacheMap.set(ruleSetsPath, ruleSetsCache);
         }
     }
 
@@ -275,7 +276,7 @@ export class RuleSetsLoaderApi {
         ruleSetId: string,
         filterList: IFilter[],
     ): Promise<IRuleSet> {
-        const ruleSetCache = RuleSetsLoaderApi.ruleSetsCache.get(ruleSetId);
+        const ruleSetCache = RuleSetsLoaderApi.ruleSetsCacheMap.get(this.ruleSetsPath)?.get(ruleSetId);
         if (ruleSetCache) {
             return ruleSetCache;
         }
@@ -329,7 +330,7 @@ export class RuleSetsLoaderApi {
             ruleSetHashMap,
         );
 
-        RuleSetsLoaderApi.ruleSetsCache.set(ruleSetId, ruleset);
+        RuleSetsLoaderApi.ruleSetsCacheMap.get(this.ruleSetsPath)?.set(ruleSetId, ruleset);
 
         return ruleset;
     }

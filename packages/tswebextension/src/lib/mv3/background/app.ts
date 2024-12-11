@@ -37,6 +37,7 @@ import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { RuleSetsCache } from './rule-sets-cache';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -71,6 +72,12 @@ export class TsWebExtension implements AppInterface<
     ConfigurationResult,
     MessagesHandlerMV3
 > {
+    /**
+     * Shared cache for rule sets.
+     */
+    // FIXME: separate cache for each ruleset path?
+    private static ruleSetsCache: RuleSetsCache = new RuleSetsCache();
+
     /**
      * Fires on filtering log event.
      */
@@ -270,7 +277,11 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        await FiltersApi.syncFiltersWithStorage(config.staticFiltersIds, config.ruleSetsPath);
+        await FiltersApi.syncFiltersWithStorage(
+            config.staticFiltersIds,
+            config.ruleSetsPath,
+            TsWebExtension.ruleSetsCache,
+        );
 
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
@@ -372,6 +383,9 @@ export class TsWebExtension implements AppInterface<
 
             // Update rulesets in declarative filtering log.
             TsWebExtension.updateRuleSetsForFilteringLog(ruleSets, configuration.declarativeLogEnabled);
+
+            TsWebExtension.ruleSetsCache.clear(enabledRuleSetsIds); // FIXME: really needed?
+            TsWebExtension.ruleSetsCache.unloadContents();
 
             res.staticFilters = staticRuleSets;
         } else {
@@ -623,11 +637,12 @@ export class TsWebExtension implements AppInterface<
         staticFilters: IFilter[],
     ): Promise<IRuleSet[]> {
         // Wrap filters into rule sets
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
         const manifest = browser.runtime.getManifest();
         if (!manifest.declarative_net_request) {
             throw new Error('Cannot find declarative_net_request in manifest');
         }
+
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath, TsWebExtension.ruleSetsCache);
 
         // Note: we cannot create rulesets only for enabled filters because we
         // need to get all rulesets' counters for checking limits on the client.
