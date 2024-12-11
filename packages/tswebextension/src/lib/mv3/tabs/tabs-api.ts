@@ -8,10 +8,11 @@ import {
     isHttpRequest,
     logger,
 } from '../../common/utils';
-import { type FrameRequestContext, TabContext } from './tab-context';
-import { type Frame } from './frame';
 import { DocumentApi } from '../background/document-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
+
+import { type FrameRequestContext, TabContext } from './tab-context';
+import { type Frame } from './frame';
 
 /**
  * Request context data related to the tab's frame.

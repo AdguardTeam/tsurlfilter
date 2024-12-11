@@ -2,7 +2,6 @@
 import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { appContext } from './context';
 import {
     createFrameMatchQuery,
     getDomain,
@@ -11,15 +10,16 @@ import {
 } from '../../common/utils';
 import { USER_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { getErrorMessage } from '../../common/error';
+import { CosmeticApiCommon } from '../../common/cosmetic-api';
+import type { ContentType } from '../../common/request-type';
+
+import { appContext } from './context';
 import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
 import { engineApi, tabsApi } from './api';
-import { getErrorMessage } from '../../common/error';
-import { CosmeticApiCommon } from '../../common/cosmetic-api';
-
-import type { ContentType } from '../../common/request-type';
 
 export type ApplyCosmeticRulesParams = {
     tabId: number,

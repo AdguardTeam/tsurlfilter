@@ -1,4 +1,5 @@
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+
 import { CosmeticApi } from '../cosmetic-api';
 import { createHidingCssRule, AttributeMatching } from '../../common/hidden-style';
 import { BACKGROUND_TAB_ID } from '../../../common/constants';

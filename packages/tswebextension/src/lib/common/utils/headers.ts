@@ -1,5 +1,6 @@
 import { remove } from 'lodash-es';
 import browser from 'webextension-polyfill';
+
 import HttpHeadersItemType = browser.WebRequest.HttpHeadersItemType;
 import HttpHeaders = browser.WebRequest.HttpHeaders;
 

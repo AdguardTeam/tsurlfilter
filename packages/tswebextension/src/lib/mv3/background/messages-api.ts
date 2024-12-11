@@ -4,10 +4,6 @@ import { getDomain } from 'tldts';
 
 import type { CookieRule } from '../../common/content-script/cookie-controller';
 import { logger, isEmptySrcFrame, nanoid } from '../../common/utils';
-
-import type { TsWebExtension } from './app';
-import { Assistant } from './assistant';
-import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
 import {
     getAssistantCreateRulePayloadValidator,
     getSaveCookieLogEventPayloadValidator,
@@ -19,9 +15,13 @@ import {
 import { MessageType } from '../../common/message-constants';
 import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import { ContentType } from '../../common/request-type';
+import type { TabsApi } from '../tabs/tabs-api';
+
+import type { TsWebExtension } from './app';
+import { Assistant } from './assistant';
+import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
 import { appContext } from './app-context';
 import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
-import type { TabsApi } from '../tabs/tabs-api';
 
 export type MessagesHandlerMV3 = (
     message: Message,

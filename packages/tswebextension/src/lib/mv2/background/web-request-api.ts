@@ -171,8 +171,6 @@
 import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { tabsApi, engineApi, documentApi } from './api';
-import { Frame } from './tabs/frame';
 import {
     findHeaderByName,
     isHttpOrWsRequest,
@@ -182,6 +180,8 @@ import {
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 
+import { Frame } from './tabs/frame';
+import { tabsApi, engineApi, documentApi } from './api';
 import { removeHeadersService } from './services/remove-headers-service';
 import { Assistant } from './assistant';
 import { CosmeticApi } from './cosmetic-api';
@@ -191,7 +191,6 @@ import { ContentFiltering } from './services/content-filtering/content-filtering
 import { cspService } from './services/csp-service';
 import { permissionsPolicyService } from './services/permissions-policy-service';
 import { TrustedTypesService } from './services/trusted-types-service';
-
 import {
     hideRequestInitiatorElement,
     RequestEvents,

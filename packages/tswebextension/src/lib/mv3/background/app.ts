@@ -1,14 +1,20 @@
 import browser from 'webextension-polyfill';
 import { Filter, type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { FilterListPreprocessor } from '@adguard/tsurlfilter';
-
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
-import { extSessionStorage } from './ext-session-storage';
-import { appContext } from './app-context';
+
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
+import { tabsApi } from '../tabs/tabs-api';
+import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
+import { type AppInterface } from '../../common/app';
+import { defaultFilteringLog } from '../../common/filtering-log';
+import { getErrorMessage } from '../../common/error';
+import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 
+import { extSessionStorage } from './ext-session-storage';
+import { appContext } from './app-context';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
@@ -18,15 +24,9 @@ import RuleSetsLoaderApi from './rule-sets-loader-api';
 import { Assistant } from './assistant';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { RequestEvents } from './request/events/request-events';
-import { tabsApi } from '../tabs/tabs-api';
-import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 import { WebRequestApi } from './web-request-api';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { allowlistApi } from './allowlist-api';
-import { type AppInterface } from '../../common/app';
-import { defaultFilteringLog } from '../../common/filtering-log';
-import { getErrorMessage } from '../../common/error';
-import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,

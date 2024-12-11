@@ -1,8 +1,9 @@
 import { type ScriptletData } from '@adguard/tsurlfilter';
 import { type Source } from '@adguard/scriptlets';
 
-import { appContext } from './app-context';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
+
+import { appContext } from './app-context';
 
 /**
  * Trusted Types API used to describe to appease the type checker.

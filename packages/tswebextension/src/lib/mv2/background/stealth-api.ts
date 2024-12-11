@@ -9,14 +9,15 @@ import {
     FilterListPreprocessor,
 } from '@adguard/tsurlfilter';
 
-import { StealthService } from './services/stealth-service';
-import { type RequestContext } from './request';
-import { appContext, type AppContext } from './context';
 import { defaultFilteringLog, type FilteringLogInterface } from '../../common/filtering-log';
 import { type StealthConfig } from '../../common/configuration';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils';
 import { StealthActions } from '../../common/stealth-actions';
+
+import { appContext, type AppContext } from './context';
+import { type RequestContext } from './request';
+import { StealthService } from './services/stealth-service';
 
 /**
  * Stealth api implementation.

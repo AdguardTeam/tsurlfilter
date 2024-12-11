@@ -57,6 +57,19 @@ module.exports = {
             items: 3,
             'max-len': MAX_LINE_LENGTH,
         }],
+        'import/order': [
+            'error',
+            {
+                groups: [
+                    'builtin',
+                    'external',
+                    'internal',
+                    'parent',
+                    'index',
+                ],
+                'newlines-between': 'always',
+            },
+        ],
 
         // Force proper import and export of types
         '@typescript-eslint/consistent-type-imports': [

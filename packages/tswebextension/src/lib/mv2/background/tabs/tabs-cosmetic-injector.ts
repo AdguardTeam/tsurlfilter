@@ -4,13 +4,14 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { isHttpOrWsRequest, isHttpRequest, logger } from '../../../common/utils';
 import { ContentType } from '../../../common/request-type';
 import { CosmeticApi } from '../cosmetic-api';
-import { Frame } from './frame';
-import { TabContext } from './tab-context';
 import type { EngineApi } from '../engine-api';
 import type { DocumentApi } from '../document-api';
-import type { TabsApi } from './tabs-api';
 import { MAIN_FRAME_ID } from '../../../common/constants';
 import { appContext } from '../context';
+
+import type { TabsApi } from './tabs-api';
+import { TabContext } from './tab-context';
+import { Frame } from './frame';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.

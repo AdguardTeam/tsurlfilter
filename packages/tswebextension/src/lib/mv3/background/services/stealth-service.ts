@@ -3,7 +3,6 @@ import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard
 import { type WebRequest } from 'webextension-polyfill';
 
 import type { SettingsConfigMV3 } from '../configuration';
-import { searchEngineDomains } from './searchEngineDomains';
 import {
     findHeaderByName,
     getDomain,
@@ -16,6 +15,8 @@ import { requestContextStorage, type RequestContext } from '../request';
 import { StealthActions } from '../../../common/stealth-actions';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { appContext } from '../app-context';
+
+import { searchEngineDomains } from './searchEngineDomains';
 
 /**
  * Reserved stealth rule ids for the DNR.

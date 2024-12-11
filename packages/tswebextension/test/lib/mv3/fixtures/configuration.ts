@@ -1,4 +1,5 @@
 import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+
 import { LF } from '../../../../src/lib/common/constants';
 import { type ConfigurationMV3 } from '../../../../src/lib/mv3/background/configuration';
 

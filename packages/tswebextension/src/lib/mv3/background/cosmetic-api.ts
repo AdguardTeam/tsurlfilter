@@ -1,8 +1,6 @@
 import { type CosmeticResult, type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { appContext } from './app-context';
-import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
 import {
     createFrameMatchQuery,
@@ -12,9 +10,12 @@ import {
 } from '../../common/utils';
 import { getErrorMessage } from '../../common/error';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
-import { ScriptingApi } from './scripting-api';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { type ContentType } from '../../common/request-type';
+
+import { ScriptingApi } from './scripting-api';
+import { engineApi } from './engine-api';
+import { appContext } from './app-context';
 
 export type ContentScriptCosmeticData = {
     /**

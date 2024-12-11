@@ -1,5 +1,6 @@
 import { z as zod } from 'zod';
 import { preprocessedFilterListValidator } from '@adguard/tsurlfilter';
+
 import { configurationValidator, settingsConfigValidator } from '../../common/configuration';
 
 /**

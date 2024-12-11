@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-import { program } from 'commander';
 import { fileURLToPath } from 'url';
 import path from 'path';
+
+import { program } from 'commander';
 
 import { copyWar } from './copyWar';
 

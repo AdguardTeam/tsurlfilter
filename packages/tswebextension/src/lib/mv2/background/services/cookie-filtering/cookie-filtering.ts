@@ -1,5 +1,6 @@
 import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
+
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
 import {
     createFrameMatchQuery,
@@ -9,11 +10,12 @@ import {
 } from '../../../../common/utils';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
-import CookieUtils from './utils';
 import { type RequestContext, requestContextStorage } from '../../request';
 import { engineApi, tabsApi } from '../../api';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
 import { ContentType } from '../../../../common/request-type';
+
+import CookieUtils from './utils';
 
 /**
  * Cookie filtering.

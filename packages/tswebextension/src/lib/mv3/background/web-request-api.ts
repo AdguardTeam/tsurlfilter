@@ -138,27 +138,28 @@
  *                                       └─────────────────────────────┘.
  */
 import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
-
 import { RequestType } from '@adguard/tsurlfilter';
+
 import {
     getDomain,
     isExtensionUrl,
     isHttpOrWsRequest,
     logger,
 } from '../../common/utils';
+import { tabsApi } from '../tabs/tabs-api';
+import { getErrorMessage } from '../../common/error';
+import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { companiesDbService } from '../../common/companies-db-service';
+
 import { RequestEvents } from './request/events/request-events';
 import { type RequestData } from './request/events/request-event';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { engineApi } from './engine-api';
-import { tabsApi } from '../tabs/tabs-api';
 import { requestContextStorage } from './request/request-context-storage';
 import { DocumentApi } from './document-api';
 import { CosmeticApi } from './cosmetic-api';
-import { getErrorMessage } from '../../common/error';
-import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
-import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { RequestBlockingApi } from './request/request-blocking-api';
-import { companiesDbService } from '../../common/companies-db-service';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { declarativeFilteringLog } from './declarative-filtering-log';

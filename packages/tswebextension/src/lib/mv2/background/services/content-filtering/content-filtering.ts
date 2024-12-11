@@ -6,10 +6,11 @@ import {
     NetworkRuleOption,
 } from '@adguard/tsurlfilter';
 
-import { ContentStringFilter } from './content-string-filter';
-import { ContentStream } from './content-stream';
 import type { RequestContext } from '../../request';
 import { defaultFilteringLog } from '../../../../common/filtering-log';
+
+import { ContentStringFilter } from './content-string-filter';
+import { ContentStream } from './content-stream';
 
 /**
  * Content filtering module.
