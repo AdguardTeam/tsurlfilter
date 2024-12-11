@@ -2,15 +2,15 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
 import { type WebRequest } from 'webextension-polyfill';
 
-import type { SettingsConfigMV3 } from '../configuration';
-import { getDomain } from '../../../common/utils/url';
-import { logger } from '../../../common/utils/logger';
-import { findHeaderByName, hasHeader, hasHeaderByName } from '../../../common/utils/headers';
 import { type StealthConfig } from '../../../common/configuration';
-import { requestContextStorage, type RequestContext } from '../request';
-import { StealthActions } from '../../../common/stealth-actions';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
+import { StealthActions } from '../../../common/stealth-actions';
+import { findHeaderByName, hasHeader, hasHeaderByName } from '../../../common/utils/headers';
+import { logger } from '../../../common/utils/logger';
+import { getDomain } from '../../../common/utils/url';
 import { appContext } from '../app-context';
+import type { SettingsConfigMV3 } from '../configuration';
+import { requestContextStorage, type RequestContext } from '../request';
 
 import { searchEngineDomains } from './searchEngineDomains';
 

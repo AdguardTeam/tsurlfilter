@@ -6,8 +6,8 @@ import {
     NetworkRuleOption,
 } from '@adguard/tsurlfilter';
 
-import type { RequestContext } from '../../request';
 import { defaultFilteringLog } from '../../../../common/filtering-log';
+import type { RequestContext } from '../../request';
 
 import { ContentStringFilter } from './content-string-filter';
 import { ContentStream } from './content-stream';

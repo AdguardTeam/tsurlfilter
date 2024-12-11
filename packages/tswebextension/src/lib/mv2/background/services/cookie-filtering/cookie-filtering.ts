@@ -8,10 +8,10 @@ import { logger } from '../../../../common/utils/logger';
 import { nanoid } from '../../../../common/utils/nanoid';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
-import { type RequestContext, requestContextStorage } from '../../request';
-import { engineApi, tabsApi } from '../../api';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
 import { ContentType } from '../../../../common/request-type';
+import { engineApi, tabsApi } from '../../api';
+import { type RequestContext, requestContextStorage } from '../../request';
 
 import CookieUtils from './utils';
 

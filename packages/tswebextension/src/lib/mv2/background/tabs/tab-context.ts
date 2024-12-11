@@ -3,10 +3,10 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 import type { Tabs } from 'webextension-polyfill';
 
-import type { DocumentApi } from '../document-api';
-import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { MAIN_FRAME_ID } from '../../../common/constants';
+import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
+import type { DocumentApi } from '../document-api';
 
 import { Frame } from './frame';
 

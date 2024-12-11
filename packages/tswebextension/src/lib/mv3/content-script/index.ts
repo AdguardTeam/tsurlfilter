@@ -1,5 +1,5 @@
-import { CookieController } from './cookie-controller';
 import { initAssistant } from './assistant';
+import { CookieController } from './cookie-controller';
 import { CosmeticController } from './cosmetic-controller';
 
 interface CustomWindow extends Window {
