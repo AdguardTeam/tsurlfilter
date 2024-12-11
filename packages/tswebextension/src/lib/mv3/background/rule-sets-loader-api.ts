@@ -183,7 +183,7 @@ export class RuleSetsLoaderApi {
         //                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
         const metadataRuleset = RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath];
-        const metadataRange = metadataRuleset.getByteRange(ruleSetId, RuleSetByteRangeCategory.DeclarativeMetadata);
+        const metadataRange = metadataRuleset.getByteRange(ruleSetId, RuleSetByteRangeCategory.MetadataRule);
         const fullRange = metadataRuleset.getByteRange(ruleSetId, RuleSetByteRangeCategory.Full);
 
         // After the metadata rule, there may be a comma or a closing bracket.
