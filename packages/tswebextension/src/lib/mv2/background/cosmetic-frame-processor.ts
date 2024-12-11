@@ -1,11 +1,12 @@
 import { RequestType } from '@adguard/tsurlfilter';
 
-import { isHttpRequest } from '../../common/utils';
 import { MAIN_FRAME_ID } from '../../common/constants';
-import { CosmeticApi } from './cosmetic-api';
+import { isHttpRequest } from '../../common/utils/url';
+
 import { documentApi, engineApi, tabsApi } from './api';
-import { Frame } from './tabs/frame';
+import { CosmeticApi } from './cosmetic-api';
 import { stealthApi } from './stealth-api';
+import { Frame } from './tabs/frame';
 
 /**
  * Precalculate cosmetic props.

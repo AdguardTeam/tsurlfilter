@@ -3,11 +3,11 @@ import { getHostname } from 'tldts';
 import { NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
-import { logger } from '../../../common/utils';
-import { isChromium } from '../utils/browser-detector';
+import { ContentType } from '../../../common/request-type';
+import { logger } from '../../../common/utils/logger';
 import type { ConfigurationMV2 } from '../configuration';
 import type { TabsApi } from '../tabs/tabs-api';
-import { ContentType } from '../../../common/request-type';
+import { isChromium } from '../utils/browser-detector';
 
 /**
  * Params for {@link DocumentBlockingService.getDocumentBlockingResponse}.

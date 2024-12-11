@@ -7,11 +7,6 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
-import { createNetworkRule } from '../../../../../helpers/rule-creator';
-import { MockFilteringLog } from '../../../../common/mocks';
-
-import HttpHeaders = polyfillBrowser.WebRequest.HttpHeaders;
-import { getNetworkRuleFields } from '../../helpers/rule-fields';
 import { BrowserCookieApi } from '../../../../../../src/lib/common/cookie-filtering/browser-cookie-api';
 import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
 import {
@@ -23,6 +18,11 @@ import {
 } from '../../../../../../src/lib';
 import { ContentType } from '../../../../../../src/lib/common/request-type';
 import { FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
+import { createNetworkRule } from '../../../../../helpers/rule-creator';
+import { MockFilteringLog } from '../../../../common/mocks';
+import { getNetworkRuleFields } from '../../helpers/rule-fields';
+
+import HttpHeaders = polyfillBrowser.WebRequest.HttpHeaders;
 
 vi.mock('../../../../../../src/lib/common/utils/logger');
 vi.mock('../../../../../../src/lib/common/cookie-filtering/browser-cookie-api');
