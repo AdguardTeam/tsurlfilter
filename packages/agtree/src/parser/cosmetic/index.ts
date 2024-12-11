@@ -548,7 +548,7 @@ export class CosmeticRuleParser extends ParserBase {
             const hasCssBlockClose = rawBody.indexOf(CSS_BLOCK_CLOSE) !== -1;
 
             // if either CSS block open or close characters are missing, return null
-            if (!hasCssBlockOpen || !hasCssBlockClose) {
+            if (!hasCssBlockOpen && !hasCssBlockClose) {
                 return null;
             }
 
