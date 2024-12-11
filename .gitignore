@@ -6,6 +6,7 @@ node_modules
 .rpt2_cache
 .nx
 .pnpm-store
+.eslintcache
 
 # IDEA files
 .idea
