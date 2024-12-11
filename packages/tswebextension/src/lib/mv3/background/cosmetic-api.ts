@@ -1,8 +1,4 @@
-import {
-    type CosmeticResult,
-    type CosmeticRule,
-    type ScriptletData,
-} from '@adguard/tsurlfilter';
+import { type CosmeticResult, type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
 import { appContext } from './app-context';

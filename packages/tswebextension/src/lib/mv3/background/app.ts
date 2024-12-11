@@ -1,9 +1,5 @@
 import browser from 'webextension-polyfill';
-import {
-    Filter,
-    type IFilter,
-    type IRuleSet,
-} from '@adguard/tsurlfilter/es/declarative-converter';
+import { Filter, type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 
 import { LogLevel } from '@adguard/logger';
@@ -20,11 +16,7 @@ import { engineApi } from './engine-api';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import RuleSetsLoaderApi from './rule-sets-loader-api';
 import { Assistant } from './assistant';
-import {
-    type ConfigurationMV3,
-    type ConfigurationMV3Context,
-    configurationMV3Validator,
-} from './configuration';
+import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { RequestEvents } from './request/events/request-events';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
