@@ -11,6 +11,7 @@ import {
 import { Assistant } from './assistant';
 import { type LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
 import { RequestEvents } from './request';
+import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
 import type { AppContext } from './context';
 import type { StealthApi } from './stealth-api';
@@ -22,7 +23,6 @@ import type { DocumentBlockingService } from './services/document-blocking-servi
 import type { MessagesApi, MessageHandlerMV2 } from './messages-api';
 import type { ExtSessionStorage } from './ext-session-storage';
 import { type AppInterface } from '../../common/app';
-import { type EventChannel } from '../../common/utils/channels';
 import type { FilteringLog, FilteringLogEvent } from '../../common/filtering-log';
 
 /**

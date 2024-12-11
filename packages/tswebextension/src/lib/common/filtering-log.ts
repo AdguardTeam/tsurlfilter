@@ -1,7 +1,7 @@
 import { type SourceRuleAndFilterId } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type RuleInfo, type RuleInfoOptional } from './content-script/rule-info';
 import type { ContentType } from './request-type';
-import { EventChannel, type EventChannelInterface } from './utils';
+import { EventChannel, type EventChannelInterface } from './utils/channels';
 
 // TODO: Add 'is' prefix to cssRule, scriptRule and contentRule properties.
 

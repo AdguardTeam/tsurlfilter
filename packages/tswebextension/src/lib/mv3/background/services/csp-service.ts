@@ -5,7 +5,7 @@ import { ContentType } from '../../../common/request-type';
 import { type RequestContext, requestContextStorage } from '../request/request-context-storage';
 import { RequestBlockingApi } from '../request/request-blocking-api';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
-import { nanoid } from '../../nanoid';
+import { nanoid } from '../../../common/utils/nanoid';
 
 /**
  * Content Security Policy Headers filtering service module.

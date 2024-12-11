@@ -19,12 +19,16 @@ import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type AnyRule } from '@adguard/agtree';
 
 import { getErrorMessage } from '../../common/error';
+import {
+    isHttpOrWsRequest,
+    isHttpRequest,
+    getHost,
+} from '../../common/utils/url';
 import { logger } from '../../common/utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
 import { allowlistApi } from './allowlist-api';
 import { DocumentApi } from './document-api';
-import { getHost, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;

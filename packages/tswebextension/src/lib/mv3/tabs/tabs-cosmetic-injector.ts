@@ -7,7 +7,7 @@ import { logger } from '../../common/utils/logger';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { CosmeticApi } from '../background/cosmetic-api';
 import { CosmeticFrameProcessor } from '../background/cosmetic-frame-processor';
-import { ContentType } from '../../common';
+import { ContentType } from '../../common/request-type';
 import { appContext } from '../background/app-context';
 
 /**

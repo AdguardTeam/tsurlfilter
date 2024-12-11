@@ -1,5 +1,4 @@
 import { getDomain } from 'tldts';
-import { nanoid } from 'nanoid';
 import { NetworkRuleOption, CSP_HEADER_NAME } from '@adguard/tsurlfilter';
 
 import { ContentType } from '../../../common/request-type';
@@ -9,6 +8,7 @@ import {
 } from '../request/request-context-storage';
 import { RequestBlockingApi } from '../request/request-blocking-api';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
+import { nanoid } from '../../../common/utils/nanoid';
 
 /**
  * Content Security Policy Headers filtering service module.

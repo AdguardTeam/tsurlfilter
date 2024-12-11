@@ -1,13 +1,12 @@
-import LRUMap from 'lru_map';
-import { nanoid } from 'nanoid';
-
+import { LRUMap } from 'lru_map';
+import { nanoid } from '../../../../common/utils/nanoid';
 /**
  * Used for new type of redirects, i.e.: click2load.html.
  * This tokens are transferred to redirect and used later to unblock page after user clicked button
  * "click to load".
  */
 class RedirectsTokensCache {
-    cache = new LRUMap.LRUMap(1000);
+    cache = new LRUMap(1000);
 
     /**
      * Generates random unblock token for url and saves it to cache.
