@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-/* eslint-disable jsdoc/require-returns */
->>>>>>> eb3a2611a (move nanoid to common utils)
 import {
     type CosmeticResult,
     type CosmeticRule,
