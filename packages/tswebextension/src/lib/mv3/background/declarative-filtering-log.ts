@@ -1,7 +1,7 @@
 import { type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type DeclarativeRuleInfo, defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { requestContextStorage } from './request';
-import { logger } from '../../common/utils';
+import { logger } from '../../common/utils/logger';
 
 /**
  * Declarative filtering log that can record information about the
