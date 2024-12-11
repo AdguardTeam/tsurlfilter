@@ -25,13 +25,6 @@ export const LEGACY_EXT_CSS_ATTRIBUTE_PREFIX = '-ext-';
 export const ABP_EXT_CSS_PREFIX = '-abp';
 
 /**
- * Known CSS pseudo-elements.
- */
-export const EXT_CSS_PSEUDO_PROPERTIES = new Set([
-    '{remove:true;}',
-]);
-
-/**
  * Known _strict_ Extended CSS pseudo-classes. Please, keep this list sorted.
  * Strict means that these pseudo-classes are not supported by any browser natively,
  * and they always require Extended CSS libraries to work.

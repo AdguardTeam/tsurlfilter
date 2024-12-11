@@ -14,7 +14,6 @@ import {
     EXT_CSS_PSEUDO_CLASSES,
     EXT_CSS_PSEUDO_CLASSES_STRICT,
     LEGACY_EXT_CSS_ATTRIBUTE_PREFIX,
-    EXT_CSS_PSEUDO_PROPERTIES,
 } from '../../converter/data/css';
 
 /**
@@ -447,15 +446,6 @@ export class CssTokenStream {
     }
 
     /**
-     * Checks whether the token stream contains any Extended CSS pseudo-properties, such as `{ remove: true; }`.
-     *
-     * @returns `true` if the stream contains any Extended CSS pseudo-properties, otherwise `false`.
-     */
-    public hasAnySelectorExtendedCssPseudoProperties(): boolean {
-        return this.hasAnySelectorExtendedCssPseudoPropertiesInternal(EXT_CSS_PSEUDO_PROPERTIES);
-    }
-
-    /**
      * Strictly checks whether the token stream contains any Extended CSS elements, such as `:contains()`.
      * Some Extended CSS elements are natively supported by browsers, like `:has()`.
      * This method is used to check for Extended CSS elements that are not natively supported by browsers,
@@ -503,50 +493,6 @@ export class CssTokenStream {
 
                 // do not check these tokens again
                 i = j;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Checks whether the token stream contains Extended CSS pseudo-properties, such as `{ remove: true; }`.
-     *
-     * @param pseudos Set of pseudo-properties to check for.
-     *
-     * @returns `true` if the stream contains any Extended CSS pseudo-properties, otherwise `false`.
-     */
-    private hasAnySelectorExtendedCssPseudoPropertiesInternal(pseudos: Set<string>): boolean {
-        for (let i = 0; i < this.tokens.length; i += 1) {
-            const token = this.tokens[i];
-
-            if (token.type === TokenType.OpenCurlyBracket) {
-                let j = i + 1;
-                let curlyBracketCount = 1;
-
-                // skip whitespace
-                while (j < this.tokens.length && curlyBracketCount > 0) {
-                    const currentToken = this.tokens[j];
-
-                    if (currentToken.type === TokenType.OpenCurlyBracket) {
-                        curlyBracketCount += 1;
-                    } else if (currentToken.type === TokenType.CloseCurlyBracket) {
-                        curlyBracketCount -= 1;
-                    }
-
-                    j += 1;
-                }
-
-                if (curlyBracketCount === 0) {
-                    const attr = this.source.slice(this.tokens[i].start, this.tokens[j - 1].end);
-                    const trimmedAttr = attr.replaceAll(/\s/g, '');
-                    if (pseudos.has(trimmedAttr)) {
-                        return true;
-                    }
-                }
-
-                // do not check these tokens again
-                i = j - 1;
             }
         }
 
