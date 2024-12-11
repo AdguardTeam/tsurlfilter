@@ -23,8 +23,8 @@ import {
     isHttpOrWsRequest,
     isHttpRequest,
     getHost,
-    logger,
-} from '../../common/utils';
+} from '../../common/utils/url';
+import { logger } from '../../common/utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
 import { allowlistApi } from './allowlist-api';

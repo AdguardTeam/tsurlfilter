@@ -3,7 +3,7 @@ import type { ResourcesService } from '../resources-service';
 
 import { redirectsCache } from './redirects-cache';
 import { redirectsTokensCache } from './redirects-tokens-cache';
-import { logger } from '../../../../common/utils';
+import { logger } from '../../../../common/utils/logger';
 
 /**
  * Service for working with redirects.

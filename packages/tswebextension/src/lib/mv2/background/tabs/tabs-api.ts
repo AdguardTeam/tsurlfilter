@@ -1,7 +1,8 @@
 import browser, { type ExtensionTypes, type Tabs } from 'webextension-polyfill';
 import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
 
-import { EventChannel, getDomain, isHttpRequest } from '../../../common/utils';
+import { EventChannel } from '../../../common/utils/channels';
+import { getDomain, isHttpRequest } from '../../../common/utils/url';
 import type { DocumentApi } from '../document-api';
 import { type FrameRequestContext, TabContext } from './tab-context';
 import { type Frame } from './frame';

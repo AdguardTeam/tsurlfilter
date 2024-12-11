@@ -11,7 +11,8 @@ import {
 import { Assistant } from './assistant';
 import { type LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
 import { RequestEvents } from './request';
-import { type EventChannel, logger } from '../../common/utils';
+import { type EventChannel } from '../../common/utils/channels';
+import { logger } from '../../common/utils/logger';
 import type { AppContext } from './context';
 import type { StealthApi } from './stealth-api';
 import type { TabsApi } from './tabs';

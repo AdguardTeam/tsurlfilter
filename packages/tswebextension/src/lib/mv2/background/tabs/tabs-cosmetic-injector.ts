@@ -1,7 +1,8 @@
 import browser, { type Tabs } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { isHttpOrWsRequest, isHttpRequest, logger } from '../../../common/utils';
+import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
+import { logger } from '../../../common/utils/logger';
 import { ContentType } from '../../../common/request-type';
 import { CosmeticApi } from '../cosmetic-api';
 import { Frame } from './frame';

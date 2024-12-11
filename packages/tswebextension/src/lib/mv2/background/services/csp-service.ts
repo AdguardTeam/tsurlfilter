@@ -8,7 +8,7 @@ import {
 } from '../request/request-context-storage';
 import { RequestBlockingApi } from '../request/request-blocking-api';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
-import { nanoid } from '../../../common/utils';
+import { nanoid } from '../../../common/utils/nanoid';
 
 /**
  * Content Security Policy Headers filtering service module.
