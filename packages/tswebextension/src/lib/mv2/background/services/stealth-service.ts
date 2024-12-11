@@ -4,10 +4,7 @@ import { type WebRequest } from 'webextension-polyfill';
 
 import { findHeaderByName, removeHeader } from '../../../common/utils/headers';
 import { getHost, isThirdPartyRequest } from '../../../common/utils/url';
-import {
-    FilteringEventType,
-    type FilteringLogInterface,
-} from '../../../common/filtering-log';
+import { FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import type { StealthConfig } from '../../../common/configuration';
 import { StealthHelper } from '../../../common/stealth-helper';
 import { StealthActions } from '../../../common/stealth-actions';

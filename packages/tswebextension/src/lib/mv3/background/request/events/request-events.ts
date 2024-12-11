@@ -2,12 +2,13 @@ import browser, { type WebRequest } from 'webextension-polyfill';
 import { RequestType, type HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
-import { RequestEvent, type RequestData } from './request-event';
 import { tabsApi, type TabFrameRequestContext } from '../../../tabs/tabs-api';
 import { getRequestType } from '../../../../common/request-type';
 import { MAIN_FRAME_ID } from '../../../../common/constants';
 import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
 import { nanoid } from '../../../../common/utils/nanoid';
+
+import { RequestEvent, type RequestData } from './request-event';
 
 const MAX_URL_LENGTH = 1024 * 16;
 

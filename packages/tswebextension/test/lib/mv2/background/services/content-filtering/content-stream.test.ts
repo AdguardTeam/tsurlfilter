@@ -1,7 +1,6 @@
 import { TextEncoder, TextDecoder } from 'text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
 
-import { MockStreamFilter } from './mock-stream-filter';
 import { MockFilteringLog } from '../../../../common/mocks';
 import {
     DEFAULT_CHARSET,
@@ -13,6 +12,8 @@ import {
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
 import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
 import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
+
+import { MockStreamFilter } from './mock-stream-filter';
 
 vi.mock('../../../../../../src/lib/common/utils/logger');
 
