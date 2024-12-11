@@ -5,7 +5,7 @@ import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
 
 describe('CosmeticRuleParser', () => {
-    describe('CosmeticRuleParser.parse - valid Adblock Plus snippet injection rules', () => {
+    describe('CosmeticRuleParser.parse - valid Adblock Plus css injection rules', () => {
         test.each<{ actual: string; expected: NodeExpectFn<CssInjectionRule> }>([
             // single snippets - without domains
             {
