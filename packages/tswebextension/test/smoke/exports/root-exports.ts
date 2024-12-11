@@ -9,4 +9,5 @@ type PartialConfigWithAllowlist = Pick<ConfigurationMV2, 'allowlist'>;
 const config: PartialConfigWithAllowlist = { allowlist: ['google.com'] };
 assert.ok(config);
 
+// eslint-disable-next-line no-console
 console.log('Smoke test for @adguard/tswebextension passed in root-exports.ts');
