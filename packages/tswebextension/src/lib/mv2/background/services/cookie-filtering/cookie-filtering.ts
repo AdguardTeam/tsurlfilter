@@ -2,12 +2,10 @@ import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adgua
 import { getDomain } from 'tldts';
 
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
-import {
-    createFrameMatchQuery,
-    findHeaderByName,
-    logger,
-    nanoid,
-} from '../../../../common/utils';
+import { createFrameMatchQuery } from '../../../../common/utils/create-frame-match-query';
+import { findHeaderByName } from '../../../../common/utils/headers';
+import { logger } from '../../../../common/utils/logger';
+import { nanoid } from '../../../../common/utils/nanoid';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
 import { type RequestContext, requestContextStorage } from '../../request';

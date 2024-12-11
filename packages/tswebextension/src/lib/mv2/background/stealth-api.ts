@@ -12,7 +12,7 @@ import {
 import { defaultFilteringLog, type FilteringLogInterface } from '../../common/filtering-log';
 import { type StealthConfig } from '../../common/configuration';
 import { getErrorMessage } from '../../common/error';
-import { logger } from '../../common/utils';
+import { logger } from '../../common/utils/logger';
 import { StealthActions } from '../../common/stealth-actions';
 
 import { appContext, type AppContext } from './context';

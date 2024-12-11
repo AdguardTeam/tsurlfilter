@@ -2,12 +2,10 @@ import { type CosmeticResult, type CosmeticRule, type ScriptletData } from '@adg
 import { CosmeticRuleType } from '@adguard/agtree';
 
 import { tabsApi } from '../tabs/tabs-api';
-import {
-    createFrameMatchQuery,
-    getDomain,
-    logger,
-    nanoid,
-} from '../../common/utils';
+import { logger } from '../../common/utils/logger';
+import { getDomain } from '../../common/utils/url';
+import { nanoid } from '../../common/utils/nanoid';
+import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { getErrorMessage } from '../../common/error';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';

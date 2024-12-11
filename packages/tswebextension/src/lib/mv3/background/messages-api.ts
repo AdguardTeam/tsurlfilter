@@ -3,7 +3,9 @@ import browser from 'webextension-polyfill';
 import { getDomain } from 'tldts';
 
 import type { CookieRule } from '../../common/content-script/cookie-controller';
-import { logger, isEmptySrcFrame, nanoid } from '../../common/utils';
+import { logger } from '../../common/utils/logger';
+import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
+import { nanoid } from '../../common/utils/nanoid';
 import {
     getAssistantCreateRulePayloadValidator,
     getSaveCookieLogEventPayloadValidator,

@@ -1,6 +1,6 @@
 import { RequestType } from '@adguard/tsurlfilter';
 
-import { isHttpRequest } from '../../common/utils';
+import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { tabsApi } from '../tabs/tabs-api';
 import { Frame } from '../tabs/frame';

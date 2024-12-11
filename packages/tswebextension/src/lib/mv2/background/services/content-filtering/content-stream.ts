@@ -4,7 +4,7 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { type RequestContext } from '../../request';
 import { FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
-import { logger } from '../../../../common/utils';
+import { logger } from '../../../../common/utils/logger';
 
 import { type ContentStringFilterInterface } from './content-string-filter';
 import {

@@ -4,7 +4,7 @@ import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 
-import { logger, stringifyObjectWithoutKeys } from '../../common/utils';
+import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';

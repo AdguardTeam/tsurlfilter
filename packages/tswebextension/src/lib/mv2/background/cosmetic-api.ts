@@ -2,12 +2,10 @@
 import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import {
-    createFrameMatchQuery,
-    getDomain,
-    logger,
-    nanoid,
-} from '../../common/utils';
+import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils/nanoid';
+import { getDomain } from '../../common/utils/url';
+import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { USER_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';

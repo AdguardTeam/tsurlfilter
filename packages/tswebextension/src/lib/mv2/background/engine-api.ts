@@ -17,7 +17,7 @@ import {
 import { type AnyRule } from '@adguard/agtree';
 
 import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
-import { getHost, isHttpRequest } from '../../common/utils';
+import { getHost, isHttpRequest } from '../../common/utils/url';
 import { type MatchQuery } from '../../common/interfaces';
 
 import type { Allowlist } from './allowlist';

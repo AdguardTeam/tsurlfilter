@@ -171,12 +171,9 @@
 import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import {
-    findHeaderByName,
-    isHttpOrWsRequest,
-    getDomain,
-    logger,
-} from '../../common/utils';
+import { logger } from '../../common/utils/logger';
+import { findHeaderByName } from '../../common/utils/headers';
+import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 

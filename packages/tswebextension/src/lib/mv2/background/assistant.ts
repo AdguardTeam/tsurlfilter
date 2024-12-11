@@ -1,6 +1,6 @@
 import browser, { type WebNavigation } from 'webextension-polyfill';
 
-import { EventChannel } from '../../common/utils';
+import { EventChannel } from '../../common/utils/channels';
 import { MessageType } from '../../common/message-constants';
 import { MAIN_FRAME_ID } from '../../common/constants';
 

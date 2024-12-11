@@ -2,7 +2,8 @@ import { NetworkRuleOption, type NetworkRule, type RemoveParamModifier } from '@
 
 import { requestContextStorage } from '../request';
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
-import { getDomain, nanoid } from '../../../common/utils';
+import { nanoid } from '../../../common/utils/nanoid';
+import { getDomain } from '../../../common/utils/url';
 
 /**
  * Params filtering service module.

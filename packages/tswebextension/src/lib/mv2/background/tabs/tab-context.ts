@@ -6,7 +6,7 @@ import type { Tabs } from 'webextension-polyfill';
 import type { DocumentApi } from '../document-api';
 import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { MAIN_FRAME_ID } from '../../../common/constants';
-import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils';
+import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
 
 import { Frame } from './frame';
 

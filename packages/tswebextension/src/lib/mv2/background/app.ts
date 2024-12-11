@@ -2,9 +2,10 @@
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 
-import { type EventChannel, logger } from '../../common/utils';
 import { type AppInterface } from '../../common/app';
 import type { FilteringLog, FilteringLogEvent } from '../../common/filtering-log';
+import { type EventChannel } from '../../common/utils/channels';
+import { logger } from '../../common/utils/logger';
 
 import { WebRequestApi } from './web-request-api';
 import { type ConfigurationMV2, type ConfigurationMV2Context, configurationMV2Validator } from './configuration';

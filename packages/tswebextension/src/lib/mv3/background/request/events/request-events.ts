@@ -5,7 +5,8 @@ import { requestContextStorage, RequestContextState } from '../request-context-s
 import { tabsApi, type TabFrameRequestContext } from '../../../tabs/tabs-api';
 import { getRequestType } from '../../../../common/request-type';
 import { MAIN_FRAME_ID } from '../../../../common/constants';
-import { isHttpRequest, isThirdPartyRequest, nanoid } from '../../../../common/utils';
+import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
+import { nanoid } from '../../../../common/utils/nanoid';
 
 import { RequestEvent, type RequestData } from './request-event';
 

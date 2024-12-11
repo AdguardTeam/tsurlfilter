@@ -17,14 +17,10 @@ import browser from 'webextension-polyfill';
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type AnyRule } from '@adguard/agtree';
 
-import { getErrorMessage } from '../../common/error';
-import {
-    isHttpOrWsRequest,
-    isHttpRequest,
-    getHost,
-    logger,
-} from '../../common/utils';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { getErrorMessage } from '../../common/error';
+import { isHttpOrWsRequest, isHttpRequest, getHost } from '../../common/utils/url';
+import { logger } from '../../common/utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
 import { allowlistApi } from './allowlist-api';
