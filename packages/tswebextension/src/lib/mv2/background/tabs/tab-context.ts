@@ -4,13 +4,13 @@ import type { NetworkRule } from '@adguard/tsurlfilter';
 import type { Tabs } from 'webextension-polyfill';
 import { identity } from 'lodash-es';
 
-import type { DocumentApi } from '../document-api';
-import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { MAIN_FRAME_ID } from '../../../common/constants';
+import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { isHttpOrWsRequest } from '../../../common/utils/url';
+import type { DocumentApi } from '../document-api';
 
-import { Frames } from './frames';
 import { Frame } from './frame';
+import { Frames } from './frames';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.

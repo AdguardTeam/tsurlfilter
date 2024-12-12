@@ -5,12 +5,12 @@ import { logger } from '../../../common/utils/logger';
 import { ContentType } from '../../../common/request-type';
 import { CosmeticApi } from '../cosmetic-api';
 import { CosmeticFrameProcessor } from '../cosmetic-frame-processor';
-import type { DocumentApi } from '../document-api';
 import { appContext } from '../app-context';
+import type { DocumentApi } from '../document-api';
 
 import { Frame } from './frame';
-import { TabContext } from './tab-context';
 import type { TabsApi } from './tabs-api';
+import { TabContext } from './tab-context';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
