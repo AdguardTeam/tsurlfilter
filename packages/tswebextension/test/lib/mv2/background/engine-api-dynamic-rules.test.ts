@@ -17,7 +17,7 @@ import { ALLOWLIST_FILTER_ID } from '../../../../src/lib/common/constants';
 
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 
-vi.mock('../../../../src/lib/mv2/background/context');
+vi.mock('../../../../src/lib/mv2/background/app-context');
 
 /**
  * AGTree parser options to use in tests.

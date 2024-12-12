@@ -22,7 +22,7 @@ import { ContentType } from '../../../../../src/lib/common/request-type';
 vi.mock('../../../../../src/lib/mv2/background/engine-api');
 vi.mock('../../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../../src/lib/mv2/background/cosmetic-api');
-vi.mock('../../../../../src/lib/mv2/background/context');
+vi.mock('../../../../../src/lib/mv2/background/app-context');
 vi.mock('../../../../../src/lib/mv2/background/stealth-api');
 vi.mock('../../../../../src/lib/mv2/background/document-api');
 

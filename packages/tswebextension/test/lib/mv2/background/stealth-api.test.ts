@@ -14,8 +14,8 @@ import { StealthService } from '../../../../src/lib/mv2/background/services/stea
 import { StealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 import { defaultFilteringLog } from '../../../../src/lib/common/filtering-log';
 
-vi.mock('../../../../src/lib/mv2/background/context', async () => {
-    const { MockAppContext } = await import('./mocks/mock-context');
+vi.mock('../../../../src/lib/mv2/background/app-context', async () => {
+    const { MockAppContext } = await import('./mocks/mock-app-context');
     return ({
         AppContext: MockAppContext,
         appContext: new MockAppContext(),

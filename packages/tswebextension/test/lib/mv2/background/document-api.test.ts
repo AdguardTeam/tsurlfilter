@@ -16,7 +16,7 @@ import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 vi.mock('../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../src/lib/mv2/background/engine-api');
 vi.mock('../../../../src/lib/mv2/background/stealth-api');
-vi.mock('../../../../src/lib/mv2/background/context');
+vi.mock('../../../../src/lib/mv2/background/app-context');
 
 describe('Document Api', () => {
     let documentApi: DocumentApi;

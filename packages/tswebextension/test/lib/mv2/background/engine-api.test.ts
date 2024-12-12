@@ -21,7 +21,7 @@ import { getConfigurationMv2Fixture } from './fixtures/configuration';
 
 vi.mock('@adguard/tsurlfilter');
 vi.mock('../../../../src/lib/mv2/background/allowlist');
-vi.mock('../../../../src/lib/mv2/background/context');
+vi.mock('../../../../src/lib/mv2/background/app-context');
 vi.mock('../../../../src/lib/mv2/background/stealth-api');
 
 describe('Engine Api', () => {

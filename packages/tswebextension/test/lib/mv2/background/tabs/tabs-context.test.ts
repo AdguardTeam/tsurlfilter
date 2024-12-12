@@ -20,7 +20,7 @@ vi.mock('../../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../../src/lib/mv2/background/engine-api');
 vi.mock('../../../../../src/lib/mv2/background/document-api');
 vi.mock('../../../../../src/lib/mv2/background/stealth-api');
-vi.mock('../../../../../src/lib/mv2/background/context');
+vi.mock('../../../../../src/lib/mv2/background/app-context');
 
 describe('TabContext', () => {
     let tabInfo: TabInfo;
