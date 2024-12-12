@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import TextEncoding from 'text-encoding';
 
 const { TextEncoder, TextDecoder } = TextEncoding;

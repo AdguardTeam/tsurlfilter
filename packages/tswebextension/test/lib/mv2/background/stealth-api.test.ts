@@ -1,3 +1,10 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+    vi,
+} from 'vitest';
 import { MatchingResult } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../helpers/rule-creator';

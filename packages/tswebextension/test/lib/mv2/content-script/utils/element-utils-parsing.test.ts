@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { ElementUtils } from '../../../../../src/lib/common/content-script/utils/element-utils';
 
 describe('Element utils - parsing', () => {
