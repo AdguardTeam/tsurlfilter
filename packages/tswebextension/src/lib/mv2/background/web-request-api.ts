@@ -121,7 +121,7 @@
  *                                       └─────────────────────────────┘.
  *
  *
- *  Web Navigation API Event Handling:
+ * Web Navigation API Event Handling:
  *
  *                                       ┌─────────────────────────────┐
  *                                       │                             │
