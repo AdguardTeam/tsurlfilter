@@ -66,34 +66,34 @@
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │
  * Removes or modifies request           │                             │ │
- * headers based on                      │      onBeforeSendHeaders    ◄─┼┐
- * {@link MatchingResult}.               │                             │ ││
- *                                       └──────────────┬──────────────┘ ││
- *                                                      │                ││
- *                                       ┌──────────────▼──────────────┐ ││
- *                                       │                             │ ││
- *                                       │        onSendHeaders        │ ││
- *                                       │                             │ ││
- *                                       └──────────────┬──────────────┘ ││
- *                                                      │                ││
- *                                       ┌──────────────▼──────────────┐ ││
- * Removes or modifies response          │                             │ ││
- * headers based on                    ┌─┤      onHeadersReceived      │ ││
- * {@link MatchingResult}.             │ │                             │ ││
- * Modifies 'trusted-types' directive  │ └─────────────────────────────┘ ││
- * for CSP headers:                    │                                 ││.
- * @see {@link TrustedTypesService}.   │                                 ││
- *                                     │                                 ││
- *                                     │                                 ││
- *                                     │ ┌─────────────────────────────┐ ││
- *                                     │ │                             │ ││
- *                                     ├─►       onBeforeRedirect      ├─┴┤
- *                                     │ │                             │  │
- *                                     │ └─────────────────────────────┘  │
- *                                     │                                  │
- *                                     │ ┌─────────────────────────────┐  │
- *                                     │ │                             │  │
- *                                     ├─►        onAuthRequired       ├──┘
+ * headers based on                      │      onBeforeSendHeaders    ◄─┼─┐
+ * {@link MatchingResult}.               │                             │ │ │
+ *                                       └──────────────┬──────────────┘ │ │
+ *                                                      │                │ │
+ *                                       ┌──────────────▼──────────────┐ │ │
+ *                                       │                             │ │ │
+ *                                       │        onSendHeaders        │ │ │
+ *                                       │                             │ │ │
+ *                                       └──────────────┬──────────────┘ │ │
+ *                                                      │                │ │
+ *                                       ┌──────────────▼──────────────┐ │ │
+ * Removes or modifies response          │                             │ │ │
+ * headers based on                    ┌─┤      onHeadersReceived      │ │ │
+ * {@link MatchingResult}.             │ │                             │ │ │
+ * Modifies 'trusted-types' directive  │ └─────────────────────────────┘ │ │
+ * for CSP headers:                    │                                 │ │.
+ * @see {@link TrustedTypesService}.   │                                 │ │
+ *                                     │                                 │ │
+ *                                     │                                 │ │
+ *                                     │ ┌─────────────────────────────┐ │ │
+ *                                     │ │                             │ │ │
+ *                                     ├─►       onBeforeRedirect      ├─┘ │
+ *                                     │ │                             │   │
+ *                                     │ └─────────────────────────────┘   │
+ *                                     │                                   │
+ *                                     │ ┌─────────────────────────────┐   │
+ *                                     │ │                             │   │
+ *                                     ├─►        onAuthRequired       ├───┘
  *                                     │ │                             │
  *                                     │ └─────────────────────────────┘
  *                                     │
@@ -118,7 +118,7 @@
  *                                       └─────────────────────────────┘.
  *
  *
- *  Web Navigation API Event Handling:
+ * Web Navigation API Event Handling:
  *
  *                                       ┌─────────────────────────────┐
  *                                       │                             │

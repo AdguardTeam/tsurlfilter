@@ -108,8 +108,6 @@ export class Frame {
     /**
      * The cosmetic result for the frame.
      * This data is stored in the frame because it is required for logging script and scriptlet rules.
-     *
-     * @see {@link WebRequestApi.injectCosmetic}
      */
     public cosmeticResult?: CosmeticResult;
 

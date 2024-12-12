@@ -63,7 +63,7 @@ export class TabsApi {
         browser.tabs.onReplaced.addListener(this.handleTabReplace);
 
         // Firefox for android doesn't support windows API
-        // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/windows#chrome_compatibility
+        // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/windows#browser_compatibility
         if (browser.windows) {
             browser.windows.onFocusChanged.addListener(this.onWindowFocusChanged);
         }
