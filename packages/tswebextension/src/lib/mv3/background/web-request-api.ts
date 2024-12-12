@@ -98,7 +98,7 @@
  *                                       ┌──────────────▼──────────────┐
  * Update main frame data with           │                             │
  * {@link updateMainFrameData}           │       onBeforeNavigate      │
- * and matches {@link CosmeticResult}    │                             │
+ * and matches {@link CosmeticResult}.   │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
