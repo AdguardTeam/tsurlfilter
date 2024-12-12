@@ -81,7 +81,7 @@ describe('cosmetic api', () => {
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getElemhideCosmeticResult(actual);
-                expect(CosmeticApi.getCssText(cosmeticResult)).toEqual(expected);
+                expect(CosmeticApi.getCssText(cosmeticResult, false)).toEqual(expected);
             });
         });
 
@@ -113,7 +113,7 @@ describe('cosmetic api', () => {
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getCssCosmeticResult(actual);
-                expect(CosmeticApi.getCssText(cosmeticResult)).toEqual(expected);
+                expect(CosmeticApi.getCssText(cosmeticResult, false)).toEqual(expected);
             });
         });
 
@@ -148,7 +148,7 @@ describe('cosmetic api', () => {
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getElemhideCosmeticResult(actual);
-                expect(CosmeticApi.getCssText(cosmeticResult)).toEqual(expected);
+                expect(CosmeticApi.getCssText(cosmeticResult, true)).toEqual(expected);
             });
         });
 
@@ -183,7 +183,7 @@ describe('cosmetic api', () => {
             ];
             test.each(testCases)('$actual', ({ actual, expected }) => {
                 const cosmeticResult = getCssCosmeticResult(actual);
-                const exp = CosmeticApi.getCssText(cosmeticResult);
+                const exp = CosmeticApi.getCssText(cosmeticResult, true);
                 expect(exp).toEqual(expected);
             });
         });
@@ -384,6 +384,7 @@ describe('cosmetic api', () => {
                     console.error('Error executing AG js: ' + ex);
                 }
             })();
+            //# sourceURL=ag-scripts.js
             `;
         };
 

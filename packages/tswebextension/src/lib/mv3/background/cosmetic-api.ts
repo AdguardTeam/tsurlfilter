@@ -73,7 +73,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             }
         }
 
-        const scriptText = [...uniqueScripts].join(';\n');
+        const scriptText = [...uniqueScripts].join('\n');
 
         const wrappedScriptText = CosmeticApi.wrapScriptText(scriptText);
 

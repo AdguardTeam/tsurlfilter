@@ -118,7 +118,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             uniqueScripts.add(rule.getScript(scriptParams));
         });
 
-        const scriptText = [...uniqueScripts].join(';\n');
+        const scriptText = [...uniqueScripts].join('\n');
 
         return CosmeticApi.wrapScriptText(scriptText);
     }
