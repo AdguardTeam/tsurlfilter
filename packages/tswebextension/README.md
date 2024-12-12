@@ -5,113 +5,113 @@ TypeScript library that wraps webextension api for tsurlfilter library.
 Table of content:
 
 - [TSWebExtension](#tswebextension)
-  - [Browser support](#browser-support)
-  - [Install](#install)
-  - [Usage](#usage)
-  - [CLI](#cli)
-  - [API](#api)
-    - [configuration](#configuration)
-      - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
-      - [EXTENDED\_CSS\_VERSION](#extended_css_version)
-      - [filters (MV2 only)](#filters-mv2-only)
-        - [filterId](#filterid)
-        - [content](#content)
-        - [trusted](#trusted)
-      - [staticFiltersIds (MV3 only)](#staticfiltersids-mv3-only)
-      - [customFilters (MV3 only)](#customfilters-mv3-only)
-        - [filterId](#filterid-1)
-        - [rawFilterList](#rawfilterlist)
-        - [sourceMap](#sourcemap)
-        - [conversionMap](#conversionmap)
-        - [content](#content-1)
-      - [filtersPath (MV3 only)](#filterspath-mv3-only)
-      - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
-      - [declarativeLogEnabled (MV3 only)](#extended-filtering-log-enabled-mv3-only)
-      - [quickFixesRules (MV3 only)](#quick-fixes-rules-mv3-only)
-      - [allowlist](#allowlist)
-      - [trustedDomains](#trusteddomains)
-      - [userrules (MV2)](#userrules-mv2)
-        - [content](#content-2)
-        - [sourceMap](#sourcemap-1)
-      - [userrules (MV3)](#userrules-mv3)
-        - [rawFilterList](#rawfilterlist-1)
-        - [sourceMap](#sourcemap-2)
-        - [conversionMap](#conversionmap-1)
-        - [content](#content-3)
-      - [verbose (deprecated)](#verbose-deprecated)
-      - [logLevel](#loglevel)
-      - [settings](#settings)
-        - [allowlistInverted](#allowlistinverted)
-        - [allowlistEnabled](#allowlistenabled)
-        - [collectStats](#collectstats)
-        - [debugScriptlets](#debugscriptlets)
-        - [stealthModeEnabled](#stealthmodeenabled)
-        - [filteringEnabled](#filteringenabled)
-        - [documentBlockingPageUrl](#documentblockingpageurl)
-        - [assistantUrl](#assistanturl)
-        - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
-        - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
-        - [stealthConfig](#stealthconfig)
-          - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
-          - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
-          - [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies)
-          - [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime)
-          - [hideReferrer](#hidereferrer)
-          - [hideSearchQueries](#hidesearchqueries)
-          - [blockChromeClientData](#blockchromeclientdata)
-          - [sendDoNotTrack](#senddonottrack)
-          - [blockWebRTC](#blockwebrtc)
-    - [TsWebExtension](#tswebextension-1)
-      - [Properties](#properties)
-        - [configuration](#configuration-1)
-        - [onFilteringLogEvent](#onfilteringlogevent)
-        - [isStarted](#isstarted)
-      - [Methods](#methods)
-        - [initStorage()](#initstorage)
-        - [start()](#start)
-        - [configure()](#configure)
-        - [stop()](#stop)
-        - [openAssistant()](#openassistant)
-        - [closeAssistant()](#closeassistant)
-        - [getRulesCount()](#getrulescount)
-        - [retrieveDynamicRuleNode](#retrievedynamicrulenode)
-        - [getMessageHandler()](#getmessagehandler)
-        - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
-        - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
-        - [setDebugScriptlets()](#setdebugscriptlets)
-        - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
-        - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
-        - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
-        - [setSelfDestructFirstPartyCookiesTime() (MV2 only)](#setselfdestructfirstpartycookiestime-mv2-only)
-        - [setSelfDestructThirdPartyCookiesTime() (MV2 only)](#setselfdestructthirdpartycookiestime-mv2-only)
-        - [setHideReferrer() (MV2 only)](#sethidereferrer-mv2-only)
-        - [setHideSearchQueries() (MV2 only)](#sethidesearchqueries-mv2-only)
-        - [setBlockChromeClientData() (MV2 only)](#setblockchromeclientdata-mv2-only)
-        - [setSendDoNotTrack() (MV2 only)](#setsenddonottrack-mv2-only)
-        - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
-  - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
-    - [events](#events)
-      - [sendRequest](#sendrequest)
-      - [tabReload](#tabreload)
-      - [applyBasicRule](#applybasicrule)
-      - [applyCosmeticRule](#applycosmeticrule)
-      - [applyCspRule](#applycsprule)
-      - [receiveResponse](#receiveresponse)
-      - [cookie](#cookie)
-      - [removeHeader](#removeheader)
-      - [removeParam](#removeparam)
-      - [replaceRuleApply](#replaceruleapply)
-      - [contentFilteringStart](#contentfilteringstart)
-      - [contentFilteringFinish](#contentfilteringfinish)
-      - [stealthAction](#stealthaction)
-      - [stealthAllowlistAction](#stealthallowlistaction)
-      - [JsInject](#jsinject)
-    - [properties](#properties-1)
-      - [onLogEvent](#onlogevent)
-    - [methods](#methods-1)
-      - [addEventListener()](#addeventlistener)
-      - [publishEvent()](#publishevent)
-  - [Development](#development)
+    - [Browser support](#browser-support)
+    - [Install](#install)
+    - [Usage](#usage)
+    - [CLI](#cli)
+    - [API](#api)
+        - [configuration](#configuration)
+        - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
+        - [EXTENDED\_CSS\_VERSION](#extended_css_version)
+        - [filters (MV2 only)](#filters-mv2-only)
+            - [filterId](#filterid)
+            - [content](#content)
+            - [trusted](#trusted)
+        - [staticFiltersIds (MV3 only)](#staticfiltersids-mv3-only)
+        - [customFilters (MV3 only)](#customfilters-mv3-only)
+            - [filterId](#filterid-1)
+            - [rawFilterList](#rawfilterlist)
+            - [sourceMap](#sourcemap)
+            - [conversionMap](#conversionmap)
+            - [content](#content-1)
+        - [filtersPath (MV3 only)](#filterspath-mv3-only)
+        - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
+        - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
+        - [quickFixesRules (MV3 only)](#quickfixesrules-mv3-only)
+        - [allowlist](#allowlist)
+        - [trustedDomains](#trusteddomains)
+        - [userrules (MV2)](#userrules-mv2)
+            - [content](#content-2)
+            - [sourceMap](#sourcemap-1)
+        - [userrules (MV3)](#userrules-mv3)
+            - [rawFilterList](#rawfilterlist-1)
+            - [sourceMap](#sourcemap-2)
+            - [conversionMap](#conversionmap-1)
+            - [content](#content-3)
+        - [verbose (deprecated)](#verbose-deprecated)
+        - [logLevel](#loglevel)
+        - [settings](#settings)
+            - [allowlistInverted](#allowlistinverted)
+            - [allowlistEnabled](#allowlistenabled)
+            - [collectStats](#collectstats)
+            - [debugScriptlets](#debugscriptlets)
+            - [stealthModeEnabled](#stealthmodeenabled)
+            - [filteringEnabled](#filteringenabled)
+            - [documentBlockingPageUrl](#documentblockingpageurl)
+            - [assistantUrl](#assistanturl)
+            - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
+            - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
+            - [stealthConfig](#stealthconfig)
+            - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
+            - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
+            - [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies)
+            - [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime)
+            - [hideReferrer](#hidereferrer)
+            - [hideSearchQueries](#hidesearchqueries)
+            - [blockChromeClientData](#blockchromeclientdata)
+            - [sendDoNotTrack](#senddonottrack)
+            - [blockWebRTC](#blockwebrtc)
+        - [TsWebExtension](#tswebextension-1)
+        - [Properties](#properties)
+            - [configuration](#configuration-1)
+            - [onFilteringLogEvent](#onfilteringlogevent)
+            - [isStarted](#isstarted)
+        - [Methods](#methods)
+            - [initStorage()](#initstorage)
+            - [start()](#start)
+            - [configure()](#configure)
+            - [stop()](#stop)
+            - [openAssistant()](#openassistant)
+            - [closeAssistant()](#closeassistant)
+            - [getRulesCount()](#getrulescount)
+            - [retrieveDynamicRuleNode](#retrievedynamicrulenode)
+            - [getMessageHandler()](#getmessagehandler)
+            - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
+            - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
+            - [setDebugScriptlets()](#setdebugscriptlets)
+            - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
+            - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
+            - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
+            - [setSelfDestructFirstPartyCookiesTime() (MV2 only)](#setselfdestructfirstpartycookiestime-mv2-only)
+            - [setSelfDestructThirdPartyCookiesTime() (MV2 only)](#setselfdestructthirdpartycookiestime-mv2-only)
+            - [setHideReferrer() (MV2 only)](#sethidereferrer-mv2-only)
+            - [setHideSearchQueries() (MV2 only)](#sethidesearchqueries-mv2-only)
+            - [setBlockChromeClientData() (MV2 only)](#setblockchromeclientdata-mv2-only)
+            - [setSendDoNotTrack() (MV2 only)](#setsenddonottrack-mv2-only)
+            - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
+    - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
+        - [events](#events)
+        - [sendRequest](#sendrequest)
+        - [tabReload](#tabreload)
+        - [applyBasicRule](#applybasicrule)
+        - [applyCosmeticRule](#applycosmeticrule)
+        - [applyCspRule](#applycsprule)
+        - [receiveResponse](#receiveresponse)
+        - [cookie](#cookie)
+        - [removeHeader](#removeheader)
+        - [removeParam](#removeparam)
+        - [replaceRuleApply](#replaceruleapply)
+        - [contentFilteringStart](#contentfilteringstart)
+        - [contentFilteringFinish](#contentfilteringfinish)
+        - [stealthAction](#stealthaction)
+        - [stealthAllowlistAction](#stealthallowlistaction)
+        - [JsInject](#jsinject)
+        - [properties](#properties-1)
+        - [onLogEvent](#onlogevent)
+        - [methods](#methods-1)
+        - [addEventListener()](#addeventlistener)
+        - [publishEvent()](#publishevent)
+    - [Development](#development)
 
 ## Browser support
 
@@ -137,7 +137,7 @@ Before running compiled app, load the web accessible resources for redirect rule
 via built-in cli:
 
 ```sh
- tswebextension war [path]
+tswebextension war [path]
 ```
 
 or integrate loading in your build pipeline:
@@ -146,9 +146,9 @@ or integrate loading in your build pipeline:
 import { copyWar, DEFAULT_WAR_PATH } from '@adguard/tswebextension/cli';
 
 const build = async () => {
-  ...
-  await copyWar(DEFAULT_WAR_PATH);
-  ...
+    ...
+    await copyWar(DEFAULT_WAR_PATH);
+    ...
 };
 ```
 
@@ -158,18 +158,18 @@ If path is not defined, the resources will be loaded to `build/war` relative to 
 
 The console interface provides useful tools for building extensions.
 
-```
+```text
 Usage: tswebextension [options] [command]
 
 CLI to some development utils
 
 Options:
-  -V, --version     output the version number
-  -h, --help        display help for command
+    -V, --version     output the version number
+    -h, --help        display help for command
 
 Commands:
-  war [path]        Downloads web accessible resources for redirect rules
-  help [command]    display help for command
+    war [path]        Downloads web accessible resources for redirect rules
+    help [command]    display help for command
 ```
 
 ## API
@@ -812,7 +812,7 @@ Event channel for [filtering log events](#filtering-log-api-mv2-only).
 
 type:
 
-```
+```ts
 <T extends FilteringEventType>(type: T, listener: FilteringLogListener<ExtractedFilteringLogEvent<T>>) => void
 ```
 
@@ -822,7 +822,7 @@ Registers a listener for the specified filtering event type.
 
 type:
 
-```
+```ts
 <T extends FilteringLogEvent>(event: T) => void
 ```
 
@@ -849,7 +849,7 @@ npx lerna run --scope=@adguard/tswebextension build
 
 Lint source code
 
-```
+```sh
 npx lerna run --scope=@adguard/tswebextension lint
 ```
 
