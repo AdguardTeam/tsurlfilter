@@ -1,3 +1,10 @@
+import {
+    describe,
+    expect,
+    it,
+    test,
+    vi,
+} from 'vitest';
 import { CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule } from '../../../helpers/rule-creator';

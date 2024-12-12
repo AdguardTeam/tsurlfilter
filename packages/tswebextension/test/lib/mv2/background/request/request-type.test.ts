@@ -1,4 +1,5 @@
 /* eslint-disable guard-for-in */
+import { describe, expect, it } from 'vitest';
 import { type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 

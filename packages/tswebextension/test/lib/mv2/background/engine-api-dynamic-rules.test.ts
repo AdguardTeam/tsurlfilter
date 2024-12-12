@@ -1,3 +1,10 @@
+import {
+    beforeAll,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import { defaultParserOptions, type ParserOptions, RuleParser } from '@adguard/agtree/parser';
 
 import { extendConfig, type RecursivePartial } from '../../../helpers/config-extend';
