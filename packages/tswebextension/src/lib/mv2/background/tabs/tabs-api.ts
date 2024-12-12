@@ -7,7 +7,7 @@ import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../../common/uti
 import type { DocumentApi } from '../document-api';
 import { logger } from '../../../common/utils/logger';
 
-import type { Frame } from './frame';
+import type { FrameMV2 } from './frame';
 import { type FrameRequestContext, TabContext } from './tab-context';
 
 /**
@@ -119,7 +119,7 @@ export class TabsApi {
      * @param frameId Frame ID.
      * @returns Frame data or null if not found.
      */
-    public getTabFrame(tabId: number, frameId: number): Frame | null {
+    public getTabFrame(tabId: number, frameId: number): FrameMV2 | null {
         const tabContext = this.context.get(tabId);
 
         if (!tabContext) {
@@ -141,7 +141,7 @@ export class TabsApi {
      * @param tabId Tab ID.
      * @returns Frame data or null if not found.
      */
-    public getTabMainFrame(tabId: number): Frame | null {
+    public getTabMainFrame(tabId: number): FrameMV2 | null {
         return this.getTabFrame(tabId, MAIN_FRAME_ID);
     }
 
@@ -474,7 +474,7 @@ export class TabsApi {
      *
      * @throws Error if the tab context or frame context is not found, as this should not occur at this point.
      */
-    public updateFrameContext(tabId: number, frameId: number, partialFrameContext: Partial<Frame>): void {
+    public updateFrameContext(tabId: number, frameId: number, partialFrameContext: Partial<FrameMV2>): void {
         const tabContext = this.getTabContext(tabId);
         if (!tabContext) {
             logger.debug('At this point tab context should already exist');
@@ -507,7 +507,7 @@ export class TabsApi {
      *
      * @throws Error if the tab context is not found, as this should not occur at this point.
      */
-    public setFrameContext(tabId: number, frameId: number, frameContext: Frame): void {
+    public setFrameContext(tabId: number, frameId: number, frameContext: FrameMV2): void {
         const tabContext = this.getTabContext(tabId);
         if (!tabContext) {
             logger.debug('At this point tab context should already exist');
@@ -524,7 +524,7 @@ export class TabsApi {
      *
      * @returns Frame context.
      */
-    public getFrameContext(tabId: number, frameId: number): Frame | undefined {
+    public getFrameContext(tabId: number, frameId: number): FrameMV2 | undefined {
         const tabContext = this.getTabContext(tabId);
         const frameContext = tabContext?.getFrameContext(frameId);
         return frameContext;
@@ -534,11 +534,11 @@ export class TabsApi {
      * Returns frame context by documentId.
      *
      * @param tabId Tab ID.
-     * @param documentId Unique identifier assigned to the frame on onCommited event.
+     * @param documentId Unique identifier assigned to the frame on onCommitted event.
      *
      * @returns Frame context.
      */
-    public getByDocumentId(tabId: number, documentId: string): Frame | undefined {
+    public getByDocumentId(tabId: number, documentId: string): FrameMV2 | undefined {
         const tabContext = this.getTabContext(tabId);
         return tabContext?.getFrameContextByDocumentId(documentId);
     }

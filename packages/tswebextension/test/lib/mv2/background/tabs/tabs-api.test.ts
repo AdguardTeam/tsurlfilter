@@ -18,8 +18,8 @@ import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
 import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
 import { TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';
 import { TabContext, type TabInfo } from '../../../../../src/lib/mv2/background/tabs/tab-context';
-import { Frame } from '../../../../../src/lib/mv2/background/tabs/frame';
-import { Frames } from '../../../../../src/lib/mv2/background/tabs/frames';
+import { FrameMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
+import { Frames } from '../../../../../src/lib/common/tabs/frames';
 
 vi.mock('../../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../../src/lib/mv2/background/engine-api');
@@ -98,7 +98,7 @@ describe('TabsApi', () => {
 
             const tabContext = { frames: new Frames() } as TabContext;
 
-            const frame = new Frame({
+            const frame = new FrameMV2({
                 url,
                 tabId,
                 frameId,

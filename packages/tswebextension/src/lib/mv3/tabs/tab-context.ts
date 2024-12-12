@@ -6,11 +6,11 @@ import { identity } from 'lodash-es';
 
 import { type FilteringLog, defaultFilteringLog } from '../../common/filtering-log';
 import { isHttpOrWsRequest } from '../../common/utils/url';
+import { Frames } from '../../common/tabs/frames';
 import { DocumentApi } from '../background/document-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
 
-import { Frame } from './frame';
-import { Frames } from './frames';
+import { FrameMV3 } from './frame';
 
 /**
  * We need tab id in the tab information, otherwise we do not process it.
@@ -148,7 +148,7 @@ export class TabContext {
         if (url && isHttpOrWsRequest(url)) {
             tabContext.mainFrameRule = DocumentApi.matchFrame(url);
 
-            tabContext.frames.set(MAIN_FRAME_ID, new Frame({
+            tabContext.frames.set(MAIN_FRAME_ID, new FrameMV3({
                 tabId: tab.id,
                 frameId: MAIN_FRAME_ID,
                 url,
@@ -178,7 +178,7 @@ export class TabContext {
      * @param frameId Frame id.
      * @returns Frame context.
      */
-    getFrameContext(frameId: number): Frame | undefined {
+    getFrameContext(frameId: number): FrameMV3 | undefined {
         return this.frames.get(frameId);
     }
 
@@ -187,7 +187,7 @@ export class TabContext {
      * @param frameId Frame id.
      * @param frameContext Frame context.
      */
-    setFrameContext(frameId: number, frameContext: Frame): void {
+    setFrameContext(frameId: number, frameContext: FrameMV3): void {
         this.frames.set(frameId, frameContext);
     }
 
@@ -205,7 +205,7 @@ export class TabContext {
      * @param documentId Unique identifier of the frame.
      * @returns Frame context.
      */
-    getFrameContextByDocumentId(documentId: string): Frame | undefined {
+    getFrameContextByDocumentId(documentId: string): FrameMV3 | undefined {
         const frameId = this.documentIdsMap.get(documentId);
 
         // frameId might be 0, do not use falsy check

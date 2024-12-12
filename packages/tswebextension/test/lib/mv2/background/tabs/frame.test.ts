@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { MatchingResult, CosmeticResult } from '@adguard/tsurlfilter';
 
-import { Frame } from '../../../../../src/lib';
+import { FrameMV2 } from '../../../../../src/lib';
 
 describe('Frame', () => {
     describe('constructor', () => {
@@ -14,7 +14,7 @@ describe('Frame', () => {
             const timeStamp = Date.now();
             const parentDocumentId = '1';
 
-            const frame = new Frame({
+            const frame = new FrameMV2({
                 url,
                 tabId,
                 frameId,

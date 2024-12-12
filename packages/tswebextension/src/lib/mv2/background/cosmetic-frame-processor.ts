@@ -5,7 +5,7 @@ import { MAIN_FRAME_ID } from '../../common/constants';
 
 import { CosmeticApi } from './cosmetic-api';
 import { documentApi, engineApi, tabsApi } from './api';
-import { Frame } from './tabs/frame';
+import { FrameMV2 } from './tabs/frame';
 import { stealthApi } from './stealth-api';
 
 /**
@@ -132,7 +132,7 @@ export class CosmeticFrameProcessor {
             parentDocumentId,
         } = props;
 
-        let parentFrame: Frame | undefined;
+        let parentFrame: FrameMV2 | undefined;
         let tempParentDocumentId = parentDocumentId;
         while (tempParentDocumentId) {
             parentFrame = tabsApi.getByDocumentId(tabId, tempParentDocumentId);
@@ -317,7 +317,7 @@ export class CosmeticFrameProcessor {
 
         // set in the beginning to let other events know that cosmetic result will be calculated in this event to
         // avoid double calculation
-        tabsApi.setFrameContext(tabId, frameId, new Frame({
+        tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
             tabId,
             frameId,
             url,

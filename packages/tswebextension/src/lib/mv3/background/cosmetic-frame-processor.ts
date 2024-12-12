@@ -3,7 +3,7 @@ import { RequestType } from '@adguard/tsurlfilter';
 import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { tabsApi } from '../tabs/tabs-api';
-import { Frame } from '../tabs/frame';
+import { FrameMV3 } from '../tabs/frame';
 
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
@@ -166,7 +166,7 @@ export class CosmeticFrameProcessor {
             parentDocumentId,
         } = props;
 
-        let parentFrame: Frame | undefined;
+        let parentFrame: FrameMV3 | undefined;
         let tempParentDocumentId = parentDocumentId;
         while (tempParentDocumentId) {
             parentFrame = tabsApi.getByDocumentId(tabId, tempParentDocumentId);
@@ -347,7 +347,7 @@ export class CosmeticFrameProcessor {
 
         // set in the beginning to let other events know that cosmetic result will be calculated in this event to
         // avoid double calculation
-        tabsApi.setFrameContext(tabId, frameId, new Frame({
+        tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
             tabId,
             frameId,
             url,

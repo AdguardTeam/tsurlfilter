@@ -11,10 +11,10 @@ import type { NetworkRule } from '@adguard/tsurlfilter';
 
 import { TabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
 import { TabContext, type TabInfo } from '../../../../src/lib/mv3/tabs/tab-context';
-import { Frame } from '../../../../src/lib/mv3/tabs/frame';
+import { FrameMV3 } from '../../../../src/lib/mv3/tabs/frame';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
-import { Frames } from '../../../../src/lib/mv3/tabs/frames';
+import { Frames } from '../../../../src/lib/common/tabs/frames';
 
 vi.mock('../../../../src/lib/mv3/tabs/tab-context');
 vi.mock('../../../../src/lib/mv3/tabs/frame');
@@ -84,7 +84,7 @@ describe('TabsApi', () => {
 
             const frameId = MAIN_FRAME_ID;
 
-            const frame = new Frame({
+            const frame = new FrameMV3({
                 url: 'https://example.org',
                 tabId,
                 frameId,

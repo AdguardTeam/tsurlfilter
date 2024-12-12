@@ -8,7 +8,7 @@ import { CosmeticFrameProcessor } from '../cosmetic-frame-processor';
 import { appContext } from '../app-context';
 import type { DocumentApi } from '../document-api';
 
-import { Frame } from './frame';
+import { FrameMV2 } from './frame';
 import type { TabsApi } from './tabs-api';
 import { TabContext } from './tab-context';
 
@@ -86,7 +86,7 @@ export class TabsCosmeticInjector {
                 documentId,
             } = frameDetails;
 
-            this.tabsApi.setFrameContext(tabId, frameId, new Frame({
+            this.tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
                 tabId,
                 frameId,
                 url,

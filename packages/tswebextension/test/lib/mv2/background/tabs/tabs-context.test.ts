@@ -7,14 +7,14 @@ import {
     vi,
 } from 'vitest';
 
-import { Frame, TabContext, type TabInfo } from '../../../../../src/lib';
+import { FrameMV2, TabContext, type TabInfo } from '../../../../../src/lib';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { appContext } from '../../../../../src/lib/mv2/background/app-context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
 import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
-import { Frames } from '../../../../../src/lib/mv3/tabs/frames';
+import { Frames } from '../../../../../src/lib/common/tabs/frames';
 
 vi.mock('../../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../../src/lib/mv2/background/engine-api');
@@ -71,7 +71,7 @@ describe('TabContext', () => {
             const context = TabContext.createNewTabContext(tabInfo, documentApi);
 
             expect(documentApi.matchFrame).toBeCalledWith(tabInfo.pendingUrl);
-            expect(context.frames.get(MAIN_FRAME_ID)).toEqual(new Frame({
+            expect(context.frames.get(MAIN_FRAME_ID)).toEqual(new FrameMV2({
                 tabId: tabInfo.id,
                 frameId: MAIN_FRAME_ID,
                 url: tabInfo.pendingUrl!,

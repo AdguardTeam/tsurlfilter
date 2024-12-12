@@ -14,3 +14,5 @@ export * from './storage';
 // so it could be imported from '@adguard/tswebextension/utils'
 export { type EventChannelListener, EventChannel } from './utils/channels';
 export { isHttpRequest, getDomain } from './utils/url';
+export { FrameCommon, type FrameConstructorProps, type PreparedCosmeticResultCommon } from './tabs/frame';
+export { Frames } from './tabs/frames';
