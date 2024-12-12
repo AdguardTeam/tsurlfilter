@@ -3,8 +3,7 @@ import { type IAffectedElement, type ExtCssConfiguration, ExtendedCss } from '@a
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
-// TODO: Move to shared 'messages' module, when it will be implemented
-import type { ContentScriptCosmeticData } from '../background/cosmetic-api';
+import type { ContentScriptCosmeticData } from '../../common/cosmetic-api';
 
 /**
  * This class applies cosmetic rules in page context.
