@@ -1,3 +1,9 @@
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'webextension-polyfill';
 
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';

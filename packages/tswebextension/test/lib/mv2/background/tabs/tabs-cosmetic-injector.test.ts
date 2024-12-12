@@ -1,3 +1,12 @@
+import {
+    describe,
+    expect,
+    beforeAll,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 

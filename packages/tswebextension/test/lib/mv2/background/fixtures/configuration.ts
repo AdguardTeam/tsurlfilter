@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { type ConfigurationMV2 } from '../../../../../src/lib';
 import { LF } from '../../../../../src/lib/common/constants';
 

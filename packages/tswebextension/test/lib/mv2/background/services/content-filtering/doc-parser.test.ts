@@ -1,6 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
+import { describe, expect, it } from 'vitest';
 
 import { DocumentParser } from '../../../../../../src/lib/mv2/background/services/content-filtering/doc-parser';
 

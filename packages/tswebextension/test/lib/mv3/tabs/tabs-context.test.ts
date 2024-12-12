@@ -1,3 +1,12 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
+
 import { TabContext, type TabInfo } from '../../../../src/lib/mv3/tabs/tab-context';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { Frame } from '../../../../src/lib/mv3/tabs/frame';

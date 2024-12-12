@@ -1,3 +1,9 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+} from 'vitest';
 import { HTTPMethod, MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';

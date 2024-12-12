@@ -1,3 +1,9 @@
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import { TextEncoder, TextDecoder } from 'text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
 

@@ -1,3 +1,9 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+} from 'vitest';
 import { type WebRequest } from 'webextension-polyfill';
 import {
     type NetworkRule,
