@@ -24,7 +24,7 @@ describe('Frame', () => {
             frame.cosmeticResult = cosmeticResult;
             frame.matchingResult = matchingResult;
 
-            expect(frame).toBeInstanceOf(Frame);
+            expect(frame).toBeInstanceOf(FrameMV2);
             expect(frame.url).toBe(url);
             expect(frame.frameId).toBe(frameId);
             expect(frame.tabId).toBe(tabId);
