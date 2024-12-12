@@ -171,24 +171,23 @@
 import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { tabsApi, engineApi, documentApi } from './api';
-import { Frame } from './tabs/frame';
-import { logger } from '../../common/utils/logger';
-import { findHeaderByName } from '../../common/utils/headers';
-import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
-import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { findHeaderByName } from '../../common/utils/headers';
+import { logger } from '../../common/utils/logger';
+import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 
-import { removeHeadersService } from './services/remove-headers-service';
 import { Assistant } from './assistant';
+import { tabsApi, engineApi, documentApi } from './api';
 import { CosmeticApi } from './cosmetic-api';
-import { paramsService } from './services/params-service';
-import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
+import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { cspService } from './services/csp-service';
+import { paramsService } from './services/params-service';
 import { permissionsPolicyService } from './services/permissions-policy-service';
 import { TrustedTypesService } from './services/trusted-types-service';
-
+import { removeHeadersService } from './services/remove-headers-service';
+import { Frame } from './tabs/frame';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
@@ -196,8 +195,8 @@ import {
     requestContextStorage,
     RequestBlockingApi,
 } from './request';
-import { stealthApi } from './stealth-api';
 import { SanitizeApi } from './sanitize-api';
+import { stealthApi } from './stealth-api';
 import { isFirefox, isOpera } from './utils/browser-detector';
 import { isLocalFrame } from './utils/is-local-frame';
 

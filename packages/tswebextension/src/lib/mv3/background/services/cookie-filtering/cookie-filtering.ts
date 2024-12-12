@@ -3,7 +3,6 @@ import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adgua
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
 import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
-
 import { createFrameMatchQuery } from '../../../../common/utils/create-frame-match-query';
 import { getDomain } from '../../../../common/utils/url';
 import { logger } from '../../../../common/utils/logger';

@@ -5,10 +5,11 @@ import {
     PERMISSIONS_POLICY_HEADER_NAME,
     RequestType,
 } from '@adguard/tsurlfilter';
-import { requestContextStorage, type RequestContext } from '../request';
+
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { ContentType } from '../../../common/request-type';
 import { nanoid } from '../../../common/utils/nanoid';
+import { requestContextStorage, type RequestContext } from '../request';
 
 /**
  * Permissions Policy service.

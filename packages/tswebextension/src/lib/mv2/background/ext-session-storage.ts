@@ -1,8 +1,9 @@
 import browser from 'webextension-polyfill';
 
 import { ExtensionStorage, createExtensionStorageDecorator } from '../../common/storage';
-import type { ConfigurationMV2Context } from './configuration';
 import { MemoryStorage } from '../../common/memory-storage';
+
+import type { ConfigurationMV2Context } from './configuration';
 
 export const enum SessionStorageKey {
     IsAppStarted = 'isAppStarted',

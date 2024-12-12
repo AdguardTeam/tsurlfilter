@@ -1,29 +1,26 @@
 /* eslint-disable class-methods-use-this */
 import { LogLevel } from '@adguard/logger';
-
 import { type AnyRule } from '@adguard/agtree';
-import { WebRequestApi } from './web-request-api';
-import {
-    type ConfigurationMV2,
-    type ConfigurationMV2Context,
-    configurationMV2Validator,
-} from './configuration';
-import { Assistant } from './assistant';
-import { type LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
-import { RequestEvents } from './request';
-import { type EventChannel } from '../../common/utils/channels';
-import { logger } from '../../common/utils/logger';
-import type { AppContext } from './context';
-import type { StealthApi } from './stealth-api';
-import type { TabsApi } from './tabs';
-import type { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
-import type { EngineApi } from './engine-api';
-import type { RedirectsService } from './services/redirects/redirects-service';
-import type { DocumentBlockingService } from './services/document-blocking-service';
-import type { MessagesApi, MessageHandlerMV2 } from './messages-api';
-import type { ExtSessionStorage } from './ext-session-storage';
+
 import { type AppInterface } from '../../common/app';
 import type { FilteringLog, FilteringLogEvent } from '../../common/filtering-log';
+import { type EventChannel } from '../../common/utils/channels';
+import { logger } from '../../common/utils/logger';
+
+import { Assistant } from './assistant';
+import type { AppContext } from './context';
+import { type ConfigurationMV2, type ConfigurationMV2Context, configurationMV2Validator } from './configuration';
+import type { EngineApi } from './engine-api';
+import type { ExtSessionStorage } from './ext-session-storage';
+import type { MessagesApi, MessageHandlerMV2 } from './messages-api';
+import { RequestEvents } from './request';
+import { type LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
+import type { StealthApi } from './stealth-api';
+import type { TabsApi } from './tabs/tabs-api';
+import type { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
+import type { RedirectsService } from './services/redirects/redirects-service';
+import type { DocumentBlockingService } from './services/document-blocking-service';
+import { WebRequestApi } from './web-request-api';
 
 /**
  * App implementation for MV2.

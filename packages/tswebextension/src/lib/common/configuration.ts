@@ -1,8 +1,8 @@
 import { z as zod } from 'zod';
 import { LogLevel } from '@adguard/logger';
-
 import { filterListChunksValidator, filterListSourceMapValidator } from '@adguard/tsurlfilter';
 import extCssPackageJson from '@adguard/extended-css/package.json';
+
 import packageJson from '../../../package.json';
 
 /**

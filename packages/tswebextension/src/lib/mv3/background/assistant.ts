@@ -1,6 +1,7 @@
-import { MessagesApi } from './messages-api';
 import { EventChannel } from '../../common/utils/channels';
 import { MessageType } from '../../common/message-constants';
+
+import { MessagesApi } from './messages-api';
 
 /**
  * Assistant class is the handler of messages and events related

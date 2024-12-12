@@ -68,7 +68,8 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension#readme",
   "scripts": {
-    "lint": "eslint . && pnpm lint:tsc",
+    "lint": "pnpm lint:code && pnpm lint:tsc",
+    "lint:code": "eslint . --cache",
     "lint:tsc": "tsc --noEmit",
     "check-types": "pnpm lint:tsc",
     "prebuild": "rimraf dist",
@@ -136,7 +137,7 @@
     "eslint-config-airbnb-base": "15.0.0",
     "eslint-config-airbnb-typescript": "17.0.0",
     "eslint-plugin-import": "2.27.5",
-    "eslint-plugin-import-newlines": "1.3.1",
+    "eslint-plugin-import-newlines": "1.4.0",
     "eslint-plugin-jsdoc": "^46.8.2",
     "lint-staged": "13.2.2",
     "rimraf": "5.0.1",
