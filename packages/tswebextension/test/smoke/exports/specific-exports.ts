@@ -1,5 +1,6 @@
-import { getFilterName } from '@adguard/tswebextension/mv3/utils';
 import assert from 'node:assert';
+
+import { getFilterName } from '@adguard/tswebextension/mv3/utils';
 
 // TODO: Add tests for more imports
 

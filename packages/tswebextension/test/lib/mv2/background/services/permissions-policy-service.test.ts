@@ -7,11 +7,7 @@ import {
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
-import {
-    type RequestContext,
-    RequestContextState,
-    RequestContextStorage,
-} from '../../../../../src/lib';
+import { type RequestContext, RequestContextState, RequestContextStorage } from '../../../../../src/lib';
 import { PermissionsPolicyService } from '../../../../../src/lib/mv2/background/services/permissions-policy-service';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';

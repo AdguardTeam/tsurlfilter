@@ -1,4 +1,5 @@
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
+
 import { type ProcessShouldCollapsePayload } from '../../common/message';
 // Import directly from files to avoid side effects of tree shaking.
 // If import from '../../common', entire tsurlfilter will be in the package.

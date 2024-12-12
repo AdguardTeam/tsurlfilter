@@ -1,25 +1,19 @@
-import {
-    type CosmeticResult,
-    type CosmeticRule,
-} from '@adguard/tsurlfilter';
+import type { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
 // TODO: set up linter to fix imports order
-import { appContext } from './app-context';
 import { getDomain } from '../../common/utils/url';
-import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
-import { USER_FILTER_ID } from '../../common/constants';
-import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { buildScriptText } from './injection-helper';
-import { localScriptRulesService } from './services/local-script-rules-service';
-import { TabsApi } from './tabs/tabs-api';
-import { engineApi, tabsApi } from './api';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
-
 import type { ContentType } from '../../common/request-type';
+
+import { appContext } from './app-context';
+import { engineApi, tabsApi } from './api';
+import { buildScriptText } from './injection-helper';
+import { localScriptRulesService } from './services/local-script-rules-service';
+import { TabsApi } from './tabs/tabs-api';
 
 /**
  * Params for applying cosmetic rules.

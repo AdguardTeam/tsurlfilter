@@ -4,12 +4,13 @@ import { logger } from '../../../common/utils/logger';
 import { ContentType } from '../../../common/request-type';
 import { CosmeticApi } from '../cosmetic-api';
 import { CosmeticFrameProcessor } from '../cosmetic-frame-processor';
-import { Frame } from './frame';
-import { TabContext } from './tab-context';
 import type { DocumentApi } from '../document-api';
-import type { TabsApi } from './tabs-api';
 import { MAIN_FRAME_ID } from '../../../common/constants';
 import { appContext } from '../app-context';
+
+import { Frame } from './frame';
+import { TabContext } from './tab-context';
+import type { TabsApi } from './tabs-api';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.

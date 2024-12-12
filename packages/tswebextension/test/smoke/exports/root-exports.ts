@@ -1,6 +1,7 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { type ConfigurationMV2 } from '@adguard/tswebextension';
 import assert from 'node:assert';
+
+import { type ConfigurationMV2 } from '@adguard/tswebextension';
 
 // TODO add more exports
 

@@ -1,4 +1,5 @@
-// TODO: remove index file to
+// FIXME: use named exports (fix in another pr)
+// OR remove index file to
 // 1) avoid possible side effects
 // 2) make it similar to mv3
 

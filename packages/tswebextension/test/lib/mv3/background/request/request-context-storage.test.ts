@@ -1,4 +1,5 @@
 import { RequestType } from '@adguard/tsurlfilter';
+
 import {
     type RequestContext,
     RequestContextState,

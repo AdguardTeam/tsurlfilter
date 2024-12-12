@@ -1,6 +1,5 @@
 import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
-
 import {
     filterListConversionMapValidator,
     filterListSourceMapValidator,
@@ -11,10 +10,11 @@ import {
     getFilterSourceMapName,
 } from '@adguard/tsurlfilter';
 import { ByteBuffer } from '@adguard/agtree';
+
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
+import { loadExtensionBinaryResource, loadExtensionTextResource } from '../utils/resource-loader';
 
 import { type ConfigurationMV3 } from './configuration';
-import { loadExtensionBinaryResource, loadExtensionTextResource } from '../utils/resource-loader';
 
 export const RULE_SET_NAME_PREFIX = 'ruleset_';
 
