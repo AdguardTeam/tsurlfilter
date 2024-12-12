@@ -1,15 +1,15 @@
 import type { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { getDomain } from '../../common/utils/url';
+import { USER_FILTER_ID } from '../../common/constants';
+import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { getErrorMessage } from '../../common/error';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import type { ContentType } from '../../common/request-type';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
-import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { USER_FILTER_ID } from '../../common/constants';
-import { CosmeticApiCommon } from '../../common/cosmetic-api';
-import type { ContentType } from '../../common/request-type';
+import { getDomain } from '../../common/utils/url';
 
 import { appContext } from './app-context';
 import { engineApi, tabsApi } from './api';

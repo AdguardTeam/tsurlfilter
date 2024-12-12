@@ -9,9 +9,9 @@ import {
     FilterListPreprocessor,
 } from '@adguard/tsurlfilter';
 
-import { defaultFilteringLog, type FilteringLogInterface } from '../../common/filtering-log';
 import type { StealthConfig } from '../../common/configuration';
 import { getErrorMessage } from '../../common/error';
+import { defaultFilteringLog, type FilteringLogInterface } from '../../common/filtering-log';
 import { StealthActions } from '../../common/stealth-actions';
 import { logger } from '../../common/utils/logger';
 
