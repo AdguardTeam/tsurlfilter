@@ -52,7 +52,7 @@ describe('TabContext', () => {
             expect(tabContext.blockedRequestCount).toBe(0);
             expect(tabContext.mainFrameRule).toBeNull();
             expect(tabContext.info).toBe(tabInfo);
-            expect(tabContext.isSyntheticTab).toBe(true);
+            expect(tabContext.isSyntheticTab).toBe(false);
         });
     });
 
