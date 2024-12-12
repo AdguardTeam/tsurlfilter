@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { createNetworkRule } from '../../../../../helpers/rule-creator';
 import CookieRulesFinder from '../../../../../../src/lib/common/cookie-filtering/cookie-rules-finder';
 

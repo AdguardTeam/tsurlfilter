@@ -1,3 +1,9 @@
+import {
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
 import { type WebRequest } from 'webextension-polyfill';
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
@@ -31,7 +37,7 @@ describe('Request Events', () => {
         thirdParty: true,
     };
 
-    it('onBeforeRequest with prerender request', async () => {
+    test('onBeforeRequest with prerender request', async () => {
         RequestEvents.init();
 
         const listener = vi.fn();
@@ -265,11 +271,11 @@ describe('Request Events', () => {
         });
     });
 
-    it('onAuthRequired', () => {
+    test('onAuthRequired', () => {
         expect(browser.webRequest.onAuthRequired.addListener.calledOnce);
     });
 
-    it('onBeforeRedirect', () => {
+    test('onBeforeRedirect', () => {
         expect(browser.webRequest.onBeforeRedirect.addListener.calledOnce);
     });
 });

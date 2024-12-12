@@ -1,3 +1,10 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
 import polyfillBrowser from 'webextension-polyfill';
 import {

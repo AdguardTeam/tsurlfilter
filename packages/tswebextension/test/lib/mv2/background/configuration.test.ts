@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 
 import { type ConfigurationMV2, configurationMV2Validator, FilterListPreprocessor } from '../../../../src/lib';

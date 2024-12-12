@@ -1,3 +1,10 @@
+import {
+    describe,
+    expect,
+    vi,
+    test,
+} from 'vitest';
+
 import { companiesDbService } from '../../../src/lib/common/companies-db-service';
 
 vi.mock('../../../src/lib/common/companies-db-service/trackers-min', () => ({
