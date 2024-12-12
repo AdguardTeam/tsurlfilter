@@ -2,6 +2,13 @@
  * @vitest-environment jsdom
  */
 
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+    vi,
+} from 'vitest';
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../helpers/rule-creator';

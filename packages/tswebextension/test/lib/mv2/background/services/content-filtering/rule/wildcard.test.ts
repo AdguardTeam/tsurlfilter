@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { Wildcard } from '../../../../../../../src/lib/mv2/background/services/content-filtering/rule/wildcard';
 
 describe('Wildcard', () => {

@@ -1,3 +1,11 @@
+import {
+    describe,
+    beforeEach,
+    afterEach,
+    it,
+    expect,
+    vi,
+} from 'vitest';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';

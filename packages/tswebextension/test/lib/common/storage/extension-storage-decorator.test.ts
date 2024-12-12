@@ -1,4 +1,10 @@
 /* eslint-disable jsdoc/require-jsdoc */
+import {
+    describe,
+    expect,
+    beforeAll,
+    it,
+} from 'vitest';
 import browser from 'webextension-polyfill';
 
 import { createExtensionStorageDecorator, ExtensionStorage } from '../../../../src/lib/common/storage';

@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { WebRequestApi } from '../../../../src/lib/mv2/background/web-request-api';
 
 describe('web request api', () => {

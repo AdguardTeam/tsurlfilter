@@ -1,3 +1,12 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
+
 import { DocumentApi } from '../../../../src/lib/mv2/background/document-api';
 import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';

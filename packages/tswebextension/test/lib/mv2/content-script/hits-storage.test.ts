@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable guard-for-in */
 
+import { describe, expect, it } from 'vitest';
+
 import { HitsStorage } from '../../../../src/lib/common/content-script/hits-storage';
 
 describe('HitsStorage', () => {

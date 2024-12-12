@@ -1,3 +1,11 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
@@ -54,7 +62,7 @@ const getGetBlockingResponseParamsData = (
 
 describe('Request Blocking Api - shouldCollapseElement', () => {
     const mockMatchingResult = (ruleText?: string): void => {
-        let matchingResult = null;
+        let matchingResult: MatchingResult | null = null;
 
         if (ruleText) {
             const rule = createNetworkRule(ruleText, 0);

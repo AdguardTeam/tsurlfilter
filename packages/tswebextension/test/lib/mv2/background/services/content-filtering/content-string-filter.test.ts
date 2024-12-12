@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
