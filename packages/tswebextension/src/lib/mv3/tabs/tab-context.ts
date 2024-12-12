@@ -60,11 +60,13 @@ export class TabContext {
      */
     public mainFrameRule: NetworkRule | null = null;
 
+    // TODO remove.
     /**
-     * // TODO remove.
      * @deprecated
-     * This field is used in the extension, and mv2 version uses it,
-     * but it is not used anymore in mv3, so it is deprecated here.
+     * This field is used in the extension, and mv2 version may use it,
+     * but it should be removed in the future.
+     *
+     * We mark these tabs as synthetic because they may not actually exist.
      */
     public isSyntheticTab = false;
 
