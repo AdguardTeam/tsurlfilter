@@ -2,17 +2,17 @@ import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { NetworkRuleOption, StealthOptionName, type NetworkRule } from '@adguard/tsurlfilter';
 import { type WebRequest } from 'webextension-polyfill';
 
-import type { SettingsConfigMV3 } from '../configuration';
-import { searchEngineDomains } from './searchEngineDomains';
-import { getDomain } from '../../../common/utils/url';
-import { logger } from '../../../common/utils/logger';
-import { findHeaderByName, hasHeader, hasHeaderByName } from '../../../common/utils/headers';
-
 import { type StealthConfig } from '../../../common/configuration';
-import { requestContextStorage, type RequestContext } from '../request';
-import { StealthActions } from '../../../common/stealth-actions';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
+import { StealthActions } from '../../../common/stealth-actions';
+import { findHeaderByName, hasHeader, hasHeaderByName } from '../../../common/utils/headers';
+import { logger } from '../../../common/utils/logger';
+import { getDomain } from '../../../common/utils/url';
 import { appContext } from '../app-context';
+import type { SettingsConfigMV3 } from '../configuration';
+import { requestContextStorage, type RequestContext } from '../request';
+
+import { searchEngineDomains } from './searchEngineDomains';
 
 /**
  * Reserved stealth rule ids for the DNR.
@@ -613,7 +613,7 @@ export class StealthService {
             logger.error('[tswebextension.setDisableWebRTC]: error on setting the WebRTC policy ($webrtc): ', e);
 
             /**
-             * Edge case: If error ocurred while applying WebRTC
+             * Edge case: If error occurred while applying WebRTC
              * setting, it means that other extension might be
              * blocking it, we should return false as a indicator
              * of that WebRTC can not be enabled.

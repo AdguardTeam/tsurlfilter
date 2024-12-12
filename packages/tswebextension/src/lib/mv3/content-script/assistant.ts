@@ -1,10 +1,10 @@
 import { adguardAssistant, type Assistant } from '@adguard/assistant';
 import browser from 'webextension-polyfill';
 
-import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
-import { logger } from '../../common/utils/logger';
 import { type Message } from '../../common/message';
+import { MessageType } from '../../common/message-constants';
+import { logger } from '../../common/utils/logger';
 
 // Simple type guard for message object with 'type' field.
 // Added to no bring here huge zod library.

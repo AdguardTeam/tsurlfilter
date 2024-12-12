@@ -1,4 +1,5 @@
 import browser from 'webextension-polyfill';
+
 import { PersistentValueContainer } from '../../../../src/lib/common/storage';
 
 describe('PersistentValueContainer', () => {

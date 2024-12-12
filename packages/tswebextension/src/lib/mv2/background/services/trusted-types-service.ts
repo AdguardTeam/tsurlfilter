@@ -1,9 +1,7 @@
 import { type WebRequest } from 'webextension-polyfill';
 import { type CosmeticResult } from '@adguard/tsurlfilter';
-import {
-    type RequestContext,
-    requestContextStorage,
-} from '../request/request-context-storage';
+
+import { type RequestContext, requestContextStorage } from '../request/request-context-storage';
 
 /**
  * CSP Trusted Types service module.

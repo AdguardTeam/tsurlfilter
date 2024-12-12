@@ -1,8 +1,5 @@
 import type { WebRequest } from 'webextension-polyfill';
-import {
-    type MatchingResult,
-    type HTTPMethod,
-} from '@adguard/tsurlfilter';
+import { type MatchingResult, type HTTPMethod } from '@adguard/tsurlfilter';
 
 import type { ContentType } from '../../../common/request-type';
 import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';

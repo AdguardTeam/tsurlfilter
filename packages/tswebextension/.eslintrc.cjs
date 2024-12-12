@@ -1,6 +1,8 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
 
+const MAX_LINE_LENGTH = 120;
+
 module.exports = {
     root: true,
     parser: '@typescript-eslint/parser',
@@ -13,6 +15,7 @@ module.exports = {
     },
     plugins: [
         'import',
+        'import-newlines',
         '@typescript-eslint',
         '@vitest',
     ],
@@ -30,7 +33,14 @@ module.exports = {
         }],
         'no-bitwise': 'off',
         'no-new': 'off',
-        'max-len': ['error', { code: 120, ignoreUrls: true }],
+        'max-len': ['error', {
+            code: MAX_LINE_LENGTH,
+            comments: MAX_LINE_LENGTH,
+            tabWidth: 4,
+            ignoreUrls: true,
+            ignoreTrailingComments: false,
+            ignoreComments: false,
+        }],
         'import/prefer-default-export': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
         'no-continue': 'off',
@@ -43,11 +53,29 @@ module.exports = {
         'no-param-reassign': 'off',
         'import/no-cycle': 'off',
         'import/export': 'off',
+        'import-newlines/enforce': ['error', {
+            items: 3,
+            'max-len': MAX_LINE_LENGTH,
+        }],
+        'import/order': [
+            'error',
+            {
+                groups: [
+                    'builtin',
+                    'external',
+                    'internal',
+                    'parent',
+                    'index',
+                ],
+                'newlines-between': 'always',
+            },
+        ],
 
         // Force proper import and export of types
         '@typescript-eslint/consistent-type-imports': [
             'error',
             {
+                prefer: 'type-imports',
                 fixStyle: 'inline-type-imports',
             },
         ],

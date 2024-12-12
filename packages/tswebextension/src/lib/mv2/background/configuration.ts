@@ -1,4 +1,5 @@
 import { z } from 'zod';
+
 import { basicFilterValidator, configurationValidator } from '../../common/configuration';
 
 /**

@@ -1,22 +1,19 @@
-import {
-    type CosmeticResult,
-    type CosmeticRule,
-    type ScriptletData,
-} from '@adguard/tsurlfilter';
+import { type CosmeticResult, type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
+
+import { CosmeticApiCommon } from '../../common/cosmetic-api';
+import { getErrorMessage } from '../../common/error';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
+import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils/nanoid';
+import { getDomain } from '../../common/utils/url';
+import { type ContentType } from '../../common/request-type';
+import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
-import { tabsApi } from '../tabs/tabs-api';
-import { logger } from '../../common/utils/logger';
-import { getDomain } from '../../common/utils/url';
-import { nanoid } from '../../common/utils/nanoid';
-import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
-import { getErrorMessage } from '../../common/error';
-import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { ScriptingApi } from './scripting-api';
-import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { type ContentType } from '../../common/request-type';
 
 export type ContentScriptCosmeticData = {
     /**

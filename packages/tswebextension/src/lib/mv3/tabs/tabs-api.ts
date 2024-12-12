@@ -1,13 +1,14 @@
 import browser, { type Tabs } from 'webextension-polyfill';
 import type { NetworkRule } from '@adguard/tsurlfilter';
 
-import { logger } from '../../common/utils/logger';
-import { EventChannel } from '../../common/utils/channels';
-import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
-import { type FrameRequestContext, TabContext } from './tab-context';
-import { type Frame } from './frame';
-import { DocumentApi } from '../background/document-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
+import { EventChannel } from '../../common/utils/channels';
+import { logger } from '../../common/utils/logger';
+import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
+import { DocumentApi } from '../background/document-api';
+
+import { type Frame } from './frame';
+import { type FrameRequestContext, TabContext } from './tab-context';
 
 /**
  * Request context data related to the tab's frame.

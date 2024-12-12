@@ -2,6 +2,7 @@
 // If import from '../../common', entire tsurlfilter will be in the package.
 import { MessageType, sendAppMessage } from '../../common/content-script';
 import { CookieController, type CookieRule } from '../../common/content-script/cookie-controller';
+
 import { CosmeticController } from './cosmetic-controller';
 import { initAssistant } from './assistant';
 

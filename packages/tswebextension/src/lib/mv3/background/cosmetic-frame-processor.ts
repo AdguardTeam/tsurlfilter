@@ -4,6 +4,7 @@ import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { tabsApi } from '../tabs/tabs-api';
 import { Frame } from '../tabs/frame';
+
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
 import { CosmeticApi } from './cosmetic-api';

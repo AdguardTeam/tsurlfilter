@@ -1,9 +1,5 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
-import {
-    RequestType,
-    NetworkRuleOption,
-    type NetworkRule,
-} from '@adguard/tsurlfilter';
+import { RequestType, NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { tabsApi } from '../../tabs/tabs-api';
 import { companiesDbService } from '../../../common/companies-db-service';

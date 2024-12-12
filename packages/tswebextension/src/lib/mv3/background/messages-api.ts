@@ -2,14 +2,9 @@ import { NetworkRuleOption } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 import { getDomain } from 'tldts';
 
+import { MessageType } from '../../common/message-constants';
 import type { CookieRule } from '../../common/content-script/cookie-controller';
-import { logger } from '../../common/utils/logger';
-import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
-import { nanoid } from '../../common/utils/nanoid';
-
-import type { TsWebExtension } from './app';
-import { Assistant } from './assistant';
-import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
+import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import {
     getAssistantCreateRulePayloadValidator,
     getSaveCookieLogEventPayloadValidator,
@@ -18,12 +13,17 @@ import {
     type Message,
     messageValidator,
 } from '../../common/message';
-import { MessageType } from '../../common/message-constants';
-import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import { ContentType } from '../../common/request-type';
-import { appContext } from './app-context';
-import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
+import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
+import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils/nanoid';
 import type { TabsApi } from '../tabs/tabs-api';
+
+import type { TsWebExtension } from './app';
+import { appContext } from './app-context';
+import { Assistant } from './assistant';
+import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
+import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 export type MessagesHandlerMV3 = (
     message: Message,
