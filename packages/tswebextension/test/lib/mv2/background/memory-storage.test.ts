@@ -1,3 +1,11 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+} from 'vitest';
+
 import { MemoryStorage } from '../../../../src/lib/common/memory-storage';
 
 describe('MemoryStorage', () => {

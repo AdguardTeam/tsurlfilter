@@ -1,3 +1,11 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+    vi,
+} from 'vitest';
+
 import { getResponseHeaders } from '../../fixtures/response-headers';
 import CookieUtils from '../../../../../../src/lib/mv2/background/services/cookie-filtering/utils';
 import { ParsedCookie } from '../../../../../../src/lib/common/cookie-filtering/parsed-cookie';
