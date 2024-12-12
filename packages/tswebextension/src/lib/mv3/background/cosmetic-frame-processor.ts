@@ -5,6 +5,7 @@ import { MAIN_FRAME_ID } from '../../common/constants';
 import { tabsApi } from '../tabs/tabs-api';
 import { FrameMV3 } from '../tabs/frame';
 
+import { appContext } from './app-context';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
 import { CosmeticApi } from './cosmetic-api';
@@ -214,7 +215,11 @@ export class CosmeticFrameProcessor {
             scriptText,
             scriptletDataList,
         } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
-        const cssText = CosmeticApi.getCssText(cosmeticResult);
+
+        const { configuration } = appContext;
+        const areHitsStatsCollected = configuration?.settings.collectStats || false;
+
+        const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
         tabsApi.updateFrameContext(tabId, frameId, {
             mainFrameUrl,
@@ -268,7 +273,11 @@ export class CosmeticFrameProcessor {
             scriptText,
             scriptletDataList,
         } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
-        const cssText = CosmeticApi.getCssText(cosmeticResult);
+
+        const { configuration } = appContext;
+        const areHitsStatsCollected = configuration?.settings.collectStats || false;
+
+        const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
         tabsApi.updateFrameContext(tabId, frameId, {
             matchingResult: result,

@@ -3,6 +3,7 @@ import { RequestType } from '@adguard/tsurlfilter';
 import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
 
+import { appContext } from './app-context';
 import { CosmeticApi } from './cosmetic-api';
 import { documentApi, engineApi, tabsApi } from './api';
 import { FrameMV2 } from './tabs/frame';
@@ -176,7 +177,10 @@ export class CosmeticFrameProcessor {
 
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
-        const cssText = CosmeticApi.getCssText(cosmeticResult);
+        const { configuration } = appContext;
+        const areHitsStatsCollected = configuration?.settings.collectStats || false;
+
+        const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
         const { scriptText } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, result);
@@ -234,7 +238,10 @@ export class CosmeticFrameProcessor {
 
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
-        const cssText = CosmeticApi.getCssText(cosmeticResult);
+        const { configuration } = appContext;
+        const areHitsStatsCollected = configuration?.settings.collectStats || false;
+
+        const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
         const { scriptText } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, result);
