@@ -89,6 +89,18 @@ export class NodeExpectContext {
     }
 
     /**
+     * Gets the range for the last slot in the actual string.
+     *
+     * @returns Location range. See {@link Range}.
+     */
+    public getLastSlotRange(): Range {
+        return {
+            start: this.actual.length - 1,
+            end: this.actual.length,
+        };
+    }
+
+    /**
      * Converts the given range to a tuple.
      *
      * @param range Range to convert.
