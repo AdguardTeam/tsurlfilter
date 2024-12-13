@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { sprintf } from 'sprintf-js';
+import { TokenType } from '@adguard/css-tokenizer';
 
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { AdblockSyntax } from '../../utils/adblockers';
@@ -58,6 +59,7 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from '../misc/value';
 import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
+import { hasToken } from '../css/has-token';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
@@ -527,7 +529,6 @@ export class CosmeticRuleParser extends ParserBase {
             if (!ADG_CSS_INJECTION_PATTERN.test(rawBody)) {
                 return null;
             }
-
             expectCommonOrSpecificSyntax(AdblockSyntax.Adg);
 
             return {
@@ -543,36 +544,28 @@ export class CosmeticRuleParser extends ParserBase {
             if (!options.parseAbpSpecificRules) {
                 return null;
             }
+
             // check if the rule contains both CSS block open and close characters
             const hasCssBlockOpen = rawBody.indexOf(CSS_BLOCK_OPEN) !== -1;
             const hasCssBlockClose = rawBody.indexOf(CSS_BLOCK_CLOSE) !== -1;
 
-            // if either CSS block open or close characters are missing, return null
-            if (!hasCssBlockOpen || !hasCssBlockClose) {
+            // if none of them is present we can stop parsing
+            if (!hasCssBlockOpen && !hasCssBlockClose) {
                 return null;
             }
 
-            let parsedRule;
+            if (!hasToken(rawBody, new Set([TokenType.OpenCurlyBracket, TokenType.CloseCurlyBracket]))) {
+                return null;
+            }
 
-            try {
             // try to parse the raw body as an AdGuard CSS injection rule
-                parsedRule = AdgCssInjectionParser.parse(rawBody, options, baseOffset + bodyStart);
-            } catch (error) {
-            // if parsing fails, return null go to the next function
-                return null;
-            }
-
+            const body = AdgCssInjectionParser.parse(rawBody, options, baseOffset + bodyStart);
             // if the parsed rule type is a 'CssInjectionRuleBody', return the parsed rule
-            if (parsedRule.type === 'CssInjectionRuleBody') {
-                return {
-                    syntax: AdblockSyntax.Abp,
-                    type: CosmeticRuleType.CssInjectionRule,
-                    body: parsedRule,
-                };
-            }
-
-            // if the parsed rule type is not a CSS injection rule body, return null
-            return null;
+            return {
+                syntax: AdblockSyntax.Abp,
+                type: CosmeticRuleType.CssInjectionRule,
+                body,
+            };
         };
 
         const parseAbpSnippetInjection = (): Pick<ScriptletInjectionRule, RestProps> | null => {
@@ -742,8 +735,8 @@ export class CosmeticRuleParser extends ParserBase {
                 parseElementHiding,
             ],
 
-            '#?#': [parseUboCssInjection, parseElementHiding],
-            '#@?#': [parseUboCssInjection, parseElementHiding],
+            '#?#': [parseUboCssInjection, parseAbpCssInjection, parseElementHiding],
+            '#@?#': [parseUboCssInjection, parseAbpCssInjection, parseElementHiding],
 
             '#$#': [parseAdgCssInjection, parseAbpSnippetInjection],
             '#@$#': [parseAdgCssInjection, parseAbpSnippetInjection],
