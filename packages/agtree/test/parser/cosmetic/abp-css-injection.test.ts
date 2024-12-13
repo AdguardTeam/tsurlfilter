@@ -13,31 +13,9 @@ import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import { ERROR_MESSAGES as CSS_TOKEN_STREAM_ERROR_MESSAGES, END_OF_INPUT } from '../../../src/parser/css/constants';
-// ##div { display: none !important; }
-// #@#div { display: none !important; }
-// ##.banner { remove: true; }
-// #@#.banner { remove: true; }
-// #?#.banner:has(.foo) { display: none !important; }
-// #@?#.banner:has(.foo) { display: none !important; }
-
-// #?#.banner:contains({) { display: none !important; }
-// #@?#.banner:contains({) { display: none !important; }
-
-// ##.banner { padding: 10px !important; background: black !important; }
-// ##div[class^="foo{"] - should be parsed as element hiding rule
-
-// #@#div[class^="foo{"]
-// #?#.foo:contains({) -should be parsed as element hiding rule
-
-// invalid cases
-// when should throw error
-// ##div { display: none !important
-// #@#div { display: none !important
-// ##div display: none !important }
-// #@#div display: none !important }
 
 describe('CosmeticRuleParser', () => {
-    describe('CosmeticRuleParser.parse - valid AdGuard CSS injection rules', () => {
+    describe('CosmeticRuleParser.parse - valid AdblockPlus CSS injection rules', () => {
         test.each<{ actual: string; expected: NodeExpectFn<ElementHidingRule | CssInjectionRule> }>([
             // generic cosmetic rule - without domains
             {
@@ -456,7 +434,7 @@ describe('CosmeticRuleParser', () => {
         });
     });
 
-    describe('CosmeticRuleParser.generate - AdGuard CSS injection rules', () => {
+    describe('CosmeticRuleParser.generate - AdblockPlus CSS injection rules', () => {
         test.each<{ actual: string; expected: string }>([
             // simple cases - without domains
             {
