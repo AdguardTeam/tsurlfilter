@@ -7,7 +7,6 @@ import { CosmeticApi } from '../cosmetic-api';
 import { CosmeticFrameProcessor } from '../cosmetic-frame-processor';
 import { appContext } from '../app-context';
 import type { DocumentApi } from '../document-api';
-import type { EngineApi } from '../engine-api';
 
 import { FrameMV2 } from './frame';
 import type { TabsApi } from './tabs-api';
@@ -17,22 +16,16 @@ import { TabContext } from './tab-context';
  * Injects cosmetic rules into tabs, opened before app initialization.
  */
 export class TabsCosmeticInjector {
-    private cosmeticFrameProcessor: CosmeticFrameProcessor;
-
     /**
      * Create instance of TabsCosmeticInjector.
      *
-     * @param documentApi Document API.
-     * @param tabsApi Tabs API.
-     * @param engineApi Engine API.
+     * @param documentApi  Document API.
+     * @param tabsApi  Tabs API.
      */
     constructor(
         private readonly documentApi: DocumentApi,
         private readonly tabsApi: TabsApi,
-        engineApi: EngineApi,
-    ) {
-        this.cosmeticFrameProcessor = new CosmeticFrameProcessor(engineApi);
-    }
+    ) {}
 
     /**
      * Creates contexts for tabs opened before api initialization and
@@ -102,7 +95,7 @@ export class TabsCosmeticInjector {
                 documentId,
             }));
 
-            this.cosmeticFrameProcessor.handleFrame({
+            CosmeticFrameProcessor.handleFrame({
                 tabId,
                 frameId,
                 url,

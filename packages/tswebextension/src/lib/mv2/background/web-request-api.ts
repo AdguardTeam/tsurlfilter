@@ -183,7 +183,7 @@ import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 import { Assistant } from './assistant';
 import { tabsApi, engineApi, documentApi } from './api';
 import { CosmeticApi } from './cosmetic-api';
-import { cosmeticFrameProcessor } from './cosmetic-frame-processor';
+import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { cspService } from './services/csp-service';
@@ -350,7 +350,7 @@ export class WebRequestApi {
         });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
-            cosmeticFrameProcessor.precalculateCosmetics({
+            CosmeticFrameProcessor.precalculateCosmetics({
                 tabId,
                 frameId,
                 url: requestUrl,
@@ -738,7 +738,7 @@ export class WebRequestApi {
             url,
         } = details;
 
-        cosmeticFrameProcessor.precalculateCosmetics({
+        CosmeticFrameProcessor.precalculateCosmetics({
             tabId,
             frameId,
             url,

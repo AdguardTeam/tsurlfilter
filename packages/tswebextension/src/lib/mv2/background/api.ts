@@ -48,7 +48,6 @@ export function createTsWebExtension(webAccessibleResourcesPath: string): TsWebE
     const tabCosmeticInjector = new TabsCosmeticInjector(
         documentApi,
         tabsApi,
-        engineApi,
     );
 
     return new TsWebExtension(
