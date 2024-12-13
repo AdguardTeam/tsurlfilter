@@ -8,8 +8,8 @@ import { FilteringEventType, type FilteringLogInterface } from '../../../common/
 import type { StealthConfig } from '../../../common/configuration';
 import { StealthHelper } from '../../../common/stealth-helper';
 import { StealthActions } from '../../../common/stealth-actions';
-import type { RequestContext } from '../request';
 import type { AppContext } from '../app-context';
+import type { RequestContext } from '../request';
 
 /**
  * Stealth service module.
