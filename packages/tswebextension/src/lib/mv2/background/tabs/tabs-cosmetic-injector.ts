@@ -31,7 +31,7 @@ export class TabsCosmeticInjector {
         private readonly tabsApi: TabsApi,
         engineApi: EngineApi,
     ) {
-        this.cosmeticFrameProcessor = new CosmeticFrameProcessor(engineApi);
+        this.cosmeticFrameProcessor = new CosmeticFrameProcessor(engineApi, tabsApi);
     }
 
     /**

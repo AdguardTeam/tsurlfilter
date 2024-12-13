@@ -183,7 +183,7 @@ import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 import { Assistant } from './assistant';
 import { tabsApi, engineApi, documentApi } from './api';
 import { CosmeticApi } from './cosmetic-api';
-import { cosmeticFrameProcessor } from './cosmetic-frame-processor';
+import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { cspService } from './services/csp-service';
@@ -210,6 +210,8 @@ export type InjectCosmeticParams = {
     timestamp: number,
     url: string,
 };
+
+export const cosmeticFrameProcessor = new CosmeticFrameProcessor(engineApi, tabsApi);
 
 /**
  * API for applying rules from background service by handling
