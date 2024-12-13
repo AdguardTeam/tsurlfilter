@@ -2,6 +2,12 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
+import type {
+    PrecalculateCosmeticProps,
+    HandleSubFrameWithoutUrlProps,
+    HandleSubFrameWithUrlProps,
+    HandleMainFrameProps,
+} from '../../common/cosmetic-frame-processor';
 import { tabsApi } from '../tabs/tabs-api';
 import { FrameMV3 } from '../tabs/frame';
 
@@ -9,106 +15,6 @@ import { appContext } from './app-context';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
 import { CosmeticApi } from './cosmetic-api';
-
-/**
- * Precalculate cosmetic props.
- */
-type PrecalculateCosmeticProps = {
-    /**
-     * Frame url.
-     */
-    url: string,
-
-    /**
-     * Frame tab id.
-     */
-    tabId: number,
-
-    /**
-     * Frame id.
-     */
-    frameId: number,
-
-    /**
-     * Frame creation timestamp.
-     */
-    timeStamp: number,
-
-    /**
-     * Parent document id.
-     */
-    parentDocumentId?: string
-
-    /**
-     * Document id.
-     */
-    documentId?: string,
-};
-
-/**
- * Handle sub frame without url props.
- */
-type HandleSubFrameWithoutUrlProps = {
-    /**
-     * Tab id.
-     */
-    tabId: number,
-
-    /**
-     * Frame id.
-     */
-    frameId: number,
-
-    /**
-     * Main frame url.
-     */
-    mainFrameUrl?: string,
-
-    /**
-     * Parent document id.
-     */
-    parentDocumentId?: string,
-};
-
-/**
- * Handle sub frame with url props.
- */
-type HandleSubFrameWithUrlProps = {
-    /**
-     * Frame url.
-     */
-    url: string,
-
-    /**
-     * Tab id.
-     */
-    tabId: number,
-
-    /**
-     * Frame id.
-     */
-    frameId: number,
-
-    /**
-     * Main frame url.
-     */
-    mainFrameUrl?: string,
-
-    /**
-     * Main frame rule.
-     */
-    mainFrameRule: any,
-};
-
-/**
- * Handle main frame props.
- */
-type HandleMainFrameProps = {
-    url: string,
-    tabId: number,
-    frameId: number,
-    documentId?: number,
-};
 
 /**
  * Cosmetic frame processor.

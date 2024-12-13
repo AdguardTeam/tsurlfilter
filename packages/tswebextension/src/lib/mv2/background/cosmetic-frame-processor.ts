@@ -2,6 +2,12 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
+import type {
+    PrecalculateCosmeticProps,
+    HandleSubFrameWithoutUrlProps,
+    HandleSubFrameWithUrlProps,
+    HandleMainFrameProps,
+} from '../../common/cosmetic-frame-processor';
 
 import { documentApi } from './api';
 import { appContext } from './app-context';
@@ -12,117 +18,9 @@ import { FrameMV2 } from './tabs/frame';
 import type { TabsApi } from './tabs/tabs-api';
 
 /**
- * Precalculate cosmetic props.
- */
-type PrecalculateCosmeticProps = {
-    /**
-     * Frame url.
-     */
-    url: string,
-
-    /**
-     * Frame tab id.
-     */
-    tabId: number,
-
-    /**
-     * Frame id.
-     */
-    frameId: number,
-
-    /**
-     * Frame creation timestamp.
-     */
-    timeStamp: number,
-
-    /**
-     * Parent document id.
-     */
-    parentDocumentId?: string
-
-    /**
-     * Document id.
-     */
-    documentId?: string,
-};
-
-/**
- * Handle sub frame without url props.
- */
-type HandleSubFrameWithoutUrlProps = {
-    /**
-     * Tab id.
-     */
-    tabId: number,
-
-    /**
-     * Frame id.
-     */
-    frameId: number,
-
-    /**
-     * Main frame url.
-     */
-    mainFrameUrl?: string,
-
-    /**
-     * Parent document id.
-     */
-    parentDocumentId?: string,
-};
-
-/**
- * Handle sub frame with url props.
- */
-type HandleSubFrameWithUrlProps = {
-    /**
-     * Frame url.
-     */
-    url: string,
-
-    /**
-     * Tab id.
-     */
-    tabId: number,
-
-    /**
-     * Frame id.
-     */
-    frameId: number,
-
-    /**
-     * Main frame url.
-     */
-    mainFrameUrl?: string,
-
-    /**
-     * Main frame rule.
-     */
-    mainFrameRule: any,
-};
-
-/**
- * Handle main frame props.
- */
-type HandleMainFrameProps = {
-    url: string,
-    tabId: number,
-    frameId: number,
-    documentId?: number,
-};
-
-/**
  * Cosmetic frame processor.
  */
 export class CosmeticFrameProcessor {
-    /**
-     * Time threshold to consider two events as part of the same frame.
-     * The value is chosen experimentally; in most cases, 100 ms is sufficient to consider the onBeforeNavigate
-     * and onBeforeRequest events as related to the same frame. It is also small enough to ignore manual page
-     * reloads by the user.
-     */
-    static SAME_FRAME_THRESHOLD_MS = 100;
-
     /**
      * Initializes a new instance of the {@link CosmeticFrameProcessor} class.
      *
