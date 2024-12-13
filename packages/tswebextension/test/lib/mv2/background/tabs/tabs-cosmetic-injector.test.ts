@@ -42,7 +42,7 @@ describe('TabsCosmeticInjector', () => {
         engineApi = new EngineApi(allowlist, appContext, stealthApi);
         const documentApi = new DocumentApi(allowlist, engineApi);
         const tabsApi = new TabsApi(documentApi);
-        tabsCosmeticInjector = new TabsCosmeticInjector(documentApi, tabsApi);
+        tabsCosmeticInjector = new TabsCosmeticInjector(documentApi, tabsApi, engineApi);
     });
 
     afterEach(() => {

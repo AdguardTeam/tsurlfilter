@@ -8,6 +8,7 @@ import { CosmeticApi } from './cosmetic-api';
 import { documentApi, engineApi, tabsApi } from './api';
 import { FrameMV2 } from './tabs/frame';
 import { stealthApi } from './stealth-api';
+import type { EngineApi } from './engine-api';
 
 /**
  * Precalculate cosmetic props.
@@ -121,11 +122,22 @@ export class CosmeticFrameProcessor {
      */
     static SAME_FRAME_THRESHOLD_MS = 100;
 
+    private engineApi: EngineApi;
+
+    /**
+     * Initializes a new instance of the {@link CosmeticFrameProcessor} class.
+     *
+     * @param engineApiInstance Engine API instance.
+     */
+    constructor(engineApiInstance: EngineApi) {
+        this.engineApi = engineApiInstance;
+    }
+
     /**
      * Handle sub frame without url.
      * @param props Handle sub frame without url props.
      */
-    public static handleSubFrameWithoutUrl(props: HandleSubFrameWithoutUrlProps): void {
+    private static handleSubFrameWithoutUrl(props: HandleSubFrameWithoutUrlProps): void {
         const {
             tabId,
             frameId,
@@ -155,7 +167,7 @@ export class CosmeticFrameProcessor {
      * Handle sub frame with url.
      * @param props Handle sub frame with url props.
      */
-    public static handleSubFrameWithUrl(props: HandleSubFrameWithUrlProps): void {
+    private handleSubFrameWithUrl(props: HandleSubFrameWithUrlProps): void {
         const {
             url,
             tabId,
@@ -164,7 +176,7 @@ export class CosmeticFrameProcessor {
             mainFrameRule,
         } = props;
 
-        const result = engineApi.matchRequest({
+        const result = this.engineApi.matchRequest({
             requestUrl: url,
             frameUrl: mainFrameUrl || url,
             requestType: RequestType.SubDocument,
@@ -175,7 +187,7 @@ export class CosmeticFrameProcessor {
             return;
         }
 
-        const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
+        const cosmeticResult = this.engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
@@ -206,7 +218,7 @@ export class CosmeticFrameProcessor {
      * Handle main frame.
      * @param props Handle main frame props.
      */
-    public static handleMainFrame(props: HandleMainFrameProps): void {
+    private handleMainFrame(props: HandleMainFrameProps): void {
         const {
             url,
             tabId,
@@ -225,7 +237,7 @@ export class CosmeticFrameProcessor {
             tabsApi.updateFrameContext(tabId, frameId, { frameRule: mainFrameRule });
         }
 
-        const result = engineApi.matchRequest({
+        const result = this.engineApi.matchRequest({
             requestUrl: url,
             frameUrl: url,
             requestType: RequestType.Document,
@@ -236,7 +248,7 @@ export class CosmeticFrameProcessor {
             return;
         }
 
-        const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
+        const cosmeticResult = this.engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
@@ -266,7 +278,7 @@ export class CosmeticFrameProcessor {
      * Handles frames used here and in the {@link TabsCosmeticInjector}.
      * @param props Precalculate cosmetic props.
      */
-    public static handleFrame(props: PrecalculateCosmeticProps): void {
+    public handleFrame(props: PrecalculateCosmeticProps): void {
         const {
             tabId,
             frameId,
@@ -277,7 +289,7 @@ export class CosmeticFrameProcessor {
         const isMainFrame = frameId === MAIN_FRAME_ID;
 
         if (isMainFrame) {
-            CosmeticFrameProcessor.handleMainFrame({
+            this.handleMainFrame({
                 url,
                 tabId,
                 frameId,
@@ -295,7 +307,7 @@ export class CosmeticFrameProcessor {
                     parentDocumentId,
                 });
             } else {
-                CosmeticFrameProcessor.handleSubFrameWithUrl({
+                this.handleSubFrameWithUrl({
                     url,
                     tabId,
                     frameId,
@@ -312,7 +324,7 @@ export class CosmeticFrameProcessor {
      *
      * @param props Precalculate cosmetic props.
      */
-    public static precalculateCosmetics(props: PrecalculateCosmeticProps): void {
+    public precalculateCosmetics(props: PrecalculateCosmeticProps): void {
         const {
             tabId,
             frameId,
@@ -333,6 +345,8 @@ export class CosmeticFrameProcessor {
             parentDocumentId,
         }));
 
-        CosmeticFrameProcessor.handleFrame(props);
+        this.handleFrame(props);
     }
 }
+
+export const cosmeticFrameProcessor = new CosmeticFrameProcessor(engineApi);
