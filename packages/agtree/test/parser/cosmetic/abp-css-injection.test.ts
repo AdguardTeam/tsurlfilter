@@ -524,10 +524,8 @@ describe('CosmeticRuleParser', () => {
                 actual: String.raw`##div { display: none !important`,
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        sprintf(
-                            'Expected \'<}-token>\', but got \'end of input\'',
-                        ),
-                        ...context.toTuple(context.getRangeFor('t')),
+                        "Expected '<}-token>', but got 'end of input'",
+                        ...context.toTuple(context.getLastSlotRange()),
                     );
                 },
             },
