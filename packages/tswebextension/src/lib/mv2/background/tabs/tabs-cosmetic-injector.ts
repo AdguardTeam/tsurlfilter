@@ -83,12 +83,10 @@ export class TabsCosmeticInjector {
             const {
                 url,
                 frameId,
-                // FIXME (Slava): supported by chrome 106+ so increase minimal supported browser version
-                // FIXME (Slava): check firefox
+                // both parentDocumentId and documentId supported by chrome 106+
+                // but not supported by Firefox so it is calculated based on tabId and frameId
                 // @ts-ignore
                 parentDocumentId,
-                // FIXME (Slava): supported by chrome 106+ so increase minimal supported browser version
-                // FIXME (Slava): check firefox
                 // @ts-ignore
                 documentId,
             } = frameDetails;

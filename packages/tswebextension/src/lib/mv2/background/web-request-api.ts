@@ -710,8 +710,8 @@ export class WebRequestApi {
     ): string | undefined {
         const {
             tabId,
-            // FIXME (Slava): supported by chrome 106+ so increase minimal supported browser version
-            // FIXME (Slava): parentDocumentId is not supported by firefox, figure out something
+            // supported by chrome 106+
+            // but not supported by Firefox so it is calculated based on tabId and frameId
             // @ts-ignore
             parentDocumentId,
             parentFrameId,
@@ -762,8 +762,8 @@ export class WebRequestApi {
         const {
             tabId,
             frameId,
-            // FIXME (Slava): supported by chrome 106+ so increase minimal supported browser version
-            // FIXME (Slava): documentId is not supported by firefox, figure out something
+            // supported by chrome 106+
+            // but not supported by Firefox so it is calculated based on tabId and frameId
             // @ts-ignore
             documentId,
         } = details;
@@ -803,25 +803,23 @@ export class WebRequestApi {
         return isAssistant;
     }
 
-    // FIXME (Slava): update comment
     /**
      * On DOM content loaded web navigation event handler.
      *
-     * This method injects css and js code in iframes without remote source.
-     * Usual webRequest callbacks don't fire for iframes without remote source.
-     * Also urls in these iframes may be "about:blank", "about:srcdoc", etc.
-     * Due to this reason we prepare injections for them as for mainframe
-     * and inject them only when onDOMContentLoaded fires.
+     * This method injects css and js code in all frames, particularly in iframes without remote source.
+     * Usual webRequest callbacks don't fire for frames without remote source.
+     * Also urls in these frames may be "about:blank", "about:srcdoc", etc.
      *
      * @see https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1046
+     *
      * @param details Event details.
      */
     private static onDomContentLoaded(details: WebNavigation.OnDOMContentLoadedDetailsType): void {
         const {
             tabId,
             frameId,
-            // FIXME (Slava): supported by chrome 106+ so increase minimal supported browser version
-            // FIXME (Slava): documentId is not supported by firefox, figure out something
+            // supported by chrome 106+
+            // but not supported by Firefox so it is calculated based on tabId and frameId
             // @ts-ignore
             documentId,
         } = details;
