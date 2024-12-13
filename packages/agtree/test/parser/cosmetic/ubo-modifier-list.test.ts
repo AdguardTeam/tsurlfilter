@@ -99,7 +99,11 @@ describe('CosmeticRuleParser', () => {
                 //       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        sprintf(COSMETIC_ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED, AdblockSyntax.Ubo, AdblockSyntax.Adg),
+                        sprintf(
+                            COSMETIC_ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED,
+                            AdblockSyntax.Ubo,
+                            AdblockSyntax.Adg,
+                        ),
                         ...context.toTuple(context.getFullRange()),
                     );
                 },

@@ -1,7 +1,7 @@
 import { sprintf } from 'sprintf-js';
 
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
-import { AdblockSyntax } from '../../utils/adblockers';
+import { type AdblockSyntaxType, AdblockSyntax } from '../../utils/adblockers';
 import { DomainListParser } from '../misc/domain-list-parser';
 import { ModifierListParser } from '../misc/modifier-list';
 import {
@@ -112,7 +112,7 @@ export class CosmeticRuleParser extends BaseParser {
             return null;
         }
 
-        let syntax = AdblockSyntax.Common;
+        let syntax: AdblockSyntaxType = AdblockSyntax.Common;
         let modifiers: ModifierList | undefined;
 
         const patternStart = StringUtils.skipWS(raw);
@@ -234,7 +234,7 @@ export class CosmeticRuleParser extends BaseParser {
          * @param expectedSyntax Expected syntax
          * @throws If the rule syntax is not common or the expected one
          */
-        const expectCommonOrSpecificSyntax = (expectedSyntax: AdblockSyntax) => {
+        const expectCommonOrSpecificSyntax = (expectedSyntax: AdblockSyntaxType) => {
             if (syntax !== AdblockSyntax.Common && syntax !== expectedSyntax) {
                 throw new AdblockSyntaxError(
                     sprintf(ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED, expectedSyntax, syntax),

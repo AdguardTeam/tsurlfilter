@@ -1,4 +1,4 @@
-import { AdblockSyntax } from '../utils/adblockers';
+import { type AdblockSyntaxType, AdblockSyntax } from '../utils/adblockers';
 import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
 
 /**
@@ -9,7 +9,7 @@ import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-let syntaxSerializationMap: Map<AdblockSyntax, number> | undefined;
+let syntaxSerializationMap: Map<AdblockSyntaxType, number> | undefined;
 export const getSyntaxSerializationMap = () => {
     if (!syntaxSerializationMap) {
         syntaxSerializationMap = new Map([

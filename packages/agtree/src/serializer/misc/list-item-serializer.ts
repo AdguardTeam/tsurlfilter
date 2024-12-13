@@ -1,5 +1,5 @@
 import { BaseSerializer } from '../base-serializer';
-import { type ListItem, ListItemNodeType } from '../../nodes';
+import { type ListItem, ListItemNodeType, type ListItemNodeTypeType } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { isUndefined } from '../../utils/type-guards';
 import { NULL } from '../../utils/constants';
@@ -17,7 +17,7 @@ export class ListItemSerializer extends BaseSerializer {
      * @param buffer Output byte buffer.
      * @template T Type of the list item.
      */
-    public static serialize<T extends ListItemNodeType>(item: ListItem<T>, buffer: OutputByteBuffer): void {
+    public static serialize<T extends ListItemNodeTypeType>(item: ListItem<T>, buffer: OutputByteBuffer): void {
         switch (item.type) {
             case ListItemNodeType.App:
                 buffer.writeUint8(BinaryTypeMarshallingMap.AppNode);

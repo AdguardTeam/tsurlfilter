@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { type ListItem, type ListItemNodeType } from '../../nodes';
+import { type ListItem, type ListItemNodeTypeType } from '../../nodes';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ListItemDeserializer } from './list-item-deserializer';
 
@@ -15,7 +15,7 @@ export class ListItemsDeserializer {
      * @param items Partial list of items to deserialize.
      * @template T Type of the list items.
      */
-    public static deserialize = <T extends ListItemNodeType>(
+    public static deserialize = <T extends ListItemNodeTypeType>(
         buffer: InputByteBuffer,
         items: Partial<ListItem<T>>[],
     ): void => {

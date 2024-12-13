@@ -12,6 +12,7 @@ import {
     type ScriptletInjectionRuleBody,
     type DomainList,
     type ModifierList,
+    type CosmeticRuleTypeType,
 } from '../../nodes';
 import { AbpSnippetInjectionBodyDeserializer } from './scriptlet-body/abp-snippet-injection-body-deserializer';
 import { UboScriptletInjectionBodyDeserializer } from './scriptlet-body/ubo-scriptlet-injection-body-deserializer';
@@ -49,7 +50,7 @@ const getCosmeticRuleSeparatorDeserializationMap = () => {
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
  * as it allows us to use a single byte to represent frequently used values.
  */
-const COSMETIC_RULE_TYPE_DESERIALIZATION_MAP = new Map<BinaryTypeMarshallingMap, CosmeticRuleType>([
+const COSMETIC_RULE_TYPE_DESERIALIZATION_MAP = new Map<BinaryTypeMarshallingMap, CosmeticRuleTypeType>([
     [BinaryTypeMarshallingMap.ElementHidingRule, CosmeticRuleType.ElementHidingRule],
     [BinaryTypeMarshallingMap.CssInjectionRule, CosmeticRuleType.CssInjectionRule],
     [BinaryTypeMarshallingMap.ScriptletInjectionRule, CosmeticRuleType.ScriptletInjectionRule],

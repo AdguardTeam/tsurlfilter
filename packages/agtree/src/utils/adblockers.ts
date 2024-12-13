@@ -5,7 +5,7 @@
 /**
  * Possible adblock syntaxes (supported by this library)
  */
-export enum AdblockSyntax {
+export const AdblockSyntax = {
     /**
      * Common syntax, which is supported by more than one adblocker (or by all adblockers).
      *
@@ -17,7 +17,7 @@ export enum AdblockSyntax {
      * we cannot determine at parsing level whether `important` is a valid option or not, and if it is valid,
      * then which adblocker supports it.
      */
-    Common = 'Common',
+    Common: 'Common',
 
     /**
      * Adblock Plus syntax.
@@ -27,7 +27,7 @@ export enum AdblockSyntax {
      * adblockers directly (probably supported by some on-the-fly conversion, but this is not the native syntax).
      * @see {@link https://adblockplus.org/}
      */
-    Abp = 'AdblockPlus',
+    Abp: 'AdblockPlus',
 
     /**
      * uBlock Origin syntax.
@@ -37,7 +37,7 @@ export enum AdblockSyntax {
      * adblockers directly (probably supported by some on-the-fly conversion, but this is not the native syntax).
      * @see {@link https://github.com/gorhill/uBlock}
      */
-    Ubo = 'UblockOrigin',
+    Ubo: 'UblockOrigin',
 
     /**
      * AdGuard syntax.
@@ -48,5 +48,7 @@ export enum AdblockSyntax {
      * syntax).
      * @see {@link https://adguard.com/}
      */
-    Adg = 'AdGuard',
-}
+    Adg: 'AdGuard',
+} as const;
+
+export type AdblockSyntaxType = typeof AdblockSyntax[keyof typeof AdblockSyntax];

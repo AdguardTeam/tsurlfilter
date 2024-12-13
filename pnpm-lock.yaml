@@ -21,8 +21,8 @@ importers:
         specifier: ^4.3.70
         version: 4.3.70
       '@adguard/filters-downloader':
-        specifier: ^2.2.0
-        version: 2.2.0
+        specifier: ^2.2.6
+        version: 2.2.6
       '@adguard/tswebextension':
         specifier: workspace:^
         version: link:../tswebextension
@@ -1062,8 +1062,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       '@adguard/scriptlets':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: https://github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz
+        version: '@github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz'
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1243,8 +1243,8 @@ importers:
         specifier: workspace:^
         version: link:../logger
       '@adguard/scriptlets':
-        specifier: ^2.0.1
-        version: 2.0.1
+        specifier: https://github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz
+        version: '@github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz'
       '@adguard/tsurlfilter':
         specifier: workspace:^
         version: link:../tsurlfilter
@@ -1446,8 +1446,8 @@ packages:
     engines: {node: '>=16'}
     dev: false
 
-  /@adguard/filters-downloader@2.2.0:
-    resolution: {integrity: sha512-VhmMNR12e9Juz2SoSDEpVIGW7PxZf0FspbOkEnqfwy7nH4R3ps1nJrQ5z1YmmwaaBEzv+P1NfnRbxfIET4juCA==}
+  /@adguard/filters-downloader@2.2.6:
+    resolution: {integrity: sha512-lAKrJbM8pEK2sZi4Tb9bfa3aSDZ025nYNAHF7FxYgihtbX5SxKPZBXThEjgHGTqyifsMDq/HSVC0n15EIytMdQ==}
     engines: {node: '>=18'}
     dependencies:
       '@adguard/diff-builder': 1.0.17
@@ -1469,14 +1469,6 @@ packages:
 
   /@adguard/scriptlets@1.12.1:
     resolution: {integrity: sha512-luAGl8hHEjKZfTFqWG8PBsif2wAPWNi0uuT+xzyBTk+IllHDYOLPSwyMKh2ru7nKCQJEOgMVwNoIrPB4zuuX1w==}
-    dependencies:
-      '@adguard/agtree': link:packages/agtree
-      '@babel/runtime': 7.26.0
-      js-yaml: 3.14.1
-    dev: false
-
-  /@adguard/scriptlets@2.0.1:
-    resolution: {integrity: sha512-AL+EFHeTxC1GfwBbexV0zSInXCnb3/ZotFdSgRK3r9jtmkjRbI2zg84h+6W3TUdqum/IqZ4ABl/B7hapvM5pOg==}
     dependencies:
       '@adguard/agtree': link:packages/agtree
       '@babel/runtime': 7.26.0
@@ -21875,6 +21867,15 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+    dev: false
+
+  '@github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz':
+    resolution: {tarball: https://github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz}
+    name: '@adguard/scriptlets'
+    version: 2.1.0
+    dependencies:
+      '@adguard/agtree': link:packages/agtree
+      js-yaml: 3.14.1
     dev: false
 
   github.com/105th/jsdiff/2be2e7df90e8eebd99f0385c7b1dc16c2f4dcc1a:

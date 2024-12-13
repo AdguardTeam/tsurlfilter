@@ -1,5 +1,7 @@
 {
     "compilerOptions": {
+      "module": "esnext",
+      "moduleResolution": "bundler",
       "target": "es2022",
       "lib": [
         "dom",
@@ -11,8 +13,6 @@
       "allowSyntheticDefaultImports": true,
       "strict": true,
       "forceConsistentCasingInFileNames": true,
-      "module": "esnext",
-      "moduleResolution": "node",
       "resolveJsonModule": true,
       "noEmit": true,
       "jsx": "react"

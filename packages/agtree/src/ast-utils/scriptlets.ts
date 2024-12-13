@@ -4,7 +4,7 @@
 
 import { type ParameterList } from '../nodes';
 import { EMPTY } from '../utils/constants';
-import { type QuoteType, QuoteUtils } from '../utils/quotes';
+import { type QuoteTypeType, QuoteUtils } from '../utils/quotes';
 import { isNull, isUndefined } from '../utils/type-guards';
 
 /**
@@ -100,7 +100,7 @@ export function setScriptletName(scriptletNode: ParameterList, name: string): vo
  * @param scriptletNode Scriptlet node to set quote type of
  * @param quoteType Preferred quote type
  */
-export function setScriptletQuoteType(scriptletNode: ParameterList, quoteType: QuoteType): void {
+export function setScriptletQuoteType(scriptletNode: ParameterList, quoteType: QuoteTypeType): void {
     // null is a special value that means "no value", but we can't change its quote type,
     // so we need to convert it to empty string
     transformAllScriptletArguments(scriptletNode, (value) => QuoteUtils.setStringQuoteType(value ?? EMPTY, quoteType));

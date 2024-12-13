@@ -1,4 +1,4 @@
-import { type ListItem, type ListItemNodeType } from '../../nodes';
+import { type ListItem, type ListItemNodeTypeType } from '../../nodes';
 import { EMPTY, NEGATION_MARKER } from '../../utils/constants';
 
 /**
@@ -13,7 +13,7 @@ export class ListItemsGenerator {
      *
      * @returns String representation of the list item.
      */
-    private static generateListItem = <T extends ListItemNodeType>(item: ListItem<T>): string => {
+    private static generateListItem = <T extends ListItemNodeTypeType>(item: ListItem<T>): string => {
         return `${item.exception ? NEGATION_MARKER : EMPTY}${item.value}`;
     };
 
@@ -26,7 +26,7 @@ export class ListItemsGenerator {
      *
      * @returns String representation of the list of items.
      */
-    public static generate = <T extends ListItemNodeType>(items: ListItem<T>[], separator: string): string => {
+    public static generate = <T extends ListItemNodeTypeType>(items: ListItem<T>[], separator: string): string => {
         return items.map(ListItemsGenerator.generateListItem)
             .join(separator);
     };

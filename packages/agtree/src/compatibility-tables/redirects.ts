@@ -8,7 +8,7 @@ import { redirectsCompatibilityTableData } from './compatibility-table-data';
 import { type CompatibilityTable } from './types';
 import { deepFreeze } from '../utils/deep-freeze';
 import { COLON } from '../utils/constants';
-import { type GenericPlatform, type SpecificPlatform } from './platforms';
+import { type GenericPlatformType, type SpecificPlatformType } from './platforms';
 import { getResourceTypeModifier } from './utils/resource-type-helpers';
 import { isNull, isString, isUndefined } from '../utils/type-guards';
 
@@ -72,7 +72,7 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
      */
     public getResourceTypeModifiers(
         redirect: string | RedirectDataSchema,
-        platform: SpecificPlatform | GenericPlatform,
+        platform: SpecificPlatformType | GenericPlatformType,
     ): Set<string> {
         let redirectData: RedirectDataSchema | null = null;
 

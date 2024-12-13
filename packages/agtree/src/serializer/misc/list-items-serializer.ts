@@ -1,4 +1,4 @@
-import { type ListItem, type ListItemNodeType } from '../../nodes';
+import { type ListItem, type ListItemNodeTypeType } from '../../nodes';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ListItemSerializer } from './list-item-serializer';
 
@@ -13,7 +13,7 @@ export class ListItemsSerializer {
      * @param buffer Output byte buffer.
      * @template T Type of the list items.
      */
-    public static serialize<T extends ListItemNodeType>(
+    public static serialize<T extends ListItemNodeTypeType>(
         items: ListItem<T>[],
         buffer: OutputByteBuffer,
     ): void {
