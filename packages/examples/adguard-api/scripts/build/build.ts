@@ -12,7 +12,7 @@ const build = async () => {
         await copyWar(WEB_ACCESSIBLE_RESOURCES_PATH);
         await zipDirectory(BUILD_PATH, path.join(BUILD_PATH, '..', BUILD_ZIP_FILE_NAME));
     } catch (e) {
-        console.log(e);
+        console.error(e);
         process.exit(1);
     }
 };

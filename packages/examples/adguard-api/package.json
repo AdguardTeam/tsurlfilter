@@ -4,6 +4,7 @@
     "description": "Sample extension based on @adguard/api",
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0",
+    "type": "module",
     "scripts": {
         "build": "rimraf build && tsx ./scripts/build/index.ts",
         "lint": "eslint 'extension/**/*.ts' 'scripts/**/*.ts'"

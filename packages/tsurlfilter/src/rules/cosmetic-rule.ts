@@ -7,6 +7,7 @@ import {
     type CosmeticRuleSeparator,
     CosmeticRuleSeparatorUtils,
     CosmeticRuleType,
+    type CosmeticRuleTypeType,
     type DomainList,
     DomainUtils,
     PIPE_MODIFIER_SEPARATOR,
@@ -185,7 +186,7 @@ export class CosmeticRule implements rule.IRule {
 
     private readonly content: string;
 
-    private readonly type: CosmeticRuleType;
+    private readonly type: CosmeticRuleTypeType;
 
     private allowlist = false;
 
@@ -254,7 +255,7 @@ export class CosmeticRule implements rule.IRule {
     /**
      * Cosmetic rule type (always present)
      */
-    getType(): CosmeticRuleType {
+    getType(): CosmeticRuleTypeType {
         return this.type;
     }
 

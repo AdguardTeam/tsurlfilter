@@ -24,27 +24,29 @@ export const QUOTE_SET = new Set([
 /**
  * Possible quote types for scriptlet parameters
  */
-export enum QuoteType {
+export const QuoteType = {
     /**
      * No quotes at all
      */
-    None = 'none',
+    None: 'none',
 
     /**
      * Single quotes (`'`)
      */
-    Single = 'single',
+    Single: 'single',
 
     /**
      * Double quotes (`"`)
      */
-    Double = 'double',
+    Double: 'double',
 
     /**
      * Backtick quotes (`` ` ``)
      */
-    Backtick = 'backtick',
-}
+    Backtick: 'backtick',
+} as const;
+
+export type QuoteTypeType = typeof QuoteType[keyof typeof QuoteType];
 
 /**
  * Utility functions for working with quotes
@@ -102,7 +104,7 @@ export class QuoteUtils {
      * @param string String to check
      * @returns Quote type of the string
      */
-    public static getStringQuoteType(string: string): QuoteType {
+    public static getStringQuoteType(string: string): QuoteTypeType {
         // Don't check 1-character strings to avoid false positives
         if (string.length > 1) {
             if (string.startsWith(SINGLE_QUOTE) && string.endsWith(SINGLE_QUOTE)) {
@@ -128,7 +130,7 @@ export class QuoteUtils {
      * @param quoteType Quote type to set
      * @returns String with the specified quote type
      */
-    public static setStringQuoteType(string: string, quoteType: QuoteType): string {
+    public static setStringQuoteType(string: string, quoteType: QuoteTypeType): string {
         const actualQuoteType = QuoteUtils.getStringQuoteType(string);
 
         switch (quoteType) {
@@ -262,7 +264,7 @@ export class QuoteUtils {
      */
     public static quoteAndJoinStrings(
         strings: string[],
-        quoteType = QuoteType.Single,
+        quoteType: QuoteTypeType = QuoteType.Single,
         separator = `${COMMA}${SPACE}`,
     ): string {
         return strings

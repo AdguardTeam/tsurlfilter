@@ -1,8 +1,8 @@
 {
     "compilerOptions": {
-        "moduleResolution": "node",
-        "target": "esnext",
-        "module": "esnext",
+        "moduleResolution": "Bundler",
+        "target": "ESNext",
+        "module": "ESNext",
         "lib": ["esnext", "dom"],
         "strict": true,
         "noUncheckedIndexedAccess": true,
