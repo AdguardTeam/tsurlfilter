@@ -3,7 +3,7 @@
  */
 
 import { type Modifier } from '../nodes';
-import { AdblockSyntax } from '../utils/adblockers';
+import { type AdblockSyntaxType, AdblockSyntax } from '../utils/adblockers';
 import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
 import { BLOCKER_PREFIX, SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
 import {
@@ -15,9 +15,9 @@ import {
 import { validateValue } from './value';
 import { clone } from '../utils/clone';
 import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
-import { GenericPlatform } from '../compatibility-tables/platforms';
+import { GenericPlatform, type GenericPlatformType } from '../compatibility-tables/platforms';
 
-const convertSyntaxToGenericPlatform = (syntax: AdblockSyntax): GenericPlatform => {
+const convertSyntaxToGenericPlatform = (syntax: AdblockSyntaxType): GenericPlatformType => {
     switch (syntax) {
         case AdblockSyntax.Adg:
             return GenericPlatform.AdgAny;
@@ -43,7 +43,7 @@ const convertSyntaxToGenericPlatform = (syntax: AdblockSyntax): GenericPlatform 
  * @returns Result of modifier validation.
  */
 const validateForSpecificSyntax = (
-    syntax: AdblockSyntax,
+    syntax: AdblockSyntaxType,
     modifier: Modifier,
     isException: boolean,
 ): ValidationResult => {
@@ -172,7 +172,7 @@ class ModifierValidator {
      *
      * @returns Result of modifier validation.
      */
-    public validate = (syntax: AdblockSyntax, rawModifier: Modifier, isException = false): ValidationResult => {
+    public validate = (syntax: AdblockSyntaxType, rawModifier: Modifier, isException = false): ValidationResult => {
         const modifier = clone(rawModifier);
 
         // special case: handle noop modifier which may be used as multiple underscores (not just one)

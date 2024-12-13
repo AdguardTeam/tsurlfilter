@@ -1,4 +1,4 @@
-import { type AdblockSyntax } from '../utils/adblockers';
+import { type AdblockSyntaxType } from '../utils/adblockers';
 import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '../utils/constants';
 
 /**
@@ -83,33 +83,35 @@ export const enum CommentMarker {
  * Represents the main categories that an adblock rule can belong to.
  * Of course, these include additional subcategories.
  */
-export enum RuleCategory {
+export const RuleCategory = {
     /**
      * Empty "rules" that are only containing whitespaces. These rules are handled just for convenience.
      */
-    Empty = 'Empty',
+    Empty: 'Empty',
 
     /**
      * Syntactically invalid rules (tolerant mode only).
      */
-    Invalid = 'Invalid',
+    Invalid: 'Invalid',
 
     /**
      * Comment rules, such as comment rules, metadata rules, preprocessor rules, etc.
      */
-    Comment = 'Comment',
+    Comment: 'Comment',
 
     /**
      * Cosmetic rules, such as element hiding rules, CSS rules, scriptlet rules, HTML rules, and JS rules.
      */
-    Cosmetic = 'Cosmetic',
+    Cosmetic: 'Cosmetic',
 
     /**
      * Network rules, such as basic network rules, header remover network rules, redirect network rules,
      * response header filtering rules, etc.
      */
-    Network = 'Network',
-}
+    Network: 'Network',
+} as const;
+
+export type RuleCategoryType = typeof RuleCategory[keyof typeof RuleCategory];
 
 /**
  * Represents similar types of modifiers values
@@ -126,36 +128,42 @@ export const enum ListNodeType {
 /**
  * Represents child items for {@link ListNodeType}.
  */
-export enum ListItemNodeType {
-    Unknown = 'Unknown',
-    App = 'App',
-    Domain = 'Domain',
-    Method = 'Method',
-    StealthOption = 'StealthOption',
-}
+export const ListItemNodeType = {
+    Unknown: 'Unknown',
+    App: 'App',
+    Domain: 'Domain',
+    Method: 'Method',
+    StealthOption: 'StealthOption',
+} as const;
+
+export type ListItemNodeTypeType = typeof ListItemNodeType[keyof typeof ListItemNodeType];
 
 /**
  * Represents possible comment types.
  */
-export enum CommentRuleType {
-    AgentCommentRule = 'AgentCommentRule',
-    CommentRule = 'CommentRule',
-    ConfigCommentRule = 'ConfigCommentRule',
-    HintCommentRule = 'HintCommentRule',
-    MetadataCommentRule = 'MetadataCommentRule',
-    PreProcessorCommentRule = 'PreProcessorCommentRule',
-}
+export const CommentRuleType = {
+    AgentCommentRule: 'AgentCommentRule',
+    CommentRule: 'CommentRule',
+    ConfigCommentRule: 'ConfigCommentRule',
+    HintCommentRule: 'HintCommentRule',
+    MetadataCommentRule: 'MetadataCommentRule',
+    PreProcessorCommentRule: 'PreProcessorCommentRule',
+} as const;
+
+export type CommentRuleTypeType = typeof CommentRuleType[keyof typeof CommentRuleType];
 
 /**
  * Represents possible cosmetic rule types.
  */
-export enum CosmeticRuleType {
-    ElementHidingRule = 'ElementHidingRule',
-    CssInjectionRule = 'CssInjectionRule',
-    ScriptletInjectionRule = 'ScriptletInjectionRule',
-    HtmlFilteringRule = 'HtmlFilteringRule',
-    JsInjectionRule = 'JsInjectionRule',
-}
+export const CosmeticRuleType = {
+    ElementHidingRule: 'ElementHidingRule',
+    CssInjectionRule: 'CssInjectionRule',
+    ScriptletInjectionRule: 'ScriptletInjectionRule',
+    HtmlFilteringRule: 'HtmlFilteringRule',
+    JsInjectionRule: 'JsInjectionRule',
+} as const;
+
+export type CosmeticRuleTypeType = typeof CosmeticRuleType[keyof typeof CosmeticRuleType];
 
 /**
  * Represents possible cosmetic rule separators.
@@ -386,12 +394,12 @@ export interface RuleBase extends Node {
      * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
      * we should use `AdblockSyntax.Common` as the value.
      */
-    syntax: AdblockSyntax;
+    syntax: AdblockSyntaxType;
 
     /**
      * Category of the adblock rule
      */
-    category: RuleCategory;
+    category: RuleCategoryType;
 
     /**
      * Raw data of the rule
@@ -432,7 +440,7 @@ export interface InvalidRule extends RuleBase {
     /**
      * Category of the adblock rule
      */
-    category: RuleCategory.Invalid;
+    category: typeof RuleCategory.Invalid;
 
     /**
      * Raw rule text
@@ -457,15 +465,15 @@ export interface EmptyRule extends RuleBase {
     /**
      * Category of the adblock rule
      */
-    category: RuleCategory.Empty;
+    category: typeof RuleCategory.Empty;
 }
 
 /**
  * Represents the basic comment rule interface.
  */
 export interface CommentBase extends RuleBase {
-    category: RuleCategory.Comment;
-    type: CommentRuleType;
+    category: typeof RuleCategory.Comment;
+    type: CommentRuleTypeType;
 }
 
 /**
@@ -481,7 +489,7 @@ export interface CommentBase extends RuleBase {
  *     ```
  */
 export interface CommentRule extends CommentBase {
-    type: CommentRuleType.CommentRule;
+    type: typeof CommentRuleType.CommentRule;
 
     /**
      * Comment marker.
@@ -513,7 +521,7 @@ export interface CommentRule extends CommentBase {
  * the name of the header is `Title`, and the value is `My List`.
  */
 export interface MetadataCommentRule extends CommentBase {
-    type: CommentRuleType.MetadataCommentRule;
+    type: typeof CommentRuleType.MetadataCommentRule;
 
     /**
      * Comment marker.
@@ -558,8 +566,8 @@ export interface ConfigNode extends Node {
  * then the command is `aglint-disable` and its params is `["some-rule", "another-rule"]`.
  */
 export interface ConfigCommentRule extends CommentBase {
-    category: RuleCategory.Comment;
-    type: CommentRuleType.ConfigCommentRule;
+    category: typeof RuleCategory.Comment;
+    type: typeof CommentRuleType.ConfigCommentRule;
 
     /**
      * The marker for the comment. It can be `!` or `#`. It is always the first non-whitespace character in the comment.
@@ -612,8 +620,8 @@ export interface ConfigCommentRule extends CommentBase {
  * the general syntax.
  */
 export interface PreProcessorCommentRule extends CommentBase {
-    category: RuleCategory.Comment;
-    type: CommentRuleType.PreProcessorCommentRule;
+    category: typeof RuleCategory.Comment;
+    type: typeof CommentRuleType.PreProcessorCommentRule;
 
     /**
      * Name of the directive
@@ -646,7 +654,7 @@ export interface Agent extends Node {
     /**
      * Needed for network rules modifier validation.
      */
-    syntax: AdblockSyntax;
+    syntax: AdblockSyntaxType;
 }
 
 /**
@@ -661,9 +669,9 @@ export interface Agent extends Node {
  *   ```
  */
 export interface AgentCommentRule extends RuleBase {
-    category: RuleCategory.Comment;
+    category: typeof RuleCategory.Comment;
 
-    type: CommentRuleType.AgentCommentRule;
+    type: typeof CommentRuleType.AgentCommentRule;
 
     /**
      * Agent list.
@@ -713,14 +721,14 @@ export interface Hint extends Node {
  * then there are two hint members: `NOT_OPTIMIZED` and `PLATFORM`.
  */
 export interface HintCommentRule extends RuleBase {
-    category: RuleCategory.Comment;
+    category: typeof RuleCategory.Comment;
 
-    type: CommentRuleType.HintCommentRule;
+    type: typeof CommentRuleType.HintCommentRule;
 
     /**
      * Currently only AdGuard supports hints.
      */
-    syntax: AdblockSyntax;
+    syntax: AdblockSyntaxType;
 
     /**
      * List of hints.
@@ -803,7 +811,7 @@ export type DomainListSeparator = CommaSeparator | PipeSeparator;
  * Common interface for a list item of $app, $denyallow, $domain, $method
  * which have similar syntax.
  */
-export interface ListItem<T extends ListItemNodeType> extends Node {
+export interface ListItem<T extends ListItemNodeTypeType> extends Node {
     type: T;
 
     /**
@@ -823,22 +831,22 @@ export interface ListItem<T extends ListItemNodeType> extends Node {
 /**
  * Represents an element of the app list — $app.
  */
-export type App = ListItem<ListItemNodeType.App>;
+export type App = ListItem<typeof ListItemNodeType.App>;
 
 /**
  * Represents an element of the domain list — $domain, $denyallow.
  */
-export type Domain = ListItem<ListItemNodeType.Domain>;
+export type Domain = ListItem<typeof ListItemNodeType.Domain>;
 
 /**
  * Represents an element of the method list — $method.
  */
-export type Method = ListItem<ListItemNodeType.Method>;
+export type Method = ListItem<typeof ListItemNodeType.Method>;
 
 /**
  * Represents an element of the stealth option list — $stealth.
  */
-export type StealthOption = ListItem<ListItemNodeType.StealthOption>;
+export type StealthOption = ListItem<typeof ListItemNodeType.StealthOption>;
 
 /**
  * Represents any list item.
@@ -1033,8 +1041,8 @@ export interface HtmlFilteringRuleBody extends Node {
  * all other properties can be defined at this level.
  */
 export interface CosmeticRule extends RuleBase {
-    category: RuleCategory.Cosmetic;
-    type: CosmeticRuleType;
+    category: typeof RuleCategory.Cosmetic;
+    type: CosmeticRuleTypeType;
 
     /**
      * List of modifiers (optional)
@@ -1088,7 +1096,7 @@ export interface CosmeticRule extends RuleBase {
  *   ```
  */
 export interface ElementHidingRule extends CosmeticRule {
-    type: CosmeticRuleType.ElementHidingRule;
+    type: typeof CosmeticRuleType.ElementHidingRule;
     body: ElementHidingRuleBody;
 }
 
@@ -1118,7 +1126,7 @@ export interface ElementHidingRule extends CosmeticRule {
  *    ```
  */
 export interface CssInjectionRule extends CosmeticRule {
-    type: CosmeticRuleType.CssInjectionRule;
+    type: typeof CosmeticRuleType.CssInjectionRule;
     body: CssInjectionRuleBody;
 }
 
@@ -1153,7 +1161,7 @@ export interface CssInjectionRule extends CosmeticRule {
  *    ```
  */
 export interface ScriptletInjectionRule extends CosmeticRule {
-    type: CosmeticRuleType.ScriptletInjectionRule;
+    type: typeof CosmeticRuleType.ScriptletInjectionRule;
     body: ScriptletInjectionRuleBody;
 }
 
@@ -1177,7 +1185,7 @@ export interface ScriptletInjectionRule extends CosmeticRule {
  *    ```
  */
 export interface HtmlFilteringRule extends CosmeticRule {
-    type: CosmeticRuleType.HtmlFilteringRule;
+    type: typeof CosmeticRuleType.HtmlFilteringRule;
     body: Value;
 }
 
@@ -1193,17 +1201,19 @@ export interface HtmlFilteringRule extends CosmeticRule {
  *    ```
  */
 export interface JsInjectionRule extends CosmeticRule {
-    type: CosmeticRuleType.JsInjectionRule;
+    type: typeof CosmeticRuleType.JsInjectionRule;
     body: Value;
 }
 
 /**
  * Represents the different types of network rules.
  */
-export enum NetworkRuleType {
-    NetworkRule = 'NetworkRule',
-    HostRule = 'HostRule',
-}
+export const NetworkRuleType = {
+    NetworkRule: 'NetworkRule',
+    HostRule: 'HostRule',
+} as const;
+
+export type NetworkRuleTypeType = typeof NetworkRuleType[keyof typeof NetworkRuleType];
 
 /**
  * Represents the common properties of network rules
@@ -1212,18 +1222,18 @@ export interface NetworkRuleBase extends RuleBase {
     /**
      * Category of the adblock rule.
      */
-    category: RuleCategory.Network;
+    category: typeof RuleCategory.Network;
 
     /**
      * Type of the network rule.
      */
-    type: NetworkRuleType;
+    type: NetworkRuleTypeType;
 
     /**
      * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
      * we should use `AdblockSyntax.Common` as the value.
      */
-    syntax: AdblockSyntax;
+    syntax: AdblockSyntaxType;
 }
 
 /**
@@ -1233,7 +1243,7 @@ export interface NetworkRule extends NetworkRuleBase {
     /**
      * Type of the node.
      */
-    type: NetworkRuleType.NetworkRule;
+    type: typeof NetworkRuleType.NetworkRule;
 
     /**
      * If the rule is an exception rule. If the rule begins with `@@`, it means that it is an exception rule.
@@ -1307,7 +1317,7 @@ export interface HostRule extends NetworkRuleBase {
     /**
      * Type of the node.
      */
-    type: NetworkRuleType.HostRule;
+    type: typeof NetworkRuleType.HostRule;
 
     /**
      * IP address. It can be an IPv4 or IPv6 address.

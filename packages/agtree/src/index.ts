@@ -58,6 +58,7 @@ export {
     type HostnameList,
     type HostRule,
     type AnyNetworkRule,
+    type CosmeticRuleTypeType,
 } from './nodes';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
 export { AgentCommentParser } from './parser/comment/agent-comment-parser';
@@ -111,7 +112,7 @@ export {
     UBO_SCRIPTLET_MASK,
 } from './utils/constants';
 export { BINARY_SCHEMA_VERSION } from './utils/binary-schema-version';
-export { AdblockSyntax } from './utils/adblockers';
+export type { AdblockSyntaxType } from './utils/adblockers';
 export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './utils/cosmetic-rule-separator';
 export { DomainUtils } from './utils/domain';
 export { type VariableTable, LogicalExpressionUtils } from './utils/logical-expression';
