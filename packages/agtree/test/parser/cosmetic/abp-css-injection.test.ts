@@ -538,7 +538,7 @@ describe('CosmeticRuleParser', () => {
                             getFormattedTokenName(TokenType.CloseCurlyBracket),
                             END_OF_INPUT,
                         ),
-                        ...context.toTuple(context.getRangeFor('t')),
+                        ...context.toTuple(context.getLastSlotRange()),
                     );
                 },
             },
@@ -547,7 +547,7 @@ describe('CosmeticRuleParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Expected '<unknown-token>', but got '<}-token>'",
-                        ...context.toTuple(context.getRangeFor('}')),
+                        ...context.toTuple(context.getLastSlotRange()),
                     );
                 },
             },
@@ -556,7 +556,7 @@ describe('CosmeticRuleParser', () => {
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
                         "Expected '<unknown-token>', but got '<}-token>'",
-                        ...context.toTuple(context.getRangeFor('}')),
+                        ...context.toTuple(context.getLastSlotRange()),
                     );
                 },
             },
