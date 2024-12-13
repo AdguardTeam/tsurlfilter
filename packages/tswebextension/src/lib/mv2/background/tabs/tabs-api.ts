@@ -155,7 +155,6 @@ export class TabsApi {
         return this.context.get(tabId);
     }
 
-    // FIXME (Slava, in another pr): do not apply cosmetics to the assistant frame (similarly to mv2)
     /**
      * Sets a current timestamp as `assistantInitTimestamp` of the tab context.
      *
