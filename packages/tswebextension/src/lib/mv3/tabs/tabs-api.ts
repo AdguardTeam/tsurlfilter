@@ -1,21 +1,20 @@
 import browser, { type Tabs } from 'webextension-polyfill';
-import type { NetworkRule } from '@adguard/tsurlfilter';
+import { type NetworkRule } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
+import { type TabFrameRequestContextCommon } from '../../common/tabs/tabs-api';
 import { EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
 import { DocumentApi } from '../background/document-api';
 
 import { type FrameMV3 } from './frame';
-import { type FrameRequestContext, TabContext } from './tab-context';
+import { TabContext } from './tab-context';
 
 /**
  * Request context data related to the tab's frame.
  */
-export type TabFrameRequestContext = FrameRequestContext & {
-    tabId: number;
-};
+export type TabFrameRequestContextMV3 = TabFrameRequestContextCommon;
 
 /**
  * TabsApi works with {@link browser.tabs} to record tabs' URLs - they are

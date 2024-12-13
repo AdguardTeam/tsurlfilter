@@ -1,20 +1,24 @@
 import browser, { type ExtensionTypes, type Tabs } from 'webextension-polyfill';
-import type { NetworkRule } from '@adguard/tsurlfilter';
+import { type NetworkRule } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../../common/constants';
+import { type TabFrameRequestContextCommon } from '../../../common/tabs/tabs-api';
 import { EventChannel } from '../../../common/utils/channels';
 import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
-import type { DocumentApi } from '../document-api';
+import { type DocumentApi } from '../document-api';
 import { logger } from '../../../common/utils/logger';
 
 import type { FrameMV2 } from './frame';
-import { type FrameRequestContext, TabContext } from './tab-context';
+import { TabContext } from './tab-context';
 
 /**
  * Request context data related to the tab's frame.
  */
-export type TabFrameRequestContext = FrameRequestContext & {
-    tabId: number;
+export type TabFrameRequestContextMV2 = TabFrameRequestContextCommon & {
+    /**
+     * Whether the request is a redirect with removed parameters.
+     */
+    isRemoveparamRedirect?: boolean;
 };
 
 /**

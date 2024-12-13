@@ -1,14 +1,12 @@
-import browser from 'webextension-polyfill';
-import type { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import type { NetworkRule } from '@adguard/tsurlfilter';
-import type { Tabs } from 'webextension-polyfill';
+import browser, { type Tabs } from 'webextension-polyfill';
+import { type NetworkRule } from '@adguard/tsurlfilter';
 import { identity } from 'lodash-es';
 
 import { MAIN_FRAME_ID } from '../../../common/constants';
 import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { Frames } from '../../../common/tabs/frames';
 import { isHttpOrWsRequest } from '../../../common/utils/url';
-import type { DocumentApi } from '../document-api';
+import { type DocumentApi } from '../document-api';
 
 import { FrameMV2 } from './frame';
 
@@ -26,36 +24,6 @@ export type TabInfo = Tabs.Tab & {
      * Tab creation timestamp in milliseconds.
      */
     createdAtMs?: number,
-};
-
-/**
- * Request context data related to the frame.
- */
-export type FrameRequestContext = {
-    /**
-     * Frame id.
-     */
-    frameId: number;
-
-    /**
-     * Request id.
-     */
-    requestId: string;
-
-    /**
-     * Request url.
-     */
-    requestUrl: string;
-
-    /**
-     * Request type.
-     */
-    requestType: RequestType;
-
-    /**
-     * Whether the request is a redirect with removed parameters.
-     */
-    isRemoveparamRedirect?: boolean;
 };
 
 /**
