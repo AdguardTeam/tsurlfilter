@@ -10,7 +10,9 @@ import {
 import browser from 'sinon-chrome';
 import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
 
-import { extSessionStorage, TabsApi, TabsCosmeticInjector } from '../../../../../src/lib';
+import { TabsCosmeticInjector } from '../../../../../src/lib/mv2/background/tabs/tabs-cosmetic-injector';
+import { TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';
+import { extSessionStorage } from '../../../../../src/lib/mv2/background/ext-session-storage';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../../src/lib/mv2/background/app-context';
@@ -27,7 +29,7 @@ vi.mock('../../../../../src/lib/mv2/background/stealth-api');
 vi.mock('../../../../../src/lib/mv2/background/document-api');
 
 describe('TabsCosmeticInjector', () => {
-    let tabCosmeticInjector: TabsCosmeticInjector;
+    let tabsCosmeticInjector: TabsCosmeticInjector;
     let engineApi: EngineApi;
 
     beforeAll(() => {
@@ -40,7 +42,7 @@ describe('TabsCosmeticInjector', () => {
         engineApi = new EngineApi(allowlist, appContext, stealthApi);
         const documentApi = new DocumentApi(allowlist, engineApi);
         const tabsApi = new TabsApi(documentApi);
-        tabCosmeticInjector = new TabsCosmeticInjector(documentApi, tabsApi);
+        tabsCosmeticInjector = new TabsCosmeticInjector(documentApi, tabsApi);
     });
 
     afterEach(() => {
@@ -70,6 +72,11 @@ describe('TabsCosmeticInjector', () => {
             vi.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
             vi.spyOn(Date, 'now').mockReturnValue(timestamp);
 
+            await tabsCosmeticInjector.processOpenTabs();
+
+            expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyJsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+
             const expectedLogParams = {
                 url,
                 tabId,
@@ -77,11 +84,6 @@ describe('TabsCosmeticInjector', () => {
                 timestamp,
                 contentType: ContentType.Document,
             };
-
-            await tabCosmeticInjector.processOpenTabs();
-
-            expect(CosmeticApi.applyCssByTabAndFrame).toBeCalledWith(frameId, tabId);
-            expect(CosmeticApi.applyJsByTabAndFrame).toBeCalledWith(frameId, tabId);
             expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 
@@ -90,7 +92,7 @@ describe('TabsCosmeticInjector', () => {
 
             browser.tabs.query.resolves([{ id: tabId }]);
 
-            await tabCosmeticInjector.processOpenTabs();
+            await tabsCosmeticInjector.processOpenTabs();
 
             expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
             expect(CosmeticApi.applyJsByTabAndFrame).not.toBeCalled();
@@ -105,7 +107,7 @@ describe('TabsCosmeticInjector', () => {
             browser.tabs.query.resolves([{ id: tabId }]);
             browser.webNavigation.getAllFrames.resolves([{ frameId, url: frameUrl }]);
 
-            await tabCosmeticInjector.processOpenTabs();
+            await tabsCosmeticInjector.processOpenTabs();
 
             expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
             expect(CosmeticApi.applyJsByTabAndFrame).not.toBeCalled();
