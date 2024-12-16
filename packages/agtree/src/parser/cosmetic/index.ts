@@ -529,6 +529,7 @@ export class CosmeticRuleParser extends ParserBase {
             if (!ADG_CSS_INJECTION_PATTERN.test(rawBody)) {
                 return null;
             }
+
             expectCommonOrSpecificSyntax(AdblockSyntax.Adg);
 
             return {
@@ -546,11 +547,8 @@ export class CosmeticRuleParser extends ParserBase {
             }
 
             // check if the rule contains both CSS block open and close characters
-            const hasCssBlockOpen = rawBody.indexOf(CSS_BLOCK_OPEN) !== -1;
-            const hasCssBlockClose = rawBody.indexOf(CSS_BLOCK_CLOSE) !== -1;
-
             // if none of them is present we can stop parsing
-            if (!hasCssBlockOpen && !hasCssBlockClose) {
+            if (rawBody.indexOf(CSS_BLOCK_OPEN) === -1 && rawBody.indexOf(CSS_BLOCK_CLOSE) === -1) {
                 return null;
             }
 
