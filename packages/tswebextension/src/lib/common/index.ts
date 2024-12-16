@@ -12,5 +12,7 @@ export * from './storage';
 
 // FIXME: used in adguard-api so maybe worth adding a new entry point for common utils
 // so it could be imported from '@adguard/tswebextension/utils'
-export { type EventChannelListener, EventChannel } from './utils/channels';
-export { isHttpRequest, getDomain } from './utils/url';
+export { type EventChannelListener, type EventChannelInterface, EventChannel } from './utils/channels';
+export {
+    isHttpRequest, getDomain, isHttpOrWsRequest, isExtensionUrl,
+} from './utils/url';
