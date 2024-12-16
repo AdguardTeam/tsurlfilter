@@ -8,12 +8,16 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum HostRuleMarshallingMap {
-    Syntax = 1,
-    Raws,
-    Ip,
-    HostnameList,
-    Comment,
-    Start,
-    End,
-}
+export const HostRuleMarshallingMap = {
+    Syntax: 1,
+    Raws: 2,
+    Ip: 3,
+    HostnameList: 4,
+    Comment: 5,
+    Start: 6,
+    End: 7,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type HostRuleMarshallingMap = typeof HostRuleMarshallingMap[keyof typeof HostRuleMarshallingMap];

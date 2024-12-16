@@ -8,8 +8,14 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum HostnameListNodeMarshallingMap {
-    Children = 1,
-    Start,
-    End,
-}
+export const HostnameListNodeMarshallingMap = {
+    Children: 1,
+    Start: 2,
+    End: 3,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type HostnameListNodeMarshallingMap = typeof HostnameListNodeMarshallingMap[
+    keyof typeof HostnameListNodeMarshallingMap
+];

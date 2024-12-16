@@ -8,9 +8,13 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum SimpleCommentMarshallingMap {
-    Marker = 1,
-    Text,
-    Start,
-    End,
-}
+export const SimpleCommentMarshallingMap = {
+    Marker: 1,
+    Text: 2,
+    Start: 3,
+    End: 4,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type SimpleCommentMarshallingMap = typeof SimpleCommentMarshallingMap[keyof typeof SimpleCommentMarshallingMap];

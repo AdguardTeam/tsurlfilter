@@ -8,8 +8,14 @@ import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum ElementHidingRuleMarshallingMap {
-    SelectorList = 1,
-    Start,
-    End,
-}
+export const ElementHidingRuleMarshallingMap = {
+    SelectorList: 1,
+    Start: 2,
+    End: 3,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ElementHidingRuleMarshallingMap = typeof ElementHidingRuleMarshallingMap[
+    keyof typeof ElementHidingRuleMarshallingMap
+];

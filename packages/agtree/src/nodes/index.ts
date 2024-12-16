@@ -1,14 +1,15 @@
-import { type AdblockSyntaxType } from '../utils/adblockers';
+import { type AdblockSyntax } from '../utils/adblockers';
 import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '../utils/constants';
 
-/**
- * Possible operators in the logical expression.
- */
-export const enum OperatorValue {
-    Not = '!',
-    And = '&&',
-    Or = '||',
-}
+export const OperatorValue = {
+    Not: '!',
+    And: '&&',
+    Or: '||',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type OperatorValue = typeof OperatorValue[keyof typeof OperatorValue];
 
 /**
  * Represents possible new line types.
@@ -66,18 +67,22 @@ export type AnyNetworkRule = NetworkRule | HostRule;
  * - If the rule is `! This is just a comment`, then the marker will be `!`.
  * - If the rule is `# This is just a comment`, then the marker will be `#`.
  */
-export const enum CommentMarker {
+export const CommentMarker = {
     /**
      * Regular comment marker. It is supported by all ad blockers.
      */
-    Regular = '!',
+    Regular: '!',
 
     /**
      * Hashmark comment marker. It is supported by uBlock Origin and AdGuard,
      * and also used in hosts files.
      */
-    Hashmark = '#',
-}
+    Hashmark: '#',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type CommentMarker = typeof CommentMarker[keyof typeof CommentMarker];
 
 /**
  * Represents the main categories that an adblock rule can belong to.
@@ -111,19 +116,25 @@ export const RuleCategory = {
     Network: 'Network',
 } as const;
 
-export type RuleCategoryType = typeof RuleCategory[keyof typeof RuleCategory];
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type RuleCategory = typeof RuleCategory[keyof typeof RuleCategory];
 
 /**
  * Represents similar types of modifiers values
  * which may be separated by a comma `,` (only for DomainList) or a pipe `|`.
  */
-export const enum ListNodeType {
-    Unknown = 'Unknown',
-    AppList = 'AppList',
-    DomainList = 'DomainList',
-    MethodList = 'MethodList',
-    StealthOptionList = 'StealthOptionList',
-}
+export const ListNodeType = {
+    Unknown: 'Unknown',
+    AppList: 'AppList',
+    DomainList: 'DomainList',
+    MethodList: 'MethodList',
+    StealthOptionList: 'StealthOptionList',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ListNodeType = typeof ListNodeType[keyof typeof ListNodeType];
 
 /**
  * Represents child items for {@link ListNodeType}.
@@ -136,7 +147,9 @@ export const ListItemNodeType = {
     StealthOption: 'StealthOption',
 } as const;
 
-export type ListItemNodeTypeType = typeof ListItemNodeType[keyof typeof ListItemNodeType];
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ListItemNodeType = typeof ListItemNodeType[keyof typeof ListItemNodeType];
 
 /**
  * Represents possible comment types.
@@ -150,7 +163,9 @@ export const CommentRuleType = {
     PreProcessorCommentRule: 'PreProcessorCommentRule',
 } as const;
 
-export type CommentRuleTypeType = typeof CommentRuleType[keyof typeof CommentRuleType];
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type CommentRuleType = typeof CommentRuleType[keyof typeof CommentRuleType];
 
 /**
  * Represents possible cosmetic rule types.
@@ -163,82 +178,88 @@ export const CosmeticRuleType = {
     JsInjectionRule: 'JsInjectionRule',
 } as const;
 
-export type CosmeticRuleTypeType = typeof CosmeticRuleType[keyof typeof CosmeticRuleType];
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type CosmeticRuleType = typeof CosmeticRuleType[keyof typeof CosmeticRuleType];
 
 /**
  * Represents possible cosmetic rule separators.
  */
-export const enum CosmeticRuleSeparator {
+export const CosmeticRuleSeparator = {
     /**
      * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
      */
-    ElementHiding = '##',
+    ElementHiding: '##',
 
     /**
      * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
      */
-    ElementHidingException = '#@#',
+    ElementHidingException: '#@#',
 
     /**
      * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
      */
-    ExtendedElementHiding = '#?#',
+    ExtendedElementHiding: '#?#',
 
     /**
      * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
      */
-    ExtendedElementHidingException = '#@?#',
+    ExtendedElementHidingException: '#@?#',
 
     /**
      * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
      */
-    AbpSnippet = '#$#',
+    AbpSnippet: '#$#',
 
     /**
      * @see {@link https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide_basic}
      */
-    AbpSnippetException = '#@$#',
+    AbpSnippetException: '#@$#',
 
     /**
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
      */
-    AdgCssInjection = '#$#',
+    AdgCssInjection: '#$#',
 
     /**
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
      */
-    AdgCssInjectionException = '#@$#',
+    AdgCssInjectionException: '#@$#',
 
     /**
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
      */
-    AdgExtendedCssInjection = '#$?#',
+    AdgExtendedCssInjection: '#$?#',
 
     /**
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#cosmetic-css-rules}
      */
-    AdgExtendedCssInjectionException = '#@$?#',
+    AdgExtendedCssInjectionException: '#@$?#',
 
     /**
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
      */
-    AdgJsInjection = '#%#',
+    AdgJsInjection: '#%#',
 
     /**
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#scriptlets}
      */
-    AdgJsInjectionException = '#@%#',
+    AdgJsInjectionException: '#@%#',
 
     /**
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules}
      */
-    AdgHtmlFiltering = '$$',
+    AdgHtmlFiltering: '$$',
 
     /**
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules}
      */
-    AdgHtmlFilteringException = '$@$',
-}
+    AdgHtmlFilteringException: '$@$',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type CosmeticRuleSeparator = typeof CosmeticRuleSeparator[keyof typeof CosmeticRuleSeparator];
 
 /**
  * Represents a basic node in the AST.
@@ -394,12 +415,12 @@ export interface RuleBase extends Node {
      * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
      * we should use `AdblockSyntax.Common` as the value.
      */
-    syntax: AdblockSyntaxType;
+    syntax: AdblockSyntax;
 
     /**
      * Category of the adblock rule
      */
-    category: RuleCategoryType;
+    category: RuleCategory;
 
     /**
      * Raw data of the rule
@@ -473,7 +494,7 @@ export interface EmptyRule extends RuleBase {
  */
 export interface CommentBase extends RuleBase {
     category: typeof RuleCategory.Comment;
-    type: CommentRuleTypeType;
+    type: CommentRuleType;
 }
 
 /**
@@ -654,7 +675,7 @@ export interface Agent extends Node {
     /**
      * Needed for network rules modifier validation.
      */
-    syntax: AdblockSyntaxType;
+    syntax: AdblockSyntax;
 }
 
 /**
@@ -728,7 +749,7 @@ export interface HintCommentRule extends RuleBase {
     /**
      * Currently only AdGuard supports hints.
      */
-    syntax: AdblockSyntaxType;
+    syntax: AdblockSyntax;
 
     /**
      * List of hints.
@@ -811,7 +832,7 @@ export type DomainListSeparator = CommaSeparator | PipeSeparator;
  * Common interface for a list item of $app, $denyallow, $domain, $method
  * which have similar syntax.
  */
-export interface ListItem<T extends ListItemNodeTypeType> extends Node {
+export interface ListItem<T extends ListItemNodeType> extends Node {
     type: T;
 
     /**
@@ -864,7 +885,7 @@ export interface DomainList extends Node {
     /**
      * Type of the node. Basically, the idea is that each main AST part should have a type
      */
-    type: ListNodeType.DomainList;
+    type: typeof ListNodeType.DomainList;
 
     /**
      * Separator used in the domain list.
@@ -888,7 +909,7 @@ export interface AppList extends Node {
     /**
      * Type of the node. Basically, the idea is that each main AST part should have a type
      */
-    type: ListNodeType.AppList;
+    type: typeof ListNodeType.AppList;
 
     /**
      * Separator used in the app list.
@@ -912,7 +933,7 @@ export interface MethodList extends Node {
     /**
      * Type of the node. Basically, the idea is that each main AST part should have a type
      */
-    type: ListNodeType.MethodList;
+    type: typeof ListNodeType.MethodList;
 
     /**
      * Separator used in the method list.
@@ -936,7 +957,7 @@ export interface StealthOptionList extends Node {
     /**
      * Type of the node. Basically, the idea is that each main AST part should have a type
      */
-    type: ListNodeType.StealthOptionList;
+    type: typeof ListNodeType.StealthOptionList;
 
     /**
      * Separator used in the stealth option list.
@@ -1042,7 +1063,7 @@ export interface HtmlFilteringRuleBody extends Node {
  */
 export interface CosmeticRule extends RuleBase {
     category: typeof RuleCategory.Cosmetic;
-    type: CosmeticRuleTypeType;
+    type: CosmeticRuleType;
 
     /**
      * List of modifiers (optional)
@@ -1213,7 +1234,9 @@ export const NetworkRuleType = {
     HostRule: 'HostRule',
 } as const;
 
-export type NetworkRuleTypeType = typeof NetworkRuleType[keyof typeof NetworkRuleType];
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type NetworkRuleType = typeof NetworkRuleType[keyof typeof NetworkRuleType];
 
 /**
  * Represents the common properties of network rules
@@ -1227,13 +1250,13 @@ export interface NetworkRuleBase extends RuleBase {
     /**
      * Type of the network rule.
      */
-    type: NetworkRuleTypeType;
+    type: NetworkRuleType;
 
     /**
      * Syntax of the adblock rule. If we are not able to determine the syntax of the rule,
      * we should use `AdblockSyntax.Common` as the value.
      */
-    syntax: AdblockSyntaxType;
+    syntax: AdblockSyntax;
 }
 
 /**

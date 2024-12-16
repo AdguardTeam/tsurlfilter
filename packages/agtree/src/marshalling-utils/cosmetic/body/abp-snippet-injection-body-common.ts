@@ -8,11 +8,17 @@ import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum AbpSnippetBodyMarshallingMap {
-    Children = 1,
-    Start,
-    End,
-}
+export const AbpSnippetBodyMarshallingMap = {
+    Children: 1,
+    Start: 2,
+    End: 3,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type AbpSnippetBodyMarshallingMap = typeof AbpSnippetBodyMarshallingMap[
+    keyof typeof AbpSnippetBodyMarshallingMap
+];
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,

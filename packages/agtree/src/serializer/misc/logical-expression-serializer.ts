@@ -20,11 +20,15 @@ import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-ty
 /**
  * Possible node types in the logical expression.
  */
-export const enum NodeType {
-    Variable = 'Variable',
-    Operator = 'Operator',
-    Parenthesis = 'Parenthesis',
-}
+export const NodeType = {
+    Variable: 'Variable',
+    Operator: 'Operator',
+    Parenthesis: 'Parenthesis',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type NodeType = typeof NodeType[keyof typeof NodeType];
 
 /**
  * `LogicalExpressionSerializer` is responsible for serializing logical expressions.
@@ -151,7 +155,8 @@ export class LogicalExpressionSerializer extends BaseSerializer {
                 break;
 
             default:
-                throw new Error(`Unexpected node type: ${node.type}`);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                throw new Error(`Unexpected node type: ${(node as any).type}`);
         }
 
         buffer.writeUint8(NULL);

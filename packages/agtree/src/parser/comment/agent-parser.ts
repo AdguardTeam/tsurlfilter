@@ -7,7 +7,7 @@ import coerce from 'semver/functions/coerce.js';
 import { StringUtils } from '../../utils/string';
 import { type Agent, type Value } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { type AdblockSyntaxType, AdblockSyntax } from '../../utils/adblockers';
+import { AdblockSyntax } from '../../utils/adblockers';
 import { BaseParser } from '../base-parser';
 import { defaultParserOptions } from '../options';
 import { ValueParser } from '../misc/value-parser';
@@ -57,7 +57,7 @@ export class AgentParser extends BaseParser {
         let name: Value | undefined;
         let version: Value | undefined;
         // default value for the syntax
-        let syntax: AdblockSyntaxType = AdblockSyntax.Common;
+        let syntax: AdblockSyntax = AdblockSyntax.Common;
 
         // Get agent parts by splitting it by spaces. The last part may be a version.
         // Example: "Adblock Plus 2.0"

@@ -8,13 +8,19 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum PreProcessorRuleMarshallingMap {
-    Name = 1,
-    Params,
-    Syntax,
-    Start,
-    End,
-}
+export const PreProcessorRuleMarshallingMap = {
+    Name: 1,
+    Params: 2,
+    Syntax: 3,
+    Start: 4,
+    End: 5,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type PreProcessorRuleMarshallingMap = typeof PreProcessorRuleMarshallingMap[
+    keyof typeof PreProcessorRuleMarshallingMap
+];
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,

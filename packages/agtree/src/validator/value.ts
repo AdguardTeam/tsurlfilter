@@ -69,7 +69,9 @@ const CustomValueFormatValidatorName = {
     StealthOption: 'pipe_separated_stealth_options',
 } as const;
 
-type CustomValueFormatValidatorNameType = typeof CustomValueFormatValidatorName[
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+type CustomValueFormatValidatorName = typeof CustomValueFormatValidatorName[
     keyof typeof CustomValueFormatValidatorName
 ];
 
@@ -695,7 +697,7 @@ const CUSTOM_VALUE_FORMAT_MAP = {
  */
 const isCustomValueFormatValidator = (
     valueFormat: string,
-): valueFormat is CustomValueFormatValidatorNameType => {
+): valueFormat is CustomValueFormatValidatorName => {
     return Object.keys(CUSTOM_VALUE_FORMAT_MAP).includes(valueFormat);
 };
 

@@ -9,12 +9,16 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum DomainListMarshallingMap {
-    Separator = 1,
-    Children,
-    Start,
-    End,
-}
+export const DomainListMarshallingMap = {
+    Separator: 1,
+    Children: 2,
+    Start: 3,
+    End: 4,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type DomainListMarshallingMap = typeof DomainListMarshallingMap[keyof typeof DomainListMarshallingMap];
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,

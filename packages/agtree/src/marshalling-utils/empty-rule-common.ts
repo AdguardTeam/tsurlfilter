@@ -8,7 +8,11 @@ import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum EmptyRuleMarshallingMap {
-    Start = 1,
-    End,
-}
+export const EmptyRuleMarshallingMap = {
+    Start: 1,
+    End: 2,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type EmptyRuleMarshallingMap = typeof EmptyRuleMarshallingMap[keyof typeof EmptyRuleMarshallingMap];

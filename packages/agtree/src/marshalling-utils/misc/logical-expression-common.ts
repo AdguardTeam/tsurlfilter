@@ -6,36 +6,54 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
  */
-export const enum VariableNodeBinaryPropMarshallingMap {
-    Name = 1,
-    FrequentName,
-    Start,
-    End,
-}
+export const VariableNodeBinaryPropMarshallingMap = {
+    Name: 1,
+    FrequentName: 2,
+    Start: 3,
+    End: 4,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type VariableNodeBinaryPropMarshallingMap = typeof VariableNodeBinaryPropMarshallingMap[
+    keyof typeof VariableNodeBinaryPropMarshallingMap
+];
 
 /**
  * Property map for binary serialization.
  *
  * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
  */
-export const enum OperatorNodeBinaryPropMarshallingMap {
-    Operator = 1,
-    Left,
-    Right,
-    Start,
-    End,
-}
+export const OperatorNodeBinaryPropMarshallingMap = {
+    Operator: 1,
+    Left: 2,
+    Right: 3,
+    Start: 4,
+    End: 5,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type OperatorNodeBinaryPropMarshallingMap = typeof OperatorNodeBinaryPropMarshallingMap[
+    keyof typeof OperatorNodeBinaryPropMarshallingMap
+];
 
 /**
  * Property map for binary serialization.
  *
  * ! IMPORTANT: If you change values here, please update the {@link BINARY_SCHEMA_VERSION} !
  */
-export const enum ParenthesisNodeBinaryPropMarshallingMap {
-    Expression = 1,
-    Start,
-    End,
-}
+export const ParenthesisNodeBinaryPropMarshallingMap = {
+    Expression: 1,
+    Start: 2,
+    End: 3,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ParenthesisNodeBinaryPropMarshallingMap = typeof ParenthesisNodeBinaryPropMarshallingMap[
+    keyof typeof ParenthesisNodeBinaryPropMarshallingMap
+];
 
 /**
  * Property map for binary serialization.

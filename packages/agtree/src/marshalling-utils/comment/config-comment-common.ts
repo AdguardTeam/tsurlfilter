@@ -8,14 +8,20 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum ConfigCommentRuleMarshallingMap {
-    Marker = 1,
-    Command,
-    Params,
-    Comment,
-    Start,
-    End,
-}
+export const ConfigCommentRuleMarshallingMap = {
+    Marker: 1,
+    Command: 2,
+    Params: 3,
+    Comment: 4,
+    Start: 5,
+    End: 6,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ConfigCommentRuleMarshallingMap = typeof ConfigCommentRuleMarshallingMap[
+    keyof typeof ConfigCommentRuleMarshallingMap
+];
 
 /**
  * Property map for binary serialization. This helps to reduce the size of the serialized data,
@@ -25,11 +31,15 @@ export const enum ConfigCommentRuleMarshallingMap {
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum ConfigNodeMarshallingMap {
-    Value = 1,
-    Start,
-    End,
-}
+export const ConfigNodeMarshallingMap = {
+    Value: 1,
+    Start: 2,
+    End: 3,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ConfigNodeMarshallingMap = typeof ConfigNodeMarshallingMap[keyof typeof ConfigNodeMarshallingMap];
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,

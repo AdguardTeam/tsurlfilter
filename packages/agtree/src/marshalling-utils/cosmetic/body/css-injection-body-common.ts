@@ -8,11 +8,17 @@ import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum CssInjectionRuleMarshallingMap {
-    SelectorList = 1,
-    DeclarationList,
-    MediaQueryList,
-    Remove,
-    Start,
-    End,
-}
+export const CssInjectionRuleMarshallingMap = {
+    SelectorList: 1,
+    DeclarationList: 2,
+    MediaQueryList: 3,
+    Remove: 4,
+    Start: 5,
+    End: 6,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type CssInjectionRuleMarshallingMap = typeof CssInjectionRuleMarshallingMap[
+    keyof typeof CssInjectionRuleMarshallingMap
+];
