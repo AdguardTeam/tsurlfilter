@@ -20,20 +20,28 @@ import { BaseParser } from '../base-parser';
 /**
  * Possible token types in the logical expression.
  */
-const enum TokenType {
-    Variable,
-    Operator,
-    Parenthesis,
-}
+const TokenType = {
+    Variable: 0,
+    Operator: 1,
+    Parenthesis: 2,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+type TokenType = typeof TokenType[keyof typeof TokenType];
 
 /**
  * Possible node types in the logical expression.
  */
-export const enum NodeType {
-    Variable = 'Variable',
-    Operator = 'Operator',
-    Parenthesis = 'Parenthesis',
-}
+export const NodeType = {
+    Variable: 'Variable',
+    Operator: 'Operator',
+    Parenthesis: 'Parenthesis',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type NodeType = typeof NodeType[keyof typeof NodeType];
 
 /**
  * Precedence of the operators, larger number means higher precedence.

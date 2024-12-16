@@ -9,7 +9,7 @@ import {
     RuleCategory,
     NetworkRuleType,
 } from '../nodes';
-import { type AdblockSyntaxType, AdblockSyntax } from '../utils/adblockers';
+import { AdblockSyntax } from '../utils/adblockers';
 import { clone } from '../utils/clone';
 
 /**
@@ -25,7 +25,7 @@ export function createNetworkRuleNode(
     pattern: string,
     modifiers: ModifierList | undefined = undefined,
     exception = false,
-    syntax: AdblockSyntaxType = AdblockSyntax.Common,
+    syntax: AdblockSyntax = AdblockSyntax.Common,
 ): NetworkRule {
     const result: NetworkRule = {
         category: RuleCategory.Network,

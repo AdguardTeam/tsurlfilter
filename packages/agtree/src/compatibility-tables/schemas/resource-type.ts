@@ -24,7 +24,9 @@ export const ResourceType = {
     Other: 'other',
 } as const;
 
-export type ResourceTypeType = typeof ResourceType[keyof typeof ResourceType];
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ResourceType = typeof ResourceType[keyof typeof ResourceType];
 
 /**
  * Resource type schema.

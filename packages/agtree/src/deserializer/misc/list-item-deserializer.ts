@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { BaseDeserializer } from '../base-deserializer';
-import { type ListItem, ListItemNodeType, type ListItemNodeTypeType } from '../../nodes';
+import { type ListItem, ListItemNodeType } from '../../nodes'; // Removed duplicate type declaration
 import { NULL } from '../../utils/constants';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ListItemMarshallingMap } from '../../marshalling-utils/misc/list-item-common';
@@ -20,7 +20,7 @@ export class ListItemDeserializer extends BaseDeserializer {
      * @param node Partial list item to deserialize.
      * @template T Type of the list item.
      */
-    public static deserialize = <T extends ListItemNodeTypeType>(
+    public static deserialize = <T extends ListItemNodeType>(
         buffer: InputByteBuffer,
         node: Partial<ListItem<T>>,
     ): void => {

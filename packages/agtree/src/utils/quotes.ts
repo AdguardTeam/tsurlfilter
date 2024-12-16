@@ -46,7 +46,9 @@ export const QuoteType = {
     Backtick: 'backtick',
 } as const;
 
-export type QuoteTypeType = typeof QuoteType[keyof typeof QuoteType];
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type QuoteType = typeof QuoteType[keyof typeof QuoteType];
 
 /**
  * Utility functions for working with quotes
@@ -104,7 +106,7 @@ export class QuoteUtils {
      * @param string String to check
      * @returns Quote type of the string
      */
-    public static getStringQuoteType(string: string): QuoteTypeType {
+    public static getStringQuoteType(string: string): QuoteType {
         // Don't check 1-character strings to avoid false positives
         if (string.length > 1) {
             if (string.startsWith(SINGLE_QUOTE) && string.endsWith(SINGLE_QUOTE)) {
@@ -130,7 +132,7 @@ export class QuoteUtils {
      * @param quoteType Quote type to set
      * @returns String with the specified quote type
      */
-    public static setStringQuoteType(string: string, quoteType: QuoteTypeType): string {
+    public static setStringQuoteType(string: string, quoteType: QuoteType): string {
         const actualQuoteType = QuoteUtils.getStringQuoteType(string);
 
         switch (quoteType) {
@@ -264,7 +266,7 @@ export class QuoteUtils {
      */
     public static quoteAndJoinStrings(
         strings: string[],
-        quoteType: QuoteTypeType = QuoteType.Single,
+        quoteType: QuoteType = QuoteType.Single,
         separator = `${COMMA}${SPACE}`,
     ): string {
         return strings

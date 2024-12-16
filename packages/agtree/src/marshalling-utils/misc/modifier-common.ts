@@ -8,13 +8,17 @@ import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
  *
  * @note Only 256 values can be represented this way.
  */
-export const enum ModifierNodeMarshallingMap {
-    Name = 1,
-    Value,
-    Exception,
-    Start,
-    End,
-}
+export const ModifierNodeMarshallingMap = {
+    Name: 1,
+    Value: 2,
+    Exception: 3,
+    Start: 4,
+    End: 5,
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type ModifierNodeMarshallingMap = typeof ModifierNodeMarshallingMap[keyof typeof ModifierNodeMarshallingMap];
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
