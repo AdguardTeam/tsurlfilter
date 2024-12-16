@@ -6,5 +6,6 @@ coverage
 dist
 node_modules
 
-# Release file for npm.
-*.tgz
+# FIXME: Undo comment before publish next version.
+# # Release file for npm.
+# *.tgz
