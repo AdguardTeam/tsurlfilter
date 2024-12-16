@@ -27,10 +27,13 @@ pnpm install
 # build with dependencies, lerna is used for builds caching
 npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
-# FIXME remove this task before merge to master
-(cd packages/tswebextension && pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz)
+# FIXME: remove this task before merge to master
+(cd packages/agtree && pnpm pack && mv adguard-agtree-*.tgz agtree.tgz)
 
-# FIXME remove this task before merging to master
+# FIXME: remove this task before merging to master
 (cd packages/tsurlfilter && pnpm pack && mv adguard-tsurlfilter-*.tgz tsurlfilter.tgz)
+
+# FIXME: remove this task before merge to master
+(cd packages/tswebextension && pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz)
 
 echo "@adguard/tswebextension and @adguard/tsurlfilter builds completed"
