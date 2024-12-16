@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "target": "ESNext",
-    "module":"Preserve",
+    "module": "ESNext",
     "lib": ["esnext", "dom"],
     "strict": true,
     "allowSyntheticDefaultImports": true,
