@@ -9,7 +9,7 @@ class AbortError extends Error {
     }
 }
 
-// TODO: add a stop function to the tokenizers callback
+// TODO: AG-38480 add a stop function to the tokenizers callback and move `hasToken` to CSS Tokenizer as well
 /**
  * Checks if the given raw string contains any of the specified tokens.
  * This function uses error throwing inside the abort tokenization process.
