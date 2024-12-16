@@ -9,7 +9,7 @@ class AbortError extends Error {
     }
 }
 
-// #TODO: add a stop function to the tokenizers callback
+// TODO: add a stop function to the tokenizers callback
 /**
  * Checks if the given raw string contains any of the specified tokens.
  *
