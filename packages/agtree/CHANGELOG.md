@@ -8,13 +8,24 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## Unreleased
+
+## [3.0.0-alpha.2] - 2024-12-17
+
+### Changed
+
+- Switched to a pure ESM package.
+
+[3.0.0-alpha.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.0.0-alpha.2
+
+## [3.0.0-alpha.1] - 2024-12-11
 
 ### Changed
 
 - The API is separated across entry points: `@adguard/agtree/parser`, `@adguard/agtree/generator`,
   `@adguard/agtree/converter`, `@adguard/agtree/validator`, `@adguard/agtree/compatibility-tables`,
   and `@adguard/agtree/utils`.
+
+[3.0.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.0.0-alpha.1
 
 ### Fixed
 
