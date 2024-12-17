@@ -41,11 +41,6 @@ Test:
         scripts:
           - bamboo-specs/scripts/examples-adguard-api-tests.sh
     # FIXME: Uncomment before merge release/v3.1 to master
-    #       src/content-script/assistant.ts → dist/adguard-assistant.js...
-    #   [!] RollupError: ../tswebextension/dist/assistant-inject.js (1:9): "adguardAssistant" is not exported by "../../node_modules/.pnpm/@adguard+assistant@4.3.70/node_modules/@adguard/assistant/dist/assistant.js", imported by "../tswebextension/dist/assistant-inject.js".
-    #   https://rollupjs.org/troubleshooting/#error-name-is-not-exported-by-module
-    #   ../tswebextension/dist/assistant-inject.js (1:9)
-    #   1: import { adguardAssistant } from '@adguard/assistant';
     # - script:
     #     interpreter: SHELL
     #     scripts:
