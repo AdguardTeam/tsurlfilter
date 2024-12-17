@@ -105,7 +105,7 @@
     "commander": "11.0.0",
     "fs-extra": "11.1.1",
     "lodash-es": "^4.17.21",
-    "lru_map": "0.4.1",
+    "lru-cache": "^11.0.2",
     "nanoid": "^5.0.9",
     "text-encoding": "git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2",
     "tldts": "^6.0.8",
