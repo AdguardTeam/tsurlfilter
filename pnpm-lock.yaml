@@ -1237,8 +1237,8 @@ importers:
         specifier: ^4.3.70
         version: 4.3.70
       '@adguard/extended-css':
-        specifier: ^2.0.59
-        version: 2.0.59
+        specifier: ^2.1.0
+        version: 2.1.0
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
@@ -1441,8 +1441,8 @@ packages:
     engines: {node: '>=14'}
     dev: false
 
-  /@adguard/extended-css@2.0.59:
-    resolution: {integrity: sha512-rh+rITfPS82JyzSd43fBUdKlLm77YFJkO9uT1PgJAA6BdW0Ufkn2Ab83VrTNWdk+X+ULikdMQVX+SPDWa0eNWA==}
+  /@adguard/extended-css@2.1.0:
+    resolution: {integrity: sha512-5UWfKd8YZnCu6SiD71ujotw+13sXq249DH4ezJbfm0dGJUXwRvwdGp+YnaLxzl8brTBMDWpVdXajE4wTgCa1rw==}
     engines: {node: '>=16'}
     dev: false
 
