@@ -96,7 +96,7 @@
   "dependencies": {
     "@adguard/agtree": "workspace:^",
     "@adguard/assistant": "^4.3.70",
-    "@adguard/extended-css": "^2.0.59",
+    "@adguard/extended-css": "^2.1.0",
     "@adguard/logger": "workspace:^",
     "@adguard/scriptlets": "https://github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz",
     "@adguard/tsurlfilter": "workspace:^",
