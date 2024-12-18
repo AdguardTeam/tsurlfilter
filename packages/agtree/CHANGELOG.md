@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 
 ### Added
 
-- Support for `ABP's` css injection rules [tsurlfilter#143].
+- Support for ABP-syntax CSS injection rules [tsurlfilter#143].
 
 [2.2.1]: ttps://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.2.1
 [tsurlfilter#143]: https://github.com/AdguardTeam/tsurlfilter/issues/143
