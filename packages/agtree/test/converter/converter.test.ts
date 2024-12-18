@@ -668,6 +668,12 @@ describe('Converter integration tests', () => {
                     expected: ['#$?#.banner { remove: true; }'],
                     shouldConvert: true,
                 },
+                // case without spaces in css pseudo proprty
+                {
+                    actual: '##.banner {remove:true;}',
+                    expected: ['#$?#.banner { remove: true; }'],
+                    shouldConvert: true,
+                },
                 {
                     actual: '##div[foo="yay{"]',
                     expected: ['##div[foo="yay{"]'],
