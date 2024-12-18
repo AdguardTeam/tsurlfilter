@@ -539,8 +539,12 @@ export class CosmeticRuleParser extends ParserBase {
             };
         };
 
-        // Parses Adb CSS injection rules
-        // eg: example.com##.foo { display: none; }
+        /**
+         * Parses Adb CSS injection rules
+         * eg: example.com##.foo { display: none; }
+         *
+         * @returns parsed rule
+         */
         const parseAbpCssInjection = (): Pick<CssInjectionRule, RestProps> | null => {
             if (!options.parseAbpSpecificRules) {
                 return null;
