@@ -24,7 +24,8 @@ const externalPackages = [
     'zod',
     'commander',
     'tslib',
-    'module'
+    'module',
+    'lru-cache',
 ];
 
 const externalFunction = (id: string): boolean => {
