@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { sprintf } from 'sprintf-js';
+import { TokenType } from '@adguard/css-tokenizer';
 
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { AdblockSyntax } from '../../utils/adblockers';
@@ -7,6 +8,8 @@ import { DomainListParser } from '../misc/domain-list';
 import { ModifierListParser } from '../misc/modifier-list';
 import {
     ADG_SCRIPTLET_MASK,
+    CSS_BLOCK_OPEN,
+    CSS_BLOCK_CLOSE,
     CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,
     COLON,
@@ -56,6 +59,7 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from '../misc/value';
 import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
+import { hasToken } from '../css/has-token';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,
@@ -535,6 +539,37 @@ export class CosmeticRuleParser extends ParserBase {
             };
         };
 
+        /**
+         * Parses Adb CSS injection rules
+         * eg: example.com##.foo { display: none; }
+         *
+         * @returns parsed rule
+         */
+        const parseAbpCssInjection = (): Pick<CssInjectionRule, RestProps> | null => {
+            if (!options.parseAbpSpecificRules) {
+                return null;
+            }
+
+            // check if the rule contains both CSS block open and close characters
+            // if none of them is present we can stop parsing
+            if (rawBody.indexOf(CSS_BLOCK_OPEN) === -1 && rawBody.indexOf(CSS_BLOCK_CLOSE) === -1) {
+                return null;
+            }
+
+            if (!hasToken(rawBody, new Set([TokenType.OpenCurlyBracket, TokenType.CloseCurlyBracket]))) {
+                return null;
+            }
+
+            // try to parse the raw body as an AdGuard CSS injection rule
+            const body = AdgCssInjectionParser.parse(rawBody, options, baseOffset + bodyStart);
+            // if the parsed rule type is a 'CssInjectionRuleBody', return the parsed rule
+            return {
+                syntax: AdblockSyntax.Abp,
+                type: CosmeticRuleType.CssInjectionRule,
+                body,
+            };
+        };
+
         const parseAbpSnippetInjection = (): Pick<ScriptletInjectionRule, RestProps> | null => {
             if (!options.parseAbpSpecificRules) {
                 throw new AdblockSyntaxError(
@@ -687,11 +722,23 @@ export class CosmeticRuleParser extends ParserBase {
         // the next function is called, and so on.
         // If all functions return null, an error should be thrown.
         const separatorMap = {
-            '##': [parseUboHtmlFiltering, parseUboScriptletInjection, parseUboCssInjection, parseElementHiding],
-            '#@#': [parseUboHtmlFiltering, parseUboScriptletInjection, parseUboCssInjection, parseElementHiding],
+            '##': [
+                parseUboHtmlFiltering,
+                parseUboScriptletInjection,
+                parseUboCssInjection,
+                parseAbpCssInjection,
+                parseElementHiding,
+            ],
+            '#@#': [
+                parseUboHtmlFiltering,
+                parseUboScriptletInjection,
+                parseUboCssInjection,
+                parseAbpCssInjection,
+                parseElementHiding,
+            ],
 
-            '#?#': [parseUboCssInjection, parseElementHiding],
-            '#@?#': [parseUboCssInjection, parseElementHiding],
+            '#?#': [parseUboCssInjection, parseAbpCssInjection, parseElementHiding],
+            '#@?#': [parseUboCssInjection, parseAbpCssInjection, parseElementHiding],
 
             '#$#': [parseAdgCssInjection, parseAbpSnippetInjection],
             '#@$#': [parseAdgCssInjection, parseAbpSnippetInjection],
@@ -772,7 +819,6 @@ export class CosmeticRuleParser extends ParserBase {
      */
     public static generateBody(node: AnyCosmeticRule): string {
         let result = EMPTY;
-
         // Body
         switch (node.type) {
             case CosmeticRuleType.ElementHidingRule:
@@ -780,7 +826,7 @@ export class CosmeticRuleParser extends ParserBase {
                 break;
 
             case CosmeticRuleType.CssInjectionRule:
-                if (node.syntax === AdblockSyntax.Adg) {
+                if (node.syntax === AdblockSyntax.Adg || node.syntax === AdblockSyntax.Abp) {
                     result = AdgCssInjectionParser.generate(node.body);
                 } else if (node.syntax === AdblockSyntax.Ubo) {
                     if (node.body.mediaQueryList) {
