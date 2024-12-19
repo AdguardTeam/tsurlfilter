@@ -277,25 +277,29 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
+    // TODO: remove this linter exception later AG-38560
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public static async applyJsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
-        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        logger.debug('Executing JS rules are not supported temporarily');
 
-        const scriptText = frameContext?.preparedCosmeticResult?.scriptText;
+        // TODO: uncomment and use later AG-38560
+        // const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        if (!scriptText) {
-            return;
-        }
+        // const scriptText = frameContext?.preparedCosmeticResult?.scriptText;
 
-        try {
-            await ScriptingApi.executeScript({
-                tabId,
-                frameId,
-                scriptText,
-                useBlob: CosmeticApi.shouldUseBlob(frameContext?.mainFrameUrl || frameContext?.url),
-            });
-        } catch (e) {
-            logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
-        }
+        // if (!scriptText) {
+        //     return;
+        // }
+
+        // try {
+        //     await ScriptingApi.executeScript({
+        //         tabId,
+        //         frameId,
+        //         scriptText,
+        //     });
+        // } catch (e) {
+        //     logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+        // }
     }
 
     /**
