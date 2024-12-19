@@ -6,7 +6,7 @@ interface CustomWindow extends Window {
     isAssistantInitiated: boolean;
 }
 
-declare const global: CustomWindow;
+const customWindow: CustomWindow = window as unknown as CustomWindow;
 
 const cosmeticController = new CosmeticController();
 cosmeticController.init();
@@ -15,7 +15,7 @@ const cookieController = new CookieController();
 cookieController.init();
 
 // Init assistant only once
-if (!global.isAssistantInitiated) {
+if (!customWindow.isAssistantInitiated) {
     initAssistant();
-    global.isAssistantInitiated = true;
+    customWindow.isAssistantInitiated = true;
 }
