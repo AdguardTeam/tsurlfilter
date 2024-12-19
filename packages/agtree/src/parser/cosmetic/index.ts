@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import { sprintf } from 'sprintf-js';
 import { TokenType } from '@adguard/css-tokenizer';
-import { hasToken } from '@adguard/css-tokenizer/src/has-token';
+import { hasToken } from '@adguard/css-tokenizer';
 
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { AdblockSyntax } from '../../utils/adblockers';
