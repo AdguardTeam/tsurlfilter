@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 import { sprintf } from 'sprintf-js';
 import { TokenType } from '@adguard/css-tokenizer';
+import { hasToken } from '@adguard/css-tokenizer/src/has-token';
 
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { AdblockSyntax } from '../../utils/adblockers';
@@ -59,7 +60,6 @@ import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { ValueParser } from '../misc/value';
 import { isUndefined } from '../../utils/type-guards';
 import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-import { hasToken } from '../css/has-token';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,

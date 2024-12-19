@@ -48,6 +48,11 @@ export class TokenizerContext {
     private customFunctionHandlers?: Map<number, TokenizerContextFunction>;
 
     /**
+     * Flag to indicate if the tokenization process should stop
+     */
+    public shouldStop = false;
+
+    /**
      * Constructs a new tokenizer context instance
      *
      * @param source Source string
@@ -83,6 +88,22 @@ export class TokenizerContext {
                 this.customFunctionHandlers.set(hash, handler);
             }
         }
+    }
+
+    /**
+     * Sets the shouldStop flag to true
+     */
+    public stop(): void {
+        this.shouldStop = true;
+    }
+
+    /**
+     * Checks if the tokenization process should stop
+     *
+     * @returns `true` if the process should stop, `false` otherwise
+     */
+    public shouldStopTokenization(): boolean {
+        return this.shouldStop;
     }
 
     /**

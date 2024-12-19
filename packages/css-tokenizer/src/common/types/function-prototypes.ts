@@ -12,10 +12,17 @@ import { type TokenType } from '../enums/token-types';
  * @param start Token start offset
  * @param end Token end offset
  * @param props Other token properties (if any)
+ * @param stop Function to halt the tokenization process
  * @note Hash tokens have a type flag set to either "id" or "unrestricted". The type flag defaults to "unrestricted" if
  * not otherwise set
  */
-export type OnTokenCallback = (type: TokenType, start: number, end: number, props?: Record<string, unknown>) => void;
+export type OnTokenCallback = (
+    type: TokenType,
+    start: number,
+    end: number,
+    props?: Record<string, unknown>,
+    stop?: () => void
+) => void;
 
 /**
  * Callback which is called when a parsing error is found. According to the spec, parsing errors are not fatal and
@@ -36,3 +43,8 @@ export type OnErrorCallback = (message: string, start: number, end: number) => v
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TokenizerContextFunction = (context: TokenizerContext, ...args: any[]) => void;
+
+/**
+ * Checks if the given raw string contains any of the specified tokens.
+ */
+export type HasToken = (raw: string, tokens: Set<TokenType>) => boolean;

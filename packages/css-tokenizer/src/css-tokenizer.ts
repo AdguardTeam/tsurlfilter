@@ -45,6 +45,9 @@ export const tokenize = (
 
     // Repeatedly consume the next input code point from the stream:
     while (!context.isEof()) {
+        if (context.shouldStopTokenization()) {
+            return;
+        }
         switch (context.code) {
             // According to the spec, these are all whitespace code points:
             case CodePoint.CharacterTabulation:
@@ -301,6 +304,9 @@ export const tokenize = (
 
                 // Return a <delim-token> with its value set to the current input code point.
                 context.consumeTrivialToken(TokenType.Delim);
+        }
+        if (context.shouldStopTokenization()) {
+            return;
         }
     }
 };
