@@ -253,25 +253,6 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Determines if a blob should be used for script injection based on the request URL.
-     * This method is used in scenarios where inline scripts are blocked by a Content Security Policy (CSP),
-     * but blobs are allowed.
-     * A common example of this is on websites like Facebook.
-     *
-     * @param url The URL of the main frame or frame URL.
-     * @returns True if a blob should be used for injection; otherwise, false.
-     */
-    private static shouldUseBlob(url: string): boolean {
-        const domain = getDomain(url);
-
-        if (!domain) {
-            return false;
-        }
-
-        return CosmeticApi.BLOB_INJECTION_URLS.has(domain);
-    }
-
-    /**
      * Injects js to specified tab and frame.
      *
      * @param tabId Tab id.
