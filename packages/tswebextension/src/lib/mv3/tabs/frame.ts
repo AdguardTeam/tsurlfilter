@@ -4,19 +4,17 @@ import {
     type NetworkRule,
     type ScriptletData,
 } from '@adguard/tsurlfilter';
-
-type ScriptFunction = () => void;
+import { type ScriptFunction } from '../background/services/local-script-rules-service';
 
 /**
  * Prepared cosmetic result.
  * This type represents the processed cosmetic data extracted from the initial cosmetic result.
  */
 type PreparedCosmeticResult = {
-    // FIXME: remove scriptText
-    // /**
-    //  * Script text extracted from the cosmetic result.
-    //  */
-    // scriptText: string;
+    /**
+     * Script text extracted from the cosmetic result from rules added by user.
+     */
+    scriptTextLocal: string;
 
     /**
      * Script functions extracted from the cosmetic result.

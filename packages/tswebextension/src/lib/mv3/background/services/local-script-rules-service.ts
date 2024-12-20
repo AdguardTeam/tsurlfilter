@@ -40,17 +40,6 @@ export class LocalScriptRulesService {
     }
 
     /**
-     * Checks if ruleText is in the pre-built JSON with JS rules.
-     *
-     * @param rule Rule text.
-     *
-     * @returns True, if rule is local, else returns false.
-     */
-    isLocal(rule: CosmeticRule): boolean {
-        return !!this.getLocalScriptFunction(rule);
-    }
-
-    /**
      * Gets local script function for the rule.
      *
      * @param rule Cosmetic rule.

@@ -84,12 +84,6 @@ export const configurationMV3Validator = configurationValidator.extend({
      * List of rules added by user.
      */
     userrules: customFilterMV3Validator.omit({ filterId: true }),
-
-    /**
-     * Object containing local script functions.
-     * The key is a string identifier and the value is the corresponding script function.
-     */
-    localScriptRules: zod.record(zod.string(), zod.function()).optional(),
 });
 
 /**
