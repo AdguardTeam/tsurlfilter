@@ -18,7 +18,7 @@ import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-
 import { getDomain } from '../../common/utils/url';
 import { type ContentType } from '../../common/request-type';
 import { nanoid } from '../nanoid';
-import { localScriptRulesService, type ScriptFunction } from './services/local-script-rules-service';
+import { localScriptRulesService, type LocalScriptFunction } from './services/local-script-rules-service';
 
 export type ContentScriptCosmeticData = {
     /**
@@ -38,13 +38,26 @@ export type ContentScriptCosmeticData = {
 };
 
 /**
- * Script functions and scriptlets data.
+ * Data for JS and scriptlets rules.
  */
-// FIXME (Slava): rename
-type ScriptFunctionsAndScriptlets = {
-    // FIXME (Slava): add description and possibility to grep all the logic by keyword
-    scriptTextLocal: string,
-    scriptFunctionList: ScriptFunction[],
+type ScriptsAndScriptletsData = {
+    /**
+     * Script text which is combiner from JS rules only from User rules and Custom filters
+     * since they are added manually by users. That's why they are considered "local".
+     */
+    localScriptText: string,
+
+    /**
+     * Script functions combined from JS rules from filters which are pre-built into the extension.
+     * That's why they are considered "local".
+     *
+     * Should be executed by chrome scripting api.
+     */
+    localScriptFunctions: LocalScriptFunction[],
+
+    /**
+     * List of scriptlet data objects. No need to separate them by type since they are all safe.
+     */
     scriptletDataList: ScriptletData[]
 };
 
@@ -168,31 +181,36 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Generates script text and retrieves a list of scriptlet data from cosmetic rules.
+     * Generates data for scriptlets and local scripts:
+     * - functions for scriptlets,
+     * - functions for JS rules from pre-built filters,
+     * - script text for JS rules from User rules and Custom filters.
      *
      * @param cosmeticResult Object containing cosmetic rules.
-     * @returns An object with:
-     * - `scriptText`: The aggregated script text, wrapped for safe execution.
-     * - `scriptletDataList`: An array of scriptlet data objects.
+     *
+     * @returns An object with data for scriptlets and local scripts — script text and functions.
      */
-    public static getScriptTextAndScriptlets(cosmeticResult: CosmeticResult): ScriptFunctionsAndScriptlets {
+    public static getScriptsAndScriptletsData(cosmeticResult: CosmeticResult): ScriptsAndScriptletsData {
         const rules = cosmeticResult.getScriptRules();
+
         if (rules.length === 0) {
             return {
-                scriptTextLocal: '',
-                scriptFunctionList: [],
+                localScriptText: '',
+                localScriptFunctions: [],
                 scriptletDataList: [],
             };
         }
 
-        const uniqueScriptFunctions = new Set<ScriptFunction>();
+        const uniqueScriptFunctions = new Set<LocalScriptFunction>();
         const scriptletDataList = [];
         const uniqueScripts = new Set<string>();
+
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
             if (!rule.isScriptlet) {
                 const filterListId = rule.getFilterListId();
                 // FIXME (Slava): add to constants
+                // FIXME (Slava): no need to check allowlist as it is impossible to have js rules in it
                 if (filterListId >= 1000 || filterListId === USER_FILTER_ID || filterListId === ALLOWLIST_FILTER_ID) {
                     const scriptText = rule.getScript();
                     if (scriptText) {
@@ -215,13 +233,14 @@ export class CosmeticApi extends CosmeticApiCommon {
             }
         }
 
+        // FIXME (Slava): add `;` at the end only if it is missing, not always
         const scriptText = [...uniqueScripts].join(';\n');
 
         const wrappedScriptText = CosmeticApi.wrapScriptText(scriptText);
 
         return {
-            scriptTextLocal: wrappedScriptText,
-            scriptFunctionList: [...uniqueScriptFunctions],
+            localScriptText: wrappedScriptText,
+            localScriptFunctions: [...uniqueScriptFunctions],
             scriptletDataList,
         };
     }
@@ -286,7 +305,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             return;
         }
 
-        const scriptFunctions = frameContext.preparedCosmeticResult?.scriptFunctions;
+        const scriptFunctions = frameContext.preparedCosmeticResult?.localScriptFunctions;
 
         if (!scriptFunctions || scriptFunctions.length === 0) {
             return;
@@ -318,7 +337,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             return;
         }
 
-        const scriptTextLocal = frameContext.preparedCosmeticResult?.scriptTextLocal;
+        const scriptTextLocal = frameContext.preparedCosmeticResult?.localScriptText;
 
         if (!scriptTextLocal) {
             return;
