@@ -1,17 +1,22 @@
 import { type CosmeticRule } from '@adguard/tsurlfilter';
 
-// FIXME (Slava): this type was duplicated somewhere else
-export type ScriptFunction = () => void;
+/**
+ * Local script function type.
+ */
+export type LocalScriptFunction = () => void;
 
-// FIXME (Slava): jsdoc
-export type LocalScriptRules = {
-    [key: string]: ScriptFunction;
+/**
+ * Type for local script functions data where
+ * - key is rule as string
+ * - value is function ready to be executed.
+ */
+export type LocalScriptFunctionData = {
+    [key: string]: LocalScriptFunction;
 };
 
-// FIXME (Slava): comment
 /**
  * By the rules of AMO we cannot use remote scripts (and our JS rules can be counted as such).
- * Because of that we use the following approach (that was accepted by AMO reviewers):
+ * Because of that we use the following approach (that was accepted by Chrome reviewers):
  *
  * 1. We pre-build JS rules from AdGuard filters into the JSON file.
  * 2. At runtime we check every JS rule if it's included into JSON.
@@ -20,23 +25,20 @@ export type LocalScriptRules = {
  *  This way filters maintainers can test new rules before including them in the filters.
  */
 export class LocalScriptRulesService {
-    // FIXME (Slava): comment
     /**
      * If {@link setLocalScriptRules} was called (for example, it should be
-     * called in Firefox AMO), this set will contain a list of prebuilt JSON
-     * with scriptlets and JS rules allowed to run.
+     * called for Chromium-MV3), this set will contain a list of prebuilt js file
+     * with JS rules allowed to run.
      * Otherwise it will remain undefined.
-     * Key is the scriptlet call (e.g.: `example.com#%#//scriptlet('foo')` it will be `#%#//scriptlet('foo')`)
-     * and the value is the list of domains from the rule.
      */
-    private localScripts: LocalScriptRules | undefined;
+    private localScripts: LocalScriptFunctionData | undefined;
 
     /**
      * Saves local script rules to object.
      *
      * @param localScriptRules Object with pre-build JS rules.
      */
-    setLocalScriptRules(localScriptRules: LocalScriptRules): void {
+    setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
         this.localScripts = localScriptRules;
     }
 
@@ -45,17 +47,17 @@ export class LocalScriptRulesService {
      *
      * @param rule Cosmetic rule.
      *
-     * @returns Local script function or undefined if it's not found.
+     * @returns Local script function or null if not found.
      */
-    getLocalScriptFunction(rule: CosmeticRule): ScriptFunction | undefined {
+    getLocalScriptFunction(rule: CosmeticRule): LocalScriptFunction | null {
         if (this.localScripts === undefined) {
-            return undefined;
+            return null;
         }
 
         const scriptFunc = this.localScripts[rule.getContent()];
 
         if (scriptFunc === undefined) {
-            return undefined;
+            return null;
         }
 
         return scriptFunc;

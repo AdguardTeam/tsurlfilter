@@ -209,10 +209,10 @@ export class CosmeticFrameProcessor {
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const {
-            scriptTextLocal,
-            scriptFunctionList,
+            localScriptText,
+            localScriptFunctions,
             scriptletDataList,
-        } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
+        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
         tabsApi.updateFrameContext(tabId, frameId, {
@@ -220,8 +220,8 @@ export class CosmeticFrameProcessor {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptTextLocal,
-                scriptFunctions: scriptFunctionList,
+                localScriptText,
+                localScriptFunctions,
                 scriptletDataList,
                 cssText,
             },
@@ -265,21 +265,21 @@ export class CosmeticFrameProcessor {
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const {
-            scriptFunctionList,
+            localScriptText,
+            localScriptFunctions,
             scriptletDataList,
-            scriptTextLocal,
-        } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
+        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
         tabsApi.updateFrameContext(tabId, frameId, {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                // FIXME (Slava): consider renaming
-                scriptFunctions: scriptFunctionList,
+                localScriptText,
+                localScriptFunctions,
                 scriptletDataList,
                 cssText,
-                scriptTextLocal,
             },
         });
     }

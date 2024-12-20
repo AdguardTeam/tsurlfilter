@@ -3,7 +3,7 @@ import { type IConfiguration } from '@adguard/scriptlets';
 
 import { appContext } from './app-context';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
-import { type ScriptFunction } from './services/local-script-rules-service';
+import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**
  * Trusted Types API used to describe to appease the type checker.
@@ -48,7 +48,7 @@ export type ExecuteScriptFuncParams = {
     /**
      * The script function to be executed.
      */
-    scriptFunction: ScriptFunction,
+    scriptFunction: LocalScriptFunction,
 };
 
 /**
