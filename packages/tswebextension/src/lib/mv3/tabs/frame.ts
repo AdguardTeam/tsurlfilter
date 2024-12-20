@@ -5,15 +5,23 @@ import {
     type ScriptletData,
 } from '@adguard/tsurlfilter';
 
+type ScriptFunction = () => void;
+
 /**
  * Prepared cosmetic result.
  * This type represents the processed cosmetic data extracted from the initial cosmetic result.
  */
 type PreparedCosmeticResult = {
+    // FIXME: remove scriptText
+    // /**
+    //  * Script text extracted from the cosmetic result.
+    //  */
+    // scriptText: string;
+
     /**
-     * Script text extracted from the cosmetic result.
+     * Script functions extracted from the cosmetic result.
      */
-    scriptText: string;
+    scriptFunctions: ScriptFunction[],
 
     /**
      * A list of scriptlet data extracted from the cosmetic result.

@@ -3,6 +3,7 @@ import { type IConfiguration } from '@adguard/scriptlets';
 
 import { appContext } from './app-context';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
+import { type ScriptFunction } from './services/local-script-rules-service';
 
 /**
  * Parameters for applying CSS rules.
@@ -28,9 +29,9 @@ export type ExecuteScriptParams = {
     frameId: number,
 
     /**
-     * The script content to be executed.
+     * The script function to be executed.
      */
-    scriptText: string,
+    scriptFunction: ScriptFunction,
 };
 
 /**
@@ -128,12 +129,14 @@ export class ScriptingApi {
      * @param params Parameters for executing the script.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
+     * @param params.scriptFunction The script function to be executed.
      *
      * @returns Promise that resolves when the script is executed.
      */
     public static async executeScript({
         tabId,
         frameId,
+        scriptFunction,
     }: ExecuteScriptParams): Promise<void> {
         // There is no reason to inject a script into the background page
         if (tabId === BACKGROUND_TAB_ID) {
@@ -142,12 +145,9 @@ export class ScriptingApi {
 
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
-            // TODO: execute JS rules AG-38560
-            // func: injectFunc,
-            // TODO: OR maybe `files` can be used to execute JS rules
-            files: [],
+            func: scriptFunction,
             injectImmediately: true,
-            world: 'MAIN', // ISOLATED doesn't allow to execute code inline
+            world: 'MAIN',
         });
     }
 }
