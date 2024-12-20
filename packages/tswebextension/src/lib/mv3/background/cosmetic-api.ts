@@ -5,6 +5,7 @@ import {
 } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
+import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
@@ -17,6 +18,7 @@ import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-
 import { getDomain } from '../../common/utils/url';
 import { type ContentType } from '../../common/request-type';
 import { nanoid } from '../nanoid';
+import { localScriptRulesService, type ScriptFunction } from './services/local-script-rules-service';
 
 export type ContentScriptCosmeticData = {
     /**
@@ -36,10 +38,12 @@ export type ContentScriptCosmeticData = {
 };
 
 /**
- * Script text and scriptlets.
+ * Script functions and scriptlets data.
  */
-type ScriptTextAndScriptlets = {
-    scriptText: string,
+type ScriptFunctionsAndScriptlets = { // FIXME rename
+    // FIXME add description and possibility to grep all the logic by keyword
+    scriptTextLocal: string,
+    scriptFunctionList: ScriptFunction[],
     scriptletDataList: ScriptletData[]
 };
 
@@ -135,6 +139,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             : null;
     }
 
+    // FIXME check if we need to wrap the same way local script functions
     /**
      * Wraps the given JavaScript code in a self-invoking function for safe execution
      * and appends a source URL comment for debugging purposes.
@@ -169,24 +174,38 @@ export class CosmeticApi extends CosmeticApiCommon {
      * - `scriptText`: The aggregated script text, wrapped for safe execution.
      * - `scriptletDataList`: An array of scriptlet data objects.
      */
-    public static getScriptTextAndScriptlets(cosmeticResult: CosmeticResult): ScriptTextAndScriptlets {
+    public static getScriptTextAndScriptlets(cosmeticResult: CosmeticResult): ScriptFunctionsAndScriptlets {
         const rules = cosmeticResult.getScriptRules();
         if (rules.length === 0) {
             return {
-                scriptText: '',
+                scriptTextLocal: '',
+                scriptFunctionList: [],
                 scriptletDataList: [],
             };
         }
 
-        const uniqueScripts = new Set();
+        const uniqueScriptFunctions = new Set<ScriptFunction>();
         const scriptletDataList = [];
-
+        const uniqueScripts = new Set<string>();
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
             if (!rule.isScriptlet) {
+                const filterListId = rule.getFilterListId();
+                // FIXME add to constants
+                if (filterListId >= 1000 || filterListId === USER_FILTER_ID || filterListId === ALLOWLIST_FILTER_ID) {
+                    const scriptText = rule.getScript();
+                    if (scriptText) {
+                        uniqueScripts.add(scriptText);
+                    }
+                } else {
+                // FIXME check that AG_ scripts are not used in the rules are working.
                 // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
                 //  are actually used in the rules. If not, avoid injecting them to reduce overhead.
-                uniqueScripts.add(rule.getScript());
+                    const scriptFunction = localScriptRulesService.getLocalScriptFunction(rule);
+                    if (scriptFunction) {
+                        uniqueScriptFunctions.add(scriptFunction);
+                    }
+                }
             } else {
                 const scriptletData = rule.getScriptletData();
                 if (scriptletData) {
@@ -200,7 +219,8 @@ export class CosmeticApi extends CosmeticApiCommon {
         const wrappedScriptText = CosmeticApi.wrapScriptText(scriptText);
 
         return {
-            scriptText: wrappedScriptText,
+            scriptTextLocal: wrappedScriptText,
+            scriptFunctionList: [...uniqueScriptFunctions],
             scriptletDataList,
         };
     }
@@ -258,29 +278,60 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    // TODO: remove this linter exception later AG-38560
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    public static async applyJsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
-        logger.debug('Executing JS rules are not supported temporarily');
+    public static async applyJsFuncsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        // TODO: uncomment and use later AG-38560
-        // const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        if (!frameContext) {
+            return;
+        }
 
-        // const scriptText = frameContext?.preparedCosmeticResult?.scriptText;
+        const scriptFunctions = frameContext.preparedCosmeticResult?.scriptFunctions;
 
-        // if (!scriptText) {
-        //     return;
-        // }
+        if (!scriptFunctions || scriptFunctions.length === 0) {
+            return;
+        }
 
-        // try {
-        //     await ScriptingApi.executeScript({
-        //         tabId,
-        //         frameId,
-        //         scriptText,
-        //     });
-        // } catch (e) {
-        //     logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
-        // }
+        try {
+            await Promise.all(scriptFunctions.map((scriptFunction) => {
+                return ScriptingApi.executeScriptFunc({
+                    tabId,
+                    frameId,
+                    scriptFunction,
+                });
+            }));
+        } catch (e) {
+            logger.debug('[applyJsFuncsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+        }
+    }
+
+    /**
+     * Injects js locally added rules by user to specified tab and frame.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     */
+    public static async applyJsTextByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+        if (!frameContext) {
+            return;
+        }
+
+        const scriptTextLocal = frameContext.preparedCosmeticResult?.scriptTextLocal;
+
+        if (!scriptTextLocal) {
+            return;
+        }
+
+        try {
+            await ScriptingApi.executeScriptText({
+                tabId,
+                frameId,
+                scriptText: scriptTextLocal,
+            });
+        } catch (e) {
+            logger.debug('[applyJsTextByTabAndFrame] error occurred during injection', getErrorMessage(e));
+        }
     }
 
     /**
