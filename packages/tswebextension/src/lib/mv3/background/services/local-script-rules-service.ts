@@ -1,13 +1,14 @@
 import { type CosmeticRule } from '@adguard/tsurlfilter';
 
-// FIXME this type was duplicated somewhere else
+// FIXME (Slava): this type was duplicated somewhere else
 export type ScriptFunction = () => void;
 
+// FIXME (Slava): jsdoc
 export type LocalScriptRules = {
     [key: string]: ScriptFunction;
 };
 
-// FIXME comment
+// FIXME (Slava): comment
 /**
  * By the rules of AMO we cannot use remote scripts (and our JS rules can be counted as such).
  * Because of that we use the following approach (that was accepted by AMO reviewers):
@@ -19,7 +20,7 @@ export type LocalScriptRules = {
  *  This way filters maintainers can test new rules before including them in the filters.
  */
 export class LocalScriptRulesService {
-    // FIXME comment
+    // FIXME (Slava): comment
     /**
      * If {@link setLocalScriptRules} was called (for example, it should be
      * called in Firefox AMO), this set will contain a list of prebuilt JSON

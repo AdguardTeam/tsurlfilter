@@ -40,8 +40,9 @@ export type ContentScriptCosmeticData = {
 /**
  * Script functions and scriptlets data.
  */
-type ScriptFunctionsAndScriptlets = { // FIXME rename
-    // FIXME add description and possibility to grep all the logic by keyword
+// FIXME (Slava): rename
+type ScriptFunctionsAndScriptlets = {
+    // FIXME (Slava): add description and possibility to grep all the logic by keyword
     scriptTextLocal: string,
     scriptFunctionList: ScriptFunction[],
     scriptletDataList: ScriptletData[]
@@ -139,7 +140,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             : null;
     }
 
-    // FIXME check if we need to wrap the same way local script functions
+    // FIXME (Slava): check if we need to wrap the same way local script functions
     /**
      * Wraps the given JavaScript code in a self-invoking function for safe execution
      * and appends a source URL comment for debugging purposes.
@@ -191,14 +192,14 @@ export class CosmeticApi extends CosmeticApiCommon {
             const rule = rules[i];
             if (!rule.isScriptlet) {
                 const filterListId = rule.getFilterListId();
-                // FIXME add to constants
+                // FIXME (Slava): add to constants
                 if (filterListId >= 1000 || filterListId === USER_FILTER_ID || filterListId === ALLOWLIST_FILTER_ID) {
                     const scriptText = rule.getScript();
                     if (scriptText) {
                         uniqueScripts.add(scriptText);
                     }
                 } else {
-                // FIXME check that AG_ scripts are not used in the rules are working.
+                // FIXME (Slava): check that AG_ scripts are not used in the rules are working.
                 // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
                 //  are actually used in the rules. If not, avoid injecting them to reduce overhead.
                     const scriptFunction = localScriptRulesService.getLocalScriptFunction(rule);
