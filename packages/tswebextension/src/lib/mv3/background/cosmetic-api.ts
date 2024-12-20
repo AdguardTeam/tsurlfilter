@@ -5,7 +5,7 @@ import {
 } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { CUSTOM_FILTERS_START_ID, USER_FILTER_ID } from '../../common/constants';
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
@@ -181,6 +181,19 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Checks whether the cosmetic (JS) rule is added manually by user —
+     * is it located in User rules or Custom filters.
+     *
+     * @param rule Rule to check.
+     *
+     * @returns True if rule is added manually by user.
+     */
+    private static isUserAddedRule(rule: CosmeticRule): boolean {
+        const filterListId = rule.getFilterListId();
+        return filterListId >= CUSTOM_FILTERS_START_ID || filterListId === USER_FILTER_ID;
+    }
+
+    /**
      * Generates data for scriptlets and local scripts:
      * - functions for scriptlets,
      * - functions for JS rules from pre-built filters,
@@ -207,28 +220,26 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
-            if (!rule.isScriptlet) {
-                const filterListId = rule.getFilterListId();
-                // FIXME (Slava): add to constants
-                // FIXME (Slava): no need to check allowlist as it is impossible to have js rules in it
-                if (filterListId >= 1000 || filterListId === USER_FILTER_ID || filterListId === ALLOWLIST_FILTER_ID) {
-                    const scriptText = rule.getScript();
-                    if (scriptText) {
-                        uniqueScripts.add(scriptText);
-                    }
-                } else {
-                // FIXME (Slava): check that AG_ scripts are not used in the rules are working.
-                // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
-                //  are actually used in the rules. If not, avoid injecting them to reduce overhead.
-                    const scriptFunction = localScriptRulesService.getLocalScriptFunction(rule);
-                    if (scriptFunction) {
-                        uniqueScriptFunctions.add(scriptFunction);
-                    }
-                }
-            } else {
+            if (rule.isScriptlet) {
                 const scriptletData = rule.getScriptletData();
                 if (scriptletData) {
                     scriptletDataList.push(scriptletData);
+                }
+            } else if (CosmeticApi.isUserAddedRule(rule)) {
+                // JS rule is manually added by user locally in the extension — save its script text.
+                const scriptText = rule.getScript();
+                if (scriptText) {
+                    uniqueScripts.add(scriptText);
+                }
+            } else {
+                // FIXME (Slava): check that AG_ scripts are not used in the rules are working.
+                // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
+                //  are actually used in the rules. If not, avoid injecting them to reduce overhead.
+
+                // JS rule is pre-built into the extension — save its function.
+                const scriptFunction = localScriptRulesService.getLocalScriptFunction(rule);
+                if (scriptFunction) {
+                    uniqueScriptFunctions.add(scriptFunction);
                 }
             }
         }
