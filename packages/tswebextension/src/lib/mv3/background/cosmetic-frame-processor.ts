@@ -209,7 +209,7 @@ export class CosmeticFrameProcessor {
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const {
-            scriptText,
+            scriptFunctionList,
             scriptletDataList,
         } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
         const cssText = CosmeticApi.getCssText(cosmeticResult);
@@ -219,7 +219,7 @@ export class CosmeticFrameProcessor {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptText,
+                scriptFunctions: scriptFunctionList,
                 scriptletDataList,
                 cssText,
             },
@@ -263,7 +263,7 @@ export class CosmeticFrameProcessor {
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const {
-            scriptText,
+            scriptFunctionList,
             scriptletDataList,
         } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
         const cssText = CosmeticApi.getCssText(cosmeticResult);
@@ -272,7 +272,7 @@ export class CosmeticFrameProcessor {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptText,
+                scriptFunctions: scriptFunctionList, // FIXME consider renaming
                 scriptletDataList,
                 cssText,
             },
