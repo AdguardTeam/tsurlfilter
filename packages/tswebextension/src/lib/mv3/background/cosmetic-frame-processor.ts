@@ -275,7 +275,8 @@ export class CosmeticFrameProcessor {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptFunctions: scriptFunctionList, // FIXME consider renaming
+                // FIXME (Slava): consider renaming
+                scriptFunctions: scriptFunctionList,
                 scriptletDataList,
                 cssText,
                 scriptTextLocal,

@@ -19,7 +19,8 @@ describe('TabsCosmeticInjector', () => {
         jest.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
         jest.spyOn(CosmeticApi, 'logScriptRules');
         jest.spyOn(ScriptingApi, 'insertCSS');
-        jest.spyOn(ScriptingApi, 'executeScriptFunc'); // FIXME add tests for executeScriptText
+        // FIXME (Slava) add tests for executeScriptText
+        jest.spyOn(ScriptingApi, 'executeScriptFunc');
         jest.spyOn(ScriptingApi, 'executeScriptlet');
     });
 
