@@ -216,7 +216,7 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const uniqueScriptFunctions = new Set<LocalScriptFunction>();
         const scriptletDataList = [];
-        const uniqueScripts = new Set<string>();
+        const uniqueScriptStrings = new Set<string>();
 
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
@@ -229,7 +229,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 // JS rule is manually added by user locally in the extension — save its script text.
                 const scriptText = rule.getScript();
                 if (scriptText) {
-                    uniqueScripts.add(scriptText.trim());
+                    uniqueScriptStrings.add(scriptText.trim());
                 }
             } else {
                 // FIXME (Slava): check that AG_ scripts are not used in the rules are working.
@@ -245,7 +245,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         let scriptText = '';
-        uniqueScripts.forEach((script) => {
+        uniqueScriptStrings.forEach((script) => {
             scriptText += script.endsWith(';')
                 ? `${script}${LF}`
                 : `${script};${LF}`;
@@ -352,9 +352,9 @@ export class CosmeticApi extends CosmeticApiCommon {
             return;
         }
 
-        const scriptTextLocal = frameContext.preparedCosmeticResult?.localScriptText;
+        const localScriptText = frameContext.preparedCosmeticResult?.localScriptText;
 
-        if (!scriptTextLocal) {
+        if (!localScriptText) {
             return;
         }
 
@@ -362,7 +362,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             await ScriptingApi.executeScriptText({
                 tabId,
                 frameId,
-                scriptText: scriptTextLocal,
+                scriptText: localScriptText,
             });
         } catch (e) {
             logger.debug('[applyJsTextByTabAndFrame] error occurred during injection', getErrorMessage(e));
