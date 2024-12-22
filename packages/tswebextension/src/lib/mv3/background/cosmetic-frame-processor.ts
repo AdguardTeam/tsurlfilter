@@ -213,6 +213,7 @@ export class CosmeticFrameProcessor {
             localScriptFunctions,
             scriptletDataList,
         } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
         tabsApi.updateFrameContext(tabId, frameId, {
