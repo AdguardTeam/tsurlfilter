@@ -5,7 +5,7 @@ import {
 } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { CUSTOM_FILTERS_START_ID, LF, USER_FILTER_ID } from '../../common/constants';
+import { CUSTOM_FILTERS_START_ID, USER_FILTER_ID } from '../../common/constants';
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
@@ -229,7 +229,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 // JS rule is manually added by user locally in the extension — save its script text.
                 const scriptText = rule.getScript();
                 if (scriptText) {
-                    uniqueScripts.add(scriptText.trim());
+                    uniqueScripts.add(scriptText);
                 }
             } else {
                 // FIXME (Slava): check that AG_ scripts are not used in the rules are working.
@@ -244,12 +244,8 @@ export class CosmeticApi extends CosmeticApiCommon {
             }
         }
 
-        let scriptText = '';
-        uniqueScripts.forEach((script) => {
-            scriptText += script.endsWith(';')
-                ? `${script}${LF}`
-                : `${script};${LF}`;
-        });
+        // FIXME (Slava): add `;` at the end only if it is missing, not always
+        const scriptText = [...uniqueScripts].join(';\n');
 
         const wrappedScriptText = CosmeticApi.wrapScriptText(scriptText);
 
