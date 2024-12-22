@@ -153,7 +153,6 @@ export class CosmeticApi extends CosmeticApiCommon {
             : null;
     }
 
-    // FIXME (Slava): check if we need to wrap the same way local script functions
     /**
      * Wraps the given JavaScript code in a self-invoking function for safe execution
      * and appends a source URL comment for debugging purposes.
@@ -178,6 +177,22 @@ export class CosmeticApi extends CosmeticApiCommon {
         })();
         //# sourceURL=ag-scripts.js
         `;
+    }
+
+    /**
+     * Wraps the given script function in a try-catch block for safe execution.
+     *
+     * @param scriptFunction The script function to wrap.
+     * @returns The wrapped script function.
+     */
+    private static wrapScriptFunction(scriptFunction: LocalScriptFunction): LocalScriptFunction {
+        return () => {
+            try {
+                scriptFunction();
+            } catch (ex) {
+                logger.error('Error executing AG js:', ex);
+            }
+        };
     }
 
     /**
@@ -239,7 +254,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 // JS rule is pre-built into the extension — save its function.
                 const scriptFunction = localScriptRulesService.getLocalScriptFunction(rule);
                 if (scriptFunction) {
-                    uniqueScriptFunctions.add(scriptFunction);
+                    uniqueScriptFunctions.add(CosmeticApi.wrapScriptFunction(scriptFunction));
                 }
             }
         }
