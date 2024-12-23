@@ -253,8 +253,6 @@ MessageHandlerMV2
     /**
      * Sets prebuild local script rules.
      *
-     * @see {@link LocalScriptRulesService}
-     *
      * @param localScriptRules JSON object with pre-build JS rules. @see {@link LocalScriptRulesService}.
      */
     public setLocalScriptRules(localScriptRules: LocalScriptRules): void {
