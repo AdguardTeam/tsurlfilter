@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
 
-## [2.4.0-alpha.8] - 2024-12-19
+## [2.4.0-alpha.8] - 2024-12-23
 
 ### Removed
 
