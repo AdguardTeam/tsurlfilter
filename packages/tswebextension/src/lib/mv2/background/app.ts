@@ -248,6 +248,10 @@ MessageHandlerMV2
     }
 
     /**
+     * JS_RULES_EXECUTION - STEP 2.2: local script rules which are combined from pre-build filters
+     * are passed to the engine; they are going to be executed by chrome.scripting API.
+     */
+    /**
      * Sets prebuild local script rules.
      *
      * @see {@link LocalScriptRulesService}

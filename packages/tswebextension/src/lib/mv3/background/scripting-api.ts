@@ -162,6 +162,9 @@ export class ScriptingApi {
             domainName: domainName ?? undefined,
         };
 
+        /**
+         * JS_RULES_EXECUTION - STEP 4.1: apply scriptlets to frames — via chrome.scripting API.
+         */
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
             func: scriptletData.func,
@@ -191,6 +194,9 @@ export class ScriptingApi {
             return;
         }
 
+        /**
+         * JS_RULES_EXECUTION - STEP 4.2: apply JS rules from pre-built filters — via chrome.scripting API.
+         */
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
             func: scriptFunction,
@@ -284,6 +290,9 @@ export class ScriptingApi {
 
             const scriptTextWithPolicy = policy.createScript(scriptText);
 
+            /**
+             * JS_RULES_EXECUTION - STEP 4.3: apply JS rules manually added by users — via script tag injection.
+             */
             injectViaScriptTag(scriptTextWithPolicy);
 
             Object.defineProperty(Window.prototype.toString, options.uniqueIdentifier, {
