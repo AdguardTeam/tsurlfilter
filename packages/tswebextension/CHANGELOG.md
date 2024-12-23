@@ -21,9 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Remade JS rules injections in MV3 — use `chrome.scripting` API for injecting functions
-  for rules from pre-built filters, and use script tag injection only for rules manually added by users —
-  rules from User rules and Custom filters.
+- Remade JS rules injections in MV3:
+    - use `chrome.scripting` API for injecting functions for script rules from the pre-built filters,
+    - use script tag injection only for script rules manually added by users —
+      rules from *User rules* and *Custom filters*.
 
 [2.4.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.8
 
