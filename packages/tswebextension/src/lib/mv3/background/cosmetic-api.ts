@@ -193,6 +193,13 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * JS_RULES_EXECUTION - STEP 3: all previously matched script rules are processed and filtered:
+     * 1) scriptlets are going to be executed as functions via chrome.scripting API,
+     * 2) JS rules from pre-built filters (previously collected and passed to the engine)
+     *   are going to be executed as functions via chrome.scripting API;
+     * 3) JS rules manually added by user (from User rules and Custom filters) are going to be executed as script text.
+     */
+    /**
      * Generates data for scriptlets and local scripts:
      * - functions for scriptlets,
      * - functions for JS rules from pre-built filters,
@@ -231,7 +238,6 @@ export class CosmeticApi extends CosmeticApiCommon {
                     uniqueScriptStrings.add(scriptText.trim());
                 }
             } else {
-                // FIXME (Slava): check that AG_ scripts are not used in the rules are working.
                 // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
                 //  are actually used in the rules. If not, avoid injecting them to reduce overhead.
 
@@ -327,6 +333,9 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         try {
             await Promise.all(localScriptFunctions.map((scriptFunction) => {
+                /**
+                 * JS_RULES_EXECUTION - STEP 4.2: apply JS rules from pre-built filters — via chrome.scripting API.
+                 */
                 return ScriptingApi.executeScriptFunc({
                     tabId,
                     frameId,
@@ -358,6 +367,9 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         try {
+            /**
+             * JS_RULES_EXECUTION - STEP 4.3: apply JS rules manually added by users — via script tag injection.
+             */
             await ScriptingApi.executeScriptText({
                 tabId,
                 frameId,
@@ -389,6 +401,9 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         try {
             await Promise.all(scriptletDataList.map((scriptletData) => {
+                /**
+                 * JS_RULES_EXECUTION - STEP 4.1: apply scriptlets to frames — via chrome.scripting API.
+                 */
                 return ScriptingApi.executeScriptlet({
                     tabId,
                     frameId,
