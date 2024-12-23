@@ -193,7 +193,9 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * JS_RULES_EXECUTION - STEP 3: All previously matched script rules are processed and filtered:
+     * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+     *
+     * This is STEP 3: All previously matched script rules are processed and filtered:
      * - JS rules from pre-built filters (previously collected, pre-built and passed to the engine)
      *   are going to be executed as functions via chrome.scripting API;
      * - JS rules manually added by users (from User rules and Custom filters)
@@ -334,7 +336,9 @@ export class CosmeticApi extends CosmeticApiCommon {
         try {
             await Promise.all(localScriptFunctions.map((scriptFunction) => {
                 /**
-                 * JS_RULES_EXECUTION - STEP 4.1: apply JS rules from pre-built filters — via chrome.scripting API.
+                 * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+                 *
+                 * This is STEP 4.1: Apply JS rules from pre-built filters — via chrome.scripting API.
                  */
                 return ScriptingApi.executeScriptFunc({
                     tabId,
@@ -368,7 +372,9 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         try {
             /**
-             * JS_RULES_EXECUTION - STEP 4.2: apply JS rules manually added by users — via script tag injection.
+             * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+             *
+             * This is STEP 4.2: Apply JS rules manually added by users — via script tag injection.
              */
             await ScriptingApi.executeScriptText({
                 tabId,

@@ -248,7 +248,9 @@ MessageHandlerMV2
     }
 
     /**
-     * JS_RULES_EXECUTION - STEP 2.2: Local script rules are passed to the engine via this API method.
+     * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+     *
+     * This is STEP 2.2: Local script rules are passed to the engine via this API method.
      */
     /**
      * Sets prebuild local script rules.
