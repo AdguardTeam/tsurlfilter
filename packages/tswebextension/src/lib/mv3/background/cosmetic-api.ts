@@ -153,7 +153,6 @@ export class CosmeticApi extends CosmeticApiCommon {
             : null;
     }
 
-    // FIXME (Slava): check if we need to wrap the same way local script functions
     /**
      * Wraps the given JavaScript code in a self-invoking function for safe execution
      * and appends a source URL comment for debugging purposes.
