@@ -1270,8 +1270,8 @@ importers:
         specifier: ^5.0.9
         version: 5.0.9
       text-encoding:
-        specifier: git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2
-        version: github.com/AdguardTeam/text-encoding/4268d6b7dc0e15f57134545ae1c8c59e9c5ced70
+        specifier: https://github.com/AdguardTeam/text-encoding/tarball/v0.8.0
+        version: '@github.com/AdguardTeam/text-encoding/tarball/v0.8.0'
       tldts:
         specifier: ^6.0.8
         version: 6.1.13
@@ -21868,6 +21868,12 @@ packages:
 
   /zod@3.23.8:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+    dev: false
+
+  '@github.com/AdguardTeam/text-encoding/tarball/v0.8.0':
+    resolution: {tarball: https://github.com/AdguardTeam/text-encoding/tarball/v0.8.0}
+    name: text-encoding
+    version: 0.8.0
     dev: false
 
   github.com/105th/jsdiff/2be2e7df90e8eebd99f0385c7b1dc16c2f4dcc1a:

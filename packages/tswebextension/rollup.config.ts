@@ -1,3 +1,4 @@
+import { type Plugin, type RollupOptions } from 'rollup';
 import externals from 'rollup-plugin-node-externals';
 import resolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
@@ -5,10 +6,11 @@ import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
 import commonjs from '@rollup/plugin-commonjs';
 import dts from 'rollup-plugin-dts';
+import { omit } from 'lodash-es';
 
 const BUILD_DIST = 'dist';
 
-const commonPlugins = [
+const commonPlugins: Plugin[] = [
     externals(),
     json(),
     typescript({ tsconfig: 'tsconfig.build.json' }),
@@ -30,7 +32,7 @@ const entryPoints = {
     'hide-document-referrer': 'src/lib/mv3/content-script/hide-document-referrer.ts',
 };
 
-const tswebextensionConfig = {
+const tswebextensionConfig: RollupOptions = {
     cache: false,
     input: entryPoints,
     output: [
@@ -42,7 +44,6 @@ const tswebextensionConfig = {
             exports: 'named',
             preserveModulesRoot: 'src',
             manualChunks: {
-                'text-encoding-polyfill': ['node_modules/text-encoding'],
                 'trackers-min': ['src/lib/common/companies-db-service/trackers-min.ts'],
             },
         },
@@ -69,8 +70,9 @@ const tswebextensionConfig = {
     ],
 };
 
-const typesConfig = {
-    input: entryPoints,
+const typesConfig: RollupOptions = {
+    // omit entry points that are not exporting types
+    input: omit(entryPoints, ['content-script.mv3', 'gpc', 'hide-document-referrer']),
     output: {
         dir: `${BUILD_DIST}/types`,
         format: 'esm',
@@ -79,6 +81,7 @@ const typesConfig = {
         preserveModulesRoot: 'src',
     },
     plugins: [
+        externals(),
         dts(),
     ],
 };
