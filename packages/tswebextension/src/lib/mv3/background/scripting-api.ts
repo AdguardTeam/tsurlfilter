@@ -192,7 +192,9 @@ export class ScriptingApi {
         }
 
         /**
-         * JS_RULES_EXECUTION - STEP 4.1: Apply JS rules from pre-built filters — via chrome.scripting API.
+         * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+         *
+         * This is STEP 4.1: Apply JS rules from pre-built filters — via chrome.scripting API.
          */
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
@@ -288,7 +290,9 @@ export class ScriptingApi {
             const scriptTextWithPolicy = policy.createScript(scriptText);
 
             /**
-             * JS_RULES_EXECUTION - STEP 4.2: Apply JS rules manually added by users — via script tag injection.
+             * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+             *
+             * This is STEP 4.2: Apply JS rules manually added by users — via script tag injection.
              */
             injectViaScriptTag(scriptTextWithPolicy);
 
