@@ -16,6 +16,7 @@ export {
     TooManyRulesError,
     UnavailableFilterSourceError,
     UnavailableRuleSetSourceError,
+    ResourceType,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 
 export {
