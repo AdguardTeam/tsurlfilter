@@ -320,14 +320,14 @@ export class CosmeticApi extends CosmeticApiCommon {
             return;
         }
 
-        const scriptFunctions = frameContext.preparedCosmeticResult?.localScriptFunctions;
+        const localScriptFunctions = frameContext.preparedCosmeticResult?.localScriptFunctions;
 
-        if (!scriptFunctions || scriptFunctions.length === 0) {
+        if (!localScriptFunctions || localScriptFunctions.length === 0) {
             return;
         }
 
         try {
-            await Promise.all(scriptFunctions.map((scriptFunction) => {
+            await Promise.all(localScriptFunctions.map((scriptFunction) => {
                 return ScriptingApi.executeScriptFunc({
                     tabId,
                     frameId,
