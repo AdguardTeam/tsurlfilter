@@ -1,7 +1,13 @@
 import browser from 'sinon-chrome';
-import { describe, it, expect, vi } from 'vitest';
+import {
+    describe,
+    it,
+    expect,
+    vi,
+} from 'vitest';
 import { type WebRequest } from 'webextension-polyfill';
 import { HTTPMethod } from '@adguard/tsurlfilter';
+
 import {
     RequestEvents,
     DocumentLifecycle,
