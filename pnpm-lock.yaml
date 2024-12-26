@@ -4155,7 +4155,7 @@ packages:
       estree-walker: 2.0.2
       fdir: 6.4.2(picomatch@4.0.2)
       is-reference: 1.2.1
-      magic-string: 0.30.8
+      magic-string: 0.30.14
       picomatch: 4.0.2
       rollup: 4.24.3
     dev: true
@@ -4193,7 +4193,7 @@ packages:
       estree-walker: 2.0.2
       fdir: 6.4.2(picomatch@4.0.2)
       is-reference: 1.2.1
-      magic-string: 0.30.8
+      magic-string: 0.30.14
       picomatch: 4.0.2
       rollup: 4.28.0
     dev: true
