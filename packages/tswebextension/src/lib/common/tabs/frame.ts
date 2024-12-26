@@ -63,9 +63,6 @@ export class FrameCommon {
 
     /**
      * Main frame url.
-     *
-     * Used to check if we need to inject script via blob or via script tag.
-     * See {@link CosmeticApi.shouldUseBlob} in MV3 implementation.
      */
     public mainFrameUrl?: string;
 
