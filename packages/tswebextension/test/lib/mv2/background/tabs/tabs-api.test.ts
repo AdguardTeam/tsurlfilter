@@ -10,19 +10,15 @@ import browser from 'sinon-chrome';
 import { type ExtensionTypes } from 'webextension-polyfill';
 import { type CosmeticResult, type MatchingResult, type NetworkRule } from '@adguard/tsurlfilter';
 
-import {
-    Frame,
-    TabContext,
-    type TabFrameRequestContext,
-    type TabInfo,
-    TabsApi,
-} from '../../../../../src/lib';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { appContext } from '../../../../../src/lib/mv2/background/context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
 import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
+import { type TabFrameRequestContextMV2, TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';
+import { TabContext, type TabInfo } from '../../../../../src/lib/mv2/background/tabs/tab-context';
+import { Frame } from '../../../../../src/lib/mv2/background/tabs/frame';
 
 vi.mock('../../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../../src/lib/mv2/background/engine-api');
@@ -122,7 +118,7 @@ describe('TabsApi', () => {
 
             tabsApi.context.set(tabId, tabContext);
 
-            const frameRequestContext = { tabId } as TabFrameRequestContext;
+            const frameRequestContext = { tabId } as TabFrameRequestContextMV2;
 
             tabsApi.handleFrameRequest(frameRequestContext);
 
@@ -130,7 +126,7 @@ describe('TabsApi', () => {
         });
 
         it('should not handle frame request if tab context is not found', () => {
-            const frameRequestContext = { tabId: 1 } as TabFrameRequestContext;
+            const frameRequestContext = { tabId: 1 } as TabFrameRequestContextMV2;
 
             tabsApi.handleFrameRequest(frameRequestContext);
 
