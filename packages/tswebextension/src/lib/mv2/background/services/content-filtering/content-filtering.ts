@@ -7,7 +7,7 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog } from '../../../../common/filtering-log';
-import type { RequestContext } from '../../request';
+import { type RequestContext } from '../../request';
 
 import { ContentStringFilter } from './content-string-filter';
 import { ContentStream } from './content-stream';

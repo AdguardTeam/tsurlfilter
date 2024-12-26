@@ -1,11 +1,11 @@
-import type { WebRequest } from 'webextension-polyfill';
-import type { CosmeticResult, MatchingResult, HTTPMethod } from '@adguard/tsurlfilter';
+import { type WebRequest } from 'webextension-polyfill';
+import { type CosmeticResult, type MatchingResult, type HTTPMethod } from '@adguard/tsurlfilter';
 
-import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
-import type { ContentType } from '../../../common/request-type';
+import { type ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
+import { type ContentType } from '../../../common/request-type';
 import { logger } from '../../../common/utils/logger';
 import { nanoid } from '../../../common/utils/nanoid';
-import type { TabFrameRequestContextMV2 } from '../tabs/tabs-api';
+import { type TabFrameRequestContextMV2 } from '../tabs/tabs-api';
 
 /**
  * Request context state. It represents the current state of the request processing.

@@ -1,4 +1,4 @@
-import type { ScriptletData } from '@adguard/tsurlfilter';
+import { type ScriptletData } from '@adguard/tsurlfilter';
 
 import { type PreparedCosmeticResultCommon, FrameCommon } from '../../common/tabs/frame';
 import { type LocalScriptFunction } from '../background/services/local-script-rules-service';

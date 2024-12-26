@@ -3,7 +3,7 @@ import { type IAffectedElement, type ExtCssConfiguration, ExtendedCss } from '@a
 import { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
-import type { ContentScriptCosmeticData } from '../../common/cosmetic-api';
+import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 
 import { ElementCollapser } from './element-collapser';
 

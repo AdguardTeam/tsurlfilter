@@ -2,20 +2,20 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
-import type {
-    PrecalculateCosmeticProps,
-    HandleSubFrameWithoutUrlProps,
-    HandleSubFrameWithUrlProps,
-    HandleMainFrameProps,
+import {
+    type PrecalculateCosmeticProps,
+    type HandleSubFrameWithoutUrlProps,
+    type HandleSubFrameWithUrlProps,
+    type HandleMainFrameProps,
 } from '../../common/cosmetic-frame-processor';
 
 import { documentApi } from './api';
 import { appContext } from './app-context';
 import { CosmeticApi } from './cosmetic-api';
-import type { EngineApi } from './engine-api';
+import { type EngineApi } from './engine-api';
 import { stealthApi } from './stealth-api';
 import { FrameMV2 } from './tabs/frame';
-import type { TabsApi } from './tabs/tabs-api';
+import { type TabsApi } from './tabs/tabs-api';
 
 /**
  * Cosmetic frame processor.

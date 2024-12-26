@@ -1,5 +1,5 @@
 import { pick, merge } from 'lodash-es';
-import type { Events, Storage } from 'webextension-polyfill';
+import { type Events, type Storage } from 'webextension-polyfill';
 
 /**
  * Memory storage that implements the StorageArea interface.

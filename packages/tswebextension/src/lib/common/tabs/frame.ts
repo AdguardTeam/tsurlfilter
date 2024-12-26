@@ -1,4 +1,4 @@
-import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type MatchingResult, type NetworkRule } from '@adguard/tsurlfilter';
 
 /**
  * Prepared cosmetic result.

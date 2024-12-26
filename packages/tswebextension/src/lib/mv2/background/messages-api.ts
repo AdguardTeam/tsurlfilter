@@ -3,8 +3,8 @@ import browser, { type Runtime } from 'webextension-polyfill';
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
-import type { CookieRule } from '../../common/content-script/cookie-controller';
-import type { ContentScriptCosmeticData } from '../../common/cosmetic-api';
+import { type CookieRule } from '../../common/content-script/cookie-controller';
+import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 import { FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import {
     getAssistantCreateRulePayloadValidator,
@@ -25,7 +25,7 @@ import { Assistant } from './assistant';
 import { CosmeticApi } from './cosmetic-api';
 import { RequestBlockingApi } from './request';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
-import type { TabsApi } from './tabs';
+import { type TabsApi } from './tabs';
 
 export type MessageHandlerMV2 = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
 

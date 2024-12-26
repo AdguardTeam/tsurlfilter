@@ -8,7 +8,7 @@ import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../../common/uti
 import { type DocumentApi } from '../document-api';
 import { logger } from '../../../common/utils/logger';
 
-import type { FrameMV2 } from './frame';
+import { type FrameMV2 } from './frame';
 import { TabContext } from './tab-context';
 
 /**

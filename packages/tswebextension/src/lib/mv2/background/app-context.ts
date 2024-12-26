@@ -1,4 +1,4 @@
-import type { ConfigurationMV2Context } from './configuration';
+import { type ConfigurationMV2Context } from './configuration';
 import { sessionDecorator, SessionStorageKey } from './ext-session-storage';
 
 /**

@@ -8,7 +8,7 @@ import {
     vi,
 } from 'vitest';
 import browser from 'sinon-chrome';
-import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
 import { TabsCosmeticInjector } from '../../../../../src/lib/mv2/background/tabs/tabs-cosmetic-injector';
 import { TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';

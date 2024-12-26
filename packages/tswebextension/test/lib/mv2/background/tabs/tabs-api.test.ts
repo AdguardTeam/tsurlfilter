@@ -7,8 +7,8 @@ import {
     vi,
 } from 'vitest';
 import browser from 'sinon-chrome';
-import type { ExtensionTypes } from 'webextension-polyfill';
-import type { NetworkRule } from '@adguard/tsurlfilter';
+import { type ExtensionTypes } from 'webextension-polyfill';
+import { type NetworkRule } from '@adguard/tsurlfilter';
 
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';

@@ -6,11 +6,11 @@ import { ContentType } from '../../../common/request-type';
 import { CosmeticApi } from '../cosmetic-api';
 import { CosmeticFrameProcessor } from '../cosmetic-frame-processor';
 import { appContext } from '../app-context';
-import type { DocumentApi } from '../document-api';
-import type { EngineApi } from '../engine-api';
+import { type DocumentApi } from '../document-api';
+import { type EngineApi } from '../engine-api';
 
 import { FrameMV2 } from './frame';
-import type { TabsApi } from './tabs-api';
+import { type TabsApi } from './tabs-api';
 import { TabContext } from './tab-context';
 
 /**

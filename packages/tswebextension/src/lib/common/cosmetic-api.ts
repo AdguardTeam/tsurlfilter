@@ -1,6 +1,6 @@
-import type { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
-import type { ContentType } from './request-type';
+import { type ContentType } from './request-type';
 
 /**
  * Information for logging js rules.

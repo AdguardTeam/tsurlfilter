@@ -1,4 +1,4 @@
-import type { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
 import { USER_FILTER_ID } from '../../common/constants';

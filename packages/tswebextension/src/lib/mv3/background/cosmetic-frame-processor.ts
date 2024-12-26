@@ -2,11 +2,11 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
-import type {
-    PrecalculateCosmeticProps,
-    HandleSubFrameWithoutUrlProps,
-    HandleSubFrameWithUrlProps,
-    HandleMainFrameProps,
+import {
+    type PrecalculateCosmeticProps,
+    type HandleSubFrameWithoutUrlProps,
+    type HandleSubFrameWithUrlProps,
+    type HandleMainFrameProps,
 } from '../../common/cosmetic-frame-processor';
 import { tabsApi } from '../tabs/tabs-api';
 import { FrameMV3 } from '../tabs/frame';
