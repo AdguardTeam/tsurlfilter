@@ -3,7 +3,12 @@ import { type PreparedCosmeticResultCommon, FrameCommon } from '../../../common/
 /**
  * Prepared cosmetic result for MV2.
  */
-type PreparedCosmeticResultMV2 = PreparedCosmeticResultCommon;
+type PreparedCosmeticResultMV2 = PreparedCosmeticResultCommon & {
+    /**
+     * Script text extracted from the cosmetic result.
+     */
+    scriptText: string;
+};
 
 /**
  * Frame context data for MV2.

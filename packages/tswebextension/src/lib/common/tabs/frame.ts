@@ -7,11 +7,6 @@ import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurl
  */
 export type PreparedCosmeticResultCommon = {
     /**
-     * Script text extracted from the cosmetic result.
-     */
-    scriptText: string;
-
-    /**
      * CSS styles extracted from the cosmetic result.
      */
     cssText?: string;

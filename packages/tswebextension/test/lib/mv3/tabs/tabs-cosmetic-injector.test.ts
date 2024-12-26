@@ -30,11 +30,12 @@ describe('TabsCosmeticInjector', () => {
 
     beforeEach(() => {
         vi.spyOn(CosmeticApi, 'applyCssByTabAndFrame');
-        vi.spyOn(CosmeticApi, 'applyJsByTabAndFrame');
+        vi.spyOn(CosmeticApi, 'applyJsFuncsByTabAndFrame');
         vi.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
         vi.spyOn(CosmeticApi, 'logScriptRules');
         vi.spyOn(ScriptingApi, 'insertCSS');
-        vi.spyOn(ScriptingApi, 'executeScript');
+        // FIXME (Slava) (in another pr): add tests for executeScriptText
+        vi.spyOn(ScriptingApi, 'executeScriptFunc');
         vi.spyOn(ScriptingApi, 'executeScriptlet');
     });
 
@@ -76,7 +77,7 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
 
-            expect(CosmeticApi.applyJsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
 
             expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
 
@@ -98,7 +99,7 @@ describe('TabsCosmeticInjector', () => {
             await TabsCosmeticInjector.processOpenTabs();
 
             expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
-            expect(CosmeticApi.applyJsByTabAndFrame).not.toBeCalled();
+            expect(CosmeticApi.applyJsFuncsByTabAndFrame).not.toBeCalled();
             expect(CosmeticApi.applyScriptletsByTabAndFrame).not.toBeCalled();
 
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
@@ -117,10 +118,10 @@ describe('TabsCosmeticInjector', () => {
             await TabsCosmeticInjector.processOpenTabs();
 
             expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-            expect(CosmeticApi.applyJsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
             expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
             expect(ScriptingApi.insertCSS).not.toBeCalled();
-            expect(ScriptingApi.executeScript).not.toBeCalled();
+            expect(ScriptingApi.executeScriptFunc).not.toBeCalled();
             expect(ScriptingApi.executeScriptlet).not.toBeCalled();
 
             expect(CosmeticApi.logScriptRules).not.toBeCalled();

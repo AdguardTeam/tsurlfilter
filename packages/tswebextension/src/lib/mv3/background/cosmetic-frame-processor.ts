@@ -118,9 +118,10 @@ export class CosmeticFrameProcessor {
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const {
-            scriptText,
+            localScriptText,
+            localScriptFunctions,
             scriptletDataList,
-        } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
+        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
 
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
@@ -132,7 +133,8 @@ export class CosmeticFrameProcessor {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptText,
+                localScriptText,
+                localScriptFunctions,
                 scriptletDataList,
                 cssText,
             },
@@ -174,9 +176,10 @@ export class CosmeticFrameProcessor {
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const {
-            scriptText,
+            localScriptText,
+            localScriptFunctions,
             scriptletDataList,
-        } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
+        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
 
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
@@ -187,7 +190,8 @@ export class CosmeticFrameProcessor {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptText,
+                localScriptText,
+                localScriptFunctions,
                 scriptletDataList,
                 cssText,
             },

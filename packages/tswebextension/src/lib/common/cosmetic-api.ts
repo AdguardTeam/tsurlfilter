@@ -50,16 +50,6 @@ export type ContentScriptCosmeticData = {
 };
 
 /**
- * Script text and scriptlets.
- */
-export type ScriptTextAndScriptletsCommon = {
-    /**
-     * JS rules and scriptlets code as a single string.
-     */
-    scriptText: string,
-};
-
-/**
  * CosmeticApiCommon contains common logic about building css for hiding elements.
  */
 export class CosmeticApiCommon {

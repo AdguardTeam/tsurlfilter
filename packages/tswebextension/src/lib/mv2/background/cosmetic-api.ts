@@ -2,12 +2,7 @@ import type { CosmeticResult, CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
 import { USER_FILTER_ID } from '../../common/constants';
-import {
-    CosmeticApiCommon,
-    type ContentScriptCosmeticData,
-    type ScriptTextAndScriptletsCommon,
-    type LogJsRulesParams,
-} from '../../common/cosmetic-api';
+import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
@@ -22,9 +17,14 @@ import { localScriptRulesService } from './services/local-script-rules-service';
 import { TabsApi } from './tabs/tabs-api';
 
 /**
- * Script text and scriptlets for MV2 with **united** js rules and scriptlets.
+ * Data for JS and scriptlet rules for MV2.
  */
-type ScriptTextAndScriptletsMv2 = ScriptTextAndScriptletsCommon;
+type ScriptsAndScriptletsDataMv2 = {
+    /**
+     * JS and scriptlet rules **combined** script text.
+     */
+    scriptText: string,
+};
 
 /**
  * Cosmetic api class.
@@ -134,7 +134,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static getScriptTextAndScriptlets(
         cosmeticResult: CosmeticResult,
         frameUrl: string,
-    ): ScriptTextAndScriptletsMv2 {
+    ): ScriptsAndScriptletsDataMv2 {
         const scriptRules = cosmeticResult.getScriptRules();
 
         const scriptText = CosmeticApi.getScriptText(scriptRules, frameUrl);

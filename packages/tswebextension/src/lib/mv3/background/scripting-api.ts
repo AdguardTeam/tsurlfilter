@@ -4,6 +4,7 @@ import { type Source } from '@adguard/scriptlets';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
 
 import { appContext } from './app-context';
+import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**
  * Trusted Types API used to describe to appease the type checker.
@@ -32,14 +33,29 @@ export type InsertCSSParams = {
 };
 
 /**
- * Whether to use a blob to inject the script.
+ * Parameters for executing script function.
  */
-const USE_BLOB_DEFAULT = false;
+export type ExecuteScriptFuncParams = {
+    /**
+     * The ID of the tab.
+     */
+    tabId: number,
+
+    /**
+     * The ID of the frame.
+     */
+    frameId: number,
+
+    /**
+     * The script function to be executed.
+     */
+    scriptFunction: LocalScriptFunction,
+};
 
 /**
- * Parameters for executing script.
+ * Parameters for executing script function.
  */
-export type ExecuteScriptParams = {
+export type ExecuteScriptTextParams = {
     /**
      * The ID of the tab.
      */
@@ -54,12 +70,6 @@ export type ExecuteScriptParams = {
      * The script content to be executed.
      */
     scriptText: string,
-
-    /**
-     * Whether to use a blob to inject the script.
-     * By default, it is set to {@link USE_BLOB_DEFAULT}.
-     */
-    useBlob?: boolean,
 };
 
 /**
@@ -96,13 +106,6 @@ type InjectFuncOptions = {
      * It is used to prevent multiple executions of the same script on the page.
      */
     uniqueIdentifier: string,
-
-    /**
-     * Whether to use a blob to inject the script.
-     * Used in rare cases when inline scripts are not allowed by the CSP policy.
-     * For example, on Facebook.
-     */
-    useBlob: boolean,
 };
 
 /**
@@ -175,16 +178,48 @@ export class ScriptingApi {
      * @param params Parameters for executing the script.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
-     * @param params.scriptText The script content to be executed.
-     * @param params.useBlob Whether to use a blob to inject the script.
+     * @param params.scriptFunction The script function to be executed.
+     *
      * @returns Promise that resolves when the script is executed.
      */
-    public static async executeScript({
+    public static async executeScriptFunc({
+        tabId,
+        frameId,
+        scriptFunction,
+    }: ExecuteScriptFuncParams): Promise<void> {
+        // There is no reason to inject a script into the background page
+        if (tabId === BACKGROUND_TAB_ID) {
+            return;
+        }
+
+        /**
+         * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+         *
+         * This is STEP 4.1: Apply JS rules from pre-built filters — via chrome.scripting API.
+         */
+        await chrome.scripting.executeScript({
+            target: { tabId, frameIds: [frameId] },
+            func: scriptFunction,
+            injectImmediately: true,
+            world: 'MAIN',
+        });
+    }
+
+    /**
+     * Executes a script within the scope of the page.
+     *
+     * @param params Parameters for executing the script.
+     * @param params.tabId The ID of the tab.
+     * @param params.frameId The ID of the frame.
+     * @param params.scriptText The script content to be executed.
+     *
+     * @returns Promise that resolves when the script is executed.
+     */
+    public static async executeScriptText({
         tabId,
         frameId,
         scriptText,
-        useBlob = USE_BLOB_DEFAULT,
-    }: ExecuteScriptParams): Promise<void> {
+    }: ExecuteScriptTextParams): Promise<void> {
         // There is no reason to inject a script into the background page
         if (tabId === BACKGROUND_TAB_ID) {
             return;
@@ -229,33 +264,6 @@ export class ScriptingApi {
             }
 
             /**
-             * Injects the script into the page using a blob.
-             * This method is used when inline scripts are not allowed by the CSP policy.
-             * We use it only in rare cases since it is not so fast as the injecting via script tag with textContent.
-             * @param scriptText The script content to be executed.
-             */
-            // eslint-disable-next-line @typescript-eslint/no-shadow
-            const injectViaScriptTagWithBlob = (scriptText: string): void => {
-                const scriptTag = document.createElement('script');
-
-                const blob = new Blob([scriptText], { type: 'text/javascript; charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                scriptTag.src = policy.createScriptURL(url);
-                const parent = document.head || document.documentElement;
-                if (parent) {
-                    parent.appendChild(scriptTag);
-                }
-
-                if (url) {
-                    URL.revokeObjectURL(url);
-                }
-
-                if (scriptTag.parentNode) {
-                    scriptTag.parentNode.removeChild(scriptTag);
-                }
-            };
-
-            /**
              * Injects the script into the page using a script tag.
              * @param scriptText The script content to be executed.
              */
@@ -281,11 +289,13 @@ export class ScriptingApi {
             };
 
             const scriptTextWithPolicy = policy.createScript(scriptText);
-            if (options.useBlob) {
-                injectViaScriptTagWithBlob(scriptTextWithPolicy);
-            } else {
-                injectViaScriptTag(scriptTextWithPolicy);
-            }
+
+            /**
+             * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+             *
+             * This is STEP 4.2: Apply JS rules manually added by users — via script tag injection.
+             */
+            injectViaScriptTag(scriptTextWithPolicy);
 
             Object.defineProperty(Window.prototype.toString, options.uniqueIdentifier, {
                 value: flag,
@@ -304,7 +314,6 @@ export class ScriptingApi {
             world: 'MAIN', // ISOLATED doesn't allow to execute code inline
             args: [scriptText, {
                 uniqueIdentifier,
-                useBlob,
             }],
         });
     }
