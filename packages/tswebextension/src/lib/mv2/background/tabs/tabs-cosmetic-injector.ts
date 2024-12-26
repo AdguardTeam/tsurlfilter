@@ -3,9 +3,9 @@ import browser, { type Tabs } from 'webextension-polyfill';
 import { MAIN_FRAME_ID } from '../../../common/constants';
 import { logger } from '../../../common/utils/logger';
 import { ContentType } from '../../../common/request-type';
+import { appContext } from '../app-context';
 import { CosmeticApi } from '../cosmetic-api';
 import { CosmeticFrameProcessor } from '../cosmetic-frame-processor';
-import { appContext } from '../app-context';
 import { type DocumentApi } from '../document-api';
 import { type EngineApi } from '../engine-api';
 
