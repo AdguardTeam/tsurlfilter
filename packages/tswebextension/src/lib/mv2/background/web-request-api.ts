@@ -677,9 +677,11 @@ export class WebRequestApi {
             frameId,
         } = details;
 
+        const isAssistant = await WebRequestApi.isAssistantFrame(tabId, details);
+
         // do not inject cosmetic rules into the assistant frame
         // TODO: fix the issue (AG-9829) in MV3
-        if (await WebRequestApi.isAssistantFrame(tabId, details)) {
+        if (isAssistant) {
             return;
         }
 
