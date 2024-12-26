@@ -5,21 +5,16 @@ import { identity } from 'lodash-es';
 import { MAIN_FRAME_ID } from '../../../common/constants';
 import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { Frames } from '../../../common/tabs/frames';
+import { type TabInfoCommon } from '../../../common/tabs/tabs-api';
 import { isHttpOrWsRequest } from '../../../common/utils/url';
 import { type DocumentApi } from '../document-api';
 
 import { FrameMV2 } from './frame';
 
 /**
- * We need tab id in the tab information, otherwise we do not process it.
- * For example developer tools tabs.
+ * Tab info for MV2.
  */
-export type TabInfo = Tabs.Tab & {
-    /**
-     * ID of the tab.
-     */
-    id: number,
-
+export type TabInfoMV2 = TabInfoCommon & {
     /**
      * Tab creation timestamp in milliseconds.
      */
@@ -88,7 +83,7 @@ export class TabContext {
      * @param filteringLog Filtering Log API.
      */
     constructor(
-        public info: TabInfo,
+        public info: TabInfoMV2,
         private readonly documentApi: DocumentApi,
         private readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
@@ -101,7 +96,7 @@ export class TabContext {
      *
      * @param tabInfo Tab info.
      */
-    public updateTabInfo(tabInfo: TabInfo): void {
+    public updateTabInfo(tabInfo: TabInfoMV2): void {
         this.info = tabInfo;
     }
 
@@ -140,7 +135,7 @@ export class TabContext {
      * @param documentApi Document API.
      * @returns Tab context for new tab.
      */
-    public static createNewTabContext(tab: TabInfo, documentApi: DocumentApi): TabContext {
+    public static createNewTabContext(tab: TabInfoMV2, documentApi: DocumentApi): TabContext {
         const tabContext = new TabContext(tab, documentApi);
 
         // In some cases, tab is created while browser navigation processing.
@@ -173,7 +168,7 @@ export class TabContext {
      * @param tab Tab details.
      * @returns True if the tab is a browser tab, otherwise returns false.
      */
-    public static isBrowserTab(tab: Tabs.Tab): tab is TabInfo {
+    public static isBrowserTab(tab: Tabs.Tab): tab is TabInfoMV2 {
         return typeof tab.id === 'number' && tab.id !== browser.tabs.TAB_ID_NONE;
     }
 
