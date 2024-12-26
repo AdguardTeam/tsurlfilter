@@ -3,7 +3,7 @@ import { type MatchingResult, type HTTPMethod } from '@adguard/tsurlfilter';
 
 import { type ContentType } from '../../../common/request-type';
 import { type ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
-import { type TabFrameRequestContext } from '../../tabs/tabs-api';
+import { type TabFrameRequestContextMV3 } from '../../tabs/tabs-api';
 
 export const enum RequestContextState {
     BeforeRequest = 'beforeRequest',
@@ -20,7 +20,7 @@ export const enum RequestContextState {
 /**
  * Request context data.
  */
-export type RequestContext = TabFrameRequestContext & {
+export type RequestContext = TabFrameRequestContextMV3 & {
     /**
      * During redirect processing, multiple events are processed in the same request lifecycle.
      * We need a unique identifier to separate these requests in the filtering log.

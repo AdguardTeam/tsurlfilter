@@ -1,5 +1,4 @@
 import browser from 'webextension-polyfill';
-import { type RequestType } from '@adguard/tsurlfilter/es/request-type';
 import { type NetworkRule } from '@adguard/tsurlfilter';
 import { type Tabs } from 'webextension-polyfill';
 import { identity } from 'lodash-es';
@@ -18,16 +17,6 @@ import { Frames } from './frames';
  */
 export type TabInfo = Tabs.Tab & {
     id: number,
-};
-
-/**
- * Request context data related to the frame.
- */
-export type FrameRequestContext = {
-    frameId: number;
-    requestId: string;
-    requestUrl: string;
-    requestType: RequestType;
 };
 
 /**

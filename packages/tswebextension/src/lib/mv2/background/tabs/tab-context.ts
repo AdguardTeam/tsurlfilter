@@ -28,7 +28,7 @@ export type TabInfo = Tabs.Tab & {
 /**
  * Request context data related to the frame.
  */
-export type FrameRequestContext = {
+type FrameRequestContext = {
     frameId: number;
     requestId: string;
     requestUrl: string;

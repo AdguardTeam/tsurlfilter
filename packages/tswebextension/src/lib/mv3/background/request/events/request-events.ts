@@ -2,7 +2,7 @@ import browser, { type WebRequest } from 'webextension-polyfill';
 import { RequestType, type HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
-import { tabsApi, type TabFrameRequestContext } from '../../../tabs/tabs-api';
+import { tabsApi, type TabFrameRequestContextMV3 } from '../../../tabs/tabs-api';
 import { getRequestType } from '../../../../common/request-type';
 import { MAIN_FRAME_ID } from '../../../../common/constants';
 import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
@@ -222,7 +222,7 @@ export class RequestEvents {
          * we get only part of the request context to record only the tab and
          * frame information before calculating the request referrer.
          */
-        const tabFrameRequestContext: TabFrameRequestContext = {
+        const tabFrameRequestContext: TabFrameRequestContextMV3 = {
             requestUrl: url,
             requestType,
             requestId,
