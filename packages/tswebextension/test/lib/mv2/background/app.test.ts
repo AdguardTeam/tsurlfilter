@@ -6,7 +6,7 @@ import {
     it,
     vi,
 } from 'vitest';
-import type { Runtime } from 'webextension-polyfill';
+import { type Runtime } from 'webextension-polyfill';
 
 import {
     type ConfigurationMV2,

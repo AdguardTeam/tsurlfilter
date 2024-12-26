@@ -3,6 +3,7 @@ import { type WebRequest } from 'webextension-polyfill';
 import { type ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
 import { CookieUtils as CommonCookieUtils } from '../../../../common/cookie-filtering/utils';
 
+// TODO: use named export
 /**
  * Cookie Utils.
  */

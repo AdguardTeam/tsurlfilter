@@ -7,11 +7,11 @@ import { ContentType } from '../../../common/request-type';
 import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
 import { appContext } from '../context';
 import { CosmeticApi } from '../cosmetic-api';
-import type { DocumentApi } from '../document-api';
-import type { EngineApi } from '../engine-api';
+import { type DocumentApi } from '../document-api';
+import { type EngineApi } from '../engine-api';
 
 import { Frame } from './frame';
-import type { TabsApi } from './tabs-api';
+import { type TabsApi } from './tabs-api';
 import { TabContext } from './tab-context';
 
 /**

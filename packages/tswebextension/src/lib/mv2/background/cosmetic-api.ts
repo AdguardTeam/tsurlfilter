@@ -6,7 +6,7 @@ import { USER_FILTER_ID } from '../../common/constants';
 import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import type { ContentType } from '../../common/request-type';
+import { type ContentType } from '../../common/request-type';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';

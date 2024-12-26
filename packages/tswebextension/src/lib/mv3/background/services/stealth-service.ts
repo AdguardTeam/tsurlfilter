@@ -9,7 +9,7 @@ import { findHeaderByName, hasHeader, hasHeaderByName } from '../../../common/ut
 import { logger } from '../../../common/utils/logger';
 import { getDomain } from '../../../common/utils/url';
 import { appContext } from '../app-context';
-import type { SettingsConfigMV3 } from '../configuration';
+import { type SettingsConfigMV3 } from '../configuration';
 import { requestContextStorage, type RequestContext } from '../request';
 
 import { searchEngineDomains } from './searchEngineDomains';

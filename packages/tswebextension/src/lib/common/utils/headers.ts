@@ -1,5 +1,5 @@
 import { remove } from 'lodash-es';
-import type { WebRequest } from 'webextension-polyfill';
+import { type WebRequest } from 'webextension-polyfill';
 
 type HttpHeadersItemType = WebRequest.HttpHeadersItemType;
 type HttpHeaders = WebRequest.HttpHeaders;

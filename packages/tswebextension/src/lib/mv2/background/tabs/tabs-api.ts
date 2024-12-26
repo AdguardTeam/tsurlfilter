@@ -1,10 +1,10 @@
 import browser, { type ExtensionTypes, type Tabs } from 'webextension-polyfill';
-import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type MatchingResult, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../../common/constants';
 import { EventChannel } from '../../../common/utils/channels';
 import { getDomain, isHttpRequest } from '../../../common/utils/url';
-import type { DocumentApi } from '../document-api';
+import { type DocumentApi } from '../document-api';
 
 import { type Frame } from './frame';
 import { type FrameRequestContext, TabContext } from './tab-context';

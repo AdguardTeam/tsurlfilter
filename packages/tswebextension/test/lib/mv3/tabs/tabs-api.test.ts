@@ -7,7 +7,7 @@ import {
     vi,
 } from 'vitest';
 import browser from 'sinon-chrome';
-import type { NetworkRule } from '@adguard/tsurlfilter';
+import { type NetworkRule } from '@adguard/tsurlfilter';
 
 import { TabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
 import { TabContext, type TabInfo } from '../../../../src/lib/mv3/tabs/tab-context';

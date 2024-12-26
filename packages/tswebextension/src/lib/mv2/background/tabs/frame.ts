@@ -1,4 +1,4 @@
-import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
 /**
  * Frame context data.

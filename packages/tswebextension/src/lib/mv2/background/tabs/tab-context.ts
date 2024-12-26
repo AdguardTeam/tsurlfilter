@@ -1,12 +1,11 @@
-import browser from 'webextension-polyfill';
+import browser, { type Tabs } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
-import type { Tabs } from 'webextension-polyfill';
+import { type CosmeticResult, type MatchingResult, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../../common/constants';
 import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
-import type { DocumentApi } from '../document-api';
+import { type DocumentApi } from '../document-api';
 
 import { Frame } from './frame';
 

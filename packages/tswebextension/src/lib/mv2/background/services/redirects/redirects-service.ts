@@ -1,7 +1,7 @@
 import { Redirects } from '@adguard/scriptlets/redirects';
 
 import { logger } from '../../../../common/utils/logger';
-import type { ResourcesService } from '../resources-service';
+import { type ResourcesService } from '../resources-service';
 
 import { redirectsCache } from './redirects-cache';
 import { redirectsTokensCache } from './redirects-tokens-cache';

@@ -1,5 +1,5 @@
 import browser, { type Tabs } from 'webextension-polyfill';
-import type { NetworkRule } from '@adguard/tsurlfilter';
+import { type NetworkRule } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { EventChannel } from '../../common/utils/channels';

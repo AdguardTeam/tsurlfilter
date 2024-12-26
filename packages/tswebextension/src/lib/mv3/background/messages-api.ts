@@ -3,7 +3,7 @@ import browser from 'webextension-polyfill';
 import { getDomain } from 'tldts';
 
 import { MessageType } from '../../common/message-constants';
-import type { CookieRule } from '../../common/content-script/cookie-controller';
+import { type CookieRule } from '../../common/content-script/cookie-controller';
 import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import {
     getAssistantCreateRulePayloadValidator,
@@ -17,9 +17,9 @@ import { ContentType } from '../../common/request-type';
 import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
-import type { TabsApi } from '../tabs/tabs-api';
+import { type TabsApi } from '../tabs/tabs-api';
 
-import type { TsWebExtension } from './app';
+import { type TsWebExtension } from './app';
 import { appContext } from './app-context';
 import { Assistant } from './assistant';
 import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';

@@ -6,7 +6,7 @@ import {
     it,
     vi,
 } from 'vitest';
-import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { Frame, TabContext, type TabInfo } from '../../../../../src/lib';

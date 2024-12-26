@@ -1,4 +1,4 @@
-import type { NetworkRule } from '@adguard/tsurlfilter';
+import { type NetworkRule } from '@adguard/tsurlfilter';
 
 import { getDomain, getUpperLevelDomain } from '../../common/utils/url';
 
