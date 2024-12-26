@@ -5,6 +5,7 @@ import { identity } from 'lodash-es';
 
 import { type FilteringLog, defaultFilteringLog } from '../../common/filtering-log';
 import { isHttpOrWsRequest } from '../../common/utils/url';
+import { type TabInfoCommon } from '../../common/tabs/tabs-api';
 import { DocumentApi } from '../background/document-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
 
@@ -12,12 +13,9 @@ import { Frame } from './frame';
 import { Frames } from './frames';
 
 /**
- * We need tab id in the tab information, otherwise we do not process it.
- * For example developer tools tabs.
+ * Tab info for MV3.
  */
-export type TabInfo = Tabs.Tab & {
-    id: number,
-};
+export type TabInfoMV3 = TabInfoCommon;
 
 /**
  * Tab context.
@@ -75,7 +73,7 @@ export class TabContext {
      * @param filteringLog Filtering Log API.
      */
     constructor(
-        public info: TabInfo,
+        public info: TabInfoMV3,
         private readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
         this.info = info;
@@ -86,7 +84,7 @@ export class TabContext {
      *
      * @param tabInfo Tab info.
      */
-    public updateTabInfo(tabInfo: TabInfo): void {
+    public updateTabInfo(tabInfo: TabInfoMV3): void {
         this.info = tabInfo;
     }
 
@@ -125,7 +123,7 @@ export class TabContext {
      *
      * @returns Tab context for new tab.
      */
-    public static createNewTabContext(tab: TabInfo): TabContext {
+    public static createNewTabContext(tab: TabInfoMV3): TabContext {
         const tabContext = new TabContext(tab);
 
         // In some cases, tab is created while browser navigation processing.
@@ -158,7 +156,7 @@ export class TabContext {
      * @param tab Tab details.
      * @returns True if the tab is a browser tab, otherwise returns false.
      */
-    public static isBrowserTab(tab: Tabs.Tab): tab is TabInfo {
+    public static isBrowserTab(tab: Tabs.Tab): tab is TabInfoMV3 {
         return typeof tab.id === 'number' && tab.id !== browser.tabs.TAB_ID_NONE;
     }
 
