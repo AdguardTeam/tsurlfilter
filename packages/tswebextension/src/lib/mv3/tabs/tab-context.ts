@@ -11,6 +11,7 @@ import { MAIN_FRAME_ID } from '../../common/constants';
 
 import { FrameMV3 } from './frame';
 
+// FIXME (Slava): refactor this type to common
 /**
  * We need tab id in the tab information, otherwise we do not process it.
  * For example developer tools tabs.
