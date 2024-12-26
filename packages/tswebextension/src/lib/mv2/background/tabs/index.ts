@@ -5,5 +5,4 @@
 
 export * from './tab-context';
 export * from './tabs-api';
-export { FrameMV2 } from './frame';
 export * from './tabs-cosmetic-injector';

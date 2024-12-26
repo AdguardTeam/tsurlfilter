@@ -7,7 +7,8 @@ import {
     vi,
 } from 'vitest';
 
-import { FrameMV2, TabContext, type TabInfoMV2 } from '../../../../../src/lib';
+import { FrameMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
+import { TabContext, type TabInfoMV2 } from '../../../../../src/lib/mv2/background/tabs/tab-context';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
