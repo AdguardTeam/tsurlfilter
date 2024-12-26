@@ -153,7 +153,7 @@ import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
-import { RequestEvents } from './request/events/request-events';
+import { type OnBeforeRequestDetailsType, RequestEvents } from './request/events/request-events';
 import { RequestBlockingApi } from './request/request-blocking-api';
 import { requestContextStorage } from './request/request-context-storage';
 import { type RequestData } from './request/events/request-event';
@@ -236,11 +236,11 @@ export class WebRequestApi {
     /**
      * On before request event handler. This is the earliest event in the chain of the web request events.
      *
-     * @param details Request details.
-     * @param details.context Request context.
+     * @param requestData Object containing request context and details.
+     * @param requestData.context Request context.
      */
     private static onBeforeRequest(
-        { context }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
+        { context }: RequestData<OnBeforeRequestDetailsType>,
     ): void {
         if (!context) {
             return;
@@ -294,28 +294,41 @@ export class WebRequestApi {
         });
 
         let frameRule;
-        if (requestType === RequestType.SubDocument) {
+        let frameUrl = referrerUrl;
+
+        /**
+         * Determine frameRule for different request types:
+         * - for Document requests, use DocumentApi to match against requestUrl and update frameUrl;
+         * - for SubDocument requests, use DocumentApi to match against referrerUrl;
+         * - for all other requests, get the frame rule from tabsApi.
+         *
+         * The referrerUrl is calculated in {@link RequestEvents.handleOnBeforeRequest} before this point.
+         */
+        if (requestType === RequestType.Document) {
+            frameRule = DocumentApi.matchFrame(requestUrl);
+            // We suppose that all document request are first party requests and
+            // that's why we set frameUrl to requestUrl.
+            frameUrl = requestUrl;
+        } else if (requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(referrerUrl);
         } else {
             frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
-        const result = engineApi.matchRequest({
+        const matchingResult = engineApi.matchRequest({
             requestUrl,
-            frameUrl: referrerUrl,
+            frameUrl,
             requestType,
             frameRule,
             method,
         });
 
-        if (!result) {
+        if (!matchingResult) {
             return;
         }
 
-        // Save matching result to the request context
-        requestContextStorage.update(requestId, {
-            matchingResult: result,
-        });
+        // Save matching result to the request context.
+        requestContextStorage.update(requestId, { matchingResult });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             CosmeticFrameProcessor.precalculateCosmetics({
@@ -326,11 +339,9 @@ export class WebRequestApi {
             });
         }
 
-        const basicResult = result.getBasicResult();
-
         const response = RequestBlockingApi.getBlockingResponse({
-            rule: basicResult,
-            popupRule: result.getPopupRule(),
+            rule: matchingResult.getBasicResult(),
+            popupRule: matchingResult.getPopupRule(),
             eventId,
             requestId,
             requestUrl,

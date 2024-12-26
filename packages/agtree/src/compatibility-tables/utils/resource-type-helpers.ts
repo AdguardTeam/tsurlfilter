@@ -1,14 +1,14 @@
 import { isNull } from '../../utils/type-guards';
 import { modifiersCompatibilityTable } from '../modifiers';
-import { type GenericPlatformType, type SpecificPlatformType } from '../platforms';
-import { ResourceType, type ResourceTypeType } from '../schemas/resource-type';
+import { type GenericPlatform, type SpecificPlatform } from '../platforms';
+import { ResourceType } from '../schemas/resource-type';
 
 /**
  * Map of resource types to their corresponding adblock modifier names.
  *
  * @note Record type is used to ensure that all resource types are present in the map.
  */
-const RESOURCE_TYPE_MODIFIER_MAP: Readonly<Record<ResourceTypeType, string>> = Object.freeze({
+const RESOURCE_TYPE_MODIFIER_MAP: Readonly<Record<ResourceType, string>> = Object.freeze({
     [ResourceType.MainFrame]: 'document',
     [ResourceType.SubFrame]: 'subdocument',
     [ResourceType.Stylesheet]: 'stylesheet',
@@ -33,8 +33,8 @@ const RESOURCE_TYPE_MODIFIER_MAP: Readonly<Record<ResourceTypeType, string>> = O
  * or `null` if the modifier could not be found.
  */
 export const getResourceTypeModifier = (
-    resourceType: ResourceTypeType,
-    platform: SpecificPlatformType | GenericPlatformType,
+    resourceType: ResourceType,
+    platform: SpecificPlatform | GenericPlatform,
 ): string | null => {
     const modifierName = RESOURCE_TYPE_MODIFIER_MAP[resourceType];
 
@@ -59,5 +59,5 @@ export const getResourceTypeModifier = (
  * @returns `true` if the resource type is valid, `false` otherwise.
  */
 export const isValidResourceType = (resourceType: string): boolean => {
-    return Object.values(ResourceType).includes(resourceType as ResourceTypeType);
+    return Object.values(ResourceType).includes(resourceType as ResourceType);
 };

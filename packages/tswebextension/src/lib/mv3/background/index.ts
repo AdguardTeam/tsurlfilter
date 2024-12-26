@@ -16,6 +16,7 @@ export {
     TooManyRulesError,
     UnavailableFilterSourceError,
     UnavailableRuleSetSourceError,
+    ResourceType,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 
 export {
@@ -54,7 +55,7 @@ export {
 export { MESSAGE_HANDLER_NAME } from '../../common/message-constants';
 export { type Message } from '../../common/message';
 export { StealthActions } from '../../common/stealth-actions';
-export { EventChannel, type EventChannelListener } from '../../common/utils/channels';
+export { EventChannel, type EventChannelListener, type EventChannelInterface } from '../../common/utils/channels';
 export {
     defaultFilteringLog,
     FilteringEventType,

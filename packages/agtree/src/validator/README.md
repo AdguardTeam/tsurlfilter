@@ -69,7 +69,7 @@ modifierValidator.exists(ModifierParser.parse('non-existent-modifier=value'));
  *
  * @returns Result of modifier validation.
  */
-validate(syntax: AdblockSyntaxType, rawModifier: Modifier, isException = false): ValidationResult;
+validate(syntax: AdblockSyntax, rawModifier: Modifier, isException = false): ValidationResult;
 ```
 
 where
@@ -109,7 +109,7 @@ where
 [**Examples of `validate()` usage:**](#modifier-validator-api--validate--examples)
 
 ```ts
-import { type AdblockSyntaxType, ModifierParser, modifierValidator } from '@adguard/agtree';
+import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/agtree';
 // ModifierParser.parse() converts a string modifier into the AGTree `Modifier` type
 ```
 

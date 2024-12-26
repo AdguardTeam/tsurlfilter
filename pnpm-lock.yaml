@@ -1062,8 +1062,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       '@adguard/scriptlets':
-        specifier: https://github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz
-        version: '@github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz'
+        specifier: ^2.1.3-alpha.1
+        version: 2.1.3
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1076,9 +1076,9 @@ importers:
       is-ip:
         specifier: 3.1.0
         version: 3.1.0
-      lru_map:
-        specifier: 0.4.1
-        version: 0.4.1
+      lru-cache:
+        specifier: ^11.0.2
+        version: 11.0.2
       punycode:
         specifier: 2.3.1
         version: 2.3.1
@@ -1237,14 +1237,14 @@ importers:
         specifier: ^4.3.70
         version: 4.3.70
       '@adguard/extended-css':
-        specifier: ^2.0.59
-        version: 2.0.59
+        specifier: ^2.1.1
+        version: 2.1.1
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
       '@adguard/scriptlets':
-        specifier: https://github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz
-        version: '@github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz'
+        specifier: ^2.1.3-alpha.1
+        version: 2.1.3
       '@adguard/tsurlfilter':
         specifier: workspace:^
         version: link:../tsurlfilter
@@ -1263,15 +1263,15 @@ importers:
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
-      lru_map:
-        specifier: 0.4.1
-        version: 0.4.1
+      lru-cache:
+        specifier: ^11.0.2
+        version: 11.0.2
       nanoid:
         specifier: ^5.0.9
         version: 5.0.9
       text-encoding:
-        specifier: git+https://github.com/AdguardTeam/text-encoding.git#v0.7.2
-        version: github.com/AdguardTeam/text-encoding/4268d6b7dc0e15f57134545ae1c8c59e9c5ced70
+        specifier: https://github.com/AdguardTeam/text-encoding/tarball/v0.8.0
+        version: '@github.com/AdguardTeam/text-encoding/tarball/v0.8.0'
       tldts:
         specifier: ^6.0.8
         version: 6.1.13
@@ -1441,8 +1441,8 @@ packages:
     engines: {node: '>=14'}
     dev: false
 
-  /@adguard/extended-css@2.0.59:
-    resolution: {integrity: sha512-rh+rITfPS82JyzSd43fBUdKlLm77YFJkO9uT1PgJAA6BdW0Ufkn2Ab83VrTNWdk+X+ULikdMQVX+SPDWa0eNWA==}
+  /@adguard/extended-css@2.1.1:
+    resolution: {integrity: sha512-TsHZ20oUWhbtrzQ4w70B96oHkGBIUZg2FdMfkq4StGfLmXQb+kI7fQb6BtXP2D0bvraIHMq6/mtKExglDJ9vsg==}
     engines: {node: '>=16'}
     dev: false
 
@@ -1472,6 +1472,13 @@ packages:
     dependencies:
       '@adguard/agtree': link:packages/agtree
       '@babel/runtime': 7.26.0
+      js-yaml: 3.14.1
+    dev: false
+
+  /@adguard/scriptlets@2.1.3:
+    resolution: {integrity: sha512-0SEQlUcHGOlgI016u17GqD1vTJw1qT63fQnHQctWdZYkzYhWpb+LoKkYRfosMU/LkNasQuCAVdbcWSF3dFu5rg==}
+    dependencies:
+      '@adguard/agtree': link:packages/agtree
       js-yaml: 3.14.1
     dev: false
 
@@ -4148,7 +4155,7 @@ packages:
       estree-walker: 2.0.2
       fdir: 6.4.2(picomatch@4.0.2)
       is-reference: 1.2.1
-      magic-string: 0.30.14
+      magic-string: 0.30.8
       picomatch: 4.0.2
       rollup: 4.24.3
     dev: true
@@ -4186,7 +4193,7 @@ packages:
       estree-walker: 2.0.2
       fdir: 6.4.2(picomatch@4.0.2)
       is-reference: 1.2.1
-      magic-string: 0.30.14
+      magic-string: 0.30.8
       picomatch: 4.0.2
       rollup: 4.28.0
     dev: true
@@ -16378,19 +16385,13 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /lru-cache@10.2.0:
-    resolution: {integrity: sha512-2bIM8x+VAf6JT4bKAljS1qUWgMsqZRPGJS6FSahIMPVvctcNhyVp7AJu7quxOW9jwkryBReKZY5tY5JYv2n/7Q==}
-    engines: {node: 14 || >=16.14}
-    dev: true
-
   /lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
     dev: true
 
-  /lru-cache@11.0.0:
-    resolution: {integrity: sha512-Qv32eSV1RSCfhY3fpPE2GNZ8jgM9X7rdAfemLWqTUxwiyIC4jJ6Sy0fZ8H+oLWevO6i4/bizg7c8d8i6bxrzbA==}
+  /lru-cache@11.0.2:
+    resolution: {integrity: sha512-123qHRfJBmo2jXDbo/a5YOQrJoHF/GNQTLzQ5+IdK5pWpceK17yRc6ozlWd25FxvGKQbIUs91fDFkXmDHTKcyA==}
     engines: {node: 20 || >=22}
-    dev: true
 
   /lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
@@ -17848,7 +17849,7 @@ packages:
     resolution: {integrity: sha512-MkhCqzzBEpPvxxQ71Md0b1Kk51W01lrYvlMzSUaIzNsODdd7mqhiimSZlr+VegAz5Z6Vzt9Xg2ttE//XBhH3EQ==}
     engines: {node: '>=16 || 14 >=14.17'}
     dependencies:
-      lru-cache: 10.2.0
+      lru-cache: 10.4.3
       minipass: 7.0.4
     dev: true
 
@@ -17864,7 +17865,7 @@ packages:
     resolution: {integrity: sha512-ypGJsmGtdXUOeM5u93TyeIEfEhM6s+ljAhrk5vAvSx8uyY/02OvrZnA0YNGUrPXfpJMgI1ODd3nwz8Npx4O4cg==}
     engines: {node: 20 || >=22}
     dependencies:
-      lru-cache: 11.0.0
+      lru-cache: 11.0.2
       minipass: 7.1.2
     dev: true
 
@@ -21869,13 +21870,10 @@ packages:
     resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
     dev: false
 
-  '@github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz':
-    resolution: {tarball: https://github.com/AdguardTeam/Scriptlets/raw/a90f0fe67ae13e83ecf653305bcd17b2c1ffcabc/test-adguard-scriptlets-2.1.0.tgz}
-    name: '@adguard/scriptlets'
-    version: 2.1.0
-    dependencies:
-      '@adguard/agtree': link:packages/agtree
-      js-yaml: 3.14.1
+  '@github.com/AdguardTeam/text-encoding/tarball/v0.8.0':
+    resolution: {tarball: https://github.com/AdguardTeam/text-encoding/tarball/v0.8.0}
+    name: text-encoding
+    version: 0.8.0
     dev: false
 
   github.com/105th/jsdiff/2be2e7df90e8eebd99f0385c7b1dc16c2f4dcc1a:

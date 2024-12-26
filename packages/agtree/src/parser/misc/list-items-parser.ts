@@ -1,4 +1,4 @@
-import { type ListItem, ListItemNodeType, type ListItemNodeTypeType } from '../../nodes';
+import { type ListItem, ListItemNodeType } from '../../nodes';
 import { defaultParserOptions } from '../options';
 import { COMMA, NEGATION_MARKER } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
@@ -39,7 +39,7 @@ export class ListItemsParser {
      * - parses a domain list — `example.com,example.org,~example.org` or `example.com|~example.org`
      * - parses a method list — `~post|~put`
      */
-    public static parse<T extends ListItemNodeTypeType>(
+    public static parse<T extends ListItemNodeType>(
         raw: string,
         options = defaultParserOptions,
         baseOffset = 0,

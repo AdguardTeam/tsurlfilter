@@ -1,7 +1,7 @@
 import { z as zod } from 'zod';
 import { LogLevel } from '@adguard/logger';
 import { filterListChunksValidator, filterListSourceMapValidator } from '@adguard/tsurlfilter';
-import extCssPackageJson from '@adguard/extended-css/package.json';
+import { EXTENDED_CSS_VERSION } from '@adguard/extended-css/version';
 
 import packageJson from '../../../package.json';
 
@@ -13,7 +13,8 @@ import packageJson from '../../../package.json';
  */
 
 export const TSWEBEXTENSION_VERSION = packageJson.version;
-export const EXTENDED_CSS_VERSION = extCssPackageJson.version;
+
+export { EXTENDED_CSS_VERSION };
 
 /**
  * Stealth mode configuration schema.

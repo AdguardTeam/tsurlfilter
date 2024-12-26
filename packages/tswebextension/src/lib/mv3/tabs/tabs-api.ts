@@ -387,6 +387,27 @@ export class TabsApi {
     }
 
     /**
+     * Sets main frame rule for the tab context and for the frame context.
+     *
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     * @param frameRule Frame rule.
+     */
+    public setMainFrameRule(tabId: number, frameId: number, frameRule: NetworkRule | null): void {
+        const tabContext = this.getTabContext(tabId);
+
+        if (tabContext && frameId === MAIN_FRAME_ID) {
+            tabContext.mainFrameRule = frameRule;
+        }
+
+        if (frameRule) {
+            this.updateFrameContext(tabId, frameId, { frameRule });
+        } else {
+            this.updateFrameContext(tabId, frameId, { frameRule: undefined });
+        }
+    }
+
+    /**
      * Updates the frame context with additional data.
      *
      * @param tabId The ID of the tab.
@@ -397,13 +418,10 @@ export class TabsApi {
      */
     public updateFrameContext(tabId: number, frameId: number, partialFrameContext: Partial<FrameMV3>): void {
         const tabContext = this.getTabContext(tabId);
+
         if (!tabContext) {
             logger.debug('At this point tab context should already exist');
             return;
-        }
-
-        if (frameId === MAIN_FRAME_ID && partialFrameContext.frameRule) {
-            tabContext.mainFrameRule = partialFrameContext.frameRule;
         }
 
         const frameContext = tabContext?.getFrameContext(frameId);

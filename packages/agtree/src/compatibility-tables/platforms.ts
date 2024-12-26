@@ -35,7 +35,9 @@ export const SpecificPlatform = {
     AbpExtFirefox: 1 << 17,
 } as const;
 
-export type SpecificPlatformType = typeof SpecificPlatform[keyof typeof SpecificPlatform];
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type SpecificPlatform = typeof SpecificPlatform[keyof typeof SpecificPlatform];
 
 const AdgOsAny = SpecificPlatform.AdgOsWindows
     | SpecificPlatform.AdgOsMac
@@ -87,4 +89,6 @@ export const GenericPlatform = {
     Any,
 } as const;
 
-export type GenericPlatformType = typeof GenericPlatform[keyof typeof GenericPlatform];
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type GenericPlatform = typeof GenericPlatform[keyof typeof GenericPlatform];

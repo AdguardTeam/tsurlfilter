@@ -40,6 +40,11 @@ Test:
         interpreter: SHELL
         scripts:
           - bamboo-specs/scripts/examples-adguard-api-tests.sh
+    # FIXME: Uncomment before merge release/v3.1 to master
+    # - script:
+    #     interpreter: SHELL
+    #     scripts:
+    #       - bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh
     - script:
         interpreter: SHELL
         scripts:

@@ -51,4 +51,6 @@ export const AdblockSyntax = {
     Adg: 'AdGuard',
 } as const;
 
-export type AdblockSyntaxType = typeof AdblockSyntax[keyof typeof AdblockSyntax];
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type AdblockSyntax = typeof AdblockSyntax[keyof typeof AdblockSyntax];

@@ -1,4 +1,4 @@
-import { type AdblockSyntaxType, AdblockSyntax } from '../utils/adblockers';
+import { AdblockSyntax } from '../utils/adblockers';
 
 /**
  * Possible AdGuard agent markers.
@@ -35,8 +35,8 @@ const ABP_NAME_MARKERS = new Set([
  *
  * @returns Adblock syntax.
  */
-export const getAdblockSyntax = (name: string): AdblockSyntaxType => {
-    let syntax: AdblockSyntaxType = AdblockSyntax.Common;
+export const getAdblockSyntax = (name: string): AdblockSyntax => {
+    let syntax: AdblockSyntax = AdblockSyntax.Common;
     const lowerCaseName = name.toLowerCase();
     if (ADG_NAME_MARKERS.has(lowerCaseName)) {
         syntax = AdblockSyntax.Adg;

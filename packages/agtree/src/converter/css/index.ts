@@ -19,22 +19,30 @@ export const ERROR_MESSAGES = {
     INVALID_ATTRIBUTE_VALUE: `Expected '${getFormattedTokenName(TokenType.Ident)}' or '${getFormattedTokenName(TokenType.String)}' as attribute value, but got '%s' with value '%s`,
 };
 
-const enum PseudoClasses {
-    AbpContains = '-abp-contains',
-    AbpHas = '-abp-has',
-    Contains = 'contains',
-    Has = 'has',
-    HasText = 'has-text',
-    MatchesCss = 'matches-css',
-    MatchesCssAfter = 'matches-css-after',
-    MatchesCssBefore = 'matches-css-before',
-    Not = 'not',
-}
+export const PseudoClasses = {
+    AbpContains: '-abp-contains',
+    AbpHas: '-abp-has',
+    Contains: 'contains',
+    Has: 'has',
+    HasText: 'has-text',
+    MatchesCss: 'matches-css',
+    MatchesCssAfter: 'matches-css-after',
+    MatchesCssBefore: 'matches-css-before',
+    Not: 'not',
+} as const;
 
-const enum PseudoElements {
-    After = 'after',
-    Before = 'before',
-}
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type PseudoClasses = typeof PseudoClasses[keyof typeof PseudoClasses];
+
+export const PseudoElements = {
+    After: 'after',
+    Before: 'before',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type PseudoElements = typeof PseudoElements[keyof typeof PseudoElements];
 
 const PSEUDO_ELEMENT_NAMES = new Set<string>([
     PseudoElements.After,
