@@ -8,7 +8,7 @@ import { getRequestType } from '../../../../common/request-type';
 import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
 import { tabsApi } from '../../api';
 import CookieUtils from '../../services/cookie-filtering/utils';
-import { type TabFrameRequestContext } from '../../tabs/tabs-api';
+import { type TabFrameRequestContextMV2 } from '../../tabs/tabs-api';
 import { isFirefox } from '../../utils';
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 
@@ -211,7 +211,7 @@ export class RequestEvents {
         // request or pre-render, it does not matter) as first-party requests,
         // we get only part of the request context to record only the tab and
         // frame information before calculating the request referrer.
-        const tabFrameRequestContext: TabFrameRequestContext = {
+        const tabFrameRequestContext: TabFrameRequestContextMV2 = {
             requestUrl: url,
             requestType,
             requestId,

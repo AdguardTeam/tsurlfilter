@@ -13,9 +13,10 @@ import {
 import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule } from '../../../helpers/rule-creator';
-import { type ContentScriptCosmeticData, CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
+import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
 import { CosmeticController } from '../../../../src/lib/mv2/content-script/cosmetic-controller';
 import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
+import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
 
 vi.mock('../../../../src/lib/common/content-script/send-app-message', () => {
     const module = vi.importActual('../../../../src/lib/common/content-script/send-app-message');

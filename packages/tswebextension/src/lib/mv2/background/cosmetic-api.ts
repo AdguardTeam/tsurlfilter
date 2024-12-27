@@ -3,10 +3,9 @@ import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
 import { USER_FILTER_ID } from '../../common/constants';
-import { CosmeticApiCommon } from '../../common/cosmetic-api';
+import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { type ContentType } from '../../common/request-type';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
@@ -24,31 +23,6 @@ export type ApplyCosmeticRulesParams = {
     frameId: number,
     url?: string,
     cosmeticResult: CosmeticResult,
-};
-
-export type LogJsRulesParams = {
-    tabId: number,
-    cosmeticResult: CosmeticResult,
-    url: string,
-    contentType: ContentType,
-    timestamp: number,
-};
-
-export type ContentScriptCosmeticData = {
-    /**
-     * Is app started.
-     */
-    isAppStarted: boolean,
-
-    /**
-     * Are hits stats collected.
-     */
-    areHitsStatsCollected: boolean,
-
-    /**
-     * Extended css rules to apply.
-     */
-    extCssRules: string[] | null,
 };
 
 /**

@@ -9,7 +9,7 @@ import {
 import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { Frame, TabContext, type TabInfo } from '../../../../../src/lib';
+import { Frame, TabContext, type TabInfoMV2 } from '../../../../../src/lib';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
@@ -24,7 +24,7 @@ vi.mock('../../../../../src/lib/mv2/background/stealth-api');
 vi.mock('../../../../../src/lib/mv2/background/app-context');
 
 describe('TabContext', () => {
-    let tabInfo: TabInfo;
+    let tabInfo: TabInfoMV2;
     let tabContext: TabContext;
     let documentApi: DocumentApi;
 
@@ -33,7 +33,7 @@ describe('TabContext', () => {
             id: 123,
             status: 'complete',
             url: 'https://example.com',
-        } as TabInfo;
+        } as TabInfoMV2;
 
         const allowlist = new Allowlist();
         const engineApi = new EngineApi(allowlist, appContext, stealthApi);
@@ -67,7 +67,7 @@ describe('TabContext', () => {
                 ...tabInfo,
                 url: 'https://another.com',
                 title: 'Page Title',
-            } as TabInfo;
+            } as TabInfoMV2;
 
             tabContext.updateTabInfo(changeInfo, newTabInfo);
 

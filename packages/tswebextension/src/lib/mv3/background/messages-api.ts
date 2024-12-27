@@ -5,6 +5,7 @@ import { getDomain } from 'tldts';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { MessageType } from '../../common/message-constants';
 import { type CookieRule } from '../../common/content-script/cookie-controller';
+import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import {
     getAssistantCreateRulePayloadValidator,
@@ -23,7 +24,7 @@ import { type TabsApi } from '../tabs/tabs-api';
 import { type TsWebExtension } from './app';
 import { appContext } from './app-context';
 import { Assistant } from './assistant';
-import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
+import { CosmeticApi } from './cosmetic-api';
 import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 export type MessagesHandlerMV3 = (

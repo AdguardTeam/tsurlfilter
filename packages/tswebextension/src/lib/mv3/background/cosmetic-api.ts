@@ -2,37 +2,19 @@ import { type CosmeticResult, type CosmeticRule, type ScriptletData } from '@adg
 import { CosmeticRuleType } from '@adguard/agtree';
 
 import { CUSTOM_FILTERS_START_ID, LF, USER_FILTER_ID } from '../../common/constants';
-import { CosmeticApiCommon } from '../../common/cosmetic-api';
+import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
 import { getDomain } from '../../common/utils/url';
-import { type ContentType } from '../../common/request-type';
 import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { ScriptingApi } from './scripting-api';
 import { localScriptRulesService, type LocalScriptFunction } from './services/local-script-rules-service';
-
-export type ContentScriptCosmeticData = {
-    /**
-     * Is app started.
-     */
-    isAppStarted: boolean,
-
-    /**
-     * Are hits stats collected.
-     */
-    areHitsStatsCollected: boolean,
-
-    /**
-     * Extended css rules to apply.
-     */
-    extCssRules: string[] | null,
-};
 
 /**
  * Data for JS and scriptlets rules.
@@ -56,17 +38,6 @@ type ScriptsAndScriptletsData = {
      * List of scriptlet data objects. No need to separate them by type since they are all safe.
      */
     scriptletDataList: ScriptletData[]
-};
-
-/**
- * Information for logging js rules.
- */
-type LogJsRulesParams = {
-    tabId: number,
-    cosmeticResult: CosmeticResult,
-    url: string,
-    contentType: ContentType,
-    timestamp: number,
 };
 
 /**
