@@ -118,6 +118,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             uniqueScripts.add(rule.getScript(scriptParams));
         });
 
+        // FIXME (Slava): not always join with '\n' is needed
         const scriptText = [...uniqueScripts].join('\n');
 
         return CosmeticApi.wrapScriptText(scriptText);

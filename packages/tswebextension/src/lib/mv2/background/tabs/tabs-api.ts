@@ -160,7 +160,7 @@ export class TabsApi {
     }
 
     // FIXME (Slava, in another pr): do the same in MV3
-    // since cosmetic rules should not be applied in the assistant frame
+    // since cosmetic rules should not be applied in the assistant frame (AG-9829)
     /**
      * Sets a current timestamp as `assistantInitTimestamp` of the tab context.
      *

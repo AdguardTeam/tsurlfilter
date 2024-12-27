@@ -151,7 +151,6 @@ export class TabContext {
                 tabId: tab.id,
                 frameId: MAIN_FRAME_ID,
                 url,
-                // timestamp is 0, so that it will be recalculated in the next event
                 timeStamp: 0,
             }));
         }
