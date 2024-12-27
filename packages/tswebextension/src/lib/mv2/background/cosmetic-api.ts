@@ -92,7 +92,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             return '';
         }
 
-        const uniqueScripts = new Set();
+        const uniqueScriptStrings = new Set<string>();
 
         let debug = false;
         const { configuration } = appContext;
@@ -115,11 +115,13 @@ export class CosmeticApi extends CosmeticApiCommon {
         };
 
         permittedRules.forEach((rule) => {
-            uniqueScripts.add(rule.getScript(scriptParams));
+            const scriptStr = rule.getScript(scriptParams);
+            if (scriptStr) {
+                uniqueScriptStrings.add(scriptStr);
+            }
         });
 
-        // FIXME (Slava): not always join with '\n' is needed
-        const scriptText = [...uniqueScripts].join('\n');
+        const scriptText = CosmeticApi.combineScripts(uniqueScriptStrings);
 
         return CosmeticApi.wrapScriptText(scriptText);
     }

@@ -1,7 +1,7 @@
 import { type CosmeticResult, type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { CUSTOM_FILTERS_START_ID, LF, USER_FILTER_ID } from '../../common/constants';
+import { CUSTOM_FILTERS_START_ID, USER_FILTER_ID } from '../../common/constants';
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
@@ -110,9 +110,9 @@ export class CosmeticApi extends CosmeticApiCommon {
                 }
             } else if (CosmeticApi.isUserAddedRule(rule)) {
                 // JS rule is manually added by user locally in the extension — save its script text.
-                const scriptText = rule.getScript();
-                if (scriptText) {
-                    uniqueScriptStrings.add(scriptText.trim());
+                const scriptStr = rule.getScript();
+                if (scriptStr) {
+                    uniqueScriptStrings.add(scriptStr);
                 }
             } else {
                 // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
@@ -126,13 +126,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             }
         }
 
-        // FIXME (Slava): do the same for MV2
-        let scriptText = '';
-        uniqueScriptStrings.forEach((script) => {
-            scriptText += script.endsWith(';')
-                ? `${script}${LF}`
-                : `${script};${LF}`;
-        });
+        const scriptText = CosmeticApi.combineScripts(uniqueScriptStrings);
 
         const wrappedScriptText = CosmeticApi.wrapScriptText(scriptText);
 

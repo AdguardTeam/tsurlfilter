@@ -1,5 +1,6 @@
 import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
+import { LF } from './constants';
 import { type ContentType } from './request-type';
 
 /**
@@ -74,9 +75,14 @@ export class CosmeticApiCommon {
     protected static readonly INJECT_HIT_START = " content: 'adguard";
 
     /**
+     * Semicolon.
+     */
+    protected static readonly SEMICOLON = ';';
+
+    /**
      * Separator for hit stats.
      */
-    protected static readonly HIT_SEP = encodeURIComponent(';');
+    protected static readonly HIT_SEP = encodeURIComponent(CosmeticApiCommon.SEMICOLON);
 
     /**
      * Element hiding CSS style ending.
@@ -205,9 +211,9 @@ export class CosmeticApiCommon {
         // remove closing brace
         const ruleTextWithoutCloseBrace = ruleContent.slice(0, -1).trim();
         // check semicolon
-        const ruleTextWithSemicolon = ruleTextWithoutCloseBrace.endsWith(';')
+        const ruleTextWithSemicolon = ruleTextWithoutCloseBrace.endsWith(CosmeticApiCommon.SEMICOLON)
             ? ruleTextWithoutCloseBrace
-            : `${ruleTextWithoutCloseBrace};`;
+            : `${ruleTextWithoutCloseBrace}${CosmeticApiCommon.SEMICOLON}`;
         result.push(ruleTextWithSemicolon);
         result.push(CosmeticApiCommon.INJECT_HIT_START);
         result.push(rule.getFilterListId());
@@ -321,5 +327,28 @@ export class CosmeticApiCommon {
         })();
         //# sourceURL=ag-scripts.js
         `;
+    }
+
+    /**
+     * Combines unique script strings into a single script text.
+     *
+     * Script string is being trimmed and a semicolon is added if it is missing.
+     *
+     * @param uniqueScriptStrings Set of unique script strings to combine.
+     *
+     * @returns Combined script string.
+     */
+    protected static combineScripts(uniqueScriptStrings: Set<string>): string {
+        let scriptText = '';
+
+        uniqueScriptStrings.forEach((rawScriptStr) => {
+            const script = rawScriptStr.trim();
+
+            scriptText += script.endsWith(CosmeticApiCommon.SEMICOLON)
+                ? `${script}${LF}`
+                : `${script}${CosmeticApiCommon.SEMICOLON}${LF}`;
+        });
+
+        return scriptText;
     }
 }
