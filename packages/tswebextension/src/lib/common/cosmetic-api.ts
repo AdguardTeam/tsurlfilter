@@ -32,6 +32,9 @@ export type LogJsRulesParams = {
     timestamp: number,
 };
 
+/**
+ * Data for applying cosmetic rules in content script.
+ */
 export type ContentScriptCosmeticData = {
     /**
      * Is app started.

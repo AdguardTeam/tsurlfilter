@@ -4,9 +4,9 @@ import { identity } from 'lodash-es';
 
 import { MAIN_FRAME_ID } from '../../../common/constants';
 import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
-import { Frames } from '../../../common/tabs/frames';
-import { type TabInfoCommon } from '../../../common/tabs/tabs-api';
 import { isHttpOrWsRequest } from '../../../common/utils/url';
+import { type TabInfoCommon } from '../../../common/tabs/tabs-api';
+import { Frames } from '../../../common/tabs/frames';
 import { type DocumentApi } from '../document-api';
 
 import { FrameMV2 } from './frame';
