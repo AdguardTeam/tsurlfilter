@@ -93,7 +93,7 @@ export class CosmeticFrameProcessor {
 
         const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
-        const { scriptText } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult, url);
+        const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, result);
 
         let combinedScriptText = '';
@@ -154,7 +154,7 @@ export class CosmeticFrameProcessor {
 
         const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
-        const { scriptText } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult, url);
+        const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, result);
 
         let combinedScriptText = '';

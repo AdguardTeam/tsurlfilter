@@ -70,7 +70,7 @@ describe('TabsCosmeticInjector', () => {
 
             vi.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
             vi.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
-            vi.spyOn(CosmeticApi, 'getScriptTextAndScriptlets').mockReturnValue({ scriptText: '' });
+            vi.spyOn(CosmeticApi, 'getScriptsAndScriptletsData').mockReturnValue({ scriptText: '' });
             vi.spyOn(stealthApi, 'getStealthScript').mockReturnValue('');
             vi.spyOn(Date, 'now').mockReturnValue(timestamp);
 

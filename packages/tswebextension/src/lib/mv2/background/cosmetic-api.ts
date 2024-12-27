@@ -127,14 +127,14 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Generates script text for JS rules and scriptlets from the cosmetic result.
+     * Generates script text for JS and scriptlet rules from the cosmetic result.
      *
      * @param cosmeticResult Object containing cosmetic rules.
      * @param frameUrl Frame url.
      *
      * @returns An object with `scriptText` — aggregated script text, wrapped for safe execution.
      */
-    public static getScriptTextAndScriptlets(
+    public static getScriptsAndScriptletsData(
         cosmeticResult: CosmeticResult,
         frameUrl: string,
     ): ScriptsAndScriptletsDataMv2 {
