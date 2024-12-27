@@ -5,7 +5,7 @@ import {
 } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { CUSTOM_FILTERS_START_ID, LF, USER_FILTER_ID } from '../../common/constants';
+import { CUSTOM_FILTERS_START_ID, LF, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { tabsApi } from '../tabs/tabs-api';
@@ -109,12 +109,16 @@ export class CosmeticApi extends CosmeticApiCommon {
         const elemhideCss = elementHiding.generic.concat(elementHiding.specific);
         const injectCss = CSS.generic.concat(CSS.specific);
 
+        // FIXME add comment that we skip quick fixes filter rule for chrome store
+        const localElemhideCss = elemhideCss.filter((rule) => rule.getFilterListId() !== QUICK_FIXES_FILTER_ID);
+        const localInjectCss = injectCss.filter((rule) => rule.getFilterListId() !== QUICK_FIXES_FILTER_ID);
+
         let styles: string[];
 
         if (collectingCosmeticRulesHits) {
-            styles = CosmeticApi.buildStyleSheetsWithHits(elemhideCss, injectCss);
+            styles = CosmeticApi.buildStyleSheetsWithHits(localElemhideCss, localInjectCss);
         } else {
-            styles = CosmeticApi.buildStyleSheets(elemhideCss, injectCss, true);
+            styles = CosmeticApi.buildStyleSheets(localElemhideCss, localInjectCss, true);
         }
 
         if (styles.length > 0) {
@@ -228,6 +232,12 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
+
+            // FIXME add comment that we skip quick fixes filter rule for chrome store
+            if (rule.getFilterListId() === QUICK_FIXES_FILTER_ID) {
+                continue;
+            }
+
             if (rule.isScriptlet) {
                 const scriptletData = rule.getScriptletData();
                 if (scriptletData) {
