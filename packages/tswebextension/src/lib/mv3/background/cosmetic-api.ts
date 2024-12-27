@@ -46,14 +46,6 @@ type ScriptsAndScriptletsDataMv3 = {
  */
 export class CosmeticApi extends CosmeticApiCommon {
     /**
-     * Blob injection urls.
-     */
-    private static readonly BLOB_INJECTION_URLS = new Set([
-        'facebook.com',
-        'open.spotify.com',
-    ]);
-
-    /**
     /**
      * Checks whether the cosmetic (JS) rule is added manually by user —
      * is it located in User rules or Custom filters.
