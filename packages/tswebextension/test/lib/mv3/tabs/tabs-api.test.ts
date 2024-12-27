@@ -10,7 +10,7 @@ import browser from 'sinon-chrome';
 import { type NetworkRule } from '@adguard/tsurlfilter';
 
 import { TabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
-import { TabContext, type TabInfo } from '../../../../src/lib/mv3/tabs/tab-context';
+import { TabContext, type TabInfoMV3 } from '../../../../src/lib/mv3/tabs/tab-context';
 import { FrameMV3 } from '../../../../src/lib/mv3/tabs/frame';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
@@ -32,7 +32,7 @@ describe('TabsApi', () => {
     });
 
     const createTestTabContext = (): TabContext => {
-        return new TabContext({} as TabInfo);
+        return new TabContext({} as TabInfoMV3);
     };
 
     describe('start method', () => {
@@ -207,7 +207,7 @@ describe('TabsApi', () => {
         it('should update all current tabs main frame rules', async () => {
             const tabId = 1;
 
-            browser.tabs.query.resolves([{ id: tabId } as TabInfo]);
+            browser.tabs.query.resolves([{ id: tabId } as TabInfoMV3]);
 
             const spy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
 
