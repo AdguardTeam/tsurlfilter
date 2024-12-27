@@ -1,7 +1,7 @@
 import { RequestType } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils/url';
-import { MAIN_FRAME_ID } from '../../common/constants';
+import { LF, MAIN_FRAME_ID } from '../../common/constants';
 import {
     type PrecalculateCosmeticProps,
     type HandleSubFrameWithoutUrlProps,
@@ -98,7 +98,7 @@ export class CosmeticFrameProcessor {
 
         let combinedScriptText = '';
         if (stealthScriptText.length > 0) {
-            combinedScriptText += `${stealthScriptText}\n`;
+            combinedScriptText += `${stealthScriptText}${LF}`;
         }
         combinedScriptText += scriptText;
 
@@ -159,7 +159,7 @@ export class CosmeticFrameProcessor {
 
         let combinedScriptText = '';
         if (stealthScriptText.length > 0) {
-            combinedScriptText += `${stealthScriptText}\n`;
+            combinedScriptText += `${stealthScriptText}${LF}`;
         }
         combinedScriptText += scriptText;
 
