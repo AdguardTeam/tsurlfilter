@@ -8,7 +8,7 @@ import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
 
 import { Assistant } from './assistant';
-import { type AppContext } from './context';
+import { type AppContext } from './app-context';
 import { type ConfigurationMV2, type ConfigurationMV2Context, configurationMV2Validator } from './configuration';
 import { type EngineApi } from './engine-api';
 import { type ExtSessionStorage } from './ext-session-storage';

@@ -23,7 +23,7 @@ import { type MatchQuery } from '../../common/interfaces';
 import { type Allowlist } from './allowlist';
 import { type StealthApi } from './stealth-api';
 import { type ConfigurationMV2 } from './configuration';
-import { type AppContext } from './context';
+import { type AppContext } from './app-context';
 
 /**
  * TSUrlFilter Engine wrapper.

@@ -5,7 +5,7 @@ import { MAIN_FRAME_ID } from '../../../common/constants';
 import { logger } from '../../../common/utils/logger';
 import { ContentType } from '../../../common/request-type';
 import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
-import { appContext } from '../context';
+import { appContext } from '../app-context';
 import { CosmeticApi } from '../cosmetic-api';
 import { type DocumentApi } from '../document-api';
 import { type EngineApi } from '../engine-api';

@@ -9,13 +9,13 @@ import { MatchingResult } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../helpers/rule-creator';
 import { type ConfigurationMV2Context } from '../../../../src/lib';
-import { AppContext } from '../../../../src/lib/mv2/background/context';
+import { AppContext } from '../../../../src/lib/mv2/background/app-context';
 import { StealthService } from '../../../../src/lib/mv2/background/services/stealth-service';
 import { StealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 import { defaultFilteringLog } from '../../../../src/lib/common/filtering-log';
 
-vi.mock('../../../../src/lib/mv2/background/context', async () => {
-    const { MockAppContext } = await import('./mocks/mock-context');
+vi.mock('../../../../src/lib/mv2/background/app-context', async () => {
+    const { MockAppContext } = await import('./mocks/mock-app-context');
     return ({
         AppContext: MockAppContext,
         appContext: new MockAppContext(),

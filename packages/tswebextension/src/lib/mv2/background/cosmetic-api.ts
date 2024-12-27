@@ -12,8 +12,8 @@ import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
 import { getDomain } from '../../common/utils/url';
 
+import { appContext } from './app-context';
 import { engineApi, tabsApi } from './api';
-import { appContext } from './context';
 import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';

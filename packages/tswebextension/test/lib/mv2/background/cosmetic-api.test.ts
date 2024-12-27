@@ -14,8 +14,8 @@ import { USER_FILTER_ID } from '../../../../src/lib/common/constants';
 
 import { getLocalScriptRulesFixture } from './fixtures/local-script-rules';
 
-vi.mock('../../../../src/lib/mv2/background/context', async () => {
-    const { MockAppContext } = await import('./mocks/mock-context');
+vi.mock('../../../../src/lib/mv2/background/app-context', async () => {
+    const { MockAppContext } = await import('./mocks/mock-app-context');
     return {
         appContext: vi.fn(() => new MockAppContext()),
     };

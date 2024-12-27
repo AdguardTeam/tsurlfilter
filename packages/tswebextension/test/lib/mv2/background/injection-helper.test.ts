@@ -6,7 +6,7 @@ import {
 } from 'vitest';
 
 import { extSessionStorage } from '../../../../src/lib';
-import { appContext } from '../../../../src/lib/mv2/background/context';
+import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { buildScriptText } from '../../../../src/lib/mv2/background/injection-helper';
 
 const timestamp = Date.now();

@@ -15,7 +15,7 @@ import { defaultFilteringLog, type FilteringLogInterface } from '../../common/fi
 import { StealthActions } from '../../common/stealth-actions';
 import { logger } from '../../common/utils/logger';
 
-import { appContext, type AppContext } from './context';
+import { appContext, type AppContext } from './app-context';
 import { type RequestContext } from './request';
 import { StealthService } from './services/stealth-service';
 
