@@ -2,6 +2,7 @@
 import browser, { type Runtime } from 'webextension-polyfill';
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
+import { MAIN_FRAME_ID } from '../../common/constants';
 import { type CookieRule } from '../../common/content-script/cookie-controller';
 import { FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../../common/message';
 import { MessageType } from '../../common/message-constants';
 import { ContentType } from '../../common/request-type';
+import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
 import { getDomain } from '../../common/utils/url';
 
@@ -96,7 +98,7 @@ export class MessagesApi implements MessagesApiInterface {
                 );
             }
             case MessageType.GetCosmeticData: {
-                return this.handleContentScriptDataMessage(
+                return this.handleGetCosmeticData(
                     sender,
                     message.payload,
                 );
@@ -157,16 +159,18 @@ export class MessagesApi implements MessagesApiInterface {
     }
 
     /**
-     * Handles get extended css message.
+     * Handles get cosmetic message.
      *
-     * @param sender Tab, which sent message.
+     * @param sender Tab which sent message.
      * @param payload Message payload.
-     * @returns Extended css string or false or undefined.
+     *
+     * @returns Content script data for applying cosmetic rules or null if no data.
      */
-    private handleContentScriptDataMessage(
+    private handleGetCosmeticData(
         sender: Runtime.MessageSender,
         payload?: unknown,
     ): ContentScriptCosmeticData | null {
+        logger.debug('[tswebextension.handleGetCosmeticData]: received call: ', payload);
         if (!payload || !sender?.tab?.id) {
             return null;
         }
@@ -174,6 +178,7 @@ export class MessagesApi implements MessagesApiInterface {
         const res = getExtendedCssPayloadValidator.safeParse(payload);
 
         if (!res.success) {
+            logger.error('[tswebextension.handleGetCosmeticData]: cannot parse payload: ', payload, res.error);
             return null;
         }
 
@@ -181,7 +186,7 @@ export class MessagesApi implements MessagesApiInterface {
         let { frameId } = sender;
 
         if (!frameId) {
-            frameId = 0;
+            frameId = MAIN_FRAME_ID;
         }
 
         return CosmeticApi.getContentScriptData(res.data.documentUrl, tabId, frameId);
@@ -212,7 +217,7 @@ export class MessagesApi implements MessagesApiInterface {
         let { frameId } = sender;
 
         if (!frameId) {
-            frameId = 0;
+            frameId = MAIN_FRAME_ID;
         }
 
         const cookieRules = cookieFiltering.getBlockingRules(res.data.documentUrl, tabId, frameId);
