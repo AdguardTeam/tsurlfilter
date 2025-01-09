@@ -20,11 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A rule from a disabled filter list disables another rule [AdguardBrowserExtension#3002].
 - Matching of `companyCategoryName` for subdomains.
 - Cosmetic rules injecting into `about:blank` iframes in MV2.
-- Scriptlets are injected too late on website reload or navigation [AdguardBrowserExtension#2855].
 
 [AdguardBrowserExtension#3020]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3020
 [AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
-[AdguardBrowserExtension#2855]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2855
 
 ## [2.4.0-alpha.8] - 2024-12-23
 
