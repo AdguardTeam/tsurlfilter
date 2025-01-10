@@ -22,6 +22,14 @@ import { type TabsApi } from './tabs/tabs-api';
  */
 export class CosmeticFrameProcessor {
     /**
+     * Time threshold to consider two events as part of the same frame.
+     * The value is chosen experimentally; in most cases, 100 ms is sufficient to consider the onBeforeNavigate
+     * and onBeforeRequest events as related to the same frame. It is also small enough to ignore manual page
+     * reloads by the user.
+     */
+    static SAME_FRAME_THRESHOLD_MS = 100;
+
+    /**
      * Initializes a new instance of the {@link CosmeticFrameProcessor} class.
      *
      * @param engineApi Engine API instance.
@@ -31,6 +39,39 @@ export class CosmeticFrameProcessor {
         private readonly engineApi: EngineApi,
         private readonly tabsApi: TabsApi,
     ) {}
+
+    /**
+     * Check if recalculation should be skipped.
+     * If the time passed between two events is less than the threshold,
+     * we consider it part of the same frame and do not recalculate.
+     * Additionally, we check if the URL has changed.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     * @param url Url.
+     * @param timeStamp Event timestamp.
+     * @returns True if recalculation should be skipped.
+     */
+    private shouldSkipRecalculation(
+        tabId: number,
+        frameId: number,
+        url: string,
+        timeStamp: number,
+    ): boolean {
+        const frameContext = this.tabsApi.getFrameContext(tabId, frameId);
+        if (!frameContext) {
+            return false;
+        }
+
+        // do not skip recalculation if the URL has changed
+        if (frameContext.url !== url) {
+            return false;
+        }
+
+        const timeDiff = Math.abs(frameContext.timeStamp - timeStamp);
+
+        return timeDiff < CosmeticFrameProcessor.SAME_FRAME_THRESHOLD_MS;
+    }
 
     /**
      * Handle sub frame without url.
@@ -232,6 +273,10 @@ export class CosmeticFrameProcessor {
             parentDocumentId,
             documentId,
         } = props;
+
+        if (this.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {
+            return;
+        }
 
         // set in the beginning to let other events know that cosmetic result will be calculated in this event to
         // avoid double calculation
