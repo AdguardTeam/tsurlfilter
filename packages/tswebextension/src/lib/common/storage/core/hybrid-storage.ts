@@ -7,11 +7,15 @@
 import type { Storage } from 'webextension-polyfill';
 import { nanoid } from 'nanoid';
 import * as idb from 'idb';
-import SuperJSON, { type SuperJSONResult } from 'superjson';
+import { SuperJSON, type SuperJSONResult } from 'superjson';
 
 import { type ExtendedStorageInterface } from './storage-interface';
 import { BrowserStorage } from './browser-storage';
 import { IDBStorage } from './idb-storage';
+
+// TODO: SuperJSONValue is not exported from superjson, so we have to redefine it here.
+// https://github.com/flightcontrolhq/superjson/issues/309
+type SuperJSONValue = any;
 
 /**
  * Implements a hybrid storage mechanism that can switch between IndexedDB and a fallback storage
@@ -110,7 +114,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
      * @param data The data to serialize.
      * @returns The serialized data.
      */
-    public static serialize = SuperJSON.serialize;
+    public static serialize = (data: SuperJSONValue): SuperJSONResult => SuperJSON.serialize(data);
 
     /**
      * Deserializes the given data using SuperJSON.
@@ -118,7 +122,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
      * @param data The data to deserialize.
      * @returns The deserialized data.
      */
-    public static deserialize = SuperJSON.deserialize;
+    public static deserialize = (data: SuperJSONResult): SuperJSONValue => SuperJSON.deserialize(data);
 
     /**
      * Checks if IndexedDB is supported in the current environment.
