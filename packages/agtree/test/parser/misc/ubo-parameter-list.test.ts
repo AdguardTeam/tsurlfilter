@@ -1,123 +1,12 @@
 import { COMMA } from '../../../src/utils/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { UboParameterListParser } from '../../../src/parser/misc/ubo-parameter-list';
+import { UboParameterListParser } from '../../../src/parser/misc/ubo-parameter-list-parser';
 import { defaultParserOptions } from '../../../src/parser/options';
-import { type ParameterList } from '../../../src/parser/common';
+import { type ParameterList } from '../../../src/nodes';
 
 describe('UboParameterListParser', () => {
-    describe('UboParameterListParser.parse - valid cases when requireQuotes enabled', () => {
-        test.each<{ actual: string; expected: ParameterList }>([
-            {
-                actual: String.raw`'abc'`,
-                expected: {
-                    type: 'ParameterList',
-                    start: 0,
-                    end: 5,
-                    children: [
-                        {
-                            type: 'Value',
-                            start: 0,
-                            end: 5,
-                            value: String.raw`'abc'`,
-                        },
-                    ],
-                },
-            },
-            {
-                actual: String.raw` ''  `,
-                expected: {
-                    type: 'ParameterList',
-                    start: 0,
-                    end: 5,
-                    children: [
-                        {
-                            type: 'Value',
-                            start: 1,
-                            end: 3,
-                            value: String.raw`''`,
-                        },
-                    ],
-                },
-            },
-            {
-                actual: String.raw`'abc', 'cba'`,
-                expected: {
-                    type: 'ParameterList',
-                    start: 0,
-                    end: 12,
-                    children: [
-                        {
-                            type: 'Value',
-                            start: 0,
-                            end: 5,
-                            value: String.raw`'abc'`,
-                        },
-                        {
-                            type: 'Value',
-                            start: 7,
-                            end: 12,
-                            value: String.raw`'cba'`,
-                        },
-                    ],
-                },
-            },
-            {
-                actual: String.raw` ''  ,  ''  `,
-                expected: {
-                    type: 'ParameterList',
-                    start: 0,
-                    end: 12,
-                    children: [
-                        {
-                            type: 'Value',
-                            start: 1,
-                            end: 3,
-                            value: String.raw`''`,
-                        },
-                        {
-                            type: 'Value',
-                            start: 8,
-                            end: 10,
-                            value: String.raw`''`,
-                        },
-                    ],
-                },
-            },
-            {
-                actual: String.raw` ""  ,  "",  ""  `,
-                expected: {
-                    type: 'ParameterList',
-                    start: 0,
-                    end: 17,
-                    children: [
-                        {
-                            type: 'Value',
-                            start: 1,
-                            end: 3,
-                            value: String.raw`""`,
-                        },
-                        {
-                            type: 'Value',
-                            start: 8,
-                            end: 10,
-                            value: String.raw`""`,
-                        },
-                        {
-                            type: 'Value',
-                            start: 13,
-                            end: 15,
-                            value: String.raw`""`,
-                        },
-                    ],
-                },
-            },
-        ])("should parse correctly on input '$actual'", ({ actual, expected }) => {
-            const result = UboParameterListParser.parse(actual, defaultParserOptions, 0, COMMA, true);
-
-            expect(result).toMatchObject(expected);
-        });
-    });
+    // valid cases are tested in `../cosmetic/body/ubo-scriptlet.test.ts`
 
     describe('UboParameterListParser.parse - invalid cases when requireQuotes enabled', () => {
         test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([

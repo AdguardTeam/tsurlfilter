@@ -1,4 +1,12 @@
 import browser from 'webextension-polyfill';
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
 
 import { BrowserStorage } from '../../../../../src/lib/common/storage/core/browser-storage';
 

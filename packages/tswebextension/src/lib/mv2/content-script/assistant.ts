@@ -1,4 +1,5 @@
 import browser from 'webextension-polyfill';
+
 // Import directly from files to avoid side effects of tree shaking.
 // If import from '../../common', entire tsurlfilter will be in the package.
 import { type Message } from '../../common/message';

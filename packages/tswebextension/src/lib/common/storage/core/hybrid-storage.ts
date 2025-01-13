@@ -5,13 +5,11 @@
  * a fallback storage mechanism based on the environment's capabilities.
  */
 import type { Storage } from 'webextension-polyfill';
-
 import { nanoid } from 'nanoid';
 import * as idb from 'idb';
-
 import SuperJSON, { type SuperJSONResult } from 'superjson';
-import { type ExtendedStorageInterface } from './storage-interface';
 
+import { type ExtendedStorageInterface } from './storage-interface';
 import { BrowserStorage } from './browser-storage';
 import { IDBStorage } from './idb-storage';
 

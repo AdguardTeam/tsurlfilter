@@ -164,7 +164,7 @@ Before running compiled app, load the web accessible resources for redirect rule
 via built-in cli:
 
 ```sh
- tswebextension war [path]
+tswebextension war [path]
 ```
 
 or integrate loading in your build pipeline:
@@ -173,9 +173,9 @@ or integrate loading in your build pipeline:
 import { copyWar, DEFAULT_WAR_PATH } from '@adguard/tswebextension/cli';
 
 const build = async () => {
-  ...
-  await copyWar(DEFAULT_WAR_PATH);
-  ...
+    ...
+    await copyWar(DEFAULT_WAR_PATH);
+    ...
 };
 ```
 
@@ -185,18 +185,18 @@ If path is not defined, the resources will be loaded to `build/war` relative to 
 
 The console interface provides useful tools for building extensions.
 
-```
+```text
 Usage: tswebextension [options] [command]
 
 CLI to some development utils
 
 Options:
-  -V, --version     output the version number
-  -h, --help        display help for command
+    -V, --version     output the version number
+    -h, --help        display help for command
 
 Commands:
-  war [path]        Downloads web accessible resources for redirect rules
-  help [command]    display help for command
+    war [path]        Downloads web accessible resources for redirect rules
+    help [command]    display help for command
 ```
 
 ## API
@@ -861,7 +861,7 @@ Event channel for [filtering log events](#filtering-log-api-mv2-only).
 
 type:
 
-```
+```ts
 <T extends FilteringEventType>(type: T, listener: FilteringLogListener<ExtractedFilteringLogEvent<T>>) => void
 ```
 
@@ -871,7 +871,7 @@ Registers a listener for the specified filtering event type.
 
 type:
 
-```
+```ts
 <T extends FilteringLogEvent>(event: T) => void
 ```
 
@@ -1041,7 +1041,7 @@ npx lerna run --scope=@adguard/tswebextension build
 
 Lint source code
 
-```
+```sh
 npx lerna run --scope=@adguard/tswebextension lint
 ```
 

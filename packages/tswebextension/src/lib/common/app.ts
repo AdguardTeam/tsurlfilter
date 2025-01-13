@@ -1,6 +1,7 @@
 import { type AnyRule } from '@adguard/agtree';
+
 import { type FilteringLogEvent } from './filtering-log';
-import { type EventChannelInterface } from './utils';
+import { type EventChannelInterface } from './utils/channels';
 
 export interface AppInterface<
     TConfiguration,

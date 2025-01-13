@@ -91,6 +91,6 @@ vi.mock('webextension-polyfill', () => {
     };
 });
 
-vi.mock('nanoid', () => ({
+vi.mock('nanoid/non-secure', () => ({
     nanoid: (): string => '1',
 }));

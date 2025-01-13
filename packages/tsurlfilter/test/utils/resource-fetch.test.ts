@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { fetchExtensionResourceText } from '../../src';
 import { type ByteRange } from '../../src/utils/byte-range';
 
@@ -19,7 +20,7 @@ describe('fetchExtensionResourceText', () => {
         // Mock the fetch function
         global.fetch = jest.fn(() => Promise.resolve({
             text: () => Promise.resolve(mockResponseText),
-        } as Response)) as jest.Mock;
+        } as Response)) as jest.Mock<typeof fetch>;
 
         const result = await fetchExtensionResourceText(url);
 
@@ -35,7 +36,7 @@ describe('fetchExtensionResourceText', () => {
         // Mock the fetch function
         global.fetch = jest.fn(() => Promise.resolve({
             text: () => Promise.resolve(mockResponseText),
-        } as Response)) as jest.Mock;
+        } as Response)) as jest.Mock<typeof fetch>;
 
         const expectedHeaders = {
             Range: `bytes=${byteRange.start}-${byteRange.end}`,
@@ -52,7 +53,7 @@ describe('fetchExtensionResourceText', () => {
         const mockError = new Error('Network error');
 
         // Mock the fetch function to throw an error
-        global.fetch = jest.fn(() => Promise.reject(mockError)) as jest.Mock;
+        global.fetch = jest.fn(() => Promise.reject(mockError)) as jest.Mock<typeof fetch>;
 
         await expect(fetchExtensionResourceText(url)).rejects.toThrow('Network error');
     });
@@ -66,7 +67,7 @@ describe('fetchExtensionResourceText', () => {
             status: 404,
             statusText: 'Not Found',
             text: () => Promise.resolve(''),
-        } as Response)) as jest.Mock;
+        } as Response)) as jest.Mock<typeof fetch>;
 
         const result = await fetchExtensionResourceText(url);
 
@@ -81,7 +82,7 @@ describe('fetchExtensionResourceText', () => {
         // Mock the fetch function
         global.fetch = jest.fn(() => Promise.resolve({
             text: () => Promise.resolve(mockResponseText),
-        } as Response)) as jest.Mock;
+        } as Response)) as jest.Mock<typeof fetch>;
 
         const result = await fetchExtensionResourceText(url, undefined);
 

@@ -9,7 +9,7 @@
 import { RuleConversionError } from '../../src/errors/rule-conversion-error';
 import { RuleConverter } from '../../src/converter/rule';
 import '../matchers/check-conversion';
-import { RuleParser } from '../../src/parser/rule';
+import { RuleParser } from '../../src/parser/rule-parser';
 
 describe('Converter integration tests', () => {
     describe('should convert rules to ADG', () => {

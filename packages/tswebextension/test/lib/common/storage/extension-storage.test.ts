@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import browser from 'webextension-polyfill';
 
 import { BrowserStorage } from '../../../../src/lib/common/storage/core';

@@ -1,4 +1,7 @@
-import { OutputByteBuffer, RuleParser, defaultParserOptions } from '@adguard/agtree';
+import { jest } from '@jest/globals';
+import { OutputByteBuffer } from '@adguard/agtree';
+import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
+import { RuleSerializer } from '@adguard/agtree/serializer';
 import {
     FilterListPreprocessor,
     type LightweightPreprocessedFilterList,
@@ -24,11 +27,10 @@ const makeSerializedFilterList = (rules: string[]): Uint8Array[] => {
             parseHostRules: false,
         });
 
-        RuleParser.serialize(node, buffer);
+        RuleSerializer.serialize(node, buffer);
     }
 
-    // TODO: Remove any cast
-    return (buffer as any).chunks;
+    return buffer.getChunks();
 };
 
 describe('FilterListPreprocessor', () => {

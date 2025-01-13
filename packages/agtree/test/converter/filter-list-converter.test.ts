@@ -1,6 +1,7 @@
-import { FilterListParser } from '../../src/parser/filterlist';
+import { FilterListParser } from '../../src/parser/filterlist-parser';
 import { NEWLINE } from '../../src/utils/constants';
 import { FilterListConverter } from '../../src/converter/filter-list';
+import { FilterListGenerator } from '../../src/generator/filterlist-generator';
 
 describe('FilterListConverter', () => {
     test('convertToAdg should leave non-affected filter lists as is', () => {
@@ -19,7 +20,7 @@ describe('FilterListConverter', () => {
 
         // Converted filter list should be the same as the original one
         expect(convertedFilterList.result.children).toHaveLength(filterListNode.children.length);
-        expect(FilterListParser.generate(convertedFilterList.result)).toBe(filterListContent);
+        expect(FilterListGenerator.generate(convertedFilterList.result)).toBe(filterListContent);
 
         // Rule object references should be the same
         convertedFilterList.result.children.forEach((rule, index) => {
@@ -69,7 +70,7 @@ describe('FilterListConverter', () => {
         expect(convertedFilterList.result).not.toBe(filterListNode);
 
         // Serialized filter lists should be equal with the expected one
-        expect(FilterListParser.generate(convertedFilterList.result)).toBe(expectedFilterListContent);
+        expect(FilterListGenerator.generate(convertedFilterList.result)).toBe(expectedFilterListContent);
 
         // Rule object references should be different
         convertedFilterList.result.children.forEach((convertedRule) => {
@@ -108,6 +109,6 @@ describe('FilterListConverter', () => {
         expect(tolerant).not.toThrow();
 
         // The rule should be left as is
-        expect(FilterListParser.generate(tolerant().result)).toBe(expectedFilterListContent);
+        expect(FilterListGenerator.generate(tolerant().result)).toBe(expectedFilterListContent);
     });
 });

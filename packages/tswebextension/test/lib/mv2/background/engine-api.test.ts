@@ -1,16 +1,27 @@
+import {
+    describe,
+    expect,
+    beforeAll,
+    beforeEach,
+    afterAll,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
 import { type CosmeticOption, Engine, CosmeticResult } from '@adguard/tsurlfilter';
 
-import { getConfigurationMv2Fixture } from './fixtures/configuration';
 import { type MatchQuery } from '../../../../src/lib/common/interfaces';
 import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
-import { appContext } from '../../../../src/lib/mv2/background/context';
+import { appContext } from '../../../../src/lib/mv2/background/app-context';
 import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
+
+import { getConfigurationMv2Fixture } from './fixtures/configuration';
 
 vi.mock('@adguard/tsurlfilter');
 vi.mock('../../../../src/lib/mv2/background/allowlist');
-vi.mock('../../../../src/lib/mv2/background/context');
+vi.mock('../../../../src/lib/mv2/background/app-context');
 vi.mock('../../../../src/lib/mv2/background/stealth-api');
 
 describe('Engine Api', () => {

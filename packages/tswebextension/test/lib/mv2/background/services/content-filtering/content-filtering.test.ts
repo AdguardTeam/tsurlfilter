@@ -2,6 +2,14 @@
  * @vitest-environment jsdom
  */
 import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
+import {
     MatchingResult,
     RequestType,
     CosmeticResult,

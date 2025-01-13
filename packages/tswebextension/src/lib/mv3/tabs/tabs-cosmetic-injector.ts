@@ -1,14 +1,15 @@
 import browser, { type Tabs } from 'webextension-polyfill';
 
-import { Frame } from './frame';
-import { TabContext } from './tab-context';
-import { tabsApi } from './tabs-api';
 import { logger } from '../../common/utils/logger';
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { CosmeticApi } from '../background/cosmetic-api';
 import { CosmeticFrameProcessor } from '../background/cosmetic-frame-processor';
-import { ContentType } from '../../common';
+import { ContentType } from '../../common/request-type';
 import { appContext } from '../background/app-context';
+
+import { Frame } from './frame';
+import { tabsApi } from './tabs-api';
+import { TabContext } from './tab-context';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -100,7 +101,8 @@ export class TabsCosmeticInjector {
             // Note: this is an async function, but we will not await it because
             // events do not support async listeners.
             Promise.all([
-                CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
+                CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
+                CosmeticApi.applyJsTextByTabAndFrame(tabId, frameId),
                 CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
                 CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
             ]).catch((e) => logger.error(e));

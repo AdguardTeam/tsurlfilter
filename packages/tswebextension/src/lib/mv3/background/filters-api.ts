@@ -6,13 +6,13 @@ import {
     RuleSetByteRangeCategory,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
-
 import {
     FilterListPreprocessor,
     type PreprocessedFilterList,
     preprocessedFilterListValidator,
 } from '@adguard/tsurlfilter';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
+
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { FiltersStorage, type PreprocessedFilterListWithChecksum } from '../../common/storage/filters';
 import { getErrorMessage } from '../../common/error';

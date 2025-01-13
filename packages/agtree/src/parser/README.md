@@ -22,7 +22,7 @@ Table of contents:
     - [Parsing single adblock rules](#parsing-single-adblock-rules)
     - [Generating adblock rules from AST](#generating-adblock-rules-from-ast)
     - [Parsing and generating complete filter lists](#parsing-and-generating-complete-filter-lists)
-- [Serializer / Deserializer](#serializer--deserializer)
+- [Serializer / Deserializer](#serializer--deserializer-api)
     - [Serialization](#serialization)
     - [Deserialization](#deserialization)
 
@@ -33,10 +33,10 @@ Table of contents:
 
 ## Parser API
 
-The parser API is available in the `@adguard/agtree` package:
+The parser API is available in the `@adguard/agtree/parser` entrypoint. You can import it like this:
 
 ```ts
-import { RuleParser, FilterListParser } from '@adguard/agtree';
+import { RuleParser, FilterListParser } from '@adguard/agtree/parser';
 ```
 
 The idea is quite simple, we provide two *main* parser classes:
@@ -46,12 +46,9 @@ The idea is quite simple, we provide two *main* parser classes:
 - `FilterListParser`: parses a complete adblock filter list, you can pass any filter list to it. Technically, it is just
   a wrapper around `RuleParser`
 
-Each parser class has the following methods:
+Each parser class provides the following method:
 
 - `parse`: parses a raw data (string) and returns an AST (Abstract Syntax Tree) node (string &#8594; AST)
-- `generate`: serializes an AST node back to a string (AST &#8594; string)
-- `serialize`: serializes an AST node to a byte buffer (AST &#8594; Buffer)
-- `deserialize`: deserializes data from a byte buffer to an AST node (Buffer &#8594; AST)
 
 We also provide some "sub-parser" classes, which are used by the main parser classes:
 
@@ -89,7 +86,7 @@ Currently, the following options are supported:
 The default parser options are stored in the `defaultParserOptions` object:
 
 ```typescript
-import { defaultParserOptions } from '@adguard/agtree';
+import { defaultParserOptions } from '@adguard/agtree/parser';
 ```
 
 #### Example of passing options
@@ -97,7 +94,7 @@ import { defaultParserOptions } from '@adguard/agtree';
 Here is an example of how to pass options to the `RuleParser`:
 
 ```typescript
-import { RuleParser, defaultParserOptions } from '@adguard/agtree';
+import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
 
 
 const ruleNode = RuleParser.parse("/ads.js^$script", {
@@ -203,12 +200,24 @@ As you can see, this AST is very detailed and contains all the information about
 modifiers, node locations, and so on. Locations are especially useful for linters, since they allow you to point to the
 exact place in the rule where the error occurred.
 
+## Generator API
+
+The generator API is available in the `@adguard/agtree/generator` entrypoint. You can import it like this:
+
+```typescript
+import { RuleGenerator } from '@adguard/agtree/generator';
+```
+
+The generator API provides the following method:
+
+- `generate`: serializes an AST node back to a string (AST &#8594; string)
+
 ### Generating adblock rules from AST
 
 If you want to generate a raw string rule from the AST, you can use the `generate` method:
 
 ```typescript
-RuleParser.generate(ast);
+RuleGenerator.generate(ast);
 ```
 
 This will generate the adblock rule back from the AST:
@@ -228,7 +237,8 @@ You can also parse complete filter lists using the `FilterListParser` class. It 
 class. Here is an example of parsing [EasyList](https://easylist.to/easylist/easylist.txt) and generating it back:
 
 ```typescript
-import { FilterListParser } from "@adguard/agtree";
+import { FilterListParser } from "@adguard/agtree/parser";
+import { FilterListGenerator } from "@adguard/agtree/generator";
 import { writeFile } from "fs/promises";
 // Requires installing "node-fetch" package
 // npm install node-fetch
@@ -250,15 +260,15 @@ const easyList = await (
 const ast = FilterListParser.parse(easyList);
 
 // Generate filter list from filter list AST
-const easyListGenerated = FilterListParser.generate(ast);
+const easyListGenerated = FilterListGenerator.generate(ast);
 
 // Write generated filter list to file
 await writeFile("easylist-generated.txt", easyListGenerated);
 ```
 
-## Serializer / Deserializer
+## Serializer / Deserializer API
 
-The parser also provides a way to serialize and deserialize AST nodes.
+The library also provides a way to serialize and deserialize AST nodes.
 Its makes possible to store AST nodes in an size-efficient binary format
 and restore them later without parsing the data again.
 
@@ -272,7 +282,7 @@ and restore them later without parsing the data again.
 1. You need an output byte buffer to serialize the AST node:
 
     ```typescript
-    import { OutputByteBuffer } from "@adguard/agtree";
+    import { OutputByteBuffer } from "@adguard/agtree/utils";
 
     const outBuffer = new OutputByteBuffer();
     ```
@@ -280,7 +290,8 @@ and restore them later without parsing the data again.
 2. Once you have the output buffer, you can serialize the AST node to it:
 
     ```typescript
-    RuleParser.serialize(ruleNode, outBuffer);
+    import { RuleSerializer } from "@adguard/agtree/serializer";
+    RuleSerializer.serialize(ruleNode, outBuffer);
     ```
 
     It will write the serialized data to the end of the buffer. If needed, it will automatically resize the buffer.
@@ -300,16 +311,17 @@ and restore them later without parsing the data again.
 2. You need an input byte buffer to deserialize the AST node:
 
     ```typescript
-    import { InputByteBuffer } from "@adguard/agtree";
+    import { InputByteBuffer } from "@adguard/agtree/utils";
 
-    const inBuffer = new InputByteBuffer(outBuffer.buffer);
+    const inBuffer = new InputByteBuffer(outBuffer.getChunks());
     ```
 
 3. Once you have the input buffer, you can deserialize the AST node from it:
 
     ```typescript
+    import { RuleDeserializer } from "@adguard/agtree/deserializer";
     let ruleNode: AnyRule;
-    RuleParser.deserialize(inBuffer, ruleNode = {} as AnyRule);
+    RuleDeserializer.deserialize(inBuffer, ruleNode = {} as AnyRule);
     ```
 
     It will read the serialized data from the actual position of the buffer and write it to the `ruleNode` object,

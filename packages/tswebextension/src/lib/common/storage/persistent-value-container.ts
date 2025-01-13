@@ -1,5 +1,6 @@
 import { debounce } from 'lodash-es';
 import browser, { type Manifest } from 'webextension-polyfill';
+
 import { type ExtendedStorageInterface } from './core/storage-interface';
 
 /**

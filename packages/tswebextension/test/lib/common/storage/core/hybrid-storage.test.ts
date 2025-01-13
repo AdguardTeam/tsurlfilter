@@ -1,6 +1,16 @@
 import * as idb from 'idb';
 import browser from 'webextension-polyfill';
 import { cloneDeep } from 'lodash-es';
+import {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
+
 import { HybridStorage } from '../../../../../src/lib/common/storage/core/hybrid-storage';
 import { IDBStorage } from '../../../../../src/lib/common/storage/core/idb-storage';
 import { BrowserStorage } from '../../../../../src/lib/common/storage/core/browser-storage';

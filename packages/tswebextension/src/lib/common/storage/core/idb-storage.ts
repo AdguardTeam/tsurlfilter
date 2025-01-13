@@ -4,9 +4,9 @@
 
 import * as idb from 'idb';
 
-import { type ExtendedStorageInterface } from './storage-interface';
-
 import { logger } from '../../utils/logger';
+
+import { type ExtendedStorageInterface } from './storage-interface';
 
 /**
  * Provides a storage mechanism using IndexedDB. This class implements the

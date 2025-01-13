@@ -1,5 +1,7 @@
 import { type PreprocessedFilterList } from '@adguard/tsurlfilter';
+
 import { logger } from '../utils/logger';
+
 import { IDBStorage } from './core/idb-storage';
 
 /**

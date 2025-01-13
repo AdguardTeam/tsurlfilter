@@ -2,7 +2,7 @@
  * @file Scriptlet injection rule converter
  */
 
-import { CosmeticRuleSeparator, type ParameterList, type ScriptletInjectionRule } from '../../parser/common';
+import { CosmeticRuleSeparator, type ParameterList, type ScriptletInjectionRule } from '../../nodes';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { QuoteType, QuoteUtils } from '../../utils/quotes';

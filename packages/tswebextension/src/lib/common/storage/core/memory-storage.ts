@@ -3,7 +3,9 @@
  */
 
 import { cloneDeep } from 'lodash-es';
+
 import { logger } from '../../utils/logger';
+
 import { type ExtendedStorageInterface } from './storage-interface';
 
 /**
@@ -73,7 +75,7 @@ export class MemoryStorage<Data = unknown> implements ExtendedStorageInterface<s
             Object.assign(
                 this.store,
                 Object.entries(clonedData).reduce((acc, [key, value]) => {
-                    acc[key] = value;
+                    acc[key] = value as Data;
                     return acc;
                 }, {} as Record<string, Data>),
             );

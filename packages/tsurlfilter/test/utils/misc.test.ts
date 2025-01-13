@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { TAB } from '../../src/common/constants';
 import { uint8ArrayToBase64, base64ToUint8Array, serializeJson } from '../../src/utils/misc';
 

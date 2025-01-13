@@ -1,10 +1,19 @@
+import {
+    describe,
+    expect,
+    beforeAll,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
-import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
 import { extSessionStorage, TabsApi, TabsCosmeticInjector } from '../../../../../src/lib';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
-import { appContext } from '../../../../../src/lib/mv2/background/context';
+import { appContext } from '../../../../../src/lib/mv2/background/app-context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';
@@ -13,7 +22,7 @@ import { ContentType } from '../../../../../src/lib/common/request-type';
 vi.mock('../../../../../src/lib/mv2/background/engine-api');
 vi.mock('../../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../../src/lib/mv2/background/cosmetic-api');
-vi.mock('../../../../../src/lib/mv2/background/context');
+vi.mock('../../../../../src/lib/mv2/background/app-context');
 vi.mock('../../../../../src/lib/mv2/background/stealth-api');
 vi.mock('../../../../../src/lib/mv2/background/document-api');
 

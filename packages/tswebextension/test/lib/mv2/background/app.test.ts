@@ -1,7 +1,13 @@
-import type { Runtime } from 'webextension-polyfill';
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
+import { type Runtime } from 'webextension-polyfill';
 
-import { getConfigurationMv2Fixture } from './fixtures/configuration';
-import { MockAppContext } from './mocks/mock-context';
 import {
     type ConfigurationMV2,
     createTsWebExtension,
@@ -12,8 +18,11 @@ import {
 import { Assistant } from '../../../../src/lib/mv2/background/assistant';
 import { type Message } from '../../../../src/lib/common/message';
 
+import { MockAppContext } from './mocks/mock-app-context';
+import { getConfigurationMv2Fixture } from './fixtures/configuration';
+
 vi.mock('../../../../src/lib/mv2/background/ext-session-storage');
-vi.mock('../../../../src/lib/mv2/background/context', () => ({
+vi.mock('../../../../src/lib/mv2/background/app-context', () => ({
     appContext: vi.fn(() => new MockAppContext()),
 }));
 vi.mock('../../../../src/lib/mv2/background/web-request-api');

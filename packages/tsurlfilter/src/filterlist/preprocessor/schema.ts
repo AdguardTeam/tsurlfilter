@@ -50,4 +50,7 @@ export const preprocessedFilterListValidator = z.object({
     sourceMap: filterListSourceMapValidator,
 });
 
-export type PreprocessedFilterList = z.infer<typeof preprocessedFilterListValidator>;
+// FIXME: Fix conflict between Uint8Array<ArrayBuffer> and Uint8Array<ArrayBufferLike>, caused by TS upgrade.
+export type PreprocessedFilterList = Omit<z.infer<typeof preprocessedFilterListValidator>, 'filterList'> & {
+    filterList: Uint8Array[];
+};

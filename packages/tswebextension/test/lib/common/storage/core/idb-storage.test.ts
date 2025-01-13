@@ -1,3 +1,12 @@
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
+
 import { IDBStorage } from '../../../../../src/lib/common/storage/core/idb-storage';
 
 describe('IDBStorage', () => {

@@ -1,20 +1,20 @@
 import browser, { type Tabs } from 'webextension-polyfill';
-import type { NetworkRule } from '@adguard/tsurlfilter';
+import { type NetworkRule } from '@adguard/tsurlfilter';
 
-import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
-import { EventChannel } from '../../common/utils/channels';
-import { type FrameRequestContext, TabContext } from './tab-context';
-import { type Frame } from './frame';
-import { DocumentApi } from '../background/document-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
-import { logger } from '../../common';
+import { type TabFrameRequestContextCommon } from '../../common/tabs/tabs-api';
+import { EventChannel } from '../../common/utils/channels';
+import { logger } from '../../common/utils/logger';
+import { getDomain, isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
+import { DocumentApi } from '../background/document-api';
+
+import { type Frame } from './frame';
+import { TabContext } from './tab-context';
 
 /**
  * Request context data related to the tab's frame.
  */
-export type TabFrameRequestContext = FrameRequestContext & {
-    tabId: number;
-};
+export type TabFrameRequestContextMV3 = TabFrameRequestContextCommon;
 
 /**
  * TabsApi works with {@link browser.tabs} to record tabs' URLs - they are
@@ -62,7 +62,7 @@ export class TabsApi {
         browser.tabs.onReplaced.addListener(this.handleTabReplace);
 
         // Firefox for android doesn't support windows API
-        // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/windows#chrome_compatibility
+        // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/windows#browser_compatibility
         if (browser.windows) {
             browser.windows.onFocusChanged.addListener(this.onWindowFocusChanged);
         }
@@ -387,6 +387,27 @@ export class TabsApi {
     }
 
     /**
+     * Sets main frame rule for the tab context and for the frame context.
+     *
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     * @param frameRule Frame rule.
+     */
+    public setMainFrameRule(tabId: number, frameId: number, frameRule: NetworkRule | null): void {
+        const tabContext = this.getTabContext(tabId);
+
+        if (tabContext && frameId === MAIN_FRAME_ID) {
+            tabContext.mainFrameRule = frameRule;
+        }
+
+        if (frameRule) {
+            this.updateFrameContext(tabId, frameId, { frameRule });
+        } else {
+            this.updateFrameContext(tabId, frameId, { frameRule: undefined });
+        }
+    }
+
+    /**
      * Updates the frame context with additional data.
      *
      * @param tabId The ID of the tab.
@@ -397,13 +418,10 @@ export class TabsApi {
      */
     public updateFrameContext(tabId: number, frameId: number, partialFrameContext: Partial<Frame>): void {
         const tabContext = this.getTabContext(tabId);
+
         if (!tabContext) {
             logger.debug('At this point tab context should already exist');
             return;
-        }
-
-        if (frameId === MAIN_FRAME_ID && partialFrameContext.frameRule) {
-            tabContext.mainFrameRule = partialFrameContext.frameRule;
         }
 
         const frameContext = tabContext?.getFrameContext(frameId);

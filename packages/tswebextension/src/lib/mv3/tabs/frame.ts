@@ -5,15 +5,22 @@ import {
     type ScriptletData,
 } from '@adguard/tsurlfilter';
 
+import { type LocalScriptFunction } from '../background/services/local-script-rules-service';
+
 /**
  * Prepared cosmetic result.
  * This type represents the processed cosmetic data extracted from the initial cosmetic result.
  */
 type PreparedCosmeticResult = {
     /**
-     * Script text extracted from the cosmetic result.
+     * Script text extracted from the cosmetic result from rules added by user — User rules and Custom filters.
      */
-    scriptText: string;
+    localScriptText: string;
+
+    /**
+     * Script functions extracted from the pre-built filters.
+     */
+    localScriptFunctions: LocalScriptFunction[],
 
     /**
      * A list of scriptlet data extracted from the cosmetic result.
@@ -108,8 +115,6 @@ export class Frame {
     /**
      * The cosmetic result for the frame.
      * This data is stored in the frame because it is required for logging script and scriptlet rules.
-     *
-     * @see {@link WebRequestApi.injectCosmetic}
      */
     public cosmeticResult?: CosmeticResult;
 

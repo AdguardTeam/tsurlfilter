@@ -12,7 +12,9 @@ import {
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import { getRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import browser from 'webextension-polyfill';
-import { getErrorMessage, logger } from '../../common';
+
+import { logger } from '../../common/utils/logger';
+import { getErrorMessage } from '../../common/error';
 
 const JSON_ARRAY_OPENING_BRACKET = '[';
 const JSON_ARRAY_CLOSING_BRACKET = ']';

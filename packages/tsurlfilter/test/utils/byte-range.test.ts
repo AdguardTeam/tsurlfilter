@@ -1,12 +1,32 @@
-import { jsonpos, type Location } from 'jsonpos';
-import { getUtf8EncodedLength } from '../../src';
-import { getByteRangeFor } from '../../src/utils/byte-range';
+// TODO: When switching to Vitest, we may can re-use this:
 
-jest.mock('jsonpos');
-jest.mock('../../src/utils/string-utils');
+// import { jest } from '@jest/globals';
+// import { jsonpos, type Location } from 'jsonpos';
+// import { getUtf8EncodedLength } from '../../src/utils/string-utils';
+// import { getByteRangeFor } from '../../src/utils/byte-range';
 
-const mockedJsonpos = jsonpos as jest.MockedFunction<typeof jsonpos>;
-const mockedGetUtf8EncodedLength = getUtf8EncodedLength as jest.MockedFunction<typeof getUtf8EncodedLength>;
+// jest.mock('jsonpos');
+// jest.mock('../../src/utils/string-utils');
+
+// const mockedJsonpos = jsonpos as jest.MockedFunction<typeof jsonpos>;
+// const mockedGetUtf8EncodedLength = getUtf8EncodedLength as jest.MockedFunction<typeof getUtf8EncodedLength>;
+
+import { jest } from '@jest/globals';
+import { type Location } from 'jsonpos'; // Import only types
+
+const mockedJsonpos = jest.fn();
+jest.unstable_mockModule('jsonpos', () => ({
+    jsonpos: mockedJsonpos,
+}));
+
+// eslint-disable-next-line max-len, @typescript-eslint/consistent-type-imports
+const mockedGetUtf8EncodedLength = jest.fn() as jest.MockedFunction<typeof import('../../src/utils/string-utils').getUtf8EncodedLength>;
+jest.unstable_mockModule('../../src/utils/string-utils', () => ({
+    getUtf8EncodedLength: mockedGetUtf8EncodedLength,
+}));
+
+// Import the actual implementation after mocking
+const { getByteRangeFor } = await import('../../src/utils/byte-range');
 
 describe('getByteRangeFor', () => {
     beforeEach(() => {
