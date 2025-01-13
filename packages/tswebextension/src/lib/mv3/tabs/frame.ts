@@ -4,7 +4,6 @@ import {
     type NetworkRule,
     type ScriptletData,
 } from '@adguard/tsurlfilter';
-import { type LocalScriptFunction } from '../background/services/local-script-rules-service';
 
 /**
  * Prepared cosmetic result.
@@ -12,14 +11,9 @@ import { type LocalScriptFunction } from '../background/services/local-script-ru
  */
 type PreparedCosmeticResult = {
     /**
-     * Script text extracted from the cosmetic result from rules added by user — User rules and Custom filters.
+     * Script texts extracted from the cosmetic result.
      */
-    localScriptText: string;
-
-    /**
-     * Script functions extracted from the pre-built filters.
-     */
-    localScriptFunctions: LocalScriptFunction[],
+    scriptTexts: string[],
 
     /**
      * A list of scriptlet data extracted from the cosmetic result.
