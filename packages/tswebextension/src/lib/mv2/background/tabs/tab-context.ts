@@ -178,7 +178,7 @@ export class TabContext {
      * @param frameId Frame id.
      * @returns Frame context.
      */
-    getFrameContext(frameId: number): FrameMV2 | undefined {
+    public getFrameContext(frameId: number): FrameMV2 | undefined {
         return this.frames.get(frameId);
     }
 
@@ -188,7 +188,7 @@ export class TabContext {
      * @param frameId Frame id.
      * @param frameContext Frame context.
      */
-    setFrameContext(frameId: number, frameContext: FrameMV2): void {
+    public setFrameContext(frameId: number, frameContext: FrameMV2): void {
         this.frames.set(frameId, frameContext);
     }
 
@@ -198,7 +198,7 @@ export class TabContext {
      * @param documentId Unique identifier of the frame.
      * @param frameId Frame id.
      */
-    setDocumentId(documentId: string, frameId: number): void {
+    public setDocumentId(documentId: string, frameId: number): void {
         this.documentIdsMap.set(documentId, frameId);
     }
 
@@ -209,7 +209,7 @@ export class TabContext {
      *
      * @returns Frame context.
      */
-    getFrameContextByDocumentId(documentId: string): FrameMV2 | undefined {
+    public getFrameContextByDocumentId(documentId: string): FrameMV2 | undefined {
         const frameId = this.documentIdsMap.get(documentId);
 
         // frameId might be 0, do not use falsy check
@@ -222,10 +222,11 @@ export class TabContext {
 
     /**
      * Deletes the frame context.
+     *
      * @param frameId The ID of the frame to delete.
      * @param maxFrameAgeMs The maximum allowed frame age in milliseconds.
      */
-    deleteFrameContext(frameId: number, maxFrameAgeMs: number): void {
+    public deleteFrameContext(frameId: number, maxFrameAgeMs: number): void {
         // The main frame should only be deleted when the tab is closed,
         // as it may be needed for sub frames created during the page's lifetime
         // or for retrieving the main frame rule.
@@ -255,7 +256,7 @@ export class TabContext {
      * Since document frames are not removed, but rather updated, document IDs can become stale.
      * This method clears stale document IDs.
      */
-    clearStaleDocumentIds(): void {
+    private clearStaleDocumentIds(): void {
         const documentIdsLeft = this.frames.values()
             .map((frame) => frame.documentId)
             .filter(identity);
@@ -276,7 +277,7 @@ export class TabContext {
      *
      * @param maxFrameAgeMs The maximum allowed frame age in milliseconds.
      */
-    clearStaleFrames(maxFrameAgeMs: number): void {
+    public clearStaleFrames(maxFrameAgeMs: number): void {
         const values = this.frames.values();
         for (const value of values) {
             this.deleteFrameContext(value.frameId, maxFrameAgeMs);
