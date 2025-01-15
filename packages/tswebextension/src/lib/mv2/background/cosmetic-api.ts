@@ -184,9 +184,18 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
-        const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
+        let cosmeticResult;
 
-        const cosmeticResult = engineApi.matchCosmetic(matchQuery);
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        if (!frameContext || !frameContext.cosmeticResult) {
+            const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
+
+            cosmeticResult = engineApi.matchCosmetic(matchQuery);
+
+            tabsApi.updateFrameContext(tabId, frameId, { cosmeticResult });
+        } else {
+            cosmeticResult = frameContext.cosmeticResult;
+        }
 
         data.extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, areHitsStatsCollected);
 
