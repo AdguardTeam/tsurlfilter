@@ -1,6 +1,6 @@
 import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
-import { LF } from './constants';
+import { LF, SEMICOLON } from './constants';
 import { type ContentType } from './request-type';
 
 /**
@@ -75,14 +75,9 @@ export class CosmeticApiCommon {
     protected static readonly INJECT_HIT_START = " content: 'adguard";
 
     /**
-     * Semicolon.
-     */
-    protected static readonly SEMICOLON = ';';
-
-    /**
      * Separator for hit stats.
      */
-    protected static readonly HIT_SEP = encodeURIComponent(CosmeticApiCommon.SEMICOLON);
+    protected static readonly HIT_SEP = encodeURIComponent(SEMICOLON);
 
     /**
      * Element hiding CSS style ending.
@@ -211,9 +206,9 @@ export class CosmeticApiCommon {
         // remove closing brace
         const ruleTextWithoutCloseBrace = ruleContent.slice(0, -1).trim();
         // check semicolon
-        const ruleTextWithSemicolon = ruleTextWithoutCloseBrace.endsWith(CosmeticApiCommon.SEMICOLON)
+        const ruleTextWithSemicolon = ruleTextWithoutCloseBrace.endsWith(SEMICOLON)
             ? ruleTextWithoutCloseBrace
-            : `${ruleTextWithoutCloseBrace}${CosmeticApiCommon.SEMICOLON}`;
+            : `${ruleTextWithoutCloseBrace}${SEMICOLON}`;
         result.push(ruleTextWithSemicolon);
         result.push(CosmeticApiCommon.INJECT_HIT_START);
         result.push(rule.getFilterListId());
@@ -344,9 +339,9 @@ export class CosmeticApiCommon {
         uniqueScriptStrings.forEach((rawScriptStr) => {
             const script = rawScriptStr.trim();
 
-            scriptText += script.endsWith(CosmeticApiCommon.SEMICOLON)
+            scriptText += script.endsWith(SEMICOLON)
                 ? `${script}${LF}`
-                : `${script}${CosmeticApiCommon.SEMICOLON}${LF}`;
+                : `${script}${SEMICOLON}${LF}`;
         });
 
         return scriptText;

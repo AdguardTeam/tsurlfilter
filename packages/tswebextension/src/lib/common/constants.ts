@@ -31,6 +31,11 @@ export const BACKGROUND_TAB_ID = -1;
 export const LF = '\n';
 
 /**
+ * Semicolon character.
+ */
+export const SEMICOLON = ';';
+
+/**
  * Timeout used for deletion of request context data and frame context data from the storage.
  */
 export const FRAME_DELETION_TIMEOUT_MS = 3000;
