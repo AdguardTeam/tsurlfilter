@@ -133,6 +133,7 @@ export class TabContext {
      *
      * @param tab Webextension API tab data.
      * @param documentApi Document API.
+     *
      * @returns Tab context for new tab.
      */
     public static createNewTabContext(tab: TabInfoMV2, documentApi: DocumentApi): TabContext {
@@ -173,6 +174,7 @@ export class TabContext {
 
     /**
      * Get frame context.
+     *
      * @param frameId Frame id.
      * @returns Frame context.
      */
@@ -182,6 +184,7 @@ export class TabContext {
 
     /**
      * Set frame context.
+     *
      * @param frameId Frame id.
      * @param frameContext Frame context.
      */
@@ -191,6 +194,7 @@ export class TabContext {
 
     /**
      * Set document id.
+     *
      * @param documentId Unique identifier of the frame.
      * @param frameId Frame id.
      */
@@ -200,7 +204,9 @@ export class TabContext {
 
     /**
      * Get frame context by document id.
+     *
      * @param documentId Unique identifier of the frame.
+     *
      * @returns Frame context.
      */
     getFrameContextByDocumentId(documentId: string): FrameMV2 | undefined {
@@ -267,6 +273,7 @@ export class TabContext {
 
     /**
      * Clears stale frames.
+     *
      * @param maxFrameAgeMs The maximum allowed frame age in milliseconds.
      */
     clearStaleFrames(maxFrameAgeMs: number): void {
