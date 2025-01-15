@@ -19,6 +19,8 @@ import { type TabsApi } from './tabs/tabs-api';
 
 /**
  * Cosmetic frame processor.
+ *
+ * Needed to properly handle cosmetic rules for frames, especially for 'about:blank' frames.
  */
 export class CosmeticFrameProcessor {
     /**
