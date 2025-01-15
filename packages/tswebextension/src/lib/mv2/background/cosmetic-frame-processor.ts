@@ -265,7 +265,10 @@ export class CosmeticFrameProcessor {
 
     /**
      * Precalculate cosmetic rules for the request.
-     * This method used in the webNavigation.onBeforeNavigate event and webRequest.onBeforeRequest event.
+     *
+     * This method used in the webNavigation.onBeforeNavigate event and webRequest.onBeforeRequest event —
+     * as sooner as possible to calculate cosmetic rules for the request,
+     * so after that they can be applied on further events without additional calculations.
      *
      * @param props Precalculate cosmetic props.
      */

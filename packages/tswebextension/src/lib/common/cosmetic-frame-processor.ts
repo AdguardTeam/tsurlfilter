@@ -1,5 +1,7 @@
 /**
  * Precalculate cosmetic props.
+ *
+ * For more details see CosmeticFrameProcessor.precalculateCosmetics().
  */
 export type PrecalculateCosmeticProps = {
     /**
