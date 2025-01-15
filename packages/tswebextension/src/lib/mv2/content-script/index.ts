@@ -6,8 +6,10 @@ import { CookieController, type CookieRule } from '../../common/content-script/c
 import { CosmeticController } from './cosmetic-controller';
 import { initAssistant } from './assistant';
 
+// TODO: check where it is used and why re-exported
 export { StealthHelper } from '../../common/stealth-helper';
 export { CookieController } from '../../common/content-script/cookie-controller';
+// TODO: check where it is used and why re-exported
 export { CssHitsCounter } from '../../common/content-script/css-hits-counter';
 
 const cosmeticController = new CosmeticController();
