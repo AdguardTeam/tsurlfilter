@@ -712,7 +712,7 @@ export class WebRequestApi {
     ): string | undefined {
         const {
             tabId,
-            // supported by chrome 106+
+            // supported by Chrome 106+
             // but not supported by Firefox so it is calculated based on tabId and frameId
             // @ts-ignore
             parentDocumentId,
@@ -764,7 +764,7 @@ export class WebRequestApi {
         const {
             tabId,
             frameId,
-            // supported by chrome 106+
+            // supported by Chrome 106+
             // but not supported by Firefox so it is calculated based on tabId and frameId
             // @ts-ignore
             documentId,
@@ -820,7 +820,7 @@ export class WebRequestApi {
         const {
             tabId,
             frameId,
-            // supported by chrome 106+
+            // supported by Chrome 106+
             // but not supported by Firefox so it is calculated based on tabId and frameId
             // @ts-ignore
             documentId,

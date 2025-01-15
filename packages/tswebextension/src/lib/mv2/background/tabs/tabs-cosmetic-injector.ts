@@ -83,7 +83,7 @@ export class TabsCosmeticInjector {
             const {
                 url,
                 frameId,
-                // both parentDocumentId and documentId supported by chrome 106+
+                // both parentDocumentId and documentId supported by Chrome 106+
                 // but not supported by Firefox so it is calculated based on tabId and frameId
                 // @ts-ignore
                 parentDocumentId,
