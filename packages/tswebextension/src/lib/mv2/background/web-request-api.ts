@@ -204,7 +204,7 @@ import {
 } from './request';
 import { SanitizeApi } from './sanitize-api';
 import { stealthApi } from './stealth-api';
-import { isFirefox, isOpera } from './utils/browser-detector';
+import { isOpera } from './utils/browser-detector';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -220,6 +220,13 @@ export type InjectCosmeticParams = {
  * Web Request API and web navigation events.
  */
 export class WebRequestApi {
+    /**
+     * Value of the parent frame id if no parent frame exists.
+     *
+     * @see {@link WebRequest.OnBeforeRequestDetailsType#parentFrameId}
+     */
+    private static readonly NO_PARENT_FRAME_ID = -1;
+
     /**
      * Adds listeners to web request events.
      */
@@ -262,6 +269,7 @@ export class WebRequestApi {
 
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommittedOperaHook);
+        browser.webNavigation.onBeforeNavigate.removeListener(WebRequestApi.onBeforeNavigate);
         browser.webNavigation.onDOMContentLoaded.removeListener(WebRequestApi.onDomContentLoaded);
         browser.webNavigation.onCompleted.removeListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onErrorOccurred.removeListener(WebRequestApi.deleteFrameContext);
@@ -594,11 +602,9 @@ export class WebRequestApi {
      *
      * @param event The event that occurred upon completion of the request.
      * @param event.context The context of the completed event.
-     * @param event.details The details of the completed event.
      */
     private static onCompleted({
         context,
-        details,
     }: RequestData<WebRequest.OnCompletedDetailsType>): void {
         if (!context) {
             return;
@@ -612,14 +618,6 @@ export class WebRequestApi {
             timestamp,
             contentType,
         } = context;
-
-        /**
-         * If the request is a subdocument request in Firefox, try injecting frame cosmetic result into frame,
-         * because {@link WebRequestApi.onCommitted} can be not triggered.
-         */
-        if (isFirefox || requestType === RequestType.SubDocument) {
-            WebRequestApi.injectCosmetic(details);
-        }
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
@@ -696,7 +694,7 @@ export class WebRequestApi {
      *
      * @returns ID as a string based on tab and frame IDs.
      */
-    private static generateIdForFirefox(tabId: number, frameId: number): string {
+    private static generateId(tabId: number, frameId: number): string {
         return `${tabId}-${frameId}`;
     }
 
@@ -708,7 +706,7 @@ export class WebRequestApi {
      * @returns Parent document ID.
      */
     private static calcParentDocumentId(
-        details: WebNavigation.OnBeforeNavigateDetailsType | WebRequest.OnCompletedDetailsType,
+        details: WebNavigation.OnBeforeNavigateDetailsType | WebRequest.OnBeforeRequestDetailsType,
     ): string | undefined {
         const {
             tabId,
@@ -719,16 +717,13 @@ export class WebRequestApi {
             parentFrameId,
         } = details;
 
-        let resParentDocumentId = parentDocumentId;
-
-        if (isFirefox) {
-            resParentDocumentId = parentFrameId >= 0
-                ? WebRequestApi.generateIdForFirefox(tabId, parentFrameId)
-                // no parent frame for the main frame
-                : undefined;
+        if (typeof parentDocumentId !== 'undefined') {
+            return parentDocumentId;
         }
 
-        return resParentDocumentId;
+        return parentFrameId === WebRequestApi.NO_PARENT_FRAME_ID
+            ? undefined
+            : WebRequestApi.generateId(tabId, parentFrameId);
     }
 
     /**
@@ -775,8 +770,8 @@ export class WebRequestApi {
             tabId,
             frameId,
             {
-                documentId: isFirefox
-                    ? WebRequestApi.generateIdForFirefox(tabId, frameId)
+                documentId: typeof documentId === 'undefined'
+                    ? WebRequestApi.generateId(tabId, frameId)
                     : documentId,
             },
         );
@@ -831,8 +826,8 @@ export class WebRequestApi {
             tabId,
             frameId,
             {
-                documentId: isFirefox
-                    ? WebRequestApi.generateIdForFirefox(tabId, frameId)
+                documentId: typeof documentId === 'undefined'
+                    ? WebRequestApi.generateId(tabId, frameId)
                     : documentId,
             },
         );
