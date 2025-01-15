@@ -175,12 +175,12 @@ export class CosmeticApiCommon {
      * @returns Rule with modified stylesheet, containing content marker.
      */
     private static addMarkerToElemhideRule(rule: CosmeticRule): string {
-        const result = [];
+        const result: string[] = [];
         result.push(rule.getContent());
         result.push(CosmeticApiCommon.ELEMHIDE_HIT_START);
-        result.push(rule.getFilterListId());
+        result.push(String(rule.getFilterListId()));
         result.push(CosmeticApiCommon.HIT_SEP);
-        result.push(rule.getIndex());
+        result.push(String(rule.getIndex()));
         result.push(CosmeticApiCommon.HIT_END);
         return result.join('');
     }
