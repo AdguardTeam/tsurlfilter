@@ -112,14 +112,23 @@ export class CssTokenStream {
         // - end: end index of the token
         // - props: additional properties of the token, if any (we don't use it here, this is why we use underscore)
         // - balance: balance level of the token
-        tokenizeBalanced(source, (type, start, end, _, balance) => {
-            this.tokens.push({
-                type,
-                start,
-                end,
-                balance,
+        try {
+            tokenizeBalanced(source, (type, start, end, _, balance) => {
+                this.tokens.push({
+                    type,
+                    start,
+                    end,
+                    balance,
+                });
             });
-        });
+        } catch (error) {
+            // If the error is an AdblockSyntaxError, adjust the error positions to the base offset
+            if (error instanceof AdblockSyntaxError) {
+                error.start += baseOffset;
+                error.end += baseOffset;
+                throw error;
+            }
+        }
 
         this.index = 0;
 
