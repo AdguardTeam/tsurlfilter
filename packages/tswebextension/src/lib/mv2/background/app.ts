@@ -248,9 +248,12 @@ MessageHandlerMV2
     }
 
     /**
-     * Sets prebuild local script rules.
+     * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
      *
-     * @see {@link LocalScriptRulesService}
+     * This is STEP 2.2: Local script rules are passed to the engine via this API method.
+     */
+    /**
+     * Sets prebuild local script rules.
      *
      * @param localScriptRules JSON object with pre-build JS rules. @see {@link LocalScriptRulesService}.
      */

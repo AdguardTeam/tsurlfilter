@@ -17,6 +17,7 @@ import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-
 import { getDomain } from '../../common/utils/url';
 import { type ContentType } from '../../common/request-type';
 import { nanoid } from '../nanoid';
+import { localScriptRulesService } from './services/local-script-rules-service';
 
 export type ContentScriptCosmeticData = {
     /**
@@ -36,10 +37,17 @@ export type ContentScriptCosmeticData = {
 };
 
 /**
- * Script text and scriptlets.
+ * Data for JS and scriptlets rules.
  */
-type ScriptTextAndScriptlets = {
-    scriptText: string,
+type ScriptsAndScriptletsData = {
+    /**
+     * Script texts from JS rules.
+     */
+    scriptTexts: string[],
+
+    /**
+     * List of scriptlet data objects. No need to separate them by type since they are all safe.
+     */
     scriptletDataList: ScriptletData[]
 };
 
@@ -162,45 +170,54 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Generates script text and retrieves a list of scriptlet data from cosmetic rules.
+     * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+     *
+     * This is STEP 3: All previously matched script rules are processed and filtered:
+     * - JS rules from pre-built filters (previously collected, pre-built and passed to the engine)
+     *   are going to be executed as functions via chrome.scripting API.
+     */
+    /**
+     * Generates data for scriptlets and local scripts:
+     * - functions for scriptlets,
+     * - script texts for JS rules from pre-built filters.
      *
      * @param cosmeticResult Object containing cosmetic rules.
-     * @returns An object with:
-     * - `scriptText`: The aggregated script text, wrapped for safe execution.
-     * - `scriptletDataList`: An array of scriptlet data objects.
+     *
+     * @returns An object with data for scriptlets and script texts.
      */
-    public static getScriptTextAndScriptlets(cosmeticResult: CosmeticResult): ScriptTextAndScriptlets {
+    public static getScriptsAndScriptletsData(cosmeticResult: CosmeticResult): ScriptsAndScriptletsData {
         const rules = cosmeticResult.getScriptRules();
+
         if (rules.length === 0) {
             return {
-                scriptText: '',
+                scriptTexts: [],
                 scriptletDataList: [],
             };
         }
 
-        const uniqueScripts = new Set();
+        const uniqueScriptTexts = new Set<string>();
         const scriptletDataList = [];
 
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
-            if (!rule.isScriptlet) {
-                // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
-                //  are actually used in the rules. If not, avoid injecting them to reduce overhead.
-                uniqueScripts.add(rule.getScript());
-            } else {
+            if (rule.isScriptlet) {
                 const scriptletData = rule.getScriptletData();
                 if (scriptletData) {
                     scriptletDataList.push(scriptletData);
                 }
+            } else {
+                // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
+                //  are actually used in the rules. If not, avoid injecting them to reduce overhead.
+
+                const ruleScriptText = rule.getContent();
+                if (ruleScriptText) {
+                    uniqueScriptTexts.add(ruleScriptText);
+                }
             }
         }
 
-        const scriptText = [...uniqueScripts].join(';\n');
-
-        const wrappedScriptText = CosmeticApi.wrapScriptText(scriptText);
-
         return {
-            scriptText: wrappedScriptText,
+            scriptTexts: [...uniqueScriptTexts],
             scriptletDataList,
         };
     }
@@ -253,48 +270,57 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Determines if a blob should be used for script injection based on the request URL.
-     * This method is used in scenarios where inline scripts are blocked by a Content Security Policy (CSP),
-     * but blobs are allowed.
-     * A common example of this is on websites like Facebook.
-     *
-     * @param url The URL of the main frame or frame URL.
-     * @returns True if a blob should be used for injection; otherwise, false.
-     */
-    private static shouldUseBlob(url: string): boolean {
-        const domain = getDomain(url);
-
-        if (!domain) {
-            return false;
-        }
-
-        return CosmeticApi.BLOB_INJECTION_URLS.has(domain);
-    }
-
-    /**
      * Injects js to specified tab and frame.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    public static async applyJsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+    public static async applyJsFuncsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        const scriptText = frameContext?.preparedCosmeticResult?.scriptText;
+        if (!frameContext) {
+            return;
+        }
 
-        if (!scriptText) {
+        const scriptTexts = frameContext.preparedCosmeticResult?.scriptTexts;
+
+        if (!scriptTexts || scriptTexts.length === 0) {
             return;
         }
 
         try {
-            await ScriptingApi.executeScript({
-                tabId,
-                frameId,
-                scriptText,
-                useBlob: CosmeticApi.shouldUseBlob(frameContext?.mainFrameUrl || frameContext?.url),
-            });
+            await Promise.all(scriptTexts.map((scriptText) => {
+                /**
+                 * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+                 *
+                 * This is STEP 4.1: Selecting only local script functions which were pre-built into the extension.
+                 */
+
+                /**
+                 * Here we check if the script text is local to guarantee that we don't execute remote code.
+                 */
+                const isLocal = localScriptRulesService.isLocal(scriptText);
+                if (!isLocal) {
+                    return;
+                }
+
+                /**
+                 * Here we get the function associated with the script text.
+                 */
+                const localScriptFunction = localScriptRulesService.getLocalScriptFunction(scriptText);
+                if (!localScriptFunction) {
+                    return;
+                }
+
+                // eslint-disable-next-line consistent-return
+                return ScriptingApi.executeScriptFunc({
+                    tabId,
+                    frameId,
+                    scriptFunction: localScriptFunction,
+                });
+            }));
         } catch (e) {
-            logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+            logger.debug('[applyJsFuncsByTabAndFrame] error occurred during injection', getErrorMessage(e));
         }
     }
 
