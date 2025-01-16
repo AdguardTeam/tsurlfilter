@@ -12,6 +12,14 @@ export type LocalScriptFunctionData = {
 };
 
 /**
+ * An object containing local scriptlet rules, mapping each rule to a boolean value
+ * indicating whether it is allowed to run.
+ */
+export type LocalScriptletRulesData = {
+    [key: string]: boolean;
+};
+
+/**
  * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
  *
  * Due to Chrome Web Store policies, we cannot execute remotely hosted code.
@@ -29,29 +37,55 @@ export class LocalScriptRulesService {
     private localScripts: LocalScriptFunctionData | undefined;
 
     /**
+     * When {@link setLocalScriptletRules} is called, this holds a list of pre-built Scriptlets rules allowed to run.
+     * If it is never called, this remains undefined.
+     */
+    private localScriptlets: LocalScriptletRulesData | undefined;
+
+    /**
      * Stores prebuilt JS rules in memory for later use.
      *
      * @param localScriptRules A map of script text to their corresponding functions.
+     * @param localScriptletRules A map of scriptlet rules as string
+     * to a boolean value indicating whether it is allowed to run.
      */
-    setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
+    setLocalScriptRules(localScriptRules: LocalScriptFunctionData, localScriptletRules: LocalScriptletRulesData): void {
         this.localScripts = localScriptRules;
+        this.localScriptlets = localScriptletRules;
     }
 
     /**
      * Checks if the given script text is included in our prebuilt local scripts.
      *
-     * This helper method is primarily for transparency during the Chrome Web Store
-     * review process.
+     * This helper method is primarily for transparency during the Chrome Web Store review process.
      *
-     * @param scriptText The script content to verify.
+     * @param scriptText The script rule to verify.
+     *
      * @returns True if the script is part of our local collection, false otherwise.
      */
-    public isLocal(scriptText: string): boolean {
+    public isLocalScript(scriptText: string): boolean {
         if (this.localScripts === undefined) {
             return false;
         }
 
         return this.localScripts[scriptText] !== undefined;
+    }
+
+    /**
+     * Checks if the given scriptlet rule is included in our prebuilt local scriptlets.
+     *
+     * This helper method is primarily for transparency during the Chrome Web Store review process.
+     *
+     * @param scriptletRuleText The scriptlet rule to verify.
+     *
+     * @returns True if the scriptlet rule is part of our local collection, false otherwise.
+     */
+    public isLocalScriptlet(scriptletRuleText: string): boolean {
+        if (this.localScriptlets === undefined) {
+            return false;
+        }
+
+        return this.localScriptlets[scriptletRuleText] !== undefined;
     }
 
     /**

@@ -35,7 +35,11 @@ import { type AppInterface } from '../../common/app';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { getErrorMessage } from '../../common/error';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
-import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
+import {
+    type LocalScriptFunctionData,
+    type LocalScriptletRulesData,
+    localScriptRulesService,
+} from './services/local-script-rules-service';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -380,12 +384,18 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Sets prebuild local script rules.
+     * Sets prebuild local script and scriptlet rules.
      *
-     * @param localScriptRules Object with pre-build JS rules. @see {@link LocalScriptRulesService}.
+     * @see {@link LocalScriptRulesService}.
+     *
+     * @param localScriptRules Object with pre-build JS rules.
+     * @param localScriptletRules Object with pre-build Scriptlet rules.
      */
-    public static setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
-        localScriptRulesService.setLocalScriptRules(localScriptRules);
+    public static setLocalScriptRules(
+        localScriptRules: LocalScriptFunctionData,
+        localScriptletRules: LocalScriptletRulesData,
+    ): void {
+        localScriptRulesService.setLocalScriptRules(localScriptRules, localScriptletRules);
     }
 
     /**
