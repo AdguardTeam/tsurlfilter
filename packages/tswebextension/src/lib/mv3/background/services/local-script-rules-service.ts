@@ -4,16 +4,18 @@
 export type LocalScriptFunction = () => void;
 
 /**
- * An object containing local script functions, mapping each script (as a string)
- * to the corresponding function that’s ready to run.
+ * An object containing local script functions where:
+ * - key — script text
+ * - value — function that is ready to run.
  */
 export type LocalScriptFunctionData = {
     [key: string]: LocalScriptFunction;
 };
 
 /**
- * An object containing local scriptlet rules, mapping each rule to a boolean value
- * indicating whether it is allowed to run.
+ * An object containing local scriptlet rules where:
+ * - key — scriptlet rule text
+ * - value — boolean value indicating whether it is allowed to run.
  */
 export type LocalScriptletRulesData = {
     [key: string]: boolean;
