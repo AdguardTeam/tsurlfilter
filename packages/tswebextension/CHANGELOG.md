@@ -17,6 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
 
+## [2.4.0-alpha.10] - 2025-01-16
+
+### Changed
+
+- Remade Scriptlet rules injections in MV3 — only rules from the pre-built filters are allowed now.
+
+[2.4.0-alpha.10]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.10
+
 ## [2.4.0-alpha.9] - 2025-01-13
 
 ### Removed
