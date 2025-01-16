@@ -13,7 +13,7 @@ import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-
 import { getDomain } from '../../common/utils/url';
 import { type ContentType } from '../../common/request-type';
 import { nanoid } from '../nanoid';
-import { type SingleScriptletData } from '../tabs/frame';
+import { type ScriptletRuleData } from '../tabs/frame';
 import { localScriptRulesService } from './services/local-script-rules-service';
 
 export type ContentScriptCosmeticData = {
@@ -45,7 +45,7 @@ type ScriptsAndScriptletsData = {
     /**
      * List of scriptlet data objects.
      */
-    scriptletDataList: SingleScriptletData[],
+    scriptletDataList: ScriptletRuleData[],
 };
 
 /**
