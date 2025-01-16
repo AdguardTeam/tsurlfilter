@@ -8,6 +8,7 @@ import {
     type CssInjectionRule,
     type ElementHidingRule,
 } from '../../../src/nodes';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-generator';
 import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
@@ -492,7 +493,7 @@ describe('CosmeticRuleParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(CosmeticRuleParser.generate(ruleNode)).toBe(expected);
+            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 
