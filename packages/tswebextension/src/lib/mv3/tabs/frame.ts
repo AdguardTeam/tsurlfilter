@@ -11,9 +11,9 @@ import {
  */
 type PreparedCosmeticResult = {
     /**
-     * Script text extracted from the cosmetic result.
+     * Script texts extracted from the cosmetic result.
      */
-    scriptText: string;
+    scriptTexts: string[],
 
     /**
      * A list of scriptlet data extracted from the cosmetic result.

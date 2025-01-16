@@ -209,9 +209,10 @@ export class CosmeticFrameProcessor {
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const {
-            scriptText,
+            scriptTexts,
             scriptletDataList,
-        } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
+        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
         tabsApi.updateFrameContext(tabId, frameId, {
@@ -219,7 +220,7 @@ export class CosmeticFrameProcessor {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptText,
+                scriptTexts,
                 scriptletDataList,
                 cssText,
             },
@@ -263,16 +264,17 @@ export class CosmeticFrameProcessor {
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const {
-            scriptText,
+            scriptTexts,
             scriptletDataList,
-        } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
+        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
         tabsApi.updateFrameContext(tabId, frameId, {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptText,
+                scriptTexts,
                 scriptletDataList,
                 cssText,
             },
