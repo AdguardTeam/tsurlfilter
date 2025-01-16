@@ -2,8 +2,8 @@
     "$schema": "https://json.schemastore.org/tsconfig",
     "compilerOptions": {
         "target": "ESNext",
-        "module": "NodeNext",
-        "moduleResolution": "Bundler",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
         "strict": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
