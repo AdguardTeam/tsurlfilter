@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Remade Scriptlet rules injections in MV3 — only rules from the pre-built filters are allowed now.
+- Remade Scriptlet rules execution in MV3 — only rules from the pre-built filters are allowed now.
 
 [2.4.0-alpha.10]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.10
 
