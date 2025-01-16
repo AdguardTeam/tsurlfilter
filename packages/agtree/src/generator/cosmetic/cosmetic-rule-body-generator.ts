@@ -39,7 +39,7 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
                 break;
 
             case CosmeticRuleType.CssInjectionRule:
-                if (node.syntax === AdblockSyntax.Adg) {
+                if (node.syntax === AdblockSyntax.Adg || node.syntax === AdblockSyntax.Abp) {
                     result = AdgCssInjectionGenerator.generate(node.body);
                 } else if (node.syntax === AdblockSyntax.Ubo) {
                     if (node.body.mediaQueryList) {
