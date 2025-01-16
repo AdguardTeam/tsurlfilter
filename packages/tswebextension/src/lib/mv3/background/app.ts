@@ -384,18 +384,21 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Sets prebuild local script and scriptlet rules.
+     * Sets prebuild local **script** rules.
      *
-     * @see {@link LocalScriptRulesService}.
-     *
-     * @param localScriptRules Object with pre-build JS rules.
-     * @param localScriptletRules Object with pre-build Scriptlet rules.
+     * @param localScriptRules Object with pre-build JS rules. @see {@link LocalScriptRulesService}.
      */
-    public static setLocalScriptRules(
-        localScriptRules: LocalScriptFunctionData,
-        localScriptletRules: LocalScriptletRulesData,
-    ): void {
-        localScriptRulesService.setLocalScriptRules(localScriptRules, localScriptletRules);
+    public static setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
+        localScriptRulesService.setLocalScriptRules(localScriptRules);
+    }
+
+    /**
+     * Sets prebuild local **scriptlet** rules.
+     *
+     * @param localScriptletRules Object with pre-build Scriptlet rules. @see {@link LocalScriptRulesService}.
+     */
+    public static setLocalScriptletRules(localScriptletRules: LocalScriptletRulesData): void {
+        localScriptRulesService.setLocalScriptletRules(localScriptletRules);
     }
 
     /**
