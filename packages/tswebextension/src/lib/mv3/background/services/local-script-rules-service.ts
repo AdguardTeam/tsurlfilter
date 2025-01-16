@@ -34,7 +34,7 @@ export type LocalScriptletRulesData = {
 export class LocalScriptRulesService {
     /**
      * When {@link setLocalScriptRules} is called, this holds a list of prebuilt JS rules
-     * allowed to run. If it’s never called, this remains undefined.
+     * allowed to run. If it is never called, this remains undefined.
      */
     private localScripts: LocalScriptFunctionData | undefined;
 
@@ -48,11 +48,18 @@ export class LocalScriptRulesService {
      * Stores prebuilt JS rules in memory for later use.
      *
      * @param localScriptRules A map of script text to their corresponding functions.
+     */
+    setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
+        this.localScripts = localScriptRules;
+    }
+
+    /**
+     * Stores prebuilt Scriptlet rules in memory for later use.
+     *
      * @param localScriptletRules A map of scriptlet rules as string
      * to a boolean value indicating whether it is allowed to run.
      */
-    setLocalScriptRules(localScriptRules: LocalScriptFunctionData, localScriptletRules: LocalScriptletRulesData): void {
-        this.localScripts = localScriptRules;
+    setLocalScriptletRules(localScriptletRules: LocalScriptletRulesData): void {
         this.localScriptlets = localScriptletRules;
     }
 
