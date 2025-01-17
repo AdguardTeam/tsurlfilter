@@ -1,5 +1,5 @@
 import { jsonpos } from 'jsonpos';
-import { z } from 'zod';
+import * as z from 'zod';
 import { getUtf8EncodedLength } from './string-utils';
 
 /**

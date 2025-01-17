@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod';
 
 import { serializeJson } from '../../utils/misc';
 import { type ByteRange, byteRangeValidator } from '../../utils/byte-range';
