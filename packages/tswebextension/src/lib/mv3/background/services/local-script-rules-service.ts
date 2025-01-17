@@ -4,11 +4,21 @@
 export type LocalScriptFunction = () => void;
 
 /**
- * An object containing local script functions, mapping each script (as a string)
- * to the corresponding function that’s ready to run.
+ * An object containing local script functions where:
+ * - key — script text
+ * - value — function that is ready to run.
  */
 export type LocalScriptFunctionData = {
     [key: string]: LocalScriptFunction;
+};
+
+/**
+ * An object containing local scriptlet rules where:
+ * - key — scriptlet rule text
+ * - value — boolean value indicating whether it is allowed to run (always true).
+ */
+export type LocalScriptletRulesData = {
+    [key: string]: boolean;
 };
 
 /**
@@ -24,34 +34,67 @@ export type LocalScriptFunctionData = {
 export class LocalScriptRulesService {
     /**
      * When {@link setLocalScriptRules} is called, this holds a list of prebuilt JS rules
-     * allowed to run. If it’s never called, this remains undefined.
+     * allowed to run. If it is never called, this remains undefined.
      */
     private localScripts: LocalScriptFunctionData | undefined;
+
+    /**
+     * When {@link setLocalScriptletRules} is called, this holds a list of pre-built Scriptlets rules allowed to run.
+     * If it is never called, this remains undefined.
+     */
+    private localScriptlets: LocalScriptletRulesData | undefined;
 
     /**
      * Stores prebuilt JS rules in memory for later use.
      *
      * @param localScriptRules A map of script text to their corresponding functions.
      */
-    setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
+    public setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
         this.localScripts = localScriptRules;
+    }
+
+    /**
+     * Stores prebuilt Scriptlet rules in memory for later use.
+     *
+     * @param localScriptletRules A map of scriptlet rules as string
+     * to a boolean value indicating whether it is allowed to run.
+     */
+    public setLocalScriptletRules(localScriptletRules: LocalScriptletRulesData): void {
+        this.localScriptlets = localScriptletRules;
     }
 
     /**
      * Checks if the given script text is included in our prebuilt local scripts.
      *
-     * This helper method is primarily for transparency during the Chrome Web Store
-     * review process.
+     * This helper method is primarily for transparency during the Chrome Web Store review process.
      *
-     * @param scriptText The script content to verify.
+     * @param scriptText The script rule to verify.
+     *
      * @returns True if the script is part of our local collection, false otherwise.
      */
-    public isLocal(scriptText: string): boolean {
+    public isLocalScript(scriptText: string): boolean {
         if (this.localScripts === undefined) {
             return false;
         }
 
         return this.localScripts[scriptText] !== undefined;
+    }
+
+    /**
+     * Checks if the given scriptlet rule is included in our prebuilt local scriptlets.
+     *
+     * This helper method is primarily for transparency during the Chrome Web Store review process.
+     *
+     * @param scriptletRuleText The scriptlet rule to verify.
+     *
+     * @returns True if the scriptlet rule is part of our local collection, false otherwise.
+     */
+    public isLocalScriptlet(scriptletRuleText: string): boolean {
+        if (this.localScriptlets === undefined) {
+            return false;
+        }
+
+        return this.localScriptlets[scriptletRuleText] !== undefined;
     }
 
     /**
@@ -61,7 +104,7 @@ export class LocalScriptRulesService {
      * @param scriptText The script content to look up.
      * @returns The corresponding function if found, or null otherwise.
      */
-    getLocalScriptFunction(scriptText: string): LocalScriptFunction | null {
+    public getLocalScriptFunction(scriptText: string): LocalScriptFunction | null {
         if (this.localScripts === undefined) {
             return null;
         }
