@@ -6,7 +6,6 @@ deployment:
 
 release-naming:
   next-version-name: ${bamboo.inject.version}
-  # TODO: remove the following line when releasing from stable/dnr-rulesets is no longer needed
   applies-to-branches: true
 
 environments:
@@ -20,7 +19,6 @@ npmjs:
   # run auto-deploy only after successful build
   triggers:
     - build-success:
-        # TODO: remove 'branch' when releasing from stable/dnr-rulesets is no longer needed
         branch: stable-dnr-rulesets
   tasks:
     - checkout:

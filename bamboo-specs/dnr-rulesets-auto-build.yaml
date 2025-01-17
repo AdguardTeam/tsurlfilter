@@ -40,7 +40,6 @@ Build:
             BRANCH="${bamboo.planRepository.branchName}"
 
             # Deploy package from "stable/dnr-rulesets" branch only
-            # TODO: replace "stable/dnr-rulesets" to "master" branch later (when needed)
             if [ $BRANCH != "stable/dnr-rulesets" ]
             then
               echo "deployment is not supported on branch ${BRANCH}, skipping"
@@ -57,7 +56,7 @@ Build:
             npx lerna run test --scope @adguard/dnr-rulesets
 
             # Set date to package version
-            npx lerna run increment:autodeploy --scope @adguard/dnr-rulesets
+            npx lerna run increment:auto-deploy --scope @adguard/dnr-rulesets
 
             # Build dnr rulesets
             # since updated tgz file should not be committed
@@ -95,7 +94,6 @@ Build:
 
             ls -la
 
-            # TODO: remove the checking after release/v3.1 is merged into master
             BRANCH="${bamboo.planRepository.branchName}"
             if [ $BRANCH != "stable/dnr-rulesets" ]
             then
@@ -142,7 +140,6 @@ labels: []
 other:
   concurrent-build-plugin: system-default
 
-# TODO: remove the branch-overrides after stable/dnr-rulesets is merged into master
 branch-overrides:
   -
     ^(stable\/dnr-rulesets.+|(?!stable\/dnr-rulesets).*)$:
