@@ -507,6 +507,17 @@ export class CosmeticApi extends CosmeticApiCommon {
                 continue;
             }
 
+            const ruleText = scriptRule.getContent();
+
+            // do not log rules if they are not local
+            // which means that will not be applied
+            if (
+                !localScriptRulesService.isLocalScript(ruleText)
+                || !localScriptRulesService.isLocalScriptlet(ruleText)
+            ) {
+                continue;
+            }
+
             const ruleType = scriptRule.getType();
             defaultFilteringLog.publishEvent({
                 type: FilteringEventType.JsInject,
