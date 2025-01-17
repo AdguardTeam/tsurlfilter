@@ -142,7 +142,7 @@ labels: []
 other:
   concurrent-build-plugin: system-default
 
-# TODO: remove the branch-overrides after release/v3.1 is merged into master
+# TODO: remove the branch-overrides after stable/dnr-rulesets is merged into master
 branch-overrides:
   -
     ^(stable\/dnr-rulesets.+|(?!stable\/dnr-rulesets).*)$:
