@@ -691,6 +691,7 @@ export class RuleSet implements IRuleSet {
         const result = serializeJson(declarativeRules, prettyPrint);
 
         // Create byte range map
+        // Note: query syntax based on https://datatracker.ietf.org/doc/html/rfc6901
         // `/0` is a pointer to the first element in the array
         // When we serialize the rule set, we produce an array of rules and the metadata rule is always the first one
         const byteRangeMap: ByteRangeMap = {
