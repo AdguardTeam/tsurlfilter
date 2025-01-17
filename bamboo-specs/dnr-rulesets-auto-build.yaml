@@ -40,7 +40,7 @@ Build:
             BRANCH="${bamboo.planRepository.branchName}"
 
             # Deploy package from "stable/dnr-rulesets" branch only
-            # TODO: replace "stable/dnr-rulesets" to "master" branch after merge
+            # TODO: replace "stable/dnr-rulesets" to "master" branch later (when needed)
             if [ $BRANCH != "stable/dnr-rulesets" ]
             then
               echo "deployment is not supported on branch ${BRANCH}, skipping"
