@@ -24,27 +24,31 @@ export const QUOTE_SET = new Set([
 /**
  * Possible quote types for scriptlet parameters
  */
-export enum QuoteType {
+export const QuoteType = {
     /**
      * No quotes at all
      */
-    None = 'none',
+    None: 'none',
 
     /**
      * Single quotes (`'`)
      */
-    Single = 'single',
+    Single: 'single',
 
     /**
      * Double quotes (`"`)
      */
-    Double = 'double',
+    Double: 'double',
 
     /**
      * Backtick quotes (`` ` ``)
      */
-    Backtick = 'backtick',
-}
+    Backtick: 'backtick',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type QuoteType = typeof QuoteType[keyof typeof QuoteType];
 
 /**
  * Utility functions for working with quotes
@@ -262,7 +266,7 @@ export class QuoteUtils {
      */
     public static quoteAndJoinStrings(
         strings: string[],
-        quoteType = QuoteType.Single,
+        quoteType: QuoteType = QuoteType.Single,
         separator = `${COMMA}${SPACE}`,
     ): string {
         return strings

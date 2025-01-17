@@ -1,4 +1,12 @@
-import { MemoryStorage } from '@lib/mv2/background/memory-storage';
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+} from 'vitest';
+
+import { MemoryStorage } from '../../../../src/lib/common/memory-storage';
 
 describe('MemoryStorage', () => {
     let memoryStorage: MemoryStorage;

@@ -28,7 +28,7 @@
     "postbuild": "pnpm types && ts-node tasks/build-txt",
     "prepush": "pnpm build",
     "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-    "lint:eslint": "eslint --cache 'src/**/*.ts'",
+    "lint:eslint": "eslint --cache --ignore-path .gitignore .",
     "check-types": "tsc --project tsconfig.build.json --noemit",
     "increment": "pnpm version patch --no-git-tag-version"
   },
@@ -36,7 +36,7 @@
   "license": "GPL-3.0-only",
   "dependencies": {
     "@adguard/assistant": "^4.3.70",
-    "@adguard/filters-downloader": "^2.2.0",
+    "@adguard/filters-downloader": "^2.2.6",
     "@adguard/tswebextension": "workspace:^",
     "webextension-polyfill": "0.10.0",
     "zod": "3.21.4"

@@ -1,18 +1,15 @@
 import { EmptyResourcesError } from './empty-resources-error';
 import { InvalidDeclarativeRuleError } from './invalid-declarative-rule-error';
-import { TooComplexRegexpError } from './too-complex-regexp-error';
 import { UnsupportedModifierError } from './unsupported-modifier-error';
 import { UnsupportedRegexpError } from './unsupported-regexp-error';
 
-type ConversionError = TooComplexRegexpError
-| UnsupportedModifierError
+type ConversionError = UnsupportedModifierError
 | EmptyResourcesError
 | UnsupportedRegexpError;
 
 export {
     type ConversionError,
     EmptyResourcesError,
-    TooComplexRegexpError,
     UnsupportedModifierError,
     UnsupportedRegexpError,
     InvalidDeclarativeRuleError,

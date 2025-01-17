@@ -1,9 +1,20 @@
 import { z as zod } from 'zod';
-import { filterListSourceMapValidator } from '@adguard/tsurlfilter';
-import { logLevelSchema, verboseSchema } from './utils/logger';
-import { version } from '../../../package.json';
+import { LogLevel } from '@adguard/logger';
+import { filterListChunksValidator, filterListSourceMapValidator } from '@adguard/tsurlfilter';
+import { EXTENDED_CSS_VERSION } from '@adguard/extended-css/version';
 
-export const TSWEBEXTENSION_VERSION = version;
+import packageJson from '../../../package.json';
+
+/**
+ * Re-export needed to print the library version on the extension About page.
+ * NOTE: We are directly re-exporting `version` from `package.json` to prevent
+ * environment runtime errors, like call `window.console`, which is not available
+ * in the service worker in MV3. And also to avoid bundle size getting larger.
+ */
+
+export const TSWEBEXTENSION_VERSION = packageJson.version;
+
+export { EXTENDED_CSS_VERSION };
 
 /**
  * Stealth mode configuration schema.
@@ -81,8 +92,7 @@ export const basicFilterValidator = zod.object({
     /**
      * Filter list text content.
      */
-    // TODO: change to byte buffer
-    content: zod.array(zod.instanceof(Uint8Array)),
+    content: filterListChunksValidator,
 
     /**
      * Source map.
@@ -165,11 +175,6 @@ export const configurationValidator = zod.object({
     allowlist: zod.string().array(),
 
     /**
-     * List of domain names of sites, which should be temporary excluded from document blocking.
-     */
-    trustedDomains: zod.string().array(),
-
-    /**
      * List of rules added by user.
      */
     userrules: basicFilterValidator,
@@ -180,12 +185,18 @@ export const configurationValidator = zod.object({
      * @deprecated  Will be removed in the next minor version.
      * Use {@link Configuration.logLevel} instead.
      */
-    verbose: verboseSchema.optional(),
+    verbose: zod.boolean().optional(),
 
     /**
      * Logging level.
      */
-    logLevel: logLevelSchema.optional(),
+    logLevel: zod.enum([
+        LogLevel.Error,
+        LogLevel.Warn,
+        LogLevel.Info,
+        LogLevel.Debug,
+        LogLevel.Trace,
+    ]).optional(),
 
     settings: settingsConfigValidator,
 

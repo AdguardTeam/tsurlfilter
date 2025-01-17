@@ -1,4 +1,6 @@
-import { getHost, isThirdPartyRequest } from '@lib/common/utils';
+import { describe, expect, it } from 'vitest';
+
+import { getHost, isThirdPartyRequest } from '../../../../../src/lib/common/utils/url';
 
 describe('Url utils', () => {
     it('parses url host', () => {

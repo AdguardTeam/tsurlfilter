@@ -66,34 +66,34 @@
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │
  * Removes or modifies request           │                             │ │
- * headers based on                      │      onBeforeSendHeaders    ◄─┼┐
- * {@link MatchingResult}.               │                             │ ││
- *                                       └──────────────┬──────────────┘ ││
- *                                                      │                ││
- *                                       ┌──────────────▼──────────────┐ ││
- *                                       │                             │ ││
- *                                       │        onSendHeaders        │ ││
- *                                       │                             │ ││
- *                                       └──────────────┬──────────────┘ ││
- *                                                      │                ││
- *                                       ┌──────────────▼──────────────┐ ││
- * Removes or modifies response          │                             │ ││
- * headers based on                    ┌─┤      onHeadersReceived      │ ││
- * {@link MatchingResult}.             │ │                             │ ││
- * Modifies 'trusted-types' directive  │ └─────────────────────────────┘ ││
- * for CSP headers:                    │                                 ││.
- * @see {@link TrustedTypesService}.   │                                 ││
- *                                     │                                 ││
- *                                     │                                 ││
- *                                     │ ┌─────────────────────────────┐ ││
- *                                     │ │                             │ ││
- *                                     ├─►       onBeforeRedirect      ├─┴┤
- *                                     │ │                             │  │
- *                                     │ └─────────────────────────────┘  │
- *                                     │                                  │
- *                                     │ ┌─────────────────────────────┐  │
- *                                     │ │                             │  │
- *                                     ├─►        onAuthRequired       ├──┘
+ * headers based on                      │      onBeforeSendHeaders    ◄─┼─┐
+ * {@link MatchingResult}.               │                             │ │ │
+ *                                       └──────────────┬──────────────┘ │ │
+ *                                                      │                │ │
+ *                                       ┌──────────────▼──────────────┐ │ │
+ *                                       │                             │ │ │
+ *                                       │        onSendHeaders        │ │ │
+ *                                       │                             │ │ │
+ *                                       └──────────────┬──────────────┘ │ │
+ *                                                      │                │ │
+ *                                       ┌──────────────▼──────────────┐ │ │
+ * Removes or modifies response          │                             │ │ │
+ * headers based on                    ┌─┤      onHeadersReceived      │ │ │
+ * {@link MatchingResult}.             │ │                             │ │ │
+ * Modifies 'trusted-types' directive  │ └─────────────────────────────┘ │ │
+ * for CSP headers:                    │                                 │ │.
+ * @see {@link TrustedTypesService}.   │                                 │ │
+ *                                     │                                 │ │
+ *                                     │                                 │ │
+ *                                     │ ┌─────────────────────────────┐ │ │
+ *                                     │ │                             │ │ │
+ *                                     ├─►       onBeforeRedirect      ├─┘ │
+ *                                     │ │                             │   │
+ *                                     │ └─────────────────────────────┘   │
+ *                                     │                                   │
+ *                                     │ ┌─────────────────────────────┐   │
+ *                                     │ │                             │   │
+ *                                     ├─►        onAuthRequired       ├───┘
  *                                     │ │                             │
  *                                     │ └─────────────────────────────┘
  *                                     │
@@ -118,7 +118,7 @@
  *                                       └─────────────────────────────┘.
  *
  *
- *  Web Navigation API Event Handling:
+ * Web Navigation API Event Handling:
  *
  *                                       ┌─────────────────────────────┐
  *                                       │                             │
@@ -171,24 +171,23 @@
 import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { tabsApi, engineApi, documentApi } from './api';
-import { Frame, MAIN_FRAME_ID } from './tabs/frame';
-import { findHeaderByName } from '../../common/utils/find-header-by-name';
-import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
-import { logger } from '../../common/utils/logger';
+import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { FRAME_DELETION_TIMEOUT } from '../../common/constants';
+import { findHeaderByName } from '../../common/utils/headers';
+import { logger } from '../../common/utils/logger';
+import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 
-import { removeHeadersService } from './services/remove-headers-service';
 import { Assistant } from './assistant';
+import { tabsApi, engineApi, documentApi } from './api';
 import { CosmeticApi } from './cosmetic-api';
-import { paramsService } from './services/params-service';
-import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
+import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { cspService } from './services/csp-service';
+import { paramsService } from './services/params-service';
 import { permissionsPolicyService } from './services/permissions-policy-service';
 import { TrustedTypesService } from './services/trusted-types-service';
-
+import { removeHeadersService } from './services/remove-headers-service';
+import { Frame } from './tabs/frame';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
@@ -196,8 +195,8 @@ import {
     requestContextStorage,
     RequestBlockingApi,
 } from './request';
-import { stealthApi } from './stealth-api';
 import { SanitizeApi } from './sanitize-api';
+import { stealthApi } from './stealth-api';
 import { isFirefox, isOpera } from './utils/browser-detector';
 import { isLocalFrame } from './utils/is-local-frame';
 
@@ -370,6 +369,7 @@ export class WebRequestApi {
             rule: basicResult,
             popupRule: result.getPopupRule(),
             eventId,
+            requestId,
             requestUrl,
             referrerUrl,
             requestType,
@@ -509,6 +509,7 @@ export class WebRequestApi {
             rule: headerResult,
             referrerUrl,
             requestUrl,
+            requestId,
             requestType,
             contentType,
         });
@@ -922,7 +923,7 @@ export class WebRequestApi {
          *   - keep tab context if webNavigation.omCompleted has not been fired,
          * etc.
          */
-        setTimeout(() => tabContext.frames.delete(frameId), FRAME_DELETION_TIMEOUT);
+        setTimeout(() => tabContext.frames.delete(frameId), FRAME_DELETION_TIMEOUT_MS);
     }
 
     /**

@@ -7,33 +7,41 @@ import {
     Request,
     CosmeticResult,
     type CosmeticOption,
-    type ScriptletData,
-    type CosmeticRule,
     type NetworkRule,
     type MatchingResult,
+    type HTTPMethod,
+    setConfiguration,
+    CompatibilityTypes,
 } from '@adguard/tsurlfilter';
-
+import browser from 'webextension-polyfill';
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
+import { type AnyRule } from '@adguard/agtree';
 
-import { getHost } from '../../common/utils';
+import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { getErrorMessage } from '../../common/error';
-import { CosmeticApiCommon } from '../../common/cosmetic-api';
-import { logger } from '../utils/logger';
+import { logger } from '../../common/utils/logger';
+import { isHttpOrWsRequest, isHttpRequest, getHost } from '../../common/utils/url';
 
+import { allowlistApi } from './allowlist-api';
 import { type ConfigurationMV3 } from './configuration';
-import { type MatchQuery } from '../../common/interfaces';
+import { DocumentApi } from './document-api';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
-const USER_FILTER_ID = 0;
 
-type EngineConfig = Pick<ConfigurationMV3, 'userrules'> & {
+type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'quickFixesRules' | 'verbose'> & {
     filters: IFilter[],
 };
 
-export type CosmeticRules = {
-    css: string[],
-    extendedCss: string[],
-};
+/**
+ * Request Match Query, contains request details.
+ */
+interface MatchQuery {
+    requestUrl: string;
+    frameUrl: string;
+    requestType: RequestType;
+    frameRule?: NetworkRule | null;
+    method?: HTTPMethod;
+}
 
 /**
  * EngineApi - TSUrlFilter engine wrapper which controls how to work with
@@ -53,14 +61,24 @@ export class EngineApi {
     waitingForEngine: Promise<void> | undefined;
 
     /**
+     * Store here links to dynamic filters which created on the fly.
+     */
+    private dynamicFilters: Map<number, IRuleList> = new Map();
+
+    /**
      * Starts the engine with the provided bunch of rules,
      * wrapped in filters or custom rules.
      *
      * @param config {@link EngineConfig} Which contains filters (static and
-     * custom), custom rules and the verbose flag.
+     * custom), custom rules, quick fixes rules and the verbose flag.
      */
     async startEngine(config: EngineConfig): Promise<void> {
-        const { filters, userrules } = config;
+        const {
+            filters,
+            userrules,
+            quickFixesRules,
+            verbose,
+        } = config;
 
         const lists: IRuleList[] = [];
 
@@ -69,14 +87,15 @@ export class EngineApi {
                 const filter = filters[i];
                 // eslint-disable-next-line no-await-in-loop
                 const content = await filter.getContent();
+                const trusted = filter.isTrusted();
 
                 lists.push(
                     new BufferRuleList(
                         filter.getId(),
                         content.filterList,
                         false,
-                        false,
-                        false,
+                        !trusted,
+                        !trusted,
                         content.sourceMap,
                     ),
                 );
@@ -86,18 +105,38 @@ export class EngineApi {
             }
         }
 
-        if (userrules.content.length > 0) {
+        if (userrules.filterList.length > 0) {
             // Note: rules are already converted at the extension side
             lists.push(
                 new BufferRuleList(
                     USER_FILTER_ID,
-                    userrules.content,
+                    userrules.filterList,
                     false,
                     false,
                     false,
                     userrules.sourceMap,
                 ),
             );
+        }
+
+        if (quickFixesRules.filterList.length > 0) {
+            // Note: rules are already converted at the extension side
+            lists.push(
+                new BufferRuleList(
+                    QUICK_FIXES_FILTER_ID,
+                    quickFixesRules.filterList,
+                    false,
+                    false,
+                    false,
+                    quickFixesRules.sourceMap,
+                ),
+            );
+        }
+
+        const allowlistRulesList = allowlistApi.getAllowlistRules();
+        if (allowlistRulesList) {
+            lists.push(allowlistRulesList);
+            this.dynamicFilters.set(ALLOWLIST_FILTER_ID, allowlistRulesList);
         }
 
         const ruleStorage = new RuleStorage(lists);
@@ -112,12 +151,20 @@ export class EngineApi {
         const engine = new Engine(ruleStorage, true);
         await engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
         this.engine = engine;
+
+        // Update configuration of engine.
+        setConfiguration({
+            engine: 'extension',
+            version: browser.runtime.getManifest().version,
+            verbose,
+            compatibility: CompatibilityTypes.Extension,
+        });
     }
 
     /**
      * Stops filtering engine with cosmetic rules.
      */
-    public async stopEngine(): Promise<void> {
+    public stopEngine(): void {
         this.engine = undefined;
     }
 
@@ -129,7 +176,7 @@ export class EngineApi {
      * @returns Document-level allowlist rule if found, otherwise null.
      */
     public matchFrame(frameUrl: string): NetworkRule | null {
-        if (!this.engine) {
+        if (!this.engine || !isHttpOrWsRequest(frameUrl)) {
             return null;
         }
 
@@ -154,7 +201,7 @@ export class EngineApi {
 
         // Checks if an allowlist rule exists at the document level,
         // then discards all cosmetic rules.
-        const allowlistFrameRule = this.engine.matchFrame(url);
+        const allowlistFrameRule = DocumentApi.matchFrame(url);
         if (allowlistFrameRule) {
             return new CosmeticResult();
         }
@@ -162,59 +209,6 @@ export class EngineApi {
         const request = new Request(url, frameUrl, RequestType.Document);
 
         return this.engine.getCosmeticResult(request, option);
-    }
-
-    /**
-     * Builds CSS for the specified web page.
-     *
-     * @see http://adguard.com/en/filterrules.html#hideRules
-     *
-     * @param url Page URL.
-     * @param options Bitmask.
-     * @param ignoreTraditionalCss Flag.
-     * @param ignoreExtCss Flag.
-     *
-     * @returns CSS and ExtCss data for the webpage.
-     */
-    public buildCosmeticCss(
-        url: string,
-        options: CosmeticOption,
-        ignoreTraditionalCss: boolean,
-        ignoreExtCss: boolean,
-    ): CosmeticRules {
-        const cosmeticResult = this.getCosmeticResult(url, options);
-
-        const elemhideCss = [
-            ...cosmeticResult.elementHiding.generic,
-            ...cosmeticResult.elementHiding.specific,
-        ];
-        const injectCss = [
-            ...cosmeticResult.CSS.generic,
-            ...cosmeticResult.CSS.specific,
-        ];
-
-        const elemhideExtCss = [
-            ...cosmeticResult.elementHiding.genericExtCss,
-            ...cosmeticResult.elementHiding.specificExtCss,
-        ];
-        const injectExtCss = [
-            ...cosmeticResult.CSS.genericExtCss,
-            ...cosmeticResult.CSS.specificExtCss,
-        ];
-
-        const styles = !ignoreTraditionalCss
-            ? CosmeticApiCommon.buildStyleSheets(elemhideCss, injectCss, true)
-            : [];
-        const extStyles = !ignoreExtCss
-            ? CosmeticApiCommon.buildStyleSheets(elemhideExtCss, injectExtCss, false)
-            : [];
-
-        logger.debug('[BUILD COSMETIC CSS]: builded');
-
-        return {
-            css: styles,
-            extendedCss: extStyles,
-        };
     }
 
     /**
@@ -228,46 +222,25 @@ export class EngineApi {
     }
 
     /**
-     * Builds domain-specific JS injection for the specified page.
+     * Searched for cosmetic rules by match query.
      *
-     * @see http://adguard.com/en/filterrules.html#javascriptInjection
-     *
-     * @param url Page URL.
-     * @param option Bitmask.
-     *
-     * @returns Javascript for the specified URL.
+     * @param matchQuery Query against which the request would be matched.
+     * @returns Cosmetic result.
      */
-    public getScriptsForUrl = (url: string, option: CosmeticOption): CosmeticRule[] => {
-        const cosmeticResult = this.getCosmeticResult(url, option);
+    public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
+        if (!this.engine || !isHttpRequest(matchQuery.frameUrl)) {
+            return new CosmeticResult();
+        }
 
-        return cosmeticResult.getScriptRules();
-    };
+        const matchingResult = this.matchRequest(matchQuery);
 
-    /**
-     * Returns scriptlets data by url.
-     *
-     * @param url Page URL.
-     * @param option Bitmask.
-     *
-     * @returns List of {@link ScriptletData}.
-     */
-    public getScriptletsDataForUrl(url: string, option: CosmeticOption): ScriptletData[] {
-        const scriptRules = this.getScriptsForUrl(url, option);
-        const scriptletDataList: ScriptletData[] = [];
-        scriptRules.forEach((scriptRule) => {
-            if (!scriptRule.isScriptlet) {
-                return;
-            }
+        if (!matchingResult) {
+            return new CosmeticResult();
+        }
 
-            const scriptletData = scriptRule.getScriptletData();
-            if (!scriptletData) {
-                return;
-            }
+        const cosmeticOption = matchingResult.getCosmeticOption();
 
-            scriptletDataList.push(scriptletData);
-        });
-
-        return scriptletDataList;
+        return this.getCosmeticResult(matchQuery.requestUrl, cosmeticOption);
     }
 
     /**
@@ -299,38 +272,22 @@ export class EngineApi {
     }
 
     /**
-     * Builds the final output string for the specified page.
-     * Depending on the browser we either allow or forbid the new remote rules
-     * grep "localScriptRulesService" for details about script source.
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but
+     * created on the fly: now only for allowlist rules.
      *
-     * @param url Page URL.
-     * @param option Bitmask.
-     *
-     * @returns Script to be applied.
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
      */
-    public getScriptsStringForUrl(url: string, option: CosmeticOption): string {
-        const scriptRules = this.getScriptsForUrl(url, option);
+    public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        const ruleList = this.dynamicFilters.get(filterId);
 
-        // TODO: Add check for firefox AMO
+        if (!ruleList) {
+            return null;
+        }
 
-        // scriptlet rules would are handled separately
-        const scripts = scriptRules
-            .filter((rule) => !rule.isScriptlet)
-            .map((scriptRule) => scriptRule.getScript());
-        // remove repeating scripts
-        const scriptsCode = [...new Set(scripts)].join('\r\n');
-
-        // TODO: Check call to filtering log
-
-        return `
-                (function () {
-                    try {
-                        ${scriptsCode}
-                    } catch (ex) {
-                        console.error('Error executing AG js: ' + ex);
-                    }
-                })();
-            `;
+        return ruleList.retrieveRuleNode(ruleIndex);
     }
 }
 

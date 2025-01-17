@@ -1,6 +1,7 @@
-import { WebRequestApi } from '@lib/mv2/background/web-request-api';
+import { describe, expect, it } from 'vitest';
 
-// TODO
+import { WebRequestApi } from '../../../../src/lib/mv2/background/web-request-api';
+
 describe('web request api', () => {
     it('start', () => {
         WebRequestApi.start();

@@ -1,11 +1,9 @@
+import { describe, expect, it } from 'vitest';
 import { HTTPMethod } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import { ContentType } from '@lib/common';
-import {
-    requestContextStorage,
-    type RequestContext,
-    RequestContextState,
-} from '@lib/mv2/background/request/request-context-storage';
+
+import { type RequestContext, RequestContextState, requestContextStorage } from '../../../../../src/lib';
+import { ContentType } from '../../../../../src/lib/common/request-type';
 
 describe('Request Context Storage', () => {
     const requestId = '12345';

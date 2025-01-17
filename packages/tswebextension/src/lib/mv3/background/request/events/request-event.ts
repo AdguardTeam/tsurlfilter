@@ -1,4 +1,5 @@
 import { type WebRequest, type Events } from 'webextension-polyfill';
+
 import { type RequestContext } from '../request-context-storage';
 
 /**
@@ -56,7 +57,7 @@ export class RequestEvent<Details, Options> {
     /**
      * Register listener for the browser.webRequest events.
      *
-     * @param event Webrequest event name.
+     * @param event WebRequest event name.
      * @param handler Handler to register.
      * @param filter Filter of the events.
      * @param extraInfoSpec Extra info spec.

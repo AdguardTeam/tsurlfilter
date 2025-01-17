@@ -1,13 +1,15 @@
-import { type AnyRule, CosmeticRuleType } from '@adguard/agtree';
+import {
+    type AnyRule,
+    CosmeticRuleType,
+    NetworkRuleType,
+    RuleCategory,
+} from '@adguard/agtree';
 
 import { IndexedRule, type IRule } from '../../rules/rule';
 import { RuleFactory } from '../../rules/rule-factory';
 import { type IReader } from '../reader/reader';
-import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { ScannerType } from './scanner-type';
 import { NetworkRule } from '../../rules/network-rule';
-import { RemoveHeaderModifier } from '../../modifiers/remove-header-modifier';
-import { type FilterListSourceMap } from '../source-map';
 
 /**
  * Represents the RuleScanner configuration.
@@ -35,11 +37,6 @@ export interface RuleScannerConfiguration {
      * TODO(ameshkov): Reconsider how "unsafe" works (does not include JS now).
      */
     ignoreUnsafe?: boolean;
-
-    /**
-     * Source map for the filter list.
-     */
-    sourceMap?: FilterListSourceMap;
 }
 
 /**
@@ -93,11 +90,6 @@ export class RuleScanner {
     private currentRuleIndex = 0;
 
     /**
-     * Source map for the filter list.
-     */
-    private readonly sourceMap: FilterListSourceMap;
-
-    /**
      * Constructor of a RuleScanner object.
      *
      * @param reader - Source of the filtering rules
@@ -119,8 +111,6 @@ export class RuleScanner {
 
         this.ignoreJS = !!configuration.ignoreJS;
         this.ignoreUnsafe = !!configuration.ignoreUnsafe;
-
-        this.sourceMap = configuration.sourceMap ?? {};
     }
 
     /**
@@ -135,16 +125,16 @@ export class RuleScanner {
         let line = this.readNext();
 
         while (line) {
-            const rule = RuleFactory.createRule(
-                line,
-                this.listId,
-                lineIndex,
-                this.ignoreNetwork,
-                this.ignoreCosmetic,
-                this.ignoreHost,
-            );
+            if (!this.isIgnored(line)) {
+                const rule = RuleFactory.createRule(
+                    line,
+                    this.listId,
+                    lineIndex,
+                    this.ignoreNetwork,
+                    this.ignoreCosmetic,
+                    this.ignoreHost,
+                );
 
-            if (rule && !this.isIgnored(rule)) {
                 this.currentRule = rule;
                 this.currentRuleIndex = lineIndex;
                 return true;
@@ -202,28 +192,35 @@ export class RuleScanner {
      * @param rule - Rule to check.
      * @return - True if the rule should be ignored.
      */
-    private isIgnored(rule: IRule): boolean {
+    private isIgnored(rule: AnyRule): boolean {
         if (!this.ignoreCosmetic && !this.ignoreJS && !this.ignoreUnsafe) {
             return false;
         }
 
-        if (rule instanceof CosmeticRule) {
+        if (rule.category === RuleCategory.Cosmetic) {
             if (this.ignoreCosmetic) {
                 return true;
             }
+
             // Ignore JS type rules.
             // TODO: in the future we may allow CSS rules and Scriptlets (except
             // for "trusted" scriptlets).
-            const type = rule.getType();
-            return (
+            if (
                 this.ignoreJS
-                && (type === CosmeticRuleType.JsInjectionRule || type === CosmeticRuleType.ScriptletInjectionRule)
-            );
+                && (
+                    rule.type === CosmeticRuleType.JsInjectionRule
+                    || rule.type === CosmeticRuleType.ScriptletInjectionRule
+                )
+            ) {
+                return true;
+            }
         }
 
         if (this.ignoreUnsafe) {
-            if (rule instanceof NetworkRule) {
-                if (rule.getAdvancedModifier() && (rule.getAdvancedModifier() instanceof RemoveHeaderModifier)) {
+            if (rule.category === RuleCategory.Network && rule.type === NetworkRuleType.NetworkRule) {
+                if (
+                    rule.modifiers?.children?.some((modifier) => NetworkRule.ADVANCED_OPTIONS.has(modifier.name.value))
+                ) {
                     return true;
                 }
             }

@@ -1,19 +1,26 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
 import { CosmeticResult } from '@adguard/tsurlfilter';
-import { type ContentScriptCosmeticData, CosmeticApi } from '@lib/mv2/background/cosmetic-api';
-import { CosmeticController } from '@lib/mv2/content-script/cosmetic-controller';
 
-import * as SendMessageModule from '@lib/common/content-script/send-app-message';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
+import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
+import { CosmeticController } from '../../../../src/lib/mv2/content-script/cosmetic-controller';
+import * as SendMessageModule from '../../../../src/lib/common/content-script/send-app-message';
+import { type ContentScriptCosmeticData } from '../../../../src/lib/common/cosmetic-api';
 
-jest.mock('@lib/common/content-script/send-app-message', () => {
-    return {
-        __esModule: true,
-        ...jest.requireActual('@lib/common/content-script/send-app-message'),
-    };
+vi.mock('../../../../src/lib/common/content-script/send-app-message', () => {
+    const module = vi.importActual('../../../../src/lib/common/content-script/send-app-message');
+    return module;
 });
 
 /**
@@ -64,51 +71,59 @@ describe('some extended css rules are invalid', () => {
         document.body.innerHTML = '';
     });
 
-    it('no hits counter', (done) => {
+    it('no hits counter', async () => {
         const rules = [
             '#?##bannerOff:remove()',
             '#?#.ad_header:contains(text)',
         ];
-        // 'false' to disable hits counter
-        jest.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, false));
+
+        // Mocking the sendAppMessage function
+        vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, false));
 
         const cosmeticController = new CosmeticController();
         cosmeticController.init();
 
         expect(cosmeticController).toBeDefined();
 
-        setTimeout(() => {
-            const headerElement = document.getElementById('headerOff');
-            if (!headerElement) {
-                throw new Error('#headerOff element is required');
-            }
-            const headerDisplayStyleValue = headerElement.style.getPropertyValue('display');
-            expect(headerDisplayStyleValue).toEqual('none');
-            done();
-        }, 20);
+        // Wait for the cosmetic controller to process (using a delay)
+        await new Promise((resolve) => {
+            setTimeout(resolve, 20);
+        });
+
+        const headerElement = document.getElementById('headerOff');
+        if (!headerElement) {
+            throw new Error('#headerOff element is required');
+        }
+
+        const headerDisplayStyleValue = headerElement.style.getPropertyValue('display');
+        expect(headerDisplayStyleValue).toEqual('none');
     });
 
-    it('hits counter enabled', (done) => {
+    it('hits counter enabled', async () => {
         const rules = [
             '#?##bannerOn:remove()',
-            '#?#.ad_headerOn:contains(text)',
+            '#?#.ad_header:contains(text)',
         ];
-        // 'true' to enable hits counter
-        jest.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, true));
+
+        // Mocking the sendAppMessage function
+        vi.spyOn(SendMessageModule, 'sendAppMessage').mockResolvedValue(getCosmeticData(rules, true));
 
         const cosmeticController = new CosmeticController();
         cosmeticController.init();
 
         expect(cosmeticController).toBeDefined();
 
-        setTimeout(() => {
-            const headerElement = document.getElementById('headerOn');
-            if (!headerElement) {
-                throw new Error('#headerOn element is required');
-            }
-            const headerDisplayStyleValue = headerElement.style.getPropertyValue('display');
-            expect(headerDisplayStyleValue).toEqual('none');
-            done();
-        }, 20);
+        // Wait for the cosmetic controller to process (using a delay)
+        await new Promise((resolve) => {
+            setTimeout(resolve, 20);
+        });
+
+        const headerElement = document.getElementById('headerOn');
+        if (!headerElement) {
+            throw new Error('#headerOn element is required');
+        }
+
+        const headerDisplayStyleValue = headerElement.style.getPropertyValue('display');
+        expect(headerDisplayStyleValue).toEqual('none');
     });
 });

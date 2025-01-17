@@ -1,6 +1,6 @@
 import { HeaderRemovalRuleConverter } from '../../src/converter/cosmetic/header-removal';
 import { RuleConversionError } from '../../src/errors/rule-conversion-error';
-import { RuleParser } from '../../src/parser/rule';
+import { RuleParser } from '../../src/parser/rule-parser';
 import '../matchers/check-conversion';
 
 describe('HeaderRemovalRuleConverter', () => {

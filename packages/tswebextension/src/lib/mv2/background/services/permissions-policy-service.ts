@@ -5,13 +5,10 @@ import {
     PERMISSIONS_POLICY_HEADER_NAME,
     RequestType,
 } from '@adguard/tsurlfilter';
-import { nanoid } from 'nanoid';
-import {
-    defaultFilteringLog,
-    FilteringEventType,
-    type FilteringLogInterface,
-    ContentType,
-} from '../../../common';
+
+import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
+import { ContentType } from '../../../common/request-type';
+import { nanoid } from '../../../common/utils/nanoid';
 import { requestContextStorage, type RequestContextStorage, type RequestContext } from '../request';
 
 /**

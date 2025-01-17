@@ -1,5 +1,6 @@
 export type EventChannelListener<T> = (data: T) => void;
-export type EventChannelDispatcher<T> = (data: T) => void;
+
+type EventChannelDispatcher<T> = (data: T) => void;
 
 export interface EventChannelInterface<T> {
     dispatch: EventChannelDispatcher<T>;

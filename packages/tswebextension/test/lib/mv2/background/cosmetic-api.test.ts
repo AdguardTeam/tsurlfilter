@@ -1,15 +1,25 @@
-import { CosmeticApi } from '@lib/mv2/background/cosmetic-api';
-import { localScriptRulesService } from '@lib/mv2/background/services/local-script-rules-service';
-
+import {
+    describe,
+    expect,
+    it,
+    test,
+    vi,
+} from 'vitest';
 import { CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
-import { USER_FILTER_ID } from '@lib/common/constants';
-import { createCosmeticRule } from '../../../helpers/rule-creator';
-import { getLocalScriptRulesFixture } from './fixtures/local-script-rules';
-import { MockAppContext } from './mocks/mock-context';
 
-jest.mock('@lib/mv2/background/context', () => ({
-    appContext: jest.fn(() => new MockAppContext()),
-}));
+import { createCosmeticRule } from '../../../helpers/rule-creator';
+import { CosmeticApi } from '../../../../src/lib/mv2/background/cosmetic-api';
+import { localScriptRulesService } from '../../../../src/lib/mv2/background/services/local-script-rules-service';
+import { USER_FILTER_ID } from '../../../../src/lib/common/constants';
+
+import { getLocalScriptRulesFixture } from './fixtures/local-script-rules';
+
+vi.mock('../../../../src/lib/mv2/background/app-context', async () => {
+    const { MockAppContext } = await import('./mocks/mock-app-context');
+    return {
+        appContext: vi.fn(() => new MockAppContext()),
+    };
+});
 
 /**
  * Creates cosmetic result for elemhide rules.

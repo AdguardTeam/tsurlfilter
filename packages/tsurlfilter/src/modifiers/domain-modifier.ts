@@ -1,5 +1,6 @@
 import { getPublicSuffix } from 'tldts';
-import { type DomainList, DomainListParser, defaultParserOptions } from '@adguard/agtree';
+import { type DomainList } from '@adguard/agtree';
+import { defaultParserOptions, DomainListParser } from '@adguard/agtree/parser';
 
 import { logger } from '../utils/logger';
 import { SimpleRegex } from '../rules/simple-regex';

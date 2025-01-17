@@ -1,5 +1,6 @@
-import { type ConfigurationMV2 } from '@lib/mv2';
 import merge from 'lodash-es/merge';
+
+import { type ConfigurationMV2 } from '../../src/lib';
 
 /**
  * Recursive partial type.

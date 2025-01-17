@@ -1,12 +1,15 @@
 import browser, { type Tabs } from 'webextension-polyfill';
-import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { Frame, MAIN_FRAME_ID } from './frame';
-import { TabContext } from './tab-context';
-import { tabsApi } from './tabs-api';
 import { logger } from '../../common/utils/logger';
-import { isHttpOrWsRequest, isHttpRequest } from '../../common/utils/url';
-import { engineApi } from '../background/engine-api';
+import { MAIN_FRAME_ID } from '../../common/constants';
+import { CosmeticApi } from '../background/cosmetic-api';
+import { CosmeticFrameProcessor } from '../background/cosmetic-frame-processor';
+import { ContentType } from '../../common/request-type';
+import { appContext } from '../background/app-context';
+
+import { Frame } from './frame';
+import { tabsApi } from './tabs-api';
+import { TabContext } from './tab-context';
 
 /**
  * Injects cosmetic rules into tabs, opened before app initialization.
@@ -26,9 +29,11 @@ export class TabsCosmeticInjector {
         // Handles errors
         promises.forEach((promise) => {
             if (promise.status === 'rejected') {
-                logger.error(promise.reason);
+                logger.error('[tswebextension.processOpenTabs]: cannot inject cosmetic to open tab: ', promise.reason);
             }
         });
+
+        appContext.cosmeticsInjectedOnStartup = true;
     }
 
     /**
@@ -42,54 +47,81 @@ export class TabsCosmeticInjector {
             return;
         }
 
-        const { url } = tab;
-
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2549
-        if (!isHttpRequest(url)) {
-            return;
-        }
-
         const tabContext = new TabContext(tab);
-
         const tabId = tab.id;
-
         tabsApi.context.set(tabId, tabContext);
+        tabsApi.updateTabMainFrameRule(tabId);
 
-        if (url) {
-            tabContext.mainFrameRule = engineApi.matchFrame(url);
-        }
-
-        const frames = await browser.webNavigation.getAllFrames({ tabId });
+        const frames = await chrome.webNavigation.getAllFrames({ tabId });
 
         if (!frames) {
             return;
         }
 
-        frames.forEach(({ frameId, url: frameUrl }) => {
-            const frame = new Frame(frameUrl);
+        const currentTime = Date.now();
 
-            tabContext.frames.set(frameId, frame);
+        frames.forEach((frameDetails) => {
+            const {
+                url,
+                frameId,
+                parentDocumentId,
+                documentId,
+            } = frameDetails;
 
-            if (!isHttpOrWsRequest(frameUrl)) {
-                return;
-            }
+            tabsApi.setFrameContext(tabId, frameId, new Frame({
+                tabId,
+                frameId,
+                url,
+                timeStamp: currentTime,
+                parentDocumentId,
+                documentId,
+            }));
 
-            const isDocumentFrame = frameId === MAIN_FRAME_ID;
-
-            frame.matchingResult = engineApi.matchRequest({
-                requestUrl: frameUrl,
-                frameUrl,
-                requestType: isDocumentFrame ? RequestType.Document : RequestType.SubDocument,
-                frameRule: tabContext.mainFrameRule,
+            CosmeticFrameProcessor.handleFrame({
+                tabId,
+                frameId,
+                url,
+                timeStamp: currentTime,
+                parentDocumentId,
+                documentId,
             });
 
-            if (!frame.matchingResult) {
+            // TODO: Instead of this, it’s better to use the runtime.onStartup and runtime.onInstalled
+            // events to inject cosmetics once during the extension's initialization
+            // and browser startup without flags.
+            // However, this would require big refactoring of the extension.
+            /**
+             * This condition prevents applying cosmetic rules to the tab multiple times.
+             * Applying them once after the extension's initialization is enough.
+             */
+            if (appContext.cosmeticsInjectedOnStartup) {
                 return;
             }
 
-            const cosmeticOption = frame.matchingResult.getCosmeticOption();
+            // Note: this is an async function, but we will not await it because
+            // events do not support async listeners.
+            Promise.all([
+                CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
+                CosmeticApi.applyJsTextByTabAndFrame(tabId, frameId),
+                CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+                CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
+            ]).catch((e) => logger.error(e));
 
-            frame.cosmeticResult = engineApi.getCosmeticResult(frameUrl, cosmeticOption);
+            const frameContext = tabsApi.getFrameContext(tabId, frameId);
+            if (!frameContext?.cosmeticResult) {
+                // eslint-disable-next-line max-len
+                logger.debug(`[tswebextension.processOpenTab]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                return;
+            }
+
+            const isMainFrame = frameId === MAIN_FRAME_ID;
+            CosmeticApi.logScriptRules({
+                url,
+                tabId,
+                cosmeticResult: frameContext.cosmeticResult,
+                timestamp: currentTime,
+                contentType: isMainFrame ? ContentType.Document : ContentType.Subdocument,
+            });
         });
     }
 }

@@ -1,34 +1,39 @@
+import browser from 'webextension-polyfill';
 import { Filter, type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
-import { CompatibilityTypes, setConfiguration } from '@adguard/tsurlfilter';
-
+import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
-import { type AppInterface, defaultFilteringLog } from '../../common';
-import { getErrorMessage } from '../../common';
-import { logger } from '../utils/logger';
-import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 
-import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
-import UserRulesApi, { USER_FILTER_ID, type ConversionResult } from './user-rules-api';
-import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
-import { getAndExecuteScripts } from './scriptlets';
-import { engineApi } from './engine-api';
-import { declarativeFilteringLog, type RecordFiltered } from './declarative-filtering-log';
-import RuleSetsLoaderApi from './rule-sets-loader-api';
-import { Assistant } from './assistant';
-import {
-    type ConfigurationMV3,
-    type ConfigurationMV3Context,
-    configurationMV3Validator,
-} from './configuration';
-import { RequestEvents } from './request/events/request-events';
-import { TabsApi, tabsApi } from '../tabs/tabs-api';
+import { type AppInterface } from '../../common/app';
+import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { getErrorMessage } from '../../common/error';
+import { defaultFilteringLog } from '../../common/filtering-log';
+import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
+import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
+import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
+
+import { allowlistApi } from './allowlist-api';
+import { appContext } from './app-context';
+import { Assistant } from './assistant';
+import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
+import { declarativeFilteringLog } from './declarative-filtering-log';
+import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
+import { engineApi } from './engine-api';
+import { extSessionStorage } from './ext-session-storage';
+import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
+import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
+import { RequestEvents } from './request/events/request-events';
+import RuleSetsLoaderApi from './rule-sets-loader-api';
+import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
+import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
     staticFilters: IRuleSet[],
-    dynamicRules: ConversionResult
+    dynamicRules?: ConversionResult
+    stealthResult?: StealthConfigurationResult,
 };
 
 type FiltersUpdateInfo = {
@@ -43,7 +48,6 @@ export type {
     ConfigurationResult,
     ConversionResult,
     FailedEnableRuleSetsError,
-    RecordFiltered,
 };
 
 /**
@@ -53,10 +57,10 @@ export type {
  * starting/stopping declarative filtering log.
  */
 export class TsWebExtension implements AppInterface<
-ConfigurationMV3,
-ConfigurationMV3Context,
-ConfigurationResult,
-MessagesHandlerMV3
+    ConfigurationMV3,
+    ConfigurationMV3Context,
+    ConfigurationResult,
+    MessagesHandlerMV3
 > {
     /**
      * Fires on filtering log event.
@@ -71,8 +75,23 @@ MessagesHandlerMV3
     /**
      * This is where the configuration is stored, excluding "heavy" fields:
      * the contents of filters, custom rules and the allowlist.
+     *
+     * @returns Configuration context.
      */
-    configuration: ConfigurationMV3Context | undefined;
+    // eslint-disable-next-line class-methods-use-this
+    public get configuration(): ConfigurationMV3Context | undefined {
+        return appContext.configuration;
+    }
+
+    /**
+     * Sets app configuration context.
+     *
+     * @param value Status value.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public set configuration(value: ConfigurationMV3Context) {
+        appContext.configuration = value;
+    }
 
     /**
      * Whether filtering is enabled or not.
@@ -101,10 +120,6 @@ MessagesHandlerMV3
      */
     constructor(webAccessibleResourcesPath?: string) {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
-
-        // Keep app context when use method as callback
-        // of WebNavigation API listeners.
-        this.onCommitted = this.onCommitted.bind(this);
     }
 
     /**
@@ -118,55 +133,43 @@ MessagesHandlerMV3
      * {@link ConfigurationResult}.
      */
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        logger.debug('[START]: start');
+        logger.debug('[tswebextension.innerStart]: start');
+
+        if (!appContext.startTimeMs) {
+            appContext.startTimeMs = Date.now();
+        }
 
         try {
             const res = await this.configure(config);
-            await this.executeScriptlets();
 
             // Start listening for request events.
             RequestEvents.init();
+
             // Start handle request events.
             WebRequestApi.start();
+
+            // Start handle onRuleMatchedDebug event.
+            declarativeFilteringLog.start();
 
             // Add tabs listeners
             await tabsApi.start();
 
-            // TODO: Inject cosmetic rules into tabs, opened before app initialization.
             // Compute and save matching result for tabs, opened before app initialization.
             await TabsCosmeticInjector.processOpenTabs();
 
+            appContext.isAppStarted = true;
             this.isStarted = true;
             this.startPromise = undefined;
-            logger.debug('[START]: started');
+
+            logger.debug('[tswebextension.innerStart]: started');
 
             return res;
         } catch (e) {
             this.startPromise = undefined;
-            logger.debug('[START]: failed', e);
+
+            logger.debug('[tswebextension.innerStart]: failed due to ', getErrorMessage(e));
 
             throw new Error('Cannot be started: ', { cause: e as Error });
-        }
-    }
-
-    /**
-     * Fires on WebNavigation.onCommitted event.
-     *
-     * @param item Web navigation details {@link chrome.webNavigation.WebNavigationTransitionCallbackDetails}.
-     * @param item.tabId The ID of the tab in which the navigation occurred.
-     * @param item.url The url of the tab in which the navigation occurred.
-     */
-    private async onCommitted(
-        { tabId, url }: chrome.webNavigation.WebNavigationTransitionCallbackDetails,
-    ): Promise<void> {
-        if (this.isStarted && this.configuration) {
-            // If service worker just woke up
-            if (this.startPromise) {
-                await this.startPromise;
-            }
-
-            const { verbose } = this.configuration;
-            await getAndExecuteScripts(tabId, url, verbose);
         }
     }
 
@@ -180,16 +183,19 @@ MessagesHandlerMV3
      * @returns Promise resolved with result of configuration {@link ConfigurationResult}.
      */
     public async start(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        logger.debug('[START]: is started ', this.isStarted);
+        // Update log level before first log message.
+        TsWebExtension.updateLogLevel(config.logLevel);
+
+        logger.debug('[tswebextension.start]: is started ', this.isStarted);
 
         if (this.isStarted) {
             throw new Error('Already started');
         }
 
         if (this.startPromise) {
-            logger.debug('[START]: already called start, waiting');
+            logger.debug('[tswebextension.start]: already called start, waiting');
             const res = await this.startPromise;
-            logger.debug('[START]: awaited start');
+            logger.debug('[tswebextension.start]: awaited start');
             return res;
         }
 
@@ -199,17 +205,34 @@ MessagesHandlerMV3
     }
 
     /**
-     * Stops service, disables all user rules and filters.
+     * Removes all static and dynamic DNR rules and stops tsurlfilter engine.
      */
-    public async stop(): Promise<void> {
-        await UserRulesApi.removeAllRules();
+    private static async removeAllFilteringRules(): Promise<void> {
+        await DynamicRulesApi.removeAllRules();
 
         const disableFiltersIds = await FiltersApi.getEnabledRuleSets();
         await FiltersApi.updateFiltering(disableFiltersIds);
 
-        await engineApi.stopEngine();
+        await StealthService.clearAll();
 
-        await declarativeFilteringLog.stop();
+        TsWebExtension.updateRuleSetsForFilteringLog([], false);
+
+        engineApi.stopEngine();
+    }
+
+    /**
+     * Stops service, disables all user rules and filters.
+     */
+    public async stop(): Promise<void> {
+        // Stop handle onRuleMatchedDebug event.
+        // It should be stopped before removing rules,
+        // otherwise, it may try to log applying of removed rules. AG-36068.
+        declarativeFilteringLog.stop();
+
+        await TsWebExtension.removeAllFilteringRules();
+
+        // Stop handle request events.
+        WebRequestApi.stop();
 
         // Stop handle request events.
         WebRequestApi.stop();
@@ -217,6 +240,7 @@ MessagesHandlerMV3
         // Remove tabs listeners and clear context storage
         tabsApi.stop();
 
+        appContext.isAppStarted = false;
         this.isStarted = false;
     }
 
@@ -235,91 +259,236 @@ MessagesHandlerMV3
      * @see {@link ConversionResult}
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        logger.debug('[CONFIGURE]: start with ', config);
+        // Update log level before first log message.
+        TsWebExtension.updateLogLevel(config.logLevel);
+
+        // Exclude binary fields from logged config.
+        const binaryFields = ['userrules', 'sourceMap', 'rawFilterList', 'filterList', 'conversionMap'];
+        logger.debug('[tswebextension.configure]: start with ', stringifyObjectWithoutKeys(config, binaryFields));
 
         const configuration = configurationMV3Validator.parse(config);
 
-        // Update configuration of engine.
-        setConfiguration({
-            engine: 'extension',
-            version: chrome.runtime.getManifest().version,
-            verbose: configuration.verbose,
-            compatibility: CompatibilityTypes.Extension,
-        });
+        const res: ConfigurationResult = {
+            staticFiltersStatus: {
+                errors: [],
+            },
+            staticFilters: [],
+        };
 
-        // Extract filter into from configuration.
-        const {
-            staticFilters,
-            customFilters,
-            filtersIdsToEnable,
-            filtersIdsToDisable,
-        } = await TsWebExtension.getFiltersUpdateInfo(configuration);
+        if (configuration.settings.filteringEnabled) {
+            res.stealthResult = await StealthService.applySettings(configuration.settings);
 
-        // Update list of enabled static filters
-        const staticFiltersStatus = await FiltersApi.updateFiltering(
-            filtersIdsToDisable,
-            filtersIdsToEnable,
-        );
+            // Extract filters info from configuration and wrap them into IFilters.
+            const {
+                staticFilters,
+                customFilters,
+                filtersIdsToEnable,
+                filtersIdsToDisable,
+            } = await TsWebExtension.getFiltersUpdateInfo(configuration);
 
-        // Create static rulesets.
-        const staticRuleSets = await TsWebExtension.loadStaticRuleSets(
-            configuration.ruleSetsPath,
-            staticFilters,
-        );
+            // Update list of enabled static filters
+            res.staticFiltersStatus = await FiltersApi.updateFiltering(
+                filtersIdsToDisable,
+                filtersIdsToEnable,
+            );
 
-        // Convert custom filters and user rules into one rule set and apply it
-        const dynamicRules = await UserRulesApi.updateDynamicFiltering(
-            new Filter(USER_FILTER_ID, {
-                getContent: () => Promise.resolve({
-                    filterList: configuration.userrules.content,
-                    sourceMap: configuration.userrules.sourceMap ?? {},
-                    conversionMap: configuration.userrules.conversionMap ?? {},
-                    rawFilterList: configuration.userrules.rawFilterList ?? '',
-                }),
-            }),
-            customFilters,
-            staticRuleSets,
-            this.webAccessibleResourcesPath,
-        );
+            // Create static rulesets.
+            const staticRuleSets = await TsWebExtension.loadStaticRuleSets(
+                configuration.ruleSetsPath,
+                staticFilters,
+            );
 
-        // Reload engine for cosmetic rules
-        engineApi.waitingForEngine = engineApi.startEngine({
-            filters: [
-                ...staticFilters,
-                ...customFilters,
-            ],
-            userrules: configuration.userrules,
-        });
-        await engineApi.waitingForEngine;
+            // Get enabled static rule sets
+            const enabledRuleSetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
+            const enabledStaticRuleSets = staticRuleSets.filter((ruleSet) => {
+                const ruleSetId = ruleSet.getId();
+                return enabledRuleSetsIds.includes(ruleSetId);
+            });
+
+            // Update allowlist settings.
+            allowlistApi.configure(configuration);
+            // Combine all allowlist rules into one network rule.
+            const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
+
+            const userRulesFilter = new Filter(
+                USER_FILTER_ID,
+                { getContent: () => Promise.resolve(configuration.userrules) },
+                true,
+            );
+
+            const allowlistFilter = new Filter(
+                ALLOWLIST_FILTER_ID,
+                // TODO: Generate AST directly for allowlist rules.
+                { getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(combinedAllowlistRules)) },
+                true,
+            );
+
+            const quickFixesFilter = new Filter(
+                QUICK_FIXES_FILTER_ID,
+                { getContent: () => Promise.resolve(configuration.quickFixesRules) },
+                true,
+            );
+
+            // Convert quick fixes rules, allowlist, custom filters and user
+            // rules into one rule set and apply it.
+            res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
+                quickFixesFilter,
+                allowlistFilter,
+                userRulesFilter,
+                customFilters,
+                enabledStaticRuleSets,
+                this.webAccessibleResourcesPath,
+            );
+
+            // Reload engine for cosmetic rules
+            engineApi.waitingForEngine = engineApi.startEngine({
+                filters: [
+                    ...staticFilters,
+                    ...customFilters,
+                ],
+                userrules: configuration.userrules,
+                quickFixesRules: configuration.quickFixesRules,
+            });
+            await engineApi.waitingForEngine;
+
+            // TODO: Recreate only dynamic rule set, because static cannot be changed
+            const ruleSets = [
+                ...staticRuleSets,
+                res.dynamicRules.ruleSet,
+            ];
+
+            // Update rulesets in declarative filtering log.
+            TsWebExtension.updateRuleSetsForFilteringLog(ruleSets, configuration.declarativeLogEnabled);
+
+            res.staticFilters = staticRuleSets;
+        } else {
+            await TsWebExtension.removeAllFilteringRules();
+        }
+
+        this.configuration = TsWebExtension.createConfigurationContext(configuration);
 
         // Update previously opened tabs with new rules - find for each tab
         // new main frame rule.
         await tabsApi.updateCurrentTabsMainFrameRules();
 
-        // TODO: Recreate only dynamic rule set, because static cannot be changed
-        const ruleSets = [
-            ...staticRuleSets,
-            dynamicRules.ruleSet,
-        ];
-
-        // Update rulesets in declarative filtering log.
-        TsWebExtension.updateRuleSetsForFilteringLog(
-            ruleSets,
-            configuration.filteringLogEnabled,
-        );
-
         // Reload request events listeners.
         await WebRequestApi.flushMemoryCache();
 
-        this.configuration = TsWebExtension.createConfigurationContext(configuration);
+        logger.debug('[tswebextension.configure]: end');
 
-        logger.debug('[CONFIGURE]: end');
+        return res;
+    }
 
-        return {
-            staticFiltersStatus,
-            staticFilters: staticRuleSets,
-            dynamicRules,
-        };
+    /**
+     * Sets prebuild local script rules.
+     *
+     * @param localScriptRules Object with pre-build JS rules. @see {@link LocalScriptRulesService}.
+     */
+    public static setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
+        localScriptRulesService.setLocalScriptRules(localScriptRules);
+    }
+
+    /**
+     * Updates `hideReferrer` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isHideReferrer `isHideReferrer` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
+     */
+    public async setHideReferrer(isHideReferrer: boolean): Promise<boolean> {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        const currentValue = await StealthService.setHideReferrer(isHideReferrer);
+        this.configuration.settings.stealth.hideReferrer = currentValue;
+
+        return currentValue;
+    }
+
+    /**
+     * Updates `blockWebRTC` stealth config value without re-initialization of engine.
+     * Also updates webRTC privacy.network settings on demand.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isBlockWebRTC `blockWebRTC` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
+     */
+    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<boolean> {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        const currentValue = await StealthService.setDisableWebRTC(isBlockWebRTC);
+        this.configuration.settings.stealth.blockWebRTC = currentValue;
+
+        return currentValue;
+    }
+
+    /**
+     * Updates `blockChromeClientData` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isBlockChromeClientData `blockChromeClientData` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
+     */
+    public async setBlockChromeClientData(isBlockChromeClientData: boolean): Promise<boolean> {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        const currentValue = await StealthService.setBlockChromeClientData(isBlockChromeClientData);
+        this.configuration.settings.stealth.blockChromeClientData = currentValue;
+
+        return currentValue;
+    }
+
+    /**
+     * Updates `sendDoNotTrack` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isSendDoNotTrack `sendDoNotTrack` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
+     */
+    public async setSendDoNotTrack(isSendDoNotTrack: boolean): Promise<boolean> {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        const currentValue = await StealthService.setSendDoNotTrack(
+            isSendDoNotTrack,
+            this.configuration.settings.gpcScriptUrl,
+        );
+        this.configuration.settings.stealth.sendDoNotTrack = currentValue;
+
+        return currentValue;
+    }
+
+    /**
+     * Updates `hideSearchQueries` stealth config value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isHideSearchQueries `hideSearchQueries` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
+     */
+    public async setHideSearchQueries(isHideSearchQueries: boolean): Promise<boolean> {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        const currentValue = await StealthService.setHideSearchQueries(
+            isHideSearchQueries,
+            this.configuration.settings.hideDocumentReferrerScriptUrl,
+        );
+
+        this.configuration.settings.stealth.hideSearchQueries = currentValue;
+
+        return currentValue;
     }
 
     /**
@@ -365,43 +534,8 @@ MessagesHandlerMV3
      */
     public getMessageHandler(): MessagesHandlerMV3 {
         // Keep app context when handle message.
-        const messagesApi = new MessagesApi(this);
+        const messagesApi = new MessagesApi(this, tabsApi, defaultFilteringLog);
         return messagesApi.handleMessage;
-    }
-
-    /**
-     * Executes scriptlets for the currently active tab and adds a listener to
-     * the {@link chrome.webNavigation.onCommitted} hook to execute scriptlets.
-     *
-     * TODO: Move to RequestEvents.
-     */
-    public async executeScriptlets(): Promise<void> {
-        const activeTab = await TabsApi.getActiveTab();
-
-        if (this.isStarted && this.configuration && activeTab?.url && activeTab?.id) {
-            const { url, id } = activeTab;
-            const { verbose } = this.configuration;
-
-            await getAndExecuteScripts(id, url, verbose);
-        }
-
-        // TODO: Move to RequestEvents.
-        chrome.webNavigation.onCommitted.addListener(this.onCommitted);
-    }
-
-    // TODO: Implement this method.
-    // eslint-disable-next-line jsdoc/require-returns-check, jsdoc/require-throws
-    /**
-     * Retrieves rule node from a dynamic filter.
-     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
-     *
-     * @param filterId Filter id.
-     * @param ruleIndex Rule index.
-     * @returns Rule node or null.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
-    retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        throw new Error('Method is not implemented.');
     }
 
     /**
@@ -423,7 +557,7 @@ MessagesHandlerMV3
             settings,
             filtersPath,
             ruleSetsPath,
-            filteringLogEnabled,
+            declarativeLogEnabled,
         } = configuration;
 
         return {
@@ -431,7 +565,7 @@ MessagesHandlerMV3
             customFilters: customFilters.map(({ filterId }) => filterId),
             filtersPath,
             ruleSetsPath,
-            filteringLogEnabled,
+            declarativeLogEnabled,
             verbose,
             settings,
         };
@@ -484,9 +618,14 @@ MessagesHandlerMV3
     ): Promise<IRuleSet[]> {
         // Wrap filters into rule sets
         const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
-        const manifest = chrome.runtime.getManifest();
-        // eslint-disable-next-line max-len
-        const manifestRuleSets = manifest.declarative_net_request.rule_resources as chrome.declarativeNetRequest.Ruleset[];
+        const manifest = browser.runtime.getManifest();
+        if (!manifest.declarative_net_request) {
+            throw new Error('Cannot find declarative_net_request in manifest');
+        }
+
+        // Note: we cannot create rulesets only for enabled filters because we
+        // need to get all rulesets' counters for checking limits on the client.
+        const manifestRuleSets = manifest.declarative_net_request.rule_resources;
         const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
             return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
         });
@@ -498,30 +637,94 @@ MessagesHandlerMV3
         } catch (e) {
             const filterListIds = staticFilters.map((f) => f.getId());
 
-            logger.error(`Cannot scan rules of filter list with ids ${filterListIds} due to: ${getErrorMessage(e)}`);
+            // eslint-disable-next-line max-len
+            logger.error(`[tswebextension.loadStaticRuleSets]: Cannot scan rules of filter list with ids ${filterListIds} due to: ${getErrorMessage(e)}`);
 
             return [];
         }
     }
 
     /**
-     * Set provided list of rule sets to a filtering log and toggle it's status
-     * with the passed value.
+     * Set provided list of rule sets to a filtering log.
      *
      * @param allRuleSets List of {@link IRuleSet}.
-     * @param filteringLogEnabled Preferred status for filtering log.
+     * @param declarativeLogEnabled Should we log matched declarative rules.
      */
     private static updateRuleSetsForFilteringLog(
         allRuleSets: IRuleSet[],
-        filteringLogEnabled: boolean,
+        declarativeLogEnabled: boolean,
     ): void {
         declarativeFilteringLog.ruleSets = allRuleSets;
 
-        // Starts or stop declarative filtering log.
-        if (filteringLogEnabled) {
+        if (declarativeLogEnabled) {
             declarativeFilteringLog.start();
         } else {
             declarativeFilteringLog.stop();
         }
+    }
+
+    /**
+     * Initialize app persistent data.
+     * This method called as soon as possible and allows access
+     * to the actual context before the app is started.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public async initStorage(): Promise<void> {
+        await extSessionStorage.init();
+        appContext.isStorageInitialized = true;
+    }
+
+    /**
+     * Sets the debug scriptlets state.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param debug Debug filtering state.
+     */
+    public setDebugScriptlets(debug: boolean): void {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+        this.configuration.settings.debugScriptlets = debug;
+    }
+
+    /**
+     * Updates `collectStats` configuration value without re-initialization of engine.
+     *
+     * @throws Error if {@link configuration} not set.
+     * @param isCollectStats `collectStats` config value.
+     */
+    public setCollectHitStats(isCollectStats: boolean): void {
+        if (!this.configuration) {
+            throw new Error('Configuration not set');
+        }
+
+        this.configuration.settings.collectStats = isCollectStats;
+    }
+
+    /**
+     * Updates the log level.
+     *
+     * @param logLevel Log level.
+     */
+    private static updateLogLevel(logLevel: ConfigurationMV3['logLevel']): void {
+        try {
+            logger.currentLevel = logLevel as LogLevel || LogLevel.Info;
+        } catch (e) {
+            logger.currentLevel = LogLevel.Info;
+        }
+    }
+
+    /**
+     * Retrieves rule node from a dynamic filter.
+     * Dynamic filters are filters that are not loaded from the storage but
+     * created on the fly: now only for allowlist.
+     *
+     * @param filterId Filter id.
+     * @param ruleIndex Rule index.
+     * @returns Rule node or null.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        return engineApi.retrieveDynamicRuleNode(filterId, ruleIndex);
     }
 }

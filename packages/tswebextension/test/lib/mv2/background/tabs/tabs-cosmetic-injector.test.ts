@@ -1,25 +1,39 @@
+import {
+    describe,
+    expect,
+    beforeAll,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
-import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
-import { EngineApi } from '@lib/mv2/background/engine-api';
-import { Allowlist } from '@lib/mv2/background/allowlist';
-import { DocumentApi } from '@lib/mv2/background/document-api';
-import { appContext } from '@lib/mv2/background/context';
-import { stealthApi } from '@lib/mv2/background/stealth-api';
-import { TabsApi } from '@lib/mv2/background/tabs/tabs-api';
-import { TabsCosmeticInjector } from '@lib/mv2/background/tabs/tabs-cosmetic-injector';
-import { CosmeticApi } from '@lib/mv2/background/cosmetic-api';
-import { ContentType } from '@lib/common/request-type';
+import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
-jest.mock('@lib/mv2/background/engine-api');
-jest.mock('@lib/mv2/background/allowlist');
-jest.mock('@lib/mv2/background/cosmetic-api');
-jest.mock('@lib/mv2/background/context');
-jest.mock('@lib/mv2/background/stealth-api');
-jest.mock('@lib/mv2/background/document-api');
+import { extSessionStorage, TabsApi, TabsCosmeticInjector } from '../../../../../src/lib';
+import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
+import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
+import { appContext } from '../../../../../src/lib/mv2/background/app-context';
+import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
+import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
+import { CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';
+import { ContentType } from '../../../../../src/lib/common/request-type';
+
+vi.mock('../../../../../src/lib/mv2/background/engine-api');
+vi.mock('../../../../../src/lib/mv2/background/allowlist');
+vi.mock('../../../../../src/lib/mv2/background/cosmetic-api');
+vi.mock('../../../../../src/lib/mv2/background/app-context');
+vi.mock('../../../../../src/lib/mv2/background/stealth-api');
+vi.mock('../../../../../src/lib/mv2/background/document-api');
 
 describe('TabsCosmeticInjector', () => {
     let tabCosmeticInjector: TabsCosmeticInjector;
     let engineApi: EngineApi;
+
+    beforeAll(() => {
+        extSessionStorage.init();
+        appContext.startTimeMs = Date.now();
+    });
 
     beforeEach(() => {
         const allowlist = new Allowlist();
@@ -30,7 +44,7 @@ describe('TabsCosmeticInjector', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     describe('processOpenTabs method', () => {
@@ -48,13 +62,13 @@ describe('TabsCosmeticInjector', () => {
             browser.webNavigation.getAllFrames.resolves([{ frameId, url }]);
 
             const matchingResult = {} as MatchingResult;
-            matchingResult.getCosmeticOption = jest.fn();
+            matchingResult.getCosmeticOption = vi.fn();
 
             const cosmeticResult = {} as CosmeticResult;
 
-            jest.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
-            jest.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
-            jest.spyOn(Date, 'now').mockReturnValue(timestamp);
+            vi.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
+            vi.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
+            vi.spyOn(Date, 'now').mockReturnValue(timestamp);
 
             const expectedLogParams = {
                 url,

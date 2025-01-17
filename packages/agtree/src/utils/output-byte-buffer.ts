@@ -250,4 +250,13 @@ export class OutputByteBuffer extends ByteBuffer {
     public get currentOffset(): number {
         return this.offset;
     }
+
+    /**
+     * Gets the chunks of the buffer.
+     *
+     * @returns Chunks of the buffer.
+     */
+    public getChunks(): Uint8Array[] {
+        return this.chunks;
+    }
 }

@@ -17,15 +17,19 @@ export class UnsupportedRegexpError extends InvalidDeclarativeRuleError {
      * @param message Message of error.
      * @param networkRule {@link NetworkRule}.
      * @param declarativeRule {@link DeclarativeRule}.
+     * @param reason Describes a reason of the error.
      */
     constructor(
         message: string,
         networkRule: NetworkRule,
         declarativeRule: DeclarativeRule,
+        reason?: string,
     ) {
         super(message, networkRule, declarativeRule);
 
-        this.name = 'UnsupportedRegexpError';
+        this.name = this.constructor.name;
+
+        this.reason = reason;
 
         // For proper work of the "instanceof" operator
         Object.setPrototypeOf(this, UnsupportedRegexpError.prototype);

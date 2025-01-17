@@ -37,14 +37,11 @@ Build:
 
             branch="${bamboo.planRepository.branchName}"
 
-            # TODO: remove when release/v3.1 is merged into master
-            # Throw error if current branch is not "release/v3.1",
-            if [ $branch != "release/v3.1" ]
+            # Throw error if current branch is not "master".
+            if [ $branch != "master" ]
             then
-              echo "load companiesdb is not supported on branch ${branch}"
-              # TODO: remove following logging and change exit to '1' after release/v3.1 is merged into master
-              echo "skipping..."
-              exit 0;
+              echo "load companiesdb is not supported on branch ${branch}."
+              exit 1;
             fi
 
             # Install dependencies
@@ -83,6 +80,11 @@ Build:
   requirements:
     - adg-docker: 'true'
     - extension: 'true'
+
+# run release build at 11:00 every Tuesday (after companiesdb update)
+triggers:
+  - cron:
+      expression: 0 0 11 ? * TUE
 
 branches:
   create: manually

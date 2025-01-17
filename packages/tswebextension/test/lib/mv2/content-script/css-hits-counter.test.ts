@@ -1,10 +1,15 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 
-import { CssHitsCounter } from '@lib/mv2/content-script/css-hits-counter';
+import { CssHitsCounter } from '../../../../src/lib';
 
 describe('CssHitsCounter', () => {
     // Mock document
@@ -30,7 +35,7 @@ describe('CssHitsCounter', () => {
     });
 
     it('checks counting', () => {
-        const onCssHitsFound = jest.fn((stats: any): void => {
+        const onCssHitsFound = vi.fn((stats: any): void => {
             expect(stats).toHaveLength(2);
 
             expect(stats[0].filterId).toBe(1);
@@ -52,7 +57,7 @@ describe('CssHitsCounter', () => {
     });
 
     it('checks counting with mutations', () => {
-        const onCssHitsFound = jest.fn((stats: any): void => {
+        const onCssHitsFound = vi.fn((stats: any): void => {
             expect(stats).not.toBeNull();
         });
 
@@ -60,7 +65,7 @@ describe('CssHitsCounter', () => {
 
         /**
          * Mock mutation observer class.
-         * In case original class doesn't work properly in jest jsdom environment.
+         * In case original class doesn't work properly in vitest jsdom environment.
          */
         window.MutationObserver = class {
             private callback: MutationCallback;
@@ -140,7 +145,7 @@ describe('CssHitsCounter', () => {
     });
 
     it('checks if countAffectedByExtendedCss is ok', () => {
-        const onCssHitsFound = jest.fn((stats: any): void => {
+        const onCssHitsFound = vi.fn((stats: any): void => {
             expect(stats).not.toBeNull();
         });
 

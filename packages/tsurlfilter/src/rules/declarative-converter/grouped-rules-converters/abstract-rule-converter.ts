@@ -97,32 +97,32 @@
 /* eslint-enable jsdoc/require-description-complete-sentence */
 /* eslint-enable jsdoc/no-multi-asterisks */
 
-import punycode from 'punycode/';
-import { redirects } from '@adguard/scriptlets';
+import punycode from 'punycode/punycode.js';
+import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
 import { type RequestType } from '../../../request-type';
 import {
-    ResourceType,
+    DECLARATIVE_REQUEST_METHOD_MAP,
+    DECLARATIVE_RESOURCE_TYPES_MAP,
     type DeclarativeRule,
+    DomainType,
+    HeaderOperation,
+    type ModifyHeaderInfo,
+    type Redirect,
+    type RequestMethod,
+    ResourceType,
     type RuleAction,
+    type RuleActionHeaders,
     RuleActionType,
     type RuleCondition,
-    DomainType,
-    type Redirect,
-    HeaderOperation,
-    type RuleActionHeaders,
-    type ModifyHeaderInfo,
-    DECLARATIVE_RESOURCE_TYPES_MAP,
-    DECLARATIVE_REQUEST_METHOD_MAP,
     type SupportedHttpMethod,
-    type RequestMethod,
 } from '../declarative-rule';
 import {
-    TooComplexRegexpError,
-    UnsupportedModifierError,
+    type ConversionError,
     EmptyResourcesError,
+    UnsupportedModifierError,
     UnsupportedRegexpError,
 } from '../errors/conversion-errors';
 import { type ConvertedRules } from '../converted-result';
@@ -136,6 +136,9 @@ import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../modifiers/permissions-m
 import { SimpleRegex } from '../../simple-regex';
 import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
+import { EmptyDomainsError } from '../errors/conversion-errors/empty-domains-error';
+import { re2Validator } from '../re2-regexp/re2-validator';
+import { getErrorMessage } from '../../../common/error';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -208,17 +211,47 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
-     * Converts to punycode if string contains non ASCII characters.
+     * Converts to ASCII characters only if `str` contains non-ASCII characters.
      *
      * @param str String to convert.
      *
      * @returns A transformed string containing only ASCII characters or
      * the original string.
+     *
+     * @throws Error if conversion into ASCII fails.
      */
     private static prepareASCII(str: string): string {
-        return DeclarativeRuleConverter.isASCII(str)
-            ? str
-            : punycode.toASCII(str);
+        let res = str;
+
+        try {
+            if (!DeclarativeRuleConverter.isASCII(res)) {
+                // for cyrillic domains we need to convert them by isASCII()
+                res = punycode.toASCII(res);
+            }
+            // after toASCII() some characters can be still non-ASCII
+            // e.g. `abc“@` with non-ASCII `“`
+            if (!DeclarativeRuleConverter.isASCII(res)) {
+                res = punycode.encode(res);
+            }
+        } catch (e: unknown) {
+            throw new Error(`Error converting to ASCII: "${str}" due to ${getErrorMessage(e)}`);
+        }
+
+        return res;
+    }
+
+    /**
+     * Removes slashes from the beginning and end of the string.
+     * We do that because regexFilter does not support them.
+     *
+     * @param str String to remove slashes.
+     * @returns String without slashes.
+     */
+    private static removeSlashes(str: string): string {
+        if (str.startsWith('/') && str.endsWith('/')) {
+            return str.substring(1, str.length - 1);
+        }
+        return str;
     }
 
     /**
@@ -290,7 +323,7 @@ export abstract class DeclarativeRuleConverter {
             }
             const advancedModifier = rule.getAdvancedModifier();
             const redirectTo = advancedModifier as RedirectModifier;
-            const filename = redirects.getRedirectFilename(redirectTo.getValue());
+            const filename = getRedirectFilename(redirectTo.getValue());
 
             return { extensionPath: `${resourcesPath}/${filename}` };
         }
@@ -307,7 +340,11 @@ export abstract class DeclarativeRuleConverter {
             return {
                 transform: {
                     queryTransform: {
-                        removeParams: DeclarativeRuleConverter.toASCII([value]),
+                        /**
+                         * In case if param is encoded URI we need to decode it first:
+                         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014.
+                         */
+                        removeParams: [decodeURIComponent(value)],
                     },
                 },
             };
@@ -525,7 +562,8 @@ export abstract class DeclarativeRuleConverter {
         if (pattern) {
             // set regexFilter
             if (rule.isRegexRule()) {
-                condition.regexFilter = DeclarativeRuleConverter.prepareASCII(pattern);
+                const regexFilter = DeclarativeRuleConverter.removeSlashes(pattern);
+                condition.regexFilter = DeclarativeRuleConverter.prepareASCII(regexFilter);
             } else {
                 // A pattern beginning with ||* is not allowed. Use * instead.
                 const patternWithoutVerticals = pattern.startsWith('||*')
@@ -577,6 +615,14 @@ export abstract class DeclarativeRuleConverter {
         const hasExcludedResourceTypes = restrictedRequestTypes !== 0;
         if (hasExcludedResourceTypes) {
             condition.excludedResourceTypes = this.getResourceTypes(restrictedRequestTypes);
+
+            /**
+             * By default, we do not block the requests that
+             * are loaded in the browser tab ("main_frame").
+             */
+            if (!condition.excludedResourceTypes.includes(ResourceType.MainFrame)) {
+                condition.excludedResourceTypes.push(ResourceType.MainFrame);
+            }
         }
 
         // set resourceTypes
@@ -595,42 +641,66 @@ export abstract class DeclarativeRuleConverter {
             condition.excludedRequestMethods = this.mapHttpMethodToDeclarativeHttpMethod(restrictedMethods);
         }
 
-        // set isUrlFilterCaseSensitive
-        condition.isUrlFilterCaseSensitive = rule.isOptionEnabled(NetworkRuleOption.MatchCase);
+        // By default, this option is false, so there is no need to specify it everywhere.
+        // We do it only if it is true.
+        if (rule.isOptionEnabled(NetworkRuleOption.MatchCase)) {
+            condition.isUrlFilterCaseSensitive = rule.isOptionEnabled(NetworkRuleOption.MatchCase);
+        }
 
         /**
-         * Here we need to set 'main_frame' to apply to document requests
-         * as well (because by default it applies to all requests except
-         * document).
-         * And if we specify 'main_frame', then we also need to specify all
-         * other types, so that it works not only for document requests, but
-         * also for all other types of requests.
+         * Adds the main_frame resource type to the resourceTypes if the popup modifier is enabled.
+         * Popup rules apply only to document requests, so adding main_frame ensures the rules are correctly applied.
          */
-        const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
-            || rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
-            || rule.isOptionEnabled(NetworkRuleOption.Csp)
-            || rule.isOptionEnabled(NetworkRuleOption.Permissions)
-            || rule.isOptionEnabled(NetworkRuleOption.Cookie)
-            || rule.isOptionEnabled(NetworkRuleOption.To)
-            || rule.isOptionEnabled(NetworkRuleOption.Method);
+        if (rule.isOptionEnabled(NetworkRuleOption.Popup)) {
+            condition.resourceTypes = condition.resourceTypes || [];
+            if (!condition.resourceTypes.includes(ResourceType.MainFrame)) {
+                condition.resourceTypes.push(ResourceType.MainFrame);
+            }
+        }
 
         const emptyResourceTypes = !condition.resourceTypes && !condition.excludedResourceTypes;
 
-        if (shouldMatchAllResourcesTypes && emptyResourceTypes) {
-            condition.resourceTypes = [
-                ResourceType.MainFrame,
-                ResourceType.SubFrame,
-                ResourceType.Stylesheet,
-                ResourceType.Script,
-                ResourceType.Image,
-                ResourceType.Font,
-                ResourceType.Object,
-                ResourceType.XmlHttpRequest,
-                ResourceType.Ping,
-                ResourceType.Media,
-                ResourceType.WebSocket,
-                ResourceType.Other,
-            ];
+        if (emptyResourceTypes) {
+            /**
+             * Here we need to set 'main_frame' to apply to document requests
+             * as well (because by default it applies to all requests except
+             * document).
+             * And if we specify 'main_frame', then we also need to specify all
+             * other types, so that it works not only for document requests, but
+             * also for all other types of requests.
+             */
+            const shouldMatchAllResourcesTypes = rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)
+                || rule.isOptionEnabled(NetworkRuleOption.Csp)
+                || rule.isOptionEnabled(NetworkRuleOption.Cookie)
+                || rule.isOptionEnabled(NetworkRuleOption.To)
+                || rule.isOptionEnabled(NetworkRuleOption.Method);
+
+            /**
+             * $permissions and $removeparam modifiers must be applied only
+             * to `document` content-type ('main_frame' and 'sub_frame')
+             * if they don't have resource types.
+             */
+            const shouldMatchOnlyDocument = rule.isOptionEnabled(NetworkRuleOption.RemoveParam)
+                || rule.isOptionEnabled(NetworkRuleOption.Permissions);
+
+            if (shouldMatchAllResourcesTypes) {
+                condition.resourceTypes = [
+                    ResourceType.MainFrame,
+                    ResourceType.SubFrame,
+                    ResourceType.Stylesheet,
+                    ResourceType.Script,
+                    ResourceType.Image,
+                    ResourceType.Font,
+                    ResourceType.Object,
+                    ResourceType.XmlHttpRequest,
+                    ResourceType.Ping,
+                    ResourceType.Media,
+                    ResourceType.WebSocket,
+                    ResourceType.Other,
+                ];
+            } else if (shouldMatchOnlyDocument) {
+                condition.resourceTypes = [ResourceType.MainFrame, ResourceType.SubFrame];
+            }
         }
 
         return condition;
@@ -648,7 +718,6 @@ export abstract class DeclarativeRuleConverter {
      *
      * @throws An {@link UnsupportedModifierError} if the network rule
      * contains an unsupported modifier
-     * OR a {@link TooComplexRegexpError} if regexp is too complex
      * OR an {@link EmptyResourcesError} if there is empty resources in the rule
      * OR an {@link UnsupportedRegexpError} if regexp is not supported in
      * the RE2 syntax.
@@ -657,10 +726,10 @@ export abstract class DeclarativeRuleConverter {
      *
      * @returns A list of declarative rules.
      */
-    protected convertRule(
+    protected async convertRule(
         rule: NetworkRule,
         id: number,
-    ): DeclarativeRule[] {
+    ): Promise<DeclarativeRule[]> {
         // If the rule is not convertible - method will throw an error.
         const shouldConvert = NetworkRuleDeclarativeValidator.shouldConvertNetworkRule(rule);
 
@@ -680,7 +749,7 @@ export abstract class DeclarativeRuleConverter {
             declarativeRule.priority = priority;
         }
 
-        const conversionErr = DeclarativeRuleConverter.checkDeclarativeRuleApplicable(
+        const conversionErr = await DeclarativeRuleConverter.checkDeclarativeRuleApplicable(
             rule,
             declarativeRule,
         );
@@ -692,58 +761,61 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
-     * Checks if the converted declarative rule passes the regexp validation
-     * (too complex regexps are not allowed also back reference,
-     * possessive and negative lookahead are not supported)
-     * and if it contains resource types.
+     * Verifies whether the converted declarative rule passes the regular expression (regexp) validation.
      *
-     * @param networkRule Network rule.
-     * @param declarativeRule Declarative rule.
+     * Additionally, it checks whether the rule contains resource types.
      *
-     * @returns Error {@link TooComplexRegexpError} if regexp is too complex
-     * OR Error {@link EmptyResourcesError} if there is empty resources
-     * in the rule
-     * OR Error {@link UnsupportedRegexpError} if regexp is not supported
-     * in the RE2 syntax @see https://github.com/google/re2/wiki/Syntax
-     * OR null.
+     * Note: some complex regexps are not allowed,
+     * e.g. back references, possessive quantifiers, negative lookaheads.
+     *
+     * @see {@link https://github.com/google/re2/wiki/Syntax}.
+     *
+     * @param networkRule The original network rule.
+     * @param declarativeRule The converted declarative rule.
+     *
+     * @returns Different errors:
+     * - {@link EmptyResourcesError} if the rule has empty resources,
+     * - {@link UnsupportedRegexpError} if the regexp is not supported
+     * by RE2 syntax (@see {@link https://github.com/google/re2/wiki/Syntax}),
+     * - {@link EmptyDomainsError} if the declarative rule has empty domains
+     * while the original rule has non-empty domains,
+     * - {@link NonAsciiUrlFilterError} if condition `urlFilter` contains non-ASCII characters,
+     * or null if no errors are found.
      */
-    private static checkDeclarativeRuleApplicable(
+    private static async checkDeclarativeRuleApplicable(
         networkRule: NetworkRule,
         declarativeRule: DeclarativeRule,
-    ): TooComplexRegexpError | EmptyResourcesError | UnsupportedRegexpError | null {
+    ): Promise<ConversionError | null> {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
 
         if (resourceTypes?.length === 0) {
             return new EmptyResourcesError('Conversion resourceTypes is empty', networkRule, declarativeRule);
         }
 
-        // More complex regex than allowed as part of the "regexFilter" key.
-        if (regexFilter?.match(/\|/g)) {
-            const regexArr = regexFilter.split('|');
-            // TODO: Find how exactly the complexity of a rule is calculated.
-            // The values maxGroups & maxGroupLength are obtained by testing.
-            // TODO: Fix these values based on Chrome Errors
-            const maxGroups = 15;
-            const maxGroupLength = 31;
-            if (regexArr.length > maxGroups
-                || regexArr.some((i) => i.length > maxGroupLength)
-            ) {
-                return new TooComplexRegexpError(
-                    'More complex regex than allowed',
-                    networkRule,
-                    declarativeRule,
-                );
+        const permittedDomains = networkRule.getPermittedDomains();
+        if (permittedDomains && permittedDomains.length > 0) {
+            const { initiatorDomains } = declarativeRule.condition;
+            if (!initiatorDomains || initiatorDomains.length === 0) {
+                const ruleText = networkRule.getText();
+                const msg = `Conversion initiatorDomains is empty, but original rule's domains not: "${ruleText}"`;
+                return new EmptyDomainsError(msg, networkRule, declarativeRule);
             }
         }
 
-        // Back reference, possessive and negative lookahead are not supported
-        // See more: https://github.com/google/re2/wiki/Syntax
-        if (regexFilter?.match(/\\[1-9]|\(\?<?(!|=)|{\S+}/g)) {
-            return new UnsupportedRegexpError(
-                'Invalid regex',
-                networkRule,
-                declarativeRule,
-            );
+        // More complex regex than allowed as part of the "regexFilter" key.
+        if (regexFilter) {
+            try {
+                await re2Validator.isRegexSupported(regexFilter);
+            } catch (e) {
+                const ruleText = networkRule.getText();
+                const msg = `Regex is unsupported: "${ruleText}"`;
+                return new UnsupportedRegexpError(
+                    msg,
+                    networkRule,
+                    declarativeRule,
+                    getErrorMessage(e),
+                );
+            }
         }
 
         return null;
@@ -768,9 +840,9 @@ export abstract class DeclarativeRuleConverter {
         e: unknown,
     ): Error {
         if (e instanceof EmptyResourcesError
-            || e instanceof TooComplexRegexpError
             || e instanceof UnsupportedModifierError
             || e instanceof UnsupportedRegexpError
+            || e instanceof EmptyDomainsError
         ) {
             return e;
         }
@@ -788,28 +860,34 @@ export abstract class DeclarativeRuleConverter {
      *
      * @param filterId An identifier for the filter.
      * @param rules Indexed rules.
-     * @param offsetId Offset for the IDs of the converted rules.
+     * @param offsetId Offset for the IDs of the converted rules. Used in cases
+     * of converting several filters into one ruleset to exclude the possibility
+     * of duplicate IDs.
      *
      * @returns Transformed declarative rules with their sources
      * and caught conversion errors.
      */
-    protected convertRules(
+    protected async convertRules(
         filterId: number,
         rules: IndexedNetworkRuleWithHash[],
         offsetId: number,
-    ): ConvertedRules {
+    ): Promise<ConvertedRules> {
         const res: ConvertedRules = {
             declarativeRules: [],
             errors: [],
             sourceMapValues: [],
         };
 
-        rules.forEach(({ rule, index }: IndexedNetworkRuleWithHash) => {
+        await Promise.all(rules.map(async ({ rule, index }: IndexedNetworkRuleWithHash) => {
+            // Here we use offset to generate unique IDs for each rule. Because
+            // sometimes we convert several filters into one ruleset, that's why
+            // we cannot just use the index on IndexedNetworkRuleWithHash - they
+            // can be the same for different filters.
             const id = offsetId + index;
             let converted: DeclarativeRule[] = [];
 
             try {
-                converted = this.convertRule(
+                converted = await this.convertRule(
                     rule,
                     id,
                 );
@@ -828,7 +906,7 @@ export abstract class DeclarativeRuleConverter {
                 });
                 res.declarativeRules.push(dRule);
             });
-        });
+        }));
 
         return res;
     }
@@ -926,5 +1004,5 @@ export abstract class DeclarativeRuleConverter {
         filterId: number,
         rules: IndexedNetworkRuleWithHash[],
         offsetId: number,
-    ): ConvertedRules;
+    ): Promise<ConvertedRules>;
 }

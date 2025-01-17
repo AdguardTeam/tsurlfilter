@@ -1,26 +1,22 @@
 /* eslint-disable jsdoc/require-returns */
-import { nanoid } from 'nanoid';
-import {
-    type CosmeticResult,
-    type CosmeticRule,
-} from '@adguard/tsurlfilter';
+import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { appContext } from './context';
-import { getDomain } from '../../common/utils/url';
 import { USER_FILTER_ID } from '../../common/constants';
+import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
+import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
+import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils/nanoid';
+import { getDomain } from '../../common/utils/url';
+
+import { appContext } from './app-context';
+import { engineApi, tabsApi } from './api';
 import { buildScriptText } from './injection-helper';
 import { localScriptRulesService } from './services/local-script-rules-service';
 import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs/tabs-api';
-import { engineApi, tabsApi } from './api';
-import { createFrameMatchQuery } from './utils/create-frame-match-query';
-import { getErrorMessage } from '../../common/error';
-import { logger } from '../../common/utils/logger';
-import { CosmeticApiCommon } from '../../common/cosmetic-api';
-
-import type { ContentType } from '../../common/request-type';
 
 export type ApplyCosmeticRulesParams = {
     tabId: number,
@@ -29,44 +25,11 @@ export type ApplyCosmeticRulesParams = {
     cosmeticResult: CosmeticResult,
 };
 
-export type LogJsRulesParams = {
-    tabId: number,
-    cosmeticResult: CosmeticResult,
-    url: string,
-    contentType: ContentType,
-    timestamp: number,
-};
-
-export type ContentScriptCosmeticData = {
-    /**
-     * Is app started.
-     */
-    isAppStarted: boolean,
-
-    /**
-     * Are hits stats collected.
-     */
-    areHitsStatsCollected: boolean,
-
-    /**
-     * Extended css rules to apply.
-     */
-    extCssRules: string[] | null,
-};
-
 /**
  * Cosmetic api class.
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi extends CosmeticApiCommon {
-    private static readonly ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
-
-    private static readonly INJECT_HIT_START = " content: 'adguard";
-
-    private static readonly HIT_SEP = encodeURIComponent(';');
-
-    private static readonly HIT_END = "' !important; }";
-
     // Timeout for cosmetic injection retry on failure.
     private static readonly INJECTION_RETRY_TIMEOUT_MS = 10;
 
@@ -86,7 +49,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @see {@link LocalScriptRulesService} for details about script source.
      */
     public static async injectScript(scriptText: string, tabId: number, frameId = 0): Promise<void> {
-        return TabsApi.injectScript(buildScriptText(scriptText), tabId, frameId);
+        return TabsApi.injectScript(buildScriptText(scriptText, appContext.startTimeMs), tabId, frameId);
     }
 
     /**
@@ -316,7 +279,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Logs js rules to specific frame.
+     * Logs js rules applied to specific frame.
      *
      * We need a separate function for logging because script rules can be logged before injection
      * to avoid duplicate logs while the js rule is being applied.
@@ -339,32 +302,34 @@ export class CosmeticApi extends CosmeticApiCommon {
         const permittedScriptRules = CosmeticApi.sanitizeScriptRules(scriptRules);
 
         for (const scriptRule of permittedScriptRules) {
-            if (!scriptRule.isGeneric()) {
-                const ruleType = scriptRule.getType();
-                defaultFilteringLog.publishEvent({
-                    type: FilteringEventType.JsInject,
-                    data: {
-                        script: true,
-                        tabId,
-                        // for proper filtering log request info rule displaying
-                        // event id should be unique for each event, not copied from request
-                        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341
-                        eventId: nanoid(),
-                        requestUrl: url,
-                        frameUrl: url,
-                        frameDomain: getDomain(url) as string,
-                        requestType: contentType,
-                        timestamp,
-                        filterId: scriptRule.getFilterListId(),
-                        ruleIndex: scriptRule.getIndex(),
-                        cssRule: ruleType === CosmeticRuleType.ElementHidingRule
-                            || ruleType === CosmeticRuleType.CssInjectionRule,
-                        scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
-                            || ruleType === CosmeticRuleType.JsInjectionRule,
-                        contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
-                    },
-                });
+            if (scriptRule.isGeneric()) {
+                continue;
             }
+
+            const ruleType = scriptRule.getType();
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.JsInject,
+                data: {
+                    script: true,
+                    tabId,
+                    // for proper filtering log request info rule displaying
+                    // event id should be unique for each event, not copied from request
+                    // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341
+                    eventId: nanoid(),
+                    requestUrl: url,
+                    frameUrl: url,
+                    frameDomain: getDomain(url) as string,
+                    requestType: contentType,
+                    timestamp,
+                    filterId: scriptRule.getFilterListId(),
+                    ruleIndex: scriptRule.getIndex(),
+                    cssRule: ruleType === CosmeticRuleType.ElementHidingRule
+                        || ruleType === CosmeticRuleType.CssInjectionRule,
+                    scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
+                        || ruleType === CosmeticRuleType.JsInjectionRule,
+                    contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
+                },
+            });
         }
     }
 

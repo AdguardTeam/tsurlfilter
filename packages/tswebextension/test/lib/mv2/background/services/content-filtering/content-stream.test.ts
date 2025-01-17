@@ -1,15 +1,27 @@
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import { TextEncoder, TextDecoder } from 'text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
-import { ContentStream } from '@lib/mv2/background/services/content-filtering/content-stream';
-import { DEFAULT_CHARSET, WIN_1251, WIN_1252 } from '@lib/mv2/background/services/content-filtering/charsets';
-import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
+
+import { MockFilteringLog } from '../../../../common/mocks';
+import {
+    DEFAULT_CHARSET,
+    WIN_1251,
+    WIN_1252,
+} from '../../../../../../src/lib/mv2/background/services/content-filtering/charsets';
 import {
     type ContentStringFilterInterface,
-} from '@lib/mv2/background/services/content-filtering/content-string-filter';
-import { MockStreamFilter } from './mock-stream-filter';
-import { MockFilteringLog } from '../../../../common/mocks';
+} from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
+import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
+import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
 
-jest.mock('../../../../../../src/lib/common/utils/logger');
+import { MockStreamFilter } from './mock-stream-filter';
+
+vi.mock('../../../../../../src/lib/common/utils/logger');
 
 describe('Content stream', () => {
     const textEncoderUtf8 = new TextEncoder();
@@ -303,8 +315,8 @@ describe('Content stream', () => {
 
         stream.setCharset(DEFAULT_CHARSET);
 
-        const spyDisconnect = jest.spyOn(mockFilter, 'disconnect').mockImplementation();
-        const spyWrite = jest.spyOn(mockFilter, 'write').mockImplementation();
+        const spyDisconnect = vi.spyOn(mockFilter, 'disconnect');
+        const spyWrite = vi.spyOn(mockFilter, 'write');
 
         const data = textEncoderUtf8.encode('qwerty');
         mockFilter.send(data);

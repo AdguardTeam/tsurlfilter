@@ -1,26 +1,24 @@
-import { nanoid } from 'nanoid';
 import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
-import {
-    ContentType,
-    defaultFilteringLog,
-    FilteringEventType,
-    type FilteringLogInterface,
-    logger,
-} from '../../../../common';
+
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
-import { findHeaderByName } from '../../../../common/utils/find-header-by-name';
+import { createFrameMatchQuery } from '../../../../common/utils/create-frame-match-query';
+import { findHeaderByName } from '../../../../common/utils/headers';
+import { logger } from '../../../../common/utils/logger';
+import { nanoid } from '../../../../common/utils/nanoid';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
-import CookieUtils from './utils';
-import { type RequestContext, requestContextStorage } from '../../request';
+import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
+import { ContentType } from '../../../../common/request-type';
 import { engineApi, tabsApi } from '../../api';
-import { createFrameMatchQuery } from '../../utils/create-frame-match-query';
+import { type RequestContext, requestContextStorage } from '../../request';
+
+import CookieUtils from './utils';
 
 /**
  * Cookie filtering.
  *
- * The following public methods should be set as suitable webrequest events listeners, check sample extension in this
+ * The following public methods should be set as suitable webRequest events listeners, check sample extension in this
  * repo for an example.
  *
  * Logic introduction:
@@ -307,8 +305,8 @@ export class CookieFiltering {
     }
 
     /**
-     * TODO: Return engine startup status data to content script
-     * to delay execution of cookie rules until the engine is ready.
+     * TODO: Use isAppStarted with interval to re-request cookie rules if engine
+     * is not started, as it implemented in CosmeticController.
      *
      * Looks up blocking rules for content-script.
      *

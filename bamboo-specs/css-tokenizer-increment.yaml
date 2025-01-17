@@ -49,7 +49,7 @@ Increment:
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
-          commitMessage: 'skipci: Automatic increment build number'
+          commitMessage: 'skipci: Automatic increment build number for CSS Tokenizer'
           selectedRepository: defaultRepository
   requirements:
     - adg-docker: 'true'

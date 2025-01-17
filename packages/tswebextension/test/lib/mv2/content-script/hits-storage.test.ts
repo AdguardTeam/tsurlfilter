@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable guard-for-in */
 
-import { HitsStorage } from '@lib/mv2/content-script/hits-storage';
+import { describe, expect, it } from 'vitest';
+
+import { HitsStorage } from '../../../../src/lib/common/content-script/hits-storage';
 
 describe('HitsStorage', () => {
     const hitsStorage = new HitsStorage();

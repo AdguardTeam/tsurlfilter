@@ -1,10 +1,7 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
-import {
-    RequestType,
-    NetworkRuleOption,
-    type NetworkRule,
-} from '@adguard/tsurlfilter';
+import { RequestType, NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
 
+import { companiesDbService } from '../../../common/companies-db-service';
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import {
     tabsApi,
@@ -12,19 +9,22 @@ import {
     redirectsService,
     documentBlockingService,
 } from '../api';
-import { type ContentType } from '../../../common/request-type';
+
+import { type RequestContext } from './request-context-storage';
 
 /**
  * Base params about request.
  */
-type RequestParams = {
-    tabId: number,
-    eventId: string,
-    referrerUrl: string,
-    requestUrl: string,
-    requestType: RequestType,
-    contentType: ContentType,
-};
+type RequestParams = Pick<
+    RequestContext,
+    'tabId' |
+    'eventId' |
+    'referrerUrl' |
+    'requestId' |
+    'requestUrl' |
+    'requestType' |
+    'contentType'
+>;
 
 /**
  * Params for {@link RequestBlockingApi.getBlockingResponse}.
@@ -140,6 +140,7 @@ export class RequestBlockingApi {
             tabId,
             eventId,
             requestUrl,
+            requestId,
             referrerUrl,
         } = data;
 
@@ -147,7 +148,7 @@ export class RequestBlockingApi {
             return undefined;
         }
 
-        // popup rule will be handled in the condition with requesttype === document below
+        // popup rule will be handled in the condition with RequestType === document below
         if (popupRule === rule && requestType !== RequestType.Document) {
             return undefined;
         }
@@ -196,6 +197,7 @@ export class RequestBlockingApi {
                 return documentBlockingService.getDocumentBlockingResponse({
                     eventId,
                     requestUrl,
+                    requestId,
                     referrerUrl,
                     rule,
                     tabId,
@@ -242,6 +244,7 @@ export class RequestBlockingApi {
         const {
             tabId,
             eventId,
+            requestId,
             referrerUrl,
             requestUrl,
             contentType,
@@ -251,6 +254,8 @@ export class RequestBlockingApi {
             return;
         }
 
+        const companyCategoryName = companiesDbService.match(requestUrl);
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
             data: {
@@ -258,7 +263,9 @@ export class RequestBlockingApi {
                 eventId,
                 requestType: contentType,
                 frameUrl: referrerUrl,
+                requestId,
                 requestUrl,
+                companyCategoryName,
                 filterId: appliedRule.getFilterListId(),
                 ruleIndex: appliedRule.getIndex(),
                 isAllowlist: appliedRule.isAllowlist(),

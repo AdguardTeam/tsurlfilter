@@ -72,9 +72,9 @@ Build:
             ls -la
 
             echo "Size before cleanup:" && du -h | tail -n 1
-            
+
             pnpm clean
-  
+
             echo "Size after cleanup:" && du -h | tail -n 1
   # Store the CSS Tokenizer package tarball as an artifact
   artifacts:

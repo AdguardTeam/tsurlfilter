@@ -17,7 +17,6 @@ export const MESSAGE_HANDLER_NAME = 'tsWebExtension' as const;
 export enum MessageType {
     ProcessShouldCollapse = 'processShouldCollapse',
     GetCosmeticData = 'getCosmeticData',
-    GetCss = 'getCss',
     GetCookieRules = 'getCookieRules',
     SaveCookieLogEvent = 'saveCookieLogEvent',
     InitAssistant = 'initAssistant',

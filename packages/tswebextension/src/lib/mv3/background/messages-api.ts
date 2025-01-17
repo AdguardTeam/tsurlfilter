@@ -1,54 +1,73 @@
-import { type MatchingResult, NetworkRuleOption, RequestType } from '@adguard/tsurlfilter';
+import { NetworkRuleOption } from '@adguard/tsurlfilter';
+import browser from 'webextension-polyfill';
+import { getDomain } from 'tldts';
 
+import { MAIN_FRAME_ID } from '../../common/constants';
+import { MessageType } from '../../common/message-constants';
 import { type CookieRule } from '../../common/content-script/cookie-controller';
+import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
+import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import {
     getAssistantCreateRulePayloadValidator,
-    getCssPayloadValidator,
-} from '../../common';
-import { isHttpOrWsRequest } from '../../common/utils';
-import { logger } from '../utils/logger';
-
-import { type CosmeticRules, engineApi } from './engine-api';
-import { type TsWebExtension } from './app';
-import { declarativeFilteringLog } from './declarative-filtering-log';
-import {
-    CommonMessageType,
-    ExtendedMV3MessageType,
-    type MessageMV3,
+    getSaveCookieLogEventPayloadValidator,
     getCookieRulesPayloadValidator,
-    messageMV3Validator,
-} from './messages';
+    getCosmeticDataPayloadValidator,
+    type Message,
+    messageValidator,
+} from '../../common/message';
+import { ContentType } from '../../common/request-type';
+import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
+import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils/nanoid';
+import { type TabsApi } from '../tabs/tabs-api';
+
+import { type TsWebExtension } from './app';
+import { appContext } from './app-context';
 import { Assistant } from './assistant';
+import { CosmeticApi } from './cosmetic-api';
+import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
 
 export type MessagesHandlerMV3 = (
-    message: MessageMV3,
-    sender: chrome.runtime.MessageSender,
+    message: Message,
+    sender: browser.Runtime.MessageSender,
 ) => Promise<unknown>;
 
+export type ContentScriptCookieRulesData = {
+    /**
+     * Is app started.
+     */
+    isAppStarted: boolean,
+
+    /**
+     * Cookie rules to apply.
+     */
+    cookieRules: CookieRule[] | undefined,
+};
+
 /**
- * MessageApi knows how to handle {@link MessageMV3}.
+ * MessageApi knows how to handle {@link Message}.
  */
 export class MessagesApi {
-    /**
-     * Stores link to {@link TsWebExtension} app to save context.
-     */
-    private tsWebExtension: TsWebExtension;
-
     /**
      * Creates new {@link MessagesApi}.
      *
      * @param tsWebExtension Current {@link TsWebExtension} app.
+     * @param tabsApi Tabs API.
+     * @param filteringLog Filtering log.
      *
      * @returns New {@link MessagesApi} handler.
      */
-    constructor(tsWebExtension: TsWebExtension) {
-        this.tsWebExtension = tsWebExtension;
+    constructor(
+        private readonly tsWebExtension: TsWebExtension,
+        private readonly tabsApi: TabsApi,
+        private readonly filteringLog: FilteringLog,
+
+    ) {
         this.handleMessage = this.handleMessage.bind(this);
     }
 
     /**
-     * Handles message with {@link CommonMessageType}
-     * or {@link ExtendedMV3MessageType}.
+     * Handles message with {@link MessageType}.
      *
      * @param message Message.
      * @param sender Sender of message.
@@ -56,41 +75,47 @@ export class MessagesApi {
      * @returns Data according to the received message.
      */
     public async handleMessage(
-        message: MessageMV3,
-        sender: chrome.runtime.MessageSender,
+        message: Message,
+        sender: browser.Runtime.MessageSender,
     ): Promise<unknown> {
-        logger.debug('[HANDLE MESSAGE]: ', message);
+        logger.debug('[tswebextension.handleMessage]: ', message);
 
         try {
-            message = messageMV3Validator.parse(message);
+            message = messageValidator.parse(message);
         } catch (e) {
-            logger.error('Bad message', message);
+            logger.error('[tswebextension.handleMessage]: cannot parse message: ', message);
             // Ignore this message
             return undefined;
         }
 
         const { type } = message;
         switch (type) {
-            case CommonMessageType.GetCss: {
-                return this.getCss(sender, message.payload);
+            case MessageType.GetCosmeticData: {
+                return this.handleGetCosmeticData(sender, message.payload);
             }
-            case ExtendedMV3MessageType.GetCollectedLog: {
-                return declarativeFilteringLog.getCollected();
-            }
-            case CommonMessageType.AssistantCreateRule: {
+            case MessageType.AssistantCreateRule: {
                 return this.handleAssistantCreateRuleMessage(
                     sender,
                     message.payload,
                 );
             }
-            case CommonMessageType.GetCookieRules: {
+            case MessageType.GetCookieRules: {
                 return this.getCookieRules(
                     sender,
                     message.payload,
                 );
             }
+            case MessageType.SaveCookieLogEvent: {
+                return MessagesApi.handleSaveCookieLogEvent(
+                    sender,
+                    message.payload,
+                );
+            }
+            case MessageType.SaveCssHitsStats: {
+                return this.handleSaveCssHitsStats(sender, message.payload);
+            }
             default: {
-                logger.error('Did not found handler for message');
+                logger.error('[tswebextension.handleMessage]: did not found handler for message');
             }
         }
 
@@ -98,44 +123,40 @@ export class MessagesApi {
     }
 
     /**
-     * Builds css for specified url.
+     * Handles get cosmetic message.
      *
-     * @param sender Tab, which sent message.
+     * @param sender Tab which sent message.
      * @param payload Message payload.
      *
-     * @returns Cosmetic css or undefined if there are no css rules for this request.
+     * @returns Content script data for applying cosmetic rules or null if no data.
      */
-    private getCss(
-        sender: chrome.runtime.MessageSender,
+    private handleGetCosmeticData(
+        sender: browser.Runtime.MessageSender,
         payload?: unknown,
-    ): CosmeticRules | undefined {
-        logger.debug('[GET CSS]: received call ', payload);
+    ): ContentScriptCosmeticData | undefined {
+        logger.debug('[tswebextension.handleGetCosmeticData]: received call: ', payload);
+        if (!payload || !sender?.tab?.id) {
+            return undefined;
+        }
 
         if (!this.tsWebExtension.isStarted) {
             return undefined;
         }
 
-        const res = getCssPayloadValidator.safeParse(payload);
+        const res = getCosmeticDataPayloadValidator.safeParse(payload);
         if (!res.success) {
+            logger.error('[tswebextension.handleGetCosmeticData]: cannot parse payload: ', payload, res.error);
             return undefined;
         }
 
-        const { url, referrer } = res.data;
+        const tabId = sender.tab?.id;
+        let { frameId } = sender;
 
-        const result = MessagesApi.calculateMatchingResult(url, referrer, sender);
-
-        const cosmeticOption = result?.getCosmeticOption();
-
-        if (cosmeticOption === undefined) {
-            return undefined;
+        if (!frameId) {
+            frameId = MAIN_FRAME_ID;
         }
 
-        return engineApi.buildCosmeticCss(
-            url,
-            cosmeticOption,
-            false,
-            false,
-        );
+        return CosmeticApi.getContentScriptData(res.data.documentUrl, tabId, frameId);
     }
 
     /**
@@ -150,7 +171,7 @@ export class MessagesApi {
      */
     // eslint-disable-next-line class-methods-use-this
     private handleAssistantCreateRuleMessage(
-        sender: chrome.runtime.MessageSender,
+        sender: browser.Runtime.MessageSender,
         payload?: unknown,
     ): boolean {
         if (!payload || !sender?.tab?.id) {
@@ -178,31 +199,54 @@ export class MessagesApi {
      * @returns Cookie rules data.
      */
     private getCookieRules(
-        sender: chrome.runtime.MessageSender,
+        sender: browser.Runtime.MessageSender,
         payload?: unknown,
-    ): CookieRule[] | undefined {
-        logger.debug('[GET COOKIE RULES]: received call ', payload);
+    ): ContentScriptCookieRulesData | undefined {
+        logger.debug('[tswebextension.getCookieRules]: received call: ', payload);
 
-        if (!this.tsWebExtension.isStarted) {
-            return undefined;
+        const { isStorageInitialized } = appContext;
+
+        const data: ContentScriptCookieRulesData = {
+            isAppStarted: false,
+            cookieRules: [],
+        };
+
+        // if storage is not initialized, then app is not ready yet.
+        if (!isStorageInitialized || !this.tsWebExtension.isStarted) {
+            return data;
         }
 
         const res = getCookieRulesPayloadValidator.safeParse(payload);
         if (!res.success) {
+            // this log message is added here as error for faster identification of the issue
+            logger.error('[tswebextension.getCookieRules]: cannot parse payload: ', payload, res.error);
             return undefined;
         }
 
-        const { url, referrer } = res.data;
+        const { documentUrl } = res.data;
 
-        const result = MessagesApi.calculateMatchingResult(url, referrer, sender);
-
-        if (!result) {
+        if (isEmptySrcFrame(documentUrl)) {
+            logger.debug('[tswebextension.getCookieRules]: frame has empty src');
             return undefined;
         }
 
-        const cookieRules = result.getCookieRules();
+        const tabId = sender.tab?.id;
+        if (tabId === undefined) {
+            logger.debug('[tswebextension.getCookieRules]: tabId is undefined');
+            return undefined;
+        }
 
-        return cookieRules.map((rule) => ({
+        data.isAppStarted = true;
+
+        let { frameId } = sender;
+
+        if (!frameId) {
+            frameId = MAIN_FRAME_ID;
+        }
+
+        const cookieRules = CookieFiltering.getBlockingRules(documentUrl, tabId, frameId);
+
+        data.cookieRules = cookieRules.map((rule) => ({
             ruleIndex: rule.getIndex(),
             match: rule.getAdvancedModifierValue(),
             isThirdParty: rule.isOptionEnabled(NetworkRuleOption.ThirdParty),
@@ -214,6 +258,111 @@ export class MessagesApi {
             isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
             advancedModifier: rule.getAdvancedModifierValue(),
         }));
+
+        return data;
+    }
+
+    /**
+     * Handle message about saving css hits stats.
+     *
+     * @param sender Tab, which sent message.
+     * @param payload Message payload.
+     * @returns True if stats was saved.
+     */
+    private handleSaveCssHitsStats(
+        sender: browser.Runtime.MessageSender,
+        // TODO add payload type
+        payload?: any,
+    ): boolean {
+        if (!payload || !sender?.tab?.id) {
+            return false;
+        }
+
+        const tabId = sender.tab.id;
+
+        const tabContext = this.tabsApi.getTabContext(tabId);
+
+        if (!tabContext?.info.url) {
+            return false;
+        }
+
+        const { url } = tabContext.info;
+
+        let published = false;
+
+        for (let i = 0; i < payload.length; i += 1) {
+            const stat = payload[i];
+
+            this.filteringLog.publishEvent({
+                type: FilteringEventType.ApplyCosmeticRule,
+                data: {
+                    tabId,
+                    eventId: nanoid(),
+                    filterId: stat.filterId,
+                    ruleIndex: stat.ruleIndex,
+                    element: stat.element,
+                    frameUrl: url,
+                    frameDomain: getDomain(url) as string,
+                    requestType: ContentType.Document,
+                    timestamp: Date.now(),
+                    cssRule: true,
+                    scriptRule: false,
+                    contentRule: false,
+                },
+            });
+            published = true;
+        }
+
+        return published;
+    }
+
+    /**
+     * Calls filtering to add an event from cookie-controller content-script.
+     *
+     * @param sender Tab which sent the message.
+     * @param payload Message payload.
+     * @returns True if event was published to filtering log.
+     */
+    private static handleSaveCookieLogEvent(
+        sender: browser.Runtime.MessageSender,
+        payload?: unknown,
+    ): boolean {
+        if (!payload || !sender?.tab?.id) {
+            return false;
+        }
+
+        const res = getSaveCookieLogEventPayloadValidator.safeParse(payload);
+        if (!res.success) {
+            return false;
+        }
+
+        const { data } = res;
+
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.Cookie,
+            data: {
+                eventId: nanoid(),
+                tabId: sender.tab.id,
+                cookieName: data.cookieName,
+                frameDomain: data.cookieDomain,
+                cookieValue: data.cookieValue,
+                filterId: data.filterId,
+                ruleIndex: data.ruleIndex,
+                isModifyingCookieRule: false,
+                requestThirdParty: data.thirdParty,
+                timestamp: Date.now(),
+                requestType: ContentType.Cookie,
+                // Additional rule properties
+                isAllowlist: data.isAllowlist,
+                isImportant: data.isImportant,
+                isDocumentLevel: data.isDocumentLevel,
+                isCsp: data.isCsp,
+                isCookie: data.isCookie,
+                advancedModifier: data.advancedModifier,
+            },
+        });
+
+        return true;
     }
 
     /**
@@ -223,43 +372,6 @@ export class MessagesApi {
      * @param message Some payload to send to the tab.
      */
     public static async sendMessageToTab(tabId: number, message: unknown): Promise<void> {
-        await chrome.tabs.sendMessage(tabId, message);
-    }
-
-    /**
-     * Calculates matching result based on provided urls.
-     *
-     * @param url Current URL of document.
-     * @param referrer The URL of the location that referred the user
-     * to the current page.
-     * @param sender An object containing information about the script context
-     * that sent a message or request.
-     *
-     * @returns Null or matched result from engine if request has been matched
-     * by some rule.
-     */
-    private static calculateMatchingResult(
-        url: string,
-        referrer: string,
-        sender: chrome.runtime.MessageSender,
-    ): MatchingResult | null {
-        let isSubDocument = false;
-
-        // When document url for iframe is about:blank then we use tab url
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1498
-        if (!isHttpOrWsRequest(url) && sender.frameId !== 0 && sender.tab?.url) {
-            isSubDocument = true;
-        }
-
-        // TODO: Extract from cache
-        return engineApi.matchRequest({
-            requestUrl: url,
-            frameUrl: referrer,
-            // Always RequestType.Document or RequestType.SubDocument,
-            // because in MV3 we request CSS for the already loaded page
-            // from content-script.
-            requestType: isSubDocument ? RequestType.SubDocument : RequestType.Document,
-            frameRule: engineApi.matchFrame(url),
-        });
+        await browser.tabs.sendMessage(tabId, message);
     }
 }

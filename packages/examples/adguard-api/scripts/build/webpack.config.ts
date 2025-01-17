@@ -1,4 +1,5 @@
 import path from 'path';
+import { createRequire } from 'module';
 import { Configuration } from 'webpack';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
@@ -10,6 +11,12 @@ import {
     BUILD_PATH,
     ASSISTANT_INJECT,
 } from '../constants';
+
+const require = createRequire(import.meta.url);
+
+const resolveModulePath = (moduleName: string) => {
+    return require.resolve(moduleName);
+};
 
 export const config: Configuration = {
     mode: 'production',
@@ -26,9 +33,9 @@ export const config: Configuration = {
     resolve: {
         extensions: ['*', '.ts', '.js'],
         fallback: {
-            crypto: require.resolve('crypto-browserify'),
-            stream: require.resolve('stream-browserify'),
-            vm: require.resolve('vm-browserify'),
+            crypto: resolveModulePath('crypto-browserify'),
+            stream: resolveModulePath('stream-browserify'),
+            vm: resolveModulePath('vm-browserify'),
         },
     },
     module: {
@@ -50,6 +57,9 @@ export const config: Configuration = {
                         },
                     },
                 ],
+                resolve: {
+                    fullySpecified: false,
+                },
             },
         ],
     },

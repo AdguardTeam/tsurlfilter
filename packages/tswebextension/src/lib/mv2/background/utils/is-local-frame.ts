@@ -1,4 +1,5 @@
-import { MAIN_FRAME_ID } from '../tabs/frame';
+import { MAIN_FRAME_ID } from '../../../common/constants';
+import { isEmptySrcFrame } from '../../../common/utils/is-empty-src-frame';
 
 /**
  * Checks if iframe has same source as main frame or if src is about:blank, javascript:, etc.
@@ -14,8 +15,7 @@ import { MAIN_FRAME_ID } from '../tabs/frame';
 export function isLocalFrame(frameUrl: string, frameId: number, mainFrameUrl: string): boolean {
     return frameId !== MAIN_FRAME_ID
         && (frameUrl === mainFrameUrl
-            || frameUrl === 'about:blank'
-            || frameUrl === 'about:srcdoc'
+            || isEmptySrcFrame(frameUrl)
             // eslint-disable-next-line no-script-url
             || frameUrl.indexOf('javascript:') > -1);
 }

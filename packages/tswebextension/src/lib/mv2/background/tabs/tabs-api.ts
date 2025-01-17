@@ -1,17 +1,23 @@
 import browser, { type ExtensionTypes, type Tabs } from 'webextension-polyfill';
-import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type MatchingResult, type NetworkRule } from '@adguard/tsurlfilter';
 
+import { MAIN_FRAME_ID } from '../../../common/constants';
+import { type TabFrameRequestContextCommon } from '../../../common/tabs/tabs-api';
 import { EventChannel } from '../../../common/utils/channels';
-import type { DocumentApi } from '../document-api';
-import { type FrameRequestContext, TabContext } from './tab-context';
-import { type Frame, MAIN_FRAME_ID } from './frame';
-import { isHttpRequest, getDomain } from '../../../common';
+import { getDomain, isHttpRequest } from '../../../common/utils/url';
+import { type DocumentApi } from '../document-api';
+
+import { type Frame } from './frame';
+import { TabContext } from './tab-context';
 
 /**
  * Request context data related to the tab's frame.
  */
-export type TabFrameRequestContext = FrameRequestContext & {
-    tabId: number;
+export type TabFrameRequestContextMV2 = TabFrameRequestContextCommon & {
+    /**
+     * Whether the request is a redirect with removed parameters.
+     */
+    isRemoveparamRedirect?: boolean;
 };
 
 /**
@@ -150,7 +156,7 @@ export class TabsApi {
      *
      * @param requestContext Tab's frame's request context.
      */
-    public handleFrameRequest(requestContext: TabFrameRequestContext): void {
+    public handleFrameRequest(requestContext: TabFrameRequestContextMV2): void {
         const { tabId } = requestContext;
 
         const tabContext = this.context.get(tabId);
@@ -369,10 +375,13 @@ export class TabsApi {
      */
     private handleTabDelete(tabId: number): void {
         const tabContext = this.context.get(tabId);
-        if (tabContext) {
-            this.context.delete(tabId);
-            this.onDelete.dispatch(tabContext);
+
+        if (!tabContext) {
+            return;
         }
+
+        this.context.delete(tabId);
+        this.onDelete.dispatch(tabContext);
     }
 
     /**
@@ -402,20 +411,30 @@ export class TabsApi {
      * Updates tab context data on tab update.
      * Works in conjunction with {@link handleTabNavigation}.
      *
+     * If the tab context is not found, creates a new tab context.
+     *
      * @param tabId Tab ID.
      * @param changeInfo Tab change info.
      * @param tabInfo Tab info.
      */
     private handleTabUpdate(tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType, tabInfo: Tabs.Tab): void {
+        if (!TabContext.isBrowserTab(tabInfo)) {
+            return;
+        }
+
+        if (changeInfo.url && !isHttpRequest(changeInfo.url)) {
+            return;
+        }
+
         // TODO: we can ignore some events (favicon url update etc.)
         const tabContext = this.context.get(tabId);
-        if (tabContext && TabContext.isBrowserTab(tabInfo)) {
-            if (changeInfo.url && !isHttpRequest(changeInfo.url)) {
-                return;
-            }
-            tabContext.updateTabInfo(changeInfo, tabInfo);
-            this.onUpdate.dispatch(tabContext);
+
+        if (!tabContext) {
+            return;
         }
+
+        tabContext.updateTabInfo(changeInfo, tabInfo);
+        this.onUpdate.dispatch(tabContext);
     }
 
     /**
@@ -427,9 +446,11 @@ export class TabsApi {
     private handleTabActivate({ tabId }: Tabs.OnActivatedActiveInfoType): void {
         const tabContext = this.context.get(tabId);
 
-        if (tabContext) {
-            this.onActivate.dispatch(tabContext);
+        if (!tabContext) {
+            return;
         }
+
+        this.onActivate.dispatch(tabContext);
     }
 
     /**
@@ -444,11 +465,13 @@ export class TabsApi {
     private handleTabReplace(addedTabId: number, removedTabId: number): void {
         const tabContext = this.context.get(removedTabId);
 
-        if (tabContext) {
-            this.context.delete(removedTabId);
-            this.context.set(addedTabId, tabContext);
-            this.onReplace.dispatch(tabContext);
+        if (!tabContext) {
+            return;
         }
+
+        this.context.delete(removedTabId);
+        this.context.set(addedTabId, tabContext);
+        this.onReplace.dispatch(tabContext);
     }
 
     /**
@@ -473,9 +496,11 @@ export class TabsApi {
 
         const tabContext = this.context.get(activeTab.id);
 
-        if (tabContext) {
-            this.onActivate.dispatch(tabContext);
+        if (!tabContext) {
+            return;
         }
+
+        this.onActivate.dispatch(tabContext);
     }
 
     /**

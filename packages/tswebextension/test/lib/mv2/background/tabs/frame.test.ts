@@ -1,5 +1,7 @@
-import type { MatchingResult, CosmeticResult } from '@adguard/tsurlfilter';
-import { Frame } from '@lib/mv2/background/tabs/frame';
+import { describe, expect, it } from 'vitest';
+import { type MatchingResult, type CosmeticResult } from '@adguard/tsurlfilter';
+
+import { Frame } from '../../../../../src/lib';
 
 describe('Frame', () => {
     describe('constructor', () => {

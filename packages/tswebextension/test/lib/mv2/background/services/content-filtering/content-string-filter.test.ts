@@ -1,11 +1,13 @@
-import {
-    HTTPMethod,
-    RequestType,
-} from '@adguard/tsurlfilter';
-import { RequestContextState } from '@lib/mv2/background/request';
-import { ContentStringFilter } from '@lib/mv2/background/services/content-filtering/content-string-filter';
-import { ContentType, defaultFilteringLog } from '@lib/common';
+import { describe, expect, it } from 'vitest';
+import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
+
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
+import { RequestContextState } from '../../../../../../src/lib';
+import {
+    ContentStringFilter,
+} from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
+import { ContentType } from '../../../../../../src/lib/common/request-type';
+import { defaultFilteringLog } from '../../../../../../src/lib/common/filtering-log';
 
 describe('Content string filter', () => {
     const context = {

@@ -1,5 +1,5 @@
-// eslint-disable-next-line max-classes-per-file
-import { type ModifierList, type NetworkRule as NetworkRuleNode, RuleParser } from '@adguard/agtree';
+import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import * as rule from './rule';
 import { SimpleRegex } from './simple-regex';
@@ -425,6 +425,24 @@ export class NetworkRule implements rule.IRule {
         NetworkRule.OPTIONS.EXTENSION,
     ]);
 
+    /**
+     * Advanced option modifier names.
+     */
+    public static readonly ADVANCED_OPTIONS = new Set([
+        NetworkRule.OPTIONS.CSP,
+        NetworkRule.OPTIONS.REPLACE,
+        NetworkRule.OPTIONS.COOKIE,
+        NetworkRule.OPTIONS.REDIRECT,
+        NetworkRule.OPTIONS.REDIRECTRULE,
+        NetworkRule.OPTIONS.REMOVEPARAM,
+        NetworkRule.OPTIONS.REMOVEHEADER,
+        NetworkRule.OPTIONS.PERMISSIONS,
+        NetworkRule.OPTIONS.CLIENT,
+        NetworkRule.OPTIONS.DNSREWRITE,
+        NetworkRule.OPTIONS.DNSTYPE,
+        NetworkRule.OPTIONS.CTAG,
+    ]);
+
     // TODO: Remove .getText() completely
     private ruleText: string;
 
@@ -712,7 +730,10 @@ export class NetworkRule implements rule.IRule {
             return false;
         }
 
-        if (this.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+        if (
+            this.isOptionEnabled(NetworkRuleOption.RemoveParam)
+            || this.isOptionEnabled(NetworkRuleOption.Permissions)
+        ) {
             if (!this.matchRequestTypeExplicit(request.requestType)) {
                 return false;
             }
@@ -924,7 +945,7 @@ export class NetworkRule implements rule.IRule {
     }
 
     /**
-     * In case of $removeparam modifier,
+     * In case of $removeparam, $permissions modifier,
      * we only allow it to target other content types if the rule has an explicit content-type modifier.
      */
     private matchRequestTypeExplicit(requestType: RequestType): boolean {
@@ -1026,7 +1047,7 @@ export class NetworkRule implements rule.IRule {
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
      *
-     * @param inputRule Original rule text.
+     * @param node AST node of the network rule.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
@@ -1037,7 +1058,7 @@ export class NetworkRule implements rule.IRule {
     constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         // TODO: Remove this completely
-        this.ruleText = RuleParser.generate(node);
+        this.ruleText = RuleGenerator.generate(node);
         this.filterListId = filterListId;
         this.allowlist = node.exception;
 
@@ -1051,7 +1072,7 @@ export class NetworkRule implements rule.IRule {
         }
 
         if (NetworkRule.isTooGeneral(node)) {
-            throw new SyntaxError(`Rule is too general: ${RuleParser.generate(node)}`);
+            throw new SyntaxError(`Rule is too general: ${RuleGenerator.generate(node)}`);
         }
 
         this.calculatePriorityWeight();

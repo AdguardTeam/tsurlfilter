@@ -1,5 +1,7 @@
-import path from 'path';
-import fs from 'fs';
+import path from 'node:path';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { Configuration } from 'webpack';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import CopyWebpackPlugin from 'copy-webpack-plugin';
@@ -7,14 +9,20 @@ import { CleanWebpackPlugin } from 'clean-webpack-plugin';
 import packageJson from '../../package.json';
 import { getIdFromFilterName } from '@adguard/tsurlfilter';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const BACKGROUND_PATH = path.resolve(__dirname, '../../extension/pages/background');
 const POPUP_PATH = path.join(__dirname, '../../extension/pages/popup');
-const DOCUMENT_BLOCKING_PATH = path.join(__dirname, '../../extension/pages/document-blocking');
 const CONTENT_SCRIPT = path.join(__dirname, '../../extension/pages/content-script');
+const ASSISTANT_INJECT = path.join(__dirname, '../../extension/pages/content-script/assistant-inject');
+const GPC_SCRIPT = path.join(__dirname, '../../extension/pages/content-script/gpc');
+const HIDE_DOCUMENT_REFERRER_SCRIPT = path.join(
+    __dirname,
+    '../../extension/pages/content-script/hide-document-referrer',
+);
 const BUILD_PATH = path.resolve(__dirname, '../../build');
 const FILTERS_DIR = path.resolve(__dirname, '../../extension/filters');
-const DEVTOOLS_PATH = path.resolve(__dirname, '../../extension/src/devtools');
-const DEBUGGING_PATH = path.resolve(__dirname, '../../extension/src/debugging');
 
 const updateManifest = (content: Buffer) => {
     const manifest = JSON.parse(content.toString());
@@ -55,8 +63,9 @@ export const config: Configuration = {
         background: BACKGROUND_PATH,
         'pages/popup': POPUP_PATH,
         'content-script': CONTENT_SCRIPT,
-        devtools: DEVTOOLS_PATH,
-        debugging: DEBUGGING_PATH,
+        'assistant-inject': ASSISTANT_INJECT,
+        'gpc': GPC_SCRIPT,
+        'hide-document-referrer': HIDE_DOCUMENT_REFERRER_SCRIPT,
     },
     output: {
         path: BUILD_PATH,
@@ -64,7 +73,7 @@ export const config: Configuration = {
         sourceMapFilename: '[name].js.map',
     },
     resolve: {
-        extensions: ['*', '.tsx', '.ts', '.js'],
+        extensions: ['.*', '.tsx', '.ts', '.js'],
     },
     module: {
         rules: [
@@ -99,21 +108,6 @@ export const config: Configuration = {
             filename: 'pages/popup.html',
             chunks: ['pages/popup'],
             cache: false,
-        }),
-        new HtmlWebpackPlugin({
-            template: path.join(DOCUMENT_BLOCKING_PATH, 'index.html'),
-            filename: 'pages/document-blocking.html',
-            cache: false,
-        }),
-        new HtmlWebpackPlugin({
-            template: path.join(DEVTOOLS_PATH, 'index.html'),
-            filename: 'devtools.html',
-            chunks: ['devtools'],
-        }),
-        new HtmlWebpackPlugin({
-            template: path.join(DEBUGGING_PATH, 'index.html'),
-            filename: 'debugging.html',
-            chunks: ['debugging'],
         }),
         new CopyWebpackPlugin({
             patterns: [
