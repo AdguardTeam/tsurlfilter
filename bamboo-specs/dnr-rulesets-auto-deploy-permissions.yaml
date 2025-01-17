@@ -2,11 +2,13 @@
 version: 2
 deployment:
   name: DNR Rulesets - auto deploy
+
 deployment-permissions:
   - groups:
       - extensions-developers
     permissions:
       - view
+
 environment-permissions:
   - npmjs:
       - groups:
