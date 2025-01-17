@@ -1,5 +1,7 @@
+import { describe, expect, it } from 'vitest';
 import browser from 'webextension-polyfill';
-import { PersistentValueContainer } from '@lib/common/storage/persistent-value-container';
+
+import { PersistentValueContainer } from '../../../../src/lib/common/storage';
 
 describe('PersistentValueContainer', () => {
     const key = 'test-key';

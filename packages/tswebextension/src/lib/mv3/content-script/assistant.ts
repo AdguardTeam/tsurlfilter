@@ -1,8 +1,16 @@
 import { adguardAssistant, type Assistant } from '@adguard/assistant';
+import browser from 'webextension-polyfill';
 
-import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
-import { logger } from '../utils/logger';
+import { type Message } from '../../common/message';
+import { MessageType } from '../../common/message-constants';
+import { logger } from '../../common/utils/logger';
+
+// Simple type guard for message object with 'type' field.
+// Added to no bring here huge zod library.
+const hasTypeField = (message: unknown): message is Pick<Message, 'type'> => {
+    return typeof message === 'object' && message !== null && 'type' in message;
+};
 
 /**
  * Initializes assistant object.
@@ -15,7 +23,11 @@ export const initAssistant = (): void => {
 
     let assistant: Assistant;
 
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    browser.runtime.onMessage.addListener((message, sender, sendResponse): undefined => {
+        if (!hasTypeField(message)) {
+            return;
+        }
+
         switch (message.type) {
             case MessageType.InitAssistant: {
                 if (typeof assistant === 'undefined') {
@@ -30,7 +42,7 @@ export const initAssistant = (): void => {
                         payload: { ruleText },
                     });
                     if (!res) {
-                        logger.debug(`Rule '${ruleText}' has not been applied.`);
+                        logger.debug(`[tswebextension.initAssistant]: rule '${ruleText}' has not been applied.`);
                     }
                 });
                 sendResponse(true);
@@ -44,7 +56,7 @@ export const initAssistant = (): void => {
                 break;
             }
             default: {
-                logger.debug(`Not found handler for message type '${message.type}'`);
+                logger.debug(`[tswebextension.initAssistant]: not found handler for message type '${message.type}'`);
                 sendResponse(false);
             }
         }

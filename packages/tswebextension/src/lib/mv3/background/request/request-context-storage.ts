@@ -1,9 +1,9 @@
-import type { WebRequest } from 'webextension-polyfill';
-import type { MatchingResult, HTTPMethod, CosmeticResult } from '@adguard/tsurlfilter';
+import { type WebRequest } from 'webextension-polyfill';
+import { type MatchingResult, type HTTPMethod } from '@adguard/tsurlfilter';
 
-import type { ContentType } from '../../../common';
-import type { ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
-import type { TabFrameRequestContext } from '../../tabs/tabs-api';
+import { type ContentType } from '../../../common/request-type';
+import { type ParsedCookie } from '../../../common/cookie-filtering/parsed-cookie';
+import { type TabFrameRequestContextMV3 } from '../../tabs/tabs-api';
 
 export const enum RequestContextState {
     BeforeRequest = 'beforeRequest',
@@ -20,9 +20,20 @@ export const enum RequestContextState {
 /**
  * Request context data.
  */
-export type RequestContext = TabFrameRequestContext & {
+export type RequestContext = TabFrameRequestContextMV3 & {
+    /**
+     * During redirect processing, multiple events are processed in the same request lifecycle.
+     * We need a unique identifier to separate these requests in the filtering log.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/webRequest/#life-cycle-of-requests
+     */
+    eventId: string;
+
     state: RequestContextState;
-    timestamp: number; // record time in ms
+    /**
+     * Record time in ms.
+     */
+    timestamp: number;
     referrerUrl: string;
     contentType: ContentType;
     thirdParty: boolean;
@@ -36,50 +47,76 @@ export type RequestContext = TabFrameRequestContext & {
      * Filtering data from {@link EngineApi.matchRequest}.
      */
     matchingResult?: MatchingResult | null;
-
-    /**
-     * Filtering data from {@link EngineApi.getCosmeticResult}.
-     */
-    cosmeticResult?: CosmeticResult;
 };
 
 /**
- * Implementation of the request context storage.
- *
- * TODO: Add persistent storage for cases of deaths service worker.
+ * Map of request context data.
  */
-export class RequestContextStorage extends Map<string, RequestContext> {
-    /**
-     * Create new request context.
-     *
-     * @param requestId Request id.
-     * @param data Request context with a omitted eventId field. It is automatically generated.
-     * @returns Request context storage instance.
-     */
-    public create(requestId: string, data: RequestContext): RequestContext {
-        super.set(requestId, data);
+type RequestMap = Map<string, RequestContext>;
 
-        return data;
+/**
+ * Request context storage used to keep track of request data
+ * and calculated rules for it.
+ */
+export class RequestContextStorage {
+    /**
+     * Map of request context data.
+     */
+    requestMap: RequestMap = new Map();
+
+    /**
+     * Sets requestData context by requestData id.
+     * @param requestId Request id.
+     * @param requestData Request context data.
+     */
+    public set(requestId: string, requestData: RequestContext): void {
+        this.requestMap.set(requestId, requestData);
     }
 
     /**
-     * Update request context fields. Can be done partially.
-     *
+     * Updates request context fields. Can be done partially.
      * @param requestId Request id.
      * @param data Partial request context.
-     * @returns Updated request context.
+     * @returns Updated request context or undefined if request context not found.
      */
     public update(requestId: string, data: Partial<RequestContext>): RequestContext | undefined {
-        const requestContext = super.get(requestId);
+        const requestContext = this.requestMap.get(requestId);
 
         if (requestContext) {
             Object.assign(requestContext, data);
             return requestContext;
         }
 
-        // TODO: Throws error if request context not found after RequestEvents refactoring.
-        super.set(requestId, data as RequestContext);
         return undefined;
+    }
+
+    /**
+     * Returns request context by request id.
+     * @param requestId Request id.
+     * @returns Request context or undefined if request context not found.
+     */
+    public get(requestId: string): RequestContext | undefined {
+        return this.requestMap.get(requestId);
+    }
+
+    /**
+     * Removes non document/subdocument request context from the map by request id.
+     * @param requestId Request id.
+     */
+    public delete(requestId: string): void {
+        const context = this.requestMap.get(requestId);
+        if (!context) {
+            return;
+        }
+
+        this.requestMap.delete(requestId);
+    }
+
+    /**
+     * Clears all request context data.
+     */
+    public clear(): void {
+        this.requestMap.clear();
     }
 }
 

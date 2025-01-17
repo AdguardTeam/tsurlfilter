@@ -1,13 +1,22 @@
-import { Allowlist } from '@lib/mv2/background/allowlist';
-import { DocumentApi } from '@lib/mv2/background/document-api';
-import { EngineApi } from '@lib/mv2/background/engine-api';
-import { appContext } from '@lib/mv2/background/context';
-import { stealthApi } from '@lib/mv2/background/stealth-api';
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
 
-jest.mock('@lib/mv2/background/allowlist');
-jest.mock('@lib/mv2/background/engine-api');
-jest.mock('@lib/mv2/background/stealth-api');
-jest.mock('@lib/mv2/background/context');
+import { DocumentApi } from '../../../../src/lib/mv2/background/document-api';
+import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
+import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
+import { appContext } from '../../../../src/lib/mv2/background/app-context';
+import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
+
+vi.mock('../../../../src/lib/mv2/background/allowlist');
+vi.mock('../../../../src/lib/mv2/background/engine-api');
+vi.mock('../../../../src/lib/mv2/background/stealth-api');
+vi.mock('../../../../src/lib/mv2/background/app-context');
 
 describe('Document Api', () => {
     let documentApi: DocumentApi;
@@ -21,7 +30,7 @@ describe('Document Api', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     describe('matchFrame method', () => {
@@ -34,11 +43,18 @@ describe('Document Api', () => {
                 domains: ['example.com'],
             },
             {
-                title: 'should call engine.matchFrame, when API is not inverted',
+                title: 'should call engine.matchFrame, when API is enabled and not inverted',
                 enabled: true,
                 inverted: false,
                 url: 'https://example.com',
                 domains: ['example.com'],
+            },
+            {
+                title: 'should call engine.matchFrame, when API is enabled and not inverted',
+                enabled: true,
+                inverted: false,
+                url: 'https://test.example.com',
+                domains: ['*.example.com'],
             },
             {
                 title: 'should call engine.matchFrame, when domain is allowlisted and API is inverted',
@@ -46,6 +62,13 @@ describe('Document Api', () => {
                 inverted: true,
                 url: 'https://example.com',
                 domains: ['example.com'],
+            },
+            {
+                title: 'should call engine.matchFrame, when domain mask is allowlisted and API is inverted',
+                enabled: true,
+                inverted: true,
+                url: 'https://test.example.com',
+                domains: ['*.example.com'],
             },
             {
                 title: 'should return custom rule, when domain is not allowlisted and API is inverted',

@@ -2,24 +2,26 @@
     "extends": "./tsconfig.base.json",
     "include": [
         "src",
-        "test",
         "rollup.config.ts",
-        "jest-environment-jsdom.ts",
-        "jest.config.ts",
-        "setupTests.ts",
         "tasks",
-        ".eslintrc.js",
-        "src/lib/mv3/.eslintrc.js"
+        ".eslintrc.cjs",
+        "src/lib/mv3/.eslintrc.js",
+        "vitest.config.ts",
+        "vitest.setup.ts",
+        "tasks/constants.ts",
+    ],
+    "exclude": [
+        "test",
+        "**/*.test.ts",
+        "**/*.spec.ts"
     ],
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
-            "@lib/*": [
-                "src/lib/*"
-            ]
+            "*": ["src/*"]
         }
     },
     "ts-node": {
-        "swc": true,
+        "swc": true
     }
 }

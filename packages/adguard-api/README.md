@@ -463,8 +463,10 @@ adguardApi.onRequestBlocked.removeListener(
 - `tabId` - Tab identifier.
 - `requestUrl` - URL of the blocked request.
 - `referrerUrl` - Referrer URL.
-- `rule` - Filtering rule that has been applied to this request.
+- `ruleIndex` - Filtering rule index that has been applied to this request.
+  Can be `undefined`, e.g. during company category matching.
 - `filterId` - ID of the filter list the rule belongs to.
+  Can be `undefined`, e.g. during company category matching.
 - `requestType` - Request mime type. Possible values are listed below:
 
 > Request types:

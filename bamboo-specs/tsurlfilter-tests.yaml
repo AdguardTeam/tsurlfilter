@@ -43,6 +43,10 @@ Test:
     - script:
         interpreter: SHELL
         scripts:
+          - bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh
+    - script:
+        interpreter: SHELL
+        scripts:
           - bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh
     - script:
         interpreter: SHELL
@@ -72,6 +76,11 @@ Test:
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
+      pattern: extension.zip
+      shared: false
+      required: false
+    - name: examples-adguard-api-mv3-extension.zip
+      location: packages/examples/adguard-api-mv3/build
       pattern: extension.zip
       shared: false
       required: false

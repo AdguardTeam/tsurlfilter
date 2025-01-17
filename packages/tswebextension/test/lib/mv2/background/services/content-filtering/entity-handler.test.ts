@@ -1,4 +1,6 @@
-import { EntityHandler } from '@lib/mv2/background/services/content-filtering/entity-handler';
+import { describe, expect, it } from 'vitest';
+
+import { EntityHandler } from '../../../../../../src/lib/mv2/background/services/content-filtering/entity-handler';
 
 describe('EntityHandler', () => {
     it('should escape entities', () => {

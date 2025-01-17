@@ -1,17 +1,24 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
-import type {
-    CosmeticResult,
-    MatchingResult,
-    NetworkRule,
-} from '@adguard/tsurlfilter';
-import { type TabFrameRequestContext, TabsApi } from '@lib/mv3/tabs/tabs-api';
-import { TabContext, type TabInfo } from '@lib/mv3/tabs/tab-context';
-import { Frame, MAIN_FRAME_ID } from '@lib/mv3/tabs/frame';
-import { engineApi } from '@lib/mv3/background/engine-api';
+import { type NetworkRule } from '@adguard/tsurlfilter';
 
-jest.mock('@lib/mv3/tabs/tab-context');
-jest.mock('@lib/mv3/tabs/frame');
-jest.mock('@lib/mv3/background/engine-api');
+import { TabsApi } from '../../../../src/lib/mv3/tabs/tabs-api';
+import { TabContext, type TabInfo } from '../../../../src/lib/mv3/tabs/tab-context';
+import { Frame } from '../../../../src/lib/mv3/tabs/frame';
+import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
+import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
+import { Frames } from '../../../../src/lib/mv3/tabs/frames';
+
+vi.mock('../../../../src/lib/mv3/tabs/tab-context');
+vi.mock('../../../../src/lib/mv3/tabs/frame');
+vi.mock('../../../../src/lib/mv3/background/engine-api');
 
 describe('TabsApi', () => {
     let tabsApi: TabsApi;
@@ -21,7 +28,7 @@ describe('TabsApi', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     const createTestTabContext = (): TabContext => {
@@ -73,11 +80,16 @@ describe('TabsApi', () => {
         it('should return frame for the tab context', () => {
             const tabId = 1;
 
-            const tabContext = { frames: new Map() } as TabContext;
+            const tabContext = { frames: new Frames() } as TabContext;
 
             const frameId = MAIN_FRAME_ID;
 
-            const frame = new Frame('example.com');
+            const frame = new Frame({
+                url: 'https://example.org',
+                tabId,
+                frameId,
+                timeStamp: 0,
+            });
 
             tabContext.frames.set(frameId, frame);
 
@@ -89,80 +101,6 @@ describe('TabsApi', () => {
 
         it('should return null if tab frame is not found', () => {
             expect(tabsApi.getTabFrame(1, 1)).toBeNull();
-        });
-    });
-
-    describe('handleFrameRequest method', () => {
-        it('should handle frame request for the tab context', () => {
-            const tabId = 1;
-
-            const tabContext = createTestTabContext();
-
-            tabsApi.context.set(tabId, tabContext);
-
-            const frameRequestContext = { tabId } as TabFrameRequestContext;
-
-            tabsApi.handleFrameRequest(frameRequestContext);
-
-            expect(TabContext.prototype.handleFrameRequest).toBeCalledWith(frameRequestContext, false);
-        });
-
-        it('should not handle frame request if tab context is not found', () => {
-            const frameRequestContext = { tabId: 1 } as TabFrameRequestContext;
-
-            tabsApi.handleFrameRequest(frameRequestContext);
-
-            expect(TabContext.prototype.handleFrameRequest).not.toBeCalled();
-        });
-    });
-
-    describe('handleFrameCosmeticResult method', () => {
-        it('should handle cosmetic result for the tab context', () => {
-            const tabId = 1;
-            const frameId = 1;
-
-            const tabContext = createTestTabContext();
-
-            tabsApi.context.set(tabId, tabContext);
-
-            const cosmeticResult = {} as CosmeticResult;
-
-            tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
-
-            expect(TabContext.prototype.handleFrameCosmeticResult).toBeCalledWith(frameId, cosmeticResult);
-        });
-
-        it('should not handle cosmetic result if tab context is not found', () => {
-            const cosmeticResult = {} as CosmeticResult;
-
-            tabsApi.handleFrameCosmeticResult(1, 0, cosmeticResult);
-
-            expect(TabContext.prototype.handleFrameCosmeticResult).not.toBeCalled();
-        });
-    });
-
-    describe('handleFrameMatchingResult method', () => {
-        it('should handle matching result for the tab context', () => {
-            const tabId = 1;
-            const frameId = 1;
-
-            const tabContext = createTestTabContext();
-
-            tabsApi.context.set(tabId, tabContext);
-
-            const matchingResult = {} as MatchingResult;
-
-            tabsApi.handleFrameMatchingResult(tabId, frameId, matchingResult);
-
-            expect(TabContext.prototype.handleFrameMatchingResult).toBeCalledWith(frameId, matchingResult);
-        });
-
-        it('should not handle matching result if tab context is not found', () => {
-            const matchingResult = {} as MatchingResult;
-
-            tabsApi.handleFrameMatchingResult(1, 0, matchingResult);
-
-            expect(TabContext.prototype.handleFrameMatchingResult).not.toBeCalled();
         });
     });
 
@@ -207,9 +145,9 @@ describe('TabsApi', () => {
 
             const tabContext = {
                 info: { url },
-                incrementBlockedRequestCount: jest.fn(),
+                incrementBlockedRequestCount: vi.fn(),
             } as unknown as TabContext;
-            const tabContextIncrement = jest.spyOn(tabContext, 'incrementBlockedRequestCount');
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
 
             tabsApi.context.set(tabId, tabContext);
             tabsApi.incrementTabBlockedRequestCount(tabId, url);
@@ -224,9 +162,9 @@ describe('TabsApi', () => {
 
             const tabContext = {
                 info: { url: originUrl },
-                incrementBlockedRequestCount: jest.fn(),
+                incrementBlockedRequestCount: vi.fn(),
             } as unknown as TabContext;
-            const tabContextIncrement = jest.spyOn(tabContext, 'incrementBlockedRequestCount');
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
 
             tabsApi.context.set(tabId, tabContext);
             tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
@@ -251,7 +189,7 @@ describe('TabsApi', () => {
 
             const mainFrameRule = {} as NetworkRule;
 
-            jest.spyOn(engineApi, 'matchFrame').mockImplementationOnce(() => mainFrameRule);
+            vi.spyOn(engineApi, 'matchFrame').mockImplementationOnce(() => mainFrameRule);
 
             tabsApi.updateTabMainFrameRule(tabId);
 
@@ -271,7 +209,7 @@ describe('TabsApi', () => {
 
             browser.tabs.query.resolves([{ id: tabId } as TabInfo]);
 
-            const spy = jest.spyOn(tabsApi, 'updateTabMainFrameRule').mockImplementation();
+            const spy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
 
             await tabsApi.updateCurrentTabsMainFrameRules();
 
@@ -296,44 +234,4 @@ describe('TabsApi', () => {
             expect(tabsApi.isNewPopupTab(tabId)).toBe(expected);
         });
     });
-
-    // TODO: Uncomment tests when injection cosmetic rules will be moved to tabs api.
-    // describe('static injectScript method', () => {
-    //     it('should inject script to the frame with correct properties', async () => {
-    //         const code = 'console.log("Hello, World!")';
-    //         const tabId = 1;
-    //         const frameId = 1;
-
-    //         const injectDetails: ExtensionTypes.InjectDetails = {
-    //             code,
-    //             frameId,
-    //             runAt: 'document_start',
-    //             matchAboutBlank: true,
-    //         };
-
-    //         await tabsApi.injectScript(code, tabId, frameId);
-
-    //         expect(browser.tabs.executeScript.calledOnceWith(tabId, injectDetails)).toBe(true);
-    //     });
-    // });
-
-    // describe('static injectCss method', () => {
-    //     it('should inject css to the frame with correct properties', async () => {
-    //         const code = 'body { background: red; }';
-    //         const tabId = 1;
-    //         const frameId = 1;
-
-    //         const injectDetails: ExtensionTypes.InjectDetails = {
-    //             code,
-    //             frameId,
-    //             runAt: 'document_start',
-    //             matchAboutBlank: true,
-    //             cssOrigin: 'user',
-    //         };
-
-    //         await tabsApi.injectCss(code, tabId, frameId);
-
-    //         expect(browser.tabs.insertCSS.calledOnceWith(tabId, injectDetails)).toBe(true);
-    //     });
-    // });
 });

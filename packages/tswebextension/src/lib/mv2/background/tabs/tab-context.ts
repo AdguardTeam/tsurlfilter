@@ -1,26 +1,19 @@
-import browser from 'webextension-polyfill';
+import browser, { type Tabs } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
-import type { Tabs } from 'webextension-polyfill';
+import { type CosmeticResult, type MatchingResult, type NetworkRule } from '@adguard/tsurlfilter';
 
-import { Frame, MAIN_FRAME_ID } from './frame';
-import type { DocumentApi } from '../document-api';
-import {
-    type FilteringLog,
-    defaultFilteringLog,
-    isHttpOrWsRequest,
-    isHttpRequest,
-} from '../../../common';
+import { MAIN_FRAME_ID } from '../../../common/constants';
+import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
+import { isHttpOrWsRequest, isHttpRequest } from '../../../common/utils/url';
+import { type TabInfoCommon } from '../../../common/tabs/tabs-api';
+import { type DocumentApi } from '../document-api';
+
+import { Frame } from './frame';
+
 /**
- * We need tab id in the tab information, otherwise we do not process it.
- * For example developer tools tabs.
+ * Tab info for MV2.
  */
-export type TabInfo = Tabs.Tab & {
-    /**
-     * ID of the tab.
-     */
-    id: number,
-
+export type TabInfoMV2 = TabInfoCommon & {
     /**
      * Tab creation timestamp in milliseconds.
      */
@@ -30,7 +23,7 @@ export type TabInfo = Tabs.Tab & {
 /**
  * Request context data related to the frame.
  */
-export type FrameRequestContext = {
+type FrameRequestContext = {
     frameId: number;
     requestId: string;
     requestUrl: string;
@@ -93,7 +86,7 @@ export class TabContext {
      * @param filteringLog Filtering Log API.
      */
     constructor(
-        public info: TabInfo,
+        public info: TabInfoMV2,
         private readonly documentApi: DocumentApi,
         private readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
@@ -107,7 +100,7 @@ export class TabContext {
      * @param changeInfo Tab change info.
      * @param tabInfo Tab info.
      */
-    public updateTabInfo(changeInfo: Tabs.OnUpdatedChangeInfoType, tabInfo: TabInfo): void {
+    public updateTabInfo(changeInfo: Tabs.OnUpdatedChangeInfoType, tabInfo: TabInfoMV2): void {
         this.info = tabInfo;
 
         // If the tab was updated it means that it wasn't used to send requests in the background.
@@ -263,7 +256,7 @@ export class TabContext {
      * @param documentApi Document API.
      * @returns Tab context for new tab.
      */
-    public static createNewTabContext(tab: TabInfo, documentApi: DocumentApi): TabContext {
+    public static createNewTabContext(tab: TabInfoMV2, documentApi: DocumentApi): TabContext {
         const tabContext = new TabContext(tab, documentApi);
 
         // In some cases, tab is created while browser navigation processing.
@@ -290,7 +283,7 @@ export class TabContext {
      * @param tab Tab details.
      * @returns True if the tab is a browser tab, otherwise returns false.
      */
-    public static isBrowserTab(tab: Tabs.Tab): tab is TabInfo {
+    public static isBrowserTab(tab: Tabs.Tab): tab is TabInfoMV2 {
         return typeof tab.id === 'number' && tab.id !== browser.tabs.TAB_ID_NONE;
     }
 }

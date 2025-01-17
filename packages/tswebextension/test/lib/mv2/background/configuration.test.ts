@@ -1,6 +1,8 @@
+import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { type ConfigurationMV2, configurationMV2Validator, FilterListPreprocessor } from '@lib/mv2';
-import { LF } from '@lib/common';
+
+import { type ConfigurationMV2, configurationMV2Validator, FilterListPreprocessor } from '../../../../src/lib';
+import { LF } from '../../../../src/lib/common/constants';
 
 describe('configuration validator', () => {
     const validConfiguration: ConfigurationMV2 = {

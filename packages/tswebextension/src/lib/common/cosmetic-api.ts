@@ -1,4 +1,56 @@
-import { type CosmeticRule } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
+
+import { type ContentType } from './request-type';
+
+/**
+ * Information for logging js rules.
+ */
+export type LogJsRulesParams = {
+    /**
+     * Tab id.
+     */
+    tabId: number,
+
+    /**
+     * Cosmetic result.
+     */
+    cosmeticResult: CosmeticResult,
+
+    /**
+     * Url.
+     */
+    url: string,
+
+    /**
+     * Content type.
+     */
+    contentType: ContentType,
+
+    /**
+     * Timestamp.
+     */
+    timestamp: number,
+};
+
+/**
+ * Data for applying cosmetic rules in content script.
+ */
+export type ContentScriptCosmeticData = {
+    /**
+     * Is app started.
+     */
+    isAppStarted: boolean,
+
+    /**
+     * Are hits stats collected.
+     */
+    areHitsStatsCollected: boolean,
+
+    /**
+     * Extended css rules to apply.
+     */
+    extCssRules: string[] | null,
+};
 
 /**
  * CosmeticApiCommon contains common logic about building css for hiding elements.
@@ -10,6 +62,26 @@ export class CosmeticApiCommon {
      * Number of selectors in grouped selector list.
      */
     protected static readonly CSS_SELECTORS_PER_LINE = 50;
+
+    /**
+     * Element hiding CSS style beginning.
+     */
+    protected static readonly ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
+
+    /**
+     * CSS style declaration for hit stats.
+     */
+    protected static readonly INJECT_HIT_START = " content: 'adguard";
+
+    /**
+     * Separator for hit stats.
+     */
+    protected static readonly HIT_SEP = encodeURIComponent(';');
+
+    /**
+     * Element hiding CSS style ending.
+     */
+    protected static readonly HIT_END = "' !important; }";
 
     /**
      * Builds stylesheets from rules.

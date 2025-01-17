@@ -14,16 +14,16 @@ import {
     type CosmeticOption,
     STEALTH_MODE_FILTER_ID,
 } from '@adguard/tsurlfilter';
-
 import { type AnyRule } from '@adguard/agtree';
-import { type MatchQuery } from '../../common/interfaces';
+
 import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { getHost, isHttpRequest } from '../../common/utils/url';
+import { type MatchQuery } from '../../common/interfaces';
 
-import type { Allowlist } from './allowlist';
-import type { StealthApi } from './stealth-api';
-import type { ConfigurationMV2 } from './configuration';
-import type { AppContext } from './context';
+import { type Allowlist } from './allowlist';
+import { type StealthApi } from './stealth-api';
+import { type ConfigurationMV2 } from './configuration';
+import { type AppContext } from './app-context';
 
 /**
  * TSUrlFilter Engine wrapper.

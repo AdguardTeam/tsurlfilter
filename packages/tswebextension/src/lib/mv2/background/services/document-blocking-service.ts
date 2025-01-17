@@ -1,13 +1,13 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
 import { getHostname } from 'tldts';
-import type { NetworkRule } from '@adguard/tsurlfilter';
+import { NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { logger } from '../../../common/utils/logger';
 import { isChromium } from '../utils/browser-detector';
-import type { ConfigurationMV2 } from '../configuration';
-import { ContentType, NetworkRuleOption } from '..';
-import type { TabsApi } from '../tabs/tabs-api';
+import { type ConfigurationMV2 } from '../configuration';
+import { type TabsApi } from '../tabs/tabs-api';
+import { ContentType } from '../../../common/request-type';
 
 /**
  * Params for {@link DocumentBlockingService.getDocumentBlockingResponse}.
@@ -18,6 +18,11 @@ type GetDocumentBlockingResponseParams = {
     rule: NetworkRule,
     referrerUrl: string,
     requestUrl: string,
+
+    /**
+     * Request id.
+     */
+    requestId: string,
 };
 
 /**
@@ -76,6 +81,7 @@ export class DocumentBlockingService {
             eventId,
             rule,
             referrerUrl,
+            requestId,
             requestUrl,
         } = data;
 
@@ -93,6 +99,7 @@ export class DocumentBlockingService {
                 filterId: rule.getFilterListId(),
                 ruleIndex: rule.getIndex(),
                 requestUrl,
+                requestId,
                 frameUrl: referrerUrl,
                 requestType: ContentType.Document,
                 isAllowlist: rule.isAllowlist(),

@@ -22,8 +22,12 @@ declare global {
 
 window.tsWebExtension = tsWebExtension;
 
+const rawUserRules = [
+    'example.com##h1',
+];
+
 // simple in-memory storage for user rules and allowlist
-let userrules = FilterListPreprocessor.preprocess('example.com##h1');
+let userrules = FilterListPreprocessor.preprocess(rawUserRules.join('\n'));
 let allowlist: string[] = [];
 
 const defaultConfig: ConfigurationMV2 = {

@@ -1,10 +1,24 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
 import { MatchingResult, RequestType } from '@adguard/tsurlfilter';
-import { type GetBlockingResponseParams, RequestBlockingApi } from '@lib/mv2/background/request/request-blocking-api';
-import { documentBlockingService, engineApi, tabsApi } from '@lib/mv2/background/api';
-import { ContentType } from '@lib/common';
-import { createNetworkRule } from '../../../../helpers/rule-creator';
 
-jest.mock('@lib/mv2/background/api');
+import { createNetworkRule } from '../../../../helpers/rule-creator';
+import {
+    documentBlockingService,
+    engineApi,
+    type GetBlockingResponseParams,
+    RequestBlockingApi,
+    tabsApi,
+} from '../../../../../src/lib';
+import { ContentType } from '../../../../../src/lib/common/request-type';
+
+vi.mock('../../../../../src/lib/mv2/background/api');
 
 /**
  * Returns simple data object for {@link RequestBlockingApi.getBlockingResponse} method
@@ -39,6 +53,7 @@ const getGetBlockingResponseParamsData = (
         rule: result.getBasicResult(),
         popupRule: result.getPopupRule(),
         referrerUrl: '',
+        requestId: '1',
         requestUrl,
         requestType,
         contentType,
@@ -47,14 +62,14 @@ const getGetBlockingResponseParamsData = (
 
 describe('Request Blocking Api - shouldCollapseElement', () => {
     const mockMatchingResult = (ruleText?: string): void => {
-        let matchingResult = null;
+        let matchingResult: MatchingResult | null = null;
 
         if (ruleText) {
             const rule = createNetworkRule(ruleText, 0);
             matchingResult = new MatchingResult([rule], null);
         }
 
-        jest.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
+        vi.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
     };
 
     it('element Should be collapsed', () => {
@@ -114,21 +129,21 @@ describe('Request Blocking Api - getBlockingResponse', () => {
     };
 
     beforeEach(() => {
-        jest.spyOn(documentBlockingService, 'getDocumentBlockingResponse')
+        vi.spyOn(documentBlockingService, 'getDocumentBlockingResponse')
             .mockReturnValue(mockedBlockingPageResponse);
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     describe('tab is new', () => {
         beforeEach(() => {
-            jest.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(true);
+            vi.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(true);
         });
 
         afterEach(() => {
-            jest.resetAllMocks();
+            vi.resetAllMocks();
         });
 
         it('the popup modifier, document request - close tab', () => {
@@ -283,11 +298,11 @@ describe('Request Blocking Api - getBlockingResponse', () => {
 
     describe('tab is not new', () => {
         beforeEach(() => {
-            jest.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(false);
+            vi.spyOn(tabsApi, 'isNewPopupTab').mockReturnValue(false);
         });
 
         afterEach(() => {
-            jest.resetAllMocks();
+            vi.resetAllMocks();
         });
 
         it('just popup modifier, document request - do not close tab, undefined is returned', () => {

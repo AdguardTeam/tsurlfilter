@@ -10,6 +10,11 @@ export abstract class InvalidDeclarativeRuleError extends Error {
     declarativeRule: DeclarativeRule;
 
     /**
+     * Describes a reason of the error.
+     */
+    reason?: string;
+
+    /**
      * Describes abstract error when declarative rule is invalid.
      *
      * @param message Message of error.
@@ -23,7 +28,7 @@ export abstract class InvalidDeclarativeRuleError extends Error {
     ) {
         super(message);
 
-        this.name = 'InvalidDeclarativeRuleError';
+        this.name = this.constructor.name;
         this.networkRule = networkRule;
         this.declarativeRule = declarativeRule;
 

@@ -9,7 +9,7 @@ import { DEFAULT_EXTENSION_CONFIG } from './constants';
 const COMMON_FILTERS_DIR = './extension/filters';
 const FILTERS_DIR = `${COMMON_FILTERS_DIR}`;
 const DEST_RULE_SETS_DIR = `${COMMON_FILTERS_DIR}/declarative`;
-const RESOURCES_DIR = '/war/redirects';
+const RESOURCES_DIR = '/web-accessible-resources/redirects';
 
 const ADGUARD_FILTERS_IDS = DEFAULT_EXTENSION_CONFIG.staticFiltersIds;
 
@@ -68,7 +68,10 @@ const precompileRules = async () => {
         FILTERS_DIR,
         RESOURCES_DIR,
         DEST_RULE_SETS_DIR,
-        true,
+        {
+            debug: true,
+            prettifyJson: true,
+        },
     );
 };
 

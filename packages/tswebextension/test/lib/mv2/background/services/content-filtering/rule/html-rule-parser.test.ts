@@ -1,9 +1,12 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
+import { describe, expect, it } from 'vitest';
 
-import { HtmlRuleParser } from '@lib/mv2/background/services/content-filtering/rule/html-rule-parser';
 import { createCosmeticRule } from '../../../../../../helpers/rule-creator';
+import {
+    HtmlRuleParser,
+} from '../../../../../../../src/lib/mv2/background/services/content-filtering/rule/html-rule-parser';
 
 describe('Html rule attributes parser', () => {
     it('checks simple attributes parsing', () => {

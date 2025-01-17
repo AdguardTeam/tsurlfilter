@@ -6,6 +6,7 @@ import { getRuleSourceIndex, getRuleSourceText } from '../../filterlist/source-m
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type IFilter } from './filter';
+import { MaxScannedRulesError } from './errors/limitation-errors';
 
 /**
  * IFilterScanner describes a method that should return indexed network rules
@@ -64,12 +65,16 @@ export class FilterScanner implements IFilterScanner {
      * rule after it has been parsed and transformed. This function is needed
      * for example to apply $badfilter: to exclude negated rules from the array
      * of rules that will be returned.
+     * @param maxNumberOfScannedNetworkRules Maximum number of network rules to
+     * scan, all other rules will be ignored and an error {@link MaxScannedRulesError}
+     * will be added to the list of result errors.
      *
      * @returns List of indexed rules with hash. If filterFn was specified then
      * out values will be filtered with this function.
      */
     public getIndexedRules(
         filterFn?: (r: IndexedNetworkRuleWithHash) => boolean,
+        maxNumberOfScannedNetworkRules?: number,
     ): ScannedRulesWithErrors {
         const { filterList } = this.filter;
 
@@ -83,6 +88,7 @@ export class FilterScanner implements IFilterScanner {
 
         let ruleBufferIndex = reader.getCurrentPos();
         let ruleNode = reader.readNext();
+        let curNumberOfScannedNetworkRules = 0;
 
         while (ruleNode) {
             let indexedNetworkRulesWithHash: IndexedNetworkRuleWithHash[] = [];
@@ -119,6 +125,22 @@ export class FilterScanner implements IFilterScanner {
                 : indexedNetworkRulesWithHash;
 
             result.rules.push(...filteredRules);
+
+            curNumberOfScannedNetworkRules += filteredRules.length;
+
+            if (maxNumberOfScannedNetworkRules !== undefined
+                && curNumberOfScannedNetworkRules >= maxNumberOfScannedNetworkRules) {
+                const lastScannedRule = indexedNetworkRulesWithHash[indexedNetworkRulesWithHash.length - 1];
+                const lineIndex = getRuleSourceIndex(lastScannedRule.index, this.filter.sourceMap);
+                // This error needed for future improvements, for example
+                // to show in the UI which rules were skipped.
+                const err = new MaxScannedRulesError(
+                    `Maximum number of scanned network rules reached at line index ${lineIndex}.`,
+                    lineIndex,
+                );
+                result.errors.push(err);
+                break;
+            }
         }
 
         return result;

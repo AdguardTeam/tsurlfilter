@@ -1,23 +1,25 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
-import {
-    RequestType,
-    NetworkRuleOption,
-    type NetworkRule,
-} from '@adguard/tsurlfilter';
+import { RequestType, NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { tabsApi } from '../../tabs/tabs-api';
+import { companiesDbService } from '../../../common/companies-db-service';
 import { FilteringEventType, defaultFilteringLog } from '../../../common/filtering-log';
-import { ContentType } from '..';
+
+import { type RequestContext } from './request-context-storage';
 
 /**
  * Base params about request.
  */
-type RequestParams = {
-    tabId: number,
-    referrerUrl: string,
-    requestUrl: string,
-    requestType: RequestType,
-};
+type RequestParams = Pick<
+    RequestContext,
+    'tabId' |
+    'eventId' |
+    'referrerUrl' |
+    'requestId' |
+    'requestUrl' |
+    'requestType' |
+    'contentType'
+>;
 
 /**
  * Params for {@link RequestBlockingApi.getBlockingResponse}.
@@ -45,6 +47,19 @@ export type GetHeadersResponseParams = RequestParams & {
  * This class also provides method {@link isRequestBlockedByRule} for checking, if rule is blocking rule.
  */
 export class RequestBlockingApi {
+    /**
+     * Checks if request rule is blocked.
+     *
+     * @param requestRule Request network rule or null.
+     * @returns True, if rule is request blocking, else returns false.
+     */
+    public static isRequestBlockedByRule(requestRule: NetworkRule | null): boolean {
+        return !!requestRule
+            && !requestRule.isAllowlist()
+            && !requestRule.isOptionEnabled(NetworkRuleOption.Replace)
+            && !requestRule.isOptionEnabled(NetworkRuleOption.Redirect);
+    }
+
     /**
      * Closes the tab which considered as a popup.
      *
@@ -79,6 +94,11 @@ export class RequestBlockingApi {
             popupRule,
             requestType,
             tabId,
+            eventId,
+            requestId,
+            requestUrl,
+            contentType,
+            referrerUrl,
         } = data;
 
         if (!rule) {
@@ -96,6 +116,28 @@ export class RequestBlockingApi {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Redirect)) {
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.ApplyBasicRule,
+                data: {
+                    tabId,
+                    eventId,
+                    requestType: contentType,
+                    frameUrl: referrerUrl,
+                    requestId,
+                    requestUrl,
+                    companyCategoryName: companiesDbService.match(requestUrl),
+                    filterId: rule.getFilterListId(),
+                    ruleIndex: rule.getIndex(),
+                    isAllowlist: rule.isAllowlist(),
+                    isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                    isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                    isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                    isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                    advancedModifier: rule.getAdvancedModifierValue(),
+                    isAssuredlyBlocked: true,
+                },
+            });
+
             // TODO: Check that redirected url exists in our resources as in mv2.
             return { redirectUrl: '' };
         }
@@ -147,27 +189,26 @@ export class RequestBlockingApi {
     ): void {
         const {
             tabId,
+            eventId,
             referrerUrl,
+            requestId,
             requestUrl,
             requestType,
+            contentType,
         } = data;
 
         if (!appliedRule || requestType === 0) {
             return;
         }
 
-        // We need this only for count total blocked requests,
-        // so we can skip contentType.
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.ApplyBasicRule,
             data: {
                 tabId,
-                // TODO: Check if eventId is needed in mv3.
-                eventId: '1',
-                // TODO: Add saving correct request type to request context
-                // storage in the upper level.
-                requestType: ContentType.Document,
+                eventId,
+                requestType: contentType,
                 frameUrl: referrerUrl,
+                requestId,
                 requestUrl,
                 filterId: appliedRule.getFilterListId(),
                 ruleIndex: appliedRule.getIndex(),

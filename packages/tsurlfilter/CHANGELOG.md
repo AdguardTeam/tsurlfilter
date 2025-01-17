@@ -8,7 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: manually add compare links for version changes -->
 <!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
 
-## Unreleased
+## Unreleased <!-- release/v3.1 -->
+
+### Added
+
+- Optional property `maxNumberOfUnsafeRules` to `DeclarativeConverterOptions`
+  for unsafe rules (only for dynamic rulesets).
+
+### Changed
+
+- We throw error for empty modifier list in network rules.
+- Updated [@adguard/agtree] to `v3.0.0`.
+- Updated [@adguard/scriptlets] to `v2.0.1`
+- Updated [@adguard/extended-css] to `v2.1.0`
+
+### Fixed
+
+- Handling missing children data in the deserializer for certain nodes.
+- URI encoded `$removeparam` value is not removed in MV3 [AdguardBrowserExtension#3014].
+- `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
+- `$popup,third-party` modifiers cause document blocking [AdguardBrowserExtension#3012].
+
+[AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
+[AdguardBrowserExtension#3012]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3012
+
+## Unreleased <!-- master -->
 
 ### Changed
 
@@ -44,24 +68,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [3.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.6
 
-## [3.0.5] - 2024-09-26
-
-### Changed
-
-- Updated `@adguard/scriptlets` to `v1.12.1`.
+## [3.1.0-alpha.7] - 2024-10-16
 
 ### Fixed
 
-- Scriptlets exclusion matching is not working properly for rules with arguments [AdguardBrowserExtension#2947].
+- Excluding request types causes document blocking [AdguardBrowserExtension#2992].
+- Not unique `eventId` on `ApplyPermissionsRule` filtering log events.
+
+[3.1.0-alpha.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.7
+[AdguardBrowserExtension#2992]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2992
+
+## [3.1.0-alpha.6] - 2024-10-09
+
+### Fixed
+
+- Content-type matching of `$permissions` and `$removeparam` rules [AdguardBrowserExtension#2954].
+
+[3.1.0-alpha.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.6
+[AdguardBrowserExtension#2954]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2954
+
+## [3.1.0-alpha.5] - 2024-10-02
+
+### Changed
+
+- Updated [@adguard/scriptlets] to `v1.12.1`.
+
+[3.1.0-alpha.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.5
+
+## [3.0.5] - 2024-09-26
+
+### Fixed
+
+- Scriptlets exclusion matching is not working properly
+  for rules with arguments [AdguardBrowserExtension#2947].
 
 [3.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.5
 [AdguardBrowserExtension#2947]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2947
+
+## [3.1.0-alpha.4] - 2024-09-20
+
+### Fixed
+
+- In some cases dynamic rules can have not unique IDs [AdguardBrowserExtension#2953].
+
+[3.1.0-alpha.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.4
+[AdguardBrowserExtension#2953]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2953
 
 ## [3.0.4] - 2024-09-19
 
 ### Changed
 
-- Updated `@adguard/agtree` to `v2.1.2`.
+- Updated [@adguard/agtree] to `v2.1.2`.
 
 [3.0.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.4
 
@@ -69,24 +126,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/agtree` to `v2.1.1`.
-- Updated `@adguard/css-tokenizer` to `v1.1.1`.
-
-### Fixed
-
-- The exception `$domain=~` filter rule is not working properly [AdguardBrowserExtension#2912].
+- Updated [@adguard/agtree] to `v2.1.1`.
+- Updated [@adguard/css-tokenizer] to `v1.1.1`.
 
 [3.0.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.3
-[AdguardBrowserExtension#2912]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2912
+
+## [3.1.0-alpha.3] - 2024-08-30
+
+### Changed
+
+- Updated [@adguard/scriptlets] to `v1.11.27`.
+
+[3.1.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.3
 
 ## [3.0.2] - 2024-08-29
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.11.27`.
+- Updated [@adguard/scriptlets] to `v1.11.27`.
 
 [3.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.2
-
 
 ## [3.0.1] - 2024-08-27
 
@@ -125,7 +184,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Integrated AGTree library into the project [#85].
 - `IFilter`'s content now based on `PreprocessFilterList` interface.
 - Rule classes now expect AGTree AST nodes in the constructor instead of rule text.
-- Reworked CSS validation. Now it's done with the `@adguard/css-tokenizer` package.
+- Reworked CSS validation. Now it's done with the [@adguard/css-tokenizer] package.
 - Reworked scanning mechanism, from now on the scanner expects an AGTree byte buffer
   and reads the AGTree rule nodes from it.
 - Changed `IRuleList`s `retrieveRuleText` method to `retrieveRuleNode`.
@@ -148,26 +207,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Cosmetic rule parser.
 
 [3.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.0
-[#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
-[#110]: https://github.com/AdguardTeam/tsurlfilter/issues/110
 [#116]: https://github.com/AdguardTeam/tsurlfilter/issues/116
-[#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
-[#41]: https://github.com/AdguardTeam/tsurlfilter/issues/41
-[#63]: https://github.com/AdguardTeam/tsurlfilter/issues/63
-[#64]: https://github.com/AdguardTeam/tsurlfilter/issues/64
-[#66]: https://github.com/AdguardTeam/tsurlfilter/issues/66
-[#69]: https://github.com/AdguardTeam/tsurlfilter/issues/69
+[#110]: https://github.com/AdguardTeam/tsurlfilter/issues/110
+[#100]: https://github.com/AdguardTeam/tsurlfilter/issues/100
 [#85]: https://github.com/AdguardTeam/tsurlfilter/issues/85
-[AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
-[AdguardBrowserExtension#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
-[AdguardBrowserExtension#2481]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481
+[#69]: https://github.com/AdguardTeam/tsurlfilter/issues/69
+[#64]: https://github.com/AdguardTeam/tsurlfilter/issues/64
+[#63]: https://github.com/AdguardTeam/tsurlfilter/issues/63
+[#41]: https://github.com/AdguardTeam/tsurlfilter/issues/41
 [AdguardBrowserExtension#2690]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2690
+[AdguardBrowserExtension#2278]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2278
 
 ## [2.2.23] - 2024-08-01
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.11.16`.
+- Updated [@adguard/scriptlets] to `v1.11.16`.
 
 [2.2.23]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.23
 
@@ -183,7 +238,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.11.6`.
+- Updated [@adguard/scriptlets] to `v1.11.6`.
 
 [2.2.21]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.21
 
@@ -191,17 +246,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Ability to allowlist scriptlets by name [#377].
+- Ability to allowlist scriptlets by name [Scriptlets#377].
 - New rule indexing algorithm. The storage index is now an integer representing
   the rule position in the concatenated filter list text.
   The list id is determined by the pre-stored filter list offset during the scan.
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.11.1`.
+- Updated [@adguard/scriptlets] to `v1.11.1`.
 
 [2.2.20]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.20
-[#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
+[Scriptlets#377]: https://github.com/AdguardTeam/Scriptlets/issues/377
 
 ## [2.2.19] - 2024-04-03
 
@@ -219,36 +274,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [2.2.18]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.18
 
-
 ## [2.2.17] - 2024-03-28
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.10.25`.
+- Updated [@adguard/scriptlets] to `v1.10.25`.
 
 [2.2.17]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.17
-
 
 ## [2.2.16] - 2024-03-28
 
 ### Fixed
 
-- Correct work `$all` and `$popup` when they both selected for request [#2620], [#2728].
+- Correct work `$all` and `$popup` when they both selected for request
+  [AdguardBrowserExtension#2620], [AdguardBrowserExtension#2728].
 
 [2.2.16]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.16
-[#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
-[#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
-
 
 ## [2.2.15] - 2024-03-01
 
 ### Changed
 
-- `$popup` should not disable simple blocking rule [#2728].
+- `$popup` should not disable simple blocking rule [AdguardBrowserExtension#2728].
 
 [2.2.15]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.15
-[#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
-
+[AdguardBrowserExtension#2728]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2728
 
 ## [2.2.14] - 2024-02-13
 
@@ -266,7 +316,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.10.1`.
+- Updated [@adguard/scriptlets] to `v1.10.1`.
 
 [2.2.13]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.13
 
@@ -274,10 +324,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Priority calculation for `$popup` modifier [#2620].
+- Priority calculation for `$popup` modifier [AdguardBrowserExtension#2620].
 
-[#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
 [2.2.12]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.12
+[AdguardBrowserExtension#2620]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2620
 
 ## [2.2.11] - 2024-01-25
 
@@ -299,29 +349,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.105`.
+- Updated [@adguard/scriptlets] to `v1.9.105`.
 
 ### Fixed
 
-- Cosmetic rules with wildcard do not work on some domains [#2650].
+- Cosmetic rules with wildcard do not work on some domains [AdguardBrowserExtension#2650].
 
-[#2650]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2650
 [2.2.9]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.9
+[AdguardBrowserExtension#2650]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2650
 
 ## [2.2.8] - 2023-12-07
 
 ### Added
 
-- Library version number to the exports [#2237].
+- Library version number to the exports [AdguardBrowserExtension#2237].
 
-[#2237]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237
 [2.2.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.8
+[AdguardBrowserExtension#2237]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2237
 
 ## [2.2.7] - 2023-11-30
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.101`.
+- Updated [@adguard/scriptlets] to `v1.9.101`.
 
 [2.2.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.7
 
@@ -329,7 +379,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.96`.
+- Updated [@adguard/scriptlets] to `v1.9.96`.
 
 [2.2.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.6
 
@@ -337,7 +387,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.91`.
+- Updated [@adguard/scriptlets] to `v1.9.91`.
 
 [2.2.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.5
 
@@ -345,36 +395,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support of `$permissions` modifier for compiler validation
-  [#66](https://github.com/AdguardTeam/tsurlfilter/issues/66)
+- Support of `$permissions` modifier for compiler validation [#66].
 
 [2.2.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.4
+[#66]: https://github.com/AdguardTeam/tsurlfilter/issues/66
 
 ## [2.2.3] - 2023-11-03
 
 ### Added
 
-- Support of `$referrerpolicy` modifier for compiler validation [#191].
-
-[#191]: https://github.com/AdguardTeam/FiltersCompiler/issues/191
+- Support of `$referrerpolicy` modifier for compiler validation [FiltersCompiler#191].
 
 [2.2.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.3
+[FiltersCompiler#191]: https://github.com/AdguardTeam/FiltersCompiler/issues/191
 
 ## [2.2.2] - 2023-10-17
 
 ### Fixed
 
-- Added all resource types for $removeparam [#49].
-
-[#49]: https://github.com/AdguardTeam/AdGuardMV3/issues/49
+- Added all resource types for $removeparam [AdGuardMV3#49].
 
 [2.2.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.2
+[AdGuardMV3#49]: https://github.com/AdguardTeam/AdGuardMV3/issues/49
 
 ## [2.2.1] - 2023-10-13
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.83`.
+- Updated [@adguard/scriptlets] to `v1.9.83`.
 
 [2.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.2.1
 
@@ -390,19 +438,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Scriptlets not being logged when filtering log is open [#2481].
-- Filtering log clearing on `$removeparam` rule application [#2442].
-
-[#2481]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481
-[#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
+- Scriptlets not being logged when filtering log is open [AdguardBrowserExtension#2481].
+- Filtering log clearing on `$removeparam` rule application [AdguardBrowserExtension#2442].
 
 [2.1.12]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.1.12
+[AdguardBrowserExtension#2481]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2481
+[AdguardBrowserExtension#2442]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2442
 
 ## [2.1.11] - 2023-08-25
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.72`.
+- Updated [@adguard/scriptlets] to `v1.9.72`.
 
 [2.1.11]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.1.11
 
@@ -410,7 +457,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.70`.
+- Updated [@adguard/scriptlets] to `v1.9.70`.
 
 [2.1.10]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.1.10
 
@@ -453,7 +500,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.62`.
+- Updated [@adguard/scriptlets] to `v1.9.62`.
 - Esm module now imports external dependencies instead of bundling.
 
 [2.1.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.1.6
@@ -462,7 +509,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.57`.
+- Updated [@adguard/scriptlets] to `v1.9.57`.
 
 [2.1.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.1.5
 
@@ -480,7 +527,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Matching result caching for rules with `$method` modifier
+- Matching result caching for rules with `$method` modifier.
 
 [2.1.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.1.4
 
@@ -523,7 +570,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The algorithm of priority calculation: adding more accurate calculation
-  of weights for each rule type - more details in [#196].
+  of weights for each rule type - more details in [KnowledgeBase#196].
 - `$all` modifier is one NetworkRule rule with all included options.
 - Removed `$csp` modifier from `$all` (`$inline-font` and `$inline-script`).
 - `$document` in blocking rule now just puts content-type: document (main_frame).
@@ -536,9 +583,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exceptions are higher in priority than `$redirect` and blocking rules.
 - `$important` is higher than all others.
 
-[#196]: https://github.com/AdguardTeam/KnowledgeBase/pull/196
-
 [2.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.1.0
+[KnowledgeBase#196]: https://github.com/AdguardTeam/KnowledgeBase/pull/196
 
 ## [2.0.7] - 2023-06-14
 
@@ -553,11 +599,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.37`
+- Updated [@adguard/scriptlets] to `v1.9.37`.
 
 ### Fixed
 
-- Domain matching for wildcard tld in rules
+- Domain matching for wildcard tld in rules.
 
 [2.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.0.6
 
@@ -568,9 +614,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RuleConverter speed has been improved by 2x [#83].
 - Declarative converter build has been separated from the main package.
 
-[#83]: https://github.com/AdguardTeam/tsurlfilter/issues/83
-
 [2.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.0.5
+[#83]: https://github.com/AdguardTeam/tsurlfilter/issues/83
 
 <!-- 2.0.4 is the same as 2.0.3, no difference -->
 
@@ -586,7 +631,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/scriptlets` to `v1.9.7`
+- Updated [@adguard/scriptlets] to `v1.9.7`.
 
 [2.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.0.2
 
@@ -615,7 +660,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated Scriptlets to v1.9.1
+- Updated [@adguard/scriptlets] to `v1.9.1`.
 
 [2.0.0-alpha.49]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v2.0.0-alpha.49
 
@@ -639,7 +684,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated Scriptlets to v1.9.1
+- Updated [@adguard/scriptlets] to `v1.9.1`.
 
 [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.77
 
@@ -656,7 +701,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated ExtendedCss to v2.0.51
+- Updated [@adguard/extended-css] to `v2.0.51`.
 
 [1.0.75]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.75
 
@@ -664,7 +709,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated ExtendedCss to v2.0.49
+- Updated [@adguard/extended-css] to `v2.0.49`.
 
 [1.0.74]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.74
 
@@ -672,7 +717,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated ExtendedCss to v2.0.45
+- Updated [@adguard/extended-css] to `v2.0.45`.
 
 [1.0.73]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.73
 
@@ -680,7 +725,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated Scriptlets to v1.8.2
+- Updated [@adguard/scriptlets] to `v1.8.2`.
 
 [1.0.70]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.70
 
@@ -688,11 +733,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Simple support of `$hls` modifier — just for compiler validation
+- Simple support of `$hls` modifier — just for compiler validation.
 
 ### Changed
 
-- Removed unnecessary brackets for unknown pseudo-class validation error
+- Removed unnecessary brackets for unknown pseudo-class validation error.
 
 [1.0.68]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.68
 
@@ -700,11 +745,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Simple support of `$jsonprune` modifier — just for compiler validation
+- Simple support of `$jsonprune` modifier — just for compiler validation.
 
 ### Changed
 
-- Improved selector validation unknown pseudo-class error
+- Improved selector validation unknown pseudo-class error.
 
 [1.0.67]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.67
 
@@ -712,7 +757,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Support of $webrtc modifier
+- Support of `$webrtc` modifier.
 
 [1.0.66]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.66
 
@@ -720,8 +765,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated ExtendedCss to v2.0.33
-- Updated Scriptlets to v1.7.19
+- Updated [@adguard/extended-css] to `v2.0.33`.
+- Updated [@adguard/scriptlets] to `v1.7.19`.
 
 [1.0.65]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.65
 
@@ -729,7 +774,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated Scriptlets to v1.7.14
+- Updated [@adguard/scriptlets] to `v1.7.14`.
 
 [1.0.64]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.64
 
@@ -737,7 +782,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated Scriptlets to v1.7.13
+- Updated [@adguard/scriptlets] to `v1.7.13`.
 
 [1.0.63]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.63
 
@@ -745,7 +790,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Always consider `:has()` pseudo-class as extended
+- Always consider `:has()` pseudo-class as extended.
 
 [1.0.62]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.62
 
@@ -753,7 +798,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated ExtendedCss to v2.0.26
+- Updated [@adguard/extended-css] to `v2.0.26`.
 
 [1.0.59]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.59
 
@@ -761,11 +806,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated ExtendedCss to v2.0.24
-- Updated Scriptlets to v1.7.10
+- Updated [@adguard/extended-css] to `v2.0.24`.
+- Updated [@adguard/scriptlets] to `v1.7.10`.
 
 ### Removed
 
 - `:if()` and `:if-not()` pseudo-classes
 
 [1.0.57]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.57
+
+[@adguard/agtree]: ../agtree/CHANGELOG.md
+[@adguard/css-tokenizer]: ../css-tokenizer/CHANGELOG.md
+
+[@adguard/extended-css]: https://github.com/AdguardTeam/ExtendedCss/blob/master/CHANGELOG.md
+[@adguard/scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/CHANGELOG.md

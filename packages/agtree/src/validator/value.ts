@@ -5,12 +5,12 @@ import {
     type MethodList,
     type StealthOptionList,
     type AnyListItem,
-} from '../parser/common';
+} from '../nodes';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
-import { AppListParser } from '../parser/misc/app-list';
-import { DomainListParser } from '../parser/misc/domain-list';
-import { MethodListParser } from '../parser/misc/method-list';
-import { StealthOptionListParser } from '../parser/misc/stealth-option-list';
+import { AppListParser } from '../parser/misc/app-list-parser';
+import { DomainListParser } from '../parser/misc/domain-list-parser';
+import { MethodListParser } from '../parser/misc/method-list-parser';
+import { StealthOptionListParser } from '../parser/misc/stealth-option-list-parser';
 import { DomainUtils } from '../utils/domain';
 import { QuoteType, QuoteUtils } from '../utils/quotes';
 import {
@@ -57,17 +57,23 @@ type PipeSeparatedList = AppList | DomainList | MethodList | StealthOptionList;
 /**
  * Pre-defined available validators for modifiers with custom `value_format`.
  */
-const enum CustomValueFormatValidatorName {
-    App = 'pipe_separated_apps',
-    Csp = 'csp_value',
+const CustomValueFormatValidatorName = {
+    App: 'pipe_separated_apps',
+    Csp: 'csp_value',
     // there are some differences between $domain and $denyallow
-    DenyAllow = 'pipe_separated_denyallow_domains',
-    Domain = 'pipe_separated_domains',
-    Method = 'pipe_separated_methods',
-    Permissions = 'permissions_value',
-    ReferrerPolicy = 'referrerpolicy_value',
-    StealthOption = 'pipe_separated_stealth_options',
-}
+    DenyAllow: 'pipe_separated_denyallow_domains',
+    Domain: 'pipe_separated_domains',
+    Method: 'pipe_separated_methods',
+    Permissions: 'permissions_value',
+    ReferrerPolicy: 'referrerpolicy_value',
+    StealthOption: 'pipe_separated_stealth_options',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+type CustomValueFormatValidatorName = typeof CustomValueFormatValidatorName[
+    keyof typeof CustomValueFormatValidatorName
+];
 
 /**
  * Checks whether the `chunk` of app name (which if splitted by dot `.`) is valid.
@@ -689,7 +695,9 @@ const CUSTOM_VALUE_FORMAT_MAP = {
  *
  * @returns True if `valueFormat` is a supported pre-defined value format validator name, false otherwise.
  */
-const isCustomValueFormatValidator = (valueFormat: string): valueFormat is CustomValueFormatValidatorName => {
+const isCustomValueFormatValidator = (
+    valueFormat: string,
+): valueFormat is CustomValueFormatValidatorName => {
     return Object.keys(CUSTOM_VALUE_FORMAT_MAP).includes(valueFormat);
 };
 

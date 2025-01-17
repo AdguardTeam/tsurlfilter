@@ -280,4 +280,13 @@ export class InputByteBuffer extends ByteBuffer {
     public get capacity(): number {
         return this.chunks.length * ByteBuffer.CHUNK_SIZE;
     }
+
+    /**
+     * Gets the chunks of the buffer.
+     *
+     * @returns Chunks of the buffer.
+     */
+    public getChunks(): Uint8Array[] {
+        return this.chunks;
+    }
 }

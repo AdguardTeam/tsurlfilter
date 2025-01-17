@@ -1,25 +1,21 @@
 import { z as zod } from 'zod';
+import { preprocessedFilterListValidator } from '@adguard/tsurlfilter';
 
-import { basicFilterValidator, configurationValidator } from '../../common';
+import { configurationValidator, settingsConfigValidator } from '../../common/configuration';
 
 /**
  * Custom filter list configuration validator for MV3.
  */
-export const customFilterMV3Validator = basicFilterValidator.extend({
+export const customFilterMV3Validator = preprocessedFilterListValidator.extend({
     /**
      * Filter identifier.
      */
     filterId: zod.number(),
 
     /**
-     * Raw filter list.
+     * Filter trusted flag.
      */
-    rawFilterList: zod.string(),
-
-    /**
-     * Conversion map for the raw filter list. Key is the rule line start index, value is the original rule.
-     */
-    conversionMap: zod.record(zod.number(), zod.string()),
+    trusted: zod.boolean(),
 });
 
 /**
@@ -27,6 +23,22 @@ export const customFilterMV3Validator = basicFilterValidator.extend({
  * This type is inferred from the {@link customFilterMV3Validator} schema.
  */
 export type CustomFilterMV3 = zod.infer<typeof customFilterMV3Validator>;
+
+export const settingsConfigMV3 = settingsConfigValidator.extend({
+    /**
+     * Path to the content script that set GPC Signal.
+     * Necessary for `Do Not Track` stealth option.
+     */
+    gpcScriptUrl: zod.string(),
+
+    /**
+     * Path to the content script that hide document referrer.
+     * Necessary for `Hide Search Queries` stealth option.
+     */
+    hideDocumentReferrerScriptUrl: zod.string(),
+});
+
+export type SettingsConfigMV3 = zod.infer<typeof settingsConfigMV3>;
 
 /**
  * Configuration validator for MV3.
@@ -56,10 +68,18 @@ export const configurationMV3Validator = configurationValidator.extend({
     ruleSetsPath: zod.string(),
 
     /**
-     * Enables filtering log if true.
+     * Enables logging declarative rules, which will increase used memory,
+     * because to extract matched source rule text we need to load ruleset
+     * in memory.
      */
-    // TODO: use settings.collectStats instead?
-    filteringLogEnabled: zod.boolean(),
+    declarativeLogEnabled: zod.boolean(),
+
+    /**
+     * List of hotfix rules which should applied dynamically.
+     */
+    quickFixesRules: customFilterMV3Validator.omit({ filterId: true }),
+
+    settings: settingsConfigMV3,
 
     /**
      * List of rules added by user.
@@ -79,5 +99,5 @@ export type ConfigurationMV3 = zod.infer<typeof configurationMV3Validator>;
  * It is used to reduce memory consumption when storing configuration data in memory.
  */
 export type ConfigurationMV3Context =
-    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'trustedDomains'>
+    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'quickFixesRules'>
     & { customFilters: number[] };

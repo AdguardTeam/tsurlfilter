@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import { program } from 'commander';
-
-import { version } from '../package.json';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
 import { convertFilters } from './convertFilters';
+import { version } from '../package.json';
 
 export const DEFAULT_DEST_RULE_SETS_DIR = 'build/ruleSets';
 
@@ -16,16 +17,24 @@ async function main() {
     program
         .command('convert')
         .description('Converts filters to declarative rule sets')
-        .argument('<filters_dir>', 'path to filters to convert')
-        .argument('<resources_dir>', 'path to web accessible resources')
-        .argument('[dest_rule_sets_dir]', 'destination path for rule sets', DEFAULT_DEST_RULE_SETS_DIR)
-        .argument('[debug]', 'debug mode', false)
-        .action(convertFilters);
+        .argument('<filters_dir>', 'Path to filters to convert')
+        .argument('<resources_dir>', 'Path to web accessible resources')
+        .argument('[dest_rule_sets_dir]', 'Destination path for rule sets', DEFAULT_DEST_RULE_SETS_DIR)
+        .option('--debug', 'Enable debug mode', false)
+        .option('--prettify-json', 'Prettify JSON output', true)
+        .action((filtersDir, resourcesDir, destRuleSetsDir, options) => {
+            convertFilters(filtersDir, resourcesDir, destRuleSetsDir, {
+                debug: options.debug,
+                prettifyJson: options.prettifyJson,
+            });
+        });
 
     await program.parseAsync(process.argv);
 }
 
-const isRunningViaCli = require.main === module;
+const modulePath = path.resolve(fileURLToPath(import.meta.url));
+const procArgPath = path.resolve(process.argv[1]);
+const isRunningViaCli = modulePath === procArgPath;
 
 if (isRunningViaCli) {
     main();

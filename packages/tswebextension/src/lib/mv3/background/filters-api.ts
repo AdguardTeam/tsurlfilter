@@ -1,5 +1,5 @@
 import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
-
+import browser from 'webextension-polyfill';
 import {
     filterListConversionMapValidator,
     filterListSourceMapValidator,
@@ -10,10 +10,11 @@ import {
     getFilterSourceMapName,
 } from '@adguard/tsurlfilter';
 import { ByteBuffer } from '@adguard/agtree';
+
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
+import { loadExtensionBinaryResource, loadExtensionTextResource } from '../utils/resource-loader';
 
 import { type ConfigurationMV3 } from './configuration';
-import { loadExtensionBinaryResource, loadExtensionTextResource } from '../utils/resource-loader';
 
 export const RULE_SET_NAME_PREFIX = 'ruleset_';
 
@@ -27,6 +28,12 @@ export type UpdateStaticFiltersResult = {
  * loading its contents.
  */
 export default class FiltersApi {
+    /**
+     * Cache for already created filters. Needed to avoid multiple loading
+     * of the same filter.
+     */
+    private static filtersCache: Map<number, IFilter> = new Map();
+
     /**
      * Enables or disables the provided rule set identifiers.
      *
@@ -47,7 +54,7 @@ export default class FiltersApi {
         const disableRulesetIds = disableFiltersIds?.map((filterId) => `${RULE_SET_NAME_PREFIX}${filterId}`) || [];
 
         try {
-            await chrome.declarativeNetRequest.updateEnabledRulesets({
+            await browser.declarativeNetRequest.updateEnabledRulesets({
                 enableRulesetIds,
                 disableRulesetIds,
             });
@@ -71,7 +78,7 @@ export default class FiltersApi {
      * @returns List of extracted enabled rule sets ids.
      */
     public static async getEnabledRuleSets(): Promise<number[]> {
-        const ruleSets = await chrome.declarativeNetRequest.getEnabledRulesets();
+        const ruleSets = await browser.declarativeNetRequest.getEnabledRulesets();
         return ruleSets.map((f) => Number.parseInt(f.slice(RULE_SET_NAME_PREFIX.length), 10));
     }
 
@@ -126,7 +133,7 @@ export default class FiltersApi {
     }
 
     /**
-     * Loads content for provided filters ids;.
+     * Wraps static filters into {@link IFilter}.
      *
      * @param filtersIds List of filters ids.
      * @param filtersPath Path to filters directory.
@@ -137,9 +144,25 @@ export default class FiltersApi {
         filtersIds: ConfigurationMV3['staticFiltersIds'],
         filtersPath: string,
     ): IFilter[] {
-        return filtersIds.map((filterId) => new Filter(filterId, {
-            getContent: () => this.loadFilterContent(filterId, filtersPath),
-        }));
+        return filtersIds.map((filterId) => {
+            const filterFromCache = this.filtersCache.get(filterId);
+            if (filterFromCache) {
+                return filterFromCache;
+            }
+
+            const filter = new Filter(
+                filterId,
+                { getContent: () => this.loadFilterContent(filterId, filtersPath) },
+                /**
+                 * Static filters are trusted.
+                 */
+                true,
+            );
+
+            this.filtersCache.set(filterId, filter);
+
+            return filter;
+        });
     }
 
     /**
@@ -150,13 +173,12 @@ export default class FiltersApi {
      * @returns List of {@link IFilter} with a lazy content loading feature.
      */
     static createCustomFilters(customFilters: ConfigurationMV3['customFilters']): IFilter[] {
-        return customFilters.map((f) => new Filter(f.filterId, {
-            getContent: () => Promise.resolve({
-                rawFilterList: f.rawFilterList,
-                filterList: f.content,
-                conversionMap: f.conversionMap,
-                sourceMap: f.sourceMap ?? {},
-            }),
-        }));
+        return customFilters.map((f) => new Filter(
+            f.filterId,
+            {
+                getContent: () => Promise.resolve(f),
+            },
+            f.trusted,
+        ));
     }
 }

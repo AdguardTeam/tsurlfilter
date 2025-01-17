@@ -1,11 +1,12 @@
 import { sprintf } from 'sprintf-js';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, RuleCategory, type CssInjectionRule } from '../../../src/parser/common';
-import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic';
+import { CosmeticRuleType, RuleCategory, type CssInjectionRule } from '../../../src/nodes';
+import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid AdGuard CSS injection rules with extended CSS', () => {
@@ -330,7 +331,7 @@ describe('CosmeticRuleParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(CosmeticRuleParser.generate(ruleNode)).toBe(expected);
+            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 });

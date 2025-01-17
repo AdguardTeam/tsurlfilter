@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-promise-executor-return */
-import { LRUMap } from 'lru_map';
+import { LRUCache } from 'lru-cache';
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
 import { Request } from '../request';
@@ -43,7 +43,7 @@ export class Engine {
     /**
      * Request results cache
      */
-    private readonly resultCache: LRUMap<string, MatchingResult>;
+    private readonly resultCache: LRUCache<string, MatchingResult>;
 
     /**
      * Creates an instance of an Engine
@@ -57,7 +57,7 @@ export class Engine {
         this.ruleStorage = ruleStorage;
         this.networkEngine = new NetworkEngine(ruleStorage, skipStorageScan);
         this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);
-        this.resultCache = new LRUMap<string, MatchingResult>(Engine.REQUEST_CACHE_SIZE);
+        this.resultCache = new LRUCache({ max: Engine.REQUEST_CACHE_SIZE });
     }
 
     /**

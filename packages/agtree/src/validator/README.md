@@ -135,7 +135,7 @@ import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/
 
     ```ts
     modifierValidator.validate(
-        AdblockSyntax.Ubo,
+        AdblockSyntax.Abp,
         ModifierParser.parse('webrtc'),
     );
     ```

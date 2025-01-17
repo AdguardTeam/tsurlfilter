@@ -1,7 +1,14 @@
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
-import { ResourcesService } from '@lib/mv2/background/services/resources-service';
 
-global.fetch = jest.fn(() => {
+import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
+
+global.fetch = vi.fn(() => {
     return Promise.resolve({
         text: () => Promise.resolve('test response'),
     } as unknown as Response);

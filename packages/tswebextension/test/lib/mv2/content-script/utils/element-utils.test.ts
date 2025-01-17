@@ -1,8 +1,9 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
+import { describe, expect, it } from 'vitest';
 
-import { ElementUtils } from '@lib/mv2/content-script/utils/element-utils';
+import { ElementUtils } from '../../../../../src/lib/common/content-script/utils/element-utils';
 
 describe('Element utils', () => {
     document.body.innerHTML = `

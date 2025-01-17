@@ -1,16 +1,22 @@
 import {
+    describe,
+    expect,
+    afterEach,
+    it,
+} from 'vitest';
+import {
     MatchingResult,
     RequestType,
     PERMISSIONS_POLICY_HEADER_NAME,
     HTTPMethod,
 } from '@adguard/tsurlfilter';
 
-import { PermissionsPolicyService } from '@lib/mv2/background/services/permissions-policy-service';
-import { type RequestContext, RequestContextState, RequestContextStorage } from '@lib/mv2/background/request';
-import { ContentType, FilteringEventType } from '@lib/common';
-
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { type RequestContext, RequestContextState, RequestContextStorage } from '../../../../../src/lib';
+import { PermissionsPolicyService } from '../../../../../src/lib/mv2/background/services/permissions-policy-service';
+import { ContentType } from '../../../../../src/lib/common/request-type';
+import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
 
 describe('Permissions policy service', () => {
     const testUrl = 'https://example.org';

@@ -1,6 +1,8 @@
-import { type RuleInfo } from './content-script/rule-info';
-import type { ContentType } from './request-type';
-import { EventChannel, type EventChannelInterface } from './utils';
+import { type SourceRuleAndFilterId } from '@adguard/tsurlfilter/es/declarative-converter';
+
+import { type RuleInfo, type RuleInfoOptional } from './content-script/rule-info';
+import { type ContentType } from './request-type';
+import { EventChannel, type EventChannelInterface } from './utils/channels';
 
 // TODO: Add 'is' prefix to cssRule, scriptRule and contentRule properties.
 
@@ -22,44 +24,53 @@ export enum FilteringEventType {
     ContentFilteringStart = 'contentFilteringStart',
     ContentFilteringFinish = 'contentFilteringFinish',
     StealthAction = 'stealthAction',
-    StealthAllowlistAction = 'stealthAllowlistAction',
+    StealthAllowlistAction = 'stealthAllowlistAction', // TODO: Add in MV3
     JsInject = 'jsInject',
-    CspReportBlocked = 'cspReportBlocked',
+    CspReportBlocked = 'cspReportBlocked', // TODO: Add in MV3
+    /**
+     * Used only in unpacked MV3.
+     */
+    MatchedDeclarativeRule = 'matchedDeclarativeRule',
 }
+
+/**
+ * Advanced information about declarative network rule with source rule list and
+ * stringified JSON version of declarative network rule.
+ */
+export type DeclarativeRuleInfo = {
+    /**
+     * Source rule list and filter id. Sometimes one declarative rule can be
+     * generated from multiple source rules, that's why we use array here.
+     */
+    sourceRules: SourceRuleAndFilterId[],
+    /**
+     * DNR rule.
+     */
+    declarativeRuleJson: string,
+};
 
 /**
  * Additional network rule info.
  */
 type AdditionalNetworkRuleInfo = {
-    /**
-     * Whether the rule is exception.
-     */
     isAllowlist: boolean,
-
-    /**
-     * Whether the rule is important.
-     */
     isImportant: boolean,
-
-    /**
-     * Whether the rule is document level.
-     */
     isDocumentLevel: boolean,
-
-    /**
-     * Whether the rule is CSP-related.
-     */
     isCsp: boolean,
-
-    /**
-     * Whether the rule is a cookie rule.
-     */
     isCookie: boolean,
-
-    /**
-     * Advanced modifier value, if present.
-     */
     advancedModifier: string | null,
+};
+
+/**
+ * Unique event id for filtering events.
+ */
+type WithEventId = {
+    /**
+     * For proper filtering log request info rule displaying
+     * event id should be unique for each event, not copied from request
+     * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341.
+     */
+    eventId: string;
 };
 
 /**
@@ -77,7 +88,6 @@ type AdditionalNetworkRuleInfo = {
  */
 export type SendRequestEventData = {
     tabId: number,
-    eventId: string,
     requestUrl: string,
     requestDomain: string | null,
     frameUrl: string,
@@ -86,7 +96,7 @@ export type SendRequestEventData = {
     timestamp: number,
     requestThirdParty: boolean,
     method: string,
-};
+} & WithEventId;
 
 /**
  * Dispatched by WebRequestApi manifest v2 module on request in onBeforeRequest event handler.
@@ -115,12 +125,48 @@ export type TabReloadEvent = {
  * {@link ApplyBasicRuleEvent} Event data.
  */
 export type ApplyBasicRuleEventData = {
+    /**
+     * Tab id.
+     */
     tabId: number,
-    eventId: string,
+
+    /**
+     * Request id.
+     */
+    requestId: string,
+
+    /**
+     * Request url.
+     */
     requestUrl: string,
+
+    /**
+     * Frame url.
+     */
     frameUrl: string,
+
+    /**
+     * Request type.
+     */
     requestType: ContentType,
-} & RuleInfo & AdditionalNetworkRuleInfo;
+
+    /**
+     * Category name from companiesdb matched by the request.
+     */
+    companyCategoryName?: string,
+
+    /**
+     * Flag indicating that the request is assuredly blocked.
+     *
+     * Needed for MV3 when some requests should not be logged as blocked
+     * because they are wrongly detected as blocked,
+     * i.e. truly blocked requests in MV3 are logged during onErrorOccurred event.
+     */
+    isAssuredlyBlocked?: boolean,
+}
+& RuleInfoOptional
+& AdditionalNetworkRuleInfo
+& WithEventId;
 
 /**
  * Dispatched by WebRequestApi manifest v2 module on request block or allowlist rule matching in onBeforeRequest event
@@ -136,13 +182,12 @@ export type ApplyBasicRuleEvent = {
  */
 export type ApplyCspRuleEventData = {
     tabId: number,
-    eventId: string,
     requestUrl: string,
     frameUrl: string,
     frameDomain: string | null,
     requestType: ContentType,
     timestamp: number,
-} & RuleInfo & AdditionalNetworkRuleInfo;
+} & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
 
 /**
  * Dispatched by manifest v2 csp service.
@@ -164,7 +209,6 @@ export type ApplyPermissionsRuleEvent = {
  */
 export type ApplyCosmeticRuleEventData = {
     tabId: number,
-    eventId: string,
     filterId: number,
     ruleIndex: number,
     element: string,
@@ -175,7 +219,7 @@ export type ApplyCosmeticRuleEventData = {
     cssRule: boolean,
     scriptRule: boolean,
     contentRule: boolean,
-};
+} & WithEventId;
 
 /**
  * Dispatched by manifest v2 messageHandler in handleSaveCssHitsStats method and in ContentStream module on html rule
@@ -191,9 +235,8 @@ export type ApplyCosmeticRuleEvent = {
  */
 export type ReceiveResponseEventData = {
     tabId: number,
-    eventId: string,
     statusCode: number,
-};
+} & WithEventId;
 
 /**
  * Dispatched by WebRequestApi manifest v2 module on response in onHeadersReceived event handler.
@@ -207,7 +250,6 @@ export type ReceiveResponseEvent = {
  * {@link CookieEvent} Event data.
  */
 export type CookieEventData = {
-    eventId: string,
     tabId: number,
     cookieName: string,
     cookieValue: string,
@@ -216,7 +258,7 @@ export type CookieEventData = {
     requestThirdParty: boolean,
     timestamp: number,
     requestType: ContentType,
-} & RuleInfo & AdditionalNetworkRuleInfo;
+} & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
 
 /**
  * Dispatched by CookieFiltering module on cookie filtering in
@@ -233,18 +275,19 @@ export type CookieEvent = {
 export type RemoveHeaderEventData = {
     removeHeader: boolean,
     headerName: string,
-    eventId: string;
     tabId: number;
     requestUrl: string,
     frameUrl: string;
     frameDomain: string;
     requestType: ContentType;
     timestamp: number,
-} & RuleInfo & AdditionalNetworkRuleInfo;
+} & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
 
 /**
  * Dispatched by RemoveHeadersService manifest v2 module on request header removing in onBeforeSendHeaders and
  * onHeadersReceived event handlers.
+ * Cannot be detected in MV3 because browser applies $removeheader
+ * (via DNR `modifyHeaders`) to request before passing it to extension.
  */
 export type RemoveHeaderEvent = {
     type: FilteringEventType.RemoveHeader;
@@ -256,18 +299,19 @@ export type RemoveHeaderEvent = {
  */
 export type RemoveParamEventData = {
     removeParam: boolean,
-    eventId: string;
     tabId: number;
     requestUrl: string,
     frameUrl: string;
     frameDomain: string;
     requestType: ContentType;
     timestamp: number,
-} & RuleInfo & AdditionalNetworkRuleInfo;
+} & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
 
 /**
  * Dispatched by ParamsService manifest v2 module on request param removing in WebRequestApi.onBeforeRequest event
  * handler.
+ * Cannot be detected in MV3 because browser applies $removeparam
+ * (via DNR `redirect`) to request before passing it to extension.
  */
 export type RemoveParamEvent = {
     type: FilteringEventType.RemoveParam;
@@ -279,9 +323,8 @@ export type RemoveParamEvent = {
  */
 export type ReplaceRuleApplyEventData = {
     tabId: number;
-    eventId: string;
     rules: RuleInfo[];
-};
+} & WithEventId;
 
 /**
  * Dispatched by ContentStringFilter manifest v2 module on replace rule apply while content filtering process.
@@ -326,12 +369,11 @@ export type ContentFilteringFinishEvent = {
  */
 export type StealthActionEventData = {
     tabId: number;
-    eventId: string;
     /**
      * Applied stealth actions mask.
      */
     stealthActions: number;
-};
+} & WithEventId;
 
 /**
  * Dispatched by manifest v2 StealthApi on stealth action apply in onBeforeSendHeaders event handler.
@@ -346,13 +388,12 @@ export type StealthActionEvent = {
  */
 export type StealthAllowlistActionEventData = {
     tabId: number;
-    eventId: string;
     rules: (RuleInfo & AdditionalNetworkRuleInfo)[];
     requestUrl: string,
     frameUrl: string,
     requestType: ContentType,
     timestamp: number,
-};
+} & WithEventId;
 
 /**
  * Dispatched by manifest v2 StealthApi on allowlist stealth rule matching in onBeforeSendHeaders event handler.
@@ -366,7 +407,6 @@ export type StealthAllowlistActionEvent = {
  * {@link JsInjectEvent} Event data.
  */
 export type JsInjectEventData = {
-    eventId: string,
     tabId: number,
     script: boolean,
     requestUrl: string,
@@ -379,7 +419,7 @@ export type JsInjectEventData = {
     cssRule: boolean,
     scriptRule: boolean,
     contentRule: boolean,
-};
+} & WithEventId;
 
 /**
  * Dispatched by manifest v2 WebRequest API injectJsScript method.
@@ -394,9 +434,8 @@ export type JsInjectEvent = {
  */
 export type CspReportBlockedEventData = {
     tabId: number;
-    eventId: string;
     cspReportBlocked: boolean;
-};
+} & WithEventId;
 
 /**
  * Dispatched by manifest v2 WebRequestApi.onBeforeCspReport handler when
@@ -405,6 +444,23 @@ export type CspReportBlockedEventData = {
 export type CspReportBlockedEvent = {
     type: FilteringEventType.CspReportBlocked
     data: CspReportBlockedEventData;
+};
+
+/**
+ * {@link DeclarativeRuleEvent} Event data.
+ */
+export type DeclarativeRuleEventData = {
+    tabId: number;
+    declarativeRuleInfo: DeclarativeRuleInfo;
+} & WithEventId;
+
+/**
+ * Dispatched by manifest v3 chrome.declarativeNetRequest.onRuleMatchedDebug
+ * handler when matched declarative rule for request.
+ */
+export type DeclarativeRuleEvent = {
+    type: FilteringEventType.MatchedDeclarativeRule
+    data: DeclarativeRuleEventData;
 };
 
 /**
@@ -430,7 +486,8 @@ export type FilteringLogEvent =
     | ApplyCosmeticRuleEvent
     | ReceiveResponseEvent
     | JsInjectEvent
-    | CspReportBlockedEvent;
+    | CspReportBlockedEvent
+    | DeclarativeRuleEvent;
 
 /**
  * Utility type for mapping {@link FilteringEventType} with specified {@link FilteringLogEvent}.

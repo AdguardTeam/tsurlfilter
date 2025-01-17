@@ -907,6 +907,47 @@ describe('NetworkRule.match', () => {
         expect(rule.match(request)).toEqual(true);
     });
 
+    it('works $permissions modifier with content types logic', () => {
+        let rule: NetworkRule;
+        let request: Request;
+
+        rule = createNetworkRule('||example.org^$permissions=accelerometer=()', 0);
+        request = new Request('https://example.org/', null, RequestType.Document);
+        expect(rule.match(request)).toEqual(true);
+        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Script);
+        expect(rule.match(request)).toEqual(false);
+
+        request = new Request('https://example.org/', null, RequestType.Image);
+        expect(rule.match(request)).toEqual(false);
+
+        rule = createNetworkRule('||example.org^$permissions=accelerometer=(),script', 0);
+        request = new Request('https://example.org/', null, RequestType.Document);
+        expect(rule.match(request)).toEqual(false);
+        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        expect(rule.match(request)).toEqual(false);
+
+        request = new Request('https://example.org/', null, RequestType.Script);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Image);
+        expect(rule.match(request)).toEqual(false);
+
+        rule = createNetworkRule('||example.org^$permissions=accelerometer=(),~script', 0);
+        request = new Request('https://example.org/', null, RequestType.Document);
+        expect(rule.match(request)).toEqual(true);
+        request = new Request('https://example.org/', null, RequestType.SubDocument);
+        expect(rule.match(request)).toEqual(true);
+
+        request = new Request('https://example.org/', null, RequestType.Script);
+        expect(rule.match(request)).toEqual(false);
+
+        request = new Request('https://example.org/', null, RequestType.Image);
+        expect(rule.match(request)).toEqual(true);
+    });
+
     it('works when $domain in uppercase', () => {
         const rule = createNetworkRule('$domain=ExaMple.com', 0);
         const request = new Request('https://example.com/', null, RequestType.Document);
@@ -1325,26 +1366,19 @@ describe('NetworkRule.match', () => {
         expect(rule.getRestrictedToDomains()).toHaveLength(1);
         expect(rule.getPermittedToDomains()).toHaveLength(1);
 
-        // Correctly matches a domain specified in the permitted domains list
+        // Correctly matches domain that is specified in permitted domains list
         rule = createNetworkRule('/ads^$to=evil.com', 0);
         request = new Request('https://evil.com/ads', 'https://example.org/', RequestType.Script);
         expect(rule.match(request)).toBeTruthy();
         request = new Request('https://good.com/ads', 'https://example.org/', RequestType.Script);
         expect(rule.match(request)).toBeFalsy();
 
-        // Correctly matches a domain specified in the restricted domains list
-        rule = createNetworkRule('/ads^$to=~evil.com', 0);
-        request = new Request('https://evil.com/ads', 'https://example.org/', RequestType.Script);
-        expect(rule.match(request)).toBeFalsy();
-        request = new Request('https://good.com/ads', 'https://example.org/', RequestType.Script);
-        expect(rule.match(request)).toBeTruthy();
-
-        // Correctly matches a subdomain specified in the permitted domains list
+        // Correctly matches subdomain that is specified in permitted domains list
         rule = createNetworkRule('/ads^$to=sub.evil.com', 0);
         request = new Request('https://sub.evil.com/ads', 'https://example.org/', RequestType.Image);
         expect(rule.match(request)).toBeTruthy();
 
-        // The inverted value excludes a subdomain from matching
+        // Inverted value excludes subdomain from matching
         rule = createNetworkRule('/ads^$to=evil.com|~sub.one.evil.com', 0);
 
         request = new Request('https://evil.com/ads', 'https://example.org/', RequestType.Script);

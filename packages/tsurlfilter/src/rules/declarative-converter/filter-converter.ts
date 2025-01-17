@@ -104,7 +104,7 @@ import { DeclarativeRulesConverter } from './rules-converter';
 import {
     ResourcesPathError,
     EmptyOrNegativeNumberOfRulesError,
-    NegativeNumberOfRegexpRulesError,
+    NegativeNumberOfRulesError,
 } from './errors/converter-options-errors';
 import type { ConversionResult } from './conversion-result';
 import type { DeclarativeConverterOptions } from './declarative-converter-options';
@@ -129,7 +129,7 @@ interface IFilterConverter {
      * @throws Error {@link UnavailableFilterSourceError} if filter content
      * is not available OR some of {@link ResourcesPathError},
      * {@link EmptyOrNegativeNumberOfRulesError},
-     * {@link NegativeNumberOfRegexpRulesError}.
+     * {@link NegativeNumberOfRulesError}.
      * @see {@link DeclarativeFilterConverter#checkConverterOptions}
      * for details.
      *
@@ -155,7 +155,7 @@ interface IFilterConverter {
      * @throws Error {@link UnavailableFilterSourceError} if filter content
      * is not available OR some of {@link ResourcesPathError},
      * {@link EmptyOrNegativeNumberOfRulesError},
-     * {@link NegativeNumberOfRegexpRulesError}.
+     * {@link NegativeNumberOfRulesError}.
      * @see {@link DeclarativeFilterConverter#checkConverterOptions}
      * for details.
      *
@@ -178,6 +178,15 @@ export class DeclarativeFilterConverter implements IFilterConverter {
     public static readonly COMBINED_RULESET_ID = '_dynamic';
 
     /**
+     * Number of scanned rules can be limited via converter options. In this
+     * case we increase the limit by 10% to scan more rules in case of some
+     * network rules will be combined into one declarative rule. It is safe,
+     * because we have double check for maxNumberOfRules on the converted DNR
+     * rules.
+     */
+    private static readonly SCANNED_NETWORK_RULES_MULTIPLICATOR = 1.1;
+
+    /**
      * Checks that provided converter options are correct.
      *
      * @param options Contains path to web accessible resources,
@@ -188,13 +197,14 @@ export class DeclarativeFilterConverter implements IFilterConverter {
      * start with a slash or it ends with a slash
      * OR an {@link EmptyOrNegativeNumberOfRulesError} if maximum number of
      * rules is equal or less than 0.
-     * OR an {@link NegativeNumberOfRegexpRulesError} if maximum number of
+     * OR an {@link NegativeNumberOfRulesError} if maximum number of
      * regexp rules is less than 0.
      */
     private static checkConverterOptions(options: DeclarativeConverterOptions): void {
         const {
             resourcesPath,
             maxNumberOfRules,
+            maxNumberOfUnsafeRules,
             maxNumberOfRegexpRules,
         } = options;
 
@@ -222,9 +232,14 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             throw new EmptyOrNegativeNumberOfRulesError(msg);
         }
 
+        if (maxNumberOfUnsafeRules && maxNumberOfUnsafeRules < 0) {
+            const msg = 'Maximum number of unsafe rules cannot be less than 0';
+            throw new NegativeNumberOfRulesError(msg);
+        }
+
         if (maxNumberOfRegexpRules && maxNumberOfRegexpRules < 0) {
             const msg = 'Maximum number of regexp rules cannot be less than 0';
-            throw new NegativeNumberOfRegexpRulesError(msg);
+            throw new NegativeNumberOfRulesError(msg);
         }
     }
 
@@ -238,12 +253,16 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             DeclarativeFilterConverter.checkConverterOptions(options);
         }
 
+        if (options?.maxNumberOfUnsafeRules !== undefined) {
+            throw new Error('Static rulesets do not require the maximum number of unsafe rules');
+        }
+
         const { errors, filters } = await NetworkRulesScanner.scanRules([filter]);
 
         const [scannedStaticFilter] = filters;
         const { id, badFilterRules } = scannedStaticFilter;
 
-        const convertedRules = DeclarativeRulesConverter.convert(
+        const convertedRules = await DeclarativeRulesConverter.convert(
             filters,
             options,
         );
@@ -299,9 +318,19 @@ export class DeclarativeFilterConverter implements IFilterConverter {
 
         // Note: if we drop some rules because of applying $badfilter - we
         // cannot show info about it to user.
-        const scanned = await NetworkRulesScanner.scanRules(filterList, skipNegatedRulesFn);
+        const scanned = await NetworkRulesScanner.scanRules(
+            filterList,
+            skipNegatedRulesFn,
+            // We increase the limit by 10% to scan more rules in case of some
+            // network rules will be combined into one declarative rule. It is
+            // safe, because we have double check for maxNumberOfRules on the
+            // converted DNR rules.
+            options?.maxNumberOfRules
+                ? Math.ceil(options.maxNumberOfRules * DeclarativeFilterConverter.SCANNED_NETWORK_RULES_MULTIPLICATOR)
+                : undefined,
+        );
 
-        const convertedRules = DeclarativeRulesConverter.convert(
+        const convertedRules = await DeclarativeRulesConverter.convert(
             scanned.filters,
             options,
         );
@@ -378,10 +407,18 @@ export class DeclarativeFilterConverter implements IFilterConverter {
 
         const rulesHashMap = new RulesHashMap(listOfRulesWithHash);
 
+        // calculate number of unsafe rules only for dynamic rules
+        const unsafeRulesCount = DeclarativeFilterConverter.COMBINED_RULESET_ID === ruleSetId
+            ? declarativeRules.filter((r) => !DeclarativeRulesConverter.isSafeRule(r)).length
+            : 0;
+
+        const regexRulesCount = declarativeRules.filter((r) => DeclarativeRulesConverter.isRegexRule(r)).length;
+
         const ruleSet = new RuleSet(
             ruleSetId,
             declarativeRules.length,
-            declarativeRules.filter((d) => d.condition.regexFilter).length,
+            unsafeRulesCount,
+            regexRulesCount,
             ruleSetContent,
             badFilterRules,
             rulesHashMap,

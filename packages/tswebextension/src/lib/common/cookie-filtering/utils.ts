@@ -1,8 +1,9 @@
-import { WebRequest } from 'webextension-polyfill';
+import browser from 'webextension-polyfill';
 
-import HttpHeadersItemType = WebRequest.HttpHeadersItemType;
+import { logger } from '../utils/logger';
+
 import { ParsedCookie } from './parsed-cookie';
-import { logger } from '../utils';
+import HttpHeadersItemType = browser.WebRequest.HttpHeadersItemType;
 
 /**
  * Cookie Utils.
@@ -114,14 +115,16 @@ export class CookieUtils {
         const parts = setCookieValue.split(';').filter((s) => !!s);
         const nameValuePart = parts.shift();
         if (!nameValuePart) {
-            logger.debug(`Cannot shift first name-value pair from Set-Cookie header '${setCookieValue}'.`);
+            // eslint-disable-next-line max-len
+            logger.debug(`[tswebextension.parseSetCookie]: cannot shift first name-value pair from Set-Cookie header '${setCookieValue}'.`);
             return null;
         }
 
         const nameValue = nameValuePart.split('=');
         const name = nameValue.shift();
         if (!name) {
-            logger.debug(`Cannot extract name from first name-value pair from Set-Cookie header '${setCookieValue}'.`);
+            // eslint-disable-next-line max-len
+            logger.debug(`[tswebextension.parseSetCookie]: cannot extract name from first name-value pair from Set-Cookie header '${setCookieValue}'.`);
             return null;
         }
         // Everything after the first =, joined by a "=" if there was more

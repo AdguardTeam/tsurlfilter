@@ -1,10 +1,18 @@
-import CookieUtils from '@lib/mv2/background/services/cookie-filtering/utils';
-import { ParsedCookie } from '@lib/common/cookie-filtering/parsed-cookie';
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+    vi,
+} from 'vitest';
+
 import { getResponseHeaders } from '../../fixtures/response-headers';
+import CookieUtils from '../../../../../../src/lib/mv2/background/services/cookie-filtering/utils';
+import { ParsedCookie } from '../../../../../../src/lib/common/cookie-filtering/parsed-cookie';
 
 const TEST_URL = 'https://test.com/url';
 
-jest.mock('@lib/common/utils/logger');
+vi.mock('../../../../../../src/lib/common/utils/logger');
 
 describe('Cookie utils - Set-Cookie headers parsing', () => {
     it('checks parse simple', () => {

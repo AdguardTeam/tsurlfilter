@@ -31,10 +31,6 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 - `matches-property` and `matches-attr` pseudo-classes to Extended CSS handlers.
 - ESM and UMD builds.
 
-### Fixed
-
-- Consuming whitespace after escape sequences.
-
 ### Changed
 
 - `version` export renamed to `CSS_TOKENIZER_VERSION`.
@@ -42,6 +38,10 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 ### Removed
 
 - Export for `TOKEN_NAMES`. Please use `getBaseTokenName` instead.
+
+### Fixed
+
+- Consuming whitespace after escape sequences.
 
 [1.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/css-tokenizer-v1.0.0
 

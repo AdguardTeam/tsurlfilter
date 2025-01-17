@@ -37,6 +37,10 @@ export class NetworkRulesScanner {
      * rule after it has been parsed and transformed. This function is needed
      * for example to apply $badfilter: to exclude negated rules from the array
      * of rules that will be returned.
+     * @param maxNumberOfScannedNetworkRules Maximum number of network rules to
+     * scan, all other rules will be ignored. It will be applied to each filter
+     * separately, not for cumulative scope of rules from all filters, because
+     * it looks simpler and more predictable solution to prevent too long scan.
      *
      * @returns List of filters includes the scanned filters and any errors that
      * may occur during the scan.
@@ -44,6 +48,7 @@ export class NetworkRulesScanner {
     public static async scanRules(
         filterList: IFilter[],
         filterFn?: (r: IndexedNetworkRuleWithHash) => boolean,
+        maxNumberOfScannedNetworkRules?: number,
     ): Promise<ScannedFiltersWithErrors> {
         const res: ScannedFiltersWithErrors = {
             errors: [],
@@ -52,7 +57,7 @@ export class NetworkRulesScanner {
 
         const promises = filterList.map(async (filter): Promise<ScannedFilter> => {
             const scanner = await FilterScanner.createNew(filter);
-            const { errors, rules } = scanner.getIndexedRules(filterFn);
+            const { errors, rules } = scanner.getIndexedRules(filterFn, maxNumberOfScannedNetworkRules);
 
             res.errors = res.errors.concat(errors);
 

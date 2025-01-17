@@ -1,9 +1,72 @@
-import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
+import {
+    type CosmeticResult,
+    type MatchingResult,
+    type NetworkRule,
+    type ScriptletData,
+} from '@adguard/tsurlfilter';
+
+import { type LocalScriptFunction } from '../background/services/local-script-rules-service';
 
 /**
- * Document level frame id.
+ * Prepared cosmetic result.
+ * This type represents the processed cosmetic data extracted from the initial cosmetic result.
  */
-export const MAIN_FRAME_ID = 0;
+type PreparedCosmeticResult = {
+    /**
+     * Script text extracted from the cosmetic result from rules added by user — User rules and Custom filters.
+     */
+    localScriptText: string;
+
+    /**
+     * Script functions extracted from the pre-built filters.
+     */
+    localScriptFunctions: LocalScriptFunction[],
+
+    /**
+     * A list of scriptlet data extracted from the cosmetic result.
+     */
+    scriptletDataList: ScriptletData[];
+
+    /**
+     * CSS styles extracted from the cosmetic result.
+     */
+    cssText?: string;
+};
+
+/**
+ * Frame constructor properties.
+ */
+type FrameConstructorProps = {
+    /**
+     * Frame url.
+     */
+    url: string;
+
+    /**
+     * Tab id.
+     */
+    tabId: number;
+
+    /**
+     * Frame id.
+     */
+    frameId: number;
+
+    /**
+     * Frame creation time.
+     */
+    timeStamp: number;
+
+    /**
+     * Parent document id.
+     */
+    parentDocumentId?: string;
+
+    /**
+     * Document id.
+     */
+    documentId?: string;
+};
 
 /**
  * Frame context data.
@@ -19,18 +82,47 @@ export class Frame {
     public url: string;
 
     /**
-     * Frame request id.
+     * Main frame url.
+     * Used to check if we need to inject script via blob or via script tag. See {@link CosmeticApi.shouldUseBlob}.
      */
-    public requestId?: string;
+    public mainFrameUrl?: string;
 
     /**
-     * Frame cosmetic result.
-     * This data is saved in the frame because we need to access it for css injection
-     * after deleting request context data.
-     *
-     * @see {@link WebRequestApi.injectCosmetic}
+     * Tab id.
+     */
+    public tabId: number;
+
+    /**
+     * Frame id.
+     */
+    public frameId: number;
+
+    /**
+     * Frame creation time.
+     */
+    public timeStamp: number;
+
+    /**
+     * Frame rule. Needed in the case of allowlist rules for the tab.
+     */
+    public frameRule?: NetworkRule;
+
+    /**
+     * Parent document id.
+     */
+    public parentDocumentId?: string;
+
+    /**
+     * The cosmetic result for the frame.
+     * This data is stored in the frame because it is required for logging script and scriptlet rules.
      */
     public cosmeticResult?: CosmeticResult;
+
+    /**
+     * Prepared cosmetic result for the frame.
+     * This data is saved in the frame because it is needed for injecting cosmetic rules into the frames.
+     */
+    public preparedCosmeticResult?: PreparedCosmeticResult;
 
     /**
      * Frame matching result.
@@ -40,13 +132,29 @@ export class Frame {
     public matchingResult?: MatchingResult | null;
 
     /**
-     * Creates frame instance.
-     *
-     * @param url Frame url.
-     * @param requestId Request id.
+     * Unique identifier for the frame.
      */
-    constructor(url: string, requestId?: string) {
+    public documentId?: string;
+
+    /**
+     * Creates frame instance.
+     * @param props Frame constructor properties.
+     */
+    constructor(props: FrameConstructorProps) {
+        const {
+            url,
+            tabId,
+            frameId,
+            timeStamp,
+            parentDocumentId,
+            documentId,
+        } = props;
+
         this.url = url;
-        this.requestId = requestId;
+        this.tabId = tabId;
+        this.frameId = frameId;
+        this.timeStamp = timeStamp;
+        this.parentDocumentId = parentDocumentId;
+        this.documentId = documentId;
     }
 }

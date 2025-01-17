@@ -1,19 +1,29 @@
-import { RedirectsService } from '@lib/mv2/background/services/redirects/redirects-service';
-import { ResourcesService } from '@lib/mv2/background/services/resources-service';
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+    vi,
+} from 'vitest';
 
-jest.mock('@lib/mv2/background/services/resources-service', () => ({
-    ...jest.requireActual('../mocks/resources-service-mock'),
-}));
+import { ResourcesService } from '../../../../../src/lib/mv2/background/services/resources-service';
+import { RedirectsService } from '../../../../../src/lib/mv2/background/services/redirects/redirects-service';
+
+vi.mock('../../../../../src/lib/mv2/background/services/resources-service', async () => {
+    return import('../mocks/resources-service-mock');
+});
 
 describe('RedirectsService', () => {
-    const resourcesService = new ResourcesService(() => {
-        return Math.floor(Math.random() * 982451653 + 982451653).toString(36);
-    });
-
+    let resourcesService: ResourcesService;
     let redirectsService: RedirectsService;
 
     beforeEach(async () => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
+
+        resourcesService = new ResourcesService(() => {
+            return Math.floor(Math.random() * 982451653 + 982451653).toString(36);
+        });
+
         // re-instantiate service before each test to clear data urls cache
         redirectsService = new RedirectsService(resourcesService);
         await redirectsService.start();

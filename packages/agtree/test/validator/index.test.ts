@@ -1,10 +1,10 @@
-import { type Modifier } from '../../src/parser/common';
-import { ModifierParser } from '../../src/parser/misc/modifier';
+import { type Modifier } from '../../src/nodes';
+import { ModifierParser } from '../../src/parser/misc/modifier-parser';
 import { modifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
 import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
 import { AdblockSyntax } from '../../src/utils/adblockers';
-import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-helpers';
+import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-items-parser';
 
 /**
  * Returns modifier AST node for given rawModifier.

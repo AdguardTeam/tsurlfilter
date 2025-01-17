@@ -1,231 +1,91 @@
+import { type Plugin, type RollupOptions } from 'rollup';
+import externals from 'rollup-plugin-node-externals';
 import resolve from '@rollup/plugin-node-resolve';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
 import commonjs from '@rollup/plugin-commonjs';
-import { preserveShebangs } from 'rollup-plugin-preserve-shebangs';
+import dts from 'rollup-plugin-dts';
+import { omit } from 'lodash-es';
 
-const DEFAULT_OUTPUT_PATH = 'dist';
-const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH ? `${process.env.PACKAGE_OUTPUT_PATH}/dist` : DEFAULT_OUTPUT_PATH;
+const BUILD_DIST = 'dist';
 
-const cache = false;
-
-const commonPlugins = [
-    // Allow json resolution
+const commonPlugins: Plugin[] = [
+    externals(),
     json(),
-
-    typescript({
-        tsconfig: 'tsconfig.build.json',
-    }),
-
-    // Allow node_modules resolution, so you can use 'external' to control
-    // which external modules to include in the bundle
-    // https://github.com/rollup/rollup-plugin-node-resolve#usage
+    typescript({ tsconfig: 'tsconfig.build.json' }),
     resolve({ preferBuiltins: false }),
-
-    cleanup({
-        comments: ['srcmaps'],
-    }),
+    cleanup({ comments: ['srcmaps'] }),
+    commonjs(),
 ];
 
-const contentScriptConfig = {
-    cache,
-    input: 'src/lib/mv2/content-script/index.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/content-script.js`,
-            format: 'esm',
-            sourcemap: false,
-        },
-    ],
-    external: [
-        'zod',
-        'webextension-polyfill',
-        '@adguard/extended-css',
-        '@adguard/tsurlfilter',
-        '@adguard/assistant',
-        'tldts',
-    ],
-    watch: {
-        include: 'src/lib/mv2/content-script/**',
-    },
-    plugins: commonPlugins,
+const entryPoints = {
+    index: 'src/lib/mv2/background/index.ts',
+    'index.mv3': 'src/lib/mv3/background/index.ts',
+    'content-script': 'src/lib/mv2/content-script/index.ts',
+    'css-hits-counter': 'src/lib/common/content-script/css-hits-counter.ts',
+    'content-script.mv3': 'src/lib/mv3/content-script/index.ts',
+    cli: 'src/cli/index.ts',
+    'mv3-utils': 'src/lib/mv3/utils/get-filter-name.ts',
+    'assistant-inject': 'src/lib/common/content-script/assistant-inject.ts',
+    gpc: 'src/lib/mv3/content-script/gpc.ts',
+    'hide-document-referrer': 'src/lib/mv3/content-script/hide-document-referrer.ts',
 };
 
-// Separate config for CssHitsCounter to better tree shake and do not export
-// browser-polyfill in the target application.
-const cssHitsCounterConfig = {
-    cache,
-    input: 'src/lib/mv2/content-script/css-hits-counter.ts',
+const tswebextensionConfig: RollupOptions = {
+    cache: false,
+    input: entryPoints,
     output: [
         {
-            file: `${OUTPUT_PATH}/css-hits-counter.js`,
+            dir: BUILD_DIST,
             format: 'esm',
-            sourcemap: false,
-        },
-    ],
-    external: [
-        '@adguard/extended-css',
-    ],
-    watch: {
-        include: 'src/lib/mv2/content-script/css-hits-counter.ts',
-    },
-    plugins: commonPlugins,
-};
-
-const contentScriptMv3Config = {
-    cache,
-    input: 'src/lib/mv3/content-script/index.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/content-script.mv3.js`,
-            format: 'esm',
-            sourcemap: false,
-        },
-    ],
-    external: [
-        'zod',
-        'webextension-polyfill',
-        '@adguard/extended-css',
-        '@adguard/tsurlfilter',
-        '@adguard/assistant',
-    ],
-    watch: {
-        include: 'src/lib/mv3/content-script/**',
-    },
-    plugins: commonPlugins,
-};
-
-const backgroundMv2Config = {
-    cache,
-    input: ['src/lib/mv2/background/index.ts'],
-    output: [
-        {
-            dir: OUTPUT_PATH,
-            format: 'esm',
-            sourcemap: false,
-            chunkFileNames: '[name].js',
+            entryFileNames: '[name].js',
+            chunkFileNames: 'common/[name].js',
+            exports: 'named',
+            preserveModulesRoot: 'src',
             manualChunks: {
-                'text-encoding-polyfill': [
-                    'node_modules/text-encoding',
-                ],
+                'trackers-min': ['src/lib/common/companies-db-service/trackers-min.ts'],
             },
         },
     ],
-    watch: {
-        include: 'src/lib/mv2/background/**',
-    },
-    external: [
-        'zod',
-        'webextension-polyfill',
-        '@adguard/tsurlfilter',
-        '@adguard/scriptlets',
-        'tldts',
-        'bowser',
-        'deepmerge',
-        'nanoid',
-        'lru_map',
-        'lodash-es',
-    ],
-    plugins: [
-        ...commonPlugins,
-        commonjs(),
-    ],
-};
-
-const backgroundMv3Config = {
-    cache,
-    input: ['src/lib/mv3/background/index.ts'],
-    output: [
-        {
-            file: `${OUTPUT_PATH}/index.mv3.js`,
-            format: 'esm',
-            sourcemap: false,
-        },
-    ],
-    watch: {
-        include: 'src/lib/mv3/background/**',
-    },
-    external: [
-        'zod',
-        '@adguard/tsurlfilter',
-        'deepmerge',
-        'tldts',
-        'webextension-polyfill',
-    ],
-    plugins: [
-        ...commonPlugins,
-        commonjs(),
-    ],
-};
-
-const cliConfig = {
-    cache,
-    input: 'src/cli/index.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/cli.js`,
-            format: 'cjs',
-            sourcemap: false,
-        },
-    ],
-    watch: {
-        include: 'src/cli/**',
-    },
-    external: ['path', 'fs-extra', 'commander'],
-    plugins: [
-        ...commonPlugins,
-        commonjs(),
-        preserveShebangs(),
-    ],
-};
-
-const mv3UtilsConfig = {
-    cache,
-    input: 'src/lib/mv3/utils/get-filter-name.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/mv3-utils.js`,
-            // TODO: Replace via 'esm'
-            format: 'cjs',
-            sourcemap: false,
-        },
-    ],
-    watch: {
-        include: 'src/lib/mv3/utils/get-filter-name.ts',
-    },
-    external: ['path', 'fs-extra', 'commander'],
-    plugins: [...commonPlugins],
-};
-
-const assistantInjectScriptConfig = {
-    cache,
-    input: 'src/lib/mv2/content-script/assistant-inject.ts',
-    output: [
-        {
-            file: `${OUTPUT_PATH}/assistant-inject.js`,
-            format: 'esm',
-            sourcemap: false,
-        },
-    ],
-    watch: {
-        include: 'src/lib/mv2/content-script/assistant-inject.ts',
+    treeshake: {
+        /**
+         * To avoid leftovers in the code when you access a property without side effects,
+         * like below:
+         * ```js
+         * Fingerprintjs3Names[0];
+         * ```.
+         */
+        propertyReadSideEffects: false,
+        /**
+         * This option prevent of the following import:
+         * ```
+         * import 'text-encoding';
+         * ```.
+         */
+        moduleSideEffects: false,
     },
     plugins: [
         ...commonPlugins,
-        commonjs(),
+    ],
+};
+
+const typesConfig: RollupOptions = {
+    // omit entry points that are not exporting types
+    input: omit(entryPoints, ['content-script.mv3', 'gpc', 'hide-document-referrer']),
+    output: {
+        dir: `${BUILD_DIST}/types`,
+        format: 'esm',
+        exports: 'named',
+        preserveModules: true,
+        preserveModulesRoot: 'src',
+    },
+    plugins: [
+        externals(),
+        dts(),
     ],
 };
 
 // TODO: Remove index files from 'src/lib', 'src/lib/mv2', 'src/lib/mv3' because
 // they are not participating in the build process and not specified as entry points.
-export default [
-    backgroundMv2Config,
-    backgroundMv3Config,
-    contentScriptConfig,
-    cssHitsCounterConfig,
-    contentScriptMv3Config,
-    cliConfig,
-    mv3UtilsConfig,
-    assistantInjectScriptConfig,
-];
+export default [tswebextensionConfig, typesConfig];

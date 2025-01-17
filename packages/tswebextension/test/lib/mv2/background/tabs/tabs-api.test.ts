@@ -1,25 +1,31 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
-import type { ExtensionTypes } from 'webextension-polyfill';
-import type {
-    CosmeticResult,
-    MatchingResult,
-    NetworkRule,
-} from '@adguard/tsurlfilter';
-import { type TabFrameRequestContext, TabsApi } from '@lib/mv2/background/tabs/tabs-api';
-import { TabContext, type TabInfo } from '@lib/mv2/background/tabs/tab-context';
-import { Frame, MAIN_FRAME_ID } from '@lib/mv2/background/tabs/frame';
-import { Allowlist } from '@lib/mv2/background/allowlist';
-import { EngineApi } from '@lib/mv2/background/engine-api';
-import { DocumentApi } from '@lib/mv2/background/document-api';
-import { appContext } from '@lib/mv2/background/context';
-import { stealthApi } from '@lib/mv2/background/stealth-api';
+import { type ExtensionTypes } from 'webextension-polyfill';
+import { type CosmeticResult, type MatchingResult, type NetworkRule } from '@adguard/tsurlfilter';
 
-jest.mock('@lib/mv2/background/allowlist');
-jest.mock('@lib/mv2/background/engine-api');
-jest.mock('@lib/mv2/background/document-api');
-jest.mock('@lib/mv2/background/stealth-api');
-jest.mock('@lib/mv2/background/context');
-jest.mock('@lib/mv2/background/tabs/tab-context');
+import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
+import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
+import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
+import { appContext } from '../../../../../src/lib/mv2/background/app-context';
+import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
+import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
+import { type TabFrameRequestContextMV2, TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';
+import { TabContext, type TabInfoMV2 } from '../../../../../src/lib/mv2/background/tabs/tab-context';
+import { Frame } from '../../../../../src/lib/mv2/background/tabs/frame';
+
+vi.mock('../../../../../src/lib/mv2/background/allowlist');
+vi.mock('../../../../../src/lib/mv2/background/engine-api');
+vi.mock('../../../../../src/lib/mv2/background/document-api');
+vi.mock('../../../../../src/lib/mv2/background/stealth-api');
+vi.mock('../../../../../src/lib/mv2/background/app-context');
+vi.mock('../../../../../src/lib/mv2/background/tabs/tab-context');
 
 describe('TabsApi', () => {
     let tabsApi: TabsApi;
@@ -33,11 +39,11 @@ describe('TabsApi', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     const createTestTabContext = (): TabContext => {
-        return new TabContext({} as TabInfo, documentApi);
+        return new TabContext({} as TabInfoMV2, documentApi);
     };
 
     describe('start method', () => {
@@ -112,7 +118,7 @@ describe('TabsApi', () => {
 
             tabsApi.context.set(tabId, tabContext);
 
-            const frameRequestContext = { tabId } as TabFrameRequestContext;
+            const frameRequestContext = { tabId } as TabFrameRequestContextMV2;
 
             tabsApi.handleFrameRequest(frameRequestContext);
 
@@ -120,7 +126,7 @@ describe('TabsApi', () => {
         });
 
         it('should not handle frame request if tab context is not found', () => {
-            const frameRequestContext = { tabId: 1 } as TabFrameRequestContext;
+            const frameRequestContext = { tabId: 1 } as TabFrameRequestContextMV2;
 
             tabsApi.handleFrameRequest(frameRequestContext);
 
@@ -219,9 +225,9 @@ describe('TabsApi', () => {
 
             const tabContext = {
                 info: { url },
-                incrementBlockedRequestCount: jest.fn(),
+                incrementBlockedRequestCount: vi.fn(),
             } as unknown as TabContext;
-            const tabContextIncrement = jest.spyOn(tabContext, 'incrementBlockedRequestCount');
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
 
             tabsApi.context.set(tabId, tabContext);
             tabsApi.incrementTabBlockedRequestCount(tabId, url);
@@ -236,9 +242,9 @@ describe('TabsApi', () => {
 
             const tabContext = {
                 info: { url: originUrl },
-                incrementBlockedRequestCount: jest.fn(),
+                incrementBlockedRequestCount: vi.fn(),
             } as unknown as TabContext;
-            const tabContextIncrement = jest.spyOn(tabContext, 'incrementBlockedRequestCount');
+            const tabContextIncrement = vi.spyOn(tabContext, 'incrementBlockedRequestCount');
 
             tabsApi.context.set(tabId, tabContext);
             tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
@@ -263,7 +269,7 @@ describe('TabsApi', () => {
 
             const mainFrameRule = {} as NetworkRule;
 
-            jest.spyOn(documentApi, 'matchFrame').mockImplementationOnce(() => mainFrameRule);
+            vi.spyOn(documentApi, 'matchFrame').mockImplementationOnce(() => mainFrameRule);
 
             tabsApi.updateTabMainFrameRule(tabId);
 
@@ -281,9 +287,9 @@ describe('TabsApi', () => {
         it('should update all current tabs main frame rules', async () => {
             const tabId = 1;
 
-            browser.tabs.query.resolves([{ id: tabId } as TabInfo]);
+            browser.tabs.query.resolves([{ id: tabId } as TabInfoMV2]);
 
-            const spy = jest.spyOn(tabsApi, 'updateTabMainFrameRule').mockImplementation();
+            const spy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
 
             await tabsApi.updateCurrentTabsMainFrameRules();
 

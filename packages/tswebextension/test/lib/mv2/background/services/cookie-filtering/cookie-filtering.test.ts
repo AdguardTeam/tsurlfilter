@@ -1,5 +1,12 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
-import { WebRequest } from 'webextension-polyfill';
+import polyfillBrowser from 'webextension-polyfill';
 import {
     HTTPMethod,
     MatchingResult,
@@ -7,28 +14,29 @@ import {
     RequestType,
 } from '@adguard/tsurlfilter';
 
-import { CookieFiltering } from '@lib/mv2/background/services/cookie-filtering/cookie-filtering';
-import { BrowserCookieApi } from '@lib/common/cookie-filtering/browser-cookie-api';
+import { createNetworkRule } from '../../../../../helpers/rule-creator';
+import { MockFilteringLog } from '../../../../common/mocks';
+import { getNetworkRuleFields } from '../../helpers/rule-fields';
+import { BrowserCookieApi } from '../../../../../../src/lib/common/cookie-filtering/browser-cookie-api';
+import { CookieFiltering } from '../../../../../../src/lib/mv2/background/services/cookie-filtering/cookie-filtering';
 import {
+    engineApi,
     type RequestContext,
     RequestContextState,
     requestContextStorage,
-} from '@lib/mv2/background/request/request-context-storage';
-import { FilteringEventType, ContentType } from '@lib/common';
-import { engineApi, tabsApi } from '@lib/mv2/background/api';
+    tabsApi,
+} from '../../../../../../src/lib';
+import { ContentType } from '../../../../../../src/lib/common/request-type';
+import { FilteringEventType } from '../../../../../../src/lib/common/filtering-log';
 
-import { createNetworkRule } from '../../../../../helpers/rule-creator';
-import { MockFilteringLog } from '../../../../common/mocks';
+import HttpHeaders = polyfillBrowser.WebRequest.HttpHeaders;
 
-import HttpHeaders = WebRequest.HttpHeaders;
-import { getNetworkRuleFields } from '../../helpers/rule-fields';
+vi.mock('../../../../../../src/lib/common/utils/logger');
+vi.mock('../../../../../../src/lib/common/cookie-filtering/browser-cookie-api');
+vi.mock('../../../../../../src/lib/mv2/background/engine-api');
 
-jest.mock('@lib/common/utils/logger');
-jest.mock('@lib/common/cookie-filtering/browser-cookie-api');
-jest.mock('@lib/mv2/background/engine-api');
-
-BrowserCookieApi.prototype.removeCookie = jest.fn().mockImplementation(() => true);
-BrowserCookieApi.prototype.modifyCookie = jest.fn().mockImplementation(() => true);
+BrowserCookieApi.prototype.removeCookie = vi.fn().mockImplementation(() => true);
+BrowserCookieApi.prototype.modifyCookie = vi.fn().mockImplementation(() => true);
 
 type SimulatedHeader = {
     name: string,
@@ -314,7 +322,7 @@ describe('Cookie filtering', () => {
 
         browser.tabs.onCreated.dispatch({ id: 0, url: 'https://example.org' });
 
-        jest.spyOn(engineApi, 'matchRequest').mockImplementationOnce(() => new MatchingResult(rules, null));
+        vi.spyOn(engineApi, 'matchRequest').mockImplementationOnce(() => new MatchingResult(rules, null));
 
         expect(cookieFiltering.getBlockingRules(context.referrerUrl, context.tabId, context.frameId)).toHaveLength(2);
 

@@ -195,7 +195,10 @@ export abstract class CompatibilityTableBase<T extends BaseCompatibilityDataSche
      *
      * @note Platform enum values can be converted to string names using {@link getSpecificPlatformName} on demand.
      */
-    public getMultiple(name: string, platform: SpecificPlatform | GenericPlatform): SinglePlatformRecords<T> | null {
+    public getMultiple(
+        name: string,
+        platform: SpecificPlatform | GenericPlatform,
+    ): SinglePlatformRecords<T> | null {
         const normalizedName = this.nameTransformer ? this.nameTransformer(name) : name;
         const data = this.getRowStorage(normalizedName);
 

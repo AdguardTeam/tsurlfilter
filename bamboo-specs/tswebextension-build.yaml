@@ -44,6 +44,7 @@ Build:
             npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
             cd packages/tswebextension
+
             pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz
     - inject-variables:
         file: ./packages/tswebextension/dist/build.txt

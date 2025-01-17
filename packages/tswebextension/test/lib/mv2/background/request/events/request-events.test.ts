@@ -1,11 +1,15 @@
+import {
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
 import browser from 'sinon-chrome';
 import { type WebRequest } from 'webextension-polyfill';
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
-import { RequestEvents } from '@lib/mv2/background/request/events/request-events';
-import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
-
-import { ContentType } from '@lib/common';
+import { type RequestContext, RequestContextState, RequestEvents } from '../../../../../../src/lib';
+import { ContentType } from '../../../../../../src/lib/common/request-type';
 
 describe('Request Events', () => {
     const commonRequestData = {
@@ -33,10 +37,10 @@ describe('Request Events', () => {
         thirdParty: true,
     };
 
-    it('onBeforeRequest with prerender request', async () => {
+    test('onBeforeRequest with prerender request', async () => {
         RequestEvents.init();
 
-        const listener = jest.fn();
+        const listener = vi.fn();
 
         RequestEvents.onBeforeRequest.addListener(listener);
 
@@ -58,7 +62,7 @@ describe('Request Events', () => {
             thirdParty: false,
         };
 
-        jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
+        vi.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
 
         browser.webRequest.onBeforeRequest.dispatch(prerenderRequestDetails);
 
@@ -250,7 +254,7 @@ describe('Request Events', () => {
         test(testName, () => {
             RequestEvents.init();
 
-            const listener = jest.fn();
+            const listener = vi.fn();
 
             testEventChannel.addListener(listener);
 
@@ -259,7 +263,7 @@ describe('Request Events', () => {
             details.timeStamp = timestamp;
             context.timestamp = timestamp;
 
-            jest.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
+            vi.spyOn(Date, 'now').mockReturnValueOnce(timestamp);
 
             browserEventChannel.dispatch(details);
 
@@ -267,11 +271,11 @@ describe('Request Events', () => {
         });
     });
 
-    it('onAuthRequired', () => {
+    test('onAuthRequired', () => {
         expect(browser.webRequest.onAuthRequired.addListener.calledOnce);
     });
 
-    it('onBeforeRedirect', () => {
+    test('onBeforeRedirect', () => {
         expect(browser.webRequest.onBeforeRedirect.addListener.calledOnce);
     });
 });

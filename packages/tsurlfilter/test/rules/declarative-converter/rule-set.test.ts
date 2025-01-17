@@ -1,8 +1,6 @@
 import { RuleParser } from '@adguard/agtree';
 
 import {
-    Filter,
-    type IFilter,
     IndexedNetworkRuleWithHash,
     RuleSet,
     type RuleSetContentProvider,
@@ -15,16 +13,8 @@ import {
     type ScannedFilter,
 } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
-import { FilterListPreprocessor } from '../../../src';
 
-const createFilter = (
-    rules: string[],
-    filterId: number = 0,
-): IFilter => {
-    return new Filter(filterId, {
-        getContent: async () => FilterListPreprocessor.preprocess(rules.join('\n')),
-    });
-};
+import { createFilter } from './helpers';
 
 describe('RuleSet', () => {
     const createScannedFilter = async (content: string[], filterId = 0): Promise<ScannedFilter[]> => {
@@ -46,7 +36,7 @@ describe('RuleSet', () => {
         const {
             sourceMapValues,
             declarativeRules,
-        } = DeclarativeRulesConverter.convert(filters);
+        } = await DeclarativeRulesConverter.convert(filters);
 
         const ruleSetContent: RuleSetContentProvider = {
             loadSourceMap: async () => new SourceMap(sourceMapValues),
@@ -71,7 +61,8 @@ describe('RuleSet', () => {
         return new RuleSet(
             'ruleSetId',
             declarativeRules.length,
-            declarativeRules.filter((d) => d.condition.regexFilter).length,
+            0,
+            declarativeRules.filter((d) => DeclarativeRulesConverter.isRegexRule(d)).length,
             ruleSetContent,
             badFilterRules,
             rulesHashMap,
@@ -146,6 +137,7 @@ describe('RuleSet', () => {
         const {
             data: {
                 regexpRulesCount,
+                unsafeRulesCount,
                 rulesCount,
                 ruleSetHashMapRaw,
                 badFilterRulesRaw,
@@ -174,6 +166,7 @@ describe('RuleSet', () => {
         const deserializedRuleSet = new RuleSet(
             id,
             rulesCount,
+            unsafeRulesCount || 0,
             regexpRulesCount,
             ruleSetContentProvider,
             badFilterRules,

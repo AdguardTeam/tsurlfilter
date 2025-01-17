@@ -1,14 +1,18 @@
 import {
-    MatchingResult,
-    RequestType,
-    HTTPMethod,
-} from '@adguard/tsurlfilter';
-import { RemoveHeadersService } from '@lib/mv2/background/services/remove-headers-service';
-import { type RequestContext, RequestContextState } from '@lib/mv2/background/request';
-import { FilteringEventType, ContentType } from '@lib/common';
+    describe,
+    expect,
+    beforeEach,
+    it,
+} from 'vitest';
+import { MatchingResult, RequestType, HTTPMethod } from '@adguard/tsurlfilter';
+
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 import { getNetworkRuleFields } from '../helpers/rule-fields';
+import { RemoveHeadersService } from '../../../../../src/lib/mv2/background/services/remove-headers-service';
+import { type RequestContext, RequestContextState } from '../../../../../src/lib';
+import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
+import { ContentType } from '../../../../../src/lib/common/request-type';
 
 describe('Headers service', () => {
     const mockFilteringLog = new MockFilteringLog();

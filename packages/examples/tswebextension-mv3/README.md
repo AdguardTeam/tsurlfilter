@@ -41,6 +41,5 @@ the site will be blocked.
 
 4. Cosmetic rules at now applies with huge (about 2 seconds) latency.
 
-5. **Declarative filtering log.** You can open the developer tools, go to the
-"AdGuard" tab, and see what declarative network rules have been applied to the
-page.
+5. To see what declarative network rules have been applied to the page - open
+console of service worker from extension page.

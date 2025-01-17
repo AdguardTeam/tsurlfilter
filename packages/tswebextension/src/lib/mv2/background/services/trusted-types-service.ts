@@ -1,9 +1,7 @@
 import { type WebRequest } from 'webextension-polyfill';
 import { type CosmeticResult } from '@adguard/tsurlfilter';
-import {
-    type RequestContext,
-    requestContextStorage,
-} from '../request/request-context-storage';
+
+import { type RequestContext, requestContextStorage } from '../request/request-context-storage';
 
 /**
  * CSP Trusted Types service module.
@@ -186,6 +184,7 @@ export class TrustedTypesService {
     }
 
     /**
+     * TODO: Should we log it for filtering log?
      * Modifies CSP header of response headers —
      * adds `AGPolicy` and `'allow-duplicates'` to CSP header if there is a `trusted-types` directive,
      * and returns modified headers.

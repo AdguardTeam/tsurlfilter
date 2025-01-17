@@ -8,7 +8,7 @@ import {
     type DomainList,
     type Modifier,
     type ModifierList,
-} from '../parser/common';
+} from '../nodes';
 import { isNull } from '../utils/type-guards';
 
 /**

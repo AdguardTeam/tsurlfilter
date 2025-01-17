@@ -1,14 +1,19 @@
 import {
     TsWebExtension,
     Configuration,
-    CommonMessageType,
+    MessageType,
+    MESSAGE_HANDLER_NAME,
+    defaultFilteringLog,
+    FilteringEventType,
+    FilterListPreprocessor,
 } from '@adguard/tswebextension/mv3';
-import { FilterListPreprocessor } from '@adguard/tsurlfilter';
-import { MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
+import browser from 'webextension-polyfill';
+
 import { Message } from '../message';
 import { StorageKeys, storage } from './storage';
 import { loadDefaultConfig } from './loadDefaultConfig';
 import { EXTENSION_INITIALIZED_EVENT } from '../common/constants';
+import { type FilteringLogEvent } from '@adguard/tswebextension';
 
 declare global {
     interface Window {
@@ -16,7 +21,9 @@ declare global {
     }
 }
 
-const tsWebExtension = new TsWebExtension('/war/redirects');
+const tsWebExtension = new TsWebExtension('/web-accessible-resources/redirects');
+await tsWebExtension.initStorage();
+
 tsWebExtension.onAssistantCreateRule.subscribe((rule) => {
     console.log(`assistant create rule ${rule}`);
 });
@@ -31,7 +38,7 @@ interface IMessage {
 }
 
 interface IMessageInner {
-    type: CommonMessageType,
+    type: MessageType,
     handlerName: typeof MESSAGE_HANDLER_NAME,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload?: any,
@@ -105,10 +112,8 @@ const messageHandler = async (message: IMessage) => {
             const preprocessed = FilterListPreprocessor.preprocess(data as string);
 
             config.userrules = {
-                rawFilterList: preprocessed.rawFilterList,
-                conversionMap: preprocessed.conversionMap,
-                content: preprocessed.filterList,
-                sourceMap: preprocessed.sourceMap,
+                ...preprocessed,
+                trusted: true,
             };
 
             await tsWebExtension.configure(config);
@@ -117,22 +122,8 @@ const messageHandler = async (message: IMessage) => {
 
             break;
         }
-        case Message.StartLog: {
-            config.filteringLogEnabled = true;
-
-            await tsWebExtension.configure(config);
-
-            break;
-        }
-        case Message.StopLog: {
-            config.filteringLogEnabled = false;
-
-            await tsWebExtension.configure(config);
-
-            break;
-        }
         case Message.OpenAssistant: {
-            const tabs = await chrome.tabs.query({ active: true });
+            const tabs = await browser.tabs.query({ active: true });
             if (tabs.length > 0 && tabs[0].id) {
                 await tsWebExtension.openAssistant(tabs[0].id);
             }
@@ -140,7 +131,7 @@ const messageHandler = async (message: IMessage) => {
             break;
         }
         case Message.CloseAssistant: {
-            const tabs = await chrome.tabs.query({ active: true });
+            const tabs = await browser.tabs.query({ active: true });
             if (tabs.length > 0 && tabs[0].id) {
                 await tsWebExtension.closeAssistant(tabs[0].id);
             }
@@ -162,9 +153,12 @@ const startIfNeed = async () => {
         }
     }
 
+    await tsWebExtension.initStorage();
+
     if (isStarted) {
         await tsWebExtension.start(config);
     }
+
 };
 
 const waitForInitAndClean = async () => {
@@ -204,7 +198,7 @@ const initExtension = async (messageId: string) => {
 
 const proxyHandler = async (
     message: IMessage | IMessageInner,
-    sender: chrome.runtime.MessageSender,
+    sender: browser.Runtime.MessageSender,
 ) => {
     const id = 'id_' + Math.random().toString(16).slice(2);
     console.debug('[PROXY HANDLER]: start check config', id, message);
@@ -220,24 +214,77 @@ const proxyHandler = async (
     }
 };
 
+/**
+ * Example of usage filtering log events.
+ */
+const startFilteringLog = async () => {
+    const logEvent = (event: FilteringLogEvent) => {
+        // Beautify declarative rule json.
+        if (event.type === FilteringEventType.MatchedDeclarativeRule) {
+            Object.assign(event.data.declarativeRuleInfo, {
+                declarativeRuleJson: JSON.parse(event.data.declarativeRuleInfo.declarativeRuleJson),
+            });
+        }
+
+        console.debug(`[${event.type}]: ${JSON.stringify(event.data, null, 2)}`);
+    };
+
+    defaultFilteringLog.addEventListener(FilteringEventType.SendRequest, logEvent);
+    defaultFilteringLog.addEventListener(FilteringEventType.ReceiveResponse, logEvent);
+    defaultFilteringLog.addEventListener(FilteringEventType.ApplyBasicRule, logEvent);
+    defaultFilteringLog.addEventListener(FilteringEventType.ApplyCosmeticRule, logEvent);
+    defaultFilteringLog.addEventListener(FilteringEventType.JsInject, logEvent);
+    defaultFilteringLog.addEventListener(FilteringEventType.MatchedDeclarativeRule, logEvent);
+};
+
+/**
+ * Checks if `message` is of type `IMessage`.
+ *
+ * @param message Message to check.
+ * @returns True if `message` has defined `type` property so it can be considered as `IMessage`,
+ * false otherwise.
+ */
+const isMessage = (message: unknown): message is IMessage => {
+    return (message as IMessage).type !== undefined;
+};
+
+/**
+ * Checks if `message` is of type `IMessageInner`.
+ *
+ * @param message Message to check.
+ * @returns True if `message` has defined properties `handlerName` and `type`
+ * so it can be considered as `IMessageInner`,
+ * false otherwise.
+ */
+const isMessageInner = (message: unknown): message is IMessageInner => {
+    return (message as IMessageInner).handlerName !== undefined
+        || (message as IMessageInner).type !== undefined;
+};
+
 // TODO: Add same logic for update event
-chrome.runtime.onInstalled.addListener(async () => {
+browser.runtime.onInstalled.addListener(async () => {
     console.debug('[ON INSTALLED]: start');
 
     await initExtension('install');
 
+    await startFilteringLog();
+
     console.debug('[ON INSTALLED]: done');
 });
 
-chrome.runtime.onMessage
+browser.runtime.onMessage
     .addListener((
-        message: IMessage | IMessageInner,
-        sender: chrome.runtime.MessageSender,
+        message: unknown,
+        sender: browser.Runtime.MessageSender,
         sendResponse,
     ) => {
-        console.debug('chrome.runtime.onMessage: ', message);
+        console.debug('browser.runtime.onMessage: ', message);
 
-        proxyHandler(message, sender).then(sendResponse);
+        if (isMessageInner(message) || isMessage(message)) {
+            proxyHandler(message, sender).then(sendResponse);
+        } else {
+            console.error('Received message with invalid type:', message);
+        }
 
         return true;
     });

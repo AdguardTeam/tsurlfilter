@@ -1,5 +1,10 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+} from 'vitest';
 import { type WebRequest } from 'webextension-polyfill';
-import { nanoid } from 'nanoid';
 import {
     type NetworkRule,
     HTTPMethod,
@@ -7,14 +12,16 @@ import {
     RequestType,
     StealthOptionName,
 } from '@adguard/tsurlfilter';
+import { minify } from 'terser';
 
-import { ContentType } from '@lib/common';
-import { type RequestContext, RequestContextState } from '@lib/mv2';
-import { StealthActions, StealthService } from '@lib/mv2/background/services/stealth-service';
-
-import type { AppContext } from '@lib/mv2/background/context';
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
+import { type AppContext } from '../../../../../src/lib/mv2/background/app-context';
+import { ContentType } from '../../../../../src/lib/common/request-type';
+import { nanoid } from '../../../../../src/lib/common/utils/nanoid';
+import { StealthService } from '../../../../../src/lib/mv2/background/services/stealth-service';
+import { StealthActions } from '../../../../../src/lib/common/stealth-actions';
+import { type RequestContext, RequestContextState } from '../../../../../src/lib';
 
 type TestAppContext = AppContext & { configuration: NonNullable<AppContext['configuration']> };
 describe('Stealth service', () => {
@@ -249,15 +256,14 @@ describe('Stealth service', () => {
             });
         });
 
-        it('checks global GPC value in the navigator', () => {
+        it('checks global GPC value in the navigator', async () => {
             appContext.configuration.settings.stealth.sendDoNotTrack = true;
             const service = new StealthService(appContext, filteringLog);
 
             // Here we check that the function is written correctly in the
             // string, to avoid changing its form to a lambda function, for
             // example.
-            const funcTxt = service.getSetDomSignalScript()
-                .replaceAll('() => true', '()=>true');
+            const funcTxt = service.getSetDomSignalScript();
 
             const expectedFuncTxt = `;(function setDomSignal() {
                 try {
@@ -274,12 +280,7 @@ describe('Stealth service', () => {
                 }
               })();`;
 
-            // Compare line-with-line to make sure that formatting does not
-            // affect the result.
-            const funcLines = funcTxt.split('\n').map((l) => l.trim());
-            const expectedFuncLines = expectedFuncTxt.split('\n').map((l) => l.trim());
-
-            expect(funcLines).toEqual(expectedFuncLines);
+            expect((await minify(funcTxt)).code).toBe((await minify(expectedFuncTxt)).code);
         });
     });
 });

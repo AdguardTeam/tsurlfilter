@@ -1,4 +1,4 @@
-import type { Storage } from 'webextension-polyfill';
+import { type Storage } from 'webextension-polyfill';
 
 import { PersistentValueContainer } from './persistent-value-container';
 

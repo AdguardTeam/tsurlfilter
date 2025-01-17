@@ -1,11 +1,19 @@
-import { type NetworkRule, type CookieModifier } from '@adguard/tsurlfilter';
+import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adguard/tsurlfilter';
+
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
-import { logger } from '../../../../common';
+import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
 import { BrowserCookieApi } from '../../../../common/cookie-filtering/browser-cookie-api';
-import { findHeaderByName } from '../../../../common/utils/find-header-by-name';
+import { createFrameMatchQuery } from '../../../../common/utils/create-frame-match-query';
+import { getDomain } from '../../../../common/utils/url';
+import { logger } from '../../../../common/utils/logger';
+import { findHeaderByName } from '../../../../common/utils/headers';
+import { nanoid } from '../../../../common/utils/nanoid';
 import CookieRulesFinder from '../../../../common/cookie-filtering/cookie-rules-finder';
 import { CookieUtils } from '../../../../common/cookie-filtering/utils';
 import { type RequestContext, requestContextStorage } from '../../request';
+import { tabsApi } from '../../../tabs/tabs-api';
+import { engineApi } from '../../engine-api';
+import { ContentType } from '../../../../common/request-type';
 
 /**
  * Cookie filtering.
@@ -63,7 +71,7 @@ export class CookieFiltering {
         // removing them from context to correct process them in headers.
         this.applyRules(context)
             .catch((e) => {
-                logger.error((e as Error).message);
+                logger.error('[tswebextension.onBeforeSendHeaders]: cannot apply rules due to: ', e);
             });
     }
 
@@ -103,7 +111,7 @@ export class CookieFiltering {
         // removing them from context to correct process them in headers.
         this.applyRules(context)
             .catch((e) => {
-                logger.error((e as Error).message);
+                logger.error('[tswebextension.onHeadersReceived]: cannot apply rules due to: ', e);
             });
     }
 
@@ -114,7 +122,10 @@ export class CookieFiltering {
      */
     private async applyRules(context: RequestContext): Promise<void> {
         const {
-            matchingResult, cookies, requestUrl, tabId,
+            matchingResult,
+            cookies,
+            requestUrl,
+            tabId,
         } = context;
 
         if (!matchingResult || !cookies) {
@@ -185,7 +196,7 @@ export class CookieFiltering {
         const bRule = CookieRulesFinder.lookupNotModifyingRule(cookieName, cookieRules, isThirdPartyCookie);
         if (bRule) {
             if (bRule.isAllowlist() || await this.browserCookieApi.removeCookie(cookie.name, cookie.url)) {
-                this.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, isThirdPartyCookie);
+                CookieFiltering.recordCookieEvent(tabId, cookie, requestUrl, bRule, false, isThirdPartyCookie);
             }
 
             return;
@@ -199,12 +210,21 @@ export class CookieFiltering {
             const cookieToModify = parentCookie || cookie;
 
             const appliedRules = CookieFiltering.applyRuleToBrowserCookie(cookieToModify, mRules);
-            if (appliedRules.length > 0) {
-                if (await this.browserCookieApi.modifyCookie(cookieToModify)) {
-                    appliedRules.forEach((r) => {
-                        this.recordCookieEvent(tabId, cookieToModify, requestUrl, r, true, isThirdPartyCookie);
-                    });
-                }
+            if (appliedRules.length === 0) {
+                return;
+            }
+
+            if (await this.browserCookieApi.modifyCookie(cookieToModify)) {
+                appliedRules.forEach((r) => {
+                    CookieFiltering.recordCookieEvent(
+                        tabId,
+                        cookieToModify,
+                        requestUrl,
+                        r,
+                        true,
+                        isThirdPartyCookie,
+                    );
+                });
             }
         }
     }
@@ -254,6 +274,35 @@ export class CookieFiltering {
     }
 
     /**
+     * Looks up blocking rules for content-script.
+     *
+     * @param frameUrl Frame url.
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     *
+     * @returns List of blocking rules.
+     */
+    public static getBlockingRules(frameUrl: string, tabId: number, frameId: number): NetworkRule[] {
+        const tabContext = tabsApi.getTabContext(tabId);
+
+        if (!tabContext?.info.url) {
+            return [];
+        }
+
+        const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
+
+        const matchingResult = engineApi.matchRequest(matchQuery);
+
+        if (!matchingResult) {
+            return [];
+        }
+
+        const cookieRules = matchingResult.getCookieRules();
+
+        return CookieRulesFinder.getBlockingRules(matchQuery.requestUrl, cookieRules);
+    }
+
+    /**
      * Records cookie event to filtering log.
      *
      * @param tabId Id of the tab.
@@ -262,20 +311,38 @@ export class CookieFiltering {
      * @param rule Applied modifying or deleting rule.
      * @param isModifyingCookieRule Is applied rule modifying or not.
      * @param requestThirdParty Whether request third party or not.
-     *
-     * TODO: Implement.
      */
-    // eslint-disable-next-line class-methods-use-this
-    private recordCookieEvent(
-        /* eslint-disable @typescript-eslint/no-unused-vars */
+    private static recordCookieEvent(
         tabId: number,
         cookie: ParsedCookie,
         requestUrl: string,
         rule: NetworkRule,
         isModifyingCookieRule: boolean,
         requestThirdParty: boolean,
-        /* eslint-enable @typescript-eslint/no-unused-vars */
-    ): void { }
+    ): void {
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.Cookie,
+            data: {
+                eventId: nanoid(),
+                tabId,
+                cookieName: cookie.name,
+                cookieValue: cookie.value,
+                frameDomain: getDomain(requestUrl) || requestUrl,
+                filterId: rule.getFilterListId(),
+                ruleIndex: rule.getIndex(),
+                isModifyingCookieRule,
+                requestThirdParty,
+                timestamp: Date.now(),
+                requestType: ContentType.Cookie,
+                isAllowlist: rule.isAllowlist(),
+                isImportant: rule.isOptionEnabled(NetworkRuleOption.Important),
+                isDocumentLevel: rule.isDocumentLevelAllowlistRule(),
+                isCsp: rule.isOptionEnabled(NetworkRuleOption.Csp),
+                isCookie: rule.isOptionEnabled(NetworkRuleOption.Cookie),
+                advancedModifier: rule.getAdvancedModifierValue(),
+            },
+        });
+    }
 }
 
 export const cookieFiltering = new CookieFiltering();

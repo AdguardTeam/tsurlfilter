@@ -1,3 +1,4 @@
+/* eslint-disable jsdoc/require-file-overview */
 const path = require('path');
 
 module.exports = {

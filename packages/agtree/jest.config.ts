@@ -5,18 +5,19 @@ const config: Config = {
     testTimeout: 30000,
     testMatch: ['**/test/**/*.test.ts'],
     transform: {
-        // Speed up tests by using SWC instead of Babel
         '.ts': '@swc/jest',
     },
     setupFilesAfterEnv: [
-        // Load custom matchers automatically
         './test/matchers/index.ts',
     ],
     coveragePathIgnorePatterns: [
-        // Ignore test helpers and matchers from coverage
         './test/helpers/',
         './test/matchers/',
     ],
+    modulePathIgnorePatterns: [
+        '<rootDir>/.rollup.cache/',
+    ],
+    extensionsToTreatAsEsm: ['.ts'],
 };
 
 export default config;

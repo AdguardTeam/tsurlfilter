@@ -1,9 +1,4 @@
-import type { CosmeticResult, MatchingResult } from '@adguard/tsurlfilter';
-
-/**
- * Document level frame id.
- */
-export const MAIN_FRAME_ID = 0;
+import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
 /**
  * Frame context data.
