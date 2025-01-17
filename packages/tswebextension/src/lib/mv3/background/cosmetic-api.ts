@@ -513,7 +513,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             // which means that will not be applied
             if (
                 !localScriptRulesService.isLocalScript(ruleText)
-                || !localScriptRulesService.isLocalScriptlet(ruleText)
+                && !localScriptRulesService.isLocalScriptlet(ruleText)
             ) {
                 continue;
             }
