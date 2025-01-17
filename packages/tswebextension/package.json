@@ -70,7 +70,7 @@
   "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension#readme",
   "scripts": {
     "lint": "pnpm lint:code && pnpm lint:tsc",
-    "lint:code": "eslint . --cache",
+    "lint:code": "eslint --cache .",
     "lint:tsc": "tsc --noEmit",
     "check-types": "pnpm lint:tsc",
     "prebuild": "rimraf dist",

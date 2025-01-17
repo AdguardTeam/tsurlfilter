@@ -1,6 +1,8 @@
 import browser from 'sinon-chrome';
 import { vi } from 'vitest';
 
+import { MANIFEST_ENV } from './tasks/constants';
+
 // Set up global `chrome` object
 global.chrome = {
     ...browser,
@@ -26,8 +28,8 @@ vi.mock('webextension-polyfill', () => {
                 ...browser.runtime,
                 getManifest: vi.fn(() => {
                     return ({
-                        version: '4.4.8',
-                        manifest_version: 2,
+                        version: '5.0.176',
+                        manifest_version: MANIFEST_ENV as any,
                     });
                 }),
             },

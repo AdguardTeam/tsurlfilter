@@ -6,6 +6,8 @@ node_modules
 .rpt2_cache
 .nx
 .pnpm-store
+
+# Cache file for ESLint.
 .eslintcache
 
 # IDEA files

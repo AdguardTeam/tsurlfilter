@@ -34,7 +34,7 @@ describe('TabsCosmeticInjector', () => {
         vi.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
         vi.spyOn(CosmeticApi, 'logScriptRules');
         vi.spyOn(ScriptingApi, 'insertCSS');
-        // FIXME (Slava) (in another pr): add tests for executeScriptText
+        // TODO (Slava): add tests for executeScriptText. AG-39122
         vi.spyOn(ScriptingApi, 'executeScriptFunc');
         vi.spyOn(ScriptingApi, 'executeScriptlet');
     });

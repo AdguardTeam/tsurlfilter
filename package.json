@@ -16,7 +16,7 @@
   },
   "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
   "scripts": {
-    "lint": "lerna run --parallel lint",
+    "lint": "lerna run lint",
     "clean": "lerna clean -y && rm -rf node_modules"
   },
   "devDependencies": {
