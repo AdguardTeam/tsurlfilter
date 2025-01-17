@@ -5,9 +5,6 @@ import nodePolyfills from 'rollup-plugin-polyfill-node';
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
 import cleanup from 'rollup-plugin-cleanup';
-import lodash from 'lodash';
-
-const { camelCase } = lodash;
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 
