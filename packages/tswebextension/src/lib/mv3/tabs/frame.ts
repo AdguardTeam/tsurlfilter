@@ -17,6 +17,9 @@ export type ScriptletRuleData = {
 
     /**
      * Scriptlet rule text to match whether it is local or not.
+     *
+     * @example
+     * `//scriptlet('set-constant', 'canRunAds', 'true')`
      */
     scriptletRuleText: string,
 };
