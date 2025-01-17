@@ -49,7 +49,7 @@ export class LocalScriptRulesService {
      *
      * @param localScriptRules A map of script text to their corresponding functions.
      */
-    setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
+    public setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
         this.localScripts = localScriptRules;
     }
 
@@ -59,7 +59,7 @@ export class LocalScriptRulesService {
      * @param localScriptletRules A map of scriptlet rules as string
      * to a boolean value indicating whether it is allowed to run.
      */
-    setLocalScriptletRules(localScriptletRules: LocalScriptletRulesData): void {
+    public setLocalScriptletRules(localScriptletRules: LocalScriptletRulesData): void {
         this.localScriptlets = localScriptletRules;
     }
 
@@ -104,7 +104,7 @@ export class LocalScriptRulesService {
      * @param scriptText The script content to look up.
      * @returns The corresponding function if found, or null otherwise.
      */
-    getLocalScriptFunction(scriptText: string): LocalScriptFunction | null {
+    public getLocalScriptFunction(scriptText: string): LocalScriptFunction | null {
         if (this.localScripts === undefined) {
             return null;
         }
