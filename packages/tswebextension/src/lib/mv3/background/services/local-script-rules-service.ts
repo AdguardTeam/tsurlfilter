@@ -15,7 +15,7 @@ export type LocalScriptFunctionData = {
 /**
  * An object containing local scriptlet rules where:
  * - key — scriptlet rule text
- * - value — boolean value indicating whether it is allowed to run.
+ * - value — boolean value indicating whether it is allowed to run (always true).
  */
 export type LocalScriptletRulesData = {
     [key: string]: boolean;
