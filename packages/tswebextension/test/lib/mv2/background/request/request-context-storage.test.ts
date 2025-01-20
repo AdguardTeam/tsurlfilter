@@ -1,11 +1,8 @@
+import { describe, expect, it } from 'vitest';
 import { HTTPMethod } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import {
-    type RequestContext,
-    RequestContextState,
-    requestContextStorage,
-} from '../../../../../src/lib';
+import { type RequestContext, RequestContextState, requestContextStorage } from '../../../../../src/lib';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 
 describe('Request Context Storage', () => {

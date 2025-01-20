@@ -1,7 +1,13 @@
+import {
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 import browser from 'webextension-polyfill';
+
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../../../src/lib/common/constants';
-
 import { createFilter } from '../helpers';
 
 describe('DynamicRulesApi', () => {
@@ -9,9 +15,9 @@ describe('DynamicRulesApi', () => {
         it('prioritizes rules in next order: quick fixes -> allowlist -> userrules -> custom filters', async () => {
             // Manually create the mock structure for browser.declarativeNetRequest
             const mockDeclarativeNetRequest = {
-                getDynamicRules: jest.fn().mockResolvedValue([]),
-                updateDynamicRules: jest.fn().mockResolvedValue({}),
-                MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES: 1,
+                getDynamicRules: vi.fn().mockResolvedValue([]),
+                updateDynamicRules: vi.fn().mockResolvedValue({}),
+                MAX_NUMBER_OF_DYNAMIC_RULES: 1,
                 MAX_NUMBER_OF_REGEX_RULES: 0,
             };
 
@@ -24,7 +30,7 @@ describe('DynamicRulesApi', () => {
             const allowlistRule = '@@$document,to=example.org';
             const customRule = 'example.com';
 
-            // Test with MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES set to 1
+            // Test with MAX_NUMBER_OF_DYNAMIC_RULES set to 1
             let conversionResult = await DynamicRulesApi.updateDynamicFiltering(
                 createFilter([quickFixesRule], QUICK_FIXES_FILTER_ID),
                 createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
@@ -38,8 +44,8 @@ describe('DynamicRulesApi', () => {
             expect(declarativeRules[0].action.type).toBe('allowAllRequests');
             expect(declarativeRules[0].condition.urlFilter).toBe('example.com');
 
-            // Change MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES to 2
-            mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES = 2;
+            // Change MAX_NUMBER_OF_DYNAMIC_RULES to 2
+            mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES = 2;
 
             conversionResult = await DynamicRulesApi.updateDynamicFiltering(
                 createFilter([quickFixesRule], QUICK_FIXES_FILTER_ID),
@@ -57,8 +63,8 @@ describe('DynamicRulesApi', () => {
             expect(declarativeRules[1].action.type).toBe('allowAllRequests');
             expect(declarativeRules[1].condition.requestDomains![0]).toBe('example.org');
 
-            // Change MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES to 3
-            mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES = 3;
+            // Change MAX_NUMBER_OF_DYNAMIC_RULES to 3
+            mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES = 3;
 
             conversionResult = await DynamicRulesApi.updateDynamicFiltering(
                 createFilter([quickFixesRule], QUICK_FIXES_FILTER_ID),
@@ -77,8 +83,8 @@ describe('DynamicRulesApi', () => {
             expect(declarativeRules[1].condition.requestDomains![0]).toBe('example.org');
             expect(declarativeRules[2].condition.urlFilter).toBe('example.org');
 
-            // Change MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES to 4
-            mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_AND_SESSION_RULES = 4;
+            // Change MAX_NUMBER_OF_DYNAMIC_RULES to 4
+            mockDeclarativeNetRequest.MAX_NUMBER_OF_DYNAMIC_RULES = 4;
 
             conversionResult = await DynamicRulesApi.updateDynamicFiltering(
                 createFilter([quickFixesRule], QUICK_FIXES_FILTER_ID),

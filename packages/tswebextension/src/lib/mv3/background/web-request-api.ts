@@ -87,7 +87,7 @@
  *                                       └─────────────────────────────┘.
  *
  *
- *  Web Navigation API Event Handling:
+ * Web Navigation API Event Handling:
  *
  *                                       ┌─────────────────────────────┐
  *                                       │                             │
@@ -98,7 +98,7 @@
  *                                       ┌──────────────▼──────────────┐
  * Update main frame data with           │                             │
  * {@link updateMainFrameData}           │       onBeforeNavigate      │
- * and matches CosmeticResult            │                             │
+ * and matches {@link CosmeticResult}.   │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
@@ -138,31 +138,29 @@
  *                                       └─────────────────────────────┘.
  */
 import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
-
 import { RequestType } from '@adguard/tsurlfilter';
-import {
-    getDomain,
-    isExtensionUrl,
-    isHttpOrWsRequest,
-} from '../../common/utils/url';
-import { RequestEvents } from './request/events/request-events';
-import { type RequestData } from './request/events/request-event';
-import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
-import { engineApi } from './engine-api';
-import { tabsApi } from '../tabs/tabs-api';
-import { requestContextStorage } from './request/request-context-storage';
-import { DocumentApi } from './document-api';
-import { CosmeticApi } from './cosmetic-api';
-import { getErrorMessage } from '../../common/error';
+
+import { companiesDbService } from '../../common/companies-db-service';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
+import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
+import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
+import { tabsApi } from '../tabs/tabs-api';
+
+import { CosmeticApi } from './cosmetic-api';
+import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
+import { declarativeFilteringLog } from './declarative-filtering-log';
+import { DocumentApi } from './document-api';
+import { engineApi } from './engine-api';
+import { type OnBeforeRequestDetailsType, RequestEvents } from './request/events/request-events';
 import { RequestBlockingApi } from './request/request-blocking-api';
-import { companiesDbService } from '../../common/companies-db-service';
+import { requestContextStorage } from './request/request-context-storage';
+import { type RequestData } from './request/events/request-event';
+import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
-import { declarativeFilteringLog } from './declarative-filtering-log';
-import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
+import { StealthService } from './services/stealth-service';
 
 /**
  * API for applying rules from background service by handling
@@ -238,11 +236,11 @@ export class WebRequestApi {
     /**
      * On before request event handler. This is the earliest event in the chain of the web request events.
      *
-     * @param details Request details.
-     * @param details.context Request context.
+     * @param requestData Object containing request context and details.
+     * @param requestData.context Request context.
      */
     private static onBeforeRequest(
-        { context }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
+        { context }: RequestData<OnBeforeRequestDetailsType>,
     ): void {
         if (!context) {
             return;
@@ -296,28 +294,41 @@ export class WebRequestApi {
         });
 
         let frameRule;
-        if (requestType === RequestType.SubDocument) {
+        let frameUrl = referrerUrl;
+
+        /**
+         * Determine frameRule for different request types:
+         * - for Document requests, use DocumentApi to match against requestUrl and update frameUrl;
+         * - for SubDocument requests, use DocumentApi to match against referrerUrl;
+         * - for all other requests, get the frame rule from tabsApi.
+         *
+         * The referrerUrl is calculated in {@link RequestEvents.handleOnBeforeRequest} before this point.
+         */
+        if (requestType === RequestType.Document) {
+            frameRule = DocumentApi.matchFrame(requestUrl);
+            // We suppose that all document request are first party requests and
+            // that's why we set frameUrl to requestUrl.
+            frameUrl = requestUrl;
+        } else if (requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(referrerUrl);
         } else {
             frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
-        const result = engineApi.matchRequest({
+        const matchingResult = engineApi.matchRequest({
             requestUrl,
-            frameUrl: referrerUrl,
+            frameUrl,
             requestType,
             frameRule,
             method,
         });
 
-        if (!result) {
+        if (!matchingResult) {
             return;
         }
 
-        // Save matching result to the request context
-        requestContextStorage.update(requestId, {
-            matchingResult: result,
-        });
+        // Save matching result to the request context.
+        requestContextStorage.update(requestId, { matchingResult });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             CosmeticFrameProcessor.precalculateCosmetics({
@@ -328,11 +339,9 @@ export class WebRequestApi {
             });
         }
 
-        const basicResult = result.getBasicResult();
-
         const response = RequestBlockingApi.getBlockingResponse({
-            rule: basicResult,
-            popupRule: result.getPopupRule(),
+            rule: matchingResult.getBasicResult(),
+            popupRule: matchingResult.getPopupRule(),
             eventId,
             requestId,
             requestUrl,
@@ -404,6 +413,8 @@ export class WebRequestApi {
         if (context?.matchingResult) {
             cookieFiltering.onBeforeSendHeaders(context);
         }
+
+        StealthService.onBeforeSendHeaders(context);
     }
 
     /**

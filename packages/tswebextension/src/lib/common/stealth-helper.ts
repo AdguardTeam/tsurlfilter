@@ -1,4 +1,4 @@
-// Disable jest coverage for this file, because it will insert
+// Disable vi coverage for this file, because it will insert
 // line comments, and code to count lines covered by tests, for example:
 // /* istanbul ignore next */
 // cov_uqm40oh03().f[0]++;

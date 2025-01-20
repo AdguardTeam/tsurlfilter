@@ -10,7 +10,7 @@ import {
     CosmeticRuleType,
     type HtmlFilteringRule,
     RuleCategory,
-} from '../../parser/common';
+} from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
@@ -43,18 +43,18 @@ const ADG_HTML_CONVERSION_MAX_LENGTH = ADG_HTML_DEFAULT_MAX_LENGTH * 32;
 
 const NOT_SPECIFIED = -1;
 
-const enum PseudoClasses {
-    Contains = 'contains',
-    HasText = 'has-text',
-    MinTextLength = 'min-text-length',
-}
+const PseudoClasses = {
+    Contains: 'contains',
+    HasText: 'has-text',
+    MinTextLength: 'min-text-length',
+} as const;
 
-const enum AttributeSelectors {
-    MaxLength = 'max-length',
-    MinLength = 'min-length',
-    TagContent = 'tag-content',
-    Wildcard = 'wildcard',
-}
+const AttributeSelectors = {
+    MaxLength: 'max-length',
+    MinLength: 'min-length',
+    TagContent: 'tag-content',
+    Wildcard: 'wildcard',
+} as const;
 
 const SUPPORTED_UBO_PSEUDO_CLASSES = new Set<string>([
     PseudoClasses.Contains,

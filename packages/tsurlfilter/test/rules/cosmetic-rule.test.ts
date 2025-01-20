@@ -1,13 +1,14 @@
 /* eslint-disable max-len */
-import { type IConfiguration } from '@adguard/scriptlets';
+import { type Source } from '@adguard/scriptlets';
 import { CosmeticRuleType } from '@adguard/agtree';
+import { jest } from '@jest/globals';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
 import { type CosmeticRule, RULE_INDEX_NONE } from '../../src';
 import { createCosmeticRule } from '../helpers/rule-creator';
 
-const parseParamsFromScript = (script: string): IConfiguration | null => {
+const parseParamsFromScript = (script: string): Source | null => {
     const matchArr = script.match(/\{"args.+"}/);
     if (!matchArr) {
         return null;

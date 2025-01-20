@@ -2,7 +2,7 @@
  * @file Conversion result interface and helper functions
  */
 
-import { type Node } from '../../parser/common';
+import { type Node } from '../../nodes';
 
 /**
  * Common conversion result interface

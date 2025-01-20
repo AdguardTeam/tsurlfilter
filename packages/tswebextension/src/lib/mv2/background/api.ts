@@ -3,6 +3,8 @@
  * Needed for backward compatibility during internal API updates.
  * Will be removed in the future.
  */
+import { defaultFilteringLog } from '../../common/filtering-log';
+
 import { Allowlist } from './allowlist';
 import { EngineApi } from './engine-api';
 import { DocumentApi } from './document-api';
@@ -10,12 +12,11 @@ import { TabsApi } from './tabs/tabs-api';
 import { MessagesApi } from './messages-api';
 import { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
 import { stealthApi } from './stealth-api';
-import { appContext } from './context';
+import { appContext } from './app-context';
 import { TsWebExtension } from './app';
 import { ResourcesService } from './services/resources-service';
 import { RedirectsService } from './services/redirects/redirects-service';
 import { DocumentBlockingService } from './services/document-blocking-service';
-import { defaultFilteringLog } from '../../common/filtering-log';
 import { extSessionStorage } from './ext-session-storage';
 
 export const allowlist = new Allowlist();
