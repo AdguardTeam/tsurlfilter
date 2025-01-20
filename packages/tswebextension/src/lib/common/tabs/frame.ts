@@ -54,8 +54,10 @@ type FrameConstructorProps = {
  * to apply rules that cannot be handled during request processing.
  * The frame data is deleted after the {@link browser.webNavigation.onCompleted} event.
  * @see {@link WebRequestApi.deleteFrameContext}
+ *
+ * The class is abstract because FrameMV2 and FrameMV3 extend it.
  */
-export class FrameCommon {
+export abstract class FrameCommon {
     /**
      * Frame url.
      */
