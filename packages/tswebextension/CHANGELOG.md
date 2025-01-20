@@ -5,14 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<!-- FIXME (Slava): prepare release v3.0.0-alpha.0 -->
 ## Unreleased
 
 ### Changed
 
-- Updated [@adguard/agtree] to `v3.0.0`.
-- Updated [@adguard/scriptlets] to `v2.0.1`.
-- Updated [@adguard/tsurlfilter] to `v3.1.0-alpha.7`
-- Updated [@adguard/extended-css] to `v2.0.59`
+- Updated [@adguard/agtree] to `v3.0.0-alpha.2`.
+- Updated [@adguard/scriptlets] to `v2.1.3-alpha.1`.
+- Updated [@adguard/tsurlfilter] to `v3.1.0-alpha.7`.
+- Updated [@adguard/extended-css] to `v2.1.1`.
 
 ### Fixed
 
@@ -336,7 +337,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
-- Extension injects scripts every time the extension's background event page wakes up [AdguardBrowserExtension#2792]
+- Extension injects scripts every time the extension's background event page wakes up [AdguardBrowserExtension#2792].
 
 [1.0.25]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.25
 [AdguardBrowserExtension#2792]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2792
@@ -556,8 +557,7 @@ mode toggle.
 
 ### Added
 
-- New `TsWebExtension.initStorage` method to initialize persistent values for
-  the background script.
+- New `TsWebExtension.initStorage` method to initialize persistent values for the background script.
 - New `createTsWebExtension` function to create `TsWebExtension` instance.
 
 ### Changed
@@ -654,9 +654,8 @@ its setting [AdguardBrowserExtension#2584].
 
 ### Added
 
-- Added new `ExtensionStorage`, `PersistentValueContainer`,
-  `createExtensionStorageDecorator` interfaces and for restoring data in
-  event-driven background scripts [AdguardBrowserExtension#2286].
+- Added new `ExtensionStorage`, `PersistentValueContainer`, `createExtensionStorageDecorator` interfaces
+  and for restoring data in event-driven background scripts [AdguardBrowserExtension#2286].
 
 [0.4.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.4.3
 [AdguardBrowserExtension#2571]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571
@@ -720,8 +719,7 @@ its setting [AdguardBrowserExtension#2584].
 
 ### Fixed
 
-- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published
-  as filtering log events.
+- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
 - Fixed cosmetic rules injection into a cached subdocument [AdguardBrowserExtension#2420],
   [AdguardBrowserExtension#2190], [AdguardBrowserExtension#2328].
 

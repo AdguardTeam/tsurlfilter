@@ -1,5 +1,5 @@
 import { type AppContext } from '../../../../../src/lib/mv2/background/app-context';
-import { type ConfigurationMV2Context } from '../../../../../src/lib';
+import { type ConfigurationMV2Context } from '../../../../../src/lib/mv2/background/configuration';
 
 /**
  * Mock for {@link AppContext}.

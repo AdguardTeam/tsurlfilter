@@ -1,66 +1,116 @@
-import { type CosmeticRule } from '@adguard/tsurlfilter';
-
 /**
- * Local script function type.
+ * A function type representing local script logic.
  */
 export type LocalScriptFunction = () => void;
 
 /**
- * Type for local script functions data where
- * - key is rule as string
- * - value is function ready to be executed.
+ * An object containing local script functions where:
+ * - key — script text
+ * - value — function that is ready to run.
  */
 export type LocalScriptFunctionData = {
     [key: string]: LocalScriptFunction;
 };
 
 /**
- * By the rules of AMO we cannot use remote scripts (and our JS rules can be counted as such).
- * Because of that we use the following approach (that was accepted by Chrome reviewers):
+ * An object containing local scriptlet rules where:
+ * - key — scriptlet rule text
+ * - value — boolean value indicating whether it is allowed to run (always true).
+ */
+export type LocalScriptletRulesData = {
+    [key: string]: boolean;
+};
+
+/**
+ * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
  *
- * 1. We pre-build JS rules from AdGuard filters into the JSON file.
- * 2. At runtime we check every JS rule if it's included into JSON.
- *    If it is included we allow this rule to work since it's pre-built. Other rules are discarded.
- * 3. We also allow "User rules" to work since those rules are added manually by the user.
- *    This way filters maintainers can test new rules before including them in the filters.
+ * Due to Chrome Web Store policies, we cannot execute remotely hosted code.
+ * Therefore, we use the following approach:
+ *
+ * 1. We bundle AdGuard’s JS rules into a local file included with the extension.
+ * 2. At runtime, we verify each JS rule to see if it's included in our local bundle.
+ *    If it is, we allow it to run; otherwise, we discard it.
  */
 export class LocalScriptRulesService {
     /**
-     * If {@link setLocalScriptRules} was called (for example, it should be
-     * called for Chromium-MV3), this set will contain a list of prebuilt js file
-     * with JS rules allowed to run.
-     * Otherwise it will remain undefined.
+     * When {@link setLocalScriptRules} is called, this holds a list of prebuilt JS rules
+     * allowed to run. If it is never called, this remains undefined.
      */
     private localScripts: LocalScriptFunctionData | undefined;
 
     /**
-     * Saves local script rules to object.
-     *
-     * @param localScriptRules Object with pre-build JS rules.
+     * When {@link setLocalScriptletRules} is called, this holds a list of pre-built Scriptlets rules allowed to run.
+     * If it is never called, this remains undefined.
      */
-    setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
+    private localScriptlets: LocalScriptletRulesData | undefined;
+
+    /**
+     * Stores prebuilt JS rules in memory for later use.
+     *
+     * @param localScriptRules A map of script text to their corresponding functions.
+     */
+    public setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
         this.localScripts = localScriptRules;
     }
 
     /**
-     * Gets local script function for the rule.
+     * Stores prebuilt Scriptlet rules in memory for later use.
      *
-     * @param rule Cosmetic rule.
-     *
-     * @returns Local script function or null if not found.
+     * @param localScriptletRules A map of scriptlet rules as string
+     * to a boolean value indicating whether it is allowed to run.
      */
-    getLocalScriptFunction(rule: CosmeticRule): LocalScriptFunction | null {
+    public setLocalScriptletRules(localScriptletRules: LocalScriptletRulesData): void {
+        this.localScriptlets = localScriptletRules;
+    }
+
+    /**
+     * Checks if the given script text is included in our prebuilt local scripts.
+     *
+     * This helper method is primarily for transparency during the Chrome Web Store review process.
+     *
+     * @param scriptText The script rule to verify.
+     *
+     * @returns True if the script is part of our local collection, false otherwise.
+     */
+    public isLocalScript(scriptText: string): boolean {
+        if (this.localScripts === undefined) {
+            return false;
+        }
+
+        return this.localScripts[scriptText] !== undefined;
+    }
+
+    /**
+     * Checks if the given scriptlet rule is included in our prebuilt local scriptlets.
+     *
+     * This helper method is primarily for transparency during the Chrome Web Store review process.
+     *
+     * @param scriptletRuleText The scriptlet rule to verify.
+     *
+     * @returns True if the scriptlet rule is part of our local collection, false otherwise.
+     */
+    public isLocalScriptlet(scriptletRuleText: string): boolean {
+        if (this.localScriptlets === undefined) {
+            return false;
+        }
+
+        return this.localScriptlets[scriptletRuleText] !== undefined;
+    }
+
+    /**
+     * Retrieves the function associated with the specified script text
+     * from our local scripts collection.
+     *
+     * @param scriptText The script content to look up.
+     * @returns The corresponding function if found, or null otherwise.
+     */
+    public getLocalScriptFunction(scriptText: string): LocalScriptFunction | null {
         if (this.localScripts === undefined) {
             return null;
         }
 
-        const scriptFunc = this.localScripts[rule.getContent()];
-
-        if (scriptFunc === undefined) {
-            return null;
-        }
-
-        return scriptFunc;
+        const scriptFunc = this.localScripts[scriptText];
+        return scriptFunc !== undefined ? scriptFunc : null;
     }
 }
 
