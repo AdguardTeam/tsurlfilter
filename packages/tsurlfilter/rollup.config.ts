@@ -26,6 +26,8 @@ const externalPackages = [
     'tslib',
     'module',
     'lru-cache',
+    'zod-validation-error',
+    'crypto',
 ];
 
 const externalFunction = (id: string): boolean => {
@@ -105,6 +107,19 @@ const esmDeclarativeConverterConfig = {
     ...commonConfig,
 };
 
+const esmDeclarativeConverterUtilsConfig = {
+    input: 'src/rules/declarative-converter-utils/index.ts',
+    output: [
+        {
+            file: `${OUTPUT_PATH}/es/declarative-converter-utils.js`,
+            format: 'esm',
+            sourcemap: false,
+        },
+    ],
+    external: externalFunction,
+    ...commonConfig,
+};
+
 const cliConfig = {
     input: 'cli/index.ts',
     output: [
@@ -142,5 +157,6 @@ const cliConfig = {
 export default [
     esmConfig,
     esmDeclarativeConverterConfig,
+    esmDeclarativeConverterUtilsConfig,
     cliConfig,
 ];

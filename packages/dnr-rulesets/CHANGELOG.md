@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [BREAKING] `unsafeRulesCount` in ruleset metadata to specify the number of unsafe rules in the ruleset.
 
+### Changed
+
+- Updated `@adguard/tswebextension` to `v2.4.0-alpha.7`.
+
+### Removed
+
+- Text files from the build result. Now only JSON files are generated and they are including all the necessary data.
+
 ## [1.2.20240930132036] - 2024-09-30
 
 ### Added

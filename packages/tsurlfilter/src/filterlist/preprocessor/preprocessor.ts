@@ -22,7 +22,11 @@ export const PREPROCESSOR_AGTREE_OPTIONS = {
     parseHostRules: false,
 };
 
-type RawListWithConversionMap = Pick<PreprocessedFilterList, 'rawFilterList' | 'conversionMap'>;
+/**
+ * A "lightweight" version of the {@link PreprocessedFilterList} type,
+ * which contains only the "rawFilterList" and "conversionMap" fields.
+ */
+export type LightweightPreprocessedFilterList = Pick<PreprocessedFilterList, 'rawFilterList' | 'conversionMap'>;
 
 /**
  * Utility class for pre-processing filter lists before they are used by the AdGuard filtering engine.
@@ -166,12 +170,63 @@ export class FilterListPreprocessor {
     }
 
     /**
+     * A "lightweight" version of the preprocess method. This method is necessary because, in the rulesets,
+     * we store the converted raw list and the conversion map, but not the entire preprocessed filter list.
+     * This method helps us regenerate the serialized filter list and the source map fields with less overhead
+     * compared to the full preprocess method.
+     *
+     * @param preprocessedFilterList Preprocessed filter list,
+     * which contains the raw filter list and the conversion map.
+     *
+     * @returns Preprocessed filter list with the "filterList" and "sourceMap" fields.
+     */
+    public static preprocessLightweight(
+        preprocessedFilterList: LightweightPreprocessedFilterList,
+    ): PreprocessedFilterList {
+        const { rawFilterList, conversionMap } = preprocessedFilterList;
+        const { length } = rawFilterList;
+
+        const sourceMap: FilterListSourceMap = {};
+        const filterList = new OutputByteBuffer();
+
+        let inputOffset = 0;
+        let outputOffset = 0;
+
+        while (inputOffset < length) {
+            const [lineBreakIndex, lineBreakLength] = findNextLineBreakIndex(rawFilterList, inputOffset);
+            const ruleText = rawFilterList.slice(inputOffset, lineBreakIndex);
+
+            const bufferOffset = filterList.currentOffset;
+
+            sourceMap[bufferOffset] = outputOffset;
+
+            try {
+                RuleSerializer.serialize(RuleParser.parse(ruleText, PREPROCESSOR_AGTREE_OPTIONS), filterList);
+            } catch (error: unknown) {
+                logger.error(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
+            }
+
+            outputOffset += ruleText.length + lineBreakLength;
+
+            // Move to the next line
+            inputOffset = lineBreakIndex + lineBreakLength;
+        }
+
+        return {
+            filterList: (filterList as any).chunks,
+            rawFilterList,
+            conversionMap,
+            sourceMap,
+        };
+    }
+
+    /**
      * Gets the original filter list text from the preprocessed filter list.
      *
      * @param preprocessedFilterList Preprocessed filter list.
      * @returns Original filter list text.
      */
-    public static getOriginalFilterListText(preprocessedFilterList: RawListWithConversionMap): string {
+    public static getOriginalFilterListText(preprocessedFilterList: LightweightPreprocessedFilterList): string {
         const { rawFilterList, conversionMap } = preprocessedFilterList;
         const { length } = rawFilterList;
         const result: string[] = [];
@@ -213,7 +268,7 @@ export class FilterListPreprocessor {
      * @param preprocessedFilterList Preprocessed filter list.
      * @returns Array of original rules.
      */
-    public static getOriginalRules(preprocessedFilterList: RawListWithConversionMap): string[] {
+    public static getOriginalRules(preprocessedFilterList: LightweightPreprocessedFilterList): string[] {
         const { rawFilterList, conversionMap } = preprocessedFilterList;
         const { length } = rawFilterList;
         const result: string[] = [];
@@ -245,5 +300,19 @@ export class FilterListPreprocessor {
         }
 
         return result;
+    }
+
+    /**
+     * Creates an empty preprocessed filter list.
+     *
+     * @returns An empty preprocessed filter list.
+     */
+    public static createEmptyPreprocessedFilterList(): PreprocessedFilterList {
+        return {
+            filterList: [],
+            rawFilterList: '',
+            conversionMap: {},
+            sourceMap: {},
+        };
     }
 }

@@ -103,6 +103,22 @@ const createTxt = async (): Promise<void> => {
 };
 
 /**
+ * Removes all txt files from the specified directory.
+ * Used as a cleanup step after filters conversion to remove unnecessary txt files.
+ *
+ * @param dir Directory with txt files.
+ * @returns Promise that resolves when all txt files are removed.
+ */
+const removeTxtFiles = async (dir: string): Promise<void> => {
+    const files = await fs.promises.readdir(dir);
+    const txtFiles = files.filter(file => file.endsWith('.txt'));
+
+    await Promise.all(
+        txtFiles.map(file => fs.promises.unlink(path.join(dir, file))),
+    );
+};
+
+/**
  * Compiles rules to declarative json
  * Actually for each rule set entry in manifest's declarative_net_request:
  *
@@ -127,6 +143,8 @@ const build = async (): Promise<void> => {
             prettifyJson: false,
         },
     );
+
+    await removeTxtFiles(FILTERS_DIR);
 
     await createTxt();
 };

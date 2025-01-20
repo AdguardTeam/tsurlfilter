@@ -1,7 +1,12 @@
+import { jest } from '@jest/globals';
 import { OutputByteBuffer } from '@adguard/agtree';
 import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
 import { RuleSerializer } from '@adguard/agtree/serializer';
-import { FilterListPreprocessor, type PreprocessedFilterList } from '../../../src/filterlist/preprocessor';
+import {
+    FilterListPreprocessor,
+    type LightweightPreprocessedFilterList,
+    type PreprocessedFilterList,
+} from '../../../src/filterlist/preprocessor';
 
 // TODO: Add more tests
 
@@ -30,6 +35,14 @@ const makeSerializedFilterList = (rules: string[]): Uint8Array[] => {
 
 describe('FilterListPreprocessor', () => {
     describe('preprocess', () => {
+        beforeAll(() => {
+            jest.spyOn(console, 'error').mockImplementation(() => {});
+        });
+
+        afterAll(() => {
+            jest.restoreAllMocks();
+        });
+
         it.each<{ name: string, actual: string, expected: PreprocessedFilterList }>([
             {
                 name: 'empty filter list',
@@ -102,6 +115,22 @@ describe('FilterListPreprocessor', () => {
                 },
             },
             {
+                name: 'should handle invalid rules',
+                actual: '||example.com^\nexample.com##+js(,\n||example.org^',
+                expected: {
+                    filterList: makeSerializedFilterList([
+                        '||example.com^',
+                        '||example.org^',
+                    ]),
+                    rawFilterList: '||example.com^\nexample.com##+js(,\n||example.org^',
+                    conversionMap: {},
+                    sourceMap: {
+                        4: 0,
+                        29: 34,
+                    },
+                },
+            },
+            {
                 name: 'converting non-AdGuard rules',
                 actual: [
                     'example.com##+js(foo)',
@@ -132,6 +161,163 @@ describe('FilterListPreprocessor', () => {
             },
         ])('handles $name', ({ actual, expected }) => {
             const preprocessedFilterList = FilterListPreprocessor.preprocess(actual);
+            expect(preprocessedFilterList).toEqual(expected);
+        });
+    });
+
+    describe('preprocessLightweight', () => {
+        beforeAll(() => {
+            jest.spyOn(console, 'error').mockImplementation(() => {});
+        });
+
+        afterAll(() => {
+            jest.restoreAllMocks();
+        });
+
+        it.each<{ name: string, actual: LightweightPreprocessedFilterList, expected: PreprocessedFilterList }>([
+            {
+                name: 'empty filter list',
+                actual: {
+                    rawFilterList: '',
+                    conversionMap: {},
+                },
+                expected: {
+                    filterList: makeSerializedFilterList([]),
+                    rawFilterList: '',
+                    conversionMap: {},
+                    sourceMap: {},
+                },
+            },
+            {
+                name: 'one rule',
+                actual: {
+                    rawFilterList: '||example.com^',
+                    conversionMap: {},
+                },
+                expected: {
+                    filterList: makeSerializedFilterList([
+                        '||example.com^',
+                    ]),
+                    rawFilterList: '||example.com^',
+                    conversionMap: {},
+                    sourceMap: {
+                        4: 0,
+                    },
+                },
+            },
+            {
+                name: 'one rule + trailing line',
+                actual: {
+                    rawFilterList: '||example.com^\n',
+                    conversionMap: {},
+                },
+                expected: {
+                    filterList: makeSerializedFilterList([
+                        '||example.com^',
+                    ]),
+                    rawFilterList: '||example.com^\n',
+                    conversionMap: {},
+                    sourceMap: {
+                        4: 0,
+                    },
+                },
+            },
+            {
+                name: 'two rules',
+                actual: {
+                    rawFilterList: '||example.com^\n||example.org^',
+                    conversionMap: {},
+                },
+                expected: {
+                    filterList: makeSerializedFilterList([
+                        '||example.com^',
+                        '||example.org^',
+                    ]),
+                    rawFilterList: '||example.com^\n||example.org^',
+                    conversionMap: {},
+                    sourceMap: {
+                        4: 0,
+                        29: 15,
+                    },
+                },
+            },
+            {
+                name: 'two rules, but CRLF',
+                actual: {
+                    rawFilterList: '||example.com^\r\n||example.org^',
+                    conversionMap: {},
+                },
+                expected: {
+                    filterList: makeSerializedFilterList([
+                        '||example.com^',
+                        '||example.org^',
+                    ]),
+                    rawFilterList: '||example.com^\r\n||example.org^',
+                    conversionMap: {},
+                    sourceMap: {
+                        4: 0,
+                        29: 16,
+                    },
+                },
+            },
+            {
+                name: 'should handle invalid rules',
+                actual: {
+                    rawFilterList: '||example.com^\nexample.com##+js(,\n||example.org^',
+                    conversionMap: {},
+                },
+                expected: {
+                    filterList: makeSerializedFilterList([
+                        '||example.com^',
+                        '||example.org^',
+                    ]),
+                    rawFilterList: '||example.com^\nexample.com##+js(,\n||example.org^',
+                    conversionMap: {},
+                    sourceMap: {
+                        4: 0,
+                        29: 34,
+                    },
+                },
+            },
+            {
+                name: 'converting non-AdGuard rules',
+                actual: {
+                    rawFilterList: [
+                        "example.com#%#//scriptlet('ubo-foo')",
+                        "example.com#%#//scriptlet('abp-bar')",
+                        "example.com#%#//scriptlet('abp-baz')",
+                    ].join('\n'),
+                    conversionMap: {
+                        0: 'example.com##+js(foo)',
+                        37: 'example.com#$#bar;baz',
+                        74: 'example.com#$#bar;baz',
+                    },
+                },
+                expected: {
+                    filterList: makeSerializedFilterList([
+                        "example.com#%#//scriptlet('ubo-foo')",
+                        "example.com#%#//scriptlet('abp-bar')",
+                        "example.com#%#//scriptlet('abp-baz')",
+                    ]),
+                    rawFilterList: [
+                        "example.com#%#//scriptlet('ubo-foo')",
+                        "example.com#%#//scriptlet('abp-bar')",
+                        "example.com#%#//scriptlet('abp-baz')",
+                    ].join('\n'),
+                    conversionMap: {
+                        0: 'example.com##+js(foo)',
+                        37: 'example.com#$#bar;baz',
+                        74: 'example.com#$#bar;baz',
+                    },
+                    sourceMap: {
+                        4: 0,
+                        63: 37,
+                        122: 74,
+                    },
+                },
+            },
+        ])('handles $name', ({ actual, expected }) => {
+            const preprocessedFilterList = FilterListPreprocessor.preprocessLightweight(actual);
             expect(preprocessedFilterList).toEqual(expected);
         });
     });
