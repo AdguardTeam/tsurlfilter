@@ -1,8 +1,9 @@
 import { type ScriptletData } from '@adguard/tsurlfilter';
 import { type Source } from '@adguard/scriptlets';
 
-import { appContext } from './app-context';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
+
+import { appContext } from './app-context';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**

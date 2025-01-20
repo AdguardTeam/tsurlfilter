@@ -1,7 +1,6 @@
-import { type CosmeticResult, type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
 
-import { CUSTOM_FILTERS_START_ID, LF, USER_FILTER_ID } from '../../common/constants';
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
@@ -9,7 +8,7 @@ import { createFrameMatchQuery } from '../../common/utils/create-frame-match-que
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
 import { getDomain } from '../../common/utils/url';
-import { ScriptletRuleData } from '../tabs/frame';
+import { type ScriptletRuleData } from '../tabs/frame';
 import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
@@ -30,17 +29,6 @@ type ScriptsAndScriptletsData = {
      * List of scriptlet data objects.
      */
     scriptletDataList: ScriptletRuleData[],
-};
-
-/**
- * Information for logging js rules.
- */
-type LogJsRulesParams = {
-    tabId: number,
-    cosmeticResult: CosmeticResult,
-    url: string,
-    contentType: ContentType,
-    timestamp: number,
 };
 
 /**
