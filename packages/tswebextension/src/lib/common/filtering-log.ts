@@ -1,7 +1,8 @@
 import { type SourceRuleAndFilterId } from '@adguard/tsurlfilter/es/declarative-converter';
+
 import { type RuleInfo, type RuleInfoOptional } from './content-script/rule-info';
-import type { ContentType } from './request-type';
-import { EventChannel, type EventChannelInterface } from './utils';
+import { type ContentType } from './request-type';
+import { EventChannel, type EventChannelInterface } from './utils/channels';
 
 // TODO: Add 'is' prefix to cssRule, scriptRule and contentRule properties.
 
@@ -22,7 +23,7 @@ export enum FilteringEventType {
     ReplaceRuleApply = 'replaceRuleApply',
     ContentFilteringStart = 'contentFilteringStart',
     ContentFilteringFinish = 'contentFilteringFinish',
-    StealthAction = 'stealthAction', // TODO: Add in MV3
+    StealthAction = 'stealthAction',
     StealthAllowlistAction = 'stealthAllowlistAction', // TODO: Add in MV3
     JsInject = 'jsInject',
     CspReportBlocked = 'cspReportBlocked', // TODO: Add in MV3

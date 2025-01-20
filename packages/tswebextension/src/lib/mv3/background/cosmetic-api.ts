@@ -1,37 +1,21 @@
-import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
 import { CosmeticRuleType } from '@adguard/agtree';
+
+import { CUSTOM_FILTERS_START_ID, LF, USER_FILTER_ID } from '../../common/constants';
+import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
+import { getErrorMessage } from '../../common/error';
+import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
+import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
+import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils/nanoid';
+import { getDomain } from '../../common/utils/url';
+import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
-import { tabsApi } from '../tabs/tabs-api';
-import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
-import { getErrorMessage } from '../../common/error';
-import { logger } from '../../common/utils/logger';
-import { CosmeticApiCommon } from '../../common/cosmetic-api';
 import { ScriptingApi } from './scripting-api';
-import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
-import { getDomain } from '../../common/utils/url';
-import { type ContentType } from '../../common/request-type';
-import { nanoid } from '../nanoid';
-import { type ScriptletRuleData } from '../tabs/frame';
-import { localScriptRulesService } from './services/local-script-rules-service';
-
-export type ContentScriptCosmeticData = {
-    /**
-     * Is app started.
-     */
-    isAppStarted: boolean,
-
-    /**
-     * Are hits stats collected.
-     */
-    areHitsStatsCollected: boolean,
-
-    /**
-     * Extended css rules to apply.
-     */
-    extCssRules: string[] | null,
-};
+import { localScriptRulesService, type LocalScriptFunction } from './services/local-script-rules-service';
+import { ScriptletRuleData } from '../tabs/frame';
 
 /**
  * Data for JS and scriptlets rules.
@@ -64,14 +48,6 @@ type LogJsRulesParams = {
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi extends CosmeticApiCommon {
-    private static readonly ELEMHIDE_HIT_START = " { display: none !important; content: 'adguard";
-
-    private static readonly INJECT_HIT_START = " content: 'adguard";
-
-    private static readonly HIT_SEP = encodeURIComponent(';');
-
-    private static readonly HIT_END = "' !important; }";
-
     /**
      * Blob injection urls.
      */

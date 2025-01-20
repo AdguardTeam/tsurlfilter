@@ -1,18 +1,23 @@
 import browser, { type ExtensionTypes, type Tabs } from 'webextension-polyfill';
-import type { CosmeticResult, MatchingResult, NetworkRule } from '@adguard/tsurlfilter';
+import { type CosmeticResult, type MatchingResult, type NetworkRule } from '@adguard/tsurlfilter';
 
-import { EventChannel } from '../../../common/utils/channels';
-import type { DocumentApi } from '../document-api';
-import { type FrameRequestContext, TabContext } from './tab-context';
-import { type Frame } from './frame';
 import { MAIN_FRAME_ID } from '../../../common/constants';
+import { type TabFrameRequestContextCommon } from '../../../common/tabs/tabs-api';
+import { EventChannel } from '../../../common/utils/channels';
 import { getDomain, isHttpRequest } from '../../../common/utils/url';
+import { type DocumentApi } from '../document-api';
+
+import { type Frame } from './frame';
+import { TabContext } from './tab-context';
 
 /**
  * Request context data related to the tab's frame.
  */
-export type TabFrameRequestContext = FrameRequestContext & {
-    tabId: number;
+export type TabFrameRequestContextMV2 = TabFrameRequestContextCommon & {
+    /**
+     * Whether the request is a redirect with removed parameters.
+     */
+    isRemoveparamRedirect?: boolean;
 };
 
 /**
@@ -151,7 +156,7 @@ export class TabsApi {
      *
      * @param requestContext Tab's frame's request context.
      */
-    public handleFrameRequest(requestContext: TabFrameRequestContext): void {
+    public handleFrameRequest(requestContext: TabFrameRequestContextMV2): void {
         const { tabId } = requestContext;
 
         const tabContext = this.context.get(tabId);

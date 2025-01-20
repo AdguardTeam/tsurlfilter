@@ -6,7 +6,6 @@ deployment:
 
 release-naming:
   next-version-name: ${bamboo.inject.version}
-  # TODO: remove the following line after release/v3.1 is merged into master
   applies-to-branches: true
 
 environments:
@@ -20,8 +19,7 @@ npmjs:
   # run auto-deploy only after successful build
   triggers:
     - build-success:
-        # TODO: remove 'branch' after release/v3.1 is merged into master
-        branch: release-v3.1
+        branch: stable-dnr-rulesets
   tasks:
     - checkout:
         force-clean-build: 'true'

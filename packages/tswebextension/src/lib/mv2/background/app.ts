@@ -1,29 +1,26 @@
 /* eslint-disable class-methods-use-this */
 import { LogLevel } from '@adguard/logger';
-
 import { type AnyRule } from '@adguard/agtree';
-import { WebRequestApi } from './web-request-api';
-import {
-    type ConfigurationMV2,
-    type ConfigurationMV2Context,
-    configurationMV2Validator,
-} from './configuration';
-import { Assistant } from './assistant';
-import { type LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
-import { RequestEvents } from './request';
-import { logger } from '../../common/utils/logger';
-import type { AppContext } from './context';
-import type { StealthApi } from './stealth-api';
-import type { TabsApi } from './tabs';
-import type { TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
-import type { EngineApi } from './engine-api';
-import type { RedirectsService } from './services/redirects/redirects-service';
-import type { DocumentBlockingService } from './services/document-blocking-service';
-import type { MessagesApi, MessageHandlerMV2 } from './messages-api';
-import type { ExtSessionStorage } from './ext-session-storage';
+
 import { type AppInterface } from '../../common/app';
+import { type FilteringLog, type FilteringLogEvent } from '../../common/filtering-log';
 import { type EventChannel } from '../../common/utils/channels';
-import type { FilteringLog, FilteringLogEvent } from '../../common/filtering-log';
+import { logger } from '../../common/utils/logger';
+
+import { Assistant } from './assistant';
+import { type AppContext } from './app-context';
+import { type ConfigurationMV2, type ConfigurationMV2Context, configurationMV2Validator } from './configuration';
+import { type EngineApi } from './engine-api';
+import { type ExtSessionStorage } from './ext-session-storage';
+import { type MessagesApi, type MessageHandlerMV2 } from './messages-api';
+import { RequestEvents } from './request';
+import { type LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
+import { type StealthApi } from './stealth-api';
+import { type TabsApi } from './tabs/tabs-api';
+import { type TabsCosmeticInjector } from './tabs/tabs-cosmetic-injector';
+import { type RedirectsService } from './services/redirects/redirects-service';
+import { type DocumentBlockingService } from './services/document-blocking-service';
+import { WebRequestApi } from './web-request-api';
 
 /**
  * App implementation for MV2.
@@ -354,9 +351,13 @@ MessageHandlerMV2
      *
      * @throws Error if {@link configuration} not set.
      * @param isHideReferrer `isHideReferrer` stealth config value.
+     *
+     * @returns Applied value for compatibility with MV3 interface.
      */
-    public setHideReferrer(isHideReferrer: boolean): void {
+    public setHideReferrer(isHideReferrer: boolean): boolean {
         this.configuration.settings.stealth.hideReferrer = isHideReferrer;
+
+        return isHideReferrer;
     }
 
     /**
@@ -364,9 +365,13 @@ MessageHandlerMV2
      *
      * @throws Error if {@link configuration} not set.
      * @param isHideSearchQueries `hideSearchQueries` stealth config value.
+     *
+     * @returns Applied value for compatibility with MV3 interface.
      */
-    public setHideSearchQueries(isHideSearchQueries: boolean): void {
+    public setHideSearchQueries(isHideSearchQueries: boolean): boolean {
         this.configuration.settings.stealth.hideSearchQueries = isHideSearchQueries;
+
+        return isHideSearchQueries;
     }
 
     /**
@@ -374,9 +379,13 @@ MessageHandlerMV2
      *
      * @throws Error if {@link configuration} not set.
      * @param isBlockChromeClientData `blockChromeClientData` stealth config value.
+     *
+     * @returns Applied value for compatibility with MV3 interface.
      */
-    public setBlockChromeClientData(isBlockChromeClientData: boolean): void {
+    public setBlockChromeClientData(isBlockChromeClientData: boolean): boolean {
         this.configuration.settings.stealth.blockChromeClientData = isBlockChromeClientData;
+
+        return isBlockChromeClientData;
     }
 
     /**
@@ -384,9 +393,13 @@ MessageHandlerMV2
      *
      * @throws Error if {@link configuration} not set.
      * @param isSendDoNotTrack `sendDoNotTrack` stealth config value.
+     *
+     * @returns Applied value for compatibility with MV3 interface.
      */
-    public setSendDoNotTrack(isSendDoNotTrack: boolean): void {
+    public setSendDoNotTrack(isSendDoNotTrack: boolean): boolean {
         this.configuration.settings.stealth.sendDoNotTrack = isSendDoNotTrack;
+
+        return isSendDoNotTrack;
     }
 
     /**
@@ -395,11 +408,15 @@ MessageHandlerMV2
      *
      * @throws Error if {@link configuration} not set.
      * @param isBlockWebRTC `blockWebRTC` stealth config value.
+     *
+     * @returns Applied value for compatibility with MV3 interface.
      */
-    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<void> {
+    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<boolean> {
         this.configuration.settings.stealth.blockWebRTC = isBlockWebRTC;
 
         await this.stealthApi.updateWebRtcPrivacyPermissions();
+
+        return isBlockWebRTC;
     }
 
     /**

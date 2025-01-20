@@ -1,4 +1,11 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    test,
+} from 'vitest';
 import { RequestType } from '@adguard/tsurlfilter';
+
 import {
     type RequestContext,
     RequestContextState,

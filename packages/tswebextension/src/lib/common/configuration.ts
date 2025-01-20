@@ -1,10 +1,20 @@
 import { z as zod } from 'zod';
 import { LogLevel } from '@adguard/logger';
-
 import { filterListChunksValidator, filterListSourceMapValidator } from '@adguard/tsurlfilter';
-import { version } from '../../../package.json';
+import { EXTENDED_CSS_VERSION } from '@adguard/extended-css/version';
 
-export const TSWEBEXTENSION_VERSION = version;
+import packageJson from '../../../package.json';
+
+/**
+ * Re-export needed to print the library version on the extension About page.
+ * NOTE: We are directly re-exporting `version` from `package.json` to prevent
+ * environment runtime errors, like call `window.console`, which is not available
+ * in the service worker in MV3. And also to avoid bundle size getting larger.
+ */
+
+export const TSWEBEXTENSION_VERSION = packageJson.version;
+
+export { EXTENDED_CSS_VERSION };
 
 /**
  * Re-export needed to print the library version on the extension About page.

@@ -1,9 +1,5 @@
-import {
-    type AnyRule,
-    NetworkRuleType,
-    RuleCategory,
-    RuleParser,
-} from '@adguard/agtree';
+import { type AnyRule, NetworkRuleType, RuleCategory } from '@adguard/agtree';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { CosmeticRule } from './cosmetic-rule';
 import { NetworkRule } from './network-rule';
@@ -81,8 +77,14 @@ export class RuleFactory {
                     return null;
             }
         } catch (e) {
-            const ruleText = RuleParser.generate(node);
-            const msg = `"${getErrorMessage(e)}" in the rule: "${ruleText}"`;
+            let msg = `"${getErrorMessage(e)}" in the rule: `;
+
+            try {
+                msg += `"${RuleGenerator.generate(node)}"`;
+            } catch (generateError) {
+                msg += `"${JSON.stringify(node)}" (generate error: ${getErrorMessage(generateError)})`;
+            }
+
             if (silent) {
                 logger.info(`Error: ${msg}`);
             } else {

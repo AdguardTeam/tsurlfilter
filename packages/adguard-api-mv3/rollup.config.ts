@@ -1,5 +1,4 @@
 /* eslint-disable jsdoc/require-file-overview */
-/* eslint-disable import/no-extraneous-dependencies */
 import swc from '@rollup/plugin-swc';
 import resolve from '@rollup/plugin-node-resolve';
 import json from '@rollup/plugin-json';
@@ -47,11 +46,11 @@ const backgroundConfig = {
         '@adguard/tswebextension/mv3',
         'zod',
     ],
-    plugins: [[
+    plugins: [
         json(),
         commonjs(),
         ...plugins,
-    ]],
+    ],
 };
 
 const contentScriptConfig = {
@@ -78,7 +77,7 @@ const assistantInjectScriptConfig = {
             sourcemap: true,
         },
     ],
-    external: ['@adguard/tswebextension/mv3/assistant-inject'],
+    external: ['@adguard/tswebextension/assistant-inject'],
     plugins,
 };
 

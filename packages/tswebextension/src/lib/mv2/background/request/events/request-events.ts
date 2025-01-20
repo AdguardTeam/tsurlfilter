@@ -1,17 +1,18 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
-import type { HTTPMethod } from '@adguard/tsurlfilter';
+import { type HTTPMethod } from '@adguard/tsurlfilter';
 
-import { requestContextStorage, RequestContextState } from '../request-context-storage';
-import { RequestEvent, type RequestData } from './request-event';
-import { type TabFrameRequestContext } from '../../tabs';
-import { tabsApi } from '../../api';
-import { isFirefox } from '../../utils';
-import CookieUtils from '../../services/cookie-filtering/utils';
-import { getRequestType } from '../../../../common/request-type';
 import { MAIN_FRAME_ID } from '../../../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
+import { getRequestType } from '../../../../common/request-type';
 import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
+import { tabsApi } from '../../api';
+import CookieUtils from '../../services/cookie-filtering/utils';
+import { type TabFrameRequestContextMV2 } from '../../tabs/tabs-api';
+import { isFirefox } from '../../utils';
+import { requestContextStorage, RequestContextState } from '../request-context-storage';
+
+import { RequestEvent, type RequestData } from './request-event';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -210,7 +211,7 @@ export class RequestEvents {
         // request or pre-render, it does not matter) as first-party requests,
         // we get only part of the request context to record only the tab and
         // frame information before calculating the request referrer.
-        const tabFrameRequestContext: TabFrameRequestContext = {
+        const tabFrameRequestContext: TabFrameRequestContextMV2 = {
             requestUrl: url,
             requestType,
             requestId,

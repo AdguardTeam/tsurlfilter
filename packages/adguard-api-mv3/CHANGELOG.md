@@ -11,12 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated [@adguard/tswebextension] to `v2.4.0-alpha.7`.
 
-## 0.2.2 - 2024-10-17
-
-### Changed
-
-- Updated [@adguard/tswebextension] to `v2.4.0-alpha.5`.
-
 ## 0.2.1 - 2024-10-15
 
 ### Changed

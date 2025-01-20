@@ -1,6 +1,7 @@
 import console from 'console';
 import fs from 'fs';
 import os from 'os';
+import { jest } from '@jest/globals';
 import {
     BufferRuleList,
     DnsEngine,

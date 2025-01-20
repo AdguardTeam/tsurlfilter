@@ -1,50 +1,43 @@
 import browser from 'webextension-polyfill';
-import {
-    Filter,
-    type IFilter,
-    type IRuleSet,
-} from '@adguard/tsurlfilter/es/declarative-converter';
+import { Filter, type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { FilterListPreprocessor } from '@adguard/tsurlfilter';
-
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
-import { extSessionStorage } from './ext-session-storage';
-import { appContext } from './app-context';
+
+import { type AppInterface } from '../../common/app';
+import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { getErrorMessage } from '../../common/error';
+import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
-
-import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
-import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
-import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
-import { engineApi } from './engine-api';
-import { declarativeFilteringLog } from './declarative-filtering-log';
-import RuleSetsLoaderApi from './rule-sets-loader-api';
-import { Assistant } from './assistant';
-import {
-    type ConfigurationMV3,
-    type ConfigurationMV3Context,
-    configurationMV3Validator,
-} from './configuration';
-import { RequestEvents } from './request/events/request-events';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
-import { WebRequestApi } from './web-request-api';
-import { StealthService } from './services/stealth-service';
+
 import { allowlistApi } from './allowlist-api';
-import { type AppInterface } from '../../common/app';
-import { defaultFilteringLog } from '../../common/filtering-log';
-import { getErrorMessage } from '../../common/error';
-import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { appContext } from './app-context';
+import { Assistant } from './assistant';
+import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
+import { declarativeFilteringLog } from './declarative-filtering-log';
+import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
+import { engineApi } from './engine-api';
+import { extSessionStorage } from './ext-session-storage';
+import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
+import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
+import { RequestEvents } from './request/events/request-events';
+import RuleSetsLoaderApi from './rule-sets-loader-api';
 import {
     type LocalScriptFunctionData,
     type LocalScriptletRulesData,
     localScriptRulesService,
 } from './services/local-script-rules-service';
+import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
+import { WebRequestApi } from './web-request-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
     staticFilters: IRuleSet[],
     dynamicRules?: ConversionResult
+    stealthResult?: StealthConfigurationResult,
 };
 
 type FiltersUpdateInfo = {
@@ -287,7 +280,7 @@ export class TsWebExtension implements AppInterface<
         };
 
         if (configuration.settings.filteringEnabled) {
-            await StealthService.applySettings(configuration.settings);
+            res.stealthResult = await StealthService.applySettings(configuration.settings);
 
             // Extract filters info from configuration and wrap them into IFilters.
             const {
@@ -308,6 +301,13 @@ export class TsWebExtension implements AppInterface<
                 configuration.ruleSetsPath,
                 staticFilters,
             );
+
+            // Get enabled static rule sets
+            const enabledRuleSetsIds = await browser.declarativeNetRequest.getEnabledRulesets();
+            const enabledStaticRuleSets = staticRuleSets.filter((ruleSet) => {
+                const ruleSetId = ruleSet.getId();
+                return enabledRuleSetsIds.includes(ruleSetId);
+            });
 
             // Update allowlist settings.
             allowlistApi.configure(configuration);
@@ -340,7 +340,7 @@ export class TsWebExtension implements AppInterface<
                 allowlistFilter,
                 userRulesFilter,
                 customFilters,
-                staticRuleSets,
+                enabledStaticRuleSets,
                 this.webAccessibleResourcesPath,
             );
 
@@ -406,14 +406,18 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if {@link configuration} not set.
      * @param isHideReferrer `isHideReferrer` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
      */
-    public async setHideReferrer(isHideReferrer: boolean): Promise<void> {
+    public async setHideReferrer(isHideReferrer: boolean): Promise<boolean> {
         if (!this.configuration) {
             throw new Error('Configuration not set');
         }
 
-        await StealthService.setHideReferrer(isHideReferrer);
-        this.configuration.settings.stealth.hideReferrer = isHideReferrer;
+        const currentValue = await StealthService.setHideReferrer(isHideReferrer);
+        this.configuration.settings.stealth.hideReferrer = currentValue;
+
+        return currentValue;
     }
 
     /**
@@ -422,14 +426,18 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if {@link configuration} not set.
      * @param isBlockWebRTC `blockWebRTC` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
      */
-    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<void> {
+    public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<boolean> {
         if (!this.configuration) {
             throw new Error('Configuration not set');
         }
 
-        await StealthService.setDisableWebRTC(isBlockWebRTC);
-        this.configuration.settings.stealth.blockWebRTC = isBlockWebRTC;
+        const currentValue = await StealthService.setDisableWebRTC(isBlockWebRTC);
+        this.configuration.settings.stealth.blockWebRTC = currentValue;
+
+        return currentValue;
     }
 
     /**
@@ -437,14 +445,18 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if {@link configuration} not set.
      * @param isBlockChromeClientData `blockChromeClientData` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
      */
-    public async setBlockChromeClientData(isBlockChromeClientData: boolean): Promise<void> {
+    public async setBlockChromeClientData(isBlockChromeClientData: boolean): Promise<boolean> {
         if (!this.configuration) {
             throw new Error('Configuration not set');
         }
 
-        await StealthService.setBlockChromeClientData(isBlockChromeClientData);
-        this.configuration.settings.stealth.blockChromeClientData = isBlockChromeClientData;
+        const currentValue = await StealthService.setBlockChromeClientData(isBlockChromeClientData);
+        this.configuration.settings.stealth.blockChromeClientData = currentValue;
+
+        return currentValue;
     }
 
     /**
@@ -452,18 +464,21 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if {@link configuration} not set.
      * @param isSendDoNotTrack `sendDoNotTrack` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
      */
-    public async setSendDoNotTrack(isSendDoNotTrack: boolean): Promise<void> {
+    public async setSendDoNotTrack(isSendDoNotTrack: boolean): Promise<boolean> {
         if (!this.configuration) {
             throw new Error('Configuration not set');
         }
 
-        await StealthService.setSendDoNotTrack(
+        const currentValue = await StealthService.setSendDoNotTrack(
             isSendDoNotTrack,
             this.configuration.settings.gpcScriptUrl,
         );
+        this.configuration.settings.stealth.sendDoNotTrack = currentValue;
 
-        this.configuration.settings.stealth.sendDoNotTrack = isSendDoNotTrack;
+        return currentValue;
     }
 
     /**
@@ -471,18 +486,22 @@ export class TsWebExtension implements AppInterface<
      *
      * @throws Error if {@link configuration} not set.
      * @param isHideSearchQueries `hideSearchQueries` stealth config value.
+     *
+     * @returns True if the value was successfully updated, false otherwise.
      */
-    public async setHideSearchQueries(isHideSearchQueries: boolean): Promise<void> {
+    public async setHideSearchQueries(isHideSearchQueries: boolean): Promise<boolean> {
         if (!this.configuration) {
             throw new Error('Configuration not set');
         }
 
-        await StealthService.setHideSearchQueries(
+        const currentValue = await StealthService.setHideSearchQueries(
             isHideSearchQueries,
             this.configuration.settings.hideDocumentReferrerScriptUrl,
         );
 
-        this.configuration.settings.stealth.hideSearchQueries = isHideSearchQueries;
+        this.configuration.settings.stealth.hideSearchQueries = currentValue;
+
+        return currentValue;
     }
 
     /**

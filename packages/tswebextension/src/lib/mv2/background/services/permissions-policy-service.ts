@@ -5,10 +5,11 @@ import {
     PERMISSIONS_POLICY_HEADER_NAME,
     RequestType,
 } from '@adguard/tsurlfilter';
-import { nanoid } from 'nanoid';
-import { requestContextStorage, type RequestContextStorage, type RequestContext } from '../request';
+
 import { defaultFilteringLog, FilteringEventType, type FilteringLogInterface } from '../../../common/filtering-log';
 import { ContentType } from '../../../common/request-type';
+import { nanoid } from '../../../common/utils/nanoid';
+import { requestContextStorage, type RequestContextStorage, type RequestContext } from '../request';
 
 /**
  * Permissions Policy service.
@@ -105,6 +106,9 @@ export class PermissionsPolicyService {
                     type: FilteringEventType.ApplyPermissionsRule,
                     data: {
                         tabId,
+                        // for proper filtering log request info rule displaying
+                        // event id should be unique for each event, not copied from request
+                        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341
                         eventId: nanoid(),
                         requestUrl,
                         frameUrl: referrerUrl,

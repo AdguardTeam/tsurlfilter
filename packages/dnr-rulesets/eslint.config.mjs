@@ -41,6 +41,7 @@ export default [
             'simple-import-sort/imports': 'error',
             'simple-import-sort/exports': 'error',
             '@stylistic/brace-style': ['error', '1tbs', { allowSingleLine: true }],
+            '@stylistic/arrow-parens': ['error', 'always'],
         },
     },
     {

@@ -9,7 +9,7 @@
 import { RuleConversionError } from '../../src/errors/rule-conversion-error';
 import { RuleConverter } from '../../src/converter/rule';
 import '../matchers/check-conversion';
-import { RuleParser } from '../../src/parser/rule';
+import { RuleParser } from '../../src/parser/rule-parser';
 
 describe('Converter integration tests', () => {
     describe('should convert rules to ADG', () => {
@@ -656,6 +656,32 @@ describe('Converter integration tests', () => {
                 {
                     actual: '#?#.banner',
                     expected: ['#?#.banner'],
+                    shouldConvert: false,
+                },
+                {
+                    actual: '##.banner { display: none; }',
+                    expected: ['#$#.banner { display: none; }'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '##.banner { remove: true; }',
+                    expected: ['#$?#.banner { remove: true; }'],
+                    shouldConvert: true,
+                },
+                // case without spaces in css pseudo property
+                {
+                    actual: '##.banner {remove:true;}',
+                    expected: ['#$?#.banner { remove: true; }'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '##div[foo="yay{"]',
+                    expected: ['##div[foo="yay{"]'],
+                    shouldConvert: false,
+                },
+                {
+                    actual: '##div[foo="yay{"][href="yay}"]',
+                    expected: ['##div[foo="yay{"][href="yay}"]'],
                     shouldConvert: false,
                 },
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {

@@ -7,7 +7,7 @@ import {
     type NetworkRule,
     NetworkRuleType,
     type AnyNetworkRule,
-} from '../../parser/common';
+} from '../../nodes';
 import { NetworkRuleModifierListConverter } from '../misc/network-rule-modifier';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';

@@ -1,5 +1,13 @@
-import { getConfigurationMv3Fixture } from './fixtures/configuration';
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+} from 'vitest';
+
 import { AllowlistApi } from '../../../src/lib/mv3/background/allowlist-api';
+
+import { getConfigurationMv3Fixture } from './fixtures/configuration';
 
 describe('Allowlist Api', () => {
     let allowlist: AllowlistApi;

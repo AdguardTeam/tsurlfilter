@@ -1,5 +1,3 @@
-import XRegExp from 'xregexp';
-
 import {
     type Modifier,
     type AppList,
@@ -7,12 +5,12 @@ import {
     type MethodList,
     type StealthOptionList,
     type AnyListItem,
-} from '../parser/common';
+} from '../nodes';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
-import { AppListParser } from '../parser/misc/app-list';
-import { DomainListParser } from '../parser/misc/domain-list';
-import { MethodListParser } from '../parser/misc/method-list';
-import { StealthOptionListParser } from '../parser/misc/stealth-option-list';
+import { AppListParser } from '../parser/misc/app-list-parser';
+import { DomainListParser } from '../parser/misc/domain-list-parser';
+import { MethodListParser } from '../parser/misc/method-list-parser';
+import { StealthOptionListParser } from '../parser/misc/stealth-option-list-parser';
 import { DomainUtils } from '../utils/domain';
 import { QuoteType, QuoteUtils } from '../utils/quotes';
 import {
@@ -41,6 +39,7 @@ import {
     VALIDATION_ERROR_PREFIX,
 } from './constants';
 import { defaultParserOptions } from '../parser/options';
+import { isString } from '../utils/type-guards';
 
 /**
  * Represents the possible list parsers.
@@ -58,17 +57,23 @@ type PipeSeparatedList = AppList | DomainList | MethodList | StealthOptionList;
 /**
  * Pre-defined available validators for modifiers with custom `value_format`.
  */
-const enum CustomValueFormatValidatorName {
-    App = 'pipe_separated_apps',
-    Csp = 'csp_value',
+const CustomValueFormatValidatorName = {
+    App: 'pipe_separated_apps',
+    Csp: 'csp_value',
     // there are some differences between $domain and $denyallow
-    DenyAllow = 'pipe_separated_denyallow_domains',
-    Domain = 'pipe_separated_domains',
-    Method = 'pipe_separated_methods',
-    Permissions = 'permissions_value',
-    ReferrerPolicy = 'referrerpolicy_value',
-    StealthOption = 'pipe_separated_stealth_options',
-}
+    DenyAllow: 'pipe_separated_denyallow_domains',
+    Domain: 'pipe_separated_domains',
+    Method: 'pipe_separated_methods',
+    Permissions: 'permissions_value',
+    ReferrerPolicy: 'referrerpolicy_value',
+    StealthOption: 'pipe_separated_stealth_options',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+type CustomValueFormatValidatorName = typeof CustomValueFormatValidatorName[
+    keyof typeof CustomValueFormatValidatorName
+];
 
 /**
  * Checks whether the `chunk` of app name (which if splitted by dot `.`) is valid.
@@ -690,7 +695,9 @@ const CUSTOM_VALUE_FORMAT_MAP = {
  *
  * @returns True if `valueFormat` is a supported pre-defined value format validator name, false otherwise.
  */
-const isCustomValueFormatValidator = (valueFormat: string): valueFormat is CustomValueFormatValidatorName => {
+const isCustomValueFormatValidator = (
+    valueFormat: string,
+): valueFormat is CustomValueFormatValidatorName => {
     return Object.keys(CUSTOM_VALUE_FORMAT_MAP).includes(valueFormat);
 };
 
@@ -699,10 +706,15 @@ const isCustomValueFormatValidator = (valueFormat: string): valueFormat is Custo
  *
  * @param modifier Modifier AST node.
  * @param valueFormat Value format for the modifier.
+ * @param valueFormatFlags Optional; RegExp flags for the value format.
  *
  * @returns Validation result.
  */
-export const validateValue = (modifier: Modifier, valueFormat: string): ValidationResult => {
+export const validateValue = (
+    modifier: Modifier,
+    valueFormat: string,
+    valueFormatFlags?: string | null,
+): ValidationResult => {
     if (isCustomValueFormatValidator(valueFormat)) {
         const validator = CUSTOM_VALUE_FORMAT_MAP[valueFormat];
         return validator(modifier);
@@ -714,14 +726,18 @@ export const validateValue = (modifier: Modifier, valueFormat: string): Validati
         return getValueRequiredValidationResult(modifierName);
     }
 
-    let xRegExp;
+    let regExp: RegExp;
     try {
-        xRegExp = XRegExp(valueFormat);
+        if (isString(valueFormatFlags)) {
+            regExp = new RegExp(valueFormat, valueFormatFlags);
+        } else {
+            regExp = new RegExp(valueFormat);
+        }
     } catch (e) {
         throw new Error(`${SOURCE_DATA_ERROR_PREFIX.INVALID_VALUE_FORMAT_REGEXP}: '${modifierName}'`);
     }
 
-    const isValid = xRegExp.test(modifier.value?.value);
+    const isValid = regExp.test(modifier.value?.value);
     if (!isValid) {
         return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.VALUE_INVALID}: '${modifierName}'`);
     }

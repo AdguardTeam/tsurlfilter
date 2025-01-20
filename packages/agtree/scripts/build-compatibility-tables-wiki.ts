@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 /**
  * @file Script to generate compatibility tables for the wiki.
  */
@@ -17,6 +16,9 @@ import { type ProductRecords, type RowByProduct, type CompatibilityTableBase } f
 import { EMPTY, NEWLINE } from '../src/utils/constants';
 import { AdblockSyntax } from '../src/utils/adblockers';
 import { GenericPlatform, SpecificPlatform } from '../src';
+
+// eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 const WIKI_PATH = path.join(__dirname, '../src/compatibility-tables/wiki');
 
@@ -66,7 +68,7 @@ const getNameWithAliases = (
  */
 const getFirstCompatibleEntityFromRow = <T extends BaseCompatibilityDataSchema>(
     row: RowByProduct<T>,
-    syntax: AdblockSyntax.Adg | AdblockSyntax.Ubo | AdblockSyntax.Abp,
+    syntax: typeof AdblockSyntax.Adg | typeof AdblockSyntax.Ubo | typeof AdblockSyntax.Abp,
     compatibility: SpecificPlatform | GenericPlatform,
 ): CompatibilityEntityData => {
     const productRow: ProductRecords<T> = row[syntax];
