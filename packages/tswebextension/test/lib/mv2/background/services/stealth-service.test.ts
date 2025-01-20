@@ -21,7 +21,10 @@ import { ContentType } from '../../../../../src/lib/common/request-type';
 import { nanoid } from '../../../../../src/lib/common/utils/nanoid';
 import { StealthService } from '../../../../../src/lib/mv2/background/services/stealth-service';
 import { StealthActions } from '../../../../../src/lib/common/stealth-actions';
-import { type RequestContext, RequestContextState } from '../../../../../src/lib';
+import {
+    type RequestContext,
+    RequestContextState,
+} from '../../../../../src/lib/mv2/background/request/request-context-storage';
 
 type TestAppContext = AppContext & { configuration: NonNullable<AppContext['configuration']> };
 describe('Stealth service', () => {

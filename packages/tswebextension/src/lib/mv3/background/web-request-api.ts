@@ -378,7 +378,6 @@ export class WebRequestApi {
         }
 
         CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
-        CosmeticApi.applyJsTextByTabAndFrame(tabId, frameId);
         CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
     }
 
@@ -642,7 +641,6 @@ export class WebRequestApi {
         // events do not support async listeners.
         Promise.all([
             CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
-            CosmeticApi.applyJsTextByTabAndFrame(tabId, frameId),
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
             CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
         ]).catch((e) => logger.error(e));

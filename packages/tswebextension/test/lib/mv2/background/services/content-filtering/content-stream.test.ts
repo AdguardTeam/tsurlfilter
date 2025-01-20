@@ -16,7 +16,10 @@ import {
 import {
     type ContentStringFilterInterface,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
-import { type RequestContext, RequestContextState } from '../../../../../../src/lib';
+import {
+    type RequestContext,
+    RequestContextState,
+} from '../../../../../../src/lib/mv2/background/request/request-context-storage';
 import { ContentStream } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-stream';
 
 import { MockStreamFilter } from './mock-stream-filter';

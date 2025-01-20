@@ -18,7 +18,7 @@ import { ContentType } from '../../../../common/request-type';
 /**
  * Cookie filtering.
  *
- * The following public methods should be set as suitable webrequest events listeners, check sample extension in this
+ * The following public methods should be set as suitable webRequest events listeners, check sample extension in this
  * repo for an example.
  *
  * Logic introduction:
