@@ -1,6 +1,6 @@
+import { NetworkRuleOption } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 import { getDomain } from 'tldts';
-import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
 import { MessageType } from '../../common/message-constants';

@@ -31,8 +31,6 @@ export class UnsupportedRegexpError extends InvalidDeclarativeRuleError {
 
         this.reason = reason;
 
-        this.reason = reason;
-
         // For proper work of the "instanceof" operator
         Object.setPrototypeOf(this, UnsupportedRegexpError.prototype);
     }

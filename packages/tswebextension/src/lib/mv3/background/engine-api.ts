@@ -1,4 +1,3 @@
-import browser from 'webextension-polyfill';
 import {
     type IRuleList,
     BufferRuleList,
@@ -14,6 +13,7 @@ import {
     setConfiguration,
     CompatibilityTypes,
 } from '@adguard/tsurlfilter';
+import browser from 'webextension-polyfill';
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type AnyRule } from '@adguard/agtree';
 

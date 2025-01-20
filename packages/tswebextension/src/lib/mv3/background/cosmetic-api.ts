@@ -9,13 +9,13 @@ import { createFrameMatchQuery } from '../../common/utils/create-frame-match-que
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
 import { getDomain } from '../../common/utils/url';
+import { ScriptletRuleData } from '../tabs/frame';
 import { tabsApi } from '../tabs/tabs-api';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { ScriptingApi } from './scripting-api';
-import { localScriptRulesService, type LocalScriptFunction } from './services/local-script-rules-service';
-import { ScriptletRuleData } from '../tabs/frame';
+import { localScriptRulesService } from './services/local-script-rules-service';
 
 /**
  * Data for JS and scriptlets rules.

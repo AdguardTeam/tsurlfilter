@@ -1,5 +1,6 @@
 import { type NetworkRule, type CookieModifier, NetworkRuleOption } from '@adguard/tsurlfilter';
 import { getDomain } from 'tldts';
+
 import { ParsedCookie } from '../../../../common/cookie-filtering/parsed-cookie';
 import { createFrameMatchQuery } from '../../../../common/utils/create-frame-match-query';
 import { findHeaderByName } from '../../../../common/utils/headers';

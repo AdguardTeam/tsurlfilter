@@ -16,12 +16,6 @@ import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 import { ALLOWLIST_FILTER_ID } from '../../../../src/lib/common/constants';
 
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
-import { type ConfigurationMV2 } from '../../../../src/lib';
-import { EngineApi } from '../../../../src/lib/mv2/background/engine-api';
-import { Allowlist } from '../../../../src/lib/mv2/background/allowlist';
-import { appContext } from '../../../../src/lib/mv2/background/context';
-import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
-import { ALLOWLIST_FILTER_ID } from '../../../../src/lib/common/constants';
 
 vi.mock('../../../../src/lib/mv2/background/app-context');
 

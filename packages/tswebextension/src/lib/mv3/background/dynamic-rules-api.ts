@@ -1,4 +1,3 @@
-import browser from 'webextension-polyfill';
 import {
     DeclarativeFilterConverter,
     type IFilter,
@@ -6,6 +5,7 @@ import {
     type IRuleSet,
     type UpdateStaticRulesOptions,
 } from '@adguard/tsurlfilter/es/declarative-converter';
+import browser from 'webextension-polyfill';
 
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
