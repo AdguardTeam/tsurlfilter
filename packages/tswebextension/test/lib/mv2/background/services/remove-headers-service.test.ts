@@ -10,7 +10,10 @@ import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
 import { getNetworkRuleFields } from '../helpers/rule-fields';
 import { RemoveHeadersService } from '../../../../../src/lib/mv2/background/services/remove-headers-service';
-import { type RequestContext, RequestContextState } from '../../../../../src/lib';
+import {
+    type RequestContext,
+    RequestContextState,
+} from '../../../../../src/lib/mv2/background/request/request-context-storage';
 import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 

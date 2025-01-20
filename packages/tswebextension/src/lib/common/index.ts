@@ -10,8 +10,8 @@ export * from './error';
 export * from './constants';
 export * from './storage';
 
-// FIXME: used in adguard-api so maybe worth adding a new entry point for common utils
-// so it could be imported from '@adguard/tswebextension/utils'
+// TODO: used in adguard-api so maybe worth adding a new entry point for common utils
+// so it could be imported from '@adguard/tswebextension/utils'. AG-39120
 export { type EventChannelListener, type EventChannelInterface, EventChannel } from './utils/channels';
 export {
     isHttpRequest, getDomain, isHttpOrWsRequest, isExtensionUrl,

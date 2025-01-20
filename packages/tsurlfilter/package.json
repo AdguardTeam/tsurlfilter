@@ -83,7 +83,7 @@
     },
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#readme",
     "scripts": {
-        "lint": "eslint 'src/**/*.ts' 'cli/**/*.ts' 'test/**/*.ts' && pnpm lint:tsc",
+        "lint": "eslint --cache --ignore-path .gitignore . && pnpm lint:tsc",
         "lint:tsc": "tsc --noEmit -p test/tsconfig.tests.json",
         "check-types": "pnpm lint:tsc",
         "prebuild": "rimraf dist && pnpm build:types",

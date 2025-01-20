@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { copyWar } from '@adguard/tswebextension/cli';
 import { AssetsLoader, ManifestPatcher } from '@adguard/dnr-rulesets';
 import path from 'path';
@@ -24,6 +23,7 @@ const build = async () => {
         await copyWar(WEB_ACCESSIBLE_RESOURCES_PATH);
         await zipDirectory(BUILD_PATH, path.join(BUILD_PATH, '..', BUILD_ZIP_FILE_NAME));
     } catch (e) {
+        // eslint-disable-next-line no-console
         console.log(e);
         process.exit(1);
     }

@@ -333,6 +333,8 @@ export class TabsApi {
      *
      * If the tab context is not found, creates a new tab context.
      *
+     * If the tab context is not found, creates a new tab context.
+     *
      * @param tabId Tab ID.
      * @param changeInfo Tab change info.
      * @param tabInfo Tab info.

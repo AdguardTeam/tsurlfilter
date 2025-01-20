@@ -10,7 +10,8 @@ import {
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { getConfigurationMv2Fixture } from '../fixtures/configuration';
 import { DocumentBlockingService } from '../../../../../src/lib/mv2/background/services/document-blocking-service';
-import { type ConfigurationMV2, tabsApi } from '../../../../../src/lib';
+import { tabsApi } from '../../../../../src/lib/mv2/background/api';
+import { type ConfigurationMV2 } from '../../../../../src/lib/mv2/background/configuration';
 
 vi.mock('../../../../../src/lib/mv2/background/api');
 

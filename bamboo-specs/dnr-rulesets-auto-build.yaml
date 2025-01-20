@@ -40,7 +40,6 @@ Build:
             BRANCH="${bamboo.planRepository.branchName}"
 
             # Deploy package from "stable/dnr-rulesets" branch only
-            # TODO: replace "stable/dnr-rulesets" to "master" branch after merge
             if [ $BRANCH != "stable/dnr-rulesets" ]
             then
               echo "deployment is not supported on branch ${BRANCH}, skipping"
@@ -95,7 +94,6 @@ Build:
 
             ls -la
 
-            # TODO: remove the checking after release/v3.1 is merged into master
             BRANCH="${bamboo.planRepository.branchName}"
             if [ $BRANCH != "stable/dnr-rulesets" ]
             then
@@ -125,6 +123,7 @@ triggers:
       expression: 0 0 */3 * * ?
 
 branches:
+  # only run plan for 'stable/dnr-rulesets' branch.
   create: manually
   delete: never
   link-to-jira: 'true'
@@ -141,20 +140,3 @@ labels: []
 
 other:
   concurrent-build-plugin: system-default
-
-# TODO: remove the branch-overrides after release/v3.1 is merged into master
-branch-overrides:
-  -
-    ^(stable\/dnr-rulesets.+|(?!stable\/dnr-rulesets).*)$:
-      # for branches other than 'stable/dnr-rulesets' no build should be run
-      stages:
-        - Build:
-            - SkipBuild
-      SkipBuild:
-        key: SKIPBUILD
-        tasks:
-          - script:
-            - echo 'No build for this branch, skipping'
-        requirements:
-          - adg-docker: 'true'
-          - extension: 'true'
