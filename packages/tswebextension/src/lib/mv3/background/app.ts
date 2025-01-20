@@ -12,6 +12,7 @@ import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
+
 import { allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
 import { Assistant } from './assistant';
