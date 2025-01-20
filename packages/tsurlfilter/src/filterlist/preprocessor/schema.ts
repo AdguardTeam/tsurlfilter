@@ -23,7 +23,7 @@ export type FilterListConversionMap = z.infer<typeof filterListConversionMapVali
 /**
  * Validator for filter list chunks.
  */
-export const filterListChunksValidator = z.array(z.instanceof(Uint8Array));
+export const filterListChunksValidator = z.array(z.custom<Uint8Array>((val) => val instanceof Uint8Array));
 
 /**
  * Validator for preprocessed filter list.
