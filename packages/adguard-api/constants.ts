@@ -15,6 +15,6 @@
  * You should have received a copy of the GNU General Public License
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
-export const API_OUTPUT = "adguard-api";
-export const CONTENT_SCRIPT_OUTPUT = "adguard-content";
-export const ASSISTANT_OUTPUT = "adguard-assistant";
+export const API_OUTPUT = 'adguard-api';
+export const CONTENT_SCRIPT_OUTPUT = 'adguard-content';
+export const ASSISTANT_OUTPUT = 'adguard-assistant';

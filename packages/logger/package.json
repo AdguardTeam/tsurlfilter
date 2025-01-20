@@ -7,7 +7,7 @@
         "build:txt": "ts-node scripts/build-txt",
         "build:types": "tsc --project tsconfig.base.json --declaration --emitDeclarationOnly --outdir dist/types",
         "test": "jest",
-        "lint": "eslint --cache . && tsc --noEmit",
+        "lint": "eslint --cache --ignore-path .gitignore . && tsc --noEmit",
         "test:smoke": "(cd tests/smoke/esm && pnpm test) && (cd tests/smoke/cjs && pnpm test) && (cd tests/smoke/typescript && pnpm test)",
         "increment": "pnpm version patch --no-git-tag-version"
     },

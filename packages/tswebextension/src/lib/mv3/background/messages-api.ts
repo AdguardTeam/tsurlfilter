@@ -2,12 +2,11 @@ import { NetworkRuleOption } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 import { getDomain } from 'tldts';
 
-import type { CookieRule } from '../../common/content-script/cookie-controller';
-import { logger } from '../../common/utils/logger';
-
-import type { TsWebExtension } from './app';
-import { Assistant } from './assistant';
-import { type ContentScriptCosmeticData, CosmeticApi } from './cosmetic-api';
+import { MAIN_FRAME_ID } from '../../common/constants';
+import { MessageType } from '../../common/message-constants';
+import { type CookieRule } from '../../common/content-script/cookie-controller';
+import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
+import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import {
     getAssistantCreateRulePayloadValidator,
     getSaveCookieLogEventPayloadValidator,
@@ -16,14 +15,17 @@ import {
     type Message,
     messageValidator,
 } from '../../common/message';
-import { MessageType } from '../../common/message-constants';
-import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
-import { defaultFilteringLog, FilteringEventType, type FilteringLog } from '../../common/filtering-log';
 import { ContentType } from '../../common/request-type';
+import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
+import { logger } from '../../common/utils/logger';
+import { nanoid } from '../../common/utils/nanoid';
+import { type TabsApi } from '../tabs/tabs-api';
+
+import { type TsWebExtension } from './app';
 import { appContext } from './app-context';
+import { Assistant } from './assistant';
+import { CosmeticApi } from './cosmetic-api';
 import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
-import { nanoid } from '../nanoid';
-import type { TabsApi } from '../tabs/tabs-api';
 
 export type MessagesHandlerMV3 = (
     message: Message,
@@ -121,12 +123,12 @@ export class MessagesApi {
     }
 
     /**
-     * Builds css for specified url.
+     * Handles get cosmetic message.
      *
-     * @param sender Tab, which sent message.
+     * @param sender Tab which sent message.
      * @param payload Message payload.
      *
-     * @returns Cosmetic css or undefined if there are no css rules for this request.
+     * @returns Content script data for applying cosmetic rules or null if no data.
      */
     private handleGetCosmeticData(
         sender: browser.Runtime.MessageSender,
@@ -151,7 +153,7 @@ export class MessagesApi {
         let { frameId } = sender;
 
         if (!frameId) {
-            frameId = 0;
+            frameId = MAIN_FRAME_ID;
         }
 
         return CosmeticApi.getContentScriptData(res.data.documentUrl, tabId, frameId);
@@ -239,7 +241,7 @@ export class MessagesApi {
         let { frameId } = sender;
 
         if (!frameId) {
-            frameId = 0;
+            frameId = MAIN_FRAME_ID;
         }
 
         const cookieRules = CookieFiltering.getBlockingRules(documentUrl, tabId, frameId);

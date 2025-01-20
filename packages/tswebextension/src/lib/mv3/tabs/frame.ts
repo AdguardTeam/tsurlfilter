@@ -6,19 +6,38 @@ import {
 } from '@adguard/tsurlfilter';
 
 /**
+ * Scriptlet rule data object which contains scriptlet data for execution
+ * and scriptlet rule text (rule content) to match whether it is local or not.
+ */
+export type ScriptletRuleData = {
+    /**
+     * Scriptlet data for the execution.
+     */
+    scriptletRunData: ScriptletData,
+
+    /**
+     * Scriptlet rule text to match whether it is local or not.
+     *
+     * @example
+     * `//scriptlet('set-constant', 'canRunAds', 'true')`
+     */
+    scriptletRuleText: string,
+};
+
+/**
  * Prepared cosmetic result.
  * This type represents the processed cosmetic data extracted from the initial cosmetic result.
  */
 type PreparedCosmeticResult = {
     /**
-     * Script text extracted from the cosmetic result.
+     * Script texts extracted from the cosmetic result.
      */
-    scriptText: string;
+    scriptTexts: string[],
 
     /**
      * A list of scriptlet data extracted from the cosmetic result.
      */
-    scriptletDataList: ScriptletData[];
+    scriptletDataList: ScriptletRuleData[];
 
     /**
      * CSS styles extracted from the cosmetic result.
@@ -108,8 +127,6 @@ export class Frame {
     /**
      * The cosmetic result for the frame.
      * This data is stored in the frame because it is required for logging script and scriptlet rules.
-     *
-     * @see {@link WebRequestApi.injectCosmetic}
      */
     public cosmeticResult?: CosmeticResult;
 

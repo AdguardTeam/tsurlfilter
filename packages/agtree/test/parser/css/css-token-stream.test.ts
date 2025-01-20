@@ -3,6 +3,7 @@ import { sprintf } from 'sprintf-js';
 
 import { END_OF_INPUT, ERROR_MESSAGES } from '../../../src/parser/css/constants';
 import { CssTokenStream } from '../../../src/parser/css/css-token-stream';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 
 describe('CssTokenStream', () => {
     test('length', () => {
@@ -180,5 +181,21 @@ describe('CssTokenStream', () => {
             const stream = new CssTokenStream(input);
             expect(stream.hasAnySelectorExtendedCssNode()).toBe(expected);
         });
+    });
+
+    test('if balanced tokenizer throws, offsets should be added to the error', () => {
+        const actual = 'div { display: none !important';
+        const offset = 2;
+
+        const fn = jest.fn(() => new CssTokenStream(actual, offset));
+
+        expect(() => fn()).toThrow();
+
+        // check the thrown error
+        const error = fn.mock.results[0].value;
+        expect(error).toBeInstanceOf(AdblockSyntaxError);
+        expect(error).toHaveProperty('message', "Expected '<}-token>', but got 'end of input'");
+        expect(error).toHaveProperty('start', offset + actual.length - 1);
+        expect(error).toHaveProperty('end', offset + actual.length);
     });
 });

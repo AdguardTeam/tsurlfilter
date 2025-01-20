@@ -893,7 +893,7 @@ describe('DeclarativeRuleConverter', () => {
         });
     });
 
-    it('ignores rules with single one modifier enabled - popup', async () => {
+    it('ignores rules with explicitly enabled modifier - popup', async () => {
         const rules = [
             '||example.org^$popup',
             '||test.com^$document,popup',
@@ -911,52 +911,14 @@ describe('DeclarativeRuleConverter', () => {
 
         const networkRule = createNetworkRule(rules[0], filterId);
         const expectedError = new UnsupportedModifierError(
-            // eslint-disable-next-line max-len
-            'Network rule with only one enabled modifier $popup is not supported',
+            'Network rule with explicitly enabled $popup modifier is not supported',
             networkRule,
         );
 
-        expect(errors).toHaveLength(1);
+        expect(errors).toHaveLength(2);
         expect(errors[0]).toStrictEqual(expectedError);
-
-        expect(declarativeRules).toHaveLength(1);
-        expect(declarativeRules[0]).toStrictEqual({
-            id: expect.any(Number),
-            priority: 101,
-            action: {
-                type: 'block',
-            },
-            condition: {
-                urlFilter: '||test.com^',
-                resourceTypes: ['main_frame'],
-            },
-        });
-    });
-
-    it('it rule has $popup modifier it should be applied only to document requests', async () => {
-        const rules = [
-            '||example.org^$popup,third-party',
-        ];
-        const filterId = 0;
-        const filter = await createScannedFilter(
-            filterId,
-            rules,
-        );
-        const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
-
-        expect(declarativeRules).toHaveLength(1);
-        expect(declarativeRules[0]).toStrictEqual({
-            id: expect.any(Number),
-            priority: 2,
-            action: {
-                type: 'block',
-            },
-            condition: {
-                urlFilter: '||example.org^',
-                domainType: 'thirdParty',
-                resourceTypes: ['main_frame'],
-            },
-        });
+        expect(errors[1]).toStrictEqual(expectedError);
+        expect(declarativeRules).toHaveLength(0);
     });
 
     it('converts all rule', async () => {

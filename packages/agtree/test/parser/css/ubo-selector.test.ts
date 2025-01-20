@@ -2,23 +2,19 @@ import { sprintf } from 'sprintf-js';
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import {
-    type UboSelector,
-    UboSelectorParser,
-    ERROR_MESSAGES,
-    UboPseudoName,
-    formatPseudoName,
-} from '../../../src/parser/css/ubo-selector';
+import { UboSelectorParser, ERROR_MESSAGES, formatPseudoName } from '../../../src/parser/css/ubo-selector-parser';
 import { CSS_NOT_PSEUDO, EMPTY, SPACE } from '../../../src/utils/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
+import { UboSelectorGenerator } from '../../../src/generator/css/ubo-selector-generator';
+import { UboPseudoName } from '../../../src/common/ubo-selector-common';
 
 describe('UboSelectorParser', () => {
     describe('UboSelectorParser.parse - valid', () => {
-        test.each<{ actual: string; expected: NodeExpectFn<UboSelector> }>([
+        test.each<{ actual: string; expected: NodeExpectFn<UboSelectorParser> }>([
             // empty selector
             {
                 actual: EMPTY,
-                expected: (context: NodeExpectContext): UboSelector => ({
+                expected: (context: NodeExpectContext): UboSelectorParser => ({
                     type: 'UboSelector',
                     selector: {
                         type: 'Value',
@@ -35,7 +31,7 @@ describe('UboSelectorParser', () => {
             },
             {
                 actual: SPACE,
-                expected: (context: NodeExpectContext): UboSelector => (
+                expected: (context: NodeExpectContext): UboSelectorParser => (
                     {
                         type: 'UboSelector',
                         selector: {
@@ -54,7 +50,7 @@ describe('UboSelectorParser', () => {
             // tricky case - in this case, parser will run, because it finds an indicator
             {
                 actual: '[a=":style(padding:0)"]',
-                expected: (context: NodeExpectContext): UboSelector => (
+                expected: (context: NodeExpectContext): UboSelectorParser => (
                     {
                         type: 'UboSelector',
                         selector: {
@@ -74,7 +70,7 @@ describe('UboSelectorParser', () => {
             // selector without uBO modifiers
             {
                 actual: 'div',
-                expected: (context: NodeExpectContext): UboSelector => ({
+                expected: (context: NodeExpectContext): UboSelectorParser => ({
                     type: 'UboSelector',
                     selector: {
                         type: 'Value',
@@ -92,7 +88,7 @@ describe('UboSelectorParser', () => {
 
             {
                 actual: '*:has(> [ad])',
-                expected: (context: NodeExpectContext): UboSelector => ({
+                expected: (context: NodeExpectContext): UboSelectorParser => ({
                     type: 'UboSelector',
                     selector: {
                         type: 'Value',
@@ -111,7 +107,7 @@ describe('UboSelectorParser', () => {
             // :style()
             {
                 actual: 'div:style()',
-                expected: (context: NodeExpectContext): UboSelector => {
+                expected: (context: NodeExpectContext): UboSelectorParser => {
                     return {
                         type: 'UboSelector',
                         selector: {
@@ -148,7 +144,7 @@ describe('UboSelectorParser', () => {
             // extra whitespace in the parameter
             {
                 actual: 'div:style( )',
-                expected: (context: NodeExpectContext): UboSelector => {
+                expected: (context: NodeExpectContext): UboSelectorParser => {
                     return {
                         type: 'UboSelector',
                         selector: {
@@ -185,7 +181,7 @@ describe('UboSelectorParser', () => {
             // extra whitespace before and after the pseudo-class
             {
                 actual: 'div :style() ',
-                expected: (context: NodeExpectContext): UboSelector => {
+                expected: (context: NodeExpectContext): UboSelectorParser => {
                     return {
                         type: 'UboSelector',
                         selector: {
@@ -221,7 +217,7 @@ describe('UboSelectorParser', () => {
 
             {
                 actual: 'div:style(padding:0)',
-                expected: (context: NodeExpectContext): UboSelector => {
+                expected: (context: NodeExpectContext): UboSelectorParser => {
                     return {
                         type: 'UboSelector',
                         selector: {
@@ -258,7 +254,7 @@ describe('UboSelectorParser', () => {
             // :remove()
             {
                 actual: 'div:remove()',
-                expected: (context: NodeExpectContext): UboSelector => {
+                expected: (context: NodeExpectContext): UboSelectorParser => {
                     return {
                         type: 'UboSelector',
                         selector: {
@@ -295,7 +291,7 @@ describe('UboSelectorParser', () => {
             // extra whitespace in the parameter
             {
                 actual: 'div:remove( )',
-                expected: (context: NodeExpectContext): UboSelector => {
+                expected: (context: NodeExpectContext): UboSelectorParser => {
                     return {
                         type: 'UboSelector',
                         selector: {
@@ -332,7 +328,7 @@ describe('UboSelectorParser', () => {
             // extra whitespace before and after the pseudo-class
             {
                 actual: 'div :remove() ',
-                expected: (context: NodeExpectContext): UboSelector => {
+                expected: (context: NodeExpectContext): UboSelectorParser => {
                     return {
                         type: 'UboSelector',
                         selector: {
@@ -369,7 +365,7 @@ describe('UboSelectorParser', () => {
             // negated :matches-path()
             {
                 actual: ':not(:matches-path(/path))',
-                expected: (context: NodeExpectContext): UboSelector => {
+                expected: (context: NodeExpectContext): UboSelectorParser => {
                     return {
                         type: 'UboSelector',
                         selector: {
@@ -407,7 +403,7 @@ describe('UboSelectorParser', () => {
             // double negation -> no negation
             {
                 actual: ':not(:not(:matches-path(/path)))',
-                expected: (context: NodeExpectContext): UboSelector => {
+                expected: (context: NodeExpectContext): UboSelectorParser => {
                     return {
                         type: 'UboSelector',
                         selector: {
@@ -444,7 +440,7 @@ describe('UboSelectorParser', () => {
             // triple negation -> negation
             {
                 actual: ':not(:not(:not(:matches-path(/path))))',
-                expected: (context: NodeExpectContext): UboSelector => {
+                expected: (context: NodeExpectContext): UboSelectorParser => {
                     return {
                         type: 'UboSelector',
                         selector: {
@@ -482,7 +478,7 @@ describe('UboSelectorParser', () => {
             {
                 // eslint-disable-next-line max-len
                 actual: ':matches-media((min-width: 1000px)) div:has(> [ad]):not(:matches-path(/path)):style(padding:0; color: red!important)',
-                expected: (context: NodeExpectContext): UboSelector => ({
+                expected: (context: NodeExpectContext): UboSelectorParser => ({
                     type: 'UboSelector',
                     selector: {
                         type: 'Value',
@@ -549,7 +545,7 @@ describe('UboSelectorParser', () => {
     });
 
     describe('parser options should work as expected', () => {
-        test.each<{ actual: string; expected: UboSelector }>([
+        test.each<{ actual: string; expected: UboSelectorParser }>([
             {
                 actual: 'div',
                 expected: {
@@ -849,7 +845,7 @@ describe('UboSelectorParser', () => {
                 expected: ':matches-media((min-width: 1000px)):not(:matches-path(/path)) div:has(> [ad]):style(padding:0; color: red!important)',
             },
         ])('should generate input: \'$actual\'', ({ actual, expected }) => {
-            expect(UboSelectorParser.generate(UboSelectorParser.parse(actual))).toBe(expected);
+            expect(UboSelectorGenerator.generate(UboSelectorParser.parse(actual))).toBe(expected);
         });
     });
 });

@@ -5,18 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<!-- FIXME (Slava): prepare release v3.0.0-alpha.0 -->
 ## Unreleased
 
 ### Changed
 
-- Updated [@adguard/agtree] to `v2.1.3`.
+- Updated [@adguard/agtree] to `v3.0.0-alpha.2`.
+- Updated [@adguard/scriptlets] to `v2.1.3-alpha.1`.
+- Updated [@adguard/tsurlfilter] to `v3.1.0-alpha.7`.
+- Updated [@adguard/extended-css] to `v2.1.1`.
 
 ### Fixed
 
+- Once allowlisted tab considers all following websites in the tab as allowlisted [AdguardBrowserExtension#3020].
 - A rule from a disabled filter list disables another rule [AdguardBrowserExtension#3002].
 - Matching of `companyCategoryName` for subdomains.
 
+[AdguardBrowserExtension#3020]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3020
 [AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
+
+## [2.4.0-alpha.10] - 2025-01-17
+
+### Changed
+
+- Remade Scriptlet rules execution in MV3 — only rules from the pre-built filters are allowed now.
+
+[2.4.0-alpha.10]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.10
+
+## [2.4.0-alpha.9] - 2025-01-13
+
+### Removed
+
+- Injection of remotely hosted script rules.
+
+[2.4.0-alpha.9]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.9
+
+## [2.4.0-alpha.8] - 2024-12-23
+
+### Changed
+
+- Remade JS rules injections in MV3:
+    - use `chrome.scripting` API for injecting functions for script rules from the pre-built filters,
+    - use script tag injection only for script rules manually added by users —
+      rules from *User rules* and *Custom filters*.
+
+[2.4.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.8
 
 ## [2.0.7] - 2024-11-20
 
@@ -51,25 +84,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated `@adguard/tsurlfilter` to `v3.0.6`.
 
 [2.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.5
-
-## Unreleased
-
-### Fixed
-
-- A rule from a disabled filter list disables another rule [AdguardBrowserExtension#3002].
-- Matching of `companyCategoryName` for subdomains.
-
-[AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
-
-## [2.4.0-alpha.7] - 2024-11-20
-
-### Fixed
-
-- Memory leak caused by multiple script injections on the same pages
-  after a service worker or event page restart [AdguardBrowserExtension#2594].
-
-[2.4.0-alpha.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.6
-[AdguardBrowserExtension#2594]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2594
 
 ## [2.4.0-alpha.6] - 2024-10-18
 
@@ -323,7 +337,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Fixed
 
-- Extension injects scripts every time the extension's background event page wakes up [AdguardBrowserExtension#2792]
+- Extension injects scripts every time the extension's background event page wakes up [AdguardBrowserExtension#2792].
 
 [1.0.25]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v1.0.25
 [AdguardBrowserExtension#2792]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2792
@@ -543,8 +557,7 @@ mode toggle.
 
 ### Added
 
-- New `TsWebExtension.initStorage` method to initialize persistent values for
-  the background script.
+- New `TsWebExtension.initStorage` method to initialize persistent values for the background script.
 - New `createTsWebExtension` function to create `TsWebExtension` instance.
 
 ### Changed
@@ -641,9 +654,8 @@ its setting [AdguardBrowserExtension#2584].
 
 ### Added
 
-- Added new `ExtensionStorage`, `PersistentValueContainer`,
-  `createExtensionStorageDecorator` interfaces and for restoring data in
-  event-driven background scripts [AdguardBrowserExtension#2286].
+- Added new `ExtensionStorage`, `PersistentValueContainer`, `createExtensionStorageDecorator` interfaces
+  and for restoring data in event-driven background scripts [AdguardBrowserExtension#2286].
 
 [0.4.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v0.4.3
 [AdguardBrowserExtension#2571]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571
@@ -707,8 +719,7 @@ its setting [AdguardBrowserExtension#2584].
 
 ### Fixed
 
-- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published
-  as filtering log events.
+- `$csp`, `$removeparam` and `$removeheader` allowlist rules not being published as filtering log events.
 - Fixed cosmetic rules injection into a cached subdocument [AdguardBrowserExtension#2420],
   [AdguardBrowserExtension#2190], [AdguardBrowserExtension#2328].
 

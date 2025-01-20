@@ -1,4 +1,11 @@
+import {
+    describe,
+    expect,
+    beforeEach,
+    it,
+} from 'vitest';
 import { BufferRuleList, FilterListPreprocessor } from '@adguard/tsurlfilter';
+
 import { getConfigurationMv2Fixture } from '../mv2/background/fixtures/configuration';
 import { getConfigurationMv3Fixture } from '../mv3/fixtures/configuration';
 import { Allowlist } from '../../../src/lib/mv2/background/allowlist';

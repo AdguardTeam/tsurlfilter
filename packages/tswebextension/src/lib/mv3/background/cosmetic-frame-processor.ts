@@ -1,8 +1,10 @@
 import { RequestType } from '@adguard/tsurlfilter';
 
-import { isHttpRequest, MAIN_FRAME_ID } from '../../common';
+import { isHttpRequest } from '../../common/utils/url';
+import { MAIN_FRAME_ID } from '../../common/constants';
 import { tabsApi } from '../tabs/tabs-api';
 import { Frame } from '../tabs/frame';
+
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
 import { CosmeticApi } from './cosmetic-api';
@@ -209,9 +211,10 @@ export class CosmeticFrameProcessor {
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const {
-            scriptText,
+            scriptTexts,
             scriptletDataList,
-        } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
+        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
         tabsApi.updateFrameContext(tabId, frameId, {
@@ -219,7 +222,7 @@ export class CosmeticFrameProcessor {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptText,
+                scriptTexts,
                 scriptletDataList,
                 cssText,
             },
@@ -245,9 +248,7 @@ export class CosmeticFrameProcessor {
 
         const mainFrameRule = DocumentApi.matchFrame(url);
 
-        if (mainFrameRule) {
-            tabsApi.updateFrameContext(tabId, frameId, { frameRule: mainFrameRule });
-        }
+        tabsApi.setMainFrameRule(tabId, frameId, mainFrameRule);
 
         const result = engineApi.matchRequest({
             requestUrl: url,
@@ -263,16 +264,17 @@ export class CosmeticFrameProcessor {
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const {
-            scriptText,
+            scriptTexts,
             scriptletDataList,
-        } = CosmeticApi.getScriptTextAndScriptlets(cosmeticResult);
+        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+
         const cssText = CosmeticApi.getCssText(cosmeticResult);
 
         tabsApi.updateFrameContext(tabId, frameId, {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptText,
+                scriptTexts,
                 scriptletDataList,
                 cssText,
             },

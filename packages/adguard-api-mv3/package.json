@@ -29,7 +29,7 @@
     "postbuild": "pnpm types && ts-node tasks/build-txt",
     "prepush": "pnpm build",
     "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-    "lint:eslint": "eslint --cache 'src/**/*.ts' 'tasks/**/*.ts'",
+    "lint:eslint": "eslint --cache --ignore-path .gitignore .",
     "check-types": "tsc --project tsconfig.build.json --noemit",
     "increment": "pnpm version patch --no-git-tag-version"
   },
@@ -37,7 +37,7 @@
   "license": "GPL-3.0-only",
   "dependencies": {
     "@adguard/logger": "1.1.0",
-    "@adguard/tswebextension": "2.4.0-alpha.7",
+    "@adguard/tswebextension": "3.0.0-alpha.0",
     "zod": "3.22.4"
   },
   "devDependencies": {

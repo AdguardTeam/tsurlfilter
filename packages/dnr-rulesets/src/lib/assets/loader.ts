@@ -1,6 +1,9 @@
 import { copy } from 'fs-extra';
 import path from 'path';
 import process from 'process';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Api for loading assets.

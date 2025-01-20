@@ -1,1 +1,1 @@
-import '@adguard/tswebextension/mv3/hideDocumentReferrer';
+import '@adguard/tswebextension/mv3/hide-document-referrer';

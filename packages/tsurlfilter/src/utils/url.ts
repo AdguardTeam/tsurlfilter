@@ -73,7 +73,6 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
     if (invert) {
         modifiedQuery = split.query
             .split('&')
-            .filter((x) => x)
             .filter((x) => x && (x.match(regExp) || decodeURIComponent(x).match(regExp)))
             .join('&');
     } else {

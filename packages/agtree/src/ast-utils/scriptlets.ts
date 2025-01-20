@@ -2,7 +2,7 @@
  * @file Utility functions for working with scriptlet nodes
  */
 
-import { type ParameterList } from '../parser/common';
+import { type ParameterList } from '../nodes';
 import { EMPTY } from '../utils/constants';
 import { type QuoteType, QuoteUtils } from '../utils/quotes';
 import { isNull, isUndefined } from '../utils/type-guards';

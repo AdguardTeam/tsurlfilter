@@ -7,12 +7,13 @@ node_modules
 .nx
 .pnpm-store
 
+# Cache file for ESLint.
+.eslintcache
+
 # IDEA files
 .idea
 
 # VS code settings and workspace project
 .vscode
 tsurlfilter.code-workspace
-
-# PNPM cache folder
-.pnpm-store
+Makefile

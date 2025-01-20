@@ -5,8 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<!-- TODO: manually add compare links for version changes -->
-<!-- e.g. [1.0.77]: https://github.com/AdguardTeam/tsurlfilter/compare/tsurlfilter-v1.0.76...tsurlfilter-v1.0.77 -->
+## Unreleased
+
+### Added
+
+- Optional property `maxNumberOfUnsafeRules` to `DeclarativeConverterOptions`
+  for unsafe rules (only for dynamic rulesets).
+
+### Changed
+
+- We throw error for empty modifier list in network rules.
+- Updated [@adguard/agtree] to `v3.0.0` which improves the bundle size and performance.
+- Updated [@adguard/scriptlets] to `v2.0.1`
+- Updated [@adguard/extended-css] to `v2.1.0`
+
+### Fixed
+
+- Handling missing children data in the deserializer for certain nodes.
+- URI encoded `$removeparam` value is not removed in MV3 [AdguardBrowserExtension#3014].
+- `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
+- `$popup,third-party` modifiers cause document blocking [AdguardBrowserExtension#3012].
+
+[AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
+[AdguardBrowserExtension#3012]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3012
+
+## [3.0.8] - 2024-11-25
+
+### Changed
+
+- Error throwing for empty modifier list in network rules.
+- Updated `@adguard/agtree` to `v2.1.4`.
+
+### Fixed
+
+- Handling missing children data in the deserializer for certain nodes.
+
+[3.0.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.8
+
+## [3.0.7] - 2024-11-19
+
+### Fixed
+
+- `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
+
+[AdguardBrowserExtension#3015]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3015
+[3.0.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.7
+
+## [3.0.6] - 2024-11-02
+
+### Changed
+
+- Updated `@adguard/agtree` to `v2.1.3`.
+
+[3.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.0.6
 
 ## Unreleased
 

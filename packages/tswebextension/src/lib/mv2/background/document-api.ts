@@ -1,8 +1,9 @@
-import type { NetworkRule } from '@adguard/tsurlfilter';
+import { type NetworkRule } from '@adguard/tsurlfilter';
 
 import { getDomain, getUpperLevelDomain } from '../../common/utils/url';
+
 import { Allowlist } from './allowlist';
-import type { EngineApi } from './engine-api';
+import { type EngineApi } from './engine-api';
 
 /**
  * Matches rules from {@link EngineApi} based on current {@link Allowlist} state.

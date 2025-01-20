@@ -1,4 +1,4 @@
-import { LRUMap } from 'lru_map';
+import { LRUCache } from 'lru-cache';
 
 /**
  * RedirectsCache is used for new type of blocking redirects, like click2load.html.
@@ -7,16 +7,23 @@ import { LRUMap } from 'lru_map';
  */
 class RedirectsCache {
     /**
-     * Instance or LRUMap.
+     * LRU Cache for URLs.
      */
-    cache = new LRUMap(100);
+    private cache: LRUCache<string, boolean>;
+
+    /**
+     * Constructor.
+     */
+    constructor() {
+        this.cache = new LRUCache({ max: 100 });
+    }
 
     /**
      * Adds url to the cache.
      *
      * @param url Url added to cache.
      */
-    add = (url: string): void => {
+    public add = (url: string): void => {
         this.cache.set(url, true);
     };
 
@@ -26,7 +33,7 @@ class RedirectsCache {
      * @param url Url to check.
      * @returns True if url is in the cache.
      */
-    hasUrl = (url: string): boolean => {
+    public hasUrl = (url: string): boolean => {
         return this.cache.has(url);
     };
 }

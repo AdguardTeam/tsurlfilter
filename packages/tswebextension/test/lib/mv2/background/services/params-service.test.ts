@@ -1,8 +1,10 @@
 import {
-    HTTPMethod,
-    MatchingResult,
-    RequestType,
-} from '@adguard/tsurlfilter';
+    describe,
+    expect,
+    beforeEach,
+    it,
+} from 'vitest';
+import { HTTPMethod, MatchingResult, RequestType } from '@adguard/tsurlfilter';
 
 import { createNetworkRule } from '../../../../helpers/rule-creator';
 import { MockFilteringLog } from '../../../common/mocks/mock-filtering-log';
@@ -10,7 +12,7 @@ import { ParamsService } from '../../../../../src/lib/mv2/background/services/pa
 import {
     RequestContextState,
     requestContextStorage,
-} from '../../../../../src/lib';
+} from '../../../../../src/lib/mv2/background/request/request-context-storage';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';
 

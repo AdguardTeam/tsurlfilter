@@ -8,12 +8,63 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## Unreleased
+## [3.0.0-alpha.2] - 2024-12-17
+
+### Changed
+
+- Switched to a pure ESM package.
+
+[3.0.0-alpha.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.0.0-alpha.2
+
+## [3.0.0-alpha.1] - 2024-12-11
+
+### Changed
+
+- The API is separated across entry points: `@adguard/agtree/parser`, `@adguard/agtree/generator`,
+  `@adguard/agtree/converter`, `@adguard/agtree/validator`, `@adguard/agtree/compatibility-tables`,
+  and `@adguard/agtree/utils`.
+
+[3.0.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v3.0.0-alpha.1
 
 ### Fixed
 
 - Fixed missing children data in the deserializer for certain nodes.
 - Add error messages for rules parsing errors.
+
+## [2.3.0] - 2024-12-19
+
+### Added
+
+- Support for ABP-syntax CSS injection rules [tsurlfilter#143].
+
+[2.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.3.0
+[tsurlfilter#143]: https://github.com/AdguardTeam/tsurlfilter/issues/143
+
+## [2.2.0] - 2024-11-27
+
+### Removed
+
+- `xregexp` library as a runtime dependency. It remains a development dependency for processing YAML files,
+  enabling enhanced readability and maintainability of regex patterns through free-spacing mode and inline comments.
+  However, xregexp is no longer bundled with the library to significantly reduce memory usage and bundle size,
+  improving overall performance.
+  The library now uses native ECMAScript regex patterns at runtime, ensuring compatibility
+  without the additional overhead of xregexp. Related to [AdguardBrowserExtension#3037].
+
+[2.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.2.0
+[AdguardBrowserExtension#3037]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3037
+
+## [2.1.4] - 2024-11-25
+
+### Added
+
+- Error messages for rules parsing errors.
+
+### Fixed
+
+- Missing children data in the deserializer for certain nodes.
+
+[2.1.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-v2.1.4
 
 ## [2.1.3] - 2024-10-21
 
