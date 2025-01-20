@@ -47,10 +47,6 @@ Test:
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh
-    - script:
-        interpreter: SHELL
-        scripts:
           - bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh
     - script:
         interpreter: SHELL

@@ -1,16 +1,3 @@
-// TODO: When switching to Vitest, we may can re-use this:
-
-// import { jest } from '@jest/globals';
-// import { jsonpos, type Location } from 'jsonpos';
-// import { getUtf8EncodedLength } from '../../src/utils/string-utils';
-// import { getByteRangeFor } from '../../src/utils/byte-range';
-
-// jest.mock('jsonpos');
-// jest.mock('../../src/utils/string-utils');
-
-// const mockedJsonpos = jsonpos as jest.MockedFunction<typeof jsonpos>;
-// const mockedGetUtf8EncodedLength = getUtf8EncodedLength as jest.MockedFunction<typeof getUtf8EncodedLength>;
-
 import { jest } from '@jest/globals';
 import { type Location } from 'jsonpos'; // Import only types
 
