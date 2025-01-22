@@ -1,6 +1,6 @@
 {
     "name": "@adguard/dnr-rulesets",
-    "version": "1.2.20241119120820",
+    "version": "1.2.20250122090102",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
         "dist/**/*"
@@ -22,7 +22,7 @@
         "lint:code": "eslint",
         "lint:types": "tsc --noEmit",
         "increment": "pnpm version patch --no-git-tag-version",
-        "increment:autodeploy": "node -r @swc-node/register tasks/auto-deploy-increment"
+        "increment:auto-deploy": "node -r @swc-node/register tasks/auto-deploy-increment"
     },
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0-only",
