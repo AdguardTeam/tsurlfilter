@@ -483,6 +483,7 @@ export class TabsApi {
      */
     public updateFrameContext(tabId: number, frameId: number, partialFrameContext: Partial<FrameMV2>): void {
         const tabContext = this.getTabContext(tabId);
+
         if (!tabContext) {
             logger.debug('At this point tab context should already exist');
             return;

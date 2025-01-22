@@ -439,6 +439,7 @@ export class TabsApi {
 
     /**
      * Sets frame context.
+     *
      * @param tabId Tab ID.
      * @param frameId Frame ID.
      * @param frameContext Frame context.
