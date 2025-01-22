@@ -1393,6 +1393,16 @@ describe('NetworkRule.match', () => {
         request = new Request('https://sub.two.evil.com/ads', 'https://example.org/', RequestType.Script);
         expect(rule.match(request)).toBeTruthy();
     });
+
+    it('work with regexp patterns that contain special character classes', () => {
+        let rule = createNetworkRule(String.raw`/api\.github\.com\/\w{5}\/AdguardTeam/`, 0);
+
+        const request = new Request('https://api.github.com/users/AdguardTeam', null, RequestType.Other);
+        expect(rule.match(request)).toEqual(true);
+
+        rule = createNetworkRule(String.raw`/api.github.com\/\w{5}\/AdguardTeam/`, 0);
+        expect(rule.match(request)).toEqual(true);
+    });
 });
 
 describe('NetworkRule.isHigherPriority', () => {

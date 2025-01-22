@@ -69,6 +69,25 @@ describe('SimpleRegex.extractShortcut', () => {
         shortcut = SimpleRegex.extractShortcut('/https://reg\\.com/');
         expect(shortcut).toEqual('reg.com');
 
+        // dots are not escaped - they considered as any character here
+        shortcut = SimpleRegex.extractShortcut(String.raw`/api.github.com\/\w{5}\/AdguardTeam/`);
+        expect(shortcut).toEqual('/adguardteam');
+
+        // dots are escaped - they considered as dots
+        // named predefined character class
+        shortcut = SimpleRegex.extractShortcut(String.raw`/api\.github\.com\/\w{5}\/AdguardTeam/`);
+        expect(shortcut).toEqual('api.github.com/');
+
+        // custom character class, but actually the same as \w
+        shortcut = SimpleRegex.extractShortcut(String.raw`/api\.github\.com\/[A-Za-z0-9_]{5}\/AdguardTeam/`);
+        expect(shortcut).toEqual('api.github.com/');
+
+        shortcut = SimpleRegex.extractShortcut(String.raw`/[a-z0-9]{32,}\.js/`);
+        expect(shortcut).toEqual('.js');
+
+        shortcut = SimpleRegex.extractShortcut(String.raw`/[a-z0-9]{32,}.js/`);
+        expect(shortcut).toEqual('js');
+
         // zero-length alternative regexp case
         // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2240#issuecomment-1344807910
         shortcut = SimpleRegex.extractShortcut(
