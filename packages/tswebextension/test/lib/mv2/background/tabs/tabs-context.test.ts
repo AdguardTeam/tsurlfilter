@@ -9,7 +9,8 @@ import {
 import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
-import { Frame, TabContext, type TabInfoMV2 } from '../../../../../src/lib';
+import { Frame } from '../../../../../src/lib/mv2/background/tabs/frame';
+import { TabContext, type TabInfoMV2 } from '../../../../../src/lib/mv2/background/tabs/tab-context';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';

@@ -5,7 +5,24 @@ import {
     type ScriptletData,
 } from '@adguard/tsurlfilter';
 
-import { type LocalScriptFunction } from '../background/services/local-script-rules-service';
+/**
+ * Scriptlet rule data object which contains scriptlet data for execution
+ * and scriptlet rule text (rule content) to match whether it is local or not.
+ */
+export type ScriptletRuleData = {
+    /**
+     * Scriptlet data for the execution.
+     */
+    scriptletRunData: ScriptletData,
+
+    /**
+     * Scriptlet rule text to match whether it is local or not.
+     *
+     * @example
+     * `//scriptlet('set-constant', 'canRunAds', 'true')`
+     */
+    scriptletRuleText: string,
+};
 
 /**
  * Prepared cosmetic result.
@@ -13,19 +30,14 @@ import { type LocalScriptFunction } from '../background/services/local-script-ru
  */
 type PreparedCosmeticResult = {
     /**
-     * Script text extracted from the cosmetic result from rules added by user — User rules and Custom filters.
+     * Script texts extracted from the cosmetic result.
      */
-    localScriptText: string;
-
-    /**
-     * Script functions extracted from the pre-built filters.
-     */
-    localScriptFunctions: LocalScriptFunction[],
+    scriptTexts: string[],
 
     /**
      * A list of scriptlet data extracted from the cosmetic result.
      */
-    scriptletDataList: ScriptletData[];
+    scriptletDataList: ScriptletRuleData[];
 
     /**
      * CSS styles extracted from the cosmetic result.

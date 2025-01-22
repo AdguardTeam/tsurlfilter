@@ -102,7 +102,6 @@ export class TabsCosmeticInjector {
             // events do not support async listeners.
             Promise.all([
                 CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
-                CosmeticApi.applyJsTextByTabAndFrame(tabId, frameId),
                 CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
                 CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
             ]).catch((e) => logger.error(e));

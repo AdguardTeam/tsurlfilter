@@ -10,7 +10,9 @@ import {
 import browser from 'sinon-chrome';
 import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 
-import { extSessionStorage, TabsApi, TabsCosmeticInjector } from '../../../../../src/lib';
+import { extSessionStorage } from '../../../../../src/lib/mv2/background/ext-session-storage';
+import { TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';
+import { TabsCosmeticInjector } from '../../../../../src/lib/mv2/background/tabs/tabs-cosmetic-injector';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../../src/lib/mv2/background/app-context';

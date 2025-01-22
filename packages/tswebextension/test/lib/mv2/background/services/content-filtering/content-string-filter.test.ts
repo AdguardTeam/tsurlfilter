@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HTTPMethod, RequestType } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
-import { RequestContextState } from '../../../../../../src/lib';
+import { RequestContextState } from '../../../../../../src/lib/mv2/background/request/request-context-storage';
 import {
     ContentStringFilter,
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/content-string-filter';
