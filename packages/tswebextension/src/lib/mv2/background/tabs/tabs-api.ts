@@ -43,6 +43,14 @@ export class TabsApi {
      */
     public static readonly POPUP_TAB_TIMEOUT_MS = 250;
 
+    // FIXME (Slava): refactor to some common interface
+    /**
+     * Value of the parent frame id if no parent frame exists.
+     *
+     * @see {@link WebRequest.OnBeforeRequestDetailsType#parentFrameId}
+     */
+    private static readonly NO_PARENT_FRAME_ID = -1;
+
     /**
      * Tabs API constructor.
      *
@@ -98,6 +106,77 @@ export class TabsApi {
         }
 
         this.context.clear();
+    }
+
+    /**
+     * Checks if the frame is a document-level frame by checking its parent frame ID.
+     *
+     * @param parentFrameId Parent frame ID.
+     * @returns True if the parent frame is a document-level frame.
+     */
+    public static isDocumentLevelFrame(parentFrameId: number): boolean {
+        return parentFrameId === TabsApi.NO_PARENT_FRAME_ID;
+    }
+
+    /**
+     * Generates a "synthetic document id".
+     *
+     * Needed for Firefox where `parentDocumentId` and `documentId` are not supported.
+     *
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     *
+     * @returns ID as a string based on tab and frame IDs.
+     */
+    private static generateId(tabId: number, frameId: number): string {
+        return `${tabId}-${frameId}`;
+    }
+
+    /**
+     * Calculates document ID.
+     *
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     * @param documentId Document ID, may be undefined.
+     *
+     * @returns Calculated document ID:
+     * - `documentId` if passed value is defined;
+     * - generated ID based on tab and frame IDs.
+     */
+    public static generateDocumentId(
+        tabId: number,
+        frameId: number,
+        documentId?: string,
+    ): string {
+        return typeof documentId === 'undefined'
+            ? TabsApi.generateId(tabId, frameId)
+            : documentId;
+    }
+
+    /**
+     * Calculates parent document ID.
+     *
+     * @param tabId Tab ID.
+     * @param parentFrameId Parent frame ID.
+     * @param parentDocumentId Parent document ID, may be undefined.
+     *
+     * @returns Calculated parent document ID:
+     * - `parentDocumentId` if passed value is defined;
+     * - `undefined` if parent frame is a document-level frame so no parent document;
+     * - generated ID based on tab and frame IDs.
+     */
+    public static generateParentDocumentId(
+        tabId: number,
+        parentFrameId: number,
+        parentDocumentId: string | undefined,
+    ): string | undefined {
+        if (typeof parentDocumentId !== 'undefined') {
+            return parentDocumentId;
+        }
+
+        return TabsApi.isDocumentLevelFrame(parentFrameId)
+            ? undefined
+            : TabsApi.generateId(tabId, parentFrameId);
     }
 
     /**

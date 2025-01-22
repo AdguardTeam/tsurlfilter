@@ -33,6 +33,14 @@ export class TabsApi {
 
     public onReplace = new EventChannel<TabContext>();
 
+    // FIXME (Slava): refactor to some common interface
+    /**
+     * Value of the parent frame id if no parent frame exists.
+     *
+     * @see {@link WebRequest.OnBeforeRequestDetailsType#parentFrameId}
+     */
+    private static readonly NO_PARENT_FRAME_ID = -1;
+
     /**
      * Creates new {@link TabsApi} with binding context.
      */
@@ -84,6 +92,16 @@ export class TabsApi {
         }
 
         this.context.clear();
+    }
+
+    /**
+     * Checks if the frame is a document-level frame by checking its parent frame ID.
+     *
+     * @param parentFrameId Parent frame ID.
+     * @returns True if the parent frame is a document-level frame.
+     */
+    public static isDocumentLevelFrame(parentFrameId: number): boolean {
+        return parentFrameId === TabsApi.NO_PARENT_FRAME_ID;
     }
 
     /**

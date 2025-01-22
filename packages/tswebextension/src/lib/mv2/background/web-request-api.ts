@@ -204,6 +204,7 @@ import {
 } from './request';
 import { SanitizeApi } from './sanitize-api';
 import { stealthApi } from './stealth-api';
+import { TabsApi } from './tabs';
 import { isOpera } from './utils/browser-detector';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
@@ -220,13 +221,6 @@ export type InjectCosmeticParams = {
  * Web Request API and web navigation events.
  */
 export class WebRequestApi {
-    /**
-     * Value of the parent frame id if no parent frame exists.
-     *
-     * @see {@link WebRequest.OnBeforeRequestDetailsType#parentFrameId}
-     */
-    private static readonly NO_PARENT_FRAME_ID = -1;
-
     /**
      * Adds listeners to web request events.
      */
@@ -687,46 +681,6 @@ export class WebRequestApi {
     }
 
     /**
-     * Generates a "synthetic document id" for Firefox.
-     *
-     * @param tabId Tab ID.
-     * @param frameId Frame ID.
-     *
-     * @returns ID as a string based on tab and frame IDs.
-     */
-    private static generateId(tabId: number, frameId: number): string {
-        return `${tabId}-${frameId}`;
-    }
-
-    /**
-     * Calculates parent document ID for the specified details.
-     *
-     * @param details Event details.
-     *
-     * @returns Parent document ID.
-     */
-    private static calcParentDocumentId(
-        details: WebNavigation.OnBeforeNavigateDetailsType | WebRequest.OnBeforeRequestDetailsType,
-    ): string | undefined {
-        const {
-            tabId,
-            // supported by Chrome 106+
-            // but not supported by Firefox so it is calculated based on tabId and frameId
-            // @ts-ignore
-            parentDocumentId,
-            parentFrameId,
-        } = details;
-
-        if (typeof parentDocumentId !== 'undefined') {
-            return parentDocumentId;
-        }
-
-        return parentFrameId === WebRequestApi.NO_PARENT_FRAME_ID
-            ? undefined
-            : WebRequestApi.generateId(tabId, parentFrameId);
-    }
-
-    /**
      * On before navigate web navigation event handler.
      *
      * @param details Event details.
@@ -737,6 +691,11 @@ export class WebRequestApi {
             tabId,
             timeStamp,
             url,
+            parentFrameId,
+            // supported by Chrome 106+
+            // but not supported by Firefox so it is calculated based on tabId and frameId
+            // @ts-ignore
+            parentDocumentId,
         } = details;
 
         cosmeticFrameProcessor.precalculateCosmetics({
@@ -744,7 +703,7 @@ export class WebRequestApi {
             frameId,
             url,
             timeStamp,
-            parentDocumentId: WebRequestApi.calcParentDocumentId(details),
+            parentDocumentId: TabsApi.generateParentDocumentId(tabId, parentFrameId, parentDocumentId),
         });
     }
 
@@ -770,9 +729,7 @@ export class WebRequestApi {
             tabId,
             frameId,
             {
-                documentId: typeof documentId === 'undefined'
-                    ? WebRequestApi.generateId(tabId, frameId)
-                    : documentId,
+                documentId: TabsApi.generateDocumentId(tabId, frameId, documentId),
             },
         );
 
@@ -826,9 +783,7 @@ export class WebRequestApi {
             tabId,
             frameId,
             {
-                documentId: typeof documentId === 'undefined'
-                    ? WebRequestApi.generateId(tabId, frameId)
-                    : documentId,
+                documentId: TabsApi.generateDocumentId(tabId, frameId, documentId),
             },
         );
 
