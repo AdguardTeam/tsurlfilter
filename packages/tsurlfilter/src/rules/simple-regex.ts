@@ -119,6 +119,36 @@ export class SimpleRegex {
     private static readonly rePatternSpecialCharacters: RegExp = new RegExp('[*^|]');
 
     /**
+     * Set of named character classes.
+     */
+    private static readonly NAMED_CHARACTER_CLASSES = new Set(['w', 'W', 'd', 'D', 's', 'S']);
+
+    /**
+     * Character class open bracket.
+     */
+    private static readonly CHARACTER_CLASS_OPEN = '[';
+
+    /**
+     * Character class close bracket.
+     */
+    private static readonly CHARACTER_CLASS_CLOSE = ']';
+
+    /**
+     * Quantity open bracket.
+     */
+    private static readonly QUANTITY_OPEN = '{';
+
+    /**
+     * Quantity close bracket.
+     */
+    private static readonly QUANTITY_CLOSE = '}';
+
+    /**
+     * Escape character.
+     */
+    private static readonly ESCAPE = '\\';
+
+    /**
      * Checks if char is valid for regexp shortcut – is alphanumeric or escaped period or forward slash
      *
      * @param str string
@@ -190,58 +220,103 @@ export class SimpleRegex {
     }
 
     /**
-     * Searches for a shortcut inside of a regexp pattern.
-     * Shortcut in this case is a longest string with no REGEX special characters.
-     * Also, we discard complicated regexps right away.
+     * Extracts the longest substring from a regex pattern that does not contain
+     * any special characters.
+     * Discards complex regex patterns early if they contain characters or constructs unsuitable for shortcuts.
      *
-     * @param pattern - network rule's pattern (regexp).
-     * @returns the shortcut or the empty string
+     * @param pattern - Network rule's pattern (regex).
+     * @returns The extracted shortcut or an empty string if none could be found.
      */
     private static extractRegexpShortcut(pattern: string): string {
-        let reText = pattern.substring(this.MASK_REGEX_RULE.length, pattern.length - this.MASK_REGEX_RULE.length);
+        // Remove the enclosing '/' regex markers
+        let reText = pattern.slice(this.MASK_REGEX_RULE.length, -this.MASK_REGEX_RULE.length);
 
-        if (reText.length === 0) {
-            // The rule is too short, doing nothing
+        // Early exit for empty or complex patterns
+
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/978
+        if (!reText || reText.includes('?')) {
             return '';
         }
 
-        if (reText.indexOf('?') >= 0) {
-            // Do not mess with complex expressions which use lookahead
-            // And with those using ? special character
-            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/978
-            return '';
-        }
-
-        // Remove protocol part to avoid useless shortcuts like "http"
+        // Remove protocol to avoid trivial shortcuts like "http"
         const protocolIndex = reText.indexOf(protocolMarker);
         if (protocolIndex > -1) {
-            reText = reText.substring(protocolIndex + protocolMarker.length);
+            reText = reText.slice(protocolIndex + protocolMarker.length);
         }
 
-        let currentLongest = '';
-        let token = '';
+        let longestToken = '';
+        let currentToken = '';
+
+        /**
+         * Resets the current token, updating the longest token if needed.
+         */
+        const resetToken = () => {
+            if (currentToken.length > longestToken.length) {
+                longestToken = currentToken;
+            }
+
+            currentToken = '';
+        };
+
+        let inEscape = false;
 
         for (let i = 0; i < reText.length; i += 1) {
             const char = reText[i];
-            if (char === '\\') {
-                // Don't break token on escapes
+
+            // Handle special character classes (e.g., \d, \w)
+            if (inEscape && SimpleRegex.NAMED_CHARACTER_CLASSES.has(char)) {
+                resetToken();
+                i += 1; // Skip the named character class
                 continue;
             }
 
-            if (SimpleRegex.isValidRegexpShortcutChar(reText, i)) {
-                token += char;
-                if (i !== reText.length - 1) {
-                    continue;
-                }
+            // Handle escape sequences
+            if (char === SimpleRegex.ESCAPE) {
+                inEscape = true;
+                continue;
+            } else {
+                inEscape = false;
             }
 
-            if (token.length > currentLongest.length) {
-                currentLongest = token;
+            // Handle character classes (e.g., [a-z])
+            if (char === SimpleRegex.CHARACTER_CLASS_OPEN && !inEscape) {
+                resetToken();
+
+                let closingIndex = reText.indexOf(SimpleRegex.CHARACTER_CLASS_CLOSE, i);
+                while (closingIndex > 0 && reText[closingIndex - 1] === SimpleRegex.ESCAPE) {
+                    closingIndex = reText.indexOf(SimpleRegex.CHARACTER_CLASS_CLOSE, closingIndex + 1);
+                }
+
+                i = closingIndex >= 0 ? closingIndex : reText.length;
+                continue;
             }
-            token = '';
+
+            if (char === SimpleRegex.QUANTITY_OPEN && !inEscape) {
+                resetToken();
+
+                // Handle quantifiers
+                let closingIndex = reText.indexOf(SimpleRegex.QUANTITY_CLOSE, i);
+                while (closingIndex > 0 && reText[closingIndex - 1] === SimpleRegex.ESCAPE) {
+                    closingIndex = reText.indexOf(SimpleRegex.QUANTITY_CLOSE, closingIndex + 1);
+                }
+
+                i = closingIndex >= 0 ? closingIndex : reText.length;
+                continue;
+            }
+
+            // Build the current token if the character is valid
+            if (SimpleRegex.isValidRegexpShortcutChar(reText, i)) {
+                currentToken += char;
+                if (i === reText.length - 1) {
+                    // Handle case where token ends at the last character
+                    resetToken();
+                }
+            } else {
+                resetToken();
+            }
         }
 
-        return currentLongest.toLowerCase();
+        return longestToken.toLowerCase();
     }
 
     /**

@@ -36,7 +36,7 @@ desktop/assets/
 desktop/assets/
 desktop/assets/
 desktop/assets/
-z0
+/
 content/uploads/
 sport
 idnes
@@ -49,7 +49,7 @@ bantengmerahnew
 .wp.pl/
 1688porn
 
-/uploads/d
+/uploads/
 139
 
 
@@ -67,7 +67,7 @@ bantengmerahnew
 .com/
 
 .js
-9a
+js
 .js
 
 readcomiconline
@@ -81,7 +81,7 @@ com/
 
 
 www.sextu.com/
-.com/d
+.com/
 hentai2w
 /static/
 .com
@@ -98,7 +98,7 @@ jdforum.net/images/
 .com/
 technologies
 .com/
-/d
+/
 
 negotiaition
 
@@ -113,11 +113,11 @@ pornpictureshq.com/
 
 
 
-z0
+js
 
 fmovies
 
-za
+/
 camgirlbay
 camwhores
 
@@ -148,7 +148,7 @@ nt.st
 
 
 
-.com/d
+.com/
 
 
 
@@ -167,7 +167,7 @@ secureserver
 meitui
 meitui
 
-net/gd
+net/g
 dbp
 .s/src/
 
@@ -185,25 +185,25 @@ dbp
 com
 
 
-ru/api/vd
+octavius
 
 
 
-kinopoisk.ru/w
+kinopoisk.ru/
 template
-ru/uploads/bad
+ru/uploads/ba
 /uploads/
 wind10
 zodiak
 winline
 //cq
-.ru/d
-/d
+.ru/
+/
 baner.png
-z0
-z0
+/
+/
 czvetnaya
-by/img/band/
+by/img/ban
 xyz/images/
 
 mediaget
@@ -218,13 +218,13 @@ stargate
 
 moneyveo240x400
 .js
-mybrazz.club/jsd
-ru/d
+mybrazz.club/js
+ru/
 maxpark
 newsland
-z0
-za
-za
+
+
+
 bigfangroup
 xhdporno.net/js/
 jopastik
@@ -239,8 +239,8 @@ online
 
 
 
-za
-za
+js
+js
 
 
 ua/templates/newscastlered
@@ -297,9 +297,9 @@ tvcanales
 ddmix
 ddmix
 
-.com/cscript/d
+.com/cscript/
 resources
-z0
+/
 lastpass
 /js/
 latest/dist/script.min.js
