@@ -10,7 +10,7 @@ import { type DocumentApi } from '../document-api';
 import { type EngineApi } from '../engine-api';
 
 import { FrameMV2 } from './frame';
-import { type TabsApi } from './tabs-api';
+import { TabsApi } from './tabs-api';
 import { TabContext } from './tab-context';
 
 /**
@@ -83,6 +83,7 @@ export class TabsCosmeticInjector {
             const {
                 url,
                 frameId,
+                parentFrameId,
                 // both parentDocumentId and documentId supported by Chrome 106+
                 // but not supported by Firefox so it is calculated based on tabId and frameId
                 // @ts-ignore
@@ -91,13 +92,16 @@ export class TabsCosmeticInjector {
                 documentId,
             } = frameDetails;
 
+            const calculatedParentDocumentId = TabsApi.generateParentDocumentId(tabId, parentFrameId, parentDocumentId);
+            const calculatedDocumentId = TabsApi.generateDocumentId(tabId, frameId, documentId);
+
             this.tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
                 tabId,
                 frameId,
                 url,
                 timeStamp: currentTime,
-                parentDocumentId,
-                documentId,
+                parentDocumentId: calculatedParentDocumentId,
+                documentId: calculatedDocumentId,
             }));
 
             this.cosmeticFrameProcessor.handleFrame({
@@ -105,8 +109,8 @@ export class TabsCosmeticInjector {
                 frameId,
                 url,
                 timeStamp: currentTime,
-                parentDocumentId,
-                documentId,
+                parentDocumentId: calculatedParentDocumentId,
+                documentId: calculatedDocumentId,
             });
 
             // TODO: Instead of this, it’s better to use the runtime.onStartup and runtime.onInstalled
