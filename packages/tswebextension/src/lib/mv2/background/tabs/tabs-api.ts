@@ -509,6 +509,8 @@ export class TabsApi {
      * @param tabId Tab ID.
      * @param frameId Frame ID.
      * @param code Script text to be injected.
+     *
+     * @throws Error if the script injection fails.
      */
     public static async injectScript(tabId: number, frameId: number, code: string): Promise<void> {
         const injectDetails: ExtensionTypes.InjectDetails = {
@@ -527,6 +529,8 @@ export class TabsApi {
      * @param tabId Tab ID.
      * @param frameId Frame ID.
      * @param code CSS styles to be injected.
+     *
+     * @throws Error if the css injection fails.
      */
     public static async injectCss(tabId: number, frameId: number, code: string): Promise<void> {
         const injectDetails: ExtensionTypes.InjectDetails = {

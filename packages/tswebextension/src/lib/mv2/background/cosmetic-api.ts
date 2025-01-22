@@ -51,6 +51,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param scriptText Script text.
      *
      * @returns Promise that resolves when the script is injected.
+     * @throws Error if the script is not injected due to one of the following reasons:
+     * - TabsApi.injectScript() execution error;
+     * - app start time is not defined yet.
      */
     public static async injectScript(tabId: number, frameId: number, scriptText: string): Promise<void> {
         return TabsApi.injectScript(
@@ -73,6 +76,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @returns Promise that will be fulfilled with no arguments when all the CSS has been inserted.
      * If any error occurs, the promise will be rejected with an error message.
+     * @throws Error if the css is not injected due TabsApi.injectCss() execution error.
      */
     public static async injectCss(tabId: number, frameId: number, cssText: string): Promise<void> {
         return TabsApi.injectCss(tabId, frameId, cssText);
@@ -298,12 +302,13 @@ export class CosmeticApi extends CosmeticApiCommon {
         try {
             await CosmeticApi.injectScript(tabId, frameId, scriptText);
         } catch (e) {
+            // Retry injection if it fails
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
                 setTimeout(() => {
                     CosmeticApi.applyJsByTabAndFrame(tabId, frameId, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
-                logger.debug('[applyJsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+                logger.debug('[applyJsByTabAndFrame] error occurred during injection', e);
             }
         }
     }
@@ -352,12 +357,13 @@ export class CosmeticApi extends CosmeticApiCommon {
         try {
             await CosmeticApi.injectCss(tabId, frameId, cssText);
         } catch (e) {
+            // Retry injection if it fails
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
                 setTimeout(() => {
                     CosmeticApi.applyJsByTabAndFrame(tabId, frameId, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
-                logger.debug('[applyCssByTabAndFrame] error occurred during injection', getErrorMessage(e));
+                logger.debug('[applyCssByTabAndFrame] error occurred during injection', e);
             }
         }
     }
