@@ -16,7 +16,7 @@ echo "adguard-api-mv3-example tests starting"
 . ./bamboo-specs/scripts/helpers.sh
 
 if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "adguard-api-mv3-example"; then
-  echo "No changes in adguard-api-example, skipping tests"
+  echo "No changes in adguard-api-mv3-example, skipping tests"
   exit 0;
 fi
 
@@ -27,6 +27,6 @@ pnpm install
 npx lerna run build --scope adguard-api-mv3-example --include-dependencies
 
 # Lint
-pnpm --filter adguard-api-example lint
+pnpm --filter adguard-api-mv3-example lint
 
 echo "adguard-api-mv3-example tests completed"
