@@ -25,9 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - URI encoded `$removeparam` value is not removed in MV3 [AdguardBrowserExtension#3014].
 - `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
 - `$popup,third-party` modifiers cause document blocking [AdguardBrowserExtension#3012].
+- Pattern shortcut extraction from regexp patterns with character classes [AdguardBrowserExtension#2924].
 
 [AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
 [AdguardBrowserExtension#3012]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3012
+[AdguardBrowserExtension#2924]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2924
 
 ## [3.0.8] - 2024-11-25
 
