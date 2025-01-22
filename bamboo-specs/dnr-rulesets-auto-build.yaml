@@ -7,18 +7,6 @@ plan:
 variables:
   dockerContainer: adguard/node-ssh:18.19--0
 
-artifacts: &artifacts
-  - name: dnr-rulesets.tgz
-    location: packages/dnr-rulesets/
-    pattern: dnr-rulesets.tgz
-    shared: true
-    required: true
-
-requirements: &requirements
-  - adg-docker: 'true'
-  - extension: 'true'
-
-
 stages:
   - Build:
       manual: false
@@ -54,8 +42,15 @@ DoNothing:
             BRANCH="${bamboo.planRepository.branchName}"
 
             echo "Build and deployment is not supported on branch ${BRANCH}, skipping"
-  artifacts: *artifacts
-  requirements: *requirements
+  artifacts: &artifacts
+    - name: dnr-rulesets.tgz
+      location: packages/dnr-rulesets/
+      pattern: dnr-rulesets.tgz
+      shared: true
+      required: true
+  requirements: &requirements
+    - adg-docker: 'true'
+    - extension: 'true'
 
 triggers: []
 
