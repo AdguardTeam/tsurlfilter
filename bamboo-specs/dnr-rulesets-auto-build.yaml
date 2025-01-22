@@ -180,11 +180,9 @@ branch-overrides:
         - cron:
             expression: 0 0 */3 * * ?
 
-      branches:
-        <<: *branches
+      branches: *branches
 
-      notifications:
-        <<: *notifications
+      notifications: *notifications
 
       labels: []
 
