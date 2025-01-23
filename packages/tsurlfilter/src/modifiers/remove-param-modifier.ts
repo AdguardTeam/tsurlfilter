@@ -45,7 +45,9 @@ export class RemoveParamModifier implements IAdvancedModifier {
                 throw new Error('Unsupported option in $removeparam: multiple values are not allowed');
             }
 
-            this.valueRegExp = new RegExp(`((^|&)(${SimpleRegex.escapeRegexSpecials(rawValue)})=[^&#]*)`, 'g');
+            // no need to match "&" in the beginning, because we are splitting by "&"
+            // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3076
+            this.valueRegExp = new RegExp(`^${SimpleRegex.escapeRegexSpecials(rawValue)}=[^&#]*$`, 'g');
         }
     }
 
