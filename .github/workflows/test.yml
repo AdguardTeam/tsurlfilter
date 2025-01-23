@@ -3,6 +3,7 @@ name: test
 
 env:
   NODE_VERSION: 20
+  PNPM_VERSION: 8.15.1
 
 on:
   push:
@@ -21,22 +22,32 @@ jobs:
         with:
           # Number of commits to fetch. 0 indicates all history.
           fetch-depth: 0
+
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
-          version: 8
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: List files
+        run: ls -alt
+
       - name: Run bash commands
         shell: bash
         run: |
-          ls -alt
-
-          # install deps
-          pnpm install
+          # logger
+          npx lerna run --scope @adguard/logger lint
+          npx lerna run --scope @adguard/logger test
+          npx lerna run --scope @adguard/logger build
 
           # css-tokenizer
           npx lerna run --scope @adguard/css-tokenizer check-types
