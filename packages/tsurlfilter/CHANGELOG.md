@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   raw filter list rules, declarative metadata, lazy metadata, conversion map, source map, etc.
 - Byte range maps. This feature allows retrieving only specific parts of the ruleset `.json` file, saving memory
   and improving performance.
+- Optional property `maxNumberOfUnsafeRules` to `DeclarativeConverterOptions`
+  for unsafe rules (only for dynamic rulesets).
 
 ### Changed
 
@@ -24,13 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated [@adguard/agtree] to `v3.0.0`.
 - Updated [@adguard/scriptlets] to `v2.0.1`
 - Updated [@adguard/extended-css] to `v2.1.0`
-
-## [3.1.0-alpha.8] - 2024-11-26
-
-### Added
-
-- Optional property `maxNumberOfUnsafeRules` to `DeclarativeConverterOptions`
-  for unsafe rules (only for dynamic rulesets).
 
 ### Fixed
 
@@ -40,16 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$popup,third-party` modifiers cause document blocking [AdguardBrowserExtension#3012].
 - Pattern shortcut extraction from regexp patterns with character classes [AdguardBrowserExtension#2924].
 
-[3.1.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.8
 [AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
 [AdguardBrowserExtension#3012]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3012
 [AdguardBrowserExtension#2924]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2924
-
-## Unreleased <!-- master -->
-
-### Changed
-
-- Updated `@adguard/agtree` to `v2.2.0` which improves the bundle size and performance.
 
 ## [3.0.8] - 2024-11-25
 
