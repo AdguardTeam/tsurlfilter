@@ -171,7 +171,7 @@ export class MetadataRuleSet {
 
     /**
      * Returns all rule set ids in the metadata.
-     * 
+     *
      * @returns Rule set ids.
      */
     public getRuleSetIds(): string[] {
