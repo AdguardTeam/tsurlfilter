@@ -30,7 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3020]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3020
 [AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
 
-
 ## [2.4.0-alpha.10] - 2025-01-17
 
 ### Changed
@@ -46,7 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Injection of remotely hosted script rules.
 
 [2.4.0-alpha.9]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.9
-
 
 ## [2.4.0-alpha.8] - 2024-12-23
 
