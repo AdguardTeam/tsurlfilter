@@ -6,8 +6,8 @@
  */
 import type { Storage } from 'webextension-polyfill';
 import { nanoid } from 'nanoid';
-import * as idb from 'idb';
 import { SuperJSON, type SuperJSONResult } from 'superjson';
+import { deleteDB, openDB } from 'idb';
 
 import { type ExtendedStorageInterface } from './storage-interface';
 import { BrowserStorage } from './browser-storage';
@@ -143,9 +143,9 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
         HybridStorage.idbCapabilityCheckerPromise = (async (): Promise<boolean> => {
             try {
                 const testDbName = `${HybridStorage.TEST_IDB_NAME_PREFIX}${nanoid()}`;
-                const testDb = await idb.openDB(testDbName, HybridStorage.TEST_IDB_VERSION);
+                const testDb = await openDB(testDbName, HybridStorage.TEST_IDB_VERSION);
                 testDb.close();
-                await idb.deleteDB(testDbName);
+                await deleteDB(testDbName);
                 HybridStorage.idbSupported = true;
             } catch (e) {
                 HybridStorage.idbSupported = false;
