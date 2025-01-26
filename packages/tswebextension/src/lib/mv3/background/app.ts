@@ -37,7 +37,6 @@ import { getErrorMessage } from '../../common/error';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import {
     type LocalScriptFunctionData,
-    type LocalScriptletRulesData,
     localScriptRulesService,
 } from './services/local-script-rules-service';
 
@@ -390,15 +389,6 @@ export class TsWebExtension implements AppInterface<
      */
     public static setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
         localScriptRulesService.setLocalScriptRules(localScriptRules);
-    }
-
-    /**
-     * Sets prebuild local **scriptlet** rules.
-     *
-     * @param localScriptletRules Object with pre-build Scriptlet rules. @see {@link LocalScriptRulesService}.
-     */
-    public static setLocalScriptletRules(localScriptletRules: LocalScriptletRulesData): void {
-        localScriptRulesService.setLocalScriptletRules(localScriptletRules);
     }
 
     /**
