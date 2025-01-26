@@ -1,5 +1,5 @@
 import { type ScriptletData } from '@adguard/tsurlfilter';
-import { type IConfiguration } from '@adguard/scriptlets';
+import { type Source } from '@adguard/scriptlets';
 
 import { appContext } from './app-context';
 import { BACKGROUND_TAB_ID } from '../../common/constants';
@@ -51,7 +51,7 @@ export type ExecuteScriptletParams = {
     /**
      * The scriptlet data to be executed.
      */
-    scriptletRunData: ScriptletData,
+    scriptletData: ScriptletData,
 
     /**
      * The domain name of the frame.
@@ -90,7 +90,7 @@ export class ScriptingApi {
      * @param params Parameters for executing the scriptlet.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
-     * @param params.scriptletRunData The scriptlet data to be executed.
+     * @param params.scriptletData The scriptlet data to be executed.
      * @param params.domainName The domain name of the frame. Used for debugging.
      * @returns Promise that resolves when the script is executed.
      */
@@ -98,7 +98,7 @@ export class ScriptingApi {
         {
             tabId,
             frameId,
-            scriptletRunData,
+            scriptletData,
             domainName,
         }: ExecuteScriptletParams,
     ): Promise<void> {
@@ -107,8 +107,8 @@ export class ScriptingApi {
             return;
         }
 
-        const params: IConfiguration = {
-            ...scriptletRunData.params,
+        const params: Source = {
+            ...scriptletData.params,
             uniqueId: String(appContext.startTimeMs),
             verbose: appContext.configuration?.settings.debugScriptlets || false,
             domainName: domainName ?? undefined,
@@ -116,10 +116,10 @@ export class ScriptingApi {
 
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
-            func: scriptletRunData.func,
+            func: scriptletData.func,
             injectImmediately: true,
             world: 'MAIN',
-            args: [params, scriptletRunData.params.args],
+            args: [params, scriptletData.params.args],
         });
     }
 
