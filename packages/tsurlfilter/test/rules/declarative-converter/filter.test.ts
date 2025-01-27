@@ -31,8 +31,8 @@ describe('Filter', () => {
         const indexes = Object.keys(preprocessedFilter.sourceMap).map(Number);
         const rules = await Promise.all(indexes.map(async (index) => filter.getRuleByIndex(index)));
 
-        // FIXME: It looks like poor design: it is not obvious that we should save
-        // and operate preprocessed filter content, but not raw original one.
+        // TODO: It looks like poor design: it is not obvious that we should save
+        // and operate preprocessed filter content, but not raw original one. AG-37306
         const preprocessedContent = preprocessedFilter.rawFilterList.split('\r\n');
 
         expect(rules).toStrictEqual(preprocessedContent);

@@ -2,12 +2,13 @@ import browser, { type WebRequest } from 'webextension-polyfill';
 import { RequestType, type HTTPMethod } from '@adguard/tsurlfilter';
 
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
-import { RequestEvent, type RequestData } from './request-event';
-import { tabsApi, type TabFrameRequestContext } from '../../../tabs/tabs-api';
+import { tabsApi, type TabFrameRequestContextMV3 } from '../../../tabs/tabs-api';
 import { getRequestType } from '../../../../common/request-type';
 import { MAIN_FRAME_ID } from '../../../../common/constants';
 import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
-import { nanoid } from '../../../nanoid';
+import { nanoid } from '../../../../common/utils/nanoid';
+
+import { RequestEvent, type RequestData } from './request-event';
 
 const MAX_URL_LENGTH = 1024 * 16;
 
@@ -18,11 +19,25 @@ type ChromiumBrowser = typeof browser & {
     }
 };
 
-type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
+export enum DocumentLifecycle {
+    /**
+     * See {@link https://developer.chrome.com/docs/web-platform/prerender-pages#how_is_a_page_prerendered}.
+     */
+    Prerender = 'prerender',
+    Active = 'active',
+    Cached = 'cached',
+    Pending_deletion = 'pending_deletion',
+}
+
+export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
     /**
      * The UUID of the document making the request.
      */
     documentId?: string;
+    /**
+     *  The document lifecycle of the frame.
+     */
+    documentLifecycle?: DocumentLifecycle
 };
 
 /**
@@ -162,6 +177,7 @@ export class RequestEvents {
             initiator,
             method,
             timeStamp,
+            documentLifecycle,
         } = details;
 
         let { url, frameId } = details;
@@ -187,22 +203,26 @@ export class RequestEvents {
         const { requestType, contentType } = getRequestType(type);
 
         const isDocumentRequest = requestType === RequestType.Document;
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
 
-        // Pre-rendered documents can have a frame ID other than zero
+        // Pre-rendered documents can have a frame ID other than zero.
         frameId = isDocumentRequest ? MAIN_FRAME_ID : frameId;
 
         let requestFrameId = isDocumentRequest ? frameId : parentFrameId;
 
-        // Relate request to main_frame
+        // If there is no parent frame ID, we assume that the request is a main
+        // frame request.
         if (requestFrameId === -1) {
             requestFrameId = 0;
         }
 
-        // To mark requests started via navigation from the address bar (real
-        // request or pre-render, it does not matter) as first-party requests,
-        // we get only part of the request context to record only the tab and
-        // frame information before calculating the request referrer.
-        const tabFrameRequestContext: TabFrameRequestContext = {
+        /*
+         * To mark requests started via navigation from the address bar (real
+         * request or pre-render, it does not matter) as first-party requests,
+         * we get only part of the request context to record only the tab and
+         * frame information before calculating the request referrer.
+         */
+        const tabFrameRequestContext: TabFrameRequestContextMV3 = {
             requestUrl: url,
             requestType,
             requestId,
@@ -210,13 +230,28 @@ export class RequestEvents {
             tabId,
         };
 
-        const referrerUrl = originUrl
+        // We rely on browser-provided values as the source of truth
+        let referrerUrl = originUrl
             || initiator
-            // Comparison of the requested url with the tab frame url in case of
-            // a navigation change from the browser address bar.
-            || tabsApi.getTabMainFrame(tabId)?.url
-            || tabsApi.getTabFrame(tabId, requestFrameId)?.url
-            || url;
+            || '';
+
+        /**
+         * For requests without a referrer, we need to determine the appropriate referrer URL.
+         * - For prerender document requests, use the request URL itself;
+         * - Otherwise, try to get the referrer from either:
+         *   1. The tab's main frame URL;
+         *   2. The specific frame URL;
+         *   3. Fallback to the request URL.
+         */
+        if (!referrerUrl && isPrerenderRequest && isDocumentRequest) {
+            referrerUrl = url;
+        }
+        if (!referrerUrl) {
+            // Try to get referrer from tab state during address bar navigation.
+            referrerUrl = tabsApi.getTabMainFrame(tabId)?.url
+                || tabsApi.getTabFrame(tabId, requestFrameId)?.url
+                || url;
+        }
 
         // Retrieve the rest part of the request context for record all fields.
         const context = {

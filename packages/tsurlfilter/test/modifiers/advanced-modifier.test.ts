@@ -353,7 +353,7 @@ describe('NetworkRule - removeparam rules', () => {
     });
 
     it('works if query parameters are correctly filtered with regexp', () => {
-        const rule = createNetworkRule('$removeparam=/p1|p2|p3|p4_.*/i', 0);
+        const rule = createNetworkRule('$removeparam=/p1|p2|p3|p4_|\\$p5.*/i', 0);
         const modifier = rule.getAdvancedModifier() as RemoveParamModifier;
 
         const comPage = 'http://example.com/page';
@@ -366,6 +366,7 @@ describe('NetworkRule - removeparam rules', () => {
         expect(modifier.removeParameters(`${comPage}?p0=0&p4_=4`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p4=4`)).toBe(`${comPage}?p0=0&p4=4`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p4_1=4`)).toBe(`${comPage}?p0=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&%24p5=0&$p5=0&p5=0`)).toBe(`${comPage}?p0=0&p5=0`);
     });
 
     it('works if query parameters are removed by naked rule', () => {
@@ -390,7 +391,7 @@ describe('NetworkRule - removeparam rules', () => {
     });
 
     it('works if inverted regex removeparam is applied correctly', () => {
-        const rule = createNetworkRule('$removeparam=~/p0.*/', 0);
+        const rule = createNetworkRule('$removeparam=~/p0|\\$p4.*/', 0);
         const modifier = rule.getAdvancedModifier() as RemoveParamModifier;
 
         const comPage = 'http://example.com/page';
@@ -398,6 +399,7 @@ describe('NetworkRule - removeparam rules', () => {
         expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p01=0&p1=1&p2=2&p3=3`)).toBe(`${comPage}?p01=0`);
+        expect(modifier.removeParameters(`${comPage}?p0=0&p1=2&p2=2&p3=3&%24p4=0&$p4=0&p4=0`)).toBe(`${comPage}?p0=0&%24p4=0&$p4=0`);
     });
 
     it('does not remove unmatched parameters', () => {
@@ -468,6 +470,22 @@ describe('NetworkRule - removeparam rules', () => {
         expect(modifier.removeParameters(`${comPage}`)).toBe(`${comPage}`);
         expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0&p1=1`);
+    });
+
+    // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3076
+    it('preserves parameters in encoded URLs', () => {
+        const rule = createNetworkRule('$removeparam=utm_campaign', 0);
+        const modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+
+        const encodedUrl = `https://redirect.com/path?url=${encodeURIComponent('https://example.com?utm_source=test&utm_campaign=123')}`;
+
+        // Should preserve the encoded URL intact
+        expect(modifier.removeParameters(encodedUrl)).toBe(encodedUrl);
+
+        // Should only remove top-level utm_campaign
+        const mixedUrl = `https://redirect.com/path?utm_campaign=remove&url=${encodeURIComponent('https://example.com?utm_campaign=keep')}`;
+        expect(modifier.removeParameters(mixedUrl))
+            .toBe(`https://redirect.com/path?url=${encodeURIComponent('https://example.com?utm_campaign=keep')}`);
     });
 });
 

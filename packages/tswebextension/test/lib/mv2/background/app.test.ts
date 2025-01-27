@@ -1,7 +1,13 @@
-import type { Runtime } from 'webextension-polyfill';
+import {
+    describe,
+    expect,
+    beforeEach,
+    afterEach,
+    it,
+    vi,
+} from 'vitest';
+import { type Runtime } from 'webextension-polyfill';
 
-import { getConfigurationMv2Fixture } from './fixtures/configuration';
-import { MockAppContext } from './mocks/mock-context';
 import {
     type ConfigurationMV2,
     createTsWebExtension,
@@ -12,26 +18,29 @@ import {
 import { Assistant } from '../../../../src/lib/mv2/background/assistant';
 import { type Message } from '../../../../src/lib/common/message';
 
-jest.mock('@lib/mv2/background/ext-session-storage');
-jest.mock('@lib/mv2/background/context', () => ({
-    appContext: jest.fn(() => new MockAppContext()),
+import { MockAppContext } from './mocks/mock-app-context';
+import { getConfigurationMv2Fixture } from './fixtures/configuration';
+
+vi.mock('../../../../src/lib/mv2/background/ext-session-storage');
+vi.mock('../../../../src/lib/mv2/background/app-context', () => ({
+    appContext: vi.fn(() => new MockAppContext()),
 }));
-jest.mock('@lib/mv2/background/web-request-api');
-jest.mock('@lib/mv2/background/engine-api');
-jest.mock('@lib/mv2/background/tabs/tabs-api');
-jest.mock('@lib/mv2/background/stealth-api');
-jest.mock('@lib/mv2/background/services/resources-service');
-jest.mock('@lib/mv2/background/services/redirects/redirects-service');
-jest.mock('@lib/mv2/background/messages-api', () => ({
+vi.mock('../../../../src/lib/mv2/background/web-request-api');
+vi.mock('../../../../src/lib/mv2/background/engine-api');
+vi.mock('../../../../src/lib/mv2/background/tabs/tabs-api');
+vi.mock('../../../../src/lib/mv2/background/stealth-api');
+vi.mock('../../../../src/lib/mv2/background/services/resources-service');
+vi.mock('../../../../src/lib/mv2/background/services/redirects/redirects-service');
+vi.mock('../../../../src/lib/mv2/background/messages-api', () => ({
     MessagesApi: class {
-        handleMessage = jest.fn();
+        handleMessage = vi.fn();
     },
 }));
-jest.mock('@lib/mv2/background/configuration');
-jest.mock('@lib/mv2/background/assistant');
-jest.mock('@lib/mv2/background/services/local-script-rules-service');
-jest.mock('@lib/mv2/background/request');
-jest.mock('@lib/mv2/background/tabs/tabs-cosmetic-injector');
+vi.mock('../../../../src/lib/mv2/background/configuration');
+vi.mock('../../../../src/lib/mv2/background/assistant');
+vi.mock('../../../../src/lib/mv2/background/services/local-script-rules-service');
+vi.mock('../../../../src/lib/mv2/background/request');
+vi.mock('../../../../src/lib/mv2/background/tabs/tabs-cosmetic-injector');
 
 describe('TsWebExtension', () => {
     let instance: TsWebExtension;
@@ -44,7 +53,7 @@ describe('TsWebExtension', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     it('should be created correctly', () => {
@@ -79,7 +88,7 @@ describe('TsWebExtension', () => {
     });
 
     it('should open assistant via assistant module', async () => {
-        const spy = jest.spyOn(Assistant, 'openAssistant');
+        const spy = vi.spyOn(Assistant, 'openAssistant');
 
         instance.openAssistant(0);
 
@@ -88,7 +97,7 @@ describe('TsWebExtension', () => {
     });
 
     it('should close assistant via assistant module', async () => {
-        const spy = jest.spyOn(Assistant, 'closeAssistant');
+        const spy = vi.spyOn(Assistant, 'closeAssistant');
 
         instance.closeAssistant(0);
 
@@ -99,7 +108,7 @@ describe('TsWebExtension', () => {
     it('should return rules count from engine api', () => {
         const expectedRulesCount = 1000;
 
-        jest.spyOn(engineApi, 'getRulesCount').mockImplementation(() => expectedRulesCount);
+        vi.spyOn(engineApi, 'getRulesCount').mockImplementation(() => expectedRulesCount);
 
         expect(instance.getRulesCount()).toBe(expectedRulesCount);
     });
@@ -107,7 +116,7 @@ describe('TsWebExtension', () => {
     it('should return message handler from messages api', async () => {
         const expectedResponse = Date.now();
 
-        jest.spyOn(messagesApi, 'handleMessage').mockReturnValue(Promise.resolve(expectedResponse));
+        vi.spyOn(messagesApi, 'handleMessage').mockReturnValue(Promise.resolve(expectedResponse));
 
         const handler = instance.getMessageHandler();
 

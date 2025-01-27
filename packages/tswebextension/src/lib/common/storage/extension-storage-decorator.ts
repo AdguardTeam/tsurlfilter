@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-import type { ExtensionStorage } from './extension-storage';
+import { type ExtensionStorage } from './extension-storage';
 
 /**
  * Creates accessor decorator for the specified storage.

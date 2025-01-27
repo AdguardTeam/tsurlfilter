@@ -1,8 +1,9 @@
 import { type ScriptletData } from '@adguard/tsurlfilter';
-import { type IConfiguration } from '@adguard/scriptlets';
+import { type Source } from '@adguard/scriptlets';
+
+import { BACKGROUND_TAB_ID } from '../../common/constants';
 
 import { appContext } from './app-context';
-import { BACKGROUND_TAB_ID } from '../../common/constants';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 
 /**
@@ -51,7 +52,7 @@ export type ExecuteScriptletParams = {
     /**
      * The scriptlet data to be executed.
      */
-    scriptletData: ScriptletData,
+    scriptletRunData: ScriptletData,
 
     /**
      * The domain name of the frame.
@@ -90,7 +91,7 @@ export class ScriptingApi {
      * @param params Parameters for executing the scriptlet.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
-     * @param params.scriptletData The scriptlet data to be executed.
+     * @param params.scriptletRunData The scriptlet data to be executed.
      * @param params.domainName The domain name of the frame. Used for debugging.
      * @returns Promise that resolves when the script is executed.
      */
@@ -98,7 +99,7 @@ export class ScriptingApi {
         {
             tabId,
             frameId,
-            scriptletData,
+            scriptletRunData,
             domainName,
         }: ExecuteScriptletParams,
     ): Promise<void> {
@@ -107,8 +108,8 @@ export class ScriptingApi {
             return;
         }
 
-        const params: IConfiguration = {
-            ...scriptletData.params,
+        const params: Source = {
+            ...scriptletRunData.params,
             uniqueId: String(appContext.startTimeMs),
             verbose: appContext.configuration?.settings.debugScriptlets || false,
             domainName: domainName ?? undefined,
@@ -116,10 +117,10 @@ export class ScriptingApi {
 
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
-            func: scriptletData.func,
+            func: scriptletRunData.func,
             injectImmediately: true,
             world: 'MAIN',
-            args: [params, scriptletData.params.args],
+            args: [params, scriptletRunData.params.args],
         });
     }
 

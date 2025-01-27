@@ -10,7 +10,7 @@ import {
     OPEN_PARENTHESIS,
 } from '../../utils/constants';
 import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css';
-import { ConverterBase } from '../base-interfaces/converter-base';
+import { BaseConverter } from '../base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
 import { CssTokenStream } from '../../parser/css/css-token-stream';
 
@@ -19,22 +19,30 @@ export const ERROR_MESSAGES = {
     INVALID_ATTRIBUTE_VALUE: `Expected '${getFormattedTokenName(TokenType.Ident)}' or '${getFormattedTokenName(TokenType.String)}' as attribute value, but got '%s' with value '%s`,
 };
 
-const enum PseudoClasses {
-    AbpContains = '-abp-contains',
-    AbpHas = '-abp-has',
-    Contains = 'contains',
-    Has = 'has',
-    HasText = 'has-text',
-    MatchesCss = 'matches-css',
-    MatchesCssAfter = 'matches-css-after',
-    MatchesCssBefore = 'matches-css-before',
-    Not = 'not',
-}
+export const PseudoClasses = {
+    AbpContains: '-abp-contains',
+    AbpHas: '-abp-has',
+    Contains: 'contains',
+    Has: 'has',
+    HasText: 'has-text',
+    MatchesCss: 'matches-css',
+    MatchesCssAfter: 'matches-css-after',
+    MatchesCssBefore: 'matches-css-before',
+    Not: 'not',
+} as const;
 
-const enum PseudoElements {
-    After = 'after',
-    Before = 'before',
-}
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type PseudoClasses = typeof PseudoClasses[keyof typeof PseudoClasses];
+
+export const PseudoElements = {
+    After: 'after',
+    Before: 'before',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type PseudoElements = typeof PseudoElements[keyof typeof PseudoElements];
 
 const PSEUDO_ELEMENT_NAMES = new Set<string>([
     PseudoElements.After,
@@ -46,7 +54,7 @@ const PSEUDO_ELEMENT_NAMES = new Set<string>([
  *
  * @todo Implement `convertToUbo` and `convertToAbp`
  */
-export class CssSelectorConverter extends ConverterBase {
+export class CssSelectorConverter extends BaseConverter {
     /**
      * Converts Extended CSS elements to AdGuard-compatible ones
      *

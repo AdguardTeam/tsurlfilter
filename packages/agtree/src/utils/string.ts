@@ -26,6 +26,9 @@ export const DOUBLE_QUOTE_MARKER = '"';
 export type NewLineType = 'lf' | 'crlf' | 'cr';
 export type NewLineSplit = [string, NewLineType | null][];
 
+/**
+ * Utility functions for string manipulation.
+ */
 export class StringUtils {
     /**
      * Finds the first occurrence of a character that:
@@ -35,6 +38,7 @@ export class StringUtils {
      * @param searchedCharacter - Searched character
      * @param start - Start index
      * @param escapeCharacter - Escape character, \ by default
+     * @param end - End index (excluded)
      * @returns Index or -1 if the character not found
      */
     public static findNextUnescapedCharacter(
@@ -42,8 +46,9 @@ export class StringUtils {
         searchedCharacter: string,
         start = 0,
         escapeCharacter: string = ESCAPE_CHARACTER,
+        end = pattern.length,
     ): number {
-        for (let i = start; i < pattern.length; i += 1) {
+        for (let i = start; i < end; i += 1) {
             // The searched character cannot be preceded by an escape
             if (pattern[i] === searchedCharacter && pattern[i - 1] !== escapeCharacter) {
                 return i;
@@ -59,6 +64,7 @@ export class StringUtils {
      * @param searchedCharacter - Searched character
      * @param start - Start index
      * @param escapeCharacter - Escape character, \ by default
+     * @param end - End index (Included)
      * @returns Index or -1 if the character not found
      */
     public static findNextUnescapedCharacterBackwards(
@@ -66,8 +72,9 @@ export class StringUtils {
         searchedCharacter: string,
         start = pattern.length - 1,
         escapeCharacter: string = ESCAPE_CHARACTER,
+        end = 0,
     ): number {
-        for (let i = start; i >= 0; i -= 1) {
+        for (let i = start; i >= end; i -= 1) {
             // The searched character cannot be preceded by an escape
             if (pattern[i] === searchedCharacter && pattern[i - 1] !== escapeCharacter) {
                 return i;

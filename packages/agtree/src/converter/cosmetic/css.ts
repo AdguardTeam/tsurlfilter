@@ -2,7 +2,7 @@
  * @file CSS injection rule converter
  */
 
-import { CosmeticRuleSeparator, type CssInjectionRule } from '../../parser/common';
+import { CosmeticRuleSeparator, type CssInjectionRule } from '../../nodes';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { CssSelectorConverter } from '../css';
 import { AdblockSyntax } from '../../utils/adblockers';

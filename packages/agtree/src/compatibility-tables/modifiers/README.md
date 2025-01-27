@@ -31,8 +31,11 @@ fields:
 | `exception_only`      | The actual modifier can only be used in exceptions, it cannot be used in blocking rules. If it's value is `true`, then the modifier can be used only in exceptions. `exception_only` and `block_only` cannot be used together (they are mutually exclusive).                             | `boolean`        | `false`               |
 | `value_optional`      | Describes whether the *assignable* modifier value is required. For example, `$cookie` is assignable but it can be used without a value in exception rules: `@@\|\|example.com^$cookie`. If `false`, the `value_format` is required, e.g. the value of `$app` should always be specified. | `boolean`        | `false`               |
 | `value_format`        | Describes the format of the value. See [Value format](#value-format) for more details.                                                                                                                                                                                                   | `string\|null`   | `null`                |
+| `value_format_flags`  | [RegExp flags][regexp-flags] for the `value_format` field. It can be used only if the `value_format` is provided and it's a regular expression. Thanks to XRegExp syntax, you can also use flags in the beginning of the regular expression, e.g. `(?i)pattern`.                         | `string\|null`   | `null`                |
 
 <!-- markdownlint-enable MD013 -->
+
+[regexp-flags]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp/RegExp#flags
 
 ### Value format
 
@@ -77,6 +80,13 @@ The value format describes the format of the modifier value. It can be one of th
             >
         - Example:
         - For validating `domain` modifier, you can use `value_format: pipe_separated_domains`.
+
+> [!NOTE]
+> In YAML files, you can use XRegExp syntax for regular expressions.
+> For example, you can use free-spacing mode `(?x)` to make the regular expression more readable,
+> or you can use comments `(?#...)` to add comments to the regular expression,
+> or named captures `(?<name>...)`.
+> During build, YAML files are processed and we extract native regular expressions from XRegExp instances.
 
 * * *
 

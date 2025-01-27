@@ -1,17 +1,21 @@
 import { sprintf } from 'sprintf-js';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/parser/common';
+import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/nodes';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list';
-import { CosmeticRuleParser, ERROR_MESSAGES as COSMETIC_ERROR_MESSAGES } from '../../../src/parser/cosmetic';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
+import {
+    CosmeticRuleParser,
+    ERROR_MESSAGES as COSMETIC_ERROR_MESSAGES,
+} from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
 import {
     ERROR_MESSAGES as UBO_SELECTOR_ERROR_MESSAGES,
-    UboPseudoName,
     formatPseudoName,
-} from '../../../src/parser/css/ubo-selector';
+} from '../../../src/parser/css/ubo-selector-parser';
 import { CSS_NOT_PSEUDO } from '../../../src/utils/constants';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import { UboPseudoName } from '../../../src/common/ubo-selector-common';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid usage of uBlock modifier list', () => {
@@ -95,7 +99,11 @@ describe('CosmeticRuleParser', () => {
                 //       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 expected: (context: NodeExpectContext): AdblockSyntaxError => {
                     return new AdblockSyntaxError(
-                        sprintf(COSMETIC_ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED, AdblockSyntax.Ubo, AdblockSyntax.Adg),
+                        sprintf(
+                            COSMETIC_ERROR_MESSAGES.SYNTAXES_CANNOT_BE_MIXED,
+                            AdblockSyntax.Ubo,
+                            AdblockSyntax.Adg,
+                        ),
                         ...context.toTuple(context.getFullRange()),
                     );
                 },
@@ -130,7 +138,7 @@ describe('CosmeticRuleParser', () => {
                 throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
             }
 
-            expect(CosmeticRuleParser.generate(ruleNode)).toBe(expected);
+            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
         });
     });
 });

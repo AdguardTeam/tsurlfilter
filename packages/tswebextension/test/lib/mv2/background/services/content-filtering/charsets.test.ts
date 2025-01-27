@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import {
     DEFAULT_CHARSET,
     parseCharsetFromCss,
@@ -7,7 +9,7 @@ import {
 } from '../../../../../../src/lib/mv2/background/services/content-filtering/charsets';
 
 describe('Content filtering - charsets', () => {
-    it('checks parsing charset from header', () => {
+    test('checks parsing charset from header', () => {
         expect(parseCharsetFromHeader('text/html; charset=utf-8')).toBe(DEFAULT_CHARSET);
         expect(parseCharsetFromHeader('text/html; charset=windows-1251')).toBe(WIN_1251);
         expect(parseCharsetFromHeader('text/html; charset="windows-1251"')).toBe(WIN_1251);
@@ -44,7 +46,7 @@ describe('Content filtering - charsets', () => {
         });
     });
 
-    it('checks parsing charset from css', () => {
+    test('checks parsing charset from css', () => {
         expect(parseCharsetFromCss('@charset "utf-8";')).toBe(DEFAULT_CHARSET);
         expect(parseCharsetFromCss('@charset "windows-1251";')).toBe(WIN_1251);
     });

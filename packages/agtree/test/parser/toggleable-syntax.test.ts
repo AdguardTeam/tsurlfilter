@@ -1,5 +1,5 @@
 import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error';
-import { RuleParser } from '../../src/parser/rule';
+import { RuleParser } from '../../src/parser/rule-parser';
 import { NodeExpectContext, type NodeExpectFn } from '../helpers/node-utils';
 import { defaultParserOptions } from '../../src/parser/options';
 

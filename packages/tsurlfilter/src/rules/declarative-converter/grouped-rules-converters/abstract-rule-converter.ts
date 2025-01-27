@@ -97,8 +97,8 @@
 /* eslint-enable jsdoc/require-description-complete-sentence */
 /* eslint-enable jsdoc/no-multi-asterisks */
 
-import punycode from 'punycode/';
-import { redirects } from '@adguard/scriptlets';
+import punycode from 'punycode/punycode.js';
+import { getRedirectFilename } from '@adguard/scriptlets/redirects';
 
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
@@ -323,7 +323,7 @@ export abstract class DeclarativeRuleConverter {
             }
             const advancedModifier = rule.getAdvancedModifier();
             const redirectTo = advancedModifier as RedirectModifier;
-            const filename = redirects.getRedirectFilename(redirectTo.getValue());
+            const filename = getRedirectFilename(redirectTo.getValue());
 
             return { extensionPath: `${resourcesPath}/${filename}` };
         }
@@ -340,7 +340,11 @@ export abstract class DeclarativeRuleConverter {
             return {
                 transform: {
                     queryTransform: {
-                        removeParams: DeclarativeRuleConverter.toASCII([value]),
+                        /**
+                         * In case if param is encoded URI we need to decode it first:
+                         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014.
+                         */
+                        removeParams: [decodeURIComponent(value)],
                     },
                 },
             };

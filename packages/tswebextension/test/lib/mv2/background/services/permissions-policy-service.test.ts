@@ -1,4 +1,10 @@
 import {
+    describe,
+    expect,
+    afterEach,
+    it,
+} from 'vitest';
+import {
     MatchingResult,
     RequestType,
     PERMISSIONS_POLICY_HEADER_NAME,
@@ -11,7 +17,7 @@ import {
     type RequestContext,
     RequestContextState,
     RequestContextStorage,
-} from '../../../../../src/lib';
+} from '../../../../../src/lib/mv2/background/request/request-context-storage';
 import { PermissionsPolicyService } from '../../../../../src/lib/mv2/background/services/permissions-policy-service';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 import { FilteringEventType } from '../../../../../src/lib/common/filtering-log';

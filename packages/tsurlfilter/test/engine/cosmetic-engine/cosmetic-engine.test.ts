@@ -177,21 +177,6 @@ describe('Test cosmetic engine', () => {
         expect(result.CSS.genericExtCss[0].getContent()).toContain(extCssCssRuleText);
     });
 
-    it('checks css styles in cosmetic rules', () => {
-        const ruleText = 'example.org##body { background: red!important; }';
-        const rulesLocal = [
-            ruleText,
-        ];
-        const processedLocal = FilterListPreprocessor.preprocess(rulesLocal.join('\n'));
-        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, processedLocal));
-
-        const result = cosmeticEngine.match(createRequest('https://example.org'), CosmeticOption.CosmeticOptionAll);
-        expect(result.elementHiding.generic).toHaveLength(0);
-        expect(result.elementHiding.specific).toHaveLength(0);
-        expect(result.CSS.generic).toHaveLength(0);
-        expect(result.CSS.specific).toHaveLength(0);
-    });
-
     it('finds wildcard hiding rules', () => {
         const rulesLocal = [
             `example.*##${specificRuleContent}`,
