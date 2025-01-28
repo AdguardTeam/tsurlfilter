@@ -3,7 +3,6 @@ import { CosmeticRuleType } from '@adguard/agtree';
 
 import { USER_FILTER_ID } from '../../common/constants';
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
-import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
