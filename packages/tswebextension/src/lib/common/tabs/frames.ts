@@ -3,28 +3,30 @@ import { type FrameCommon } from './frame';
 /**
  * Wrapper around a map for frames.
  */
-export class Frames<T extends FrameCommon> {
+export class Frames {
     /**
      * A map where the key is the frame ID and the value is the frame object.
      */
-    private framesMap = new Map<number, T>();
+    private framesMap = new Map<number, FrameCommon>();
 
     /**
      * Sets frame by id.
+     *
      * @param frameId Frame id.
      * @param frame Frame to save.
      */
-    public set(frameId: number, frame: T): void {
+    public set(frameId: number, frame: FrameCommon): void {
         this.framesMap.set(frameId, frame);
     }
 
     /**
      * Returns frame by id.
+     *
      * @param frameId Frame id.
      *
      * @returns Frame or undefined if frame not found.
      */
-    public get(frameId: number): T | undefined {
+    public get(frameId: number): FrameCommon | undefined {
         return this.framesMap.get(frameId);
     }
 
@@ -37,6 +39,7 @@ export class Frames<T extends FrameCommon> {
 
     /**
      * Deletes frame by id.
+     *
      * @param frameId Frame id.
      */
     public delete(frameId: number): void {
@@ -45,9 +48,10 @@ export class Frames<T extends FrameCommon> {
 
     /**
      * Returns all frames.
+     *
      * @returns Array of frames.
      */
-    public values(): T[] {
+    public values(): FrameCommon[] {
         return [...this.framesMap.values()];
     }
 }
