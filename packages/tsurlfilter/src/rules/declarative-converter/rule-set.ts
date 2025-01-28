@@ -172,6 +172,12 @@ export interface IRuleSet {
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
     serializeCompact(prettyPrint?: boolean): Promise<{ result: string, byteRangeMap: ByteRangeMap }>;
+
+    /**
+     * Unload ruleset content.
+     * This method can be used to free memory until the content is needed again.
+     */
+    unloadContent(): void;
 }
 
 /**
@@ -428,6 +434,36 @@ export class RuleSet implements IRuleSet {
             this.initializerPromise = undefined;
         });
         await this.initializerPromise;
+    }
+
+    /** @inheritdoc */
+    public unloadContent(): void {
+        // If not initialized, no need to unload content
+        if (!this.initialized) {
+            return;
+        }
+
+        // Wait for initialization to complete before proceeding
+        if (this.initializerPromise) {
+            this.initializerPromise.then(() => {
+                this.unloadContent();
+            });
+            return;
+        }
+
+        // Safely iterate over the filter list and unload each filter's content
+        this.filterList.forEach((filter) => {
+            filter.unloadContent();
+        });
+
+        // Clear loaded resources
+        this.sourceMap = undefined;
+        this.declarativeRules = [];
+        this.filterList.clear();
+
+        // Mark the content as unloaded
+        this.initialized = false;
+        this.initializerPromise = undefined;
     }
 
     /** @inheritdoc */

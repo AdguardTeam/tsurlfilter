@@ -20,6 +20,7 @@ import { logger } from '../../common/utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
 import { RuleSetsLoaderApi } from './rule-sets-loader-api';
+import { type RuleSetsCache } from './rule-sets-cache';
 
 export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[],
@@ -55,6 +56,7 @@ export default class FiltersApi {
      * Cache for already created filters. Needed to avoid multiple loading
      * of the same filter.
      */
+    // FIXME
     private static filtersCache: Map<number, IFilter> = new Map();
 
     /**
@@ -177,10 +179,15 @@ export default class FiltersApi {
      *
      * @param filterIds Filter identifiers to sync.
      * @param ruleSetsPath Path to the rulesets.
+     * @param ruleSetsCache Shared cache for rule sets.
      *
      * @returns Promise that resolves when the sync is finished.
      */
-    public static async syncFiltersWithStorage(filterIds: number[], ruleSetsPath: string): Promise<void> {
+    public static async syncFiltersWithStorage(
+        filterIds: number[],
+        ruleSetsPath: string,
+        ruleSetsCache: RuleSetsCache,
+    ): Promise<void> {
         logger.info('Syncing enabled filters with the extension storage');
 
         const filtersToSync: Record<number, PreprocessedFilterListWithChecksum> = {};
@@ -198,7 +205,7 @@ export default class FiltersApi {
             filterIds.map(async (filterId) => {
                 try {
                     const [currentChecksum, storedChecksum] = await Promise.all([
-                        FiltersApi.getChecksum(filterId, ruleSetsPath),
+                        FiltersApi.getChecksum(filterId, ruleSetsPath, ruleSetsCache),
                         FiltersStorage.getChecksum(filterId),
                     ]);
 
@@ -212,7 +219,11 @@ export default class FiltersApi {
                         return;
                     }
 
-                    const preprocessedFilter = await FiltersApi.getPreprocessedFilterList(filterId, ruleSetsPath);
+                    const preprocessedFilter = await FiltersApi.getPreprocessedFilterList(
+                        filterId,
+                        ruleSetsPath,
+                        ruleSetsCache,
+                    );
                     filtersToSync[filterId] = {
                         ...preprocessedFilter,
                         checksum: currentChecksum,
@@ -273,6 +284,7 @@ export default class FiltersApi {
      *
      * @param filterId Filter id.
      * @param ruleSetsPath Path to the rule sets.
+     * @param ruleSetsCache Shared cache for rule sets.
      *
      * @returns Raw filter list.
      *
@@ -281,8 +293,9 @@ export default class FiltersApi {
     public static getRawFilterList = async (
         filterId: number,
         ruleSetsPath: string,
+        ruleSetsCache: RuleSetsCache,
     ): Promise<string> => {
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath, ruleSetsCache);
         const ruleSetId = getRuleSetId(filterId);
 
         return ruleSetsLoaderApi.getRawCategoryContent(
@@ -296,6 +309,7 @@ export default class FiltersApi {
      *
      * @param filterId Filter id.
      * @param ruleSetsPath Path to the rule sets.
+     * @param ruleSetsCache Shared cache for rule sets.
      *
      * @returns Preprocessed filter list.
      *
@@ -307,8 +321,9 @@ export default class FiltersApi {
     public static getPreprocessedFilterList = async (
         filterId: number,
         ruleSetsPath: string,
+        ruleSetsCache: RuleSetsCache,
     ): Promise<PreprocessedFilterList> => {
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath, ruleSetsCache);
         const ruleSetId = getRuleSetId(filterId);
 
         const [rawFilterList, conversionMap] = await Promise.all([
@@ -334,13 +349,18 @@ export default class FiltersApi {
      *
      * @param ruleSetId Rule set id.
      * @param ruleSetsPath Path to the rule sets.
+     * @param ruleSetsCache Shared cache for rule sets.
      *
      * @returns Checksums of the rule sets.
      *
      * @throws If the rule sets loader is not initialized or the checksum for the specified rule set is not found.
      */
-    public static getChecksum(ruleSetId: string | number, ruleSetsPath: string): Promise<string | undefined> {
-        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+    public static getChecksum(
+        ruleSetId: string | number,
+        ruleSetsPath: string,
+        ruleSetsCache: RuleSetsCache,
+    ): Promise<string | undefined> {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath, ruleSetsCache);
 
         return ruleSetsLoaderApi.getChecksum(ruleSetId);
     }

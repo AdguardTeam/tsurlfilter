@@ -35,12 +35,20 @@ export interface IFilter {
      * Returns if the filter is trusted or not.
      */
     isTrusted(): boolean;
+
+    /**
+     * Unload filter content.
+     * This method can be used to free memory until the content is needed again.
+     */
+    unloadContent(): void;
 }
 
 /**
  * Saves the original rules and can return all original rules or just one,
  * with lazy content loading.
  */
+// FIXME: Consider using weak maps
+// FIXME: Consider splitting content to 2 parts: text and binary
 export class Filter implements IFilter {
     // Id of filter
     private readonly id: number;
@@ -133,5 +141,10 @@ export class Filter implements IFilter {
      */
     public isTrusted(): boolean {
         return this.trusted;
+    }
+
+    /** @inheritdoc */
+    public unloadContent(): void {
+        this.content = null;
     }
 }
