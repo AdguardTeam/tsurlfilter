@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Text files from the build result. Now only JSON files are generated and they are including all the necessary data.
+- `filters.json` from the build result. We embedded it to the metadata ruleset.
 
 ## [1.2.20240930132036] - 2024-09-30
 

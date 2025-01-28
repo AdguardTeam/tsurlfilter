@@ -46,8 +46,23 @@ type ByteRangeMapCollection = z.infer<typeof byteRangeMapCollectionValidator>;
  * Metadata validator.
  */
 const metadataValidator = z.object({
+    /**
+     * Byte range maps collection for all rulesets.
+     */
     byteRangeMapsCollection: byteRangeMapCollectionValidator,
+
+    /**
+     * Checksums for all rulesets.
+     */
     checksums: checksumMapValidator,
+
+    /**
+     * Additional properties.
+     * This field stores any extra information not covered by the other fields.
+     * The content of this field is not validated, but it must be JSON serializable.
+     * Validation should be performed by users.
+     */
+    additionalProperties: z.record(z.unknown()),
 });
 
 /**
@@ -65,27 +80,39 @@ const metadataRuleValidator = z.object({
 type Metadata = z.infer<typeof metadataValidator>;
 
 /**
- * Metadata rule set.
- * Its a special rule set that contains only one rule - metadata rule, that holds metadata for all other rulesets.
+ * Represents a specialized metadata ruleset for managing and validating metadata associated
+ * with various rulesets.
+ *
+ * This class handles byte range maps, checksums, and additional properties,
+ * providing methods to manipulate and query this metadata.
  */
 export class MetadataRuleSet {
     private metadataRule: MetadataRule<Metadata>;
 
     /**
-     * Constructor.
+     * Creates an instance of the MetadataRuleSet class.
      *
-     * @param byteRangeMapsCollection Byte range maps collection. Default is an empty object.
-     * @param checksums Checksums. Default is an empty object.
+     * @param byteRangeMapsCollection A map of byte range maps, where each key corresponds to a ruleset ID
+     * and each value is a map of byte ranges for that ruleset. Defaults to an empty object.
+     * @param checksums A map of checksums, where each key corresponds to a rule set ID and each value is the checksum
+     * for that ruleset. Defaults to an empty object.
+     * @param additionalProperties A collection of additional properties, where keys are property names and values are
+     * their associated data. These properties are JSON serializable but not validated by the class.
+     * Defaults to an empty object.
      *
-     * @note It takes values by reference. If ever needed, clone them before passing.
+     * @note
+     * This constructor uses references for the provided arguments. If immutability is required, ensure to clone the
+     * inputs before passing them.
      */
     constructor(
         byteRangeMapsCollection: ByteRangeMapCollection = {},
         checksums: ChecksumMap = {},
+        additionalProperties: Record<string, unknown> | undefined = {},
     ) {
         this.metadataRule = createMetadataRule({
             byteRangeMapsCollection,
             checksums,
+            additionalProperties: additionalProperties ?? {},
         });
     }
 
@@ -179,6 +206,47 @@ export class MetadataRuleSet {
     }
 
     /**
+     * Gets additional property.
+     *
+     * @param key Property key.
+     *
+     * @returns Property value or undefined if not found.
+     */
+    public getAdditionalProperty(key: string): unknown | undefined {
+        return this.metadataRule.metadata.additionalProperties[key];
+    }
+
+    /**
+     * Sets additional property.
+     *
+     * @param key Property key.
+     * @param value Property value. Should be JSON serializable.
+     */
+    public setAdditionalProperty(key: string, value: unknown): void {
+        this.metadataRule.metadata.additionalProperties[key] = value;
+    }
+
+    /**
+     * Checks whether additional property exists.
+     *
+     * @param key Property key.
+     *
+     * @returns Whether the property exists.
+     */
+    public hasAdditionalProperty(key: string): boolean {
+        return key in this.metadataRule.metadata.additionalProperties;
+    }
+
+    /**
+     * Removes additional property.
+     *
+     * @param key Property key.
+     */
+    public removeAdditionalProperty(key: string): void {
+        delete this.metadataRule.metadata.additionalProperties[key];
+    }
+
+    /**
      * Serializes the ruleset to a string.
      *
      * @param pretty Whether to prettify the output.
@@ -205,9 +273,15 @@ export class MetadataRuleSet {
             throw new Error('Invalid input: expected a non-empty array.');
         }
 
-        const { metadata: { byteRangeMapsCollection, checksums } } = metadataRuleValidator.parse(parsed[0]);
+        const {
+            metadata: {
+                byteRangeMapsCollection,
+                checksums,
+                additionalProperties,
+            },
+        } = metadataRuleValidator.parse(parsed[0]);
 
-        const ruleSet = new MetadataRuleSet(byteRangeMapsCollection, checksums);
+        const ruleSet = new MetadataRuleSet(byteRangeMapsCollection, checksums, additionalProperties);
 
         return ruleSet;
     }
