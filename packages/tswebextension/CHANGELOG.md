@@ -24,6 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3020]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3020
 [AdguardBrowserExtension#3002]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3002
 
+## [2.4.0-alpha.11] - 2025-01-29
+
+### Removed
+
+- Local Scriptlet rules allowing. This is a reversion of `2.4.0-alpha.10` changes
+  so there is no more limitation on Scriptlet rules execution.
+
+[2.4.0-alpha.11]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.4.0-alpha.11
+
 ## [2.4.0-alpha.10] - 2025-01-17
 
 ### Changed
