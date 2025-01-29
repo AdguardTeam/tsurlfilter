@@ -17,6 +17,8 @@ import {
     parseCharsetFromHeader,
 } from './charsets';
 
+// Do not destruct inside import, because it somehow breaks build in browser
+// extension via "ReferenceError: TextDecoder is not defined".
 const { TextEncoder, TextDecoder } = TextEncoding;
 
 /**

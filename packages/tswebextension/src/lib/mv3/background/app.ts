@@ -31,11 +31,7 @@ import FiltersApi, { type LoadFilterContent, type UpdateStaticFiltersResult } fr
 import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
 import { RuleSetsLoaderApi } from './rule-sets-loader-api';
-import {
-    type LocalScriptFunctionData,
-    type LocalScriptletRulesData,
-    localScriptRulesService,
-} from './services/local-script-rules-service';
+import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
 
@@ -400,15 +396,6 @@ export class TsWebExtension implements AppInterface<
      */
     public static setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
         localScriptRulesService.setLocalScriptRules(localScriptRules);
-    }
-
-    /**
-     * Sets prebuild local **scriptlet** rules.
-     *
-     * @param localScriptletRules Object with pre-build Scriptlet rules. @see {@link LocalScriptRulesService}.
-     */
-    public static setLocalScriptletRules(localScriptletRules: LocalScriptletRulesData): void {
-        localScriptRulesService.setLocalScriptletRules(localScriptletRules);
     }
 
     /**

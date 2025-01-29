@@ -471,6 +471,22 @@ describe('NetworkRule - removeparam rules', () => {
         expect(modifier.removeParameters(`${comPage}?p0=0`)).toBe(`${comPage}?p0=0`);
         expect(modifier.removeParameters(`${comPage}?p0=0&p1=1`)).toBe(`${comPage}?p0=0&p1=1`);
     });
+
+    // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3076
+    it('preserves parameters in encoded URLs', () => {
+        const rule = createNetworkRule('$removeparam=utm_campaign', 0);
+        const modifier = rule.getAdvancedModifier() as RemoveParamModifier;
+
+        const encodedUrl = `https://redirect.com/path?url=${encodeURIComponent('https://example.com?utm_source=test&utm_campaign=123')}`;
+
+        // Should preserve the encoded URL intact
+        expect(modifier.removeParameters(encodedUrl)).toBe(encodedUrl);
+
+        // Should only remove top-level utm_campaign
+        const mixedUrl = `https://redirect.com/path?utm_campaign=remove&url=${encodeURIComponent('https://example.com?utm_campaign=keep')}`;
+        expect(modifier.removeParameters(mixedUrl))
+            .toBe(`https://redirect.com/path?url=${encodeURIComponent('https://example.com?utm_campaign=keep')}`);
+    });
 });
 
 describe('NetworkRule - mv3 validity', () => {
