@@ -1,12 +1,9 @@
 import { type ScriptletData, type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
-import { CosmeticRuleType } from '@adguard/agtree';
 
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { getErrorMessage } from '../../common/error';
-import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
-import { nanoid } from '../../common/utils/nanoid';
 import { getDomain } from '../../common/utils/url';
 import { tabsApi } from '../tabs/tabs-api';
 
@@ -259,6 +256,18 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Predicate to filter out non-local script rules.
+     *
+     * @param rule Cosmetic rule.
+     *
+     * @returns True if the rule is a local script rule, otherwise false.
+     */
+    private static shouldSanitizeScriptRule(rule: CosmeticRule): boolean {
+        const ruleText = rule.getContent();
+        return localScriptRulesService.isLocalScript(ruleText);
+    }
+
+    /**
      * Logs js rules applied to specific frame.
      *
      * We need a separate function for logging because script rules can be logged before injection
@@ -269,53 +278,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param params Data for js rule logging.
      */
     public static logScriptRules(params: LogJsRulesParams): void {
-        const {
-            tabId,
-            cosmeticResult,
-            url,
-            contentType,
-            timestamp,
-        } = params;
-
-        const scriptRules = cosmeticResult.getScriptRules();
-
-        for (const scriptRule of scriptRules) {
-            if (scriptRule.isGeneric()) {
-                continue;
-            }
-
-            const ruleText = scriptRule.getContent();
-
-            // do not log rules if they are not local
-            // which means that will not be applied
-            if (!localScriptRulesService.isLocalScript(ruleText)) {
-                continue;
-            }
-
-            const ruleType = scriptRule.getType();
-            defaultFilteringLog.publishEvent({
-                type: FilteringEventType.JsInject,
-                data: {
-                    script: true,
-                    tabId,
-                    // for proper filtering log request info rule displaying
-                    // event id should be unique for each event, not copied from request
-                    // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341
-                    eventId: nanoid(),
-                    requestUrl: url,
-                    frameUrl: url,
-                    frameDomain: getDomain(url) as string,
-                    requestType: contentType,
-                    timestamp,
-                    filterId: scriptRule.getFilterListId(),
-                    ruleIndex: scriptRule.getIndex(),
-                    cssRule: ruleType === CosmeticRuleType.ElementHidingRule
-                        || ruleType === CosmeticRuleType.CssInjectionRule,
-                    scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
-                        || ruleType === CosmeticRuleType.JsInjectionRule,
-                    contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
-                },
-            });
-        }
+        super.logScriptRules(
+            params,
+            CosmeticApi.shouldSanitizeScriptRule,
+        );
     }
 }

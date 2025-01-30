@@ -1,13 +1,9 @@
 import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
-import { CosmeticRuleType } from '@adguard/agtree';
 
 import { USER_FILTER_ID } from '../../common/constants';
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
-import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
-import { nanoid } from '../../common/utils/nanoid';
-import { getDomain } from '../../common/utils/url';
 
 import { appContext } from './app-context';
 import { engineApi, tabsApi } from './api';
@@ -39,8 +35,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Max number of tries to inject cosmetic rules.
      *
      * Script or style injection may fail in Firefox,
-     * @see {@link https://bugzilla.mozilla.org/show_bug.cgi?id=1591825},
      * so we need to retry the injection.
+     *
+     * @see {@link https://bugzilla.mozilla.org/show_bug.cgi?id=1591825}
      */
     private static readonly INJECTION_MAX_TRIES = 100;
 
@@ -224,52 +221,10 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param params Data for js rule logging.
      */
     public static logScriptRules(params: LogJsRulesParams): void {
-        const {
-            tabId,
-            cosmeticResult,
-            url,
-            contentType,
-            timestamp,
-        } = params;
-
-        const scriptRules = cosmeticResult.getScriptRules();
-
-        const permittedScriptRules = CosmeticApi.sanitizeScriptRules(scriptRules);
-
-        // TODO: following code is similar to mv3 one
-        // the only difference is that mv2 code iterates over *sanitized* script rules
-        // and mv3 code iterates over script rules as is
-        // so probably additional helper method, e.g. prepareScriptRulesForLogging, should be added
-        for (const scriptRule of permittedScriptRules) {
-            if (scriptRule.isGeneric()) {
-                continue;
-            }
-
-            const ruleType = scriptRule.getType();
-            defaultFilteringLog.publishEvent({
-                type: FilteringEventType.JsInject,
-                data: {
-                    script: true,
-                    tabId,
-                    // for proper filtering log request info rule displaying
-                    // event id should be unique for each event, not copied from request
-                    // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341
-                    eventId: nanoid(),
-                    requestUrl: url,
-                    frameUrl: url,
-                    frameDomain: getDomain(url) as string,
-                    requestType: contentType,
-                    timestamp,
-                    filterId: scriptRule.getFilterListId(),
-                    ruleIndex: scriptRule.getIndex(),
-                    cssRule: ruleType === CosmeticRuleType.ElementHidingRule
-                        || ruleType === CosmeticRuleType.CssInjectionRule,
-                    scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
-                        || ruleType === CosmeticRuleType.JsInjectionRule,
-                    contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
-                },
-            });
-        }
+        super.logScriptRules(
+            params,
+            CosmeticApi.shouldSanitizeScriptRule,
+        );
     }
 
     /**
@@ -324,26 +279,36 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Filters insecure scripts from remote sources.
      *
      * @param rules Cosmetic rules.
+     *
      * @returns Permitted script rules.
      */
     private static sanitizeScriptRules(rules: CosmeticRule[]): CosmeticRule[] {
-        return rules.filter((rule) => {
-            // Scriptlets should not be excluded for remote filters
-            if (rule.isScriptlet) {
-                return true;
-            }
+        return rules.filter(CosmeticApi.shouldSanitizeScriptRule);
+    }
 
-            // User rules should not be excluded
-            const filterId = rule.getFilterListId();
-            if (filterId === USER_FILTER_ID) {
-                return true;
-            }
+    /**
+     * Predicate to filter out non-local script rules.
+     *
+     * @param rule Cosmetic rule.
+     *
+     * @returns True if the rule is a local script rule, otherwise false.
+     */
+    private static shouldSanitizeScriptRule(rule: CosmeticRule): boolean {
+        // Scriptlets should not be excluded for remote filters
+        if (rule.isScriptlet) {
+            return true;
+        }
 
-            /**
-             * @see {@link LocalScriptRulesService} for details about script source
-             */
-            return localScriptRulesService.isLocal(rule);
-        });
+        // User rules should not be excluded
+        const filterId = rule.getFilterListId();
+        if (filterId === USER_FILTER_ID) {
+            return true;
+        }
+
+        /**
+         * @see {@link LocalScriptRulesService} for details about script source
+         */
+        return localScriptRulesService.isLocal(rule);
     }
 
     /**

@@ -1,7 +1,11 @@
+import { CosmeticRuleType } from '@adguard/agtree';
 import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { LF, SEMICOLON } from './constants';
+import { defaultFilteringLog, FilteringEventType } from './filtering-log';
 import { type ContentType } from './request-type';
+import { getDomain } from './utils/url';
+import { nanoid } from './utils/nanoid';
 
 /**
  * Information for logging js rules.
@@ -345,5 +349,57 @@ export class CosmeticApiCommon {
         });
 
         return scriptText;
+    }
+
+    /**
+     * Logs js rules applied to a specific frame.
+     *
+     * @param params Data for js rule logging.
+     * @param predicate Function to filter script rules before logging, e.g. check if the script rule is local.
+     */
+    protected static logScriptRules(
+        params: LogJsRulesParams,
+        predicate: (cosmeticResult: CosmeticRule) => boolean,
+    ): void {
+        const {
+            tabId,
+            cosmeticResult,
+            url,
+            contentType,
+            timestamp,
+        } = params;
+
+        const scriptRules = cosmeticResult.getScriptRules().filter(predicate);
+
+        for (const scriptRule of scriptRules) {
+            if (scriptRule.isGeneric()) {
+                continue;
+            }
+
+            const ruleType = scriptRule.getType();
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.JsInject,
+                data: {
+                    script: true,
+                    tabId,
+                    // for proper filtering log request info rule displaying
+                    // event id should be unique for each event, not copied from request
+                    // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2341
+                    eventId: nanoid(),
+                    requestUrl: url,
+                    frameUrl: url,
+                    frameDomain: getDomain(url) as string,
+                    requestType: contentType,
+                    timestamp,
+                    filterId: scriptRule.getFilterListId(),
+                    ruleIndex: scriptRule.getIndex(),
+                    cssRule: ruleType === CosmeticRuleType.ElementHidingRule
+                        || ruleType === CosmeticRuleType.CssInjectionRule,
+                    scriptRule: ruleType === CosmeticRuleType.ScriptletInjectionRule
+                        || ruleType === CosmeticRuleType.JsInjectionRule,
+                    contentRule: ruleType === CosmeticRuleType.HtmlFilteringRule,
+                },
+            });
+        }
     }
 }
