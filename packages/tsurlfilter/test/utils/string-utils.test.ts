@@ -4,6 +4,7 @@ import {
     hasUnquotedSubstring,
     fastHash,
     replaceAll,
+    getUtf8EncodedLength,
 } from '../../src/utils/string-utils';
 
 describe('splitByDelimiterWithEscapeCharacter', () => {
@@ -135,55 +136,55 @@ describe('fastHash', () => {
     });
 });
 
-describe('stringUtils.getUtf8EncodedLength', () => {
+describe('getUtf8EncodedLength', () => {
     it('should return 0 for an empty string', () => {
-        expect(stringUtils.getUtf8EncodedLength('')).toBe(0);
+        expect(getUtf8EncodedLength('')).toBe(0);
     });
 
     it('should return 1 for a single ASCII character', () => {
         // ASCII character
-        expect(stringUtils.getUtf8EncodedLength('A')).toBe(1);
+        expect(getUtf8EncodedLength('A')).toBe(1);
     });
 
     it('should return the correct byte length for a string with multiple ASCII characters', () => {
         // "Hello" consists of 5 ASCII characters
-        expect(stringUtils.getUtf8EncodedLength('Hello')).toBe(5);
+        expect(getUtf8EncodedLength('Hello')).toBe(5);
     });
 
     it('should return 2 for a 2-byte UTF-8 character (e.g., é)', () => {
         // 'é' is a 2-byte character in UTF-8
-        expect(stringUtils.getUtf8EncodedLength('é')).toBe(2);
+        expect(getUtf8EncodedLength('é')).toBe(2);
     });
 
     it('should return 3 for a 3-byte UTF-8 character (e.g., 中)', () => {
         // '中' is a 3-byte character in UTF-8
-        expect(stringUtils.getUtf8EncodedLength('中')).toBe(3);
+        expect(getUtf8EncodedLength('中')).toBe(3);
     });
 
     it('should return 4 for a 4-byte UTF-8 character (e.g., smiley emoji)', () => {
         // '😄' is a 4-byte character in UTF-8 (surrogate pair)
-        expect(stringUtils.getUtf8EncodedLength('😄')).toBe(4);
+        expect(getUtf8EncodedLength('😄')).toBe(4);
     });
 
     it('should handle mixed strings with ASCII and multi-byte UTF-8 characters', () => {
         // "Hello " = 6 bytes, 'é' = 2 bytes
-        expect(stringUtils.getUtf8EncodedLength('Hello é')).toBe(8);
+        expect(getUtf8EncodedLength('Hello é')).toBe(8);
     });
 
     it('should handle surrogate pairs correctly', () => {
         const complexEmoji = '👨‍👩‍👧‍👦'; // Family emoji
-        expect(stringUtils.getUtf8EncodedLength(complexEmoji)).toBe(25); // Surrogate pairs and ZWJ
+        expect(getUtf8EncodedLength(complexEmoji)).toBe(25); // Surrogate pairs and ZWJ
     });
 
     it('should return correct byte length for characters in different byte ranges', () => {
         // 'A' = 1 byte, 'é' = 2 bytes, '中' = 3 bytes, '😄' = 4 bytes
-        expect(stringUtils.getUtf8EncodedLength('Aé中😄')).toBe(10);
+        expect(getUtf8EncodedLength('Aé中😄')).toBe(10);
     });
 
     it('should correctly handle special characters like newline, tabs, etc.', () => {
         // Newline is a single byte in UTF-8
-        expect(stringUtils.getUtf8EncodedLength('\n')).toBe(1);
+        expect(getUtf8EncodedLength('\n')).toBe(1);
         // Tab is a single byte in UTF-8
-        expect(stringUtils.getUtf8EncodedLength('\t')).toBe(1);
+        expect(getUtf8EncodedLength('\t')).toBe(1);
     });
 });
