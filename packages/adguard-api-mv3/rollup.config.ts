@@ -42,7 +42,6 @@ const backgroundConfig = {
         include: 'src/background/**',
     },
     external: [
-        '@adguard/logger',
         '@adguard/tswebextension/mv3',
         'zod',
     ],

@@ -1,7 +1,7 @@
 import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
 
-import * as rule from './rule';
+import { type IRule, RULE_INDEX_NONE } from './rule';
 import { SimpleRegex } from './simple-regex';
 import { type Request } from '../request';
 import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
@@ -202,7 +202,7 @@ export enum NetworkRuleGroupOptions {
  * Basic network filtering rule.
  * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
  */
-export class NetworkRule implements rule.IRule {
+export class NetworkRule implements IRule {
     private readonly ruleIndex: number;
 
     private readonly filterListId: number;
@@ -1055,7 +1055,7 @@ export class NetworkRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = rule.RULE_INDEX_NONE) {
+    constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         // TODO: Remove this completely
         this.ruleText = RuleGenerator.generate(node);

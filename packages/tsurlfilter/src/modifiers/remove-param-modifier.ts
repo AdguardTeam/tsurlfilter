@@ -1,4 +1,4 @@
-import * as utils from '../utils/url';
+import { cleanUrlParamByRegExp } from '../utils/url';
 import { type IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
 
@@ -95,9 +95,9 @@ export class RemoveParamModifier implements IAdvancedModifier {
         }
 
         if (this.value.startsWith('~')) {
-            return utils.cleanUrlParamByRegExp(url, this.valueRegExp, true);
+            return cleanUrlParamByRegExp(url, this.valueRegExp, true);
         }
 
-        return utils.cleanUrlParamByRegExp(url, this.valueRegExp);
+        return cleanUrlParamByRegExp(url, this.valueRegExp);
     }
 }
