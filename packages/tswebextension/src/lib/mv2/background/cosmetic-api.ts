@@ -30,10 +30,18 @@ type ScriptsAndScriptletsDataMv2 = {
  * Used to prepare and inject javascript and css into pages.
  */
 export class CosmeticApi extends CosmeticApiCommon {
-    // Timeout for cosmetic injection retry on failure.
+    /**
+     * Timeout for cosmetic injection retry on failure.
+     */
     private static readonly INJECTION_RETRY_TIMEOUT_MS = 10;
 
-    // Max number of tries to inject cosmetic rules.
+    /**
+     * Max number of tries to inject cosmetic rules.
+     *
+     * Script or style injection may fail in Firefox,
+     * @see {@link https://bugzilla.mozilla.org/show_bug.cgi?id=1591825},
+     * so we need to retry the injection.
+     */
     private static readonly INJECTION_MAX_TRIES = 100;
 
     /**
