@@ -31,18 +31,16 @@
  *
  *  Applying {@link CosmeticRule} from the background page.
  *
- * We calculate {@link CosmeticResult} and store it in {@link TabContext} context
- * at the time {@link RequestEvents.onBeforeRequest} is processed.
+ * We pre-calculate cosmetics for the request as soon as possible —
+ * on {@link browser.webNavigation.onBeforeNavigate} or {@link RequestEvents.onBeforeRequest} events,
+ * depending on which event is processed first, (there is a guard clause for this).
+ * Pre-calculated cosmetics are stored in the context of frames.
  *
  * To get the scripts up and running as quickly as possible
  * we try to inject them the first time during the {@link RequestEvents.onResponseStarted}.
  *
- * All cosmetic rules are then injected on the {@link browser.webNavigation.onCommitted} event.
- *
- * In Firefox, {@link browser.webNavigation.onCommitted} may not work for child frames,
- * so we also try to inject cosmetic rules on {@link RequestEvents.onCompleted}.
- *
- * For frames without a source, we inject cosmetics on the {@link browser.webNavigation.onDOMContentLoaded} event.
+ * All cosmetic rules are then injected on the {@link browser.webNavigation.onCommitted}
+ * or {@link browser.webNavigation.onDOMContentLoaded} events.
  *
  * The frame data will be removed from the specified {@link TabContext} on {@link browser.webNavigation.onCompleted} or
  * {@link browser.webNavigation.onErrorOccurred } events.
@@ -52,10 +50,11 @@
  *                                       ┌─────────────────────────────┐
  * Matches {@link MatchingResult}        │                             │
  * for the request.                      │       onBeforeRequest       ◄─┐
- * If this is a frame request,           │                             │ │
- * also matches the                      └──────────────┬──────────────┘ │
- * {@link CosmeticResult}                               │                │
- * for the specified frame.                             │                │
+ * If this is a frame request, also      │                             │ │
+ * pre-calculates {@link CosmeticResult} └──────────────┬──────────────┘ │
+ * for the specified frame,                             │                │
+ * and stores it in the frame context.                  │                │
+ *                                                      │                │
  * If the request is neither blocked                    │                │
  * nor redirected, apply the                            │                │
  * $removeparam rules.                                  │                │
@@ -101,18 +100,16 @@
  *                                     │ └─────────────────────────────┘
  *                                     │
  *                                     │ ┌─────────────────────────────┐
- * Try injecting JS rules into the     │ │                             │
- * frame based on                      └─►      onResponseStarted      │
- * {@link CosmeticRule}.                 │                             │
+ * Tries injecting JS rules into the   │ │                             │
+ * frame based on pre-calculate        └─►      onResponseStarted      │
+ * cosmetic result.                      │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- * In Firefox, try injecting the         │                             │
- * CSS and JS into the                   │         onCompleted         │
- * subdocument frame based on            │                             │
- * {@link CosmeticResult}.               └─────────────────────────────┘
- * Remove the request information
- * from {@link requestContextStorage}.
+ * Removes the request information       │                             │
+ * from {@link requestContextStorage}.   │         onCompleted         │
+ *                                       │                             │
+ *                                       └─────────────────────────────┘
  *
  *                                       ┌─────────────────────────────┐
  * Remove the request information        │                             │
@@ -132,20 +129,21 @@
  *                                       ┌──────────────▼──────────────┐
  * Update main frame data with           │                             │
  * {@link updateMainFrameData}           │       onBeforeNavigate      │
- * and matches {@link CosmeticResult}    │                             │
+ * and pre-calculate cosmetics           │                             │
+ * so it can be applied later.           │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
  * Try injecting CSS and JS rules        │                             │
- * into the frame with source            │         onCommitted         │
- * based on {@link CosmeticRule}.        │                             │
+ * into the frame with source based on   │         onCommitted         │
+ * pre-calculated cosmetic result.       │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
  * Try injecting CSS and JS rules        │                             │
- * into the subdocument frame            │      onDOMContentLoaded     ├─┐
- * without source based on               │                             │ │
- * {@link CosmeticRule}.                 └──────────────┬──────────────┘ │
+ * into the subdocument frame without    │      onDOMContentLoaded     ├─┐
+ * source based on pre-calculated        │                             │ │
+ * cosmetic result.                      └──────────────┬──────────────┘ │
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │
  * Remove the frame data                 │                             │ │
