@@ -1,16 +1,15 @@
 import browser, { type WebNavigation } from 'webextension-polyfill';
 
-import { EventChannel } from '../../common/utils/channels';
-import { MessageType } from '../../common/message-constants';
 import { MAIN_FRAME_ID } from '../../common/constants';
+import { Assistant as CommonAssistant } from '../../common/content-script/assistant/assistant';
 
 import { type TabContext } from './tabs';
-import { messagesApi } from './api';
 
 /**
- * Event channel wrapper for sending messages to the assistant.
+ * Assistant class is the handler of messages and events related
+ * to AdGuard assistant with extended detection of assistant frame.
  */
-export class Assistant {
+export class Assistant extends CommonAssistant {
     /**
      * Maximum time delay in milliseconds between the assistant frame creation and the assistant initialization.
      */
@@ -20,44 +19,6 @@ export class Assistant {
      * Assistant frame URL.
      */
     private static FRAME_URL = 'about:blank';
-
-    public static onCreateRule = new EventChannel<string>();
-
-    /**
-     * Path to assembled @adguard/assistant module. Necessary for lazy on-demand
-     * loading of the assistant.
-     */
-    public static assistantUrl = '';
-
-    /**
-     * Sends message to assistant to open it on the page.
-     *
-     * @param tabId Tab id.
-     */
-    public static async openAssistant(tabId: number): Promise<void> {
-        // Lazy load assistant
-        await browser.tabs.executeScript(
-            tabId,
-            { file: this.assistantUrl },
-        );
-
-        await messagesApi.sendMessage(tabId, {
-            type: MessageType.InitAssistant,
-            tabId,
-            assistantUrl: this.assistantUrl,
-        });
-    }
-
-    /**
-     * Sends message to assistant to close it on the page.
-     *
-     * @param tabId Tab id.
-     */
-    public static async closeAssistant(tabId: number): Promise<void> {
-        await messagesApi.sendMessage(tabId, {
-            type: MessageType.CloseAssistant,
-        });
-    }
 
     /**
      * Checks whether the frame is an assistant frame. Two conditions must be met:

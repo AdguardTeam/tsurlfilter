@@ -1,5 +1,5 @@
 /* eslint-disable class-methods-use-this */
-import browser, { type Runtime } from 'webextension-polyfill';
+import { type Runtime } from 'webextension-polyfill';
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
@@ -27,27 +27,13 @@ import { RequestBlockingApi } from './request';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { type TabsApi } from './tabs';
 
-export type MessageHandlerMV2 = (message: Message, sender: Runtime.MessageSender) => Promise<unknown>;
-
-type MessageSenderMV2 = (tabId: number, message: unknown) => Promise<void>;
-
-export interface MessagesApiInterface {
-    sendMessage: MessageSenderMV2;
-    handleMessage: MessageHandlerMV2;
-}
-
 // TODO: add long live connection
 // TODO: CollectHitStats
+// TODO: Move to common folder
 /**
  * Messages API implementation. It is used to communicate with content scripts.
  */
-export class MessagesApi implements MessagesApiInterface {
-    // TODO: use IoC container?
-    /**
-     * Assistant event listener.
-     */
-    onAssistantCreateRuleListener: undefined | ((ruleText: string) => void);
-
+export class MessagesApi {
     /**
      * Messages API constructor.
      *
@@ -62,16 +48,6 @@ export class MessagesApi implements MessagesApiInterface {
     }
 
     /**
-     * Sends message to the specified tab.
-     *
-     * @param tabId Tab ID.
-     * @param message Message.
-     */
-    public async sendMessage(tabId: number, message: unknown): Promise<void> {
-        await browser.tabs.sendMessage(tabId, message);
-    }
-
-    /**
      * Messages handler.
      *
      * @param message Message object.
@@ -79,9 +55,7 @@ export class MessagesApi implements MessagesApiInterface {
      *
      * @returns Promise resolved with response to the message.
      */
-    // TODO remove the rule bellow, and any
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public async handleMessage(message: Message, sender: Runtime.MessageSender): Promise<any> {
+    public async handleMessage(message: Message, sender: Runtime.MessageSender): Promise<unknown> {
         try {
             message = messageValidator.parse(message);
         } catch (e) {

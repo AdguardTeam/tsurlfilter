@@ -4,7 +4,7 @@ import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 
-import { type AppInterface } from '../../common/app';
+import { type MessageHandler, type AppInterface } from '../../common/app';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog } from '../../common/filtering-log';
@@ -12,17 +12,17 @@ import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
+import { Assistant } from '../../common/content-script/assistant/assistant';
 
 import { allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
-import { Assistant } from './assistant';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { declarativeFilteringLog } from './declarative-filtering-log';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
 import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
-import { MessagesApi, type MessagesHandlerMV3 } from './messages-api';
+import { MessagesApi } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
 import RuleSetsLoaderApi from './rule-sets-loader-api';
 import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
@@ -59,8 +59,7 @@ export type {
 export class TsWebExtension implements AppInterface<
     ConfigurationMV3,
     ConfigurationMV3Context,
-    ConfigurationResult,
-    MessagesHandlerMV3
+    ConfigurationResult
 > {
     /**
      * Fires on filtering log event.
@@ -156,6 +155,10 @@ export class TsWebExtension implements AppInterface<
 
             // Compute and save matching result for tabs, opened before app initialization.
             await TabsCosmeticInjector.processOpenTabs();
+
+            // Do it only once on first start, because path to assistantUrl can
+            // not be changed during runtime.
+            Assistant.setAssistantUrl(config.settings.assistantUrl);
 
             appContext.isAppStarted = true;
             this.isStarted = true;
@@ -532,7 +535,7 @@ export class TsWebExtension implements AppInterface<
      *
      * @returns Messages handler.
      */
-    public getMessageHandler(): MessagesHandlerMV3 {
+    public getMessageHandler(): MessageHandler {
         // Keep app context when handle message.
         const messagesApi = new MessagesApi(this, tabsApi, defaultFilteringLog);
         return messagesApi.handleMessage;

@@ -3,7 +3,7 @@
  * This file contains validation schemas and inferred types for message data.
  */
 import { z } from 'zod';
-import { RequestType } from '@adguard/tsurlfilter';
+import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
 import { MESSAGE_HANDLER_NAME, MessageType } from './message-constants';
 

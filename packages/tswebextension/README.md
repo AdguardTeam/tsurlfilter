@@ -9,6 +9,7 @@ Table of content:
     - [Install](#install)
     - [Usage](#usage)
     - [CLI](#cli)
+    - [Side effects](#side-effects)
     - [API](#api)
         - [configuration](#configuration)
         - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
@@ -171,6 +172,24 @@ Commands:
     war [path]        Downloads web accessible resources for redirect rules
     help [command]    display help for command
 ```
+
+## Side effects
+
+### Side Effects
+In this project, the `sideEffects` field is defined as follows:
+```
+"sideEffects": [
+    "dist/assistant-inject.js",
+    "dist/content-script.js",
+    "dist/content-script.mv3.js"
+]
+```
+
+This configuration indicates that the specified files (`dist/assistant-inject.js`, `dist/content-script.js`, and `dist/content-script.mv3.js`) have side effects and should not be tree-shaken by the bundler. These files are likely to perform actions such as modifying the global scope or performing I/O operations, which are essential for the correct functioning of the application.
+
+By explicitly listing these files, we ensure that they are included in the final bundle, even if they do not have any direct imports or exports that are used elsewhere in the codebase.
+
+In the content script, we need access to `@adguard/assistant` only when the user clicks 'block ad manually'. Therefore, we marked files with `@adguard/assistant` as side effects. We also added a required field to the configuration object to ensure the assistant is bundled inside the final extension, allowing `tswebextension` to load it on-demand.
 
 ## API
 

@@ -80,7 +80,7 @@ export {
 export { BACKGROUND_TAB_ID, LF } from '../../common/constants';
 export { ContentType } from '../../common/request-type';
 export type { RequestData } from './request/events/request-event';
-export type { MessagesHandlerMV3 } from './messages-api';
+export type { MessageHandler } from '../../common/app';
 export type { LocalScriptFunctionData } from './services/local-script-rules-service';
 
 export { TSWEBEXTENSION_VERSION, EXTENDED_CSS_VERSION } from '../../common/configuration';
