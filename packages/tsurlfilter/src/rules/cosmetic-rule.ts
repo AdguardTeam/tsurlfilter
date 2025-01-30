@@ -16,7 +16,7 @@ import {
 } from '@adguard/agtree';
 
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
-import * as rule from './rule';
+import { type IRule, RULE_INDEX_NONE } from './rule';
 import { DomainModifier } from '../modifiers/domain-modifier';
 import { getRelativeUrl } from '../utils/url';
 import { SimpleRegex } from './simple-regex';
@@ -178,7 +178,7 @@ interface ProcessedModifiers {
  * * `example.org#%#//scriptlet('scriptlet-name')` -- Scriptlet rule
  * * `example.org$$div[id="test"]` -- HTML filtering rule
  */
-export class CosmeticRule implements rule.IRule {
+export class CosmeticRule implements IRule {
     private readonly ruleIndex: number;
 
     private readonly filterListId: number;
@@ -562,7 +562,7 @@ export class CosmeticRule implements rule.IRule {
      *
      * @throws error if it fails to parse the rule.
      */
-    constructor(node: AnyCosmeticRule, filterListId: number, ruleIndex: number = rule.RULE_INDEX_NONE) {
+    constructor(node: AnyCosmeticRule, filterListId: number, ruleIndex: number = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
 

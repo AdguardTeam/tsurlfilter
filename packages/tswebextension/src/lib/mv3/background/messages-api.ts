@@ -1,5 +1,5 @@
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
-import browser from 'webextension-polyfill';
+import type browser from 'webextension-polyfill';
 import { getDomain } from 'tldts';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
@@ -20,17 +20,12 @@ import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
 import { type TabsApi } from '../tabs/tabs-api';
+import { Assistant } from '../../common/content-script/assistant/assistant';
 
 import { type TsWebExtension } from './app';
 import { appContext } from './app-context';
-import { Assistant } from './assistant';
 import { CosmeticApi } from './cosmetic-api';
 import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
-
-export type MessagesHandlerMV3 = (
-    message: Message,
-    sender: browser.Runtime.MessageSender,
-) => Promise<unknown>;
 
 export type ContentScriptCookieRulesData = {
     /**
@@ -46,6 +41,9 @@ export type ContentScriptCookieRulesData = {
 
 /**
  * MessageApi knows how to handle {@link Message}.
+ * It is used to communicate with content scripts.
+ *
+ * TODO: Move to common folder.
  */
 export class MessagesApi {
     /**
@@ -140,6 +138,7 @@ export class MessagesApi {
         }
 
         if (!this.tsWebExtension.isStarted) {
+            logger.debug('[tswebextension.handleGetCosmeticData]: tswebextension is not started.');
             return undefined;
         }
 
@@ -363,15 +362,5 @@ export class MessagesApi {
         });
 
         return true;
-    }
-
-    /**
-     * Sends message to the specified tab.
-     *
-     * @param tabId The ID of the tab to send the message.
-     * @param message Some payload to send to the tab.
-     */
-    public static async sendMessageToTab(tabId: number, message: unknown): Promise<void> {
-        await browser.tabs.sendMessage(tabId, message);
     }
 }

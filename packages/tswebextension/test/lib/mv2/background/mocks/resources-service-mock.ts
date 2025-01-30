@@ -1,5 +1,5 @@
 import { readFile } from 'fs/promises';
-import * as path from 'path';
+import path from 'path';
 
 import { vi } from 'vitest';
 

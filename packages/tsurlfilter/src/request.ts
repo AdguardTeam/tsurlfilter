@@ -143,6 +143,7 @@ export class Request {
         this.sourceUrl = Request.compactUrl(sourceUrl);
 
         const tldResult = parse(url);
+        // We suppose that request always has a hostname and a domain.
         this.hostname = tldResult.hostname!;
         this.domain = tldResult.domain!;
         this.subdomains = Request.getSubdomains(tldResult);

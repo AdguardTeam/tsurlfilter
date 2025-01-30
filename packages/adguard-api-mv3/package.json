@@ -36,7 +36,6 @@
   "author": "Adguard Software Ltd.",
   "license": "GPL-3.0-only",
   "dependencies": {
-    "@adguard/logger": "workspace:^",
     "@adguard/tswebextension": "workspace:^",
     "zod": "3.22.4"
   },

@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import * as tldts from 'tldts';
+import { getHostname, getDomain } from 'tldts';
 import isIp from 'is-ip';
 
 import { StringUtils } from '../../utils/string';
@@ -93,7 +93,7 @@ export class HostRuleParser extends BaseParser {
         if (partsLength === 1) {
             // "Just domain" syntax, e.g. `example.org`
             // In this case, domain should be valid and IP will be set to 0.0.0.0 by default
-            if (tldts.getDomain(parts[0].value) !== parts[0].value) {
+            if (getDomain(parts[0].value) !== parts[0].value) {
                 throw new Error(`Not a valid domain: ${parts[0].value}`);
             }
 
@@ -115,7 +115,7 @@ export class HostRuleParser extends BaseParser {
             }
 
             for (const { value } of hostnames) {
-                if (tldts.getHostname(value) !== value) {
+                if (getHostname(value) !== value) {
                     throw new Error(`Not a valid hostname: ${value}`);
                 }
             }
