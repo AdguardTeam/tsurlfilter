@@ -3,11 +3,11 @@ import { type FrameCommon } from './frame';
 /**
  * Wrapper around a map for frames.
  */
-export class Frames {
+export class Frames<F extends FrameCommon> {
     /**
      * A map where the key is the frame ID and the value is the frame object.
      */
-    private framesMap = new Map<number, FrameCommon>();
+    private framesMap = new Map<number, F>();
 
     /**
      * Sets frame by id.
@@ -15,7 +15,7 @@ export class Frames {
      * @param frameId Frame id.
      * @param frame Frame to save.
      */
-    public set(frameId: number, frame: FrameCommon): void {
+    public set(frameId: number, frame: F): void {
         this.framesMap.set(frameId, frame);
     }
 
@@ -26,7 +26,7 @@ export class Frames {
      *
      * @returns Frame or undefined if frame not found.
      */
-    public get(frameId: number): FrameCommon | undefined {
+    public get(frameId: number): F | undefined {
         return this.framesMap.get(frameId);
     }
 

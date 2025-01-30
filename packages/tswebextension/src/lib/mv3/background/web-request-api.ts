@@ -146,7 +146,8 @@ import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
-import { TabsApi, tabsApi } from '../tabs/tabs-api';
+import { TabsApiCommon } from '../../common/tabs/tabs-api';
+import { tabsApi } from '../tabs/tabs-api';
 
 import { CosmeticApi } from './cosmetic-api';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
@@ -533,7 +534,7 @@ export class WebRequestApi {
                 ruleIndex: null,
                 isAllowlist: false,
                 isImportant: false,
-                isDocumentLevel: TabsApi.isDocumentLevelFrame(parentFrameId),
+                isDocumentLevel: TabsApiCommon.isDocumentLevelFrame(parentFrameId),
                 isCsp: false,
                 isCookie: false,
                 advancedModifier: null,
