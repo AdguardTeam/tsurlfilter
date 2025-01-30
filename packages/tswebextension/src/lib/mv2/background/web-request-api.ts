@@ -701,7 +701,7 @@ export class WebRequestApi {
             frameId,
             url,
             timeStamp,
-            parentDocumentId: TabsApi.generateParentDocumentId(tabId, parentFrameId, parentDocumentId),
+            parentDocumentId: TabsApi.generateParentDocumentId(tabId, url, parentFrameId, parentDocumentId),
         });
     }
 
@@ -716,6 +716,7 @@ export class WebRequestApi {
         const {
             tabId,
             frameId,
+            url,
             // supported by Chrome 106+
             // but not supported by Firefox so it is calculated based on tabId and frameId
             // @ts-ignore
@@ -727,7 +728,7 @@ export class WebRequestApi {
             tabId,
             frameId,
             {
-                documentId: TabsApi.generateDocumentId(tabId, frameId, documentId),
+                documentId: TabsApi.generateDocumentId(tabId, frameId, url, documentId),
             },
         );
 
@@ -770,6 +771,7 @@ export class WebRequestApi {
         const {
             tabId,
             frameId,
+            url,
             // supported by Chrome 106+
             // but not supported by Firefox so it is calculated based on tabId and frameId
             // @ts-ignore
@@ -781,7 +783,7 @@ export class WebRequestApi {
             tabId,
             frameId,
             {
-                documentId: TabsApi.generateDocumentId(tabId, frameId, documentId),
+                documentId: TabsApi.generateDocumentId(tabId, frameId, url, documentId),
             },
         );
 
