@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [3.1.0-alpha.8] - 2025-01-30
 
 ### Added
 
@@ -14,20 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- We throw error for empty modifier list in network rules.
-- Updated [@adguard/agtree] to `v3.0.0` which improves the bundle size and performance.
-- Updated [@adguard/scriptlets] to `v2.0.1`
-- Updated [@adguard/extended-css] to `v2.1.0`
+- Drop UMD support, now only ESM builds.
+- Updated [@adguard/agtree] to `v3.0.0-alpha.3` which improves the bundle size
+  and performance.
+- Updated [@adguard/scriptlets] to `v2.1.4` which improves the bundle size and
+  performance.
 
 ### Fixed
 
-- Handling missing children data in the deserializer for certain nodes.
 - URI encoded `$removeparam` value is not removed in MV3 [AdguardBrowserExtension#3014].
 - `$removeparam` fails to match encoded URL params in MV2 [AdguardBrowserExtension#3015].
 - `$popup,third-party` modifiers cause document blocking [AdguardBrowserExtension#3012].
 - `$removeparam` incorrectly removes parameters from encoded URLs [AdguardBrowserExtension#3076].
 - Pattern shortcut extraction from regexp patterns with character classes [AdguardBrowserExtension#2924].
 
+[3.1.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.8
 [AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
 [AdguardBrowserExtension#3015]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3015
 [AdguardBrowserExtension#3012]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3012
