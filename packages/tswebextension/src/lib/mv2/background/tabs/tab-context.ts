@@ -37,6 +37,7 @@ export class TabContext extends TabContextCommon<FrameMV2, TabInfoMV2> {
         super(info, filteringLog);
     }
 
+    // TODO: consider moving to common class AG-39552.
     /**
      * Creates context for new tab.
      *
