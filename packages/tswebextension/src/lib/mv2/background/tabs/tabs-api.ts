@@ -120,55 +120,8 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
      *
      * @returns ID as a string based on tab and frame IDs.
      */
-    private static generateId(tabId: number, frameId: number): string {
+    public static generateId(tabId: number, frameId: number): string {
         return `${tabId}-${frameId}`;
-    }
-
-    /**
-     * Calculates document ID.
-     *
-     * @param tabId Tab ID.
-     * @param frameId Frame ID.
-     * @param documentId Document ID, may be undefined.
-     *
-     * @returns Calculated document ID:
-     * - `documentId` if passed value is defined;
-     * - generated ID based on tab and frame IDs.
-     */
-    public static generateDocumentId(
-        tabId: number,
-        frameId: number,
-        documentId?: string,
-    ): string {
-        return typeof documentId === 'undefined'
-            ? TabsApi.generateId(tabId, frameId)
-            : documentId;
-    }
-
-    /**
-     * Calculates parent document ID.
-     *
-     * @param tabId Tab ID.
-     * @param parentFrameId Parent frame ID.
-     * @param parentDocumentId Parent document ID, may be undefined.
-     *
-     * @returns Calculated parent document ID:
-     * - `parentDocumentId` if passed value is defined;
-     * - `undefined` if parent frame is a document-level frame so no parent document;
-     * - generated ID based on tab and frame IDs.
-     */
-    public static generateParentDocumentId(
-        tabId: number,
-        parentFrameId: number,
-        parentDocumentId: string | undefined,
-    ): string | undefined {
-        if (typeof parentDocumentId !== 'undefined') {
-            return parentDocumentId;
-        }
-
-        return TabsApi.isDocumentLevelFrame(parentFrameId)
-            ? undefined
-            : TabsApi.generateId(tabId, parentFrameId);
     }
 
     // TODO: do the same in MV3 (AG-39527)

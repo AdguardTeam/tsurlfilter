@@ -701,7 +701,15 @@ export class WebRequestApi {
             frameId,
             url,
             timeStamp,
-            parentDocumentId: TabsApi.generateParentDocumentId(tabId, parentFrameId, parentDocumentId),
+            /**
+             * Use parentDocumentId if it is defined, otherwise:
+             * - if parent frame is a document-level frame, use undefined
+             * - else generate parentDocumentId based on tabId and parentFrameId.
+             */
+            parentDocumentId: parentDocumentId
+                || (TabsApi.isDocumentLevelFrame(parentFrameId)
+                    ? undefined
+                    : TabsApi.generateId(tabId, parentFrameId)),
         });
     }
 
@@ -727,7 +735,7 @@ export class WebRequestApi {
             tabId,
             frameId,
             {
-                documentId: TabsApi.generateDocumentId(tabId, frameId, documentId),
+                documentId: documentId || TabsApi.generateId(tabId, frameId),
             },
         );
 
@@ -781,7 +789,7 @@ export class WebRequestApi {
             tabId,
             frameId,
             {
-                documentId: TabsApi.generateDocumentId(tabId, frameId, documentId),
+                documentId: documentId || TabsApi.generateId(tabId, frameId),
             },
         );
 
