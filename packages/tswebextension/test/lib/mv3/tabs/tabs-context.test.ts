@@ -7,16 +7,16 @@ import {
     vi,
 } from 'vitest';
 
-import { TabContext, type TabInfo } from '../../../../src/lib/mv3/tabs/tab-context';
+import { TabContext, type TabInfoMV3 } from '../../../../src/lib/mv3/tabs/tab-context';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
-import { Frame } from '../../../../src/lib/mv3/tabs/frame';
+import { FrameMV3 } from '../../../../src/lib/mv3/tabs/frame';
 import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
-import { Frames } from '../../../../src/lib/mv3/tabs/frames';
+import { Frames } from '../../../../src/lib/common/tabs/frames';
 
 vi.mock('../../../../src/lib/mv3/background/engine-api');
 
 describe('TabContext', () => {
-    let tabInfo: TabInfo;
+    let tabInfo: TabInfoMV3;
     let tabContext: TabContext;
 
     beforeEach(() => {
@@ -24,7 +24,7 @@ describe('TabContext', () => {
             id: 123,
             status: 'complete',
             url: 'https://example.com',
-        } as TabInfo;
+        } as TabInfoMV3;
 
         tabContext = new TabContext(tabInfo);
     });
@@ -58,7 +58,7 @@ describe('TabContext', () => {
             const context = TabContext.createNewTabContext(tabInfo);
 
             expect(engineApi.matchFrame).toBeCalledWith(tabInfo.pendingUrl);
-            expect(context.frames.get(MAIN_FRAME_ID)).toEqual(new Frame({
+            expect(context.frames.get(MAIN_FRAME_ID)).toEqual(new FrameMV3({
                 tabId: tabInfo.id,
                 frameId: MAIN_FRAME_ID,
                 url: tabInfo.pendingUrl!,

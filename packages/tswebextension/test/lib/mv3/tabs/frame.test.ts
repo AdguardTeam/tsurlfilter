@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { type MatchingResult, type CosmeticResult } from '@adguard/tsurlfilter';
 
-import { Frame } from '../../../../src/lib/mv3/tabs/frame';
+import { FrameMV3 } from '../../../../src/lib/mv3/tabs/frame';
 
 describe('Frame', () => {
     describe('constructor', () => {
@@ -14,7 +14,7 @@ describe('Frame', () => {
             const timeStamp = Date.now();
             const parentDocumentId = '1';
 
-            const frame = new Frame({
+            const frame = new FrameMV3({
                 url,
                 tabId,
                 frameId,
@@ -24,7 +24,7 @@ describe('Frame', () => {
             frame.cosmeticResult = cosmeticResult;
             frame.matchingResult = matchingResult;
 
-            expect(frame).toBeInstanceOf(Frame);
+            expect(frame).toBeInstanceOf(FrameMV3);
             expect(frame.url).toBe(url);
             expect(frame.frameId).toBe(frameId);
             expect(frame.tabId).toBe(tabId);

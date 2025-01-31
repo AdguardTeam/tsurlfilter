@@ -5,7 +5,7 @@ TypeScript library that wraps webextension api for tsurlfilter library.
 Table of content:
 
 - [TSWebExtension](#tswebextension)
-    - [Browser support](#browser-support)
+    - [Browser compatibility](#browser-compatibility)
     - [Install](#install)
     - [Usage](#usage)
     - [CLI](#cli)
@@ -141,12 +141,14 @@ Table of content:
                 - [isIDBSupported()](#isidbsupported)
     - [Development](#development)
 
-## Browser support
+## Browser compatibility
 
-|                |manifest v2   |manifest v3  |
-|----------------|--------------|-------------|
-| Chrome         | ✅           | 🚧           |
-| Firefox        | ✅           | 🚧           |
+| Browser                     | Version |
+|-----------------------------|---------|
+| Chromium-based browsers MV2 | 79      |
+| Chromium-based browsers MV3 | 121     |
+| Firefox                     | 78      |
+| Firefox Mobile              | 113     |
 
 ## Install
 
@@ -202,9 +204,9 @@ Commands:
 
 ## Side effects
 
-### Side Effects
-In this project, the `sideEffects` field is defined as follows:
-```
+In this project, the `sideEffects` field is defined as follows in the `package.json` file:
+
+```json
 "sideEffects": [
     "dist/assistant-inject.js",
     "dist/content-script.js",

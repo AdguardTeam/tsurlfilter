@@ -1,23 +1,26 @@
 import { RequestType } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils/url';
-import { MAIN_FRAME_ID } from '../../common/constants';
+import { LF, MAIN_FRAME_ID } from '../../common/constants';
 import {
     type PrecalculateCosmeticProps,
     type HandleSubFrameWithoutUrlProps,
     type HandleSubFrameWithUrlProps,
     type HandleMainFrameProps,
 } from '../../common/cosmetic-frame-processor';
-import { tabsApi } from '../tabs/tabs-api';
-import { FrameMV3 } from '../tabs/frame';
 
+import { documentApi } from './api';
 import { appContext } from './app-context';
-import { DocumentApi } from './document-api';
-import { engineApi } from './engine-api';
 import { CosmeticApi } from './cosmetic-api';
+import { type EngineApi } from './engine-api';
+import { stealthApi } from './stealth-api';
+import { FrameMV2 } from './tabs/frame';
+import { type TabsApi } from './tabs/tabs-api';
 
 /**
  * Cosmetic frame processor.
+ *
+ * Needed to properly handle cosmetic rules for frames, especially for 'about:blank' frames.
  */
 export class CosmeticFrameProcessor {
     /**
@@ -29,6 +32,17 @@ export class CosmeticFrameProcessor {
     static SAME_FRAME_THRESHOLD_MS = 100;
 
     /**
+     * Initializes a new instance of the {@link CosmeticFrameProcessor} class.
+     *
+     * @param engineApi Engine API instance.
+     * @param tabsApi Tabs API instance.
+     */
+    constructor(
+        private readonly engineApi: EngineApi,
+        private readonly tabsApi: TabsApi,
+    ) {}
+
+    /**
      * Check if recalculation should be skipped.
      * If the time passed between two events is less than the threshold,
      * we consider it part of the same frame and do not recalculate.
@@ -38,15 +52,16 @@ export class CosmeticFrameProcessor {
      * @param frameId Frame id.
      * @param url Url.
      * @param timeStamp Event timestamp.
+     *
      * @returns True if recalculation should be skipped.
      */
-    private static shouldSkipRecalculation(
+    private shouldSkipRecalculation(
         tabId: number,
         frameId: number,
         url: string,
         timeStamp: number,
     ): boolean {
-        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+        const frameContext = this.tabsApi.getFrameContext(tabId, frameId);
         if (!frameContext) {
             return false;
         }
@@ -63,9 +78,10 @@ export class CosmeticFrameProcessor {
 
     /**
      * Handle sub frame without url.
+     *
      * @param props Handle sub frame without url props.
      */
-    public static handleSubFrameWithoutUrl(props: HandleSubFrameWithoutUrlProps): void {
+    private handleSubFrameWithoutUrl(props: HandleSubFrameWithoutUrlProps): void {
         const {
             tabId,
             frameId,
@@ -73,10 +89,10 @@ export class CosmeticFrameProcessor {
             parentDocumentId,
         } = props;
 
-        let parentFrame: FrameMV3 | undefined;
+        let parentFrame: FrameMV2 | undefined;
         let tempParentDocumentId = parentDocumentId;
         while (tempParentDocumentId) {
-            parentFrame = tabsApi.getByDocumentId(tabId, tempParentDocumentId);
+            parentFrame = this.tabsApi.getByDocumentId(tabId, tempParentDocumentId);
             tempParentDocumentId = parentFrame?.parentDocumentId;
             if (isHttpRequest(parentFrame?.url)) {
                 break;
@@ -84,7 +100,7 @@ export class CosmeticFrameProcessor {
         }
 
         if (parentFrame) {
-            tabsApi.updateFrameContext(tabId, frameId, {
+            this.tabsApi.updateFrameContext(tabId, frameId, {
                 preparedCosmeticResult: parentFrame.preparedCosmeticResult,
                 mainFrameUrl,
             });
@@ -93,9 +109,10 @@ export class CosmeticFrameProcessor {
 
     /**
      * Handle sub frame with url.
+     *
      * @param props Handle sub frame with url props.
      */
-    public static handleSubFrameWithUrl(props: HandleSubFrameWithUrlProps): void {
+    private handleSubFrameWithUrl(props: HandleSubFrameWithUrlProps): void {
         const {
             url,
             tabId,
@@ -104,7 +121,7 @@ export class CosmeticFrameProcessor {
             mainFrameRule,
         } = props;
 
-        const result = engineApi.matchRequest({
+        const result = this.engineApi.matchRequest({
             requestUrl: url,
             frameUrl: mainFrameUrl || url,
             requestType: RequestType.SubDocument,
@@ -115,25 +132,28 @@ export class CosmeticFrameProcessor {
             return;
         }
 
-        const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
-
-        const {
-            scriptTexts,
-            scriptletDataList,
-        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+        const cosmeticResult = this.engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
 
         const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
-        tabsApi.updateFrameContext(tabId, frameId, {
+        const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
+        const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, result);
+
+        let combinedScriptText = '';
+        if (stealthScriptText.length > 0) {
+            combinedScriptText += `${stealthScriptText}${LF}`;
+        }
+        combinedScriptText += scriptText;
+
+        this.tabsApi.updateFrameContext(tabId, frameId, {
             mainFrameUrl,
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptTexts,
-                scriptletDataList,
+                scriptText: combinedScriptText,
                 cssText,
             },
         });
@@ -141,9 +161,10 @@ export class CosmeticFrameProcessor {
 
     /**
      * Handle main frame.
+     *
      * @param props Handle main frame props.
      */
-    public static handleMainFrame(props: HandleMainFrameProps): void {
+    private handleMainFrame(props: HandleMainFrameProps): void {
         const {
             url,
             tabId,
@@ -154,13 +175,15 @@ export class CosmeticFrameProcessor {
             return;
         }
 
-        tabsApi.resetBlockedRequestsCount(tabId);
+        this.tabsApi.resetBlockedRequestsCount(tabId);
 
-        const mainFrameRule = DocumentApi.matchFrame(url);
+        const mainFrameRule = documentApi.matchFrame(url);
 
-        tabsApi.setMainFrameRule(tabId, frameId, mainFrameRule);
+        if (mainFrameRule) {
+            this.tabsApi.updateFrameContext(tabId, frameId, { frameRule: mainFrameRule });
+        }
 
-        const result = engineApi.matchRequest({
+        const result = this.engineApi.matchRequest({
             requestUrl: url,
             frameUrl: url,
             requestType: RequestType.Document,
@@ -171,24 +194,27 @@ export class CosmeticFrameProcessor {
             return;
         }
 
-        const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
-
-        const {
-            scriptTexts,
-            scriptletDataList,
-        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+        const cosmeticResult = this.engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
 
         const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
-        tabsApi.updateFrameContext(tabId, frameId, {
+        const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
+        const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, result);
+
+        let combinedScriptText = '';
+        if (stealthScriptText.length > 0) {
+            combinedScriptText += `${stealthScriptText}${LF}`;
+        }
+        combinedScriptText += scriptText;
+
+        this.tabsApi.updateFrameContext(tabId, frameId, {
             matchingResult: result,
             cosmeticResult,
             preparedCosmeticResult: {
-                scriptTexts,
-                scriptletDataList,
+                scriptText: combinedScriptText,
                 cssText,
             },
         });
@@ -196,9 +222,10 @@ export class CosmeticFrameProcessor {
 
     /**
      * Handles frames used here and in the {@link TabsCosmeticInjector}.
+     *
      * @param props Precalculate cosmetic props.
      */
-    public static handleFrame(props: PrecalculateCosmeticProps): void {
+    public handleFrame(props: PrecalculateCosmeticProps): void {
         const {
             tabId,
             frameId,
@@ -209,25 +236,25 @@ export class CosmeticFrameProcessor {
         const isMainFrame = frameId === MAIN_FRAME_ID;
 
         if (isMainFrame) {
-            CosmeticFrameProcessor.handleMainFrame({
+            this.handleMainFrame({
                 url,
                 tabId,
                 frameId,
             });
         } else {
-            const mainFrame = tabsApi.getFrameContext(tabId, MAIN_FRAME_ID);
+            const mainFrame = this.tabsApi.getFrameContext(tabId, MAIN_FRAME_ID);
             const mainFrameRule = mainFrame?.frameRule;
             const mainFrameUrl = mainFrame?.url;
 
             if (!isHttpRequest(url)) {
-                CosmeticFrameProcessor.handleSubFrameWithoutUrl({
+                this.handleSubFrameWithoutUrl({
                     tabId,
                     frameId,
                     mainFrameUrl,
                     parentDocumentId,
                 });
             } else {
-                CosmeticFrameProcessor.handleSubFrameWithUrl({
+                this.handleSubFrameWithUrl({
                     url,
                     tabId,
                     frameId,
@@ -240,11 +267,14 @@ export class CosmeticFrameProcessor {
 
     /**
      * Precalculate cosmetic rules for the request.
-     * This method used in the webNavigation.onBeforeNavigate event and webRequest.onBeforeRequest event.
+     *
+     * This method used in the webNavigation.onBeforeNavigate event and webRequest.onBeforeRequest event —
+     * as sooner as possible to calculate cosmetic rules for the request,
+     * so after that they can be applied on further events without additional calculations.
      *
      * @param props Precalculate cosmetic props.
      */
-    public static precalculateCosmetics(props: PrecalculateCosmeticProps): void {
+    public precalculateCosmetics(props: PrecalculateCosmeticProps): void {
         const {
             tabId,
             frameId,
@@ -260,7 +290,7 @@ export class CosmeticFrameProcessor {
 
         // set in the beginning to let other events know that cosmetic result will be calculated in this event to
         // avoid double calculation
-        tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+        this.tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
             tabId,
             frameId,
             url,
@@ -269,6 +299,6 @@ export class CosmeticFrameProcessor {
             parentDocumentId,
         }));
 
-        CosmeticFrameProcessor.handleFrame(props);
+        this.handleFrame(props);
     }
 }

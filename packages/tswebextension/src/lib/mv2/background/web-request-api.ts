@@ -3,15 +3,18 @@
  * API for applying rules from background service
  * by handling web Request API and web navigation events.
  *
+ * This scheme describes flow for MV2.
+ *
  * Event data is aggregated into two contexts: {@link RequestContext},
  * which contains data about the specified request
- * and {@link TabContext} which contains data about the specified tab.
+ * and {@link TabContext} which contains data about the specified tab and frames inside it.
  *
+ * Applying {@link NetworkRule} from the background page:
  *
- *  Applying {@link NetworkRule} from the background page:
+ * The {@link MatchingResult} of specified request is calculated and stored in tab context storage,
+ * at the time {@link RequestEvents.onBeforeRequest} or {@link WebNavigation.onBeforeNavigate} is processed.
+ * In the most cases the onBeforeNavigate event is processed before onBeforeRequest.
  *
- * The {@link MatchingResult} of specified request is calculated and stored in context storages,
- * at the time {@link RequestEvents.onBeforeRequest} is processed.
  * The handler for this event also computes the response based on {@link MatchingResult}
  * via {@link RequestBlockingApi.getBlockingResponse}.
  * If the rule is blocking rule, the request will be cancelled, otherwise it will be handled by the next handlers.
@@ -28,18 +31,16 @@
  *
  *  Applying {@link CosmeticRule} from the background page.
  *
- * We calculate {@link CosmeticResult} and store it in {@link TabContext} context
- * at the time {@link RequestEvents.onBeforeRequest} is processed.
+ * We pre-calculate cosmetics for the request as soon as possible —
+ * on {@link browser.webNavigation.onBeforeNavigate} or {@link RequestEvents.onBeforeRequest} events,
+ * depending on which event is processed first, (there is a guard clause for this).
+ * Pre-calculated cosmetics are stored in the context of frames.
  *
  * To get the scripts up and running as quickly as possible
  * we try to inject them the first time during the {@link RequestEvents.onResponseStarted}.
  *
- * All cosmetic rules are then injected on the {@link browser.webNavigation.onCommitted} event.
- *
- * In Firefox, {@link browser.webNavigation.onCommitted} may not work for child frames,
- * so we also try to inject cosmetic rules on {@link RequestEvents.onCompleted}.
- *
- * For frames without a source, we inject cosmetics on the {@link browser.webNavigation.onDOMContentLoaded} event.
+ * All cosmetic rules are then injected on the {@link browser.webNavigation.onCommitted}
+ * or {@link browser.webNavigation.onDOMContentLoaded} events.
  *
  * The frame data will be removed from the specified {@link TabContext} on {@link browser.webNavigation.onCompleted} or
  * {@link browser.webNavigation.onErrorOccurred } events.
@@ -49,10 +50,11 @@
  *                                       ┌─────────────────────────────┐
  * Matches {@link MatchingResult}        │                             │
  * for the request.                      │       onBeforeRequest       ◄─┐
- * If this is a frame request,           │                             │ │
- * also matches the                      └──────────────┬──────────────┘ │
- * {@link CosmeticResult}                               │                │
- * for the specified frame.                             │                │
+ * If this is a frame request, also      │                             │ │
+ * pre-calculates {@link CosmeticResult} └──────────────┬──────────────┘ │
+ * for the specified frame,                             │                │
+ * and stores it in the frame context.                  │                │
+ *                                                      │                │
  * If the request is neither blocked                    │                │
  * nor redirected, apply the                            │                │
  * $removeparam rules.                                  │                │
@@ -98,18 +100,16 @@
  *                                     │ └─────────────────────────────┘
  *                                     │
  *                                     │ ┌─────────────────────────────┐
- * Try injecting JS rules into the     │ │                             │
- * frame based on                      └─►      onResponseStarted      │
- * {@link CosmeticRule}.                 │                             │
+ * Tries injecting JS rules into the   │ │                             │
+ * frame based on pre-calculate        └─►      onResponseStarted      │
+ * cosmetic result.                      │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- * In Firefox, try injecting the         │                             │
- * CSS and JS into the                   │         onCompleted         │
- * subdocument frame based on            │                             │
- * {@link CosmeticResult}.               └─────────────────────────────┘
- * Remove the request information
- * from {@link requestContextStorage}.
+ * Removes the request information       │                             │
+ * from {@link requestContextStorage}.   │         onCompleted         │
+ *                                       │                             │
+ *                                       └─────────────────────────────┘
  *
  *                                       ┌─────────────────────────────┐
  * Remove the request information        │                             │
@@ -129,20 +129,21 @@
  *                                       ┌──────────────▼──────────────┐
  * Update main frame data with           │                             │
  * {@link updateMainFrameData}           │       onBeforeNavigate      │
- *                                       │                             │
+ * and pre-calculate cosmetics           │                             │
+ * so it can be applied later.           │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
  * Try injecting CSS and JS rules        │                             │
- * into the frame with source            │         onCommitted         │
- * based on {@link CosmeticRule}.        │                             │
+ * into the frame with source based on   │         onCommitted         │
+ * pre-calculated cosmetic result.       │                             │
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
  * Try injecting CSS and JS rules        │                             │
- * into the subdocument frame            │      onDOMContentLoaded     ├─┐
- * without source based on               │                             │ │
- * {@link CosmeticRule}.                 └──────────────┬──────────────┘ │
+ * into the subdocument frame without    │      onDOMContentLoaded     ├─┐
+ * source based on pre-calculated        │                             │ │
+ * cosmetic result.                      └──────────────┬──────────────┘ │
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │
  * Remove the frame data                 │                             │ │
@@ -178,7 +179,12 @@ import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 
 import { Assistant } from './assistant';
-import { tabsApi, engineApi, documentApi } from './api';
+import {
+    cosmeticFrameProcessor,
+    documentApi,
+    engineApi,
+    tabsApi,
+} from './api';
 import { CosmeticApi } from './cosmetic-api';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
@@ -187,7 +193,6 @@ import { paramsService } from './services/params-service';
 import { permissionsPolicyService } from './services/permissions-policy-service';
 import { TrustedTypesService } from './services/trusted-types-service';
 import { removeHeadersService } from './services/remove-headers-service';
-import { Frame } from './tabs/frame';
 import {
     hideRequestInitiatorElement,
     RequestEvents,
@@ -197,8 +202,8 @@ import {
 } from './request';
 import { SanitizeApi } from './sanitize-api';
 import { stealthApi } from './stealth-api';
-import { isFirefox, isOpera } from './utils/browser-detector';
-import { isLocalFrame } from './utils/is-local-frame';
+import { TabsApi } from './tabs';
+import { isOpera } from './utils/browser-detector';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -256,6 +261,7 @@ export class WebRequestApi {
 
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommitted);
         browser.webNavigation.onCommitted.removeListener(WebRequestApi.onCommittedOperaHook);
+        browser.webNavigation.onBeforeNavigate.removeListener(WebRequestApi.onBeforeNavigate);
         browser.webNavigation.onDOMContentLoaded.removeListener(WebRequestApi.onDomContentLoaded);
         browser.webNavigation.onCompleted.removeListener(WebRequestApi.deleteFrameContext);
         browser.webNavigation.onErrorOccurred.removeListener(WebRequestApi.deleteFrameContext);
@@ -348,16 +354,11 @@ export class WebRequestApi {
         });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
-            tabsApi.handleFrameMatchingResult(tabId, frameId, result);
-
-            const cosmeticOption = result.getCosmeticOption();
-
-            const cosmeticResult = engineApi.getCosmeticResult(requestUrl, cosmeticOption);
-
-            tabsApi.handleFrameCosmeticResult(tabId, frameId, cosmeticResult);
-
-            requestContextStorage.update(requestId, {
-                cosmeticResult,
+            cosmeticFrameProcessor.precalculateCosmetics({
+                tabId,
+                frameId,
+                url: requestUrl,
+                timeStamp: timestamp,
             });
         }
 
@@ -579,96 +580,63 @@ export class WebRequestApi {
             return;
         }
 
-        const {
-            tabId,
-            frameId,
-            requestType,
-        } = context;
+        const { tabId, frameId, requestType } = context;
 
         if (requestType !== RequestType.Document && requestType !== RequestType.SubDocument) {
             return;
         }
 
-        const tabContext = tabsApi.getTabContext(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        const frame = tabContext.frames.get(frameId);
-
-        if (!frame || !frame.cosmeticResult) {
-            return;
-        }
-
-        /**
-         * Actual tab url may not be committed by navigation event during response processing.
-         * If {@link tabContext.info.url} and {@link url} are not the same, this means
-         * that tab navigation steel is being processed and js injection may be causing the error.
-         * In this case, js will be injected in the {@link WebNavigation.onCommitted} event.
-         */
-        if (requestType === RequestType.Document
-            /**
-             * Check if url exists because it might be empty for new tabs.
-             * In this case we may inject on response started
-             * (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2571).
-             */
-            && tabContext.info.url && tabContext.info.url !== frame.url) {
-            return;
-        }
-
-        CosmeticApi.applyFrameJsRules(frameId, tabId);
+        CosmeticApi.applyJsByTabAndFrame(tabId, frameId);
     }
 
     /**
-     * This is handler for the last event from the request lifecycle.
+     * Handler for the last event in the request lifecycle.
      *
-     * @param event On completed event.
-     * @param event.context Request context.
-     * @private
+     * @param event The event that occurred upon completion of the request.
+     * @param event.context The context of the completed event.
      */
     private static onCompleted({
         context,
-    }: RequestData<WebRequest.OnCompletedDetailsType>): WebRequestEventResponse {
+    }: RequestData<WebRequest.OnCompletedDetailsType>): void {
         if (!context) {
             return;
         }
 
         const {
-            requestId,
             requestType,
             tabId,
             frameId,
             requestUrl,
             timestamp,
             contentType,
-            cosmeticResult,
         } = context;
 
-        /**
-         * If the request is a subdocument request in Firefox, try injecting frame cosmetic result into frame,
-         * because {@link WebRequestApi.onCommitted} can be not triggered.
-         */
-        if (isFirefox || requestType === RequestType.SubDocument) {
-            WebRequestApi.injectCosmetic({
-                frameId,
-                tabId,
-                timestamp,
-                url: requestUrl,
-            });
-        }
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            const frameContext = tabsApi.getFrameContext(tabId, frameId);
+            if (!frameContext?.cosmeticResult) {
+                // eslint-disable-next-line max-len
+                logger.debug(`[RequestEvents.onCompleted]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                return;
+            }
 
-        if (cosmeticResult
-            && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
             CosmeticApi.logScriptRules({
                 tabId,
-                cosmeticResult,
+                cosmeticResult: frameContext.cosmeticResult,
                 url: requestUrl,
                 contentType,
                 timestamp,
             });
         }
 
+        WebRequestApi.deleteRequestContext(context.requestId);
+    }
+
+    /**
+     * Deletes the request context immediately.
+     *
+     * @param requestId The ID of the request.
+     */
+    private static deleteRequestContext(requestId: string): void {
         requestContextStorage.delete(requestId);
     }
 
@@ -681,55 +649,33 @@ export class WebRequestApi {
     private static onErrorOccurred({
         details,
     }: RequestData<WebRequest.OnErrorOccurredDetailsType>): WebRequestEventResponse {
-        requestContextStorage.delete(details.requestId);
+        WebRequestApi.deleteRequestContext(details.requestId);
     }
 
     /**
-     * Injects cosmetic rules to specified frame based on data from frame and response context.
+     * Injects cosmetic rules to specified frame based on tab id and frame id.
      *
-     * If cosmetic result does not exist or it has been already applied, ignore injection.
-     *
-     * @param params Data required for rule injection.
+     * @param details Event details.
      */
-    private static injectCosmetic(params: InjectCosmeticParams): void {
+    private static async injectCosmetic(
+        details: WebNavigation.OnCommittedDetailsType
+        | WebNavigation.OnDOMContentLoadedDetailsType
+        | WebRequest.OnCompletedDetailsType,
+    ): Promise<void> {
         const {
-            frameId,
             tabId,
-            url,
-        } = params;
+            frameId,
+        } = details;
 
-        const tabContext = tabsApi.getTabContext(tabId);
+        const isAssistant = await WebRequestApi.isAssistantFrame(tabId, details);
 
-        if (!tabContext) {
+        // do not inject cosmetic rules into the assistant frame
+        // TODO: fix the issue (AG-9829) in MV3
+        if (isAssistant) {
             return;
         }
 
-        let frame = tabContext.frames.get(frameId);
-
-        /**
-         * Subdocument frame context may not be created durning worker request processing.
-         * We create new one in this case.
-         */
-        if (!frame) {
-            frame = new Frame(url);
-            tabContext.frames.set(frameId, frame);
-        }
-
-        /**
-         * Cosmetic result may not be committed to frame context during worker request processing.
-         * We use engine request as a fallback for this case.
-         */
-        if (!frame.cosmeticResult && isHttpOrWsRequest(url)) {
-            frame.cosmeticResult = engineApi.matchCosmetic({
-                requestUrl: url,
-                frameUrl: url,
-                requestType: frameId === MAIN_FRAME_ID ? RequestType.Document : RequestType.SubDocument,
-                frameRule: tabContext.mainFrameRule,
-            });
-        }
-
-        CosmeticApi.applyFrameCssRules(frameId, tabId);
-        CosmeticApi.applyFrameJsRules(frameId, tabId);
+        CosmeticApi.injectCosmetic(tabId, frameId);
     }
 
     /**
@@ -738,11 +684,33 @@ export class WebRequestApi {
      * @param details Event details.
      */
     private static onBeforeNavigate(details: WebNavigation.OnBeforeNavigateDetailsType): void {
-        const { frameId, tabId, url } = details;
+        const {
+            frameId,
+            tabId,
+            timeStamp,
+            url,
+            parentFrameId,
+            // supported by Chrome 106+
+            // but not supported by Firefox so it is calculated based on tabId and frameId
+            // @ts-ignore
+            parentDocumentId,
+        } = details;
 
-        if (frameId === MAIN_FRAME_ID) {
-            tabsApi.handleTabNavigation(tabId, url);
-        }
+        cosmeticFrameProcessor.precalculateCosmetics({
+            tabId,
+            frameId,
+            url,
+            timeStamp,
+            /**
+             * Use parentDocumentId if it is defined, otherwise:
+             * - if parent frame is a document-level frame, use undefined
+             * - else generate parentDocumentId based on tabId and parentFrameId.
+             */
+            parentDocumentId: parentDocumentId
+                || (TabsApi.isDocumentLevelFrame(parentFrameId)
+                    ? undefined
+                    : TabsApi.generateId(tabId, parentFrameId)),
+        });
     }
 
     /**
@@ -754,77 +722,78 @@ export class WebRequestApi {
      */
     private static onCommitted(details: WebNavigation.OnCommittedDetailsType): void {
         const {
-            frameId,
             tabId,
-            timeStamp,
-            url,
+            frameId,
+            // supported by Chrome 106+
+            // but not supported by Firefox so it is calculated based on tabId and frameId
+            // @ts-ignore
+            documentId,
         } = details;
 
-        WebRequestApi.injectCosmetic({
-            frameId,
+        // This is necessary mainly to update documentId
+        tabsApi.updateFrameContext(
             tabId,
-            timestamp: timeStamp,
-            url,
-        });
+            frameId,
+            {
+                documentId: documentId || TabsApi.generateId(tabId, frameId),
+            },
+        );
+
+        WebRequestApi.injectCosmetic(details);
+    }
+
+    /**
+     * Checks whether the frame is an assistant frame.
+     *
+     * @param tabId Tab id.
+     * @param details Event details.
+     *
+     * @returns True if the frame is an assistant frame, false otherwise.
+     */
+    private static async isAssistantFrame(
+        tabId: number,
+        details: WebNavigation.OnCommittedDetailsType
+        | WebNavigation.OnDOMContentLoadedDetailsType
+        | WebRequest.OnCompletedDetailsType,
+    ): Promise<boolean> {
+        const tabContext = tabsApi.getTabContext(tabId);
+
+        const isAssistant = await Assistant.isAssistantFrame(details, tabContext);
+
+        return isAssistant;
     }
 
     /**
      * On DOM content loaded web navigation event handler.
      *
-     * This method injects css and js code in iframes without remote source.
-     * Usual webRequest callbacks don't fire for iframes without remote source.
-     * Also urls in these iframes may be "about:blank", "about:srcdoc", etc.
-     * Due to this reason we prepare injections for them as for mainframe
-     * and inject them only when onDOMContentLoaded fires.
+     * This method injects css and js code in all frames, particularly in iframes without remote source.
+     * Usual webRequest callbacks don't fire for frames without remote source.
+     * Also urls in these frames may be "about:blank", "about:srcdoc", etc.
      *
      * @see https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1046
+     *
      * @param details Event details.
      */
-    private static async onDomContentLoaded(details: WebNavigation.OnDOMContentLoadedDetailsType): Promise<void> {
+    private static onDomContentLoaded(details: WebNavigation.OnDOMContentLoadedDetailsType): void {
         const {
             tabId,
             frameId,
-            url,
+            // supported by Chrome 106+
+            // but not supported by Firefox so it is calculated based on tabId and frameId
+            // @ts-ignore
+            documentId,
         } = details;
 
-        const tabContext = tabsApi.getTabContext(tabId);
+        // This is necessary mainly to update documentId
+        tabsApi.updateFrameContext(
+            tabId,
+            frameId,
+            {
+                documentId: documentId || TabsApi.generateId(tabId, frameId),
+            },
+        );
 
-        const mainFrameUrl = tabContext?.info.url;
-
-        if (!mainFrameUrl || !isLocalFrame(url, frameId, mainFrameUrl)) {
-            return;
-        }
-
-        const isAssistant = await Assistant.isAssistantFrame(details, tabContext);
-
-        // do not inject cosmetic rules into the assistant frame
-        if (isAssistant) {
-            return;
-        }
-
-        const cosmeticResult = engineApi.matchCosmetic({
-            requestUrl: mainFrameUrl,
-            frameUrl: mainFrameUrl,
-            requestType: RequestType.Document,
-            frameRule: tabContext.mainFrameRule,
-        });
-
-        CosmeticApi
-            .applyCssRules({
-                tabId,
-                frameId,
-                cosmeticResult,
-            })
-            .catch(logger.debug);
-
-        CosmeticApi
-            .applyJsRules({
-                tabId,
-                frameId,
-                cosmeticResult,
-                url,
-            })
-            .catch(logger.debug);
+        WebRequestApi.injectCosmetic(details);
     }
 
     /**
@@ -906,24 +875,10 @@ export class WebRequestApi {
         details: WebNavigation.OnCompletedDetailsType | WebNavigation.OnErrorOccurredDetailsType,
     ): void {
         const { tabId, frameId } = details;
-        const tabContext = tabsApi.getTabContext(tabId);
 
-        if (!tabContext) {
-            return;
-        }
-
-        /**
-         * On creation of an empty iframe with subsequent url assignment,
-         * WebNavigation.onCompleted of the frame could fire before WebRequest.onCommitted,
-         * removing the frame context with it's matching and cosmetic results before it could be applied.
-         *
-         * TODO add the ability to prolong request and tab/frame contexts lives if it was not yet consumed
-         * at webRequest or webNavigation events, i.e
-         *   - keep requestContext, if webRequest.onCommitted has not been fired,
-         *   - keep tab context if webNavigation.omCompleted has not been fired,
-         * etc.
-         */
-        setTimeout(() => tabContext.frames.delete(frameId), FRAME_DELETION_TIMEOUT_MS);
+        setTimeout(() => {
+            tabsApi.deleteFrameContext(tabId, frameId, FRAME_DELETION_TIMEOUT_MS);
+        }, FRAME_DELETION_TIMEOUT_MS);
     }
 
     /**

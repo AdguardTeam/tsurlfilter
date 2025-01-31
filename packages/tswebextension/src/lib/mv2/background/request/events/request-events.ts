@@ -219,11 +219,6 @@ export class RequestEvents {
             tabId,
         };
 
-        if (isDocumentRequest || requestType === RequestType.SubDocument) {
-            // Saves the current tab url to retrieve it correctly below.
-            tabsApi.handleFrameRequest(tabFrameRequestContext);
-        }
-
         // Do not reload filtering log on requests that are being redirected by $removeparam
         if (isDocumentRequest && !requestContextStorage.has(requestId)) {
             // dispatch filtering log reload event
