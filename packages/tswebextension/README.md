@@ -177,9 +177,9 @@ Commands:
 
 ## Side effects
 
-### Side Effects
-In this project, the `sideEffects` field is defined as follows:
-```
+In this project, the `sideEffects` field is defined as follows in the `package.json` file:
+
+```json
 "sideEffects": [
     "dist/assistant-inject.js",
     "dist/content-script.js",
