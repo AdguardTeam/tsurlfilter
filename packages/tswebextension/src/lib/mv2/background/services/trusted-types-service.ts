@@ -1,6 +1,7 @@
 import { type WebRequest } from 'webextension-polyfill';
 import { type CosmeticResult } from '@adguard/tsurlfilter';
 
+import { SEMICOLON } from '../../../common/constants';
 import { type RequestContext, requestContextStorage } from '../request/request-context-storage';
 
 /**
@@ -10,8 +11,6 @@ export class TrustedTypesService {
     private static readonly SPACE = ' ';
 
     private static readonly CSP_DIRECTIVE_VALUES_SEPARATOR = TrustedTypesService.SPACE;
-
-    private static readonly CSP_DIRECTIVES_SEPARATOR = ';';
 
     /**
      * Content Security Policy header name.
@@ -147,7 +146,7 @@ export class TrustedTypesService {
             return header;
         }
 
-        const directives = value.split(TrustedTypesService.CSP_DIRECTIVES_SEPARATOR);
+        const directives = value.split(SEMICOLON);
         const resultDirectives: string[] = [];
 
         for (let i = 0; i < directives.length; i += 1) {
@@ -178,8 +177,7 @@ export class TrustedTypesService {
 
         return {
             name: header.name,
-            // eslint-disable-next-line max-len
-            value: `${resultDirectives.join(`${TrustedTypesService.CSP_DIRECTIVES_SEPARATOR}${TrustedTypesService.SPACE}`)}`,
+            value: `${resultDirectives.join(`${SEMICOLON}${TrustedTypesService.SPACE}`)}`,
         };
     }
 

@@ -146,6 +146,7 @@ import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
+import { TabsApiCommon } from '../../common/tabs/tabs-api';
 import { tabsApi } from '../tabs/tabs-api';
 
 import { CosmeticApi } from './cosmetic-api';
@@ -171,13 +172,6 @@ import { StealthService } from './services/stealth-service';
  * cosmetic rules from content-script.
  */
 export class WebRequestApi {
-    /**
-     * Value of the parent frame id if no parent frame exists.
-     *
-     * @see {@link WebRequest.OnBeforeRequestDetailsType#parentFrameId}
-     */
-    private static readonly NO_PARENT_FRAME_ID = -1;
-
     /**
      * Adds listeners to web request events.
      */
@@ -540,7 +534,7 @@ export class WebRequestApi {
                 ruleIndex: null,
                 isAllowlist: false,
                 isImportant: false,
-                isDocumentLevel: parentFrameId === WebRequestApi.NO_PARENT_FRAME_ID,
+                isDocumentLevel: TabsApiCommon.isDocumentLevelFrame(parentFrameId),
                 isCsp: false,
                 isCookie: false,
                 advancedModifier: null,

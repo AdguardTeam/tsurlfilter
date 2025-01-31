@@ -1,5 +1,7 @@
 import { type IAffectedElement } from '@adguard/extended-css';
 
+import { SEMICOLON } from '../constants';
+
 import { HitsStorage } from './hits-storage';
 import { type RuleInfo } from './rule-info';
 import { ElementUtils } from './utils/element-utils';
@@ -258,7 +260,6 @@ export class CssHitsCounter {
         start: number,
         length: number | null,
     ): ICountedElement[] {
-        const RULE_FILTER_SEPARATOR = ';';
         start = start || 0;
         length = length || elements.length;
 
@@ -271,7 +272,7 @@ export class CssHitsCounter {
             }
 
             const { filterId, ruleIndex } = cssHitData;
-            const ruleAndFilterString = filterId + RULE_FILTER_SEPARATOR + ruleIndex;
+            const ruleAndFilterString = filterId + SEMICOLON + ruleIndex;
 
             if (this.hitsStorage.isCounted(element, ruleAndFilterString)) {
                 continue;

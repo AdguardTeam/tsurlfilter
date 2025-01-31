@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated [@adguard/tsurlfilter] to `v3.2.0-alpha.0`.
 - Renamed export `RULE_SET_NAME_PREFIX` to `RULESET_NAME_PREFIX`.
 
+### Fixed
+
+- Cosmetic rules injecting into `about:blank` iframes in MV2.
+
 ## [3.0.0-alpha.1] - 2025-01-30
 
 ### Added

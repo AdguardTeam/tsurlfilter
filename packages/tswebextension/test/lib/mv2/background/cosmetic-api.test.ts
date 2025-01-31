@@ -384,6 +384,7 @@ describe('cosmetic api', () => {
                     console.error('Error executing AG js: ' + ex);
                 }
             })();
+            //# sourceURL=ag-scripts.js
             `;
         };
 

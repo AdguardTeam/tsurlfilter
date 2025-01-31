@@ -120,5 +120,5 @@ export function hideRequestInitiatorElement(
         code += createHidingCssRule(initiatorTags[i], src, matching);
     }
 
-    CosmeticApi.injectCss(code, tabId, requestFrameId);
+    CosmeticApi.injectCss(tabId, requestFrameId, code);
 }

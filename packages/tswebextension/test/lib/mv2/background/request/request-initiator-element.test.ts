@@ -43,7 +43,7 @@ describe('Request Initiator Element', () => {
             expectedCode += `${expectedTags[i]}[src$="//example.org"] ${HIDING_STYLE}\n`;
         }
 
-        expect(CosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
+        expect(CosmeticApi.injectCss).toBeCalledWith(tabId, frameId, expectedCode);
     });
 
     it('hides image with third party src', () => {
@@ -61,7 +61,7 @@ describe('Request Initiator Element', () => {
 
         const expectedCode = `${InitiatorTag.Image}[src$="//example.org/image.png"] ${HIDING_STYLE}\n`;
 
-        expect(CosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
+        expect(CosmeticApi.injectCss).toBeCalledWith(tabId, frameId, expectedCode);
     });
 
     describe('hides image with first party src', () => {
@@ -96,7 +96,7 @@ describe('Request Initiator Element', () => {
                 expectedSrcAttribute
             }"] ${HIDING_STYLE}\n`;
 
-            expect(CosmeticApi.injectCss).toBeCalledWith(expectedCode, tabId, frameId);
+            expect(CosmeticApi.injectCss).toBeCalledWith(tabId, frameId, expectedCode);
         });
     });
 

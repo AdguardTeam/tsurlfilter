@@ -18,6 +18,7 @@ import { ResourcesService } from './services/resources-service';
 import { RedirectsService } from './services/redirects/redirects-service';
 import { DocumentBlockingService } from './services/document-blocking-service';
 import { extSessionStorage } from './ext-session-storage';
+import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
 
 export const allowlist = new Allowlist();
 
@@ -26,6 +27,8 @@ export const engineApi = new EngineApi(allowlist, appContext, stealthApi);
 export const documentApi = new DocumentApi(allowlist, engineApi);
 
 export const tabsApi = new TabsApi(documentApi);
+
+export const cosmeticFrameProcessor = new CosmeticFrameProcessor(engineApi, tabsApi);
 
 export const documentBlockingService = new DocumentBlockingService(tabsApi);
 
@@ -46,9 +49,9 @@ export function createTsWebExtension(webAccessibleResourcesPath: string): TsWebE
     resourcesService.init(webAccessibleResourcesPath);
 
     const tabCosmeticInjector = new TabsCosmeticInjector(
-        engineApi,
         documentApi,
         tabsApi,
+        engineApi,
     );
 
     return new TsWebExtension(

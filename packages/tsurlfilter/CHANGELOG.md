@@ -35,7 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [3.1.0-alpha.8]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.1.0-alpha.8
 [AdguardBrowserExtension#3014]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3014
-[AdguardBrowserExtension#3015]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3015
 [AdguardBrowserExtension#3012]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3012
 [AdguardBrowserExtension#3076]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3076
 [AdguardBrowserExtension#2924]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2924

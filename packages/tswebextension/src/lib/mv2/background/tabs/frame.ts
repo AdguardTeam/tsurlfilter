@@ -1,47 +1,25 @@
-import { type CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
+import { type PreparedCosmeticResultCommon, FrameCommon } from '../../../common/tabs/frame';
 
 /**
- * Frame context data.
- * We store {@link MatchingResult} and {@link CosmeticResult} in the frame context
- * to apply rules that cannot be handled during request processing.
- * The frame data is deleted after the {@link browser.webNavigation.onCompleted} event.
- * @see {@link WebRequestApi.deleteFrameContext}
+ * Prepared cosmetic result for MV2.
  */
-export class Frame {
+type PreparedCosmeticResultMV2 = PreparedCosmeticResultCommon & {
     /**
-     * Frame url.
+     * Script text extracted from the cosmetic result.
      */
-    public url: string;
+    scriptText: string;
+};
 
+/**
+ * Frame context data for MV2.
+ *
+ * @see {@link FrameCommon} description.
+ */
+export class FrameMV2 extends FrameCommon {
     /**
-     * Frame request id.
-     */
-    public requestId?: string;
-
-    /**
-     * Frame cosmetic result.
-     * This data is saved in the frame because we need to access it for css injection
-     * after deleting request context data.
+     * Prepared cosmetic result for the frame in MV2.
      *
-     * @see {@link WebRequestApi.injectCosmetic}
+     * This data is saved in the frame because it is needed for injecting cosmetic rules into the frames.
      */
-    public cosmeticResult?: CosmeticResult;
-
-    /**
-     * Frame matching result.
-     * This data is saved in frame, because we need for access it for script rules injection
-     * after deleting request context data.
-     */
-    public matchingResult?: MatchingResult | null;
-
-    /**
-     * Creates frame instance.
-     *
-     * @param url Frame url.
-     * @param requestId Request id.
-     */
-    constructor(url: string, requestId?: string) {
-        this.url = url;
-        this.requestId = requestId;
-    }
+    public preparedCosmeticResult?: PreparedCosmeticResultMV2;
 }
