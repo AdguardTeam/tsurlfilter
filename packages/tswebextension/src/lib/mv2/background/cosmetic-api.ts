@@ -35,9 +35,8 @@ export class CosmeticApi extends CosmeticApiCommon {
      * Max number of tries to inject cosmetic rules.
      *
      * Script or style injection may fail in Firefox,
+     * e.g. "Error: Missing host permission for the tab",
      * so we need to retry the injection.
-     *
-     * @see {@link https://bugzilla.mozilla.org/show_bug.cgi?id=1591825}
      */
     private static readonly INJECTION_MAX_TRIES = 100;
 
