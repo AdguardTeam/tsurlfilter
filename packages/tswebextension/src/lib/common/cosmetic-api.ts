@@ -176,8 +176,9 @@ export class CosmeticApiCommon {
 
     /**
      * Patches rule selector adding adguard mark rule info in the content attribute.
-     * Example:
-     * .selector -> .selector { content: 'adguard{filterId};{ruleText} !important;}.
+     *
+     * @example
+     * `.selector` -> `.selector { content: 'adguard{filterId};{ruleText} !important;}`
      *
      * @param rule Elemhide cosmetic rule.
      *
