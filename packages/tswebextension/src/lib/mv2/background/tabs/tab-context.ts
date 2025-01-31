@@ -11,6 +11,7 @@ import { FrameMV2 } from './frame';
  * Tab info for MV2.
  */
 export type TabInfoMV2 = TabInfoCommon & {
+    // TODO: may not be used so can be removed (so there will be no need in TabInfoMV2/TabInfoMV3) AG-39551.
     /**
      * Tab creation timestamp in milliseconds.
      */
