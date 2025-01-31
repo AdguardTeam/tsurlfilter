@@ -101,7 +101,7 @@ export abstract class FrameCommon {
     public cosmeticResult?: CosmeticResult;
 
     /**
-     * Frame matching result.
+     * Matching result for the frame.
      *
      * This data is saved in frame, because we need for access it for script rules injection
      * after deleting request context data.
