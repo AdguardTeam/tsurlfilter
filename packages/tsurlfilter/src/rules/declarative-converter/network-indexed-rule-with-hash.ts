@@ -1,4 +1,5 @@
-import { type AnyRule, RuleConverter } from '@adguard/agtree';
+import { type AnyRule } from '@adguard/agtree';
+import { RuleConverter } from '@adguard/agtree/converter';
 
 import { getErrorMessage } from '../../common/error';
 import { fastHash } from '../../utils/string-utils';

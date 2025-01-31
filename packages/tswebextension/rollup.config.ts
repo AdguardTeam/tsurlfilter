@@ -27,7 +27,7 @@ const entryPoints = {
     'content-script.mv3': 'src/lib/mv3/content-script/index.ts',
     cli: 'src/cli/index.ts',
     'mv3-utils': 'src/lib/mv3/utils/get-filter-name.ts',
-    'assistant-inject': 'src/lib/common/content-script/assistant-inject.ts',
+    'assistant-inject': 'src/lib/common/content-script/assistant/assistant-inject.ts',
     gpc: 'src/lib/mv3/content-script/gpc.ts',
     'hide-document-referrer': 'src/lib/mv3/content-script/hide-document-referrer.ts',
 };

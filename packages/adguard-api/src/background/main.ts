@@ -19,7 +19,7 @@
 import {
     type TsWebExtension,
     type ConfigurationMV2 as TsWebExtensionConfiguration,
-    type MessageHandlerMV2,
+    type MessageHandler,
     EventChannel,
     createTsWebExtension,
     BasicFilterValidator,
@@ -129,7 +129,7 @@ export class AdguardApi {
      * for example, message for get computed css for content-script.
      * @returns Message handler.
      */
-    public getMessageHandler(): MessageHandlerMV2 {
+    public getMessageHandler(): MessageHandler {
         return this.tswebextension.getMessageHandler();
     }
 

@@ -2,7 +2,7 @@
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 
-import { type AppInterface } from '../../common/app';
+import { type MessageHandler, type AppInterface } from '../../common/app';
 import { type FilteringLog, type FilteringLogEvent } from '../../common/filtering-log';
 import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
@@ -12,7 +12,7 @@ import { type AppContext } from './app-context';
 import { type ConfigurationMV2, type ConfigurationMV2Context, configurationMV2Validator } from './configuration';
 import { type EngineApi } from './engine-api';
 import { type ExtSessionStorage } from './ext-session-storage';
-import { type MessagesApi, type MessageHandlerMV2 } from './messages-api';
+import { type MessagesApi } from './messages-api';
 import { RequestEvents } from './request';
 import { type LocalScriptRules, localScriptRulesService } from './services/local-script-rules-service';
 import { type StealthApi } from './stealth-api';
@@ -26,10 +26,9 @@ import { WebRequestApi } from './web-request-api';
  * App implementation for MV2.
  */
 export class TsWebExtension implements AppInterface<
-ConfigurationMV2,
-ConfigurationMV2Context,
-void,
-MessageHandlerMV2
+    ConfigurationMV2,
+    ConfigurationMV2Context,
+    void
 > {
     /**
      * Fires on filtering log event.
@@ -157,7 +156,7 @@ MessageHandlerMV2
         await this.tabCosmeticInjector.processOpenTabs();
         await this.tabsApi.start();
         WebRequestApi.start();
-        Assistant.assistantUrl = configuration.settings.assistantUrl;
+        Assistant.setAssistantUrl(configuration.settings.assistantUrl);
 
         await WebRequestApi.flushMemoryCache();
         await this.stealthApi.updateWebRtcPrivacyPermissions();
@@ -240,7 +239,7 @@ MessageHandlerMV2
      *
      * @returns Messages handler.
      */
-    public getMessageHandler(): MessageHandlerMV2 {
+    public getMessageHandler(): MessageHandler {
         return this.messagesApi.handleMessage;
     }
 
