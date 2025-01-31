@@ -1,6 +1,6 @@
 {
     "name": "@adguard/tsurlfilter",
-    "version": "3.1.0-alpha.8",
+    "version": "3.2.0-alpha.0",
     "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
     "main": "dist/es/index.js",
     "module": "dist/es/index.js",
@@ -34,6 +34,10 @@
             "import": "./dist/es/simple-regex.js",
             "types": "./dist/types/src/rules/simple-regex.d.ts"
         },
+        "./es/declarative-converter-utils": {
+            "import": "./dist/es/declarative-converter-utils.js",
+            "types": "./dist/types/src/rules/declarative-converter-utils/index.d.ts"
+        },
         "./es/*": "./dist/es/*.js",
         "./umd": "./dist/tsurlfilter.umd.js",
         "./cli": {
@@ -60,6 +64,9 @@
             ],
             "es/declarative-converter": [
                 "dist/types/src/rules/declarative-converter/index.d.ts"
+            ],
+            "es/declarative-converter-utils": [
+                "dist/types/src/rules/declarative-converter-utils/index.d.ts"
             ],
             "cli": [
                 "dist/types/cli/index.d.ts"
@@ -121,10 +128,12 @@
         "commander": "9.4.1",
         "is-cidr": "4.0.2",
         "is-ip": "3.1.0",
+        "jsonpos": "^4.1.2",
         "lru-cache": "^11.0.2",
         "punycode": "2.3.1",
         "tldts": "^5.7.112",
-        "zod": "3.21.4"
+        "zod": "3.21.4",
+        "zod-validation-error": "^3.4.0"
     },
     "devDependencies": {
         "@jest/globals": "^29.7.0",

@@ -1,7 +1,7 @@
 /**
  * @file Custom Jest matcher to check proper rule conversion
  */
-import { z } from 'zod';
+import * as z from 'zod';
 
 import { type BaseConverter } from '../../src/converter/base-interfaces/base-converter';
 import { RuleParser } from '../../src/parser/rule-parser';

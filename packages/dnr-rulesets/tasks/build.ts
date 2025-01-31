@@ -1,4 +1,6 @@
 import { convertFilters } from '@adguard/tsurlfilter/cli';
+import { METADATA_RULESET_ID, MetadataRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
+import { getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import axios from 'axios';
 import fs from 'fs';
 import { ensureDir } from 'fs-extra';
@@ -9,7 +11,6 @@ import {
     BASE_DIR,
     DEST_RULE_SETS_DIR,
     FILTERS_DIR,
-    FILTERS_METADATA_FILE_NAME,
     FILTERS_METADATA_I18N_FILE_NAME,
     FILTERS_URL,
     QUICK_FIXES_FILTER_ID,
@@ -67,17 +68,12 @@ const downloadFilter = async (filter: FilterDTO, filtersDir: string) => {
 /**
  * Downloads filters from the server and saves them to the specified directory.
  *
- * @returns Promise that resolves when all filters are downloaded.
+ * @returns Promise that resolves the filters metadata.
  */
-const startDownload = async (): Promise<void> => {
+const startDownload = async (): Promise<Metadata> => {
     await ensureDir(FILTERS_DIR);
 
     const metadata = await getMetadata();
-
-    await fs.promises.writeFile(
-        path.join(FILTERS_DIR, FILTERS_METADATA_FILE_NAME),
-        JSON.stringify(metadata, null, '\t'),
-    );
 
     const i18nMetadata = await getI18nMetadata();
 
@@ -88,6 +84,27 @@ const startDownload = async (): Promise<void> => {
 
     const filters = await getUrlsOfFiltersResources(metadata);
     await Promise.all(filters.map((filter) => downloadFilter(filter, FILTERS_DIR)));
+
+    return metadata;
+};
+
+/**
+ * Writes metadata to the metadata ruleset.
+ *
+ * @param metadata Metadata to write.
+ *
+ * @returns Promise that resolves when metadata is written.
+ */
+const writeMetadataFilesToMetadataRuleset = async (metadata: Metadata): Promise<void> => {
+    await ensureDir(DEST_RULE_SETS_DIR);
+
+    const metadataRuleSetPath = getRuleSetPath(METADATA_RULESET_ID, DEST_RULE_SETS_DIR);
+    const rawMetadataRuleSet = await fs.promises.readFile(metadataRuleSetPath, 'utf-8');
+    const metadataRuleSet = MetadataRuleSet.deserialize(rawMetadataRuleSet);
+
+    metadataRuleSet.setAdditionalProperty('metadata', metadata);
+
+    await fs.promises.writeFile(metadataRuleSetPath, metadataRuleSet.serialize());
 };
 
 /**
@@ -99,6 +116,22 @@ const createTxt = async (): Promise<void> => {
     return fs.promises.writeFile(
         path.join(BASE_DIR, 'build.txt'),
         `version=${version}`,
+    );
+};
+
+/**
+ * Removes all txt files from the specified directory.
+ * Used as a cleanup step after filters conversion to remove unnecessary txt files.
+ *
+ * @param dir Directory with txt files.
+ * @returns Promise that resolves when all txt files are removed.
+ */
+const removeTxtFiles = async (dir: string): Promise<void> => {
+    const files = await fs.promises.readdir(dir);
+    const txtFiles = files.filter((file) => file.endsWith('.txt'));
+
+    await Promise.all(
+        txtFiles.map((file) => fs.promises.unlink(path.join(dir, file))),
     );
 };
 
@@ -117,7 +150,7 @@ const createTxt = async (): Promise<void> => {
  * we should find corresponding text file in resources, and then convert and save json to path specified in the manifest
  */
 const build = async (): Promise<void> => {
-    await startDownload();
+    const metadata = await startDownload();
     await convertFilters(
         FILTERS_DIR,
         RESOURCES_DIR,
@@ -127,6 +160,10 @@ const build = async (): Promise<void> => {
             prettifyJson: false,
         },
     );
+
+    await writeMetadataFilesToMetadataRuleset(metadata);
+
+    await removeTxtFiles(FILTERS_DIR);
 
     await createTxt();
 };

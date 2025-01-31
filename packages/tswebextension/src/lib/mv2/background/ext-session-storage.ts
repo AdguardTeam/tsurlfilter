@@ -1,7 +1,7 @@
 import browser from 'webextension-polyfill';
 
+import { BrowserStorage, MemoryStorage } from '../../common/storage/core';
 import { ExtensionStorage, createExtensionStorageDecorator } from '../../common/storage';
-import { MemoryStorage } from '../../common/memory-storage';
 
 import { type ConfigurationMV2Context } from './configuration';
 
@@ -37,7 +37,12 @@ export class ExtSessionStorage extends ExtensionStorage<SessionStorageSchema> {
      */
     constructor() {
         // Use memory storage as a fallback for old browsers.
-        super(ExtSessionStorage.#DOMAIN, browser.storage.session ?? new MemoryStorage());
+        super(
+            ExtSessionStorage.#DOMAIN,
+            browser.storage.session
+                ? new BrowserStorage<SessionStorageSchema>(browser.storage.session)
+                : new MemoryStorage<SessionStorageSchema>(),
+        );
     }
 
     /** @inheritdoc */

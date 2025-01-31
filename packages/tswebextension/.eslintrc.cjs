@@ -93,7 +93,7 @@ module.exports = {
         'jsdoc/tag-lines': 'off',
         'jsdoc/require-throws': 'error',
         'jsdoc/check-tag-names': ['error', {
-            definedTags: ['vitest-environment'],
+            definedTags: ['vitest-environment', 'note'],
         }],
         'jsdoc/require-jsdoc': [
             'error',
@@ -127,5 +127,6 @@ module.exports = {
             },
         ],
         'jsdoc/require-returns': ['error'],
+        'jsdoc/no-defaults': 'off',
     },
 };

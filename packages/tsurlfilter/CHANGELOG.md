@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Metadata declarative rule to hold additional information about the filter list.
+  It is a special rule at the beginning of the ruleset that contains metadata, e.g.
+  raw filter list rules, declarative metadata, lazy metadata, conversion map, source map, etc.
+- Byte range maps. This feature allows retrieving only specific parts of the ruleset `.json` file, saving memory
+  and improving performance.
 - Optional property `maxNumberOfUnsafeRules` to `DeclarativeConverterOptions`
   for unsafe rules (only for dynamic rulesets).
 
