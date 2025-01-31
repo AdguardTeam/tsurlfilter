@@ -33,6 +33,7 @@ vi.mock('webextension-polyfill', () => {
                     });
                 }),
             },
+            // TODO: Move to separate mock file
             storage: {
                 // Basic `browser.storage.local` mock implementation
                 local: {
