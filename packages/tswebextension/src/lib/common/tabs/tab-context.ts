@@ -71,7 +71,7 @@ export class TabContextCommon<F extends FrameCommon, T extends TabInfoCommon> {
      */
     constructor(
         public info: T,
-        readonly filteringLog: FilteringLog = defaultFilteringLog,
+        protected readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
         this.createdAtMs = Date.now();
     }

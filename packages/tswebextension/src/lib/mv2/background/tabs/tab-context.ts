@@ -31,7 +31,7 @@ export class TabContext extends TabContextCommon<FrameMV2, TabInfoMV2> {
     constructor(
         public info: TabInfoMV2,
         private readonly documentApi: DocumentApi,
-        readonly filteringLog: FilteringLog = defaultFilteringLog,
+        protected readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
         super(info, filteringLog);
     }
