@@ -115,7 +115,10 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
     /**
      * Generates a "synthetic document id".
      *
-     * Needed for Firefox where `parentDocumentId` and `documentId` are not supported.
+     * Important: This workaround is needed for Firefox where `parentDocumentId` and `documentId` are not supported,
+     * so a unique document ID is generated based on tab and frame IDs.
+     * And in some cases it may not help, for example, frame's document can change (e.g. by navigating),
+     * but the frame ID remains the same, so the *generated* document ID will be the same.
      *
      * @param tabId Tab ID.
      * @param frameId Frame ID.
@@ -128,11 +131,6 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
 
     /**
      * Calculates document ID.
-     *
-     * Important: This workaround is needed for Firefox where `parentDocumentId` and `documentId` are not supported,
-     * so a unique document ID is generated based on tab and frame IDs.
-     * And in some cases it may not help, for example, frame's document can change (e.g. by navigating),
-     * but the frame ID remains the same, so the *generated* document ID will be the same.
      *
      * @param tabId Tab ID.
      * @param frameId Frame ID.
