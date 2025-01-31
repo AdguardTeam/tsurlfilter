@@ -92,8 +92,13 @@ export class TabsCosmeticInjector {
                 documentId,
             } = frameDetails;
 
-            const calculatedParentDocumentId = TabsApi.generateParentDocumentId(tabId, parentFrameId, parentDocumentId);
-            const calculatedDocumentId = TabsApi.generateDocumentId(tabId, frameId, documentId);
+            const calculatedParentDocumentId = TabsApi.generateParentDocumentId(
+                tabId,
+                url,
+                parentFrameId,
+                parentDocumentId,
+            );
+            const calculatedDocumentId = TabsApi.generateDocumentId(tabId, frameId, url, documentId);
 
             this.tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
                 tabId,

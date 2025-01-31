@@ -115,27 +115,27 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
     /**
      * Generates a "synthetic document id".
      *
-     * Needed for Firefox where `parentDocumentId` and `documentId` are not supported.
+     * Important: This workaround is needed for Firefox where `parentDocumentId` and `documentId` are not supported,
+     * so a unique document ID is generated based on tab and frame IDs, and frame url.
+     * Sometimes frame's document can change (e.g. by navigating), but the frame ID remains the same,
+     * that's why frame url is used to make the document ID as unique as possible.
      *
      * @param tabId Tab ID.
      * @param frameId Frame ID.
+     * @param frameUrl Frame URL.
      *
      * @returns ID as a string based on tab and frame IDs.
      */
-    private static generateId(tabId: number, frameId: number): string {
-        return `${tabId}-${frameId}`;
+    private static generateId(tabId: number, frameId: number, frameUrl: string): string {
+        return `${tabId}-${frameId}-${frameUrl}`;
     }
 
     /**
      * Calculates document ID.
      *
-     * Important: This workaround is needed for Firefox where `parentDocumentId` and `documentId` are not supported,
-     * so a unique document ID is generated based on tab and frame IDs.
-     * And in some cases it may not help, for example, frame's document can change (e.g. by navigating),
-     * but the frame ID remains the same, so the *generated* document ID will be the same.
-     *
      * @param tabId Tab ID.
      * @param frameId Frame ID.
+     * @param frameUrl Frame URL.
      * @param documentId Document ID, may be undefined.
      *
      * @returns Calculated document ID:
@@ -145,10 +145,11 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
     public static generateDocumentId(
         tabId: number,
         frameId: number,
+        frameUrl: string,
         documentId?: string,
     ): string {
         return typeof documentId === 'undefined'
-            ? TabsApi.generateId(tabId, frameId)
+            ? TabsApi.generateId(tabId, frameId, frameUrl)
             : documentId;
     }
 
@@ -156,6 +157,7 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
      * Calculates parent document ID.
      *
      * @param tabId Tab ID.
+     * @param frameUrl Frame URL.
      * @param parentFrameId Parent frame ID.
      * @param parentDocumentId Parent document ID, may be undefined.
      *
@@ -166,6 +168,7 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
      */
     public static generateParentDocumentId(
         tabId: number,
+        frameUrl: string,
         parentFrameId: number,
         parentDocumentId: string | undefined,
     ): string | undefined {
@@ -175,7 +178,7 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
 
         return TabsApi.isDocumentLevelFrame(parentFrameId)
             ? undefined
-            : TabsApi.generateId(tabId, parentFrameId);
+            : TabsApi.generateId(tabId, parentFrameId, frameUrl);
     }
 
     // TODO: do the same in MV3 (AG-39527)
