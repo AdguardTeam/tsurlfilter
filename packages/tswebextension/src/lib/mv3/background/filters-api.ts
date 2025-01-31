@@ -1,26 +1,49 @@
-import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
+import zod from 'zod';
+import {
+    Filter,
+    type IFilter,
+    RULESET_NAME_PREFIX,
+    RuleSetByteRangeCategory,
+} from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 import {
-    filterListConversionMapValidator,
-    filterListSourceMapValidator,
+    FilterListPreprocessor,
     type PreprocessedFilterList,
-    getFilterBinaryName,
-    getFilterConversionMapName,
-    getFilterName,
-    getFilterSourceMapName,
+    preprocessedFilterListValidator,
 } from '@adguard/tsurlfilter';
-import { ByteBuffer } from '@adguard/agtree';
+import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
-import { loadExtensionBinaryResource, loadExtensionTextResource } from '../utils/resource-loader';
+import { FiltersStorage, type PreprocessedFilterListWithChecksum } from '../../common/storage/filters';
+import { getErrorMessage } from '../../common/error';
+import { logger } from '../../common/utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
-
-export const RULE_SET_NAME_PREFIX = 'ruleset_';
+import { RuleSetsLoaderApi } from './rule-sets-loader-api';
 
 export type UpdateStaticFiltersResult = {
     errors: FailedEnableRuleSetsError[],
 };
+
+const loadFilterContentValidator = zod.function()
+    .args(zod.number())
+    .returns(
+        zod.promise(
+            preprocessedFilterListValidator,
+        ),
+    );
+
+/**
+ * Lazy load filter content.
+ *
+ * @param filterId Filter identifier to load content for.
+ *
+ * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
+ * or null if the filter is not found.
+ *
+ * @throws Error if the filter content cannot be loaded.
+ */
+export type LoadFilterContent = zod.infer<typeof loadFilterContentValidator>;
 
 /**
  * FiltersApi knows how to enable or disable static rule sets (which were built
@@ -50,8 +73,8 @@ export default class FiltersApi {
             errors: [],
         };
 
-        const enableRulesetIds = enableFiltersIds?.map((filterId) => `${RULE_SET_NAME_PREFIX}${filterId}`) || [];
-        const disableRulesetIds = disableFiltersIds?.map((filterId) => `${RULE_SET_NAME_PREFIX}${filterId}`) || [];
+        const enableRulesetIds = enableFiltersIds?.map((filterId) => `${RULESET_NAME_PREFIX}${filterId}`) || [];
+        const disableRulesetIds = disableFiltersIds?.map((filterId) => `${RULESET_NAME_PREFIX}${filterId}`) || [];
 
         try {
             await browser.declarativeNetRequest.updateEnabledRulesets({
@@ -79,70 +102,20 @@ export default class FiltersApi {
      */
     public static async getEnabledRuleSets(): Promise<number[]> {
         const ruleSets = await browser.declarativeNetRequest.getEnabledRulesets();
-        return ruleSets.map((f) => Number.parseInt(f.slice(RULE_SET_NAME_PREFIX.length), 10));
-    }
-
-    /**
-     * Helper method to load chunks from ArrayBuffer.
-     *
-     * @param arrayBuffer ArrayBuffer to load chunks from.
-     *
-     * @returns List of Uint8Array chunks.
-     */
-    private static async loadChunksFromArrayBuffer(arrayBuffer: ArrayBuffer): Promise<Uint8Array[]> {
-        // we can assume that the arrayBuffer.byteLength is divisible by ByteBuffer.CHUNK_SIZE
-        const chunkSize = ByteBuffer.CHUNK_SIZE;
-        const totalChunks = arrayBuffer.byteLength / chunkSize;
-
-        return Array.from({ length: totalChunks }, (_, i) => {
-            const start = i * chunkSize;
-            const end = Math.min(start + chunkSize, arrayBuffer.byteLength);
-            return new Uint8Array(arrayBuffer.slice(start, end));
-        });
-    }
-
-    /**
-     * Loads filters content from provided filtersPath (which has been extracted
-     * from field 'filtersPath' of the {@link Configuration}).
-     *
-     * @param id Filter id.
-     * @param filtersPath Path to filters directory.
-     *
-     * @returns Promise resolved file content as a list of strings.
-     */
-    private static async loadFilterContent(id: number, filtersPath: string): Promise<PreprocessedFilterList> {
-        const rawFilterPath = `${filtersPath}/${getFilterName(id)}`;
-        const binaryFilterPath = `${filtersPath}/${getFilterBinaryName(id)}`;
-        const conversionMapPath = `${filtersPath}/${getFilterConversionMapName(id)}`;
-        const sourceMapPath = `${filtersPath}/${getFilterSourceMapName(id)}`;
-
-        const [rawFilterList, filterList, conversionMap, sourceMap] = await Promise.all([
-            // TODO (David): store raw filter list in byte-encoded form
-            loadExtensionTextResource(rawFilterPath),
-            loadExtensionBinaryResource(binaryFilterPath).then(this.loadChunksFromArrayBuffer),
-            loadExtensionTextResource(conversionMapPath).then(JSON.parse).then(filterListConversionMapValidator.parse),
-            loadExtensionTextResource(sourceMapPath).then(JSON.parse).then(filterListSourceMapValidator.parse),
-        ]);
-
-        return {
-            rawFilterList,
-            filterList,
-            conversionMap,
-            sourceMap,
-        };
+        return ruleSets.map((f) => Number.parseInt(f.slice(RULESET_NAME_PREFIX.length), 10));
     }
 
     /**
      * Wraps static filters into {@link IFilter}.
      *
      * @param filtersIds List of filters ids.
-     * @param filtersPath Path to filters directory.
+     * @param loadFilterContent Function to load filter content.
      *
      * @returns List of {@link IFilter} with a lazy content loading feature.
      */
     static createStaticFilters(
         filtersIds: ConfigurationMV3['staticFiltersIds'],
-        filtersPath: string,
+        loadFilterContent: LoadFilterContent,
     ): IFilter[] {
         return filtersIds.map((filterId) => {
             const filterFromCache = this.filtersCache.get(filterId);
@@ -152,7 +125,7 @@ export default class FiltersApi {
 
             const filter = new Filter(
                 filterId,
-                { getContent: () => this.loadFilterContent(filterId, filtersPath) },
+                { getContent: () => loadFilterContent(filterId) },
                 /**
                  * Static filters are trusted.
                  */
@@ -180,5 +153,195 @@ export default class FiltersApi {
             },
             f.trusted,
         ));
+    }
+
+    /**
+     * Helper method to stringify filter ids.
+     *
+     * @param filterIds Filter identifiers to stringify.
+     *
+     * @returns Comma-separated string of filter ids or 'none' if the list is empty.
+     */
+    private static stringifyFilterIds(filterIds: number[]): string {
+        if (filterIds.length === 0) {
+            return 'none';
+        }
+
+        return filterIds.join(', ');
+    }
+
+    /**
+     * Syncs specified filters with the extension storage.
+     *
+     * This method updates the extension storage with the latest filter content.
+     *
+     * @param filterIds Filter identifiers to sync.
+     * @param ruleSetsPath Path to the rulesets.
+     *
+     * @returns Promise that resolves when the sync is finished.
+     */
+    public static async syncFiltersWithStorage(filterIds: number[], ruleSetsPath: string): Promise<void> {
+        logger.info('Syncing enabled filters with the extension storage');
+
+        const filtersToSync: Record<number, PreprocessedFilterListWithChecksum> = {};
+        const filtersInStorage = new Set(await FiltersStorage.getFilterIds());
+        const filtersToRemove = Array.from(filtersInStorage).filter((id) => !filterIds.includes(id));
+
+        const syncStatus = {
+            unchanged: [] as number[],
+            added: [] as number[],
+            updated: [] as number[],
+        };
+
+        // Process each filter ID to determine its status and update if needed
+        await Promise.all(
+            filterIds.map(async (filterId) => {
+                try {
+                    const [currentChecksum, storedChecksum] = await Promise.all([
+                        FiltersApi.getChecksum(filterId, ruleSetsPath),
+                        FiltersStorage.getChecksum(filterId),
+                    ]);
+
+                    if (currentChecksum === storedChecksum) {
+                        syncStatus.unchanged.push(filterId);
+                        return;
+                    }
+
+                    if (currentChecksum === undefined) {
+                        logger.error(`Failed to get checksum for filter with id ${filterId}`);
+                        return;
+                    }
+
+                    const preprocessedFilter = await FiltersApi.getPreprocessedFilterList(filterId, ruleSetsPath);
+                    filtersToSync[filterId] = {
+                        ...preprocessedFilter,
+                        checksum: currentChecksum,
+                    };
+
+                    if (filtersInStorage.has(filterId)) {
+                        syncStatus.updated.push(filterId);
+                    } else {
+                        syncStatus.added.push(filterId);
+                    }
+                } catch (error) {
+                    logger.error(`Failed to update filter with id ${filterId}. Error: ${getErrorMessage(error)}`);
+                }
+            }),
+        );
+
+        // Persist changes to storage
+        if (Object.keys(filtersToSync).length > 0) {
+            await FiltersStorage.setMultipleFilters(filtersToSync);
+        }
+
+        if (filtersToRemove.length > 0) {
+            await FiltersStorage.removeMultipleFilters(filtersToRemove);
+        }
+
+        logger.info(
+            // eslint-disable-next-line max-len
+            `Synced static rulesets with the extension storage. Added: ${FiltersApi.stringifyFilterIds(syncStatus.added)}. Updated: ${FiltersApi.stringifyFilterIds(syncStatus.updated)}. Removed: ${FiltersApi.stringifyFilterIds(filtersToRemove)}. Unchanged: ${FiltersApi.stringifyFilterIds(syncStatus.unchanged)}`,
+        );
+    }
+
+    /**
+     * Loads filter content by filter id.
+     *
+     * @param filterId Filter identifier to load content for.
+     *
+     * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
+     * or null if the filter is not found.
+     *
+     * @throws Error if the filter content cannot be loaded.
+     */
+    public static loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
+        try {
+            const result = await FiltersStorage.getFilter(filterId);
+
+            if (!result) {
+                throw new Error(`Filter with id ${filterId} not found`);
+            }
+
+            return result;
+        } catch (e) {
+            throw new Error(`Failed to load filter content: ${e}`);
+        }
+    };
+
+    /**
+     * Retrieves the raw filter list.
+     *
+     * @param filterId Filter id.
+     * @param ruleSetsPath Path to the rule sets.
+     *
+     * @returns Raw filter list.
+     *
+     * @throws Error if rule sets path is not set.
+     */
+    public static getRawFilterList = async (
+        filterId: number,
+        ruleSetsPath: string,
+    ): Promise<string> => {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        const ruleSetId = getRuleSetId(filterId);
+
+        return ruleSetsLoaderApi.getRawCategoryContent(
+            ruleSetId,
+            RuleSetByteRangeCategory.PreprocessedFilterListRaw,
+        ).then(JSON.parse);
+    };
+
+    /**
+     * Retrieves the preprocessed filter list.
+     *
+     * @param filterId Filter id.
+     * @param ruleSetsPath Path to the rule sets.
+     *
+     * @returns Preprocessed filter list.
+     *
+     * @throws Error if rule sets path is not set.
+     *
+     * @note You can learn more about the preprocessed filter list in
+     * {@link https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#preprocessedfilterlist-interface|tsurlfilter documentation}.
+     */
+    public static getPreprocessedFilterList = async (
+        filterId: number,
+        ruleSetsPath: string,
+    ): Promise<PreprocessedFilterList> => {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        const ruleSetId = getRuleSetId(filterId);
+
+        const [rawFilterList, conversionMap] = await Promise.all([
+            ruleSetsLoaderApi.getRawCategoryContent(
+                ruleSetId,
+                RuleSetByteRangeCategory.PreprocessedFilterListRaw,
+            ).then(JSON.parse),
+
+            ruleSetsLoaderApi.getRawCategoryContent(
+                ruleSetId,
+                RuleSetByteRangeCategory.PreprocessedFilterListConversionMap,
+            ).then(JSON.parse),
+        ]);
+
+        return FilterListPreprocessor.preprocessLightweight({
+            rawFilterList,
+            conversionMap,
+        });
+    };
+
+    /**
+     * Gets the checksums of the rule sets.
+     *
+     * @param ruleSetId Rule set id.
+     * @param ruleSetsPath Path to the rule sets.
+     *
+     * @returns Checksums of the rule sets.
+     *
+     * @throws If the rule sets loader is not initialized or the checksum for the specified rule set is not found.
+     */
+    public static getChecksum(ruleSetId: string | number, ruleSetsPath: string): Promise<string | undefined> {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+
+        return ruleSetsLoaderApi.getChecksum(ruleSetId);
     }
 }

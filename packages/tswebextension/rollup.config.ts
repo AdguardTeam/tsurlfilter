@@ -30,6 +30,7 @@ const entryPoints = {
     'assistant-inject': 'src/lib/common/content-script/assistant/assistant-inject.ts',
     gpc: 'src/lib/mv3/content-script/gpc.ts',
     'hide-document-referrer': 'src/lib/mv3/content-script/hide-document-referrer.ts',
+    'core-storages': 'src/lib/common/storage/core/index.ts',
 };
 
 const tswebextensionConfig: RollupOptions = {

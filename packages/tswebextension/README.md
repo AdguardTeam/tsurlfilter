@@ -12,106 +12,133 @@ Table of content:
     - [Side effects](#side-effects)
     - [API](#api)
         - [configuration](#configuration)
-        - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
-        - [EXTENDED\_CSS\_VERSION](#extended_css_version)
-        - [filters (MV2 only)](#filters-mv2-only)
-            - [filterId](#filterid)
-            - [content](#content)
-            - [trusted](#trusted)
-        - [staticFiltersIds (MV3 only)](#staticfiltersids-mv3-only)
-        - [customFilters (MV3 only)](#customfilters-mv3-only)
-            - [filterId](#filterid-1)
-            - [rawFilterList](#rawfilterlist)
-            - [sourceMap](#sourcemap)
-            - [conversionMap](#conversionmap)
-            - [content](#content-1)
-        - [filtersPath (MV3 only)](#filterspath-mv3-only)
-        - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
-        - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
-        - [quickFixesRules (MV3 only)](#quickfixesrules-mv3-only)
-        - [allowlist](#allowlist)
-        - [trustedDomains](#trusteddomains)
-        - [userrules (MV2)](#userrules-mv2)
-            - [content](#content-2)
-            - [sourceMap](#sourcemap-1)
-        - [userrules (MV3)](#userrules-mv3)
-            - [rawFilterList](#rawfilterlist-1)
-            - [sourceMap](#sourcemap-2)
-            - [conversionMap](#conversionmap-1)
-            - [content](#content-3)
-        - [verbose (deprecated)](#verbose-deprecated)
-        - [logLevel](#loglevel)
-        - [settings](#settings)
-            - [allowlistInverted](#allowlistinverted)
-            - [allowlistEnabled](#allowlistenabled)
-            - [collectStats](#collectstats)
-            - [debugScriptlets](#debugscriptlets)
-            - [stealthModeEnabled](#stealthmodeenabled)
-            - [filteringEnabled](#filteringenabled)
-            - [documentBlockingPageUrl](#documentblockingpageurl)
-            - [assistantUrl](#assistanturl)
-            - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
-            - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
-            - [stealthConfig](#stealthconfig)
-            - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
-            - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
-            - [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies)
-            - [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime)
-            - [hideReferrer](#hidereferrer)
-            - [hideSearchQueries](#hidesearchqueries)
-            - [blockChromeClientData](#blockchromeclientdata)
-            - [sendDoNotTrack](#senddonottrack)
-            - [blockWebRTC](#blockwebrtc)
+            - [TSWEBEXTENSION\_VERSION](#tswebextension_version)
+            - [EXTENDED\_CSS\_VERSION](#extended_css_version)
+            - [filters (MV2 only)](#filters-mv2-only)
+                - [filterId](#filterid)
+                - [content](#content)
+                - [trusted](#trusted)
+            - [staticFiltersIds (MV3 only)](#staticfiltersids-mv3-only)
+            - [customFilters (MV3 only)](#customfilters-mv3-only)
+                - [filterId](#filterid-1)
+                - [rawFilterList](#rawfilterlist)
+                - [sourceMap](#sourcemap)
+                - [conversionMap](#conversionmap)
+                - [content](#content-1)
+            - [filtersPath (MV3 only)](#filterspath-mv3-only)
+            - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
+            - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
+            - [quickFixesRules (MV3 only)](#quickfixesrules-mv3-only)
+                - [rawFilterList](#rawfilterlist-1)
+                - [sourceMap](#sourcemap-1)
+                - [conversionMap](#conversionmap-1)
+                - [content](#content-2)
+            - [allowlist](#allowlist)
+            - [trustedDomains](#trusteddomains)
+            - [userrules (MV2)](#userrules-mv2)
+                - [content](#content-3)
+                - [sourceMap](#sourcemap-2)
+            - [userrules (MV3)](#userrules-mv3)
+                - [rawFilterList](#rawfilterlist-2)
+                - [sourceMap](#sourcemap-3)
+                - [conversionMap](#conversionmap-2)
+                - [content](#content-4)
+            - [verbose (deprecated)](#verbose-deprecated)
+            - [logLevel](#loglevel)
+            - [settings](#settings)
+                - [allowlistInverted](#allowlistinverted)
+                - [allowlistEnabled](#allowlistenabled)
+                - [collectStats](#collectstats)
+                - [debugScriptlets](#debugscriptlets)
+                - [stealthModeEnabled](#stealthmodeenabled)
+                - [filteringEnabled](#filteringenabled)
+                - [documentBlockingPageUrl](#documentblockingpageurl)
+                - [assistantUrl](#assistanturl)
+                - [gpcScriptUrl (MV3 only)](#gpcscripturl-mv3-only)
+                - [hideDocumentReferrerScriptUrl (MV3 only)](#hidedocumentreferrerscripturl-mv3-only)
+                - [stealthConfig](#stealthconfig)
+                    - [selfDestructFirstPartyCookies](#selfdestructfirstpartycookies)
+                    - [selfDestructFirstPartyCookiesTime](#selfdestructfirstpartycookiestime)
+                    - [selfDestructThirdPartyCookies](#selfdestructthirdpartycookies)
+                    - [selfDestructThirdPartyCookiesTime](#selfdestructthirdpartycookiestime)
+                    - [hideReferrer](#hidereferrer)
+                    - [hideSearchQueries](#hidesearchqueries)
+                    - [blockChromeClientData](#blockchromeclientdata)
+                    - [sendDoNotTrack](#senddonottrack)
+                    - [blockWebRTC](#blockwebrtc)
         - [TsWebExtension](#tswebextension-1)
-        - [Properties](#properties)
-            - [configuration](#configuration-1)
-            - [onFilteringLogEvent](#onfilteringlogevent)
-            - [isStarted](#isstarted)
-        - [Methods](#methods)
-            - [initStorage()](#initstorage)
-            - [start()](#start)
-            - [configure()](#configure)
-            - [stop()](#stop)
-            - [openAssistant()](#openassistant)
-            - [closeAssistant()](#closeassistant)
-            - [getRulesCount()](#getrulescount)
-            - [retrieveDynamicRuleNode](#retrievedynamicrulenode)
-            - [getMessageHandler()](#getmessagehandler)
-            - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
-            - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
-            - [setDebugScriptlets()](#setdebugscriptlets)
-            - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
-            - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
-            - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
-            - [setSelfDestructFirstPartyCookiesTime() (MV2 only)](#setselfdestructfirstpartycookiestime-mv2-only)
-            - [setSelfDestructThirdPartyCookiesTime() (MV2 only)](#setselfdestructthirdpartycookiestime-mv2-only)
-            - [setHideReferrer() (MV2 only)](#sethidereferrer-mv2-only)
-            - [setHideSearchQueries() (MV2 only)](#sethidesearchqueries-mv2-only)
-            - [setBlockChromeClientData() (MV2 only)](#setblockchromeclientdata-mv2-only)
-            - [setSendDoNotTrack() (MV2 only)](#setsenddonottrack-mv2-only)
-            - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
+            - [Properties](#properties)
+                - [configuration](#configuration-1)
+                - [onFilteringLogEvent](#onfilteringlogevent)
+                - [isStarted](#isstarted)
+            - [Methods](#methods)
+                - [initStorage()](#initstorage)
+                - [start()](#start)
+                - [configure()](#configure)
+                - [stop()](#stop)
+                - [openAssistant()](#openassistant)
+                - [closeAssistant()](#closeassistant)
+                - [getRulesCount()](#getrulescount)
+                - [retrieveDynamicRuleNode](#retrievedynamicrulenode)
+                - [getMessageHandler()](#getmessagehandler)
+                - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
+                - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
+                - [setDebugScriptlets()](#setdebugscriptlets)
+                - [setStealthModeEnabled() (MV2 only)](#setstealthmodeenabled-mv2-only)
+                - [setSelfDestructFirstPartyCookies() (MV2 only)](#setselfdestructfirstpartycookies-mv2-only)
+                - [setSelfDestructThirdPartyCookies() (MV2 only)](#setselfdestructthirdpartycookies-mv2-only)
+                - [setSelfDestructFirstPartyCookiesTime() (MV2 only)](#setselfdestructfirstpartycookiestime-mv2-only)
+                - [setSelfDestructThirdPartyCookiesTime() (MV2 only)](#setselfdestructthirdpartycookiestime-mv2-only)
+                - [setHideReferrer() (MV2 only)](#sethidereferrer-mv2-only)
+                - [setHideSearchQueries() (MV2 only)](#sethidesearchqueries-mv2-only)
+                - [setBlockChromeClientData() (MV2 only)](#setblockchromeclientdata-mv2-only)
+                - [setSendDoNotTrack() (MV2 only)](#setsenddonottrack-mv2-only)
+                - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
+                - [getRawFilterList() (MV3 only)](#getrawfilterlist-mv3-only)
+                - [getPreprocessedFilterList() (MV3 only)](#getpreprocessedfilterlist-mv3-only)
     - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
         - [events](#events)
-        - [sendRequest](#sendrequest)
-        - [tabReload](#tabreload)
-        - [applyBasicRule](#applybasicrule)
-        - [applyCosmeticRule](#applycosmeticrule)
-        - [applyCspRule](#applycsprule)
-        - [receiveResponse](#receiveresponse)
-        - [cookie](#cookie)
-        - [removeHeader](#removeheader)
-        - [removeParam](#removeparam)
-        - [replaceRuleApply](#replaceruleapply)
-        - [contentFilteringStart](#contentfilteringstart)
-        - [contentFilteringFinish](#contentfilteringfinish)
-        - [stealthAction](#stealthaction)
-        - [stealthAllowlistAction](#stealthallowlistaction)
-        - [JsInject](#jsinject)
+            - [sendRequest](#sendrequest)
+            - [tabReload](#tabreload)
+            - [applyBasicRule](#applybasicrule)
+            - [applyCosmeticRule](#applycosmeticrule)
+            - [applyCspRule](#applycsprule)
+            - [receiveResponse](#receiveresponse)
+            - [cookie](#cookie)
+            - [removeHeader](#removeheader)
+            - [removeParam](#removeparam)
+            - [replaceRuleApply](#replaceruleapply)
+            - [contentFilteringStart](#contentfilteringstart)
+            - [contentFilteringFinish](#contentfilteringfinish)
+            - [stealthAction](#stealthaction)
+            - [stealthAllowlistAction](#stealthallowlistaction)
+            - [JsInject](#jsinject)
         - [properties](#properties-1)
-        - [onLogEvent](#onlogevent)
+            - [onLogEvent](#onlogevent)
         - [methods](#methods-1)
-        - [addEventListener()](#addeventlistener)
-        - [publishEvent()](#publishevent)
+            - [addEventListener()](#addeventlistener)
+            - [publishEvent()](#publishevent)
+    - [Storage API](#storage-api)
+        - [Common methods](#common-methods)
+            - [get()](#get)
+            - [set()](#set)
+            - [remove()](#remove)
+            - [setMultiple()](#setmultiple)
+            - [removeMultiple()](#removemultiple)
+            - [entries()](#entries)
+            - [keys()](#keys)
+            - [has()](#has)
+            - [clear()](#clear)
+        - [BrowserStorage](#browserstorage)
+            - [Constructor](#constructor)
+        - [IDBStorage](#idbstorage)
+            - [Constructor](#constructor-1)
+        - [HybridStorage](#hybridstorage)
+            - [Constructor](#constructor-2)
+            - [Methods](#methods-2)
+                - [serialize()](#serialize)
+                - [deserialize()](#deserialize)
+                - [isIDBSupported()](#isidbsupported)
     - [Development](#development)
 
 ## Browser support
@@ -721,6 +748,28 @@ Also updates webRTC privacy.network settings on demand.
 
 Throws error if [configuration](#configuration) is not set.
 
+##### getRawFilterList() (MV3 only)
+
+type: `async (filterId: number, ruleSetsPath: string): Promise<string>`
+
+Returns raw filter list for the specified filter id via the rule sets loader.
+
+Throws error if rule sets path is not set.
+
+##### getPreprocessedFilterList() (MV3 only)
+
+type: `async (filterId: number, ruleSetsPath: string): Promise<PreprocessedFilterList>`
+
+Returns preprocessed filter list for the specified filter id via the rule sets loader.
+
+Throws error if rule sets path is not set.
+
+> [!NOTE]
+> You can learn more about the preprocessed filter list in the
+> [tsurlfilter documentation][tsurlfilter-preprocessed-filter-list].
+
+[tsurlfilter-preprocessed-filter-list]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#preprocessedfilterlist-interface
+
 ## Filtering Log API (MV2 only)
 
 Provides a set of methods for [filtering log events](#filtering-log-api-mv2-only) management.
@@ -846,6 +895,149 @@ type:
 ```
 
 Dispatch the specified filtering event.
+
+## Storage API
+
+The library provides a set of methods for working with the storage.
+Technically, these classes are wrappers around the browser's storage API and IndexedDB
+to provide a common, easy-to-use interface.
+
+You can import them from the `@adguard/tswebextension/core-storages` module, for example:
+
+```ts
+import {
+    BrowserStorage,
+    HybridStorage,
+    IDBStorage,
+} from '@adguard/tswebextension/core-storages';
+```
+
+### Common methods
+
+The following methods are common for all storage classes.
+
+#### get()
+
+type: `async (key: string) => Promise<Data | undefined>`
+
+Retrieves an item from the storage.
+
+#### set()
+
+type: `async (key: string, value: Data) => Promise<void>`
+
+Saves an item to the storage.
+
+#### remove()
+
+type: `async (key: string) => Promise<void>`
+
+Removes an item from the storage.
+
+#### setMultiple()
+
+type: `async (data: Record<string, Data>): Promise<boolean>`
+
+Saves multiple items to the storage.
+
+#### removeMultiple()
+
+type: `async (keys: string[]): Promise<boolean>`
+
+Removes multiple items from the storage.
+
+#### entries()
+
+type: `async (): Promise<Record<string, Data>>`
+
+Returns all items from the storage.
+
+#### keys()
+
+type: `async (): Promise<string[]>`
+
+Returns all keys from the storage.
+
+#### has()
+
+type: `async (key: string): Promise<boolean>`
+
+Checks if the storage contains an item with the specified key.
+
+#### clear()
+
+type: `async (): Promise<void>`
+
+Removes all items from the storage.
+
+### BrowserStorage
+
+Wrapper around Storage Area API.
+
+#### Constructor
+
+type: `(storage: StorageArea) => BrowserStorage`
+
+Creates a new instance of the BrowserStorage class.
+
+### IDBStorage
+
+Wrapper around IndexedDB.
+
+#### Constructor
+
+type:
+
+```ts
+constructor(
+    name = IDBStorage.DEFAULT_IDB_NAME,
+    version = IDBStorage.DEFAULT_IDB_VERSION,
+    store = IDBStorage.DEFAULT_STORE_NAME,
+)
+```
+
+Creates a new instance of the IDBStorage class.
+
+### HybridStorage
+
+Hybrid storage primarily uses IndexedDB, but if it is not available, it falls back to the Storage Area API.
+
+#### Constructor
+
+type:
+
+```ts
+constructor(fallbackStorage: StorageArea): HybridStorage
+```
+
+Creates a new instance of the HybridStorage class.
+
+#### Methods
+
+In addition to the common methods, the HybridStorage class provides the following methods.
+
+##### serialize()
+
+type: `(object: SuperJSONValue) => SuperJSONResult`
+
+Static method that serializes an object with SuperJSON.
+It just a "re-export" of the SuperJSON method.
+It is used to serialize data before saving it to the fallback storage,
+because the Storage Area API does not support saving complex objects,
+e.g. typed arrays, like `Uint8Array`.
+
+##### deserialize()
+
+type: `<T = unknown>(payload: SuperJSONResult) => T`
+
+Static method that deserializes an object with SuperJSON.
+It is similar to the `serialize` method, but in the opposite direction.
+
+##### isIDBSupported()
+
+type: `() => boolean`
+
+Static method that checks if IndexedDB is supported in the current environment.
 
 ## Development
 
