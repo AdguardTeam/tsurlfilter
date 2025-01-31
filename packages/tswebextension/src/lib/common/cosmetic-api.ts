@@ -89,6 +89,11 @@ export class CosmeticApiCommon {
     protected static readonly HIT_END = "' !important; }";
 
     /**
+     * Regular expression to find content attribute in css rule.
+     */
+    protected static CONTENT_ATTR_RE = /[{;"(]\s*content\s*:/gi;
+
+    /**
      * Builds stylesheets from rules.
      * If `groupElemhideSelectors` is set,
      * element hiding selector are to be combined into selector lists of {@link CosmeticApi.CSS_SELECTORS_PER_LINE}.
@@ -202,8 +207,7 @@ export class CosmeticApiCommon {
         const result = [];
         const ruleContent = rule.getContent();
         // if rule text has content attribute we don't add rule marker
-        const contentAttributeRegex = /[{;"(]\s*content\s*:/gi;
-        if (contentAttributeRegex.test(ruleContent)) {
+        if (CosmeticApiCommon.CONTENT_ATTR_RE.test(ruleContent)) {
             return ruleContent;
         }
 
