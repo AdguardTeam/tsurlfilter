@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+- Cosmetic rules injecting into `about:blank` iframes in MV2.
+
 ## [3.0.0-alpha.1] - 2025-01-30
 
 ### Added
@@ -27,7 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Once allowlisted tab considers all following websites in the tab as allowlisted [AdguardBrowserExtension#3020].
 - A rule from a disabled filter list disables another rule [AdguardBrowserExtension#3002].
 - Matching of `companyCategoryName` for subdomains.
-- Cosmetic rules injecting into `about:blank` iframes in MV2.
 
 [3.0.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.0.0-alpha.1
 [AdguardBrowserExtension#3020]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3020
