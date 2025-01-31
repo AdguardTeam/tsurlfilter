@@ -1,12 +1,15 @@
+import { type ByteRange } from '@adguard/tsurlfilter';
+import {
+    METADATA_RULESET_ID,
+    MetadataRuleSet,
+    RuleSetByteRangeCategory,
+} from '@adguard/tsurlfilter/es/declarative-converter';
+import { extractRuleSetId, getRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import fs from 'fs';
 import path from 'path';
 
 import { version } from '../package.json';
 import { DEST_RULE_SETS_DIR } from './constants';
-
-// TODO: import METADATA_FILENAME from tsurlfilter/declarative-converter
-// and resolve transpile issue related to its import
-const METADATA_FILENAME = 'metadata.json';
 
 /**
  * File name where old validator data is stored.
@@ -36,6 +39,42 @@ type RulesetIdsAndMetadataKeys = {
 };
 
 /**
+ * Retrieves metadata ruleset.
+ *
+ * @param destDir Directory with declarative rulesets.
+ *
+ * @returns Metadata ruleset.
+ *
+ * @throws Error if metadata ruleset is not found.
+ */
+const getMetadataRuleset = (destDir: string): MetadataRuleSet => {
+    const metadataRuleSetPath = getRuleSetPath(METADATA_RULESET_ID, destDir);
+
+    if (!fs.existsSync(metadataRuleSetPath)) {
+        throw new Error(`Metadata ruleset not found at ${metadataRuleSetPath}`);
+    }
+
+    const metadataRulesetContent = fs.readFileSync(metadataRuleSetPath, { encoding: 'utf-8' });
+
+    return MetadataRuleSet.deserialize(metadataRulesetContent);
+};
+
+/**
+ * Node.js specific function that reads the specified range of bytes from the file.
+ *
+ * @param filePath Path to the file.
+ * @param range Range of bytes to read.
+ *
+ * @returns Buffer with the read data.
+ */
+const readFileRange = async (filePath: string, range: ByteRange): Promise<Buffer> => {
+    const file = await fs.promises.open(filePath, 'r');
+    const buffer = Buffer.alloc(range.end - range.start + 1);
+    await file.read(buffer, 0, buffer.length, range.start);
+    return buffer;
+};
+
+/**
  * Retrieves data needed for rulesets validation — rulesets ids and metadata keys.
  *
  * @param destDir Directory with declarative rulesets.
@@ -44,24 +83,43 @@ type RulesetIdsAndMetadataKeys = {
  */
 const getValidatorData = async (destDir: string): Promise<RulesetIdsAndMetadataKeys> => {
     const rulesetIds: number[] = [];
-    const rulesetMetadataKeys = [];
+    const rulesetMetadataKeys: string[] = [];
+
+    const metadataRuleSet = getMetadataRuleset(destDir);
 
     const destDirItems = await fs.promises.readdir(destDir, { withFileTypes: true });
 
     const destDirSubdirectories = destDirItems.filter((item) => item.isDirectory());
 
     destDirSubdirectories.forEach((item) => {
-        // TODO: import and use const later instead of 'ruleset_' — RULESET_NAME_PREFIX
-        // or use RuleSetsLoaderApi.getRuleSetId()
-        const id = item.name.replace('ruleset_', '');
-        rulesetIds.push(Number(id));
+        const id = extractRuleSetId(item.name);
+
+        if (id === null) {
+            throw new Error(`Cannot extract ruleset id from ${item.name}`);
+        }
+
+        // Skip metadata ruleset, because its a special ruleset
+        if (id === METADATA_RULESET_ID) {
+            return;
+        }
+
+        rulesetIds.push(id);
     });
 
-    const rulesetMetadata = path.join(destDir, destDirSubdirectories[0].name, METADATA_FILENAME);
-    const rulesetMetadataContent = await fs.promises.readFile(rulesetMetadata, { encoding: 'utf-8' });
+    const metadataByteRange = metadataRuleSet.getByteRange(
+        getRuleSetId(rulesetIds[0]),
+        RuleSetByteRangeCategory.DeclarativeMetadata,
+    );
+
+    const metadataBuffer = await readFileRange(
+        getRuleSetPath(rulesetIds[0], destDir),
+        metadataByteRange,
+    );
+
+    const rulesetMetadata = metadataBuffer.toString('utf-8');
 
     try {
-        const parsedRulesetMetadata = JSON.parse(rulesetMetadataContent);
+        const parsedRulesetMetadata = JSON.parse(rulesetMetadata);
         rulesetMetadataKeys.push(...Object.keys(parsedRulesetMetadata));
     } catch (e: unknown) {
         console.error(`Error parsing metadata file ${rulesetMetadata} due to ${e}`);

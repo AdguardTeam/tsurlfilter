@@ -1,8 +1,14 @@
 import browser from 'webextension-polyfill';
-import { Filter, type IFilter, type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
+import {
+    Filter,
+    METADATA_RULESET_ID,
+    type IFilter,
+    type IRuleSet,
+} from '@adguard/tsurlfilter/es/declarative-converter';
 import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
+import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 
 import { type MessageHandler, type AppInterface } from '../../common/app';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
@@ -21,10 +27,10 @@ import { declarativeFilteringLog } from './declarative-filtering-log';
 import DynamicRulesApi, { type ConversionResult } from './dynamic-rules-api';
 import { engineApi } from './engine-api';
 import { extSessionStorage } from './ext-session-storage';
-import FiltersApi, { type UpdateStaticFiltersResult } from './filters-api';
+import FiltersApi, { type LoadFilterContent, type UpdateStaticFiltersResult } from './filters-api';
 import { MessagesApi } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
-import RuleSetsLoaderApi from './rule-sets-loader-api';
+import { RuleSetsLoaderApi } from './rule-sets-loader-api';
 import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
@@ -260,8 +266,12 @@ export class TsWebExtension implements AppInterface<
      * - list of errors for static filters, if any of them has been thrown
      * - converted dynamic rule set with rule set, errors and limitations.
      * @see {@link ConversionResult}
+     *
+     * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
+        await FiltersApi.syncFiltersWithStorage(config.staticFiltersIds, config.ruleSetsPath);
+
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 
@@ -287,7 +297,7 @@ export class TsWebExtension implements AppInterface<
                 customFilters,
                 filtersIdsToEnable,
                 filtersIdsToDisable,
-            } = await TsWebExtension.getFiltersUpdateInfo(configuration);
+            } = await TsWebExtension.getFiltersUpdateInfo(configuration, FiltersApi.loadFilterContent);
 
             // Update list of enabled static filters
             res.staticFiltersStatus = await FiltersApi.updateFiltering(
@@ -578,16 +588,18 @@ export class TsWebExtension implements AppInterface<
      * Extract configuration update info from already parsed configuration.
      *
      * @param parsedConfiguration Already parsed {@link ConfigurationMV3}.
+     * @param loadFilterContent Lazy load filter content function.
      *
      * @returns Item of {@link FiltersUpdateInfo}.
      */
     private static async getFiltersUpdateInfo(
         parsedConfiguration: ConfigurationMV3,
+        loadFilterContent: LoadFilterContent,
     ): Promise<FiltersUpdateInfo> {
         // Wrap filters to tsurlfilter.IFilter
         const staticFilters = FiltersApi.createStaticFilters(
             parsedConfiguration.staticFiltersIds,
-            parsedConfiguration.filtersPath,
+            loadFilterContent,
         );
         const customFilters = FiltersApi.createCustomFilters(
             parsedConfiguration.customFilters,
@@ -628,7 +640,10 @@ export class TsWebExtension implements AppInterface<
 
         // Note: we cannot create rulesets only for enabled filters because we
         // need to get all rulesets' counters for checking limits on the client.
-        const manifestRuleSets = manifest.declarative_net_request.rule_resources;
+        // Note: we skip metadata ruleset, because it is not a real ruleset.
+        const manifestRuleSets = manifest.declarative_net_request.rule_resources
+            .filter(({ id }) => id !== getRuleSetId(METADATA_RULESET_ID));
+
         const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
             return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
         });

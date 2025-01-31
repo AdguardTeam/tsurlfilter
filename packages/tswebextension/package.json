@@ -47,6 +47,10 @@
     "./assistant-inject": {
       "types": "./dist/types/assistant-inject.d.ts",
       "default": "./dist/assistant-inject.js"
+    },
+    "./core-storages": {
+      "types": "./dist/types/core-storages.d.ts",
+      "default": "./dist/core-storages.js"
     }
   },
   "bin": {
@@ -106,9 +110,11 @@
     "chrome-types": "^0.1.307",
     "commander": "11.0.0",
     "fs-extra": "11.1.1",
+    "idb": "^8.0.0",
     "lodash-es": "^4.17.21",
     "lru-cache": "^11.0.2",
     "nanoid": "^5.0.9",
+    "superjson": "^2.2.1",
     "text-encoding": "https://github.com/AdguardTeam/text-encoding/tarball/v0.8.0",
     "tldts": "^5.7.112",
     "tslib": "2.5.3",
@@ -141,6 +147,7 @@
     "eslint-plugin-import": "2.27.5",
     "eslint-plugin-import-newlines": "1.4.0",
     "eslint-plugin-jsdoc": "^46.8.2",
+    "fake-indexeddb": "^6.0.0",
     "lint-staged": "13.2.2",
     "rimraf": "5.0.1",
     "rollup": "^4.28.0",

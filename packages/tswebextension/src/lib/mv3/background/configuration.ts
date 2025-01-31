@@ -1,5 +1,6 @@
 import { z as zod } from 'zod';
-import { preprocessedFilterListValidator } from '@adguard/tsurlfilter';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { preprocessedFilterListValidator, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 
 import { configurationValidator, settingsConfigValidator } from '../../common/configuration';
 

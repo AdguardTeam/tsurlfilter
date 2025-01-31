@@ -6,21 +6,16 @@ import {
     type ConversionResult,
     type IRuleSet,
     DeclarativeFilterConverter,
-    METADATA_FILENAME,
-    LAZY_METADATA_FILENAME,
     Filter,
 } from '../src/rules/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
 import { FilterListPreprocessor } from '../src';
-import {
-    getFilterBinaryName,
-    getFilterConversionMapName,
-    getFilterName,
-    getFilterSourceMapName,
-    getIdFromFilterName,
-} from '../src/utils/resource-names';
+import { getIdFromFilterName } from '../src/utils/resource-names';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
+import { generateMD5Hash } from '../src/utils/checksum';
+import { MetadataRuleSet } from '../src/rules/declarative-converter/metadata-ruleset';
+import { getRuleSetId, getRuleSetPath } from '../src/rules/declarative-converter-utils';
 
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
@@ -189,77 +184,42 @@ export const convertFilters = async (
         limitations.forEach((e) => console.log(e.message));
     }
 
+    const metadataRuleSet = new MetadataRuleSet();
+
     for (let i = 0; i < convertedRuleSets.length; i += 1) {
         const ruleSet = convertedRuleSets[i];
+        const id = ruleSet.getId();
 
-        const {
-            id,
-            data,
-            lazyData,
-            // eslint-disable-next-line no-await-in-loop
-        } = await ruleSet.serialize();
-
-        // eslint-disable-next-line no-await-in-loop
-        const declarativeRules = await ruleSet.getDeclarativeRules();
-
-        const ruleSetDir = `${destRuleSetsPath}/${id}`;
+        const ruleSetDir = path.join(destRuleSetsPath, getRuleSetId(id));
         ensureDirSync(ruleSetDir);
 
-        const stringifiedDeclarativeRules = prettifyJson
-            ? JSON.stringify(declarativeRules, null, '\t')
-            : JSON.stringify(declarativeRules);
-
         // eslint-disable-next-line no-await-in-loop
-        await Promise.all([
-            fs.promises.writeFile(`${ruleSetDir}/${id}.json`, stringifiedDeclarativeRules),
-            fs.promises.writeFile(`${ruleSetDir}/${METADATA_FILENAME}`, data),
-            fs.promises.writeFile(`${ruleSetDir}/${LAZY_METADATA_FILENAME}`, lazyData),
-        ]);
+        const { result, byteRangeMap } = await ruleSet.serializeCompact(prettifyJson);
+        const ruleSetPath = getRuleSetPath(id, destRuleSetsPath);
+        // eslint-disable-next-line no-await-in-loop
+        await fs.promises.writeFile(ruleSetPath, result);
+
+        metadataRuleSet.setByteRangeMap(id, byteRangeMap);
+        metadataRuleSet.setChecksum(id, generateMD5Hash(result));
 
         console.log('===============================================');
         console.info(`Rule set with id ${id} and all rule set info`);
         console.info('(counters, source map, filter list) was saved');
-        console.info(`to ${destRuleSetsDir}/${id}`);
+        console.info(`to ${ruleSetPath}`);
         console.log('===============================================');
     }
 
-    console.log('======================================');
-    console.log('Writing processed filters');
-    console.log('======================================');
+    const metadataRulesetId = metadataRuleSet.getId();
+    const metadataRulesetDir = path.join(destRuleSetsPath, getRuleSetId(metadataRulesetId));
+    ensureDirSync(metadataRulesetDir);
 
-    for (let i = 0; i < filters.length; i += 1) {
-        const filter = filters[i];
-        const filterId = filter.getId();
+    const metadataRuleSetPath = getRuleSetPath(metadataRulesetId, destRuleSetsPath);
+    await fs.promises.writeFile(
+        metadataRuleSetPath,
+        metadataRuleSet.serialize(prettifyJson),
+    );
 
-        console.info(`Writing filter #${filterId}...`);
-
-        // eslint-disable-next-line no-await-in-loop
-        const content = await filter.getContent();
-
-        // eslint-disable-next-line no-await-in-loop
-        await Promise.all([
-            fs.promises.writeFile(
-                path.join(filtersDir, getFilterSourceMapName(filterId)),
-                JSON.stringify(content.sourceMap),
-            ),
-            fs.promises.writeFile(
-                path.join(filtersDir, getFilterConversionMapName(filterId)),
-                JSON.stringify(content.conversionMap),
-            ),
-            fs.promises.writeFile(
-                path.join(filtersDir, getFilterBinaryName(filterId)),
-                Buffer.concat(content.filterList),
-            ),
-            // While preprocessing filter content, some rules can be transformed
-            // and this can lead to a situation where source map will contain
-            // incorrect offsets. That's why we save the preprocessed raw filter
-            // content.
-            fs.promises.writeFile(
-                path.join(filtersDir, getFilterName(filterId)),
-                content.rawFilterList,
-            ),
-        ]);
-
-        console.info(`Filter #${filterId} saved`);
-    }
+    console.log('===============================================');
+    console.info(`Metadata ruleset saved to ${metadataRuleSetPath}`);
+    console.log('===============================================');
 };

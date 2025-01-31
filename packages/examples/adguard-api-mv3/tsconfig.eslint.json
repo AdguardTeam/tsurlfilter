@@ -3,6 +3,6 @@
     "include": [
       "extension/**/*.ts",
       "scripts/**/*.ts",
-      ".eslintrc.js",
+      ".eslintrc.cjs",
     ]
 }
