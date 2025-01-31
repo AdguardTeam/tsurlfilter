@@ -204,7 +204,7 @@ export class CosmeticApiCommon {
      * @returns Modified rule with injected content marker into stylesheet.
      */
     private static addMarkerToInjectRule(rule: CosmeticRule): string {
-        const result = [];
+        const result: string[] = [];
         const ruleContent = rule.getContent();
         // if rule text has content attribute we don't add rule marker
         if (CosmeticApiCommon.CONTENT_ATTR_RE.test(ruleContent)) {
@@ -219,9 +219,9 @@ export class CosmeticApiCommon {
             : `${ruleTextWithoutCloseBrace}${SEMICOLON}`;
         result.push(ruleTextWithSemicolon);
         result.push(CosmeticApiCommon.INJECT_HIT_START);
-        result.push(rule.getFilterListId());
+        result.push(String(rule.getFilterListId()));
         result.push(CosmeticApiCommon.HIT_SEP);
-        result.push(rule.getIndex());
+        result.push(String(rule.getIndex()));
         result.push(CosmeticApiCommon.HIT_END);
 
         return result.join('');
