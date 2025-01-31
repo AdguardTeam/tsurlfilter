@@ -39,12 +39,7 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
     }
 
     /**
-     * Creates a new tab context.
-     *
-     * @param tab Tab info.
-     * @param tab.id Tab id.
-     *
-     * @returns Created tab context, or null if tab is not browser tab.
+     * @inheritdoc
      */
     protected handleTabCreate(tab: Tabs.Tab): TabContext | null {
         if (!TabContext.isBrowserTab(tab)) {

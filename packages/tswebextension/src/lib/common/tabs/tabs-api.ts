@@ -134,14 +134,12 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     /**
      * Creates a new tab context.
      *
-     * @param args Arguments.
+     * @param tab Tab info.
+     * @param tab.id Tab id.
      *
-     * @throws Error if not implemented in a child class.
+     * @returns Created tab context, or null if tab is not browser tab.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, class-methods-use-this
-    protected handleTabCreate(...args: any[]): any {
-        throw new Error('Not implemented');
-    }
+    protected abstract handleTabCreate(tab: Tabs.Tab): T | null;
 
     /**
      * Updates tab context data on tab update.
