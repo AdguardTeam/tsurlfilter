@@ -1,10 +1,15 @@
 # Benchmark results
 
-## Environment
+Date: Thu, 30 Jan 2025 10:26:44 GMT
 
-- Date: Mon, 23 Oct 2023 11:09:33 GMT
-- Node.js version: v18.17.1
-- OS: Linux 5.15
+## System Specs
+
+| Spec   | Value                           |
+| :----- | :------------------------------ |
+| CPU    | Intel Core™ i7-9750H (12 cores) |
+| Memory | 16384.00 MB                     |
+| OS     | macOS 14.6.1 x64                |
+| Node   | v18.18.2                        |
 
 > [!NOTE]
 > Results are sorted by performance (fastest first).
@@ -12,112 +17,112 @@
 <!--markdownlint-disable MD013-->
 ## Bootstrap
 
-|                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime | Tokens |   Status  |
-| :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :--------------: | :----: | :-------: |
-| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |  678 (±0.58%)  |      95      |  1.4751103601 ms |  72249 | no errors |
-|                              [css-tree](https://github.com/csstree/csstree)                             |  655 (±0.30%)  |      96      |  1.5263193413 ms |  72249 | no errors |
-|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  293 (±0.25%)  |      90      |  3.4124665216 ms |  72611 | no errors |
-|                              [csslex](https://github.com/keithamus/csslex)                              |  215 (±2.71%)  |      77      |  4.6587483439 ms |  72249 | no errors |
-|                           [parse-css](https://github.com/tabatkins/parse-css)                           | 97.19 (±1.36%) |      72      | 10.2889108491 ms |  72228 | no errors |
-| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 68.88 (±2.61%) |      60      | 14.5175841833 ms |  72250 | no errors |
+|                                                Tokenizer                                                |     ops/sec     | Runs sampled |  Average runtime | Tokens |   Status  |
+| :-----------------------------------------------------------------------------------------------------: | :-------------: | :----------: | :--------------: | :----: | :-------: |
+|                              [css-tree](https://github.com/csstree/csstree)                             |   270 (±5.47%)  |      76      |  3.7081475457 ms |  72249 | no errors |
+| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |   208 (±5.72%)  |      76      |  4.7988309574 ms |  72249 | no errors |
+|                              [csslex](https://github.com/keithamus/csslex)                              |   101 (±3.15%)  |      65      |  9.8651358649 ms |  72249 | no errors |
+|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  87.46 (±0.97%) |      73      | 11.4333315260 ms |  72611 | no errors |
+|                           [parse-css](https://github.com/tabatkins/parse-css)                           | 44.35 (±13.63%) |      62      | 22.5494988495 ms |  72228 | no errors |
+| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 21.63 (±19.50%) |      39      | 46.2287616496 ms |  72250 | no errors |
 
 ## Bulma
 
 |                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime | Tokens |   Status  |
 | :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :--------------: | :----: | :-------: |
-| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |  775 (±0.35%)  |      97      |  1.2906238496 ms |  75215 | no errors |
-|                              [css-tree](https://github.com/csstree/csstree)                             |  730 (±0.26%)  |      96      |  1.3704211252 ms |  75215 | no errors |
-|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  307 (±0.31%)  |      93      |  3.2579037218 ms |  75712 | no errors |
-|                              [csslex](https://github.com/keithamus/csslex)                              |  216 (±2.74%)  |      80      |  4.6244439891 ms |  75215 | no errors |
-|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  130 (±1.51%)  |      84      |  7.7125864167 ms |  75205 | no errors |
-| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 77.86 (±2.82%) |      68      | 12.8432758294 ms |  75216 | no errors |
+| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |  348 (±1.13%)  |      88      |  2.8709996068 ms |  75215 | no errors |
+|                              [css-tree](https://github.com/csstree/csstree)                             |  345 (±0.71%)  |      90      |  2.8946954351 ms |  75215 | no errors |
+|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  155 (±0.32%)  |      87      |  6.4465536753 ms |  75712 | no errors |
+|                              [csslex](https://github.com/keithamus/csslex)                              |  102 (±2.99%)  |      66      |  9.7687063413 ms |  75215 | no errors |
+|                           [parse-css](https://github.com/tabatkins/parse-css)                           | 64.38 (±1.65%) |      67      | 15.5322786194 ms |  75205 | no errors |
+| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 48.51 (±3.19%) |      63      | 20.6145774074 ms |  75216 | no errors |
 
 ## Foundation
 
-|                                                Tokenizer                                                |    ops/sec    | Runs sampled | Average runtime | Tokens |   Status  |
-| :-----------------------------------------------------------------------------------------------------: | :-----------: | :----------: | :-------------: | :----: | :-------: |
-| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) | 1149 (±0.31%) |      96      | 0.8704606604 ms |  50874 | no errors |
-|                              [css-tree](https://github.com/csstree/csstree)                             | 1060 (±0.35%) |      96      | 0.9437109600 ms |  50873 | no errors |
-|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  456 (±0.27%) |      94      | 2.1942941175 ms |  51528 | no errors |
-|                              [csslex](https://github.com/keithamus/csslex)                              |  268 (±2.48%) |      77      | 3.7351010328 ms |  50873 | no errors |
-|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  174 (±1.55%) |      83      | 5.7578719589 ms |  50870 | no errors |
-| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) |  110 (±2.77%) |      72      | 9.1276466128 ms |  50874 | no errors |
+|                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime | Tokens |   Status  |
+| :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :--------------: | :----: | :-------: |
+|                              [css-tree](https://github.com/csstree/csstree)                             |  553 (±0.56%)  |      93      |  1.8080485951 ms |  50873 | no errors |
+| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |  481 (±1.13%)  |      89      |  2.0798233761 ms |  50874 | no errors |
+|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  218 (±5.32%)  |      85      |  4.5973362510 ms |  51528 | no errors |
+|                              [csslex](https://github.com/keithamus/csslex)                              |  125 (±2.87%)  |      68      |  7.9837495076 ms |  50873 | no errors |
+|                           [parse-css](https://github.com/tabatkins/parse-css)                           | 74.94 (±3.74%) |      65      | 13.3445165269 ms |  50870 | no errors |
+| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 43.00 (±9.68%) |      45      | 23.2561000370 ms |  50874 | no errors |
 
 ## Fomantic UI
 
-|                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime | Tokens |   Status  |
-| :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :--------------: | :----: | :-------: |
-| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |  110 (±0.37%)  |      82      |  9.0670222276 ms | 534504 | no errors |
-|                              [css-tree](https://github.com/csstree/csstree)                             | 97.79 (±0.32%) |      74      | 10.2262439374 ms | 534502 | no errors |
-|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      | 42.50 (±0.30%) |      57      | 23.5312804386 ms | 535714 | no errors |
-|                              [csslex](https://github.com/keithamus/csslex)                              | 25.65 (±3.12%) |      47      | 38.9919680851 ms | 534504 | no errors |
-| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 10.64 (±0.83%) |      29      | 94.0178075517 ms | 534505 | no errors |
-|                           [parse-css](https://github.com/tabatkins/parse-css)                           | 10.10 (±1.65%) |      30      | 99.0240675667 ms | 534088 | no errors |
+|                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime  | Tokens |   Status  |
+| :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :---------------: | :----: | :-------: |
+|                              [css-tree](https://github.com/csstree/csstree)                             | 46.56 (±0.65%) |      61      |  21.4797374918 ms | 534502 | no errors |
+| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) | 45.19 (±4.75%) |      60      |  22.1265246611 ms | 534502 | no errors |
+|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      | 19.72 (±0.48%) |      39      |  50.7131039487 ms | 535714 | no errors |
+|                              [csslex](https://github.com/keithamus/csslex)                              | 11.68 (±5.31%) |      33      |  85.6491360606 ms | 534504 | no errors |
+|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  4.62 (±5.57%) |      16      | 216.3331198750 ms | 534088 | no errors |
+| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 2.90 (±17.93%) |      12      | 345.3981200833 ms | 534505 | no errors |
 
 ## Font Awesome
 
-|                                                Tokenizer                                                |    ops/sec    | Runs sampled | Average runtime | Tokens |   Status  |
-| :-----------------------------------------------------------------------------------------------------: | :-----------: | :----------: | :-------------: | :----: | :-------: |
-|                              [css-tree](https://github.com/csstree/csstree)                             | 1563 (±0.30%) |      96      | 0.6398423604 ms |  43905 | no errors |
-| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) | 1557 (±0.37%) |      98      | 0.6423208017 ms |  43905 | no errors |
-|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  584 (±0.30%) |      94      | 1.7117446765 ms |  43965 | no errors |
-|                              [csslex](https://github.com/keithamus/csslex)                              |  326 (±2.50%) |      76      | 3.0648706150 ms |  43905 | no errors |
-|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  135 (±1.24%) |      78      | 7.4238688826 ms |  43923 | no errors |
-| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) |  129 (±2.61%) |      75      | 7.7635107989 ms |  43906 | no errors |
+|                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime | Tokens |   Status  |
+| :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :--------------: | :----: | :-------: |
+|                              [css-tree](https://github.com/csstree/csstree)                             |  771 (±0.96%)  |      92      |  1.2966780329 ms |  43905 | no errors |
+| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |  598 (±0.55%)  |      91      |  1.6734684521 ms |  43905 | no errors |
+|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  276 (±0.56%)  |      86      |  3.6260228059 ms |  43965 | no errors |
+|                              [csslex](https://github.com/keithamus/csslex)                              |  136 (±8.39%)  |      64      |  7.3295262969 ms |  43905 | no errors |
+| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 73.59 (±2.33%) |      63      | 13.5892927429 ms |  43906 | no errors |
+|                           [parse-css](https://github.com/tabatkins/parse-css)                           | 66.85 (±2.03%) |      69      | 14.9596465543 ms |  43923 | no errors |
 
 ## jQuery UI
 
 |                                                Tokenizer                                                |    ops/sec    | Runs sampled | Average runtime | Tokens |   Status  |
 | :-----------------------------------------------------------------------------------------------------: | :-----------: | :----------: | :-------------: | :----: | :-------: |
-| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) | 5903 (±0.23%) |      98      | 0.1694111919 ms |  8818  | no errors |
-|                              [css-tree](https://github.com/csstree/csstree)                             | 5802 (±0.28%) |      97      | 0.1723567168 ms |  8818  | no errors |
-|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      | 2328 (±0.29%) |      98      | 0.4296036582 ms |  8852  | no errors |
-|                              [csslex](https://github.com/keithamus/csslex)                              | 1684 (±2.24%) |      80      | 0.5938042832 ms |  8818  | no errors |
-|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  760 (±0.26%) |      98      | 1.3164588940 ms |  8785  | no errors |
-| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) |  555 (±2.70%) |      85      | 1.8005803315 ms |  8819  | no errors |
+|                              [css-tree](https://github.com/csstree/csstree)                             | 3042 (±1.86%) |      96      | 0.3287597224 ms |  8818  | no errors |
+| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) | 2257 (±1.75%) |      91      | 0.4429903142 ms |  8818  | no errors |
+|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      | 1065 (±1.17%) |      89      | 0.9387706021 ms |  8852  | no errors |
+|                              [csslex](https://github.com/keithamus/csslex)                              |  795 (±3.12%) |      74      | 1.2572937049 ms |  8818  | no errors |
+|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  350 (±2.59%) |      88      | 2.8578770076 ms |  8785  | no errors |
+| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) |  336 (±0.81%) |      89      | 2.9728763876 ms |  8819  | no errors |
 
 ## AdGuard Base List
 
-|                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime | Tokens |   Status  |
-| :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :--------------: | :----: | :-------: |
-| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |  144 (±0.28%)  |      83      |  6.9488601250 ms | 297915 | no errors |
-|                              [css-tree](https://github.com/csstree/csstree)                             |  132 (±0.25%)  |      85      |  7.5810497748 ms | 297913 | no errors |
-|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      | 62.23 (±0.29%) |      66      | 16.0704132121 ms | 269324 | no errors |
-|                              [csslex](https://github.com/keithamus/csslex)                              | 41.68 (±2.66%) |      56      | 23.9937326250 ms | 297924 | no errors |
-| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 15.20 (±2.53%) |      42      | 65.7808102857 ms | 297925 | no errors |
-|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  0.00 (±0.00%) |       0      |  0.0000000000 ms |   N/A  |   failed  |
+|                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime  | Tokens |   Status  |
+| :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :---------------: | :----: | :-------: |
+| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) | 56.55 (±4.79%) |      60      |  17.6834078472 ms | 341236 | no errors |
+|                              [css-tree](https://github.com/csstree/csstree)                             | 55.89 (±6.54%) |      60      |  17.8914359583 ms | 341236 | no errors |
+|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      | 25.75 (±4.16%) |      46      |  38.8421099891 ms | 298553 | no errors |
+|                              [csslex](https://github.com/keithamus/csslex)                              | 17.77 (±2.18%) |      34      |  56.2637567353 ms | 341246 | no errors |
+| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) |  4.99 (±3.76%) |      17      | 200.4833514118 ms | 341247 | no errors |
+|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  0.00 (±0.00%) |       0      |  0.0000000000 ms  |   N/A  |   failed  |
 
 ## AdGuard Annoyances Filter
 
-|                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime | Tokens |   Status  |
-| :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :--------------: | :----: | :-------: |
-| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |  148 (±0.30%)  |      85      |  6.7771021324 ms | 279851 | no errors |
-|                              [css-tree](https://github.com/csstree/csstree)                             |  139 (±0.23%)  |      81      |  7.1762287855 ms | 279851 | no errors |
-|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      | 72.21 (±0.79%) |      75      | 13.8484045400 ms | 181137 | no errors |
-|                              [csslex](https://github.com/keithamus/csslex)                              | 45.86 (±2.73%) |      61      | 21.8038467158 ms | 279862 | no errors |
-| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 15.57 (±2.96%) |      43      | 64.2089721860 ms | 279863 | no errors |
-|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  0.00 (±0.00%) |       0      |  0.0000000000 ms |   N/A  |   failed  |
+|                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime  | Tokens |   Status  |
+| :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :---------------: | :----: | :-------: |
+|                              [css-tree](https://github.com/csstree/csstree)                             | 58.68 (±0.44%) |      65      |  17.0403076500 ms | 339810 | no errors |
+| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) | 57.16 (±0.99%) |      67      |  17.4940191169 ms | 339808 | no errors |
+|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      | 27.65 (±0.65%) |      49      |  36.1695965102 ms | 226027 | no errors |
+|                              [csslex](https://github.com/keithamus/csslex)                              | 18.16 (±2.82%) |      34      |  55.0709890294 ms | 339825 | no errors |
+| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) |  5.41 (±2.03%) |      17      | 184.9118453529 ms | 339826 | no errors |
+|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  0.00 (±0.00%) |       0      |  0.0000000000 ms  |   N/A  |   failed  |
 
 ## AdGuard Mobile Ads Filter
 
-|                                                Tokenizer                                                |    ops/sec    | Runs sampled | Average runtime | Tokens |   Status  |
-| :-----------------------------------------------------------------------------------------------------: | :-----------: | :----------: | :-------------: | :----: | :-------: |
-| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) | 1058 (±0.34%) |      96      | 0.9449868712 ms |  40443 | no errors |
-|                              [css-tree](https://github.com/csstree/csstree)                             |  972 (±0.26%) |      97      | 1.0288468562 ms |  40443 | no errors |
-|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  449 (±0.28%) |      92      | 2.2253225365 ms |  40453 | no errors |
-|                              [csslex](https://github.com/keithamus/csslex)                              |  312 (±1.90%) |      79      | 3.2055811946 ms |  40445 | no errors |
-|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  177 (±0.75%) |      84      | 5.6368659095 ms |  39106 | no errors |
-| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) |  112 (±1.99%) |      73      | 8.9473396670 ms |  40446 | no errors |
+|                                                Tokenizer                                                |     ops/sec    | Runs sampled |  Average runtime | Tokens |   Status  |
+| :-----------------------------------------------------------------------------------------------------: | :------------: | :----------: | :--------------: | :----: | :-------: |
+|                              [css-tree](https://github.com/csstree/csstree)                             |  386 (±0.44%)  |      92      |  2.5911729538 ms |  52238 | no errors |
+| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |  367 (±0.81%)  |      87      |  2.7271142588 ms |  52238 | no errors |
+|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  170 (±0.87%)  |      86      |  5.8786797416 ms |  52249 | no errors |
+|                              [csslex](https://github.com/keithamus/csslex)                              |  128 (±2.63%)  |      73      |  7.8264106035 ms |  52240 | no errors |
+|                           [parse-css](https://github.com/tabatkins/parse-css)                           | 61.41 (±3.61%) |      64      | 16.2843308320 ms |  50556 | no errors |
+| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) | 43.77 (±2.84%) |      58      | 22.8443752931 ms |  52241 | no errors |
 
 ## uBlock Base List
 
 |                                                Tokenizer                                                |    ops/sec    | Runs sampled | Average runtime | Tokens |   Status  |
 | :-----------------------------------------------------------------------------------------------------: | :-----------: | :----------: | :-------------: | :----: | :-------: |
-| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) | 1723 (±0.20%) |      98      | 0.5802379960 ms |  24322 | no errors |
-|                              [css-tree](https://github.com/csstree/csstree)                             | 1555 (±0.22%) |      98      | 0.6429304859 ms |  24322 | no errors |
-|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  745 (±0.23%) |      95      | 1.3427479437 ms |  24321 | no errors |
-|                              [csslex](https://github.com/keithamus/csslex)                              |  528 (±2.24%) |      83      | 1.8936886689 ms |  24322 | no errors |
-|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  286 (±0.74%) |      92      | 3.4927348275 ms |  23571 | no errors |
-| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) |  184 (±1.99%) |      79      | 5.4244890018 ms |  24323 | no errors |
+|                              [css-tree](https://github.com/csstree/csstree)                             | 1034 (±0.54%) |      92      | 0.9667334829 ms |  19429 | no errors |
+| [@adguard/css-tokenizer](https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/css-tokenizer) |  959 (±0.53%) |      91      | 1.0432209931 ms |  19429 | no errors |
+|                       [@csstools/tokenizer](https://github.com/csstools/tokenizer)                      |  459 (±0.71%) |      88      | 2.1765661026 ms |  19425 | no errors |
+|                              [csslex](https://github.com/keithamus/csslex)                              |  331 (±2.18%) |      76      | 3.0216797444 ms |  19429 | no errors |
+|                           [parse-css](https://github.com/tabatkins/parse-css)                           |  180 (±0.65%) |      83      | 5.5637690364 ms |  18856 | no errors |
+| [@csstools/css-tokenizer](https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer) |  152 (±3.95%) |      77      | 6.5718441934 ms |  19430 | no errors |
 
 <!--markdownlint-enable MD013-->

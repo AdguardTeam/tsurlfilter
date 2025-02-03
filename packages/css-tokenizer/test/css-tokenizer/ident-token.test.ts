@@ -1,7 +1,6 @@
 import { TokenType } from '../../src/common/enums/token-types';
 import { tokenize } from '../../src/css-tokenizer';
 import { getFormattedTokenName } from '../../src/utils/token-names';
-import type { TokenData } from '../helpers/test-interfaces';
 
 describe('ident-token', () => {
     // Tests from https://developer.mozilla.org/en-US/docs/Web/CSS/ident
@@ -19,10 +18,11 @@ describe('ident-token', () => {
         String.raw`\\75 rl`, // Extra whitespace
         String.raw`\\0075 rl`, // Extra leading zeros and extra whitespace
     ])(`should tokenize '%s' as ${getFormattedTokenName(TokenType.Ident)}`, (actual) => {
-        const tokens: TokenData[] = [];
-        tokenize(actual, (...args) => tokens.push(args));
-        expect(tokens).toEqual([
-            [TokenType.Ident, 0, actual.length],
-        ]);
+        const onToken: jest.MockedFunction<OnTokenCallback> = jest.fn();
+
+        tokenize(actual, onToken);
+
+        expect(onToken).toHaveBeenCalledTimes(1);
+        expect(onToken.mock.calls[0]?.slice(0, 3)).toEqual([TokenType.Ident, 0, actual.length]);
     });
 });

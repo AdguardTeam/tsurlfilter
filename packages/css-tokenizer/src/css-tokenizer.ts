@@ -24,6 +24,7 @@ import {
     type OnErrorCallback,
     type OnTokenCallback,
     type TokenizerContextFunction,
+    type TokenizerFunction,
 } from './common/types/function-prototypes';
 
 /**
@@ -34,7 +35,7 @@ import {
  * @param onError Error callback which is called when a parsing error is found (optional)
  * @param functionHandlers Custom function handlers (optional)
  */
-export const tokenize = (
+export const tokenize: TokenizerFunction = (
     source: string,
     onToken: OnTokenCallback,
     onError: OnErrorCallback = () => {},
@@ -141,7 +142,7 @@ export const tokenize = (
                     // 4. Return the <hash-token>.
                     // TODO: Uncomment when needed
                     // context.onToken(TokenType.Hash, start, context.offset, props);
-                    context.onToken(TokenType.Hash, start, context.offset);
+                    context.onToken(TokenType.Hash, start, context.offset, undefined, context.stop);
                     break;
                 }
 
@@ -178,7 +179,7 @@ export const tokenize = (
                 if (context.getRelativeCode(1) === CodePoint.HyphenMinus
                         && context.getRelativeCode(2) === CodePoint.GreaterThanSign) {
                     context.consumeCodePoint(3);
-                    context.onToken(TokenType.Cdc, context.offset - 3, context.offset);
+                    context.onToken(TokenType.Cdc, context.offset - 3, context.offset, undefined, context.stop);
                     break;
                 }
 
@@ -214,7 +215,7 @@ export const tokenize = (
                         && context.getRelativeCode(3) === CodePoint.HyphenMinus
                 ) {
                     context.consumeCodePoint(4);
-                    context.onToken(TokenType.Cdo, context.offset - 4, context.offset);
+                    context.onToken(TokenType.Cdo, context.offset - 4, context.offset, undefined, context.stop);
                     break;
                 }
 
@@ -238,7 +239,7 @@ export const tokenize = (
                     // Consume ident sequence after commercial at character
                     consumeIndentSequence(context);
 
-                    context.onToken(TokenType.AtKeyword, start, context.offset);
+                    context.onToken(TokenType.AtKeyword, start, context.offset, undefined, context.stop);
                     break;
                 }
 
@@ -282,7 +283,7 @@ export const tokenize = (
                         );
                     }
 
-                    context.onToken(TokenType.Comment, start, context.offset);
+                    context.onToken(TokenType.Comment, start, context.offset, undefined, context.stop);
                     break;
                 }
 

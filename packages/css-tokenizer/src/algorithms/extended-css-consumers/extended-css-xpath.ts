@@ -32,7 +32,7 @@ export const handleXpathExtendedCssPseudo: TokenizerContextFunction = (context: 
         // It is important to report them, because we already consumed them - and the report is faster here than
         // a re-consume
         if (context.offset > start) {
-            context.onToken(TokenType.Whitespace, start, context.offset);
+            context.onToken(TokenType.Whitespace, start, context.offset, undefined, context.stop);
         }
 
         // We simply abort the custom handler
@@ -49,7 +49,7 @@ export const handleXpathExtendedCssPseudo: TokenizerContextFunction = (context: 
     // Note: we handle the parameter characters as delim-tokens, this is why we don't need to report them here
     // as whitespace-tokens
     for (let i = start; i < context.offset; i += 1) {
-        context.onToken(TokenType.Delim, i, i + 1);
+        context.onToken(TokenType.Delim, i, i + 1, undefined, context.stop);
     }
 
     // :xpath() is a bit tricky, because it can contain unescaped parentheses inside strings in the XPath expression,

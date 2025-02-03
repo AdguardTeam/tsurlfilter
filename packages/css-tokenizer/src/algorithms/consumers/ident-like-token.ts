@@ -46,7 +46,7 @@ export const consumeIdentLikeToken: TokenizerContextFunction = (context: Tokeniz
             const nextNonWsCode = context.getNextNonWsCode();
 
             if (nextNonWsCode === CodePoint.QuotationMark || nextNonWsCode === CodePoint.Apostrophe) {
-                context.onToken(TokenType.Function, start, context.offset);
+                context.onToken(TokenType.Function, start, context.offset, undefined, context.stop);
                 return;
             }
 
@@ -61,7 +61,7 @@ export const consumeIdentLikeToken: TokenizerContextFunction = (context: Tokeniz
         // For performance reasons, we use `has` and `get` separately to avoid declaring a new variable every time here
         if (context.hasFunctionHandler(fnHash)) {
             // Return the <function-token>.
-            context.onToken(TokenType.Function, start, context.offset);
+            context.onToken(TokenType.Function, start, context.offset, undefined, context.stop);
 
             // Consume the function body
             // It's safe to call the handler directly because we already checked if it exists
@@ -72,10 +72,10 @@ export const consumeIdentLikeToken: TokenizerContextFunction = (context: Tokeniz
 
         // Otherwise, if the next input code point is U+0028 LEFT PARENTHESIS ((), consume it. Create a <function-token>
         // with its value set to string and return it.
-        context.onToken(TokenType.Function, start, context.offset);
+        context.onToken(TokenType.Function, start, context.offset, undefined, context.stop);
         return;
     }
 
     // Otherwise, create an <ident-token> with its value set to string and return it.
-    context.onToken(TokenType.Ident, start, context.offset);
+    context.onToken(TokenType.Ident, start, context.offset, undefined, context.stop);
 };

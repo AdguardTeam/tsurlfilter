@@ -18,5 +18,5 @@ export const consumeWhitespaceToken: TokenizerContextFunction = (context: Tokeni
 
     context.consumeWhitespace();
 
-    context.onToken(TokenType.Whitespace, start, context.offset);
+    context.onToken(TokenType.Whitespace, start, context.offset, undefined, context.stop);
 };

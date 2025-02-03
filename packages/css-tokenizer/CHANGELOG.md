@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog][keepachangelog], and this project adhe
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
 [semver]: https://semver.org/spec/v2.0.0.html
 
+## [1.2.0] - 2025-01-31
+
+### Added
+
+- Stop functionality to `CSS tokenizer` callback and implement `hasToken` function.
+
+[1.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/css-tokenizer-v1.2.0
+
 ## [1.1.1] - 2024-09-19
 
 ### Fixed

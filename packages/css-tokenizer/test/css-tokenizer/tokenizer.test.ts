@@ -10,7 +10,7 @@ describe('tokenizer', () => {
     test('should skip leading BOM in the regular tokenizer', () => {
         const tokens: TokenData[] = [];
         tokenize('\uFEFF ', (...args) => tokens.push(args));
-        expect(tokens).toEqual([
+        expect(tokens.map((call) => call.slice(0, 3))).toEqual([
             [TokenType.Whitespace, 1, 2],
         ]);
     });
@@ -22,10 +22,10 @@ describe('tokenizer', () => {
                 const start = context.offset;
                 // this is a simple handler that just consumes one single code point - just for testing purposes
                 context.consumeCodePoint();
-                context.onToken(TokenType.Delim, start, context.offset);
+                context.onToken(TokenType.Delim, start, context.offset, undefined, context.stop);
             }],
         ]));
-        expect(tokens).toEqual([
+        expect(tokens.map((call) => call.slice(0, 3))).toEqual([
             [TokenType.Colon, 0, 1],
             [TokenType.Function, 1, 8],
             [TokenType.Delim, 8, 9],

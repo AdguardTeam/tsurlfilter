@@ -16,6 +16,38 @@ import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
 
 /**
+ * Utility type to get the last element from a tuple, handling optional last elements correctly.
+ *
+ * @param T - The tuple to extract the last element from.
+ * @returns The last element of the tuple if present; `L | undefined` if the last element is optional.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type Last<T extends unknown[]> = T extends [...infer _I, infer L]
+    ? L
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    : T extends [...infer _I, (infer L)?] ? L | undefined : never;
+
+/**
+ * Utility type to remove the last element from a tuple, handling optional last elements correctly.
+ *
+ * @param T - The tuple to remove the last element from.
+ * @returns A tuple without the last element. If the last element is optional, it is also removed.
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type OmitLast<T extends unknown[]> = T extends [...infer Rest, infer _Last]
+    ? Rest
+    // Handles cases where the last element is optional
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    : T extends [...infer Rest, (infer _Last)?]
+        ? Rest
+        : never;
+
+/**
+ * Extracts the parameters of `OnTokenCallback` as a tuple.
+ */
+type OnTokenCallbackParameters = Parameters<OnTokenCallback>;
+
+/**
  * Extended version of `OnTokenCallback` which also receives a `balance` parameter.
  *
  * @param type Type of the token.
@@ -23,11 +55,12 @@ import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
  * @param end End index in the source string.
  * @param props Additional properties of the token (if any - can be `undefined`, depending on the token type).
  * @param balance Calculated balance level of the token.
+ * @param stop Function to halt tokenization.
  * @note This function is keeping the same signature as the original `OnTokenCallback` to avoid breaking changes,
  * just adding the `balance` parameter at the end.
  */
 export type OnBalancedTokenCallback = (
-    ...args: [...Parameters<OnTokenCallback>, ...[balance: number]]
+    ...args: [...OmitLast<OnTokenCallbackParameters>, balance: number, Last<OnTokenCallbackParameters>]
 ) => ReturnType<OnTokenCallback>;
 
 /**
@@ -72,7 +105,7 @@ const tokenizeWithBalancedPairs = (
 
     tokenizeExtended(
         raw,
-        (type: TokenType, start, end, props) => {
+        (type: TokenType, start, end, props, stop) => {
             if (tokenPairs.has(type)) {
                 // If the token is an opening token, push its corresponding closing token to the stack.
                 // It is safe to use non-null assertion here, because we have checked that the token exists in the map.
@@ -95,7 +128,7 @@ const tokenizeWithBalancedPairs = (
                 }
             }
 
-            onToken(type, start, end, props, stack.length);
+            onToken(type, start, end, props, stack.length, stop);
         },
         onError,
         functionHandlers,

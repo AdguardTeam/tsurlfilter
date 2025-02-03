@@ -54,7 +54,7 @@ function consumeBadUrlRemnants(context: TokenizerContext): void {
  */
 function consumeBadUrlToken(context: TokenizerContext, start: number): void {
     consumeBadUrlRemnants(context);
-    context.onToken(TokenType.BadUrl, start, context.offset);
+    context.onToken(TokenType.BadUrl, start, context.offset, undefined, context.stop);
 }
 
 /**
@@ -88,14 +88,14 @@ export const consumeUrlToken: TokenizerContextFunction = (context: TokenizerCont
             context.consumeCodePoint();
 
             // Return the <url-token>.
-            context.onToken(TokenType.Url, start, context.offset);
+            context.onToken(TokenType.Url, start, context.offset, undefined, context.stop);
             return;
         }
 
         // EOF
         if (context.isEof()) {
             // This is a parse error. Return the <url-token>.
-            context.onToken(TokenType.Url, start, context.offset);
+            context.onToken(TokenType.Url, start, context.offset, undefined, context.stop);
             context.onError(ErrorMessage.UnexpectedEofInUrl, start, context.offset);
             return;
         }
@@ -111,7 +111,7 @@ export const consumeUrlToken: TokenizerContextFunction = (context: TokenizerCont
 
             if (context.code === CodePoint.RightParenthesis || context.isEof()) {
                 context.consumeCodePoint();
-                context.onToken(TokenType.Url, start, context.offset);
+                context.onToken(TokenType.Url, start, context.offset, undefined, context.stop);
                 context.onError(ErrorMessage.UnexpectedEofInUrl, start, context.offset);
                 return;
             }

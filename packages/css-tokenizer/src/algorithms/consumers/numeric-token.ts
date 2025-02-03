@@ -34,7 +34,7 @@ export const consumeNumericToken: TokenizerContextFunction = (context: Tokenizer
         consumeIndentSequence(context);
 
         // 3. Return the <dimension-token>.
-        context.onToken(TokenType.Dimension, start, context.offset);
+        context.onToken(TokenType.Dimension, start, context.offset, undefined, context.stop);
         return;
     }
 
@@ -42,10 +42,10 @@ export const consumeNumericToken: TokenizerContextFunction = (context: Tokenizer
     // <percentage-token> with the same value as number, and return it.
     if (context.code === CodePoint.PercentageSign) {
         context.consumeCodePoint();
-        context.onToken(TokenType.Percentage, start, context.offset);
+        context.onToken(TokenType.Percentage, start, context.offset, undefined, context.stop);
         return;
     }
 
     // Otherwise, create a <number-token> with the same value and type flag as number, and return it.
-    context.onToken(TokenType.Number, start, context.offset);
+    context.onToken(TokenType.Number, start, context.offset, undefined, context.stop);
 };

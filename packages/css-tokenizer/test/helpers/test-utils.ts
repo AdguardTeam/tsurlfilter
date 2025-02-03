@@ -71,8 +71,18 @@ export const addAsProp = (tests: TokenTest[]): TokenTest[] => {
  * @param test Token test
  * @param fn Tokenizer function
  */
-export const testTokenization = (test: TokenTest, fn: typeof tokenize | typeof tokenizeExtended = tokenize): void => {
+export const testTokenization = (
+    test: TokenTest,
+    fn: typeof tokenize | typeof tokenizeExtended = tokenize,
+): void => {
     const tokens: TokenData[] = [];
-    fn(test.actual, (...args) => tokens.push(args));
+
+    // Ignore props and stop for test
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    fn(test.actual, (type, start, end, _props, _stop) => {
+        tokens.push([type, start, end]);
+    });
+
+    // Now compare the trimmed (or sliced) tokens against your `test.expected`
     expect(tokens).toEqual(test.expected);
 };

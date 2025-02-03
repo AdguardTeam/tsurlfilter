@@ -221,6 +221,19 @@ export class TokenizerContext {
     }
 
     /**
+     * Stops the tokenizer by moving the cursor to the end of the input.
+     *
+     * @note This method is defined as an arrow function to ensure it retains the correct `this` context.
+     * Since `stop` is always passed to the `onToken` callback, which is invoked frequently during tokenization,
+     * avoiding unnecessary overhead is crucial.
+     * Using an arrow function provides better performance compared to binding the method in the constructor
+     * or at the call site.
+     */
+    public stop = (): void => {
+        this.cursor = this.length;
+    };
+
+    /**
      * Check if the next code point is EOF
      *
      * @returns `true` if the next code point is EOF, `false` otherwise
@@ -308,7 +321,7 @@ export class TokenizerContext {
      */
     public consumeTrivialToken(tokenType: TokenType): void {
         // eslint-disable-next-line no-plusplus
-        this.onToken(tokenType, this.cursor, ++this.cursor);
+        this.onToken(tokenType, this.cursor, ++this.cursor, undefined, this.stop);
     }
 
     /**
