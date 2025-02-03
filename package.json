@@ -9,7 +9,7 @@
   },
   "license": "GPL-3.0-only",
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=18"
   },
   "bugs": {
     "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
