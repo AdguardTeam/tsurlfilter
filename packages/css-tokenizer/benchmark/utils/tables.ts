@@ -1,17 +1,26 @@
 /**
  * @file Write benchmark results to a markdown file
  */
-
+import si from 'systeminformation';
 import { writeFile } from 'fs/promises';
 import { markdownTable } from 'markdown-table';
 import { formatRFC7231 } from 'date-fns';
-import osName from 'os-name';
 
 import { EMPTY, LINE_FEED } from '../common/constants';
 import { type ResourceBenchResult } from '../common/interfaces';
 import { tokenizerConfigs } from '../config/tokenizers';
 
 const ALIGN_CENTER = 'c'; // https://github.com/wooorm/markdown-table#optionsalign
+
+/**
+ * Helper function to print bytes as megabytes.
+ *
+ * @param bytes Bytes to print.
+ * @returns String representation of bytes in megabytes.
+ */
+export const printBytesAsMegabytes = (bytes: number): string => {
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+};
 
 /**
  * Header fields for the tables
@@ -24,6 +33,66 @@ const HEADERS = Object.freeze({
     TOKENS: 'Tokens',
     STATUS: 'Status',
 });
+
+/**
+ * Interface for the system specs.
+ */
+export interface SystemSpecs {
+    /**
+     * CPU specs.
+     */
+    CPU: string;
+
+    /**
+     * Memory (RAM) specs.
+     */
+    Memory: string;
+
+    /**
+     * OS specs.
+     */
+    OS: string;
+
+    /**
+     * Node.js version.
+     */
+    Node: string;
+}
+
+/**
+ * Helper function to get system specs.
+ *
+ * @returns System specs.
+ */
+export const getSystemSpecs = async (): Promise<SystemSpecs> => {
+    const cpu = await si.cpu();
+    const os = await si.osInfo();
+    const mem = await si.mem();
+
+    return {
+        CPU: `${cpu.manufacturer} ${cpu.brand} (${cpu.cores} cores)`,
+        Memory: `${printBytesAsMegabytes(mem.total)}`,
+        OS: `${os.distro} ${os.release} ${os.arch}`,
+        Node: process.version,
+    };
+};
+
+/**
+ * Builds a markdown table representing the given system specs.
+ *
+ * @param specs - System specs object
+ * @returns A markdown string
+ */
+export const buildSystemSpecsMarkdownTable = (specs: SystemSpecs): string => {
+    const rows = [
+        ['Spec', 'Value'],
+        ['CPU', specs.CPU],
+        ['Memory', specs.Memory],
+        ['OS', specs.OS],
+        ['Node', specs.Node],
+    ];
+    return markdownTable(rows, { align: ['left', 'left'] });
+};
 
 /**
  * Write benchmark results to a markdown file
@@ -39,11 +108,16 @@ export const writeMdTable = async (resourceBenchResults: ResourceBenchResult[], 
     result.push('# Benchmark results');
     result.push(EMPTY);
 
-    result.push('## Environment');
+    result.push(`Date: ${formatRFC7231(new Date())}`);
     result.push(EMPTY);
-    result.push(`- Date: ${formatRFC7231(new Date())}`);
-    result.push(`- Node.js version: ${process.version}`);
-    result.push(`- OS: ${osName()}`);
+
+    // Get and print system specs
+    const specs = await getSystemSpecs();
+
+    result.push('## System Specs');
+    result.push(EMPTY);
+    result.push(buildSystemSpecsMarkdownTable(specs));
+
     result.push(EMPTY);
     result.push('> [!NOTE]');
     result.push('> Results are sorted by performance (fastest first).');

@@ -23,3 +23,6 @@ export { decodeIdent } from './utils/ident-decoder';
 
 // Version of the library
 export { CSS_TOKENIZER_VERSION } from './version';
+
+// Function to check if a token is present in a string
+export { hasToken } from './utils/has-token';

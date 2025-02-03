@@ -24,6 +24,7 @@ Table of contents:
         - [`tokenize`](#tokenize)
         - [`tokenizeExtended`](#tokenizeextended)
     - [Utilities](#utilities)
+        - [`hasToken`](#hastoken)
         - [`TokenizerContext`](#tokenizercontext)
         - [`decodeIdent`](#decodeident)
     - [`CSS_TOKENIZER_VERSION`](#css_tokenizer_version)
@@ -176,10 +177,17 @@ where
  * @param start Token start offset
  * @param end Token end offset
  * @param props Other token properties (if any)
+ * @param stop Function to halt the tokenization process
  * @note Hash tokens have a type flag set to either "id" or "unrestricted". The type flag defaults to "unrestricted" if
  * not otherwise set
  */
-type OnTokenCallback = (type: TokenType, start: number, end: number, props?: Record<string, unknown>) => void;
+type OnTokenCallback = (
+    type: TokenType,
+    start: number,
+    end: number,
+    props: Record<string, unknown> | undefined,
+    stop: () => void
+);
 ```
 
 ```ts
@@ -231,6 +239,27 @@ function tokenizeExtended(
 ```
 
 ### Utilities
+
+#### `hasToken`
+
+```ts
+/**
+ * Checks if the given raw string contains any of the specified tokens.
+ *
+ * @param raw - The raw string to be tokenized and checked.
+ * @param tokens - A set of token types to check for in the raw string.
+ * @param tokenizer - The tokenizer function to use. Defaults to `tokenizeExtended`.
+ *
+ * @example hasToken('div:contains("foo")', new Set([TokenType.Function]), tokenizeExtended); // true
+ *
+ * @returns `true` if any of the specified tokens are found in the raw string, otherwise `false`.
+ */
+function hasToken = (
+    raw: string,
+    tokens: Set<TokenType>,
+    tokenizer: TokenizerFunction = tokenizeExtended,
+): boolean
+```
 
 #### `TokenizerContext`
 

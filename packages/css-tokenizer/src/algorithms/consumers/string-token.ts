@@ -39,13 +39,13 @@ export const consumeStringToken: TokenizerContextFunction = (context: TokenizerC
                 context.consumeCodePoint();
 
                 // Return the <string-token>.
-                context.onToken(TokenType.String, start, context.offset);
+                context.onToken(TokenType.String, start, context.offset, undefined, context.stop);
                 return;
 
             // EOF
             case ImaginaryCodePoint.Eof:
                 // This is a parse error. Return the <string-token>.
-                context.onToken(TokenType.String, start, context.offset);
+                context.onToken(TokenType.String, start, context.offset, undefined, context.stop);
                 context.onError(ErrorMessage.UnexpectedEofInString, start, context.offset);
                 return;
 
@@ -63,7 +63,7 @@ export const consumeStringToken: TokenizerContextFunction = (context: TokenizerC
 
                 // This is a parse error. Reconsume the current input code point, create a <bad-string-token>, and
                 // return it.
-                context.onToken(TokenType.BadString, start, context.offset);
+                context.onToken(TokenType.BadString, start, context.offset, undefined, context.stop);
                 context.onError(ErrorMessage.UnexpectedNewlineInString, start, context.offset);
                 return;
 
@@ -72,7 +72,7 @@ export const consumeStringToken: TokenizerContextFunction = (context: TokenizerC
                 // If the next input code point is EOF, do nothing.
                 if (context.isNextEof()) {
                     context.consumeCodePoint();
-                    context.onToken(TokenType.String, start, context.offset);
+                    context.onToken(TokenType.String, start, context.offset, undefined, context.stop);
                     context.onError(ErrorMessage.UnexpectedEofInString, start, context.offset);
                     return;
                 }

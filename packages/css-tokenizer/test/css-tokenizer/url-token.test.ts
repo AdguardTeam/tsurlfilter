@@ -1,7 +1,6 @@
 import { CodePoint } from '../../src/common/enums/code-points';
 import { TokenType } from '../../src/common/enums/token-types';
 import { tokenize } from '../../src/css-tokenizer';
-import type { TokenData } from '../helpers/test-interfaces';
 import { addAsProp, testTokenization } from '../helpers/test-utils';
 
 describe('URLs', () => {
@@ -19,9 +18,12 @@ describe('URLs', () => {
             // escaped parenthesis - if no quotes are used, parenthesis should be escaped
             String.raw`url(myFont\(1\).woff)`,
         ])('should tokenize \'%s\' as <url-token>', (actual) => {
-            const tokens: TokenData[] = [];
-            tokenize(actual, (...args) => tokens.push(args));
-            expect(tokens).toEqual([
+            const tokensWithExtras: unknown[][] = [];
+            tokenize(actual, (...args) => tokensWithExtras.push(args));
+            // strip props and stop from the tokens
+            const tokens = tokensWithExtras.map(([type, start, end]) => [type, start, end]);
+
+            expect(tokens.map(([type, start, end]) => [type, start, end])).toEqual([
                 [TokenType.Url, 0, actual.length],
             ]);
         });
@@ -144,9 +146,11 @@ describe('URLs', () => {
             'url(aa\\\n)', // invalid escape sequence
             'url(aa\\\n\\)bb)', // bad url remnants contains a valid escape sequence
         ])("should tokenize '%s' as <bad-url-token>", (actual) => {
-            const tokens: TokenData[] = [];
-            tokenize(actual, (...args) => tokens.push(args));
-            expect(tokens).toEqual([
+            const tokensWithExtras: unknown[][] = [];
+            tokenize(actual, (...args) => tokensWithExtras.push(args));
+            // strip props and stop from the tokens
+            const tokens = tokensWithExtras.map(([type, start, end]) => [type, start, end]);
+            expect(tokens.map(([type, start, end]) => [type, start, end])).toEqual([
                 [TokenType.BadUrl, 0, actual.length],
             ]);
         });

@@ -1,5 +1,5 @@
 import { sprintf } from 'sprintf-js';
-import { TokenType } from '@adguard/css-tokenizer';
+import { hasToken, TokenType } from '@adguard/css-tokenizer';
 
 import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
 import { AdblockSyntax } from '../../utils/adblockers';
@@ -44,7 +44,6 @@ import { UboScriptletInjectionBodyParser } from './body/ubo-scriptlet-injection-
 import { AdgScriptletInjectionBodyParser } from './body/adg-scriptlet-injection-body-parser';
 import { BaseParser } from '../base-parser';
 import { UboPseudoName } from '../../common/ubo-selector-common';
-import { hasToken } from '../css/has-token';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.

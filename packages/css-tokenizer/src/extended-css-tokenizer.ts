@@ -17,6 +17,7 @@ import {
     type OnErrorCallback,
     type OnTokenCallback,
     type TokenizerContextFunction,
+    type TokenizerFunction,
 } from './common/types/function-prototypes';
 import { tokenize } from './css-tokenizer';
 import { mergeMaps } from './utils/maps';
@@ -59,12 +60,12 @@ const EXT_CSS_PSEUDO_HANDLERS = new Map<number, TokenizerContextFunction>([
  * duplicate a function handler, the custom one will be used instead of the default one, so you can override the default
  * function handlers this way, if you want to.
  */
-export function tokenizeExtended(
+export const tokenizeExtended: TokenizerFunction = (
     source: string,
     onToken: OnTokenCallback,
     onError: OnErrorCallback = () => {},
     functionHandlers: Map<number, TokenizerContextFunction> = new Map(),
-): void {
+): void => {
     tokenize(
         source,
         onToken,
@@ -75,4 +76,4 @@ export function tokenizeExtended(
             ? mergeMaps(EXT_CSS_PSEUDO_HANDLERS, functionHandlers)
             : EXT_CSS_PSEUDO_HANDLERS,
     );
-}
+};
