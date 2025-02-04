@@ -21,7 +21,7 @@ export class CommonAssistant extends Assistant {
     /**
      * Maximum time delay in milliseconds between the assistant frame creation and the assistant initialization.
      */
-    private static FRAME_CREATION_LIMIT_MS = 300;
+    private static FRAME_CREATION_LIMIT_MS = 200;
 
     /**
      * Assistant frame URL.
