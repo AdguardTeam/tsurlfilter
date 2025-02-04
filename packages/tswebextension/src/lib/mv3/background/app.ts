@@ -512,6 +512,7 @@ export class TsWebExtension implements AppInterface<
      */
     // eslint-disable-next-line class-methods-use-this
     public async openAssistant(tabId: number): Promise<void> {
+        tabsApi.setAssistantInitTimestamp(tabId);
         await Assistant.openAssistant(tabId);
     }
 
@@ -524,6 +525,7 @@ export class TsWebExtension implements AppInterface<
     // TODO: deprecated?
     // eslint-disable-next-line class-methods-use-this
     public async closeAssistant(tabId: number): Promise<void> {
+        tabsApi.resetAssistantInitTimestamp(tabId);
         await Assistant.closeAssistant(tabId);
     }
 

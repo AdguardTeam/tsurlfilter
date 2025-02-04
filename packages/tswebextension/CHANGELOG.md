@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Cosmetic rules injecting into `about:blank` iframes in MV2.
+- Do not inject cosmetic rules into the Assistant frame in MV3.
 
 ## [3.0.0-alpha.1] - 2025-01-30
 
