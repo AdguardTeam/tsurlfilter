@@ -15,7 +15,7 @@ import {
     messagesApi,
     TsWebExtension,
 } from '../../../../src/lib';
-import { Assistant } from '../../../../src/lib/mv2/background/assistant';
+import { Assistant } from '../../../../src/lib/common/content-script/assistant/assistant';
 import { type Message } from '../../../../src/lib/common/message';
 
 import { MockAppContext } from './mocks/mock-app-context';
