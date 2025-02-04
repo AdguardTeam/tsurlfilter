@@ -71,6 +71,7 @@ export class ScriptingApi {
      * @param params.tabId Tab id.
      * @param params.frameId Frame id.
      * @param params.cssText CSS text.
+     *
      * @returns Promise that resolves when the CSS is injected.
      */
     public static async insertCSS({ tabId, frameId, cssText }: InsertCSSParams): Promise<void> {
@@ -93,6 +94,7 @@ export class ScriptingApi {
      * @param params.frameId The ID of the frame.
      * @param params.scriptletData The scriptlet data to be executed.
      * @param params.domainName The domain name of the frame. Used for debugging.
+     *
      * @returns Promise that resolves when the script is executed.
      */
     public static async executeScriptlet(

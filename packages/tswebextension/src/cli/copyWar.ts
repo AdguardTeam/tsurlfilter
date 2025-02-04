@@ -10,6 +10,7 @@ const REDIRECTS_RESOURCES_DEST_PATH = 'redirects';
 
 /**
  * Resolves path to scriptlets package.
+ *
  * @returns The directory path of the scriptlets package.
  */
 const resolveScriptletsPath = async (): Promise<string> => {
@@ -20,6 +21,7 @@ const resolveScriptletsPath = async (): Promise<string> => {
 // TODO: use logger from lib after import fix
 /**
  * Copies web accessible resources to the specified destination.
+ *
  * @param dest - The destination directory path.
  */
 export const copyWar = async (dest: string): Promise<void> => {

@@ -23,6 +23,7 @@ export class DocumentParser {
      * {@link https://developer.mozilla.org/en-US/docs/Web/API/DOMParser#Error_handling}.
      *
      * @param parsedDocument Parsed document.
+     *
      * @returns True if document cannot be parsed.
      */
     private isParseError(parsedDocument: Document): boolean {
@@ -37,6 +38,7 @@ export class DocumentParser {
      * Parse html to document.
      *
      * @param html HTML content.
+     *
      * @returns Document or null if parse error occurred.
      */
     parse(html: string): Document | null {

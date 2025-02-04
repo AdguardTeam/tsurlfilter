@@ -42,7 +42,9 @@ export const redirectsService = new RedirectsService(resourcesService);
 
 /**
  * Creates new instance of {@link TsWebExtension}.
+ *
  * @param webAccessibleResourcesPath Path to web accessible resources for {@link resourcesService}.
+ *
  * @returns New instance of {@link TsWebExtension}.
  */
 export function createTsWebExtension(webAccessibleResourcesPath: string): TsWebExtension {

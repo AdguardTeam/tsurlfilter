@@ -52,7 +52,9 @@ export default class CookieUtils extends CommonCookieUtils {
      * Serializes cookie data into a string suitable for Set-Cookie header.
      *
      * @param cookie A cookie object.
+     *
      * @returns Set-Cookie string or null if it failed to serialize object.
+     *
      * @throws {TypeError} Thrown in case of invalid input data.
      */
     static serializeCookieToResponseHeader(cookie: ParsedCookie): string {
@@ -129,6 +131,7 @@ export default class CookieUtils extends CommonCookieUtils {
      * Serializes cookie data into a string suitable for Cookie header.
      *
      * @param cookies Array with {@link ParsedCookie}.
+     *
      * @returns Cookie string or null if it failed to serialize object.
      */
     static serializeCookieToRequestHeader(cookies: ParsedCookie[]): string {

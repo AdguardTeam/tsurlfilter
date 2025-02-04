@@ -26,6 +26,7 @@ export class ParamsService {
      * Removes request params from url, stored in request context.
      *
      * @param requestId Request id.
+     *
      * @returns Modified url or null.
      */
     public getPurgedUrl(requestId: string): string | null {
@@ -123,6 +124,7 @@ export class ParamsService {
      * Checks if we support requests for specified method.
      *
      * @param method Request method.
+     *
      * @returns True if method supported.
      */
     private static isMethodSupported(method: string): boolean {

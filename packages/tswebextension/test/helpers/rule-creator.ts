@@ -22,7 +22,9 @@ import { isString } from 'lodash-es';
  * @param rule Rule string or parsed node.
  * @param filterListId Filter list ID (optional, default is 0).
  * @param ruleIndex Rule index (optional, default is {@link RULE_INDEX_NONE}).
+ *
  * @returns Network rule instance.
+ *
  * @throws Error if the rule is not a valid network rule.
  */
 export const createNetworkRule = (
@@ -49,7 +51,9 @@ export const createNetworkRule = (
  * @param rule Rule string or parsed node.
  * @param filterListId Filter list ID (optional, default is 0).
  * @param ruleIndex Rule index (optional, default is {@link RULE_INDEX_NONE}).
+ *
  * @returns Cosmetic rule instance.
+ *
  * @throws Error if the rule is not a valid cosmetic rule.
  */
 export const createCosmeticRule = (
@@ -89,7 +93,9 @@ export const createCosmeticRule = (
  * @param ignoreCosmetic Ignore cosmetic rules (optional, default is false).
  * @param ignoreHost Ignore host rules (optional, default is true).
  * @param silent Silent mode (optional, default is true).
+ *
  * @returns Rule instance.
+ *
  * @throws Error if the rule is not a valid rule.
  */
 export const createRule = (

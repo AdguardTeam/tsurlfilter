@@ -8,7 +8,9 @@
 export class EntityHandler {
     /**
      * Escapes specific entities in an HTML string.
+     *
      * @param html String to escape.
+     *
      * @returns Escaped string.
      */
     static escapeEntities(html: string): string {
@@ -17,7 +19,9 @@ export class EntityHandler {
 
     /**
      * Reverts escaped entities back to their original form.
+     *
      * @param html String to revert.
+     *
      * @returns Reverted string.
      */
     static revertEntities(html: string): string {

@@ -9,6 +9,7 @@ type HttpHeaders = WebRequest.HttpHeaders;
  *
  * @param headers Headers collection.
  * @param headerName Name of the header.
+ *
  * @returns The header object if found, or null otherwise.
  */
 export function findHeaderByName(headers: HttpHeaders, headerName: string): HttpHeadersItemType | null {
@@ -21,6 +22,7 @@ export function findHeaderByName(headers: HttpHeaders, headerName: string): Http
  *
  * @param headers Headers collection.
  * @param headerName Name of the header to search.
+ *
  * @returns True if the header exists, false otherwise.
  */
 export function hasHeaderByName(headers: HttpHeaders, headerName: string): boolean {
@@ -32,6 +34,7 @@ export function hasHeaderByName(headers: HttpHeaders, headerName: string): boole
  *
  * @param headers Headers collection.
  * @param header The header object to match.
+ *
  * @returns True if an exact match for the header exists, false otherwise.
  */
 export function hasHeader(headers: HttpHeaders, header: HttpHeadersItemType): boolean {
@@ -44,6 +47,7 @@ export function hasHeader(headers: HttpHeaders, header: HttpHeadersItemType): bo
  *
  * @param headers Headers collection.
  * @param headerName Name of the header to remove.
+ *
  * @returns True if any headers were removed, false otherwise.
  */
 export function removeHeader(headers: HttpHeaders, headerName: string): boolean {

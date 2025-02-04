@@ -40,6 +40,7 @@ export class PermissionsPolicyService {
      * Checks if a network rule is sub document rule.
      *
      * @param rule Rule to check.
+     *
      * @returns `true` if the rule is sub document rule.
      */
     private static isSubDocumentRule(rule: NetworkRule): boolean {
@@ -48,7 +49,9 @@ export class PermissionsPolicyService {
 
     /**
      * Applies permissions policy directives to the response headers.
+     *
      * @param context Request context.
+     *
      * @returns True if policies were set successfully.
      */
     public onHeadersReceived(context: RequestContext): boolean {

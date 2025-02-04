@@ -21,6 +21,7 @@ type Fields = Pick<
  * This helper function retrieves associated fields from network rules pertinent to network rule events.
  *
  * @param rule Network rule instance to extract fields from.
+ *
  * @returns Fields extracted from the network rule.
  */
 export const getNetworkRuleFields = (rule: NetworkRule): Fields => ({

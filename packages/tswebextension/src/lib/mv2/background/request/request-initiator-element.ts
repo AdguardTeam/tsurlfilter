@@ -66,6 +66,7 @@ function getRelativeSrcPath(
  * Returns network request initiator tag by request type.
  *
  * @param requestType Request type.
+ *
  * @returns Initiator tag.
  */
 function getRequestInitiatorTag(requestType: RequestType): InitiatorTag[] | null {

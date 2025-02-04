@@ -73,6 +73,7 @@ export class TabsApi extends TabsApiCommon<FrameMV3, TabContext> {
      * the opposite is true, then we block it with a stub.
      *
      * @param tabId Tab ID.
+     *
      * @returns True if tab is a new tab.
      */
     public isNewPopupTab(tabId: number): boolean {

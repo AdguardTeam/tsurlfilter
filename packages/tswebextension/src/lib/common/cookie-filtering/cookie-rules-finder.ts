@@ -10,6 +10,7 @@ export default class CookieRulesFinder {
      *
      * @param url Request url.
      * @param rules List of rules.
+     *
      * @returns Blocking rules.
      */
     static getBlockingRules(url: string, rules: NetworkRule[]): NetworkRule[] {
@@ -23,6 +24,7 @@ export default class CookieRulesFinder {
      * @param cookieName Cookie name.
      * @param rules List of network rules.
      * @param isThirdPartyCookie Flag that indicates if cookie is third-party.
+     *
      * @returns Found rule or null.
      */
     static lookupNotModifyingRule(
@@ -66,6 +68,7 @@ export default class CookieRulesFinder {
      * @param cookieName Cookie name.
      * @param rules Matching rules.
      * @param isThirdPartyCookie Flag that indicates if cookie is third-party.
+     *
      * @returns Modifying rules.
      */
     static lookupModifyingRules(
@@ -112,6 +115,7 @@ export default class CookieRulesFinder {
      *
      * @param rule Rule.
      * @param isThirdParty Flag that indicates if cookie is third-party.
+     *
      * @returns True if rule and third party flag matches.
      */
     private static matchThirdParty(rule: NetworkRule, isThirdParty: boolean): boolean {
@@ -126,6 +130,7 @@ export default class CookieRulesFinder {
      * Checks if $cookie rule is modifying.
      *
      * @param rule $cookie rule.
+     *
      * @returns True if rule is modifying.
      */
     private static isModifyingRule(rule: NetworkRule): boolean {

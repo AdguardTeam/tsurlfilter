@@ -33,6 +33,7 @@ export class ContentFiltering {
      * Retrieves html rules.
      *
      * @param context Request context.
+     *
      * @returns Html rules or null.
      */
     private static getHtmlRules(context: RequestContext): CosmeticRule[] | null {
@@ -59,6 +60,7 @@ export class ContentFiltering {
      * Retrieves replace rules and sorts them alphabetically.
      *
      * @param context Request context.
+     *
      * @returns Replace rules or null.
      */
     private static getReplaceRules(context: RequestContext): NetworkRule[] | null {
@@ -122,6 +124,7 @@ export class ContentFiltering {
      * Checks if request method is supported.
      *
      * @param context Request context.
+     *
      * @returns `true`, if request method is supported,
      * overwise returns `false`.
      */

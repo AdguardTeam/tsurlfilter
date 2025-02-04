@@ -86,6 +86,7 @@ export interface AppInterface<
      *
      * @param filterId Filter id.
      * @param ruleIndex Rule index.
+     *
      * @returns Rule node or null.
      */
     retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null;

@@ -305,6 +305,7 @@ export class ContentStream {
      * Parses charset from html.
      *
      * @param data Data to parse.
+     *
      * @returns Parsed charset or null.
      */
     private static parseHtmlCharset(data: BufferSource): string | null {
@@ -316,6 +317,7 @@ export class ContentStream {
      * Parses charset from css.
      *
      * @param data Data to parse.
+     *
      * @returns Parsed charset or null.
      */
     private static parseCssCharset(data: BufferSource): string | null {

@@ -103,6 +103,7 @@ export class RemoveHeadersService {
      * Removes request headers.
      *
      * @param context Request context.
+     *
      * @returns True if headers were modified.
      */
     public onBeforeSendHeaders(context: RequestContext): boolean {
@@ -122,6 +123,7 @@ export class RemoveHeadersService {
      * Removes response headers.
      *
      * @param context Request context.
+     *
      * @returns True if headers were modified.
      */
     public onHeadersReceived(context: RequestContext): boolean {

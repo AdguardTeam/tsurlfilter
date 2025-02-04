@@ -10,6 +10,7 @@ import { isEmptySrcFrame } from '../../../common/utils/is-empty-src-frame';
  * @param frameUrl Frame url.
  * @param frameId Unique id of frame in the tab.
  * @param mainFrameUrl Url of tab where iframe exists.
+ *
  * @returns True if frame without src, else returns false.
  */
 export function isLocalFrame(frameUrl: string, frameId: number, mainFrameUrl: string): boolean {

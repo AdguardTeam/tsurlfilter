@@ -33,6 +33,7 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
 
     /**
      * Creates {@link PersistentValueContainer} instance.
+     *
      * @param key The key to use for storing the data.
      * @param storage The storage interface implementation.
      * @param debounceMs The debounce time in milliseconds to save the data to the storage.
@@ -58,8 +59,11 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
 
     /**
      * Initializes the value.
+     *
      * @param value The initial value.
+     *
      * @returns Promise that resolves when the value is initialized.
+     *
      * @throws Error, if storage already initialized.
      */
     async init(value: Value): Promise<void> {
@@ -80,7 +84,9 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
 
     /**
      * Gets the value.
+     *
      * @returns The value stored by the specified key.
+     *
      * @throws Error, if storage not initialized.
      */
     get(): Value {
@@ -90,7 +96,9 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
 
     /**
      * Sets the value.
+     *
      * @param value Value to be stored in the specified key.
+     *
      * @throws Error, if storage not initialized.
      */
     set(value: Value): void {
@@ -102,6 +110,7 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
 
     /**
      * Checks if the storage is initialized.
+     *
      * @throws Error, if storage not initialized.
      */
     #checkIsInitialized(): void {
@@ -113,6 +122,7 @@ export class PersistentValueContainer<Key extends string = string, Value = unkno
     /**
      * TODO: remove this method after the migration to event-driven background.
      * Checks if the background script is persistent.
+     *
      * @returns True if the background script is persistent.
      */
     static #isBackgroundPersistent(): boolean {

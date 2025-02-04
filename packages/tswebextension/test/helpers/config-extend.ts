@@ -22,6 +22,7 @@ export type RecursivePartial<T> = {
  *
  * @param baseConfig Base configuration.
  * @param additionalConfig Additional configuration.
+ *
  * @returns Merged configuration.
  */
 export const extendConfig = (

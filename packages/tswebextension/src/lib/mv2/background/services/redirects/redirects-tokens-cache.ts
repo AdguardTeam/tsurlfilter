@@ -37,6 +37,7 @@ class RedirectsTokensCache {
      * Used when redirect is checked in {@link resourcesService.shouldCreateRedirectUrl}.
      *
      * @param token Some string or null.
+     *
      * @returns True if cache has such token.
      */
     public hasToken = (token: string | null): boolean => {

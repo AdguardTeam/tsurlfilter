@@ -144,6 +144,7 @@ export class RequestEvents {
      * Handles onResponseStarted event.
      *
      * @param details WebRequest details.
+     *
      * @returns Request data with context.
      */
     private static handleOnResponseStarted(
@@ -163,6 +164,7 @@ export class RequestEvents {
      * Handles onBeforeRequest event.
      *
      * @param details WebRequest details.
+     *
      * @returns Request data.
      */
     private static handleOnBeforeRequest(
@@ -274,6 +276,7 @@ export class RequestEvents {
      * Handles onBeforeSendHeaders event.
      *
      * @param details WebRequest details.
+     *
      * @returns Request data.
      */
     private static handleOnBeforeSendHeaders(
@@ -294,6 +297,7 @@ export class RequestEvents {
      * Handles onHeadersReceived event.
      *
      * @param details WebRequest details.
+     *
      * @returns Request data with context.
      */
     private static handleOnHeadersReceived(
@@ -316,6 +320,7 @@ export class RequestEvents {
      * Handles onCompleted event.
      *
      * @param details WebRequest details.
+     *
      * @returns Request data with context.
      */
     private static handleOnCompleted(
@@ -335,6 +340,7 @@ export class RequestEvents {
      * Handles onErrorOccurred event.
      *
      * @param details WebRequest details.
+     *
      * @returns Request data with context.
      */
     private static handleOnErrorOccurred(

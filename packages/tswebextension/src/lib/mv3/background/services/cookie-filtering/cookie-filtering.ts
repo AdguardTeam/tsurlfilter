@@ -234,6 +234,7 @@ export class CookieFiltering {
      *
      * @param cookie Cookie modify.
      * @param rules Cookie matching rules.
+     *
      * @returns Applied rules.
      */
     private static applyRuleToBrowserCookie(cookie: ParsedCookie, rules: NetworkRule[]): NetworkRule[] {

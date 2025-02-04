@@ -25,6 +25,7 @@ export class CookieUtils {
      *
      * @param header HTTP response header.
      * @param url Request URL.
+     *
      * @returns Parsed cookie or null if it failed to parse the header.
      */
     static parseSetCookieHeader(header: HttpHeadersItemType, url: string): ParsedCookie | null {
@@ -44,6 +45,7 @@ export class CookieUtils {
      *
      * @param responseHeaders HTTP response headers.
      * @param url Request URL.
+     *
      * @returns Array of parsed cookies.
      */
     static parseSetCookieHeaders(responseHeaders: HttpHeadersItemType[], url: string): ParsedCookie[] {
@@ -68,6 +70,7 @@ export class CookieUtils {
      *
      * @param cookieValue HTTP Cookie value.
      * @param url Request URL.
+     *
      * @returns Array of cookie name-value pairs.
      */
     static parseCookies(cookieValue: string, url: string): ParsedCookie[] {
@@ -109,6 +112,7 @@ export class CookieUtils {
      *
      * @param setCookieValue "Set-Cookie" header value to parse.
      * @param url Request URL.
+     *
      * @returns Parsed cookie or null if it failed to parse the value.
      */
     static parseSetCookie(setCookieValue: string, url: string): ParsedCookie | null {
@@ -164,6 +168,7 @@ export class CookieUtils {
      *
      * @param cookie Cookie to modify.
      * @param maxAge New maxAge value.
+     *
      * @returns True if cookie was modified.
      */
     static updateCookieMaxAge(cookie: ParsedCookie, maxAge: number): boolean {
@@ -193,8 +198,10 @@ export class CookieUtils {
      * Serializes cookie data into a string suitable for Set-Cookie header.
      *
      * @param cookie A cookie object.
+     *
      * @returns Set-Cookie string or null if it failed to serialize object.
-     * @throws {TypeError} Thrown in case of invalid input data.
+     *
+     * @throws `TypeError` if input data is invalid.
      */
     static serializeCookieToResponseHeader(cookie: ParsedCookie): string {
         if (!cookie) {
@@ -270,6 +277,7 @@ export class CookieUtils {
      * Serializes cookie data into a string suitable for Cookie header.
      *
      * @param cookies Array with {@link ParsedCookie}.
+     *
      * @returns Cookie string or null if it failed to serialize object.
      */
     static serializeCookieToRequestHeader(cookies: ParsedCookie[]): string {

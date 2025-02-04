@@ -62,6 +62,7 @@ export class FiltersStorage {
      * Gets the binary serialized filter list from the storage.
      *
      * @param filterId Filter id.
+     *
      * @returns Promise, resolved with binary serialized filter list or undefined if not found.
      */
     public static async getFilterList(
@@ -76,6 +77,7 @@ export class FiltersStorage {
      * Gets the raw filter list from the storage.
      *
      * @param filterId Filter id.
+     *
      * @returns Promise, resolved with raw filter list or undefined if not found.
      */
     public static async getRawFilterList(
@@ -90,6 +92,7 @@ export class FiltersStorage {
      * Gets the conversion map from the storage.
      *
      * @param filterId Filter id.
+     *
      * @returns Promise, resolved with conversion map or undefined if not found.
      */
     public static async getConversionMap(
@@ -104,6 +107,7 @@ export class FiltersStorage {
      * Gets the source map from the storage.
      *
      * @param filterId Filter id.
+     *
      * @returns Promise, resolved with source map or undefined if not found.
      */
     public static async getSourceMap(
@@ -118,6 +122,7 @@ export class FiltersStorage {
      * Gets the checksum from the storage.
      *
      * @param filterId Filter id.
+     *
      * @returns Promise, resolved with checksum or undefined if not found.
      */
     public static async getChecksum(filterId: number): Promise<string | undefined> {

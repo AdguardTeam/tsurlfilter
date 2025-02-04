@@ -167,6 +167,7 @@ export class StealthApi {
      *
      * @param mainFrameRule Main frame rule to use if no matching result provided.
      * @param matchingResult Matching result.
+     *
      * @returns Stealth script.
      */
     public getStealthScript(mainFrameRule: NetworkRule | null, matchingResult?: MatchingResult | null): string {

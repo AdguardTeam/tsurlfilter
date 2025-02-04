@@ -31,6 +31,7 @@ class RedirectsCache {
      * Checks if url is in the cache.
      *
      * @param url Url to check.
+     *
      * @returns True if url is in the cache.
      */
     public hasUrl = (url: string): boolean => {

@@ -2,6 +2,7 @@
  * Loads a resource from the extension resources.
  *
  * @param path Path to the resource.
+ *
  * @returns Promise resolved with the resource.
  *
  * @throws If the resource is not found.
@@ -15,6 +16,7 @@ const loadExtensionResource = async (path: string): Promise<Response> => {
  * Loads a text file from the extension resources.
  *
  * @param path Path to the file.
+ *
  * @returns Promise resolved with file content as a string.
  */
 export const loadExtensionTextResource = async (path: string): Promise<string> => {
@@ -26,6 +28,7 @@ export const loadExtensionTextResource = async (path: string): Promise<string> =
  * Loads a binary file from the extension resources.
  *
  * @param path Path to the file.
+ *
  * @returns Promise resolved with file content as an ArrayBuffer.
  */
 export const loadExtensionBinaryResource = async (path: string): Promise<ArrayBuffer> => {

@@ -83,8 +83,8 @@
  * headers based on                    ┌─┤      onHeadersReceived      │ │ │
  * {@link MatchingResult}.             │ │                             │ │ │
  * Modifies 'trusted-types' directive  │ └─────────────────────────────┘ │ │
- * for CSP headers:                    │                                 │ │.
- * @see {@link TrustedTypesService}.   │                                 │ │
+ * for CSP headers                     │                                 │ │
+ * via {@link TrustedTypesService}.    │                                 │ │
  *                                     │                                 │ │
  *                                     │                                 │ │
  *                                     │ ┌─────────────────────────────┐ │ │
@@ -109,7 +109,7 @@
  * Removes the request information       │                             │
  * from {@link requestContextStorage}.   │         onCompleted         │
  *                                       │                             │
- *                                       └─────────────────────────────┘
+ *                                       └─────────────────────────────┘.
  *
  *                                       ┌─────────────────────────────┐
  * Remove the request information        │                             │
@@ -288,6 +288,7 @@ export class WebRequestApi {
      *
      * @param details Request details.
      * @param details.context Request context.
+     *
      * @returns Web request response or void if there is nothing to do.
      */
     private static onBeforeRequest(
@@ -419,6 +420,7 @@ export class WebRequestApi {
      *
      * @param details On before send headers details.
      * @param details.context Details context.
+     *
      * @returns Web request event response.
      */
     private static onBeforeSendHeaders({
@@ -466,6 +468,7 @@ export class WebRequestApi {
      * @param event On headers received event.
      * @param event.context Event context.
      * @param event.details On headers received details.
+     *
      * @returns Web request event response.
      */
     private static onHeadersReceived({
@@ -803,6 +806,7 @@ export class WebRequestApi {
      * If it's sent to a third party, block it right away.
      * For firefox only:
      * If it contains moz://extension with our extension ID, block it as well.
+     *
      * @see https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1792.
      *
      * @param details Request details.
@@ -869,6 +873,7 @@ export class WebRequestApi {
 
     /**
      * Delete frame data from tab context when navigation is finished.
+     *
      * @param details Navigation event details.
      */
     private static deleteFrameContext(

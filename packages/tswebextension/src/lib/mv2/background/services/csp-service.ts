@@ -30,6 +30,7 @@ export class CspService {
      * It is applied when webRequest.onHeadersReceived event is fired.
      *
      * @param context Request context.
+     *
      * @returns True if headers were modified.
      */
     public onHeadersReceived(context: RequestContext): boolean {

@@ -14,6 +14,7 @@ export class RedirectsService {
 
     /**
      * Creates {@link RedirectsService} instance.
+     *
      * @param resourcesService Prevent web pages to identify extension through its web accessible resources.
      */
     constructor(
@@ -38,6 +39,7 @@ export class RedirectsService {
      *
      * @param title Redirect title or null.
      * @param requestUrl Request url.
+     *
      * @returns Redirect url or null if redirect is not found.
      */
     public createRedirectUrl(title: string | null, requestUrl: string): string | null {
@@ -72,6 +74,7 @@ export class RedirectsService {
      *
      * @param redirectTitle A name of the redirect.
      * @param requestUrl Request url.
+     *
      * @returns True if should create redirect url.
      */
     private shouldCreateRedirectUrl = (redirectTitle: string, requestUrl: string): boolean => {
@@ -110,8 +113,11 @@ export class RedirectsService {
      *
      * @param redirectTitle Title of the redirect.
      * @param requestUrl Request url.
-     * @throws Error if this method called before redirects where set.
+     *
      * @returns Url search params.
+     *
+     * @throws Error if this method called before redirects where set.
+     *
      * @private
      */
     private blockingUrlParams(redirectTitle: string, requestUrl: string): URLSearchParams {

@@ -113,6 +113,7 @@ export class CosmeticController {
      * Preprocess {@link IAffectedElement} for {@link ExtendedCss} instance.
      *
      * @param el Record with required 'content' style property in rules.
+     *
      * @returns Affected element record.
      */
     private beforeStyleApplied(el: IAffectedElement): IAffectedElement {

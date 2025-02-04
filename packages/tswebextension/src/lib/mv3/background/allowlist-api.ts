@@ -43,19 +43,21 @@ export class AllowlistApi extends CommonAllowlist {
      * NOTE: We use $to (_to domains_) modifier instead of $domain (_from domains_),
      * because it is needed to match frame request itself and all requests from
      * this frame.
+     *
      * @see https://groups.google.com/a/chromium.org/g/chromium-extensions/c/S0TtE9Vk4N4/m/hPtSafzVAQAJ
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#to-modifier
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#domain-modifier
      *
+     * @returns Combined rule in AG format.
+     *
      * @example
+     * ```
      * // configuration = { allowlist: 'example.com, example.org', enabled: true, inverted: false }
      * combineAllowListRules() -> '@@$document,to=example.com|example.org'
      *
-     * @example
      * // configuration = { allowlist: 'example.com, example.org', enabled: true, inverted: true }
      * combineAllowListRules() -> '@@$document,to=~example.com|~example.org'
-     *
-     * @returns Combined rule in AG format.
+     * ```
      */
     public combineAllowListRulesForDNR(): string {
         const allDomains = this.domains.map((domain) => {

@@ -110,6 +110,7 @@ export class MessagesApi {
      *
      * @param sender Tab, which sent message.
      * @param payload Message payload.
+     *
      * @returns True if element should be collapsed.
      */
     private handleProcessShouldCollapseMessage(
@@ -173,6 +174,7 @@ export class MessagesApi {
      *
      * @param sender Tab, which sent message.
      * @param payload Message payload.
+     *
      * @returns Cookie rules data.
      */
     private handleGetCookieRulesMessage(
@@ -216,6 +218,7 @@ export class MessagesApi {
      *
      * @param sender Tab which sent the message.
      * @param payload Message payload.
+     *
      * @returns True if event was published to filtering log.
      */
     private handleSaveCookieLogEvent(
@@ -265,6 +268,7 @@ export class MessagesApi {
      *
      * @param sender Tab, which sent message.
      * @param payload Message payload.
+     *
      * @returns True if rule was dispatched.
      */
     private handleAssistantCreateRuleMessage(
@@ -291,6 +295,7 @@ export class MessagesApi {
      *
      * @param sender Tab, which sent message.
      * @param payload Message payload.
+     *
      * @returns True if stats was saved.
      */
     private handleSaveCssHitsStats(

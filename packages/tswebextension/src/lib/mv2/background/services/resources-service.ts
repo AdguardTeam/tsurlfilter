@@ -66,9 +66,10 @@ export class ResourcesService implements ResourcesServiceInterface {
      *
      * @param path Resource relative path.
      * @param params Additional params appended to url, by default empty.
-     * @throws Error, if web accessible resources path is not defined.
      *
      * @returns Url to resource with secret param.
+     *
+     * @throws Error, if web accessible resources path is not defined.
      */
     public createResourceUrl(path: string, params: URLSearchParams = new URLSearchParams()): string {
         if (!this.warDir) {
@@ -123,6 +124,7 @@ export class ResourcesService implements ResourcesServiceInterface {
      * If secret is not found redirects to the main url of extension, otherwise removes secret from the stored values.
      *
      * @param details Web request details.
+     *
      * @returns Redirect or nothing.
      */
     private guardWar(details: WebRequest.OnBeforeRequestDetailsType): WebRequest.BlockingResponse | undefined {

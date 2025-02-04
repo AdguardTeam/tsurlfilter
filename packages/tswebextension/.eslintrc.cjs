@@ -90,7 +90,6 @@ module.exports = {
         'jsdoc/require-param-type': 'off',
         'jsdoc/no-undefined-types': 'off',
         'jsdoc/require-returns-type': 'off',
-        'jsdoc/tag-lines': 'off',
         'jsdoc/require-throws': 'error',
         'jsdoc/check-tag-names': ['error', {
             definedTags: ['vitest-environment', 'note'],
@@ -128,5 +127,58 @@ module.exports = {
         ],
         'jsdoc/require-returns': ['error'],
         'jsdoc/no-defaults': 'off',
+        'jsdoc/multiline-blocks': ['error', {
+            noSingleLineBlocks: true,
+            singleLineTags: [
+                'inheritdoc',
+            ],
+        }],
+        'jsdoc/tag-lines': [
+            'error',
+            'any',
+            {
+                startLines: 1,
+            },
+        ],
+        'jsdoc/sort-tags': ['error', {
+            linesBetween: 1,
+            tagSequence: [
+                {
+                    tags: [
+                        'file',
+                    ],
+                },
+                {
+                    tags: [
+                        'template',
+                    ],
+                },
+                {
+                    tags: [
+                        'see',
+                    ],
+                },
+                {
+                    tags: [
+                        'param',
+                    ],
+                },
+                {
+                    tags: [
+                        'returns',
+                    ],
+                },
+                {
+                    tags: [
+                        'throws',
+                    ],
+                },
+                {
+                    tags: [
+                        'example',
+                    ],
+                },
+            ],
+        }],
     },
 };

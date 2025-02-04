@@ -608,6 +608,7 @@ export class WebRequestApi {
 
     /**
      * Delete frame data from tab context when navigation is finished.
+     *
      * @param details Navigation event details.
      */
     private static deleteFrameContext(

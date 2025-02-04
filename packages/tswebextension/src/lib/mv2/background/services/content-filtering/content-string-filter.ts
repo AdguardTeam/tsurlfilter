@@ -58,6 +58,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
      * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#replace-modifier}
      *
      * @param content Content string.
+     *
      * @returns Modified content string.
      */
     public applyRules(content: string): string {
@@ -82,6 +83,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
      * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#html-filtering-rules}
      *
      * @param content Content string.
+     *
      * @returns Modified content string.
      */
     private applyHtmlRules(content: string): string {
@@ -156,6 +158,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
      * Applies "replace" rules to content string.
      *
      * @param content Content string.
+     *
      * @returns Modified content string.
      */
     private applyReplaceRules(content: string): string {

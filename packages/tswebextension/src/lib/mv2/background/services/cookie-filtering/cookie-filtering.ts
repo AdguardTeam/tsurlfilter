@@ -102,6 +102,7 @@ export class CookieFiltering {
      * Applies cookies to request headers.
      *
      * @param context Request context.
+     *
      * @returns True if headers were modified.
      */
     private applyRulesToRequestCookieHeaders(context: RequestContext): boolean {
@@ -185,6 +186,7 @@ export class CookieFiltering {
      * Applies cookies to response headers.
      *
      * @param context Request context.
+     *
      * @returns True if headers were modified.
      */
     private applyRulesToResponseCookieHeaders(context: RequestContext): boolean {
@@ -259,6 +261,7 @@ export class CookieFiltering {
      * TODO separate or rewrite to mv2 and mv3 methods.
      *
      * @param context Request context.
+     *
      * @returns True if headers were modified.
      */
     public onHeadersReceived(context: RequestContext): boolean {
@@ -313,6 +316,7 @@ export class CookieFiltering {
      * @param frameUrl Frame url.
      * @param tabId Tab id.
      * @param frameId Frame id.
+     *
      * @returns List of blocking rules.
      */
     // eslint-disable-next-line class-methods-use-this
@@ -443,6 +447,7 @@ export class CookieFiltering {
      *
      * @param cookie Cookie modify.
      * @param rules Cookie matching rules.
+     *
      * @returns Applied rules.
      */
     private static applyRuleToBrowserCookie(cookie: ParsedCookie, rules: NetworkRule[]): NetworkRule[] {

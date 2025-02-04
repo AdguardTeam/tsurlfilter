@@ -107,6 +107,7 @@ export class StealthService {
      * Applies stealth actions to request headers.
      *
      * @param context Request context.
+     *
      * @returns Stealth actions bitmask.
      */
     public processRequestHeaders(context: RequestContext): StealthActions {
@@ -232,6 +233,7 @@ export class StealthService {
      *
      * @param requestHeaders Request headers.
      * @param requestUrl Request URL.
+     *
      * @returns True if referrer was removed.
      */
     private static removeReferrer(requestHeaders: WebRequest.HttpHeaders, requestUrl: string): boolean {
@@ -252,6 +254,7 @@ export class StealthService {
      *
      * @param requestHeaders Request headers.
      * @param requestUrl Request URL.
+     *
      * @returns True if search queries were hidden.
      */
     private static hideSearchQueries(requestHeaders: WebRequest.HttpHeaders, requestUrl: string): boolean {
@@ -272,6 +275,7 @@ export class StealthService {
      * Removes X-Client-Data header.
      *
      * @param requestHeaders Request headers.
+     *
      * @returns True if X-Client-Data header was removed.
      */
     private static removeXClientData(requestHeaders: WebRequest.HttpHeaders): boolean {
@@ -282,6 +286,7 @@ export class StealthService {
      * Adds Do-Not-Track (DNT) and Global Privacy Control (GPC) headers.
      *
      * @param requestHeaders Request headers.
+     *
      * @returns True if DNT and GPC headers were added.
      */
     private static sendDoNotTrack(requestHeaders: WebRequest.HttpHeaders): boolean {
@@ -319,6 +324,7 @@ export class StealthService {
      *
      * @param maxAgeMinutes Cookie maxAge in minutes.
      * @param isThirdParty Flag for generating third-party rule texts.
+     *
      * @returns Rule text.
      */
     private static generateCookieRuleText(maxAgeMinutes: number, isThirdParty = false): string {
@@ -332,6 +338,7 @@ export class StealthService {
      * Crops url path.
      *
      * @param url URL.
+     *
      * @returns URL without path.
      */
     private static createMockRefHeaderUrl(url: string): string {
@@ -343,6 +350,7 @@ export class StealthService {
      * Is url search engine.
      *
      * @param url Url for check.
+     *
      * @returns True if url is search engine.
      */
     private static isSearchEngine(url: string): boolean {
