@@ -24,6 +24,7 @@
 import browser from 'webextension-polyfill';
 
 import { EventChannel } from '../../utils/channels';
+import { logger } from '../../utils/logger';
 import { MessageType } from '../../message-constants';
 
 /**
@@ -64,11 +65,24 @@ export class Assistant {
             throw new Error('Path to bundled assistant-inject file is not set up.');
         }
 
+        // TODO: try..catch is needed to cover MV2 and MV3, consider separating
         // Inject assistant to the frame, before accessing it.
-        await browser.tabs.executeScript(
-            tabId,
-            { file: Assistant.assistantUrl },
-        );
+        try {
+            await browser.tabs.executeScript(
+                tabId,
+                { file: Assistant.assistantUrl },
+            );
+        } catch (e1) {
+            logger.debug('Failed to inject assistant via tabs.executeScript() due to ', e1);
+            try {
+                await chrome.scripting.executeScript({
+                    target: { tabId },
+                    files: [Assistant.assistantUrl],
+                });
+            } catch (e2) {
+                logger.debug('Failed to inject assistant via chrome.scripting.executeScript() due to ', e2);
+            }
+        }
 
         // After injection we can request opening it.
         await browser.tabs.sendMessage(tabId, {
