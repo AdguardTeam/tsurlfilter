@@ -3,6 +3,7 @@ import { type Runtime } from 'webextension-polyfill';
 import { NetworkRuleOption } from '@adguard/tsurlfilter';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
+import { Assistant } from '../../common/content-script/assistant/assistant';
 import { type CookieRule } from '../../common/content-script/cookie-controller';
 import { type ContentScriptCosmeticData } from '../../common/cosmetic-api';
 import { FilteringEventType, type FilteringLog } from '../../common/filtering-log';
@@ -21,7 +22,6 @@ import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
 import { getDomain } from '../../common/utils/url';
 
-import { Assistant } from './assistant';
 import { CosmeticApi } from './cosmetic-api';
 import { RequestBlockingApi } from './request';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
