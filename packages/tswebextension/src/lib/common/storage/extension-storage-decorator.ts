@@ -4,9 +4,11 @@ import { type ExtensionStorage } from './extension-storage';
 /**
  * Creates accessor decorator for the specified storage.
  *
- * @param storage The extension storage API to use.
- * @returns Accessor decorator for the specified storage.
  * @see https://github.com/tc39/proposal-decorators
+ *
+ * @param storage The extension storage API to use.
+ *
+ * @returns Accessor decorator for the specified storage.
  */
 export function createExtensionStorageDecorator<Data extends Record<string, unknown>>(
     storage: ExtensionStorage<Data, string>, // Ensures we use our storage interface
@@ -19,11 +21,15 @@ export function createExtensionStorageDecorator<Data extends Record<string, unkn
      * NOTE: You should not set the initial value to the accessor via assignment,
      * because the decorator overwrites accessor methods and doesn't use a private property, created on initialization.
      * Use Non-null assertion operator instead.
-     * @example `@storage('foo') accessor bar!: string`;
+     *
      * @param field Storage field name.
+     *
+     * @returns Decorator for access to specified storage {@link field}.
+     *
      * @throws Error if the decorator is already registered for {@link field}
      * or the decorator is applied to a class member other than an accessor.
-     * @returns Decorator for access to specified storage {@link field}.
+     *
+     * @example `@storage('foo') accessor bar!: string`;
      */
     return function createFieldDecorator<Field extends keyof Data>(field: Field) {
         // Prevent the use of multiple decorators on a single storage field

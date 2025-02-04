@@ -9,10 +9,13 @@ import { type MatchQuery } from '../interfaces';
 /**
  * Creates match query for frame based on content script data and background tab context.
  * Used in {@link CosmeticApi} and {@link CookieFiltering} to match rules for content scripts.
+ *
  * @param frameUrl Frame url. Received from content script.
  * @param frameId Frame id. Received from content script.
  * @param tabContext Tab context. Received from background script.
+ *
  * @returns Match query for {@link EngineApi}.
+ *
  * @throws Error if tab context url is not defined.
  */
 export function createFrameMatchQuery(

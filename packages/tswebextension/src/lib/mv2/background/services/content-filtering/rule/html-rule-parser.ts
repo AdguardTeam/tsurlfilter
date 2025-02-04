@@ -33,6 +33,7 @@ export class HtmlRuleParser {
      * Parses html rule.
      *
      * @param rule Rule to parse.
+     *
      * @returns Parsed rule attributes.
      */
     public static parse(rule: CosmeticRule): HtmlRuleAttributes {
@@ -120,6 +121,7 @@ export class HtmlRuleParser {
      *
      * @param text Text to search.
      * @param startIndex Start index.
+     *
      * @returns Index of closing double quotation `"` found, or `-1` if not found.
      */
     private static getClosingQuoteIndex(text: string, startIndex: number): number {

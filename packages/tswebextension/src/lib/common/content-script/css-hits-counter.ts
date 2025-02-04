@@ -79,6 +79,7 @@ export class CssHitsCounter {
 
     /**
      * Flag determining if we should convert elements to string, or not.
+     *
      * @private
      */
     private elementToString = DEFAULT_ELEMENT_TO_STRING;
@@ -120,6 +121,7 @@ export class CssHitsCounter {
      * Callback used to collect statistics of elements affected by extended css rules.
      *
      * @param affectedEl Affected element.
+     *
      * @returns Affected element.
      */
     public countAffectedByExtendedCss(affectedEl: IAffectedElement): IAffectedElement {
@@ -419,6 +421,7 @@ export class CssHitsCounter {
      * Function retrieves css hits data from element style content attribute contains data injected with AdGuard.
      *
      * @param element Element to check.
+     *
      * @returns Rule info or null.
      */
     private static getCssHitData(element: Element): RuleInfo | null {
@@ -430,6 +433,7 @@ export class CssHitsCounter {
      * Checks if tag is ignored.
      *
      * @param nodeTag Tag name to check.
+     *
      * @returns True if tag is ignored.
      */
     private static isIgnoredNodeTag(nodeTag: string): boolean {

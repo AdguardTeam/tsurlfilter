@@ -33,6 +33,7 @@ export class BrowserStorage<Data = unknown> implements ExtendedStorageInterface<
      * Returns data from storage.
      *
      * @param key Storage key.
+     *
      * @returns Storage value.
      */
     public async get(key: string): Promise<Data | undefined> {

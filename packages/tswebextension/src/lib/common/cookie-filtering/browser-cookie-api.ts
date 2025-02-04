@@ -18,6 +18,7 @@ export class BrowserCookieApi {
      *
      * @param name Cookie name.
      * @param url Request url.
+     *
      * @returns True if cookie was removed.
      */
     async removeCookie(name: string, url: string): Promise<boolean> {
@@ -104,6 +105,7 @@ export class BrowserCookieApi {
      * Converts cookie to SetDetailsType.
      *
      * @param cookie Cookie for convert.
+     *
      * @returns SetDetailsType.
      */
     private static convertToSetDetailsType(cookie: ParsedCookie): SetDetailsType {
@@ -164,6 +166,7 @@ export class BrowserCookieApi {
      * Returns same-site type.
      *
      * @param sameSite Same-site string.
+     *
      * @returns Same-site status or undefined if same-site is not specified.
      */
     private static getSameSiteStatus(sameSite: string | undefined): SameSiteStatus | undefined {

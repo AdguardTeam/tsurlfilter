@@ -190,6 +190,7 @@ export class EngineApi {
      *
      * @param url Hostname to check.
      * @param option Mask of enabled cosmetic types.
+     *
      * @returns Cosmetic result.
      */
     public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
@@ -225,6 +226,7 @@ export class EngineApi {
      * Searched for cosmetic rules by match query.
      *
      * @param matchQuery Query against which the request would be matched.
+     *
      * @returns Cosmetic result.
      */
     public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
@@ -278,6 +280,7 @@ export class EngineApi {
      *
      * @param filterId Filter id.
      * @param ruleIndex Rule index.
+     *
      * @returns Rule node or null.
      */
     public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {

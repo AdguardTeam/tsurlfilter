@@ -60,6 +60,7 @@ export class LocalScriptRulesService {
      * from our local scripts collection.
      *
      * @param scriptText The script content to look up.
+     *
      * @returns The corresponding function if found, or null otherwise.
      */
     public getLocalScriptFunction(scriptText: string): LocalScriptFunction | null {

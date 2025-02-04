@@ -14,6 +14,7 @@ export class SanitizeApi {
      * Removes Cookie headers from background extension's requests.
      *
      * @param context Request context.
+     *
      * @returns Blocking response or null.
      */
     public static onBeforeSendHeaders(context: RequestContext): WebRequest.BlockingResponseOrPromise | null {

@@ -266,6 +266,7 @@ export class MessagesApi {
      *
      * @param sender Tab, which sent message.
      * @param payload Message payload.
+     *
      * @returns True if stats was saved.
      */
     private handleSaveCssHitsStats(
@@ -320,6 +321,7 @@ export class MessagesApi {
      *
      * @param sender Tab which sent the message.
      * @param payload Message payload.
+     *
      * @returns True if event was published to filtering log.
      */
     private static handleSaveCookieLogEvent(

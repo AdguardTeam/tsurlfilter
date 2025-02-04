@@ -43,10 +43,7 @@ export class TrustedTypesService {
     /**
      * Allows for creating Trusted Types policies with a name that was already used.
      *
-     * Related:.
-     *
-     *
-     * @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/trusted-types}
+     * Related: @see {@link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/trusted-types}.
      */
     private static readonly ALLOW_DUPLICATES_POLICY_VALUE = "'allow-duplicates'";
 

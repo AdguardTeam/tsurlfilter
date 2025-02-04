@@ -33,6 +33,7 @@ describe('EngineApi.retrieveDynamicRuleNode', () => {
      * Create and start engine API.
      *
      * @param additionalConfig Additional configuration.
+     *
      * @returns Engine API instance.
      */
     const createAndStartEngineApi = async (

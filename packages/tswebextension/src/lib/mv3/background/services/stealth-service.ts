@@ -579,9 +579,9 @@ export class StealthService {
      *
      * @param isWebRTCDisabled Flag that determines if the WebRTC should be disabled.
      *
-     * @throws Error if the permissions are not granted, but required to set the WebRTC policy.
-     *
      * @returns Promise that resolves with current state of the referrer header.
+     *
+     * @throws Error if the permissions are not granted, but required to set the WebRTC policy.
      */
     public static async setDisableWebRTC(isWebRTCDisabled: boolean): Promise<boolean> {
         const isPermissionGranted = await chrome.permissions.contains({
@@ -627,7 +627,9 @@ export class StealthService {
      *
      * @param setting Webextension setting API.
      * @param value Setting value to set.
+     *
      * @returns Resolves when the setting is set.
+     *
      * @throws Error if the setting is not controllable or controlled by other extensions.
      */
     private static async setSetting(
@@ -652,8 +654,11 @@ export class StealthService {
 
     /**
      * Gets the browser settings value and webextension level of control.
+     *
      * @param setting Webextension browser setting API.
+     *
      * @returns Resolved promise with the setting value and level of control.
+     *
      * @throws Error if something went wrong.
      */
     private static async getSetting(
@@ -672,8 +677,11 @@ export class StealthService {
 
     /**
      * Sets the browser settings value to the default.
+     *
      * @param setting Webextension browser setting API.
+     *
      * @returns Resolved promise when the setting is cleared.
+     *
      * @throws Error if something went wrong.
      */
     private static async clearSetting(
@@ -698,6 +706,7 @@ export class StealthService {
      * Checks if the setting is controllable.
      *
      * @param setting Webextension browser setting API.
+     *
      * @throws Error, if setting is not controllable.
      */
     private static async validateLevelOfControl(
@@ -719,6 +728,7 @@ export class StealthService {
      * If the rule with the same id already exists, it will be replaced.
      *
      * @param rule Stealth rule to set.
+     *
      * @returns Resolved promise when the rule is set.
      */
     private static async setSessionRule(
@@ -734,6 +744,7 @@ export class StealthService {
      * Remove the stealth rule from the session ruleset.
      *
      * @param ruleId Stealth rule id.
+     *
      * @returns Resolved promise when the rule is removed.
      */
     private static async removeSessionRule(ruleId: StealthRuleId): Promise<void> {
@@ -745,6 +756,7 @@ export class StealthService {
     /**
      * Unregister content script with specified {@link contentScriptId}.
      * If content script is not found, do nothing.
+     *
      * @param contentScriptId Content script id.
      */
     private static async removeContentScript(contentScriptId: StealthContentScriptId): Promise<void> {
@@ -762,6 +774,7 @@ export class StealthService {
     /**
      * Register content script.
      * If content script with {@link contentScript} has already registered, update it.
+     *
      * @param contentScript Content script to set.
      */
     private static async setContentScript(
@@ -791,6 +804,7 @@ export class StealthService {
      * Is url search engine.
      *
      * @param url Url for check.
+     *
      * @returns True if url is search engine.
      */
     private static isSearchEngine(url: string): boolean {

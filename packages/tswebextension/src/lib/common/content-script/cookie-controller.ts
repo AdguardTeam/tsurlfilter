@@ -166,10 +166,11 @@ export class CookieController {
     /**
      * Applies rules to document cookies.
      *
-     * @param rules Rules to apply.
-     *
      * Inspired by remove-cookie scriptlet.
+     *
      * @see {@link https://github.com/AdguardTeam/Scriptlets/blob/master/src/scriptlets/remove-cookie.js}
+     *
+     * @param rules Rules to apply.
      */
     private applyRules(
         rules: CookieRule[],
@@ -274,6 +275,7 @@ export class CookieController {
      * Converts cookie rule match to regular expression.
      *
      * @param str String to convert.
+     *
      * @returns Regular expression.
      */
     private static toRegExp(str: string): RegExp {

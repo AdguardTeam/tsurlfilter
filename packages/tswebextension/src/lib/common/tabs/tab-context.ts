@@ -120,6 +120,7 @@ export class TabContextCommon<F extends FrameCommon, T extends TabInfoCommon> {
      * @see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/TAB_ID_NONE
      *
      * @param tab Tab details.
+     *
      * @returns True if the tab is a browser tab, otherwise returns false.
      */
     public static isBrowserTab(tab: Tabs.Tab): tab is TabInfoCommon {
@@ -130,6 +131,7 @@ export class TabContextCommon<F extends FrameCommon, T extends TabInfoCommon> {
      * Get frame context.
      *
      * @param frameId Frame id.
+     *
      * @returns Frame context.
      */
     public getFrameContext(frameId: number): F | undefined {

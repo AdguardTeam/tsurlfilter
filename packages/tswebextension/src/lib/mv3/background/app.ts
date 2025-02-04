@@ -119,9 +119,9 @@ export class TsWebExtension implements AppInterface<
     /**
      * Creates new {@link TsWebExtension} class.
      *
-     * @param webAccessibleResourcesPath Path to resources.
-     *
      * @see {@link TsWebExtension.webAccessibleResourcesPath} for details.
+     *
+     * @param webAccessibleResourcesPath Path to resources.
      */
     constructor(webAccessibleResourcesPath?: string) {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
@@ -265,7 +265,7 @@ export class TsWebExtension implements AppInterface<
      * @returns ConfigurationResult {@link ConfigurationResult} which contains:
      * - list of errors for static filters, if any of them has been thrown
      * - converted dynamic rule set with rule set, errors and limitations.
-     * @see {@link ConversionResult}
+     * Details: {@link ConversionResult}.
      *
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
@@ -404,10 +404,11 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `hideReferrer` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isHideReferrer `isHideReferrer` stealth config value.
      *
      * @returns True if the value was successfully updated, false otherwise.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public async setHideReferrer(isHideReferrer: boolean): Promise<boolean> {
         if (!this.configuration) {
@@ -424,10 +425,11 @@ export class TsWebExtension implements AppInterface<
      * Updates `blockWebRTC` stealth config value without re-initialization of engine.
      * Also updates webRTC privacy.network settings on demand.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isBlockWebRTC `blockWebRTC` stealth config value.
      *
      * @returns True if the value was successfully updated, false otherwise.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<boolean> {
         if (!this.configuration) {
@@ -443,10 +445,11 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `blockChromeClientData` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isBlockChromeClientData `blockChromeClientData` stealth config value.
      *
      * @returns True if the value was successfully updated, false otherwise.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public async setBlockChromeClientData(isBlockChromeClientData: boolean): Promise<boolean> {
         if (!this.configuration) {
@@ -462,10 +465,11 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `sendDoNotTrack` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isSendDoNotTrack `sendDoNotTrack` stealth config value.
      *
      * @returns True if the value was successfully updated, false otherwise.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public async setSendDoNotTrack(isSendDoNotTrack: boolean): Promise<boolean> {
         if (!this.configuration) {
@@ -484,10 +488,11 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `hideSearchQueries` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isHideSearchQueries `hideSearchQueries` stealth config value.
      *
      * @returns True if the value was successfully updated, false otherwise.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public async setHideSearchQueries(isHideSearchQueries: boolean): Promise<boolean> {
         if (!this.configuration) {
@@ -695,8 +700,9 @@ export class TsWebExtension implements AppInterface<
     /**
      * Sets the debug scriptlets state.
      *
-     * @throws Error if {@link configuration} not set.
      * @param debug Debug filtering state.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setDebugScriptlets(debug: boolean): void {
         if (!this.configuration) {
@@ -708,8 +714,9 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `collectStats` configuration value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isCollectStats `collectStats` config value.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setCollectHitStats(isCollectStats: boolean): void {
         if (!this.configuration) {
@@ -739,6 +746,7 @@ export class TsWebExtension implements AppInterface<
      *
      * @param filterId Filter id.
      * @param ruleIndex Rule index.
+     *
      * @returns Rule node or null.
      */
     // eslint-disable-next-line class-methods-use-this

@@ -16,6 +16,7 @@ type AssistantMessage = {
  * Checks if the given message has a 'type' field.
  *
  * @param message The message to check.
+ *
  * @returns `true` if the message is an object with a 'type' field, otherwise `false`.
  */
 export const hasTypeField = (message: unknown): message is AssistantMessage => {

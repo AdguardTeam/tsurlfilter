@@ -31,6 +31,7 @@ export class MemoryStorage<Data = unknown> implements ExtendedStorageInterface<s
      * Retrieves a value by key from the storage.
      *
      * @param key The key of the value to retrieve.
+     *
      * @returns A promise that resolves with the value associated with the key.
      */
     public async get(key: string): Promise<Data | undefined> {
@@ -42,6 +43,7 @@ export class MemoryStorage<Data = unknown> implements ExtendedStorageInterface<s
      *
      * @param key The key under which to store the value.
      * @param value The value to store.
+     *
      * @returns A promise that resolves when the operation is complete.
      */
     public async set(key: string, value: Data): Promise<void> {
@@ -53,6 +55,7 @@ export class MemoryStorage<Data = unknown> implements ExtendedStorageInterface<s
      * Removes a value from the storage by key.
      *
      * @param key The key of the value to remove.
+     *
      * @returns A promise that resolves when the operation is complete.
      */
     public async remove(key: string): Promise<void> {
@@ -64,6 +67,7 @@ export class MemoryStorage<Data = unknown> implements ExtendedStorageInterface<s
      * Sets multiple key-value pairs in the storage.
      *
      * @param data The key-value pairs to set.
+     *
      * @returns A promise that resolves with true if all operations were successful.
      */
     public async setMultiple(data: Record<string, Data>): Promise<boolean> {
@@ -91,6 +95,7 @@ export class MemoryStorage<Data = unknown> implements ExtendedStorageInterface<s
      * Removes multiple key-value pairs from the storage.
      *
      * @param keys The keys to remove.
+     *
      * @returns A promise that resolves with true if all operations were successful.
      */
     public async removeMultiple(keys: string[]): Promise<boolean> {
@@ -125,6 +130,7 @@ export class MemoryStorage<Data = unknown> implements ExtendedStorageInterface<s
      * Checks if a key exists in the storage.
      *
      * @param key The key to check.
+     *
      * @returns A promise that resolves with true if the key exists, false otherwise.
      */
     public async has(key: string): Promise<boolean> {

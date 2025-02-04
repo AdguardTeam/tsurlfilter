@@ -68,8 +68,9 @@ export class TsWebExtension implements AppInterface<
     /**
      * Gets app configuration context.
      *
-     * @throws Error if value not set.
      * @returns True if app started, else false.
+     *
+     * @throws Error if value not set.
      */
     public get configuration(): ConfigurationMV2Context {
         if (!this.appContext.configuration) {
@@ -262,8 +263,9 @@ export class TsWebExtension implements AppInterface<
      *
      * Also updates webRTC privacy.network settings on demand and flushes browser in-memory request cache.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isFilteringEnabled `filteringEnabled` config value.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public async setFilteringEnabled(isFilteringEnabled: boolean): Promise<void> {
         this.configuration.settings.filteringEnabled = isFilteringEnabled;
@@ -275,8 +277,9 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `collectStats` configuration value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isCollectStats `collectStats` config value.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setCollectHitStats(isCollectStats: boolean): void {
         this.configuration.settings.collectStats = isCollectStats;
@@ -285,8 +288,9 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `debugScriptlets` configuration value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isDebugScriptlets `debugScriptlets` config value.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setDebugScriptlets(isDebugScriptlets: boolean): void {
         this.configuration.settings.debugScriptlets = isDebugScriptlets;
@@ -296,8 +300,9 @@ export class TsWebExtension implements AppInterface<
      * Updates `stealthModeEnabled` configuration value without re-initialization of engine.
      * Also updates webRTC privacy.network settings on demand.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isStealthModeEnabled `stealthModeEnabled` config value.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public async setStealthModeEnabled(isStealthModeEnabled: boolean): Promise<void> {
         this.configuration.settings.stealthModeEnabled = isStealthModeEnabled;
@@ -308,8 +313,9 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `selfDestructFirstPartyCookies` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isSelfDestructFirstPartyCookies `selfDestructFirstPartyCookies` stealth config value.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setSelfDestructFirstPartyCookies(isSelfDestructFirstPartyCookies: boolean): void {
         this.configuration.settings.stealth.selfDestructFirstPartyCookies = isSelfDestructFirstPartyCookies;
@@ -318,8 +324,9 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `selfDestructThirdPartyCookies` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isSelfDestructThirdPartyCookies `selfDestructThirdPartyCookies` stealth config value.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setSelfDestructThirdPartyCookies(isSelfDestructThirdPartyCookies: boolean): void {
         this.configuration.settings.stealth.selfDestructThirdPartyCookies = isSelfDestructThirdPartyCookies;
@@ -328,8 +335,9 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `selfDestructFirstPartyCookiesTime` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param selfDestructFirstPartyCookiesTime `selfDestructFirstPartyCookiesTime` stealth config value.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setSelfDestructFirstPartyCookiesTime(selfDestructFirstPartyCookiesTime: number): void {
         this.configuration.settings.stealth.selfDestructFirstPartyCookiesTime = selfDestructFirstPartyCookiesTime;
@@ -338,8 +346,9 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `selfDestructThirdPartyCookiesTime` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param selfDestructThirdPartyCookiesTime `selfDestructThirdPartyCookiesTime` stealth config value.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setSelfDestructThirdPartyCookiesTime(selfDestructThirdPartyCookiesTime: number): void {
         this.configuration.settings.stealth.selfDestructThirdPartyCookiesTime = selfDestructThirdPartyCookiesTime;
@@ -348,10 +357,11 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `hideReferrer` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isHideReferrer `isHideReferrer` stealth config value.
      *
      * @returns Applied value for compatibility with MV3 interface.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setHideReferrer(isHideReferrer: boolean): boolean {
         this.configuration.settings.stealth.hideReferrer = isHideReferrer;
@@ -362,10 +372,11 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `hideSearchQueries` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isHideSearchQueries `hideSearchQueries` stealth config value.
      *
      * @returns Applied value for compatibility with MV3 interface.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setHideSearchQueries(isHideSearchQueries: boolean): boolean {
         this.configuration.settings.stealth.hideSearchQueries = isHideSearchQueries;
@@ -376,10 +387,11 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `blockChromeClientData` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isBlockChromeClientData `blockChromeClientData` stealth config value.
      *
      * @returns Applied value for compatibility with MV3 interface.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setBlockChromeClientData(isBlockChromeClientData: boolean): boolean {
         this.configuration.settings.stealth.blockChromeClientData = isBlockChromeClientData;
@@ -390,10 +402,11 @@ export class TsWebExtension implements AppInterface<
     /**
      * Updates `sendDoNotTrack` stealth config value without re-initialization of engine.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isSendDoNotTrack `sendDoNotTrack` stealth config value.
      *
      * @returns Applied value for compatibility with MV3 interface.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public setSendDoNotTrack(isSendDoNotTrack: boolean): boolean {
         this.configuration.settings.stealth.sendDoNotTrack = isSendDoNotTrack;
@@ -405,10 +418,11 @@ export class TsWebExtension implements AppInterface<
      * Updates `blockWebRTC` stealth config value without re-initialization of engine.
      * Also updates webRTC privacy.network settings on demand.
      *
-     * @throws Error if {@link configuration} not set.
      * @param isBlockWebRTC `blockWebRTC` stealth config value.
      *
      * @returns Applied value for compatibility with MV3 interface.
+     *
+     * @throws Error if {@link configuration} not set.
      */
     public async setBlockWebRTC(isBlockWebRTC: boolean): Promise<boolean> {
         this.configuration.settings.stealth.blockWebRTC = isBlockWebRTC;
@@ -424,6 +438,7 @@ export class TsWebExtension implements AppInterface<
      *
      * @param filterId Filter id.
      * @param ruleIndex Rule index.
+     *
      * @returns Rule node or null.
      */
     public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
@@ -434,6 +449,7 @@ export class TsWebExtension implements AppInterface<
      * Creates configuration context.
      *
      * @param configuration Configuration.
+     *
      * @returns Configuration context.
      */
     private static createConfigurationMV2Context(configuration: ConfigurationMV2): ConfigurationMV2Context {

@@ -98,6 +98,7 @@ export class RequestContextStorage extends Map<string, RequestContext> {
      *
      * @param requestId Request id.
      * @param data Request context with a omitted eventId field. It is automatically generated.
+     *
      * @returns Request context storage instance.
      */
     public create(requestId: string, data: CreateRequestContext): RequestContext {
@@ -116,6 +117,7 @@ export class RequestContextStorage extends Map<string, RequestContext> {
      *
      * @param requestId Request id.
      * @param data Partial request context.
+     *
      * @returns Updated request context.
      */
     public update(requestId: string, data: Partial<RequestContext>): RequestContext | undefined {

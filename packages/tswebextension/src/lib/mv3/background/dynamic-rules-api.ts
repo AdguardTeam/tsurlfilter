@@ -87,7 +87,7 @@ export default class DynamicRulesApi {
      *
      * @throws Error if declarativeNetRequest.updateDynamicRules() receives invalid rules
      * e.g. with non-ASCII `urlFilter` value.
-     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}
+     * Details: {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}.
      */
     public static async updateDynamicFiltering(
         quickFixesFilter: IFilter,

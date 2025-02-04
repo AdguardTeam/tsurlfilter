@@ -51,6 +51,7 @@ export class DocumentBlockingService {
 
     /**
      * Creates instance of {@link DocumentBlockingService}.
+     *
      * @param tabsApi Wrapper around browser.tabs API.
      */
     constructor(
@@ -73,6 +74,7 @@ export class DocumentBlockingService {
      * Processes $document modifier rule matched request in {@link RequestBlockingApi.getBlockingResponse}.
      *
      * @param data Data for document request processing.
+     *
      * @returns Blocking response or null {@link WebRequestApi.onBeforeRequest}.
      */
     public getDocumentBlockingResponse(data: GetDocumentBlockingResponseParams): WebRequest.BlockingResponse | void {
@@ -147,6 +149,7 @@ export class DocumentBlockingService {
      * Checks if request url domain is trusted.
      *
      * @param url Request url.
+     *
      * @returns True, if request url domain is trusted, else false.
      */
     private isTrustedDomain(url: string): boolean {
@@ -181,6 +184,7 @@ export class DocumentBlockingService {
      * @param  documentBlockingPageUrl Url of document-blocking page.
      * @param  requestUrl Processed request url.
      * @param  ruleText Matched rule text.
+     *
      * @returns Document blocking page url with required params.
      */
     private static createBlockingUrl(

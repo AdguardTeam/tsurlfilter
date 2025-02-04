@@ -121,6 +121,7 @@ const simplifyCompaniesDbTrackers = (rawData: CompaniesDbTrackers): CompaniesDbM
  * @param dest Path to save the JSON database.
  *
  * @returns Promise that resolves when the database is downloaded.
+ *
  * @throws Error if the download fails.
  */
 export async function downloadCompaniesDb(dest: string): Promise<void> {

@@ -150,6 +150,7 @@ export class EngineApi {
      * Searched for rules by match query.
      *
      * @param matchQuery Query against which the request would be matched.
+     *
      * @returns Matching result or null.
      */
     public matchRequest(matchQuery: MatchQuery): MatchingResult | null {
@@ -184,6 +185,7 @@ export class EngineApi {
      * Searched for cosmetic rules by match query.
      *
      * @param matchQuery Query against which the request would be matched.
+     *
      * @returns Cosmetic result.
      */
     public matchCosmetic(matchQuery: MatchQuery): CosmeticResult {
@@ -206,6 +208,7 @@ export class EngineApi {
      * Matches current frame url and returns rule if found.
      *
      * @param frameUrl Frame url.
+     *
      * @returns NetworkRule or null.
      */
     public matchFrame(frameUrl: string): NetworkRule | null {
@@ -221,6 +224,7 @@ export class EngineApi {
      *
      * @param url Request url.
      * @param option Cosmetic options.
+     *
      * @returns Cosmetic result.
      */
     public getCosmeticResult(url: string, option: CosmeticOption): CosmeticResult {
@@ -240,6 +244,7 @@ export class EngineApi {
      *
      * @param filterId Filter id.
      * @param ruleIndex Rule index.
+     *
      * @returns Rule node or null.
      */
     public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {

@@ -94,6 +94,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameUrl Frame url.
      * @param tabId Tab id.
      * @param frameId Frame id.
+     *
      * @returns Content script data for applying cosmetic.
      */
     public static getContentScriptData(

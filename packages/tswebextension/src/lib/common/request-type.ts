@@ -36,6 +36,7 @@ export interface RequestTypeData {
  * Returns request type and content type by resource type.
  *
  * @param resourceType Resource type.
+ *
  * @returns Request type and content type.
  */
 export function getRequestType(resourceType: WebRequest.ResourceType): RequestTypeData {

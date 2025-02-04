@@ -22,6 +22,7 @@ export class HtmlRuleSelector {
      * Returns elements matched by provided html rule.
      *
      * @param doc Document object.
+     *
      * @returns Array of elements or null.
      */
     public getMatchedElements(doc: Document): Element[] | null {
@@ -60,6 +61,7 @@ export class HtmlRuleSelector {
      * Checks if element is filtered by provided rule.
      *
      * @param element Element to check.
+     *
      * @returns True if element is filtered.
      */
     private isFiltered(element: Element): boolean {
@@ -108,6 +110,7 @@ export class HtmlRuleSelector {
      * If suitable element found - returns it. Otherwise - returns null.
      *
      * @param element Element evaluated against this rule.
+     *
      * @returns Parent element.
      */
     private searchForParentElement(element: Element): Element | null {

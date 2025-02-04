@@ -54,6 +54,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param scriptText Script text.
      *
      * @returns Promise that resolves when the script is injected.
+     *
      * @throws Error if the script is not injected due to one of the following reasons:
      * - TabsApi.injectScript() execution error;
      * - app start time is not defined yet.
@@ -79,6 +80,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @returns Promise that will be fulfilled with no arguments when all the CSS has been inserted.
      * If any error occurs, the promise will be rejected with an error message.
+     *
      * @throws Error if the css is not injected due TabsApi.injectCss() execution error.
      */
     public static async injectCss(tabId: number, frameId: number, cssText: string): Promise<void> {
@@ -90,6 +92,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * @param rules Cosmetic rules.
      * @param frameUrl Frame url.
+     *
      * @returns Script text or empty string if no script rules are passed.
      */
     public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string {
@@ -158,6 +161,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameUrl Frame url.
      * @param tabId Tab id.
      * @param frameId Frame id.
+     *
      * @returns Content script data for applying cosmetic.
      */
     public static getContentScriptData(

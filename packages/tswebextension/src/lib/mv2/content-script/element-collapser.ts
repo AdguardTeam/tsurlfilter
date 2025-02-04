@@ -122,6 +122,7 @@ export class ElementCollapser {
      * Returns request type by tag name.
      *
      * @param tagName Tag name.
+     *
      * @returns Request type or null.
      */
     private static getRequestTypeByInitiatorTagName(tagName: string): RequestType | null {
@@ -150,6 +151,7 @@ export class ElementCollapser {
      * Extracts element URL from the dom node.
      *
      * @param element Dom node.
+     *
      * @returns Element URL or null.
      */
     private static getElementUrl(element: RequestInitiatorElement): string | null {
@@ -177,6 +179,7 @@ export class ElementCollapser {
      * Checks if element is already collapsed.
      *
      * @param element DOM element.
+     *
      * @returns True if element is collapsed.
      */
     private static isElementCollapsed(element: HTMLElement): boolean {

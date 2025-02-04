@@ -95,6 +95,7 @@ export class RequestBlockingApi {
      * Checks if request rule is blocked.
      *
      * @param requestRule Request network rule or null.
+     *
      * @returns True, if rule is request blocking, else returns false.
      */
     public static isRequestBlockedByRule(requestRule: NetworkRule | null): boolean {

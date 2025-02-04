@@ -19,7 +19,6 @@
  *  -- [tswebext] After injection, the content script interacts with the assistant.
  *
  * Reference code: ASSISTANT_INJECT.
- *
  */
 import browser from 'webextension-polyfill';
 

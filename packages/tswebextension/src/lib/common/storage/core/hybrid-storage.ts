@@ -79,6 +79,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
      * Checks if the given storage is an instance of IDBStorage.
      *
      * @param storage The storage instance to check.
+     *
      * @returns True if the storage is an instance of IDBStorage, false otherwise.
      */
     private static isIdbStorage(
@@ -112,6 +113,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
      * Serializes the given data using SuperJSON.
      *
      * @param data The data to serialize.
+     *
      * @returns The serialized data.
      */
     public static serialize = (data: SuperJSONValue): SuperJSONResult => SuperJSON.serialize(data);
@@ -120,6 +122,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
      * Deserializes the given data using SuperJSON.
      *
      * @param data The data to deserialize.
+     *
      * @returns The deserialized data.
      */
     public static deserialize = (data: SuperJSONResult): SuperJSONValue => SuperJSON.deserialize(data);
@@ -163,6 +166,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
      *
      * @param key The key under which the value is stored.
      * @param value The value to be stored.
+     *
      * @returns A promise that resolves when the operation is complete.
      */
     async set(key: string, value: Data): Promise<void> {
@@ -183,6 +187,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
      * Asynchronously retrieves the value for a given key from the selected storage mechanism.
      *
      * @param key The key whose value is to be retrieved.
+     *
      * @returns A promise that resolves with the retrieved value, or undefined if the key does not exist.
      */
     async get(key: string): Promise<Data | undefined> {

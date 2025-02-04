@@ -38,6 +38,7 @@ export class CosmeticFrameProcessor {
      * @param frameId Frame id.
      * @param url Url.
      * @param timeStamp Event timestamp.
+     *
      * @returns True if recalculation should be skipped.
      */
     private static shouldSkipRecalculation(
@@ -63,6 +64,7 @@ export class CosmeticFrameProcessor {
 
     /**
      * Handle sub frame without url.
+     *
      * @param props Handle sub frame without url props.
      */
     public static handleSubFrameWithoutUrl(props: HandleSubFrameWithoutUrlProps): void {
@@ -93,6 +95,7 @@ export class CosmeticFrameProcessor {
 
     /**
      * Handle sub frame with url.
+     *
      * @param props Handle sub frame with url props.
      */
     public static handleSubFrameWithUrl(props: HandleSubFrameWithUrlProps): void {
@@ -141,6 +144,7 @@ export class CosmeticFrameProcessor {
 
     /**
      * Handle main frame.
+     *
      * @param props Handle main frame props.
      */
     public static handleMainFrame(props: HandleMainFrameProps): void {
@@ -196,6 +200,7 @@ export class CosmeticFrameProcessor {
 
     /**
      * Handles frames used here and in the {@link TabsCosmeticInjector}.
+     *
      * @param props Precalculate cosmetic props.
      */
     public static handleFrame(props: PrecalculateCosmeticProps): void {

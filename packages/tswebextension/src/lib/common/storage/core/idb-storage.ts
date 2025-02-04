@@ -83,6 +83,7 @@ export class IDBStorage<Data = unknown> implements ExtendedStorageInterface<stri
      * Retrieves a value by key from the store.
      *
      * @param key The key of the value to retrieve.
+     *
      * @returns The value associated with the key.
      */
     public async get(key: string): Promise<Data | undefined> {

@@ -13,6 +13,7 @@ export class DocumentApi {
      * Match frame rule based on allowlist state.
      *
      * @param frameUrl Frame url.
+     *
      * @returns Matched rule or null.
      */
     public static matchFrame(frameUrl: string): NetworkRule | null {
@@ -36,6 +37,7 @@ export class DocumentApi {
      * In other cases returns engine matched rule.
      *
      * @param frameUrl Frame url.
+     *
      * @returns Matched rule or null.
      */
     private static matchFrameInverted(frameUrl: string): NetworkRule | null {

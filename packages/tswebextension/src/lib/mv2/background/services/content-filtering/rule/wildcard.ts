@@ -23,6 +23,7 @@ export class Wildcard {
      * This method first checking shortcut -- if shortcut exists in input string -- than it checks regexp.
      *
      * @param input Input string.
+     *
      * @returns Boolean if input string matches wildcard.
      */
     public matches(input: string): boolean {
@@ -41,6 +42,7 @@ export class Wildcard {
      * Converts wildcard to regular expression.
      *
      * @param pattern The wildcard pattern to convert.
+     *
      * @returns A regex equivalent of the given wildcard.
      */
     private static wildcardToRegex(pattern: string): string {
@@ -61,6 +63,7 @@ export class Wildcard {
      * Extracts the longest string that does not contain "*" or "?" symbols.
      *
      * @param pattern Wildcard pattern.
+     *
      * @returns Longest string without special symbols.
      */
     private static extractShortcut(pattern: string): string {

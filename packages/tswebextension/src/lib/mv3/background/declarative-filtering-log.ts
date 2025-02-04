@@ -37,10 +37,10 @@ class DeclarativeFilteringLog {
      * @param ruleSetId Rule set id.
      * @param ruleId Rule id in this filter.
      *
-     * @throws Error when couldn't find ruleset or rule in ruleset.
-     *
      * @returns Converted declarative json rule, original txt rule
      * and filter id.
+     *
+     * @throws Error when couldn't find ruleset or rule in ruleset.
      */
     private getRuleInfo = async (ruleSetId: string, ruleId: number): Promise<DeclarativeRuleInfo> => {
         const ruleSet = this.ruleSets.find((r) => r.getId() === ruleSetId);

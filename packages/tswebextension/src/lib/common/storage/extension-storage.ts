@@ -16,6 +16,7 @@ export class ExtensionStorage<
 
     /**
      * Creates {@link ExtensionStorage} instance.
+     *
      * @param key The key to use for storing the data.
      * @param storage Storage interface implementation (replacing WebExtension API storage).
      */
@@ -28,8 +29,11 @@ export class ExtensionStorage<
 
     /**
      * Initializes the storage.
+     *
      * @param data The initial data.
+     *
      * @returns Promise that resolves when the storage is initialized.
+     *
      * @throws Error, if storage already initialized.
      */
     init(data: Data): Promise<void> {
@@ -38,9 +42,12 @@ export class ExtensionStorage<
 
     /**
      * Gets the value by the specified key.
+     *
      * @param key The key to retrieve the value.
-     * @throws Error, if storage not initialized.
+     *
      * @returns The data stored by the specified key.
+     *
+     * @throws Error, if storage not initialized.
      */
     get<T extends keyof Data>(key: T): Data[T] {
         return this.#container.get()[key];
@@ -48,8 +55,10 @@ export class ExtensionStorage<
 
     /**
      * Sets the value by the specified key.
+     *
      * @param key The key for the value to be stored.
      * @param value The new value.
+     *
      * @throws Error, if storage not initialized.
      */
     set<T extends keyof Data>(key: T, value: Data[T]): void {
@@ -60,7 +69,9 @@ export class ExtensionStorage<
 
     /**
      * Deletes the value by the specified key.
+     *
      * @param key The key for the value to be deleted.
+     *
      * @throws Error, if storage not initialized.
      */
     delete(key: keyof Data): void {

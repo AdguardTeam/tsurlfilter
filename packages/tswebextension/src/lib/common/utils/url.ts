@@ -5,6 +5,7 @@ import browser from 'webextension-polyfill';
  * Checks if url is http request.
  *
  * @param url Request url.
+ *
  * @returns True if url starts with http{s?}.
  */
 export function isHttpRequest(url: unknown): boolean {
@@ -15,6 +16,7 @@ export function isHttpRequest(url: unknown): boolean {
  * Checks if url is http or websocket.
  *
  * @param url Request url.
+ *
  * @returns True if url starts with http{s?} or ws.
  */
 export function isHttpOrWsRequest(url: string): boolean {
@@ -25,6 +27,7 @@ export function isHttpOrWsRequest(url: string): boolean {
  * Extract host from url.
  *
  * @param url Url.
+ *
  * @returns Host of the url or null.
  */
 export function getHost(url: string): string | null {
@@ -68,6 +71,7 @@ export function getHost(url: string): string | null {
  * Extracts domain name from url.
  *
  * @param url Url.
+ *
  * @returns Domain name or null.
  */
 export function getDomain(url: string): string | null {
@@ -85,6 +89,7 @@ export function getDomain(url: string): string | null {
  * Related issue: @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1437}.
  *
  * @param url Request url.
+ *
  * @returns True if request is extension's own.
  */
 export function isExtensionUrl(url: string): boolean {
@@ -96,6 +101,7 @@ export function isExtensionUrl(url: string): boolean {
  *
  * @param requestUrl Request url.
  * @param referrer Referrer url.
+ *
  * @returns True if request is third-party.
  */
 export function isThirdPartyRequest(requestUrl: string, referrer: string): boolean {
@@ -110,11 +116,14 @@ export function isThirdPartyRequest(requestUrl: string, referrer: string): boole
  *
  * @param domain Domain.
  *
- * @example getUpperLevelDomain('www.example.com') => 'example.com'
- * @example getUpperLevelDomain('test.pages.dev') => 'pages.dev'
- * @example getUpperLevelDomain('allowlist.test.pages.dev') => 'test.pages.dev'
- *
  * @returns Upper level domain.
+ *
+ * @example
+ * ```
+ * getUpperLevelDomain('www.example.com') => `example.com`
+ * getUpperLevelDomain('test.pages.dev') => `pages.dev`
+ * getUpperLevelDomain('allowlist.test.pages.dev') => `test.pages.dev`
+ * ```
  */
 export function getUpperLevelDomain(domain: string): string {
     const parts = domain.split('.');

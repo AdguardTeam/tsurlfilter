@@ -177,12 +177,12 @@ export class CosmeticApiCommon {
     /**
      * Patches rule selector adding adguard mark rule info in the content attribute.
      *
-     * @example
-     * `.selector` -> `.selector { content: 'adguard{filterId};{ruleText} !important;}`
-     *
      * @param rule Elemhide cosmetic rule.
      *
      * @returns Rule with modified stylesheet, containing content marker.
+     *
+     * @example
+     * `.selector` -> `.selector { content: 'adguard{filterId};{ruleText} !important;}`
      */
     private static addMarkerToElemhideRule(rule: CosmeticRule): string {
         const result: string[] = [];
@@ -251,6 +251,7 @@ export class CosmeticApiCommon {
      *
      * @param cosmeticResult Cosmetic result.
      * @param collectingCosmeticRulesHits Flag to collect cosmetic rules hits.
+     *
      * @returns Array of extended css rules or null.
      */
     public static getExtCssRules(
@@ -312,6 +313,7 @@ export class CosmeticApiCommon {
      * and appends a source URL comment for debugging purposes.
      *
      * @param scriptText The JavaScript code to wrap.
+     *
      * @returns The wrapped script code, or an empty string if the input is falsy.
      */
     protected static wrapScriptText(scriptText: string): string {

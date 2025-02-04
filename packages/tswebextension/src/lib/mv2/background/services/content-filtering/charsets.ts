@@ -12,6 +12,7 @@ export const SUPPORTED_CHARSETS = [DEFAULT_CHARSET, WIN_1251, WIN_1252, LATIN_1]
  * Parses charset from content-type header.
  *
  * @param contentType Content-type header.
+ *
  * @returns Charset string or null.
  */
 export function parseCharsetFromHeader(contentType: string | undefined): string | null {
@@ -36,6 +37,7 @@ export function parseCharsetFromHeader(contentType: string | undefined): string 
  * <meta content="text/html; charset=utf-8" http-equiv="content-type" />.
  *
  * @param text Html content.
+ *
  * @returns Charset string or null.
  */
 export function parseCharsetFromHtml(text: string): string | null {
@@ -63,6 +65,7 @@ export function parseCharsetFromHtml(text: string): string | null {
  * Parses charset from css.
  *
  * @param text Css content.
+ *
  * @returns Charset string or null.
  */
 export function parseCharsetFromCss(text: string): string | null {

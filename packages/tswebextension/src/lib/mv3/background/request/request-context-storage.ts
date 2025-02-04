@@ -66,6 +66,7 @@ export class RequestContextStorage {
 
     /**
      * Sets requestData context by requestData id.
+     *
      * @param requestId Request id.
      * @param requestData Request context data.
      */
@@ -75,8 +76,10 @@ export class RequestContextStorage {
 
     /**
      * Updates request context fields. Can be done partially.
+     *
      * @param requestId Request id.
      * @param data Partial request context.
+     *
      * @returns Updated request context or undefined if request context not found.
      */
     public update(requestId: string, data: Partial<RequestContext>): RequestContext | undefined {
@@ -92,7 +95,9 @@ export class RequestContextStorage {
 
     /**
      * Returns request context by request id.
+     *
      * @param requestId Request id.
+     *
      * @returns Request context or undefined if request context not found.
      */
     public get(requestId: string): RequestContext | undefined {
@@ -101,6 +106,7 @@ export class RequestContextStorage {
 
     /**
      * Removes non document/subdocument request context from the map by request id.
+     *
      * @param requestId Request id.
      */
     public delete(requestId: string): void {
