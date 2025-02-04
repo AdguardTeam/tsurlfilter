@@ -1,19 +1,27 @@
-import browser, { type WebNavigation } from 'webextension-polyfill';
+import browser from 'webextension-polyfill';
 
-import { MAIN_FRAME_ID } from '../../common/constants';
-import { Assistant as CommonAssistant } from '../../common/content-script/assistant/assistant';
+import { MAIN_FRAME_ID } from './constants';
+import { Assistant } from './content-script/assistant/assistant';
+import { type FrameCommon } from './tabs/frame';
+import { type TabContextCommon } from './tabs/tab-context';
+import { type TabInfoCommon } from './tabs/tabs-api';
 
-import { type TabContext } from './tabs';
+export type CommonAssistantDetails = {
+    tabId: number,
+    frameId: number,
+    url: string,
+    timeStamp: number,
+};
 
 /**
  * Assistant class is the handler of messages and events related
  * to AdGuard assistant with extended detection of assistant frame.
  */
-export class Assistant extends CommonAssistant {
+export class CommonAssistant extends Assistant {
     /**
      * Maximum time delay in milliseconds between the assistant frame creation and the assistant initialization.
      */
-    private static FRAME_CREATION_LIMIT_MS = 200;
+    private static FRAME_CREATION_LIMIT_MS = 300;
 
     /**
      * Assistant frame URL.
@@ -33,9 +41,9 @@ export class Assistant extends CommonAssistant {
      *
      * @returns True if the frame is an assistant frame, false otherwise.
      */
-    public static async isAssistantFrame(
-        details: WebNavigation.OnDOMContentLoadedDetailsType,
-        tabContext: TabContext | undefined,
+    public static async isAssistantFrame<F extends FrameCommon, T extends TabContextCommon<F, TabInfoCommon>>(
+        details: CommonAssistantDetails,
+        tabContext: T | undefined,
     ): Promise<boolean> {
         if (!tabContext || !tabContext?.assistantInitTimestamp) {
             return false;
@@ -43,8 +51,8 @@ export class Assistant extends CommonAssistant {
 
         const {
             tabId,
-            url,
             frameId,
+            url,
             timeStamp,
         } = details;
 
@@ -52,8 +60,8 @@ export class Assistant extends CommonAssistant {
 
         const timeSinceFrameCreatedMs = timeStamp - tabContext.assistantInitTimestamp;
 
-        return timeSinceFrameCreatedMs < Assistant.FRAME_CREATION_LIMIT_MS
-            && url === Assistant.FRAME_URL
+        return timeSinceFrameCreatedMs < CommonAssistant.FRAME_CREATION_LIMIT_MS
+            && url === CommonAssistant.FRAME_URL
             && newFrameData?.parentFrameId === MAIN_FRAME_ID;
     }
 }

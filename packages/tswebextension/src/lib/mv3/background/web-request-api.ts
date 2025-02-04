@@ -140,6 +140,7 @@
 import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 
+import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { companiesDbService } from '../../common/companies-db-service';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
 import { getErrorMessage } from '../../common/error';
@@ -356,10 +357,13 @@ export class WebRequestApi {
     /**
      * On response started event handler.
      *
-     * @param event On response started event.
-     * @param event.context Event context.
+     * @param details Event details.
      */
-    private static onResponseStarted({ context }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
+    private static onResponseStarted(
+        details: RequestData<WebRequest.OnResponseStartedDetailsType>,
+    ): void {
+        const { context } = details;
+
         if (!context) {
             return;
         }
@@ -371,8 +375,17 @@ export class WebRequestApi {
             return;
         }
 
-        CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
-        CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
+        WebRequestApi.isAssistantFrame(tabId, {
+            tabId,
+            frameId,
+            url: context.requestUrl,
+            timeStamp: context.timestamp,
+        }).then((shouldSkipInjection) => {
+            if (!shouldSkipInjection) {
+                CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
+                CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
+            }
+        });
     }
 
     /**
@@ -625,11 +638,16 @@ export class WebRequestApi {
      *
      * @param details Navigation event details.
      */
-    private static onCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails): void {
+    private static async onCommitted(details: chrome.webNavigation.WebNavigationFramedCallbackDetails): Promise<void> {
         const { tabId, frameId, documentId } = details;
 
         // This is necessary mainly to update documentId
         tabsApi.updateFrameContext(tabId, frameId, { documentId });
+
+        const shouldSkipInjection = await WebRequestApi.isAssistantFrame(tabId, details);
+        if (shouldSkipInjection) {
+            return;
+        }
 
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
@@ -638,5 +656,31 @@ export class WebRequestApi {
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
             CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
         ]).catch((e) => logger.error(e));
+    }
+
+    /**
+     * Checks whether the frame is an assistant frame.
+     *
+     * @param tabId Tab id.
+     * @param details Event details.
+     *
+     * @returns True if the frame is an assistant frame, false otherwise.
+     */
+    private static async isAssistantFrame(
+        tabId: number,
+        details: CommonAssistantDetails,
+    ): Promise<boolean> {
+        const tabContext = tabsApi.getTabContext(tabId);
+
+        const assistantDetails = {
+            tabId,
+            frameId: details.frameId,
+            url: details.url,
+            timeStamp: details.timeStamp,
+        };
+
+        const isAssistant = await CommonAssistant.isAssistantFrame(assistantDetails, tabContext);
+
+        return isAssistant;
     }
 }

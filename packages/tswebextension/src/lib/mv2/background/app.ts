@@ -3,11 +3,11 @@ import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 
 import { type MessageHandler, type AppInterface } from '../../common/app';
+import { Assistant } from '../../common/content-script/assistant/assistant';
 import { type FilteringLog, type FilteringLogEvent } from '../../common/filtering-log';
 import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
 
-import { Assistant } from './assistant';
 import { type AppContext } from './app-context';
 import { type ConfigurationMV2, type ConfigurationMV2Context, configurationMV2Validator } from './configuration';
 import { type EngineApi } from './engine-api';

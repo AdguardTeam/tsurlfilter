@@ -172,13 +172,13 @@
 import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
+import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { findHeaderByName } from '../../common/utils/headers';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 
-import { Assistant } from './assistant';
 import {
     cosmeticFrameProcessor,
     documentApi,
@@ -752,13 +752,11 @@ export class WebRequestApi {
      */
     private static async isAssistantFrame(
         tabId: number,
-        details: WebNavigation.OnCommittedDetailsType
-        | WebNavigation.OnDOMContentLoadedDetailsType
-        | WebRequest.OnCompletedDetailsType,
+        details: CommonAssistantDetails,
     ): Promise<boolean> {
         const tabContext = tabsApi.getTabContext(tabId);
 
-        const isAssistant = await Assistant.isAssistantFrame(details, tabContext);
+        const isAssistant = await CommonAssistant.isAssistantFrame(details, tabContext);
 
         return isAssistant;
     }
