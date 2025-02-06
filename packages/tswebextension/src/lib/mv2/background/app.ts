@@ -7,7 +7,7 @@ import { type FilteringLog, type FilteringLogEvent } from '../../common/filterin
 import { type EventChannel } from '../../common/utils/channels';
 import { logger } from '../../common/utils/logger';
 
-import { Assistant } from './assistant';
+import { assistant, Assistant } from './assistant';
 import { type AppContext } from './app-context';
 import { type ConfigurationMV2, type ConfigurationMV2Context, configurationMV2Validator } from './configuration';
 import { type EngineApi } from './engine-api';
@@ -212,7 +212,7 @@ export class TsWebExtension implements AppInterface<
      */
     public async openAssistant(tabId: number): Promise<void> {
         this.tabsApi.setAssistantInitTimestamp(tabId);
-        await Assistant.openAssistant(tabId);
+        await assistant.openAssistant(tabId);
     }
 
     /**

@@ -22,14 +22,16 @@
  */
 import browser from 'webextension-polyfill';
 
-import { EventChannel } from '../../utils/channels';
-import { MessageType } from '../../message-constants';
+import { EventChannel } from './utils/channels';
+import { MessageType } from './message-constants';
 
 /**
- * Assistant class is the handler of messages and events related
+ * Abstract assistant class is the handler of messages and events related
  * to AdGuard assistant.
+ * Should be extended by the specific assistant implementation for executing
+ * script for injecting assistant.
  */
-export class Assistant {
+export abstract class CommonAssistant {
     /**
      * Fires when a rule has been created from the AdGuard assistant.
      */
@@ -49,7 +51,7 @@ export class Assistant {
      * @param url Path to assistant, see @see {@link Assistant.assistantUrl}.
      */
     public static setAssistantUrl(url: string): void {
-        Assistant.assistantUrl = url;
+        CommonAssistant.assistantUrl = url;
     }
 
     /**
@@ -58,16 +60,13 @@ export class Assistant {
      * @param tabId The ID of the tab where is needed to inject and open
      * the AdGuard assistant.
      */
-    public static async openAssistant(tabId: number): Promise<void> {
-        if (!Assistant.assistantUrl) {
+    public async openAssistant(tabId: number): Promise<void> {
+        if (!CommonAssistant.assistantUrl) {
             throw new Error('Path to bundled assistant-inject file is not set up.');
         }
 
         // Inject assistant to the frame, before accessing it.
-        await browser.tabs.executeScript(
-            tabId,
-            { file: Assistant.assistantUrl },
-        );
+        await this.injectAssistant(tabId, CommonAssistant.assistantUrl);
 
         // After injection we can request opening it.
         await browser.tabs.sendMessage(tabId, {
@@ -86,4 +85,12 @@ export class Assistant {
             type: MessageType.CloseAssistant,
         });
     }
+
+    /**
+     * Injects the assistant to the tab.
+     *
+     * @param tabId The ID of the tab where is needed to inject the AdGuard assistant.
+     * @param fileUrl The URL of the file to inject.
+     */
+    protected abstract injectAssistant(tabId: number, fileUrl: string): Promise<unknown[]>;
 }

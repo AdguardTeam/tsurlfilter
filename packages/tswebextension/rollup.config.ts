@@ -19,23 +19,34 @@ const commonPlugins: Plugin[] = [
     commonjs(),
 ];
 
+/**
+ * These files should be marked as via side effects in package.json.
+ *
+ * NOTE: If you update list here, please update related section in the readme.
+ */
+const entryPointsWithSideEffects = {
+    'assistant-inject': 'src/lib/common/content-script/assistant/assistant-inject.ts',
+    'content-script': 'src/lib/mv2/content-script/index.ts',
+    'content-script.mv3': 'src/lib/mv3/content-script/index.ts',
+    'gpc.mv3': 'src/lib/mv3/content-script/gpc.ts',
+    'hide-document-referrer.mv3': 'src/lib/mv3/content-script/hide-document-referrer.ts',
+};
+
 const entryPoints = {
     index: 'src/lib/mv2/background/index.ts',
     'index.mv3': 'src/lib/mv3/background/index.ts',
-    'content-script': 'src/lib/mv2/content-script/index.ts',
     'css-hits-counter': 'src/lib/common/content-script/css-hits-counter.ts',
-    'content-script.mv3': 'src/lib/mv3/content-script/index.ts',
     cli: 'src/cli/index.ts',
     'mv3-utils': 'src/lib/mv3/utils/get-filter-name.ts',
-    'assistant-inject': 'src/lib/common/content-script/assistant/assistant-inject.ts',
-    gpc: 'src/lib/mv3/content-script/gpc.ts',
-    'hide-document-referrer': 'src/lib/mv3/content-script/hide-document-referrer.ts',
     'core-storages': 'src/lib/common/storage/core/index.ts',
 };
 
 const tswebextensionConfig: RollupOptions = {
     cache: false,
-    input: entryPoints,
+    input: {
+        ...entryPoints,
+        ...entryPointsWithSideEffects,
+    },
     output: [
         {
             dir: BUILD_DIST,

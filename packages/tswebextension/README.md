@@ -210,16 +210,21 @@ In this project, the `sideEffects` field is defined as follows in the `package.j
 "sideEffects": [
     "dist/assistant-inject.js",
     "dist/content-script.js",
-    "dist/content-script.mv3.js"
+    "dist/content-script.mv3.js",
+    "dist/gpc.mv3.js",
+    "dist/hide-document-referrer.mv3.js"
 ]
 ```
 
-This configuration indicates that the specified files (`dist/assistant-inject.js`, `dist/content-script.js`, and `dist/content-script.mv3.js`) have side effects and should not be tree-shaken by the bundler. These files are likely to perform actions such as modifying the global scope or performing I/O operations, which are essential for the correct functioning of the application.
+This configuration indicates that the specified files have side effects and should not be tree-shaken by the bundler. These files will modifying the global scope, which are essential for the correct functioning of the application.
 
 By explicitly listing these files, we ensure that they are included in the final bundle, even if they do not have any direct imports or exports that are used elsewhere in the codebase.
 
 In the content script, we need access to `@adguard/assistant` only when the user clicks 'block ad manually'. Therefore, we marked files with `@adguard/assistant` as side effects. We also added a required field to the configuration object to ensure the assistant is bundled inside the final extension, allowing `tswebextension` to load it on-demand.
 
+Same approach with dynamic injecting we use for stealth options GPC and Hide
+Document Referrer. Handlers for these options will dynamically register content
+scripts via `scripting.registerContentScript`.
 ## API
 
 The main idea of the library is to provide a common interface for different browsers and manifest versions.

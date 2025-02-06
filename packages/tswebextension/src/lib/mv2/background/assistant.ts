@@ -1,7 +1,7 @@
 import browser, { type WebNavigation } from 'webextension-polyfill';
 
 import { MAIN_FRAME_ID } from '../../common/constants';
-import { Assistant as CommonAssistant } from '../../common/content-script/assistant/assistant';
+import { CommonAssistant } from '../../common/assistant';
 
 import { type TabContext } from './tabs';
 
@@ -56,4 +56,14 @@ export class Assistant extends CommonAssistant {
             && url === Assistant.FRAME_URL
             && newFrameData?.parentFrameId === MAIN_FRAME_ID;
     }
+
+    /**
+     * @inheritdoc
+     */
+    // eslint-disable-next-line class-methods-use-this
+    protected injectAssistant(tabId: number, fileUrl: string): Promise<unknown[]> {
+        return browser.tabs.executeScript(tabId, { file: fileUrl });
+    }
 }
+
+export const assistant = new Assistant();

@@ -18,7 +18,6 @@ import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
-import { Assistant } from '../../common/content-script/assistant/assistant';
 
 import { allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
@@ -34,6 +33,7 @@ import { RuleSetsLoaderApi } from './rule-sets-loader-api';
 import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
+import { assistant, Assistant } from './assistant';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -517,7 +517,7 @@ export class TsWebExtension implements AppInterface<
      */
     // eslint-disable-next-line class-methods-use-this
     public async openAssistant(tabId: number): Promise<void> {
-        await Assistant.openAssistant(tabId);
+        await assistant.openAssistant(tabId);
     }
 
     /**
@@ -526,7 +526,6 @@ export class TsWebExtension implements AppInterface<
      * @param tabId The ID of the tab where is needed to close
      * the AdGuard assistant.
      */
-    // TODO: deprecated?
     // eslint-disable-next-line class-methods-use-this
     public async closeAssistant(tabId: number): Promise<void> {
         await Assistant.closeAssistant(tabId);

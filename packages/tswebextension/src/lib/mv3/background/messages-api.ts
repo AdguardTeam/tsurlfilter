@@ -20,12 +20,12 @@ import { isEmptySrcFrame } from '../../common/utils/is-empty-src-frame';
 import { logger } from '../../common/utils/logger';
 import { nanoid } from '../../common/utils/nanoid';
 import { type TabsApi } from '../tabs/tabs-api';
-import { Assistant } from '../../common/content-script/assistant/assistant';
 
 import { type TsWebExtension } from './app';
 import { appContext } from './app-context';
 import { CosmeticApi } from './cosmetic-api';
 import { CookieFiltering } from './services/cookie-filtering/cookie-filtering';
+import { Assistant } from './assistant';
 
 export type ContentScriptCookieRulesData = {
     /**

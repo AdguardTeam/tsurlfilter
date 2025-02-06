@@ -3,6 +3,10 @@
  */
 /**
  * @file
+ * IMPORTANT: This file should be listed inside 'sideEffects' field
+ * in the package.json, because it has side effects: we do not export anything
+ * from it outside, just evaluate the code (via injection).
+ *
  * In the content script, we need access to @adguard/assistant only when
  * the user clicks 'block ad manually'.
  * Therefore, we exclude @adguard/assistant from the bundled content-script code
@@ -24,10 +28,6 @@
  * Reference code: ASSISTANT_INJECT.
  *
  * Injection will be done by {@link AssistantRef.openAssistant}.
- *
- * IMPORTANT: This file should be listed inside 'sideEffects' field
- * in the package.json, because it has side effects: we do not export anything
- * from it, just evaluate the code (via injection).
  */
 import { adguardAssistant, type Assistant } from '@adguard/assistant';
 
