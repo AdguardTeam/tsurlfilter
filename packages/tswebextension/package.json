@@ -8,7 +8,9 @@
   "sideEffects": [
     "dist/assistant-inject.js",
     "dist/content-script.js",
-    "dist/content-script.mv3.js"
+    "dist/content-script.mv3.js",
+    "dist/gpc.mv3.js",
+    "dist/hide-document-referrer.mv3.js"
   ],
   "exports": {
     ".": {
@@ -24,10 +26,10 @@
       "default": "./dist/mv3-utils.js"
     },
     "./mv3/gpc": {
-      "default": "./dist/gpc.js"
+      "default": "./dist/gpc.mv3.js"
     },
     "./mv3/hide-document-referrer": {
-      "default": "./dist/hide-document-referrer.js"
+      "default": "./dist/hide-document-referrer.mv3.js"
     },
     "./mv3/content-script": {
       "default": "./dist/content-script.mv3.js"

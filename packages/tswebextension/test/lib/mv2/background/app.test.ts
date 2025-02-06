@@ -15,7 +15,7 @@ import {
     messagesApi,
     TsWebExtension,
 } from '../../../../src/lib';
-import { Assistant } from '../../../../src/lib/mv2/background/assistant';
+import { assistant, Assistant } from '../../../../src/lib/mv2/background/assistant';
 import { type Message } from '../../../../src/lib/common/message';
 
 import { MockAppContext } from './mocks/mock-app-context';
@@ -88,7 +88,7 @@ describe('TsWebExtension', () => {
     });
 
     it('should open assistant via assistant module', async () => {
-        const spy = vi.spyOn(Assistant, 'openAssistant');
+        const spy = vi.spyOn(assistant, 'openAssistant');
 
         instance.openAssistant(0);
 

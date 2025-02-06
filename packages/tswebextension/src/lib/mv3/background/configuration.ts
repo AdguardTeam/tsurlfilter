@@ -29,12 +29,16 @@ export const settingsConfigMV3 = settingsConfigValidator.extend({
     /**
      * Path to the content script that set GPC Signal.
      * Necessary for `Do Not Track` stealth option.
+     * This content script will be dynamically registered and unregistered
+     * by the tswebextension when the stealth option is enabled/disabled.
      */
     gpcScriptUrl: zod.string(),
 
     /**
      * Path to the content script that hide document referrer.
      * Necessary for `Hide Search Queries` stealth option.
+     * This content script will be dynamically registered and unregistered
+     * by the tswebextension when the stealth option is enabled/disabled.
      */
     hideDocumentReferrerScriptUrl: zod.string(),
 });
