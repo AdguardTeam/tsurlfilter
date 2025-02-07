@@ -16,6 +16,7 @@ const ALIGN_CENTER = 'c'; // https://github.com/wooorm/markdown-table#optionsali
  * Helper function to print bytes as megabytes.
  *
  * @param bytes Bytes to print.
+ *
  * @returns String representation of bytes in megabytes.
  */
 export const printBytesAsMegabytes = (bytes: number): string => {
@@ -80,7 +81,8 @@ export const getSystemSpecs = async (): Promise<SystemSpecs> => {
 /**
  * Builds a markdown table representing the given system specs.
  *
- * @param specs - System specs object
+ * @param specs System specs object
+ *
  * @returns A markdown string
  */
 export const buildSystemSpecsMarkdownTable = (specs: SystemSpecs): string => {

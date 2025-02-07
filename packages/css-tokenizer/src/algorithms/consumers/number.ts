@@ -13,10 +13,12 @@ import { CodePoint } from '../../common/enums/code-points';
  * Consume a number from a stream of code points. It returns a numeric value, and a type which is either "integer" or
  * "number".
  *
+ * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-number}
+ *
  * @param context Reference to the tokenizer context instance
+ *
  * @note This algorithm does not do the verification of the first few code points that are necessary to ensure a number
  * can be obtained from the stream. Ensure that the stream starts with a number before calling this algorithm.
- * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-number}
  * @todo Uncomment type/repr handling if needed - currently we don't need them, and they're not used for performance
  * reasons
  */

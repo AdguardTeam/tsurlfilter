@@ -15,6 +15,7 @@ interface TokenizerConfig {
      * Function to tokenize CSS
      *
      * @param css CSS to tokenize
+     *
      * @returns Token count
      */
     tokenize: (css: string) => number;

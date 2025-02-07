@@ -22,6 +22,7 @@ const SEPARATOR = ', ';
  * after each other, it is replaced with a single token name and a multiplier, e.g. `<token-name> x <multiplier>`.
  *
  * @param args Array of token types
+ *
  * @returns Formatted token name list separated by comma
  */
 export const getTokenNameList = (...args: TokenType[]): string => {
@@ -53,7 +54,9 @@ export const getTokenNameList = (...args: TokenType[]): string => {
  * A simple helper function to add `as` property to token tests. This is useful for generating meaningful test names.
  *
  * @param tests Token tests
+ *
  * @returns Modified token tests (with `as` property added to array items)
+ *
  * @note It modifies the original array
  */
 export const addAsProp = (tests: TokenTest[]): TokenTest[] => {

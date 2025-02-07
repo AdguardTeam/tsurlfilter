@@ -27,6 +27,7 @@ const EVENT_COMPLETE = 'complete';
  *
  * @param resource Resource to benchmark
  * @param tokenizerConfigs Tokenizer configs to benchmark
+ *
  * @returns Benchmark results for each tokenizer on the resource
  */
 export const benchmarkResource = (resource: Resource, tokenizerConfigs: TokenizerConfigs): TokenizerBenchResult[] => {

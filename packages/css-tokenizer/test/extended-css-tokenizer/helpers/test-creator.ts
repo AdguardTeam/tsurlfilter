@@ -12,6 +12,7 @@ export type PseudoValues = { [key: string]: TokenData[] };
  *
  * @param values Values to shift
  * @param shift Amount to shift by
+ *
  * @returns Shifted values
  */
 const shiftValues = (values: PseudoValues, shift: number): PseudoValues => {
@@ -29,6 +30,7 @@ const shiftValues = (values: PseudoValues, shift: number): PseudoValues => {
  *
  * @param pseudos Pseudo names
  * @param values Pseudo value expectations
+ *
  * @returns Test data for each pseudo name
  */
 export const createTests = (pseudos: string[], values: PseudoValues): TokenTest[] => {

@@ -10,6 +10,7 @@ import { TokenType } from '../../common/enums/token-types';
  * § 4.3.1. Consume a token (whitespace)
  *
  * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-token}
+ *
  * @param context Reference to the tokenizer context instance
  */
 export const consumeWhitespaceToken: TokenizerContextFunction = (context: TokenizerContext): void => {

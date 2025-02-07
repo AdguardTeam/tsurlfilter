@@ -12,8 +12,9 @@ export const MAX_HEX_DIGITS = 6;
 /**
  * § 4.3.7. Consume an escaped code point
  *
- * @param context Reference to the tokenizer context instance
  * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-escaped-code-point}
+ *
+ * @param context Reference to the tokenizer context instance
  */
 export const consumeEscapedCodePoint: TokenizerContextFunction = (context: TokenizerContext): void => {
     // It assumes that the U+005C REVERSE SOLIDUS (\) has already been consumed and that the next input code point has

@@ -43,13 +43,13 @@ export const TOKEN_NAMES: Record<TokenType, string> = Object.freeze({
  *
  * @param type Token type
  *
+ * @returns Base token name or 'unknown' if token type is unknown
+ *
  * @example
  * ```ts
  * getBaseTokenName(TokenType.Ident); // 'ident'
  * getBaseTokenName(-1); // 'unknown'
  * ```
- *
- * @returns Base token name or 'unknown' if token type is unknown
  */
 export const getBaseTokenName = (type: TokenType): string => {
     return TOKEN_NAMES[type] ?? UNKNOWN_TOKEN_NAME;
@@ -60,13 +60,13 @@ export const getBaseTokenName = (type: TokenType): string => {
  *
  * @param type Token type
  *
+ * @returns Formatted token name or `'<unknown-token>'` if token type is unknown
+ *
  * @example
  * ```ts
  * getFormattedTokenName(TokenType.Ident); // '<ident-token>'
  * getFormattedTokenName(-1); // '<unknown-token>'
  * ```
- *
- * @returns Formatted token name or `'<unknown-token>'` if token type is unknown
  */
 export const getFormattedTokenName = (type: TokenType): string => {
     return `<${getBaseTokenName(type)}-token>`;
