@@ -7,6 +7,7 @@ import { type FilterListSourceMap } from './schema';
  *
  * @param lineStartIndex Rule start index.
  * @param source Raw filter list source.
+ *
  * @returns Rule string or null if the rule couldn't be found.
  */
 export const getRuleSourceText = (lineStartIndex: number, source: string): string | null => {
@@ -47,7 +48,9 @@ export const getRuleSourceText = (lineStartIndex: number, source: string): strin
  *
  * @param ruleIdx Rule index.
  * @param sourceMap Source map.
+ *
  * @returns Rule source index or RULE_INDEX_NONE (-1).
+ *
  * @note Similar to `Array.prototype.indexOf`, we return -1 if the rule index is not found.
  */
 export const getRuleSourceIndex = (ruleIdx: number, sourceMap: FilterListSourceMap): number => {

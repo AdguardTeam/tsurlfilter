@@ -3,23 +3,23 @@ import { type IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
 
 /**
- * Replace modifier class
+ * Replace modifier class.
  */
 export class ReplaceModifier implements IAdvancedModifier {
     /**
-     * Replace option value
+     * Replace option value.
      */
     private readonly replaceOption: string;
 
     /**
-     * Replace option apply func
+     * Replace option apply function.
      */
     private readonly replaceApply: (input: string) => string;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param value
+     * @param value Replace modifier value.
      */
     constructor(value: string) {
         const parsed = ReplaceModifier.parseReplaceOption(value);
@@ -29,8 +29,11 @@ export class ReplaceModifier implements IAdvancedModifier {
     }
 
     /**
+     * Parses replace option.
      *
-     * @param option
+     * @param option Replace option.
+     *
+     * @returns Parsed replace option.
      */
     private static parseReplaceOption(option: string): { apply: (input: string) => string; optionText: string } {
         if (!option) {
@@ -62,14 +65,18 @@ export class ReplaceModifier implements IAdvancedModifier {
     }
 
     /**
-     * Replace content
+     * Replace content.
+     *
+     * @returns The replace option value.
      */
     getValue(): string {
         return this.replaceOption;
     }
 
     /**
-     * Replace apply function
+     * Replace apply function.
+     *
+     * @returns The function to apply the replacement.
      */
     getApplyFunc(): (input: string) => string {
         return this.replaceApply;

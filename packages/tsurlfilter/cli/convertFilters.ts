@@ -24,7 +24,7 @@ const ensureDirSync = (dirPath: string) => {
 };
 
 /**
- * Default options used by convert filters
+ * Default options used by convert filters.
  */
 const CONVERT_FILTER_DEFAULT_OPTIONS = {
     debug: false,
@@ -32,19 +32,19 @@ const CONVERT_FILTER_DEFAULT_OPTIONS = {
 };
 
 /**
- * Options for the convert filters function
+ * Options for the convert filters function.
  */
 interface ConvertFiltersOptions {
     /**
      * If true, additional information is printed during conversion.
-     * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.debug}
+     * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.debug}.
      */
     debug?: boolean;
 
     /**
      * Defines whether to prettify the rulesets JSON or not.
      * Not prettifying can save on JSON size.
-     * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson}
+     * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson}.
      */
     prettifyJson?: boolean;
 }

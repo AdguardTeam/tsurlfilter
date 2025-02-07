@@ -1,9 +1,9 @@
 /**
- * Rule advanced modifier interface
+ * Rule advanced modifier interface.
  */
 export interface IAdvancedModifier {
     /**
-     * Modifier value
+     * Modifier value.
      */
     getValue(): string;
 }

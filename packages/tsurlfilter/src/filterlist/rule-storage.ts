@@ -11,25 +11,25 @@ import { logger } from '../utils/logger';
 /**
  * RuleStorage is an abstraction that combines several rule lists
  * It can be scanned using RuleStorageScanner, and also it allows
- * retrieving rules by its index
-
+ * retrieving rules by its index.
+ *
  * The idea is to keep rules in a serialized format (even original format in the case of FileRuleList)
  * and create them in a lazy manner only when we really need them. When the filtering engine is
  * being initialized, we need to scan the rule lists once in order to fill up the lookup tables.
  * We use rule indexes as a unique rule identifier instead of the rule itself.
  * The rule is created (see RetrieveRule) only when there's a chance that it's needed.
-
+ *
  * Rule index is an int64 value that actually consists of two int32 values:
  * One is the rule list identifier, and the second is the index of the rule inside of that list.
-*/
+ */
 export class RuleStorage {
     /**
-     * Lists is an array of rules lists which can be accessed using this RuleStorage
+     * Lists is an array of rules lists which can be accessed using this RuleStorage.
      */
     private readonly lists: IRuleList[];
 
     /**
-     * Map with rule lists. map key is the list ID.
+     * Map with rule lists. Map key is the list ID.
      */
     private readonly listsMap: Map<number, IRuleList>;
 
@@ -44,11 +44,11 @@ export class RuleStorage {
     declare private scanner: RuleStorageScanner;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param lists rule lists array
+     * @param lists Rule lists array.
      *
-     * @throws on duplicate lists
+     * @throws Error on duplicate lists.
      */
     constructor(lists: IRuleList[]) {
         this.lists = lists;
@@ -69,7 +69,9 @@ export class RuleStorage {
      * Creates a new instance of RuleStorageScanner.
      * It can be used to read and parse all the storage contents.
      *
-     * @return scanner instance
+     * @param scannerType The type of scanner to create.
+     *
+     * @returns Scanner instance.
      */
     createRuleStorageScanner(scannerType: ScannerType): RuleStorageScanner {
         const scanners: RuleScanner[] = this.lists.map((list) => list.newScanner(scannerType));
@@ -78,10 +80,12 @@ export class RuleStorage {
     }
 
     /**
-     * Looks for the filtering rule in this storage
+     * Looks for the filtering rule in this storage.
      *
-     * @param storageIdx the lookup index that you can get from the rule storage scanner
-     * @param ignoreHost rules could be retrieved as host rules
+     * @param storageIdx The lookup index that you can get from the rule storage scanner.
+     * @param ignoreHost Rules could be retrieved as host rules.
+     *
+     * @returns The rule or null if not found or an error occurs.
      */
     retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
         const rule = this.cache.get(storageIdx);
@@ -117,10 +121,11 @@ export class RuleStorage {
     }
 
     /**
-     * RetrieveNetworkRule is a helper method that retrieves a network rule from the storage
+     * Retrieves a network rule from the storage.
      *
-     * @param storageIdx
-     * @return the rule or nil in any other case (not found or error)
+     * @param storageIdx Storage index of the rule.
+     *
+     * @returns The rule or nil in any other case (not found or error).
      */
     retrieveNetworkRule(storageIdx: number): NetworkRule | null {
         const rule = this.retrieveRule(storageIdx);
@@ -136,10 +141,11 @@ export class RuleStorage {
     }
 
     /**
-     * RetrieveHostRule is a helper method that retrieves a host rule from the storage
+     * Retrieves a host rule from the storage.
      *
-     * @param storageIdx
-     * @return the rule or nil in any other case (not found or error)
+     * @param storageIdx Storage index of the rule.
+     *
+     * @returns The rule or nil in any other case (not found or error).
      */
     retrieveHostRule(storageIdx: number): HostRule | null {
         const rule = this.retrieveRule(storageIdx, false);
@@ -156,6 +162,8 @@ export class RuleStorage {
 
     /**
      * Returns the size of the cache.
+     *
+     * @returns The size of the cache.
      */
     getCacheSize(): number {
         return this.cache.size;

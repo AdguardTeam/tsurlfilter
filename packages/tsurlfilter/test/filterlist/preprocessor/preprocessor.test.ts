@@ -14,6 +14,7 @@ import {
  * Helper function to create a serialized filter list from a list of rules.
  *
  * @param rules List of rules to serialize.
+ *
  * @returns Serialized chunks of the filter list.
  */
 const makeSerializedFilterList = (rules: string[]): Uint8Array[] => {

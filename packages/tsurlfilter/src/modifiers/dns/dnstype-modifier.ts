@@ -1,13 +1,13 @@
 import { BaseValuesModifier } from '../values-modifier';
 
 /**
- * The dnstype modifier allows specifying DNS request type on which this rule will be triggered.
+ * The `$dnstype` modifier allows specifying DNS request type on which this rule will be triggered.
  */
 export class DnsTypeModifier extends BaseValuesModifier {
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param value
+     * @param value The value used to initialize the modifier.
      */
     constructor(value: string) {
         super(value);

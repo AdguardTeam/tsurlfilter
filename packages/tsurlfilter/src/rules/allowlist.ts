@@ -6,6 +6,7 @@ import { SimpleRegex } from './simple-regex';
  * Helper function to create an allowlist rule node for a given domain.
  *
  * @param domain Domain to create an allowlist rule for.
+ *
  * @returns Allowlist rule node or null.
  */
 export const createAllowlistRuleNode = (domain: string): null | NetworkRule => {

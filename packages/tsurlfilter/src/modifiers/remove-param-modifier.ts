@@ -3,29 +3,31 @@ import { type IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
 
 /**
- * Query parameters filtering modifier class
- * Works with '$removeparam' modifier
+ * Query parameters filtering modifier class.
+ * Works with `$removeparam` modifier.
  */
 export class RemoveParamModifier implements IAdvancedModifier {
     /**
-     * Value
+     * Value of the modifier.
      */
     private readonly value: string;
 
     /**
-     * Is modifier valid for MV3 or not
+     * Is modifier valid for MV3 or not.
+     *
+     * @returns True if the modifier is valid for MV3, false otherwise.
      */
     private readonly mv3Valid: boolean = true;
 
     /**
-     * RegExp to apply
+     * RegExp to apply.
      */
     private readonly valueRegExp: RegExp;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param value
+     * @param value The value used to initialize the modifier.
      */
     constructor(value: string) {
         this.value = value;
@@ -52,14 +54,18 @@ export class RemoveParamModifier implements IAdvancedModifier {
     }
 
     /**
-     * Modifier value
+     * Modifier value.
+     *
+     * @returns The value of the modifier.
      */
     public getValue(): string {
         return this.value;
     }
 
     /**
-     * Is modifier valid for MV3 or not
+     * Is modifier valid for MV3 or not.
+     *
+     * @returns True if the modifier is valid for MV3, false otherwise.
      */
     public getMV3Validity(): boolean {
         return this.mv3Valid;
@@ -69,6 +75,7 @@ export class RemoveParamModifier implements IAdvancedModifier {
      * Checks if the given modifier is an instance of RemoveParamModifier.
      *
      * @param m The modifier to check.
+     *
      * @returns True if the modifier is an instance of RemoveParamModifier, false otherwise.
      */
     public static isRemoveParamModifier = (m: IAdvancedModifier): m is RemoveParamModifier => {
@@ -76,9 +83,11 @@ export class RemoveParamModifier implements IAdvancedModifier {
     };
 
     /**
-     * Removes query parameters from url
+     * Removes query parameters from url.
      *
-     * @param url
+     * @param url The URL from which query parameters should be removed.
+     *
+     * @returns The URL with the query parameters removed.
      */
     public removeParameters(url: string): string {
         const sepIndex = url.indexOf('?');

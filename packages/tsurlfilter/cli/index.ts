@@ -8,6 +8,9 @@ import { version } from '../package.json';
 
 export const DEFAULT_DEST_RULE_SETS_DIR = 'build/ruleSets';
 
+/**
+ * Main function to set up and run the CLI program.
+ */
 async function main() {
     program
         .name('tsurlfilter')

@@ -5,19 +5,21 @@ import { type IRule, RULE_INDEX_NONE } from './rule';
  * Implements a host rule.
  *
  * HostRule is a structure for simple host-level rules (i.e. /etc/hosts syntax).
- * http://man7.org/linux/man-pages/man5/hosts.5.html
- * It also supports "just domain" syntax. In this case, the IP will be set to 0.0.0.0.
+ * More details: http://man7.org/linux/man-pages/man5/hosts.5.html.
+ * It also supports "just domain" syntax. In this case, the IP will be set to `0.0.0.0`.
  *
- * Rules syntax looks like this:
+ * Rules syntax looks like this.
  * ```
  * IP_address canonical_hostname [aliases...]
  * ```
  *
  * Examples:
- * * `192.168.1.13 bar.mydomain.org bar` -- ipv4
- * * `ff02::1 ip6-allnodes` -- ipv6
- * * `::1 localhost ip6-localhost ip6-loopback` -- ipv6 aliases
- * * `example.org` -- "just domain" syntax
+ * `192.168.1.13 bar.mydomain.org bar` -- ipv4
+ * `ff02::1 ip6-allnodes` -- ipv6
+ * `::1 localhost ip6-localhost ip6-loopback` -- ipv6 aliases
+ * `example.org` -- "just domain" syntax.
+ *
+ * @returns True if this rule can be used on the specified hostname.
  */
 export class HostRule implements IRule {
     private readonly ruleIndex: number;
@@ -31,14 +33,15 @@ export class HostRule implements IRule {
     private readonly invalid: boolean = false;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * Parses the rule and creates a new HostRule instance
+     * Parses the rule and creates a new HostRule instance.
      *
-     * @param inputRule - original rule text.
-     * @param filterListId - ID of the filter list this rule belongs to.
+     * @param node Original rule text.
+     * @param filterListId ID of the filter list this rule belongs to.
+     * @param ruleIndex Index of the rule.
      *
-     * @throws error if it fails to parse the rule.
+     * @throws Error if it fails to parse the rule.
      */
     constructor(node: HostRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
@@ -57,42 +60,54 @@ export class HostRule implements IRule {
     /**
      * Match returns true if this rule can be used on the specified hostname.
      *
-     * @param hostname - hostname to check
+     * @param hostname Hostname to check.
+     *
+     * @returns True if the hostname matches one of the hostnames in the rule.
      */
     match(hostname: string): boolean {
         return this.hostnames.includes(hostname);
     }
 
     /**
-     * Returns list id
+     * Returns list id.
+     *
+     * @returns The filter list ID.
      */
     getFilterListId(): number {
         return this.filterListId;
     }
 
     /**
-     * Returns rule index
+     * Returns rule index.
+     *
+     * @returns The rule index.
      */
     getIndex(): number {
         return this.ruleIndex;
     }
 
     /**
-     * Returns ip address
+     * Returns ip address.
+     *
+     * @returns IP address.
      */
     getIp(): string {
         return this.ip;
     }
 
     /**
-     * Returns hostnames
+     * Returns hostnames.
+     *
+     * @returns Array of hostnames.
      */
     getHostnames(): string[] {
         return this.hostnames;
     }
 
     /**
-     * Is invalid rule
+     * Checks if the rule is invalid.
+     *
+     * @returns True if the rule is invalid.
      */
     isInvalid(): boolean {
         return this.invalid;

@@ -54,6 +54,7 @@ export class FilterListPreprocessor {
      *
      * @param filterList Raw filter list to convert.
      * @param parseHosts If true, the preprocessor will parse host rules.
+     *
      * @returns A {@link PreprocessedFilterList} object which contains the converted filter list,
      * the mapping between the original and converted rules, and the source map.
      */
@@ -224,6 +225,7 @@ export class FilterListPreprocessor {
      * Gets the original filter list text from the preprocessed filter list.
      *
      * @param preprocessedFilterList Preprocessed filter list.
+     *
      * @returns Original filter list text.
      */
     public static getOriginalFilterListText(preprocessedFilterList: LightweightPreprocessedFilterList): string {
@@ -266,6 +268,7 @@ export class FilterListPreprocessor {
      * Gets the original rules from the preprocessed filter list.
      *
      * @param preprocessedFilterList Preprocessed filter list.
+     *
      * @returns Array of original rules.
      */
     public static getOriginalRules(preprocessedFilterList: LightweightPreprocessedFilterList): string[] {

@@ -16,12 +16,12 @@ import { RequestType } from '../request-type';
  */
 export class DnsEngine {
     /**
-     * Count of rules added to the engine
+     * Count of rules added to the engine.
      */
     public rulesCount: number;
 
     /**
-     * Storage
+     * Storage.
      */
     private ruleStorage: RuleStorage;
 
@@ -31,14 +31,14 @@ export class DnsEngine {
     private readonly lookupTable: Map<number, number[]>;
 
     /**
-     * Network engine instance
+     * Network engine instance.
      */
     private readonly networkEngine: NetworkEngine;
 
     /**
-     * Builds an instance of dns engine
+     * Builds an instance of dns engine.
      *
-     * @param storage
+     * @param storage Rule storage.
      */
     constructor(storage: RuleStorage) {
         this.ruleStorage = storage;
@@ -63,10 +63,11 @@ export class DnsEngine {
     }
 
     /**
-     * Match searches over all filtering and host rules loaded to the engine
+     * Match searches over all filtering and host rules loaded to the engine.
      *
-     * @param hostname to check
-     * @return dns result object
+     * @param hostname To check.
+     *
+     * @returns Dns result object.
      */
     public match(hostname: string): DnsResult {
         const result = new DnsResult();
@@ -100,10 +101,10 @@ export class DnsEngine {
     }
 
     /**
-     * Adds rule to engine
+     * Adds rule to engine.
      *
-     * @param rule
-     * @param storageIdx
+     * @param rule Rule to add.
+     * @param storageIdx Storage index of the rule.
      */
     private addRule(rule: HostRule, storageIdx: number): void {
         rule.getHostnames().forEach((hostname) => {

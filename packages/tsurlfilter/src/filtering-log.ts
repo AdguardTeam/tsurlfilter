@@ -12,19 +12,19 @@ export interface CookieEventOptions {
 }
 
 /**
- * Filtering log interface
+ * Filtering log interface.
  */
 export interface FilteringLog {
 
     /**
-     * Add cookie rule event
+     * Add cookie rule event.
      *
      * @param options
      */
     addCookieEvent(options: CookieEventOptions): void;
 
     /**
-     * Add header removed event
+     * Add header removed event.
      *
      * @param tabId
      * @param frameUrl

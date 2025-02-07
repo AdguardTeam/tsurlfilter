@@ -2,27 +2,26 @@ import { isRedirectResourceCompatibleWithAdg } from '@adguard/scriptlets/validat
 import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
- * Redirect modifier class
+ * Redirect modifier class.
  */
 export class RedirectModifier implements IAdvancedModifier {
     /**
-     * Value
+     * Redirect title.
      */
     private readonly redirectTitle: string;
 
     /**
      * Is redirecting only blocked requests
-     * See $redirect-rule options
+     * See $redirect-rule options.
      */
     readonly isRedirectingOnlyBlocked: boolean = false;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param value
-     * @param ruleText
-     * @param isAllowlist
-     * @param isRedirectingOnlyBlocked is redirect-rule modifier
+     * @param value Redirect modifier value.
+     * @param isAllowlist Is allowlist rule.
+     * @param isRedirectingOnlyBlocked Is redirect-rule modifier.
      */
     constructor(value: string, isAllowlist: boolean, isRedirectingOnlyBlocked = false) {
         RedirectModifier.validate(value, isAllowlist);
@@ -32,17 +31,19 @@ export class RedirectModifier implements IAdvancedModifier {
     }
 
     /**
-     * Redirect title
+     * Redirect title.
+     *
+     * @returns The redirect title.
      */
     getValue(): string {
         return this.redirectTitle;
     }
 
     /**
-     * Validates redirect rule
+     * Validates redirect rule.
      *
-     * @param redirectTitle
-     * @param isAllowlist
+     * @param redirectTitle The title of the redirect.
+     * @param isAllowlist Indicates if the rule is an allowlist rule.
      */
     private static validate(redirectTitle: string, isAllowlist: boolean): void {
         if (isAllowlist && !redirectTitle) {

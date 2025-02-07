@@ -4,32 +4,36 @@ import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { CosmeticHtmlResult } from './cosmetic-html-result';
 
 /**
+ * @typedef {import('./cosmetic-engine').CosmeticEngine} CosmeticEngine
+ */
+
+/**
  * Cosmetic result is the representation of rules
- * It is primarily used by the {@see CosmeticEngine}
+ * It is primarily used by the {@link CosmeticEngine}.
  */
 export class CosmeticResult {
     /**
-     * Storage of element hiding rules
+     * Storage of element hiding rules.
      */
     public elementHiding: CosmeticStylesResult;
 
     /**
-     * Storage of CSS rules
+     * Storage of CSS rules.
      */
     public CSS: CosmeticStylesResult;
 
     /**
-     * Storage of JS rules
+     * Storage of JS rules.
      */
     public JS: CosmeticScriptsResult;
 
     /**
-     * Storage of Html filtering rules
+     * Storage of Html filtering rules.
      */
     public Html: CosmeticHtmlResult;
 
     /**
-     * Constructor
+     * Constructor.
      */
     constructor() {
         this.elementHiding = new CosmeticStylesResult();
@@ -39,7 +43,9 @@ export class CosmeticResult {
     }
 
     /**
-     * Script rules
+     * Script rules.
+     *
+     * @returns Array of cosmetic **JavaScript** rules.
      */
     public getScriptRules(): CosmeticRule[] {
         return this.JS.getRules();

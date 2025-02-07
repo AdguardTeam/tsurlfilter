@@ -10,16 +10,16 @@ import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
 import { SeqScanLookupTable } from './lookup-tables/seq-scan-lookup-table';
 
 /**
- * NetworkEngine is the engine that supports quick search over network rules
+ * NetworkEngine is the engine that supports quick search over network rules.
  */
 export class NetworkEngine {
     /**
-     * Count of rules added to the engine
+     * Count of rules added to the engine.
      */
     public rulesCount: number;
 
     /**
-     * Storage for the network filtering rules
+     * Storage for the network filtering rules.
      */
     private ruleStorage: RuleStorage;
 
@@ -34,7 +34,7 @@ export class NetworkEngine {
     private readonly shortcutsLookupTable: ILookupTable;
 
     /**
-     * Lookup table for rules like '||hostname^' or '||hostname/path'
+     * Lookup table for rules like `||hostname^` or `||hostname/path`.
      */
     private readonly hostnameLookupTable: ILookupTable;
 
@@ -44,10 +44,10 @@ export class NetworkEngine {
     private readonly seqScanLookupTable: ILookupTable;
 
     /**
-     * Builds an instance of the network engine
+     * Builds an instance of the network engine.
      *
-     * @param storage an object for a rules storage.
-     * @param skipStorageScan create an instance without storage scanning.
+     * @param storage An object for a rules storage.
+     * @param skipStorageScan Create an instance without storage scanning.
      */
     constructor(storage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = storage;
@@ -73,11 +73,12 @@ export class NetworkEngine {
     }
 
     /**
-     * Match searches over all filtering rules loaded to the engine
-     * It returns rule if a match was found alongside the matching rule
+     * Match searches over all filtering rules loaded to the engine.
+     * It returns rule if a match was found alongside the matching rule.
      *
-     * @param request to check
-     * @return rule matching request or null
+     * @param request Request to check.
+     *
+     * @returns Rule matching request or null if no match was found.
      */
     match(request: Request): NetworkRule | null {
         const networkRules = this.matchAll(request);
@@ -92,10 +93,11 @@ export class NetworkEngine {
 
     /**
      * Finds all rules matching the specified request regardless of the rule types
-     * It will find both allowlist and blacklist rules
+     * It will find both allowlist and blacklist rules.
      *
-     * @param request to check
-     * @return array of matching rules
+     * @param request Request to check.
+     *
+     * @returns Array of matching rules.
      */
     matchAll(request: Request): NetworkRule[] {
         // First check by shortcuts
@@ -108,10 +110,10 @@ export class NetworkEngine {
     }
 
     /**
-     * Adds rule to the network engine
+     * Adds rule to the network engine.
      *
-     * @param rule
-     * @param storageIdx
+     * @param rule Rule to add.
+     * @param storageIdx Storage index of the rule.
      */
     public addRule(rule: NetworkRule, storageIdx: number): void {
         if (!this.hostnameLookupTable.addRule(rule, storageIdx)) {

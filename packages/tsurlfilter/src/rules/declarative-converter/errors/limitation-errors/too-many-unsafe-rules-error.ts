@@ -1,4 +1,8 @@
 /**
+ * @typedef {import('../../source-map').Source} Source
+ */
+
+/**
  * Describes an error when the maximum number of unsafe rules is reached.
  */
 export class TooManyUnsafeRulesError extends Error {

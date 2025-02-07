@@ -112,7 +112,7 @@ constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined
  *
  * @param request - request to check
  * @param frameRules - source rules or undefined
- * @return matching result
+ * @returns matching result
  */
 matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult;
 ```
@@ -191,7 +191,7 @@ MatchingResult contains all the rules matching a web request, and provides metho
  * returns a allowlist rule -- bypass the request.
  * returns a blocking rule -- block the request.
  *
- * @return basic result rule
+ * @returns basic result rule
  */
 getBasicResult(): NetworkRule | null;
 ```
@@ -204,7 +204,7 @@ This flag should be used for `getCosmeticResult(request: Request, option: Cosmet
 /**
   * Returns a bit-flag with the list of cosmetic options
   *
-  * @return {CosmeticOption} mask
+  * @returns {CosmeticOption} mask
   */
 getCosmeticOption(): CosmeticOption;
 ```
@@ -309,7 +309,7 @@ constructor(storage: RuleStorage);
  * Match searches over all filtering and host rules loaded to the engine
  *
  * @param hostname to check
- * @return dns result object
+ * @returns dns result object
  */
 public match(hostname: string): DnsResult;
 ```

@@ -20,14 +20,14 @@ export class DomainsLookupTable implements ILookupTable {
     private readonly domainsLookupTable = new Map<number, number[]>();
 
     /**
-     * Storage for the network filtering rules
+     * Storage for the network filtering rules.
      */
     private readonly ruleStorage: RuleStorage;
 
     /**
-     * Creates a new instance
+     * Creates a new instance.
      *
-     * @param storage rules storage. We store "rule indexes" in the lookup table which
+     * @param storage Rules storage. We store "rule indexes" in the lookup table which
      * can be used to retrieve the full rules from the storage.
      */
     constructor(storage: RuleStorage) {
@@ -35,9 +35,12 @@ export class DomainsLookupTable implements ILookupTable {
     }
 
     /**
-     * addRule implements the ILookupTable interface for DomainsLookupTable.
-     * @param rule
-     * @param storageIdx
+     * Implements the ILookupTable interface for DomainsLookupTable.
+     *
+     * @param rule Rule to add.
+     * @param storageIdx Index of the rule in the storage.
+     *
+     * @returns True if the rule was added.
      */
     addRule(rule: NetworkRule, storageIdx: number): boolean {
         const permittedDomains = rule.getPermittedDomains();
@@ -67,6 +70,8 @@ export class DomainsLookupTable implements ILookupTable {
 
     /**
      * Implements the ILookupTable interface method.
+     *
+     * @returns The count of rules added to this lookup table.
      */
     getRulesCount(): number {
         return this.rulesCount;
@@ -74,7 +79,10 @@ export class DomainsLookupTable implements ILookupTable {
 
     /**
      * Implements the ILookupTable interface method.
-     * @param request
+     *
+     * @param request Request to check.
+     *
+     * @returns Array of matching network rules.
      */
     matchAll(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];

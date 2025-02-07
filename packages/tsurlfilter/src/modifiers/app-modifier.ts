@@ -8,25 +8,31 @@ export interface IAppModifier {
 /**
  * This is a helper class that is used specifically to work with app restrictions.
  *
- * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app}
  *
- * Examples:
+ * @example
+ * ```adblock
  * ||baddomain.com^$app=org.example.app
  * ||baddomain.com^$app=org.example.app1|org.example.app2
+ * ```
  */
 export class AppModifier implements IAppModifier {
-    /** list of permitted apps or null */
+    /**
+     * List of permitted apps or null.
+     */
     public readonly permittedApps: string[] | null;
 
-    /** list of restricted apps or null */
+    /**
+     * List of restricted apps or null.
+     */
     public readonly restrictedApps: string[] | null;
 
     /**
-     * Parses the `apps` string
+     * Parses the `apps` string.
      *
-     * @param apps - apps string
+     * @param apps Apps string.
      *
-     * @throws an error if the app string is empty or invalid
+     * @throws An error if the app string is empty or invalid.
      */
     constructor(apps: string) {
         if (!apps) {

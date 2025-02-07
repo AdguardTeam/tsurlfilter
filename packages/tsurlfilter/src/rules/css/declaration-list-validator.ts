@@ -14,6 +14,7 @@ const REMOVE_LENGTH = REMOVE_PROPERTY.length;
  * Check if function name is forbidden. If so, throws an error.
  *
  * @param functionName Function name to check.
+ *
  * @throws Error if function name is forbidden.
  */
 const checkFunctionName = (functionName: string): void => {
@@ -30,7 +31,9 @@ const checkFunctionName = (functionName: string): void => {
  * Checks for unsafe resource loading and determines if the declaration list is an Extended CSS declaration list.
  *
  * @param declarationList Declaration list to validate.
+ *
  * @returns Validation result, see {@link CssValidationResult}.
+ *
  * @note This is a basic validation for the most necessary things, it does not guarantee that the CSS is completely
  * valid.
  */

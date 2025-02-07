@@ -8,43 +8,43 @@
 export const RULE_INDEX_NONE = -1;
 
 /**
- * Represents a filtering rule
+ * Represents a filtering rule.
  */
 // eslint-disable-next-line max-classes-per-file
 export interface IRule {
     /**
      * Unique rule index within the filter list, which can be used to source map the rule back to its original source.
      *
-     * @return Rule index or {@link RULE_INDEX_NONE} if not available
+     * @returns Rule index or {@link RULE_INDEX_NONE} if not available.
      */
     getIndex(): number;
 
     /**
-     * ID of the filter list this rule belongs to
+     * ID of the filter list this rule belongs to.
      */
     getFilterListId(): number;
 }
 
 /**
- * Rule with index
+ * Rule with index.
  */
 // TODO: Consider remove this because rule already has an index field
 export class IndexedRule {
     /**
-     * Rule
+     * Rule.
      */
     public rule: IRule;
 
     /**
-     * Index
+     * Index.
      */
     public index: number;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param rule
-     * @param index
+     * @param rule Rule.
+     * @param index Index of the rule.
      */
     constructor(rule: IRule, index: number) {
         this.rule = rule;
@@ -53,24 +53,24 @@ export class IndexedRule {
 }
 
 /**
- * Rule with storage index
+ * Rule with storage index.
  */
 export class IndexedStorageRule {
     /**
-     * Rule
+     * Rule.
      */
     public rule: IRule;
 
     /**
-     * Index
+     * Index.
      */
     public index: number;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param rule
-     * @param index
+     * @param rule Rule.
+     * @param index Index of the rule.
      */
     constructor(rule: IRule, index: number) {
         this.rule = rule;

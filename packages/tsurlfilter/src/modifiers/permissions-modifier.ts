@@ -10,12 +10,11 @@ const PIPE_SEPARATOR = '|';
  * Permissions modifier class.
  * Allows setting permission policies, effectively blocking specific page functionality.
  *
- * Learn more about it here:
- * https://adguard.com/kb/general/ad-filtering/create-own-filters/#permissions-modifier
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#permissions-modifier}
  */
 export class PermissionsModifier implements IAdvancedModifier {
     /**
-     * Permission Policy directive
+     * Permission Policy directive.
      */
     private readonly permissionPolicyDirective: string;
 
@@ -26,9 +25,10 @@ export class PermissionsModifier implements IAdvancedModifier {
     private static readonly RE_SEPARATOR_REPLACE = new RegExp(`(\\\\${COMMA_SEPARATOR}|\\${PIPE_SEPARATOR})`, 'g');
 
     /**
-     * Constructor
-     * @param permissionPolicyStr
-     * @param isAllowlist
+     * Constructor.
+     *
+     * @param permissionPolicyStr The permission policy string to be set.
+     * @param isAllowlist Indicates if the permission policy is for an allowlist.
      */
     constructor(permissionPolicyStr: string, isAllowlist: boolean) {
         this.permissionPolicyDirective = permissionPolicyStr
@@ -38,22 +38,27 @@ export class PermissionsModifier implements IAdvancedModifier {
     }
 
     /**
-     * Returns permission policy allowlist string
-     * @returns permission policy allowlist string
+     * Returns permission policy allowlist string.
+     *
+     * @returns Permission policy allowlist string.
      */
     public getValue(): string {
         return this.permissionPolicyDirective;
     }
 
     /**
-     * Validates permission policy directive
-     * @throws SyntaxError on invalid permission policy directive
+     * Validates permission policy directive.
+     *
+     * @param directive The permission policy directive to validate.
+     * @param isAllowlist Indicates if the directive is for an allowlist.
+     *
+     * @throws SyntaxError on invalid permission policy directive.
      */
     public static validatePermissionPolicyDirective(directive: string, isAllowlist: boolean): void {
         /**
          * $permissions modifier value may be empty only in case of allowlist rule,
          * it means to disable all $permissions rules matching the rule pattern.
-        */
+         */
         if (!isAllowlist && !directive) {
             throw new SyntaxError('Invalid $permissions rule: permissions directive must not be empty');
         }

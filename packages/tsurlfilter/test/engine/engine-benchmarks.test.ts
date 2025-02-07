@@ -16,6 +16,7 @@ import {
     FilterListPreprocessor,
 } from '../../src';
 
+/* eslint-disable jsdoc/require-description-complete-sentence */
 /**
  * The comment below describes the bench test results that are achieved on
  * different machines. The results are not stable and can vary from machine to
@@ -94,18 +95,31 @@ import {
  * Min per request: 0 μs
  * Allocations + cache overhead: 8.94 MB total heap size, 8.94 MB used
  */
+/* eslint-enable jsdoc/require-description-complete-sentence */
 
 /**
- * Resources file paths
+ * Resources file paths.
  */
 const requestsZipFilePath = './test/resources/requests.json.gz';
 const expectedRequestsCount = 27969;
 const requestsFilePath = './test/resources/requests.json';
 
+/**
+ * Checks if the given URL is supported.
+ *
+ * @param url The URL to check.
+ *
+ * @returns True if the URL is supported, false otherwise.
+ */
 function isSupportedURL(url: string): boolean {
     return (!!url && (url.startsWith('http') || url.startsWith('ws')));
 }
 
+/**
+ * Unzips the requests file.
+ *
+ * @returns A promise that resolves when the file is unzipped.
+ */
 async function unzipRequests(): Promise<void> {
     return new Promise((resolve, reject) => {
         const fileContents = fs.createReadStream(requestsZipFilePath);
@@ -120,6 +134,11 @@ async function unzipRequests(): Promise<void> {
     });
 }
 
+/**
+ * Loads and parses the requests from the requests file.
+ *
+ * @returns A promise that resolves to an array of request objects.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadRequests(): Promise<any[]> {
     await unzipRequests();
@@ -141,6 +160,13 @@ async function loadRequests(): Promise<any[]> {
     return requests;
 }
 
+/**
+ * Determines the request type based on the provided string.
+ *
+ * @param requestType The type of the request as a string.
+ *
+ * @returns The corresponding RequestType enum value.
+ */
 function testGetRequestType(requestType: string): RequestType {
     switch (requestType) {
         case 'document':
@@ -167,6 +193,11 @@ function testGetRequestType(requestType: string): RequestType {
     }
 }
 
+/**
+ * Parses the requests from the loaded requests file.
+ *
+ * @returns A promise that resolves to an array of Request objects.
+ */
 async function parseRequests(): Promise<Request[]> {
     const testRequests = await loadRequests();
     expect(testRequests.length).toBe(expectedRequestsCount);
@@ -179,6 +210,13 @@ async function parseRequests(): Promise<Request[]> {
     return requests;
 }
 
+/**
+ * Gets the memory usage.
+ *
+ * @param base The base memory usage to subtract from the current memory usage.
+ *
+ * @returns The memory usage difference.
+ */
 function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
     let { heapUsed, heapTotal } = process.memoryUsage();
 
@@ -188,6 +226,14 @@ function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
     return ({ heapUsed, heapTotal });
 }
 
+/**
+ * Runs the engine and processes the requests.
+ *
+ * @param requests The list of requests to process.
+ * @param matchFunc The function to match requests.
+ *
+ * @returns The total number of matches.
+ */
 function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): number {
     console.log(`Processing ${requests.length} requests...`);
 
@@ -265,9 +311,20 @@ describe('Benchmarks', () => {
     /**
      * Helper function that formats memory usage.
      *
-     * @param mem - Memory usage info.
+     * @param mem Memory usage info.
+     * @param mem.heapTotal Total heap size.
+     * @param mem.heapUsed Used heap size.
+     *
+     * @returns Formatted memory usage.
      */
     function formatMemory(mem: { heapTotal: number, heapUsed: number }): string {
+        /**
+         * Formats bytes.
+         *
+         * @param b Bytes to format.
+         *
+         * @returns Formatted bytes.
+         */
         function formatBytes(b: number): string {
             if (b === 0) return '0 Bytes';
 
@@ -285,15 +342,15 @@ describe('Benchmarks', () => {
     /**
      * Runs a bench on the Engine, but limits rules to network rules only.
      * Effectively, it only tests the network engine. This function allows
-     * parameterizing the storage type (IRuleList). This test ignores cosmetic
+     * to parameterize the storage type (IRuleList). This test ignores cosmetic
      * rules.
      *
-     * @param loadAsync - controls how the NetworkEngine will be initialized
+     * @param loadAsync Controls how the NetworkEngine will be initialized
      * (synchronously or not).
      */
     async function benchNetworkEngine(loadAsync: boolean) {
         /**
-         * Expected matches for specified requests and rules
+         * Expected matches for specified requests and rules.
          */
         const expectedMatchesCount = 4667;
         const expectedLoadedRules = 38577;
@@ -357,12 +414,12 @@ describe('Benchmarks', () => {
     const hostsFilePrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/hosts', 'utf8'), true);
 
     /**
-     * Runs a bench on the DnsEngine. This function allows parameterizing the
+     * Runs a bench on the DnsEngine. This function allows to parameterize the
      * storage type (IRuleList). This test ignores cosmetic rules.
      */
     async function benchDnsEngine() {
         /**
-         * Expected matches for specified requests and rules
+         * Expected matches for specified requests and rules.
          */
         const expectedMatchesCount = 11043;
 
@@ -419,12 +476,12 @@ describe('Benchmarks', () => {
     const adguardBaseFilterPrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/adguard_base_filter.txt', 'utf8'));
 
     /**
-     * Runs a bench on the CosmeticEngine. This function allows parameterizing
+     * Runs a bench on the CosmeticEngine. This function allows to parameterize
      * the storage type (IRuleList). This test ignores cosmetic rules.
      */
     async function benchCosmeticEngine() {
         /**
-         * Expected matches for specified requests and rules
+         * Expected matches for specified requests and rules.
          */
         const expectedMatchesCount = 1754;
 

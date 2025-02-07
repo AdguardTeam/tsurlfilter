@@ -4,6 +4,7 @@ import { createHash } from 'crypto';
  * Generates an MD5 hash from a given input string.
  *
  * @param input The input string to be hashed.
+ *
  * @returns The MD5 hash of the input string in hexadecimal format.
  *
  * @example

@@ -5,7 +5,7 @@ import { contains } from 'cidr-tools';
 import { BaseValuesModifier } from '../values-modifier';
 
 /**
- * Netmasks class
+ * Netmasks class.
  */
 class NetmasksCollection {
     ipv4Masks: string[] = [];
@@ -13,9 +13,11 @@ class NetmasksCollection {
     ipv6Masks: string[] = [];
 
     /**
-     * Returns true if any of the containing masks contains provided value
+     * Returns true if any of the containing masks contains provided value.
      *
-     * @param value
+     * @param value Value to check.
+     *
+     * @returns True if any of the containing masks contains provided value.
      */
     contains(value: string): boolean {
         if (isIp.v4(value)) {
@@ -36,9 +38,9 @@ export class ClientModifier extends BaseValuesModifier {
     private readonly restrictedNetmasks: NetmasksCollection | undefined;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param value
+     * @param value Value of the modifier.
      */
     constructor(value: string) {
         super(value);
@@ -57,9 +59,11 @@ export class ClientModifier extends BaseValuesModifier {
     }
 
     /**
-     * Unquotes and unescapes string
+     * Unquotes and unescapes string.
      *
-     * @param values
+     * @param values Values to process.
+     *
+     * @returns Unquoted and unescaped values.
      */
     private static stripValues(values: string[]): string[] {
         return values.map((v) => {
@@ -74,10 +78,12 @@ export class ClientModifier extends BaseValuesModifier {
     }
 
     /**
-     * Checks if this modifier matches provided params
+     * Checks if this modifier matches provided params.
      *
-     * @param clientName
-     * @param clientIP
+     * @param clientName Client name.
+     * @param clientIP Client IP.
+     *
+     * @returns True if this modifier matches provided params.
      */
     matchAny(clientName: string | undefined, clientIP: string | undefined): boolean {
         if (this.restricted) {
@@ -120,9 +126,11 @@ export class ClientModifier extends BaseValuesModifier {
     }
 
     /**
-     * Parses netmasks from client's strings
+     * Parses netmasks from client's strings.
      *
-     * @param values
+     * @param values Values to parse.
+     *
+     * @returns Parsed netmasks.
      */
     private static parseNetmasks(values: string[]): NetmasksCollection {
         const result = new NetmasksCollection();

@@ -22,27 +22,30 @@ const escapeSequence: { [key: string]: string } = {
 
 /**
  * Class with static helper methods for working with basic filtering rules patterns.
- * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
+ *
+ * @returns The escaped string.
  */
 export class SimpleRegex {
     /**
      * Matching the beginning of an address. With this character you don't
      * have to specify a particular protocol and subdomain in address mask.
-     * It means, || stands for http://*., https://*., ws://*., wss://*. at once.
+     * It means, `||` stands for `http://*.`, `https://*.`, `ws://*.`, `wss://*.` at once.
      */
     public static readonly MASK_START_URL: string = '||';
 
     /**
-     * REGEX_START_URL corresponds to MASK_START_URL
+     * REGEX_START_URL corresponds to MASK_START_URL.
      */
     public static readonly REGEX_START_URL: string = '^(http|https|ws|wss)://([a-z0-9-_.]+\\.)?';
 
     /**
      * A pointer to the beginning or the end of address. The value depends on the
-     * character placement in the mask. For example, a rule swf| corresponds
-     * to http://example.com/annoyingflash.swf , but not to http://example.com/swf/index.html.
-     * |http://example.org corresponds to http://example.org,
-     * but not to http://domain.com?url=http://example.org.
+     * character placement in the mask. For example, a rule `swf|` corresponds
+     * to `http://example.com/annoyingflash.swf`, but not to `http://example.com/swf/index.html`.
+     * `|http://example.org` corresponds to `http://example.org`,
+     * but not to `http://domain.com?url=http://example.org`.
      */
     public static readonly MASK_PIPE: string = '|';
 
@@ -63,7 +66,7 @@ export class SimpleRegex {
     public static readonly MASK_SEPARATOR: string = '^';
 
     /**
-     * REGEX_SEPARATOR corresponds to MASK_SEPARATOR
+     * REGEX_SEPARATOR corresponds to MASK_SEPARATOR.
      */
     public static readonly REGEX_SEPARATOR: string = '([^ a-zA-Z0-9.%_-]|$)';
 
@@ -74,7 +77,7 @@ export class SimpleRegex {
     public static readonly MASK_ANY_CHARACTER: string = '*';
 
     /**
-     * Path separator
+     * Path separator.
      */
     public static readonly MASK_BACKSLASH: string = '/';
 
@@ -84,38 +87,41 @@ export class SimpleRegex {
     public static readonly REGEX_ANY_CHARACTER: string = '.*';
 
     /**
-     * Enclose regex in two backslashes to mark a regex rule:
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#regular-expressions-support
+     * Enclose regex in two backslashes to mark a regex rule.
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#regular-expressions-support}
      */
     public static readonly MASK_REGEX_RULE: string = '/';
 
     /**
-     *  Regex for matching special characters in modifier regex pattern
+     *  Regex for matching special characters in modifier regex pattern.
      */
     public static readonly reModifierPatternSpecialCharacters = /[[\],\\]/g;
 
     /**
-      *  Regex for matching escaped special characters in modifier regex pattern
-      */
+     * Regex for matching escaped special characters in modifier regex pattern.
+     */
     public static readonly reModifierPatternEscapedSpecialCharacters = /\\[[\],\\]/g;
 
     /**
-     * If string starts with exclamation mark "!" we consider it as comment
+     * If string starts with exclamation mark "!" we consider it as comment.
      */
     public static readonly MASK_COMMENT = '!';
 
     /**
      * Min length of rule shortcut
-     * This value has been picked as a result of performance experiments
+     * This value has been picked as a result of performance experiments.
      */
     public static readonly MIN_SHORTCUT_LENGTH = 3;
 
     /**
-     * Min length of generic rule shortcut
+     * Min length of generic rule shortcut.
      */
     public static readonly MIN_GENERIC_RULE_LENGTH = 4;
 
-    /** Regex with basic matching pattern special characters */
+    /**
+     * Regex with basic matching pattern special characters.
+     */
     private static readonly rePatternSpecialCharacters: RegExp = new RegExp('[*^|]');
 
     /**
@@ -149,11 +155,12 @@ export class SimpleRegex {
     private static readonly ESCAPE = '\\';
 
     /**
-     * Checks if char is valid for regexp shortcut – is alphanumeric or escaped period or forward slash
+     * Checks if char is valid for regexp shortcut – is alphanumeric or escaped period or forward slash.
      *
-     * @param str string
-     * @param i index of char
-     * @returns  true if char is valid for regexp shortcut
+     * @param str String.
+     * @param i Index of char.
+     *
+     * @returns  true if char is valid for regexp shortcut.
      */
     private static isValidRegexpShortcutChar = (str: string, i: number) => {
         const charCode = str.charCodeAt(i);
@@ -172,9 +179,11 @@ export class SimpleRegex {
     };
 
     /**
-     * Checks if char is alpha-numeric
-     * @param charCode - char code
-     * @returns true if char is alpha-numeric
+     * Checks if char is alpha-numeric.
+     *
+     * @param charCode Char code.
+     *
+     * @returns True if char is alpha-numeric.
      */
     private static isAlphaNumericChar = (charCode: number) => {
         return (charCode > 47 && charCode < 58) // numeric (0-9)
@@ -189,8 +198,9 @@ export class SimpleRegex {
      *
      * Please note, that the shortcut is always lower-case!
      *
-     * @param pattern - network rule's pattern.
-     * @returns the shortcut or the empty string if we could not extract any.
+     * @param pattern Network rule's pattern.
+     *
+     * @returns The shortcut or the empty string if we could not extract any.
      */
     static extractShortcut(pattern: string): string {
         if (pattern.startsWith(this.MASK_REGEX_RULE) && pattern.endsWith(this.MASK_REGEX_RULE)) {
@@ -201,10 +211,11 @@ export class SimpleRegex {
 
     /**
      * Searches for the longest substring of the pattern that
-     * does not contain any special characters: *,^,|.
+     * does not contain any special characters: `*`, `^`, `|`.
      *
-     * @param pattern - network rule's pattern.
-     * @returns the shortcut or the empty string
+     * @param pattern Network rule's pattern.
+     *
+     * @returns The shortcut or the empty string.
      */
     private static extractBasicShortcut(pattern: string): string {
         let longest = '';
@@ -224,7 +235,8 @@ export class SimpleRegex {
      * any special characters.
      * Discards complex regex patterns early if they contain characters or constructs unsuitable for shortcuts.
      *
-     * @param pattern - Network rule's pattern (regex).
+     * @param pattern Network rule's pattern (regex).
+     *
      * @returns The extracted shortcut or an empty string if none could be found.
      */
     private static extractRegexpShortcut(pattern: string): string {
@@ -320,12 +332,14 @@ export class SimpleRegex {
     }
 
     /**
-     * patternToRegexp is a helper method for creating regular expressions from the simple
-     * wildcard-based syntax which is used in basic filters:
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
+     * PatternToRegexp is a helper method for creating regular expressions from the simple
+     * wildcard-based syntax which is used in basic filters.
      *
-     * @param pattern - basic rule pattern
-     * @returns regular expression
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
+     *
+     * @param pattern Basic rule pattern.
+     *
+     * @returns Regular expression.
      */
     static patternToRegexp(pattern: string): string {
         if (
@@ -383,9 +397,11 @@ export class SimpleRegex {
     }
 
     /**
-     * Creates RegExp object from string in '/reg_exp/gi' format
+     * Creates RegExp object from string in '/reg_exp/gi' format.
      *
-     * @param str
+     * @param str The string to escape.
+     *
+     * @returns The created RegExp object.
      */
     public static patternFromString(str: string): RegExp {
         const parts = splitByDelimiterWithEscapeCharacter(str, '/', '\\', true);
@@ -400,8 +416,10 @@ export class SimpleRegex {
     /**
      * Escapes characters with special meaning inside a regular expression.
      *
-     * @param str
-     * @param searchPattern - Pattern for detecting special characters. Optional.
+     * @param str The string to escape.
+     * @param searchPattern Pattern for detecting special characters. Optional.
+     *
+     * @returns The escaped string.
      */
     public static escapeRegexSpecials(
         str: string,
@@ -413,8 +431,10 @@ export class SimpleRegex {
     /**
      * Unescapes characters with special meaning inside a regular expression.
      *
-     * @param str
-     * @param searchPattern - Pattern for detecting special characters. Optional.
+     * @param str The string to unescape.
+     * @param searchPattern Pattern for detecting special characters. Optional.
+     *
+     * @returns The unescaped string.
      */
     public static unescapeRegexSpecials(
         str: string,
@@ -424,15 +444,24 @@ export class SimpleRegex {
     }
 
     /**
-     * Check if pattern is Regex
+     * Check if pattern is Regex.
+     *
+     * @param str The string to check.
+     *
+     * @returns True if the string is a regex pattern, false otherwise.
      */
     public static isRegexPattern(str: string): boolean {
         return str.startsWith('/') && str.endsWith('/');
     }
 
     /**
-     * Unescapes special characters in a string
-     * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#using_special_characters_in_strings
+     * Unescapes special characters in a string.
+     *
+     * @see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types#using_special_characters_in_strings}
+     *
+     * @param str The string to unescape.
+     *
+     * @returns The unescaped string.
      */
     public static unescapeSpecials(str: string): string {
         const keys = Object.keys(escapeSequence).join('|');

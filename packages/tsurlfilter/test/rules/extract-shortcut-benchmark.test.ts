@@ -26,6 +26,7 @@ const enum FilePath {
  * Reads rule list from file and extracts patterns from it.
  *
  * @param filePath Path to file with rule list.
+ *
  * @returns List of patterns extracted from rule list.
  */
 const getPatterns = async (filePath: string): Promise<string[]> => {
@@ -48,6 +49,7 @@ const getPatterns = async (filePath: string): Promise<string[]> => {
  * Calculates memory usage difference between current and base values.
  *
  * @param base Base memory usage values.
+ *
  * @returns Memory usage difference.
  */
 function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
@@ -64,6 +66,7 @@ function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
  *
  * @param patterns List of patterns to extract shortcuts from.
  * @param referencePath Path to reference file.
+ *
  * @throws Error if extracted shortcuts are not equal to reference.
  */
 const validateExtraction = async (
@@ -95,7 +98,7 @@ const validateExtraction = async (
 /**
  * Runs benchmark for given patterns.
  *
- * @param title Title to print before benchmark results
+ * @param title Title to print before benchmark results.
  * @param patterns List of patterns to extract shortcuts from.
  */
 const runBench = async (

@@ -10,7 +10,7 @@ import { CosmeticOption } from './cosmetic-option';
 
 /**
  * MatchingResult contains all the rules matching a web request, and provides methods
- * that define how a web request should be processed
+ * that define how a web request should be processed.
  */
 export class MatchingResult {
     /**
@@ -19,59 +19,59 @@ export class MatchingResult {
      * block the request
      * unblock the request (a regular allowlist rule or a document-level allowlist rule)
      * modify the way cosmetic rules work for this request
-     * modify the response (see $redirect rules)
+     * modify the response (see $redirect rules).
      */
     public readonly basicRule: NetworkRule | null;
 
     /**
-     * DocumentRule - a rule matching the request's referrer and having on of the following modifiers:
-     * $document -- this one basically disables everything
-     * $urlblock -- disables network-level rules (not cosmetic)
-     * $genericblock -- disables generic network-level rules
-
-     * Other document-level modifiers like $jsinject or $content will be ignored here as they don't do anything
+     * Rule matching the request's referrer and having on of the following modifiers:
+     * - $document — this one basically disables everything;
+     * - $urlblock — disables network-level rules (not cosmetic);
+     * - $genericblock — disables generic network-level rules.
+     *
+     * Other document-level modifiers like $jsinject or $content will be ignored here as they don't do anything.
      */
     public documentRule: NetworkRule | null;
 
     /**
-     * CspRules - a set of rules modifying the response's content-security-policy
-     * See $csp modifier
+     * Set of rules modifying the response's content-security-policy
+     * See $csp modifier.
      */
     public readonly cspRules: NetworkRule[] | null;
 
     /**
-     * CookieRules - a set of rules modifying the request's and response's cookies
-     * See $cookie modifier
+     * Set of rules modifying the request's and response's cookies
+     * See $cookie modifier.
      */
     public readonly cookieRules: NetworkRule[] | null;
 
     /**
-     * ReplaceRules - a set of rules modifying the response's content
-     * See $replace modifier
+     * Set of rules modifying the response's content
+     * See $replace modifier.
      */
     public readonly replaceRules: NetworkRule[] | null;
 
     /**
-     * Redirect rules - a set of rules redirecting request
-     * See $redirect and $redirect-rule modifiers
+     * Set of rules redirecting request
+     * See $redirect and $redirect-rule modifiers.
      */
     public readonly redirectRules: NetworkRule[] | null;
 
     /**
      * RemoveParam rules - a set of rules modifying url query parameters
-     * See $removeparam modifier
+     * See $removeparam modifier.
      */
     public readonly removeParamRules: NetworkRule[] | null;
 
     /**
      * RemoveHeader rules - a set of rules modifying headers
-     * See $removeheader modifier
+     * See $removeheader modifier.
      */
     public readonly removeHeaderRules: NetworkRule[] | null;
 
     /**
      * Permissions rules - a set of rules modifying permissions policy
-     * See $permissions modifier
+     * See $permissions modifier.
      */
     public readonly permissionsRules: NetworkRule[] | null;
 
@@ -84,8 +84,9 @@ export class MatchingResult {
      * Stealth rules - a set of allowlist rules with $stealth modifier,
      * that negates stealth mode features.
      *
-     * Note that the stealth rule can be received from both rules and sourceRules
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#stealth-modifier
+     * Note that the stealth rule can be received from both rules and sourceRules.
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#stealth-modifier}
      */
     public readonly stealthRules: NetworkRule[] | null;
 
@@ -100,7 +101,8 @@ export class MatchingResult {
      * to blocking document request: close the tab or open dummy blocking page.
      * We should store it separately from other blocking rules, because $popup
      * has an intersection by use cases with $all.
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#popup-modifier
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#popup-modifier}
      */
     private popupRule: NetworkRule | null;
 
@@ -231,7 +233,9 @@ export class MatchingResult {
     }
 
     /**
-     * Returns popup rule
+     * Returns popup rule.
+     *
+     * @returns The popup rule or null if not found.
      */
     public getPopupRule(): NetworkRule | null {
         return this.popupRule;
@@ -239,13 +243,14 @@ export class MatchingResult {
 
     /**
      * GetBasicResult returns a rule that should be applied to the web request.
-     * Possible outcomes are:
-     * returns nil -- allow the request.
-     * returns an allowlist rule -- allow the request.
-     * returns a blocking rule -- block the request.
-     * returns a redirect rule -- redirect the request.
      *
-     * @return {NetworkRule | null} basic result rule
+     * Possible outcomes are:
+     * - returns nil -- allow the request;
+     * - returns an allowlist rule -- allow the request;
+     * - returns a blocking rule -- block the request;
+     * - returns a redirect rule -- redirect the request.
+     *
+     * @returns Basic result rule.
      */
     getBasicResult(): NetworkRule | null {
         let basic = this.basicRule;
@@ -303,8 +308,9 @@ export class MatchingResult {
      * Returns a single stealth rule, that is corresponding to the given option.
      * If no option is given, returns a rule that disables stealth completely if any.
      *
-     * @param stealthOption stealth option name
-     * @returns stealth rule or null
+     * @param stealthOption Stealth option name.
+     *
+     * @returns Stealth rule or null.
      */
     getStealthRule(stealthOption?: StealthOptionName): NetworkRule | null {
         if (!this.stealthRules) {
@@ -337,8 +343,9 @@ export class MatchingResult {
      * TODO: filterAdvancedModifierRules may not be optimal for sorting rules with $header modifier,
      * as $header is not an advanced modifier.
      *
-     * @param responseHeaders response headers
-     * @returns header result rule or null
+     * @param responseHeaders Response headers.
+     *
+     * @returns Header result rule or null.
      */
     getResponseHeadersResult(responseHeaders: HttpHeadersItem[] | undefined): NetworkRule | null {
         if (!responseHeaders || responseHeaders.length === 0) {
@@ -378,9 +385,9 @@ export class MatchingResult {
     }
 
     /**
-     * Returns a bit-flag with the list of cosmetic options
+     * Returns a bit-flag with the list of cosmetic options.
      *
-     * @return {CosmeticOption} mask
+     * @returns Cosmetic option mask.
      */
     getCosmeticOption(): CosmeticOption {
         const { basicRule, documentRule, cosmeticExceptionRule } = this;
@@ -424,7 +431,9 @@ export class MatchingResult {
     }
 
     /**
-     * Return an array of replace rules
+     * Return an array of replace rules.
+     *
+     * @returns An array of replace rules.
      */
     getReplaceRules(): NetworkRule[] {
         if (!this.replaceRules) {
@@ -443,9 +452,12 @@ export class MatchingResult {
      * Filters array of rules according to allowlist rules contained.
      * Empty advanced modifier allowlists everything.
      *
-     * @param rules
-     * @param allowlistPredicate allowlist criteria
-     * This function result will be called for testing if rule `x` allowlists rule `r`
+     * This function result will be called for testing if rule `x` allowlists rule `r`.
+     *
+     * @param rules Array of rules.
+     * @param allowlistPredicate Allowlist criteria.
+     *
+     * @returns Filtered array of rules.
      */
     private static filterAdvancedModifierRules(
         rules: NetworkRule[],
@@ -500,7 +512,9 @@ export class MatchingResult {
     }
 
     /**
-     * Returns an array of csp rules
+     * Returns an array of csp rules.
+     *
+     * @returns An array of csp rules.
      */
     getCspRules(): NetworkRule[] {
         if (!this.cspRules) {
@@ -539,6 +553,7 @@ export class MatchingResult {
      * Checks if a network rule is sub document rule.
      *
      * @param rule Rule to check.
+     *
      * @returns `true` if the rule is sub document rule.
      */
     private static isSubDocumentRule(rule: NetworkRule): boolean {
@@ -546,7 +561,9 @@ export class MatchingResult {
     }
 
     /**
-     * Returns an array of permission policy rules
+     * Returns an array of permission policy rules.
+     *
+     * @returns An array of permission policy rules.
      */
     getPermissionsPolicyRules(): NetworkRule[] {
         if (!this.permissionsRules) {
@@ -613,6 +630,8 @@ export class MatchingResult {
      * Returns a redirect rule or null if redirect rules are empty.
      * $redirect-rule is only returned if there's a blocking rule also matching
      * this request.
+     *
+     * @returns Redirect rule or null if not found.
      */
     private getRedirectRule(): NetworkRule | null {
         if (!this.redirectRules) {
@@ -652,7 +671,9 @@ export class MatchingResult {
     }
 
     /**
-     * Returns an array of cookie rules
+     * Returns an array of cookie rules.
+     *
+     * @returns An array of cookie rules.
      */
     getCookieRules(): NetworkRule[] {
         if (!this.cookieRules) {
@@ -702,7 +723,9 @@ export class MatchingResult {
     }
 
     /**
-     * Returns an array of removeparam rules
+     * Returns an array of removeparam rules.
+     *
+     * @returns Array of removeparam rules.
      */
     getRemoveParamRules(): NetworkRule[] {
         if (!this.removeParamRules) {
@@ -719,7 +742,9 @@ export class MatchingResult {
     }
 
     /**
-     * Returns an array of removeheader rules
+     * Returns an array of removeheader rules.
+     *
+     * @returns An array of removeheader rules.
      */
     getRemoveHeaderRules(): NetworkRule[] {
         if (!this.removeHeaderRules) {
@@ -742,9 +767,9 @@ export class MatchingResult {
      * Decides which rule should be put into the given map.
      * Compares priorities of the two given rules with the equal CSP directive and the rule that may already in the map.
      *
-     * @param rule CSP rule (not null)
-     * @param allowlistRule CSP allowlist rule (may be null)
-     * @param map Rules mapped by csp directive
+     * @param rule CSP rule (not null).
+     * @param allowlistRule CSP allowlist rule (may be null).
+     * @param map Rules mapped by csp directive.
      */
     // eslint-disable-next-line max-len
     private static putWithPriority(rule: NetworkRule, allowlistRule: NetworkRule | undefined, map: Map<string, NetworkRule>): void {
@@ -765,10 +790,11 @@ export class MatchingResult {
 
     /**
      * Looks if there are any matching $badfilter rules and removes
-     * matching bad filters from the array (see the $badfilter description for more info)
+     * matching bad filters from the array (see the $badfilter description for more info).
      *
-     * @param rules to filter
-     * @return filtered rules
+     * @param rules Rules to filter.
+     *
+     * @returns Filtered rules.
      */
     static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
         const badfilterRules: NetworkRule[] = [];
@@ -796,8 +822,9 @@ export class MatchingResult {
     /**
      * Returns the highest priority rule from the given array.
      *
-     * @param rules array of network rules
-     * @returns hightest priority rule or null if the array is empty
+     * @param rules Array of network rules.
+     *
+     * @returns Hightest priority rule or null if the array is empty.
      */
     static getHighestPriorityRule(rules: NetworkRule[]): NetworkRule | null {
         if (rules.length === 0) {

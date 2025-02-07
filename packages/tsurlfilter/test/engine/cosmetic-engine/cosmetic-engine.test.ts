@@ -17,6 +17,8 @@ import {
  *
  * @param listId Filter list ID.
  * @param processed Preprocessed filter list.
+ *
+ * @returns Created rule storage.
  */
 const createTestRuleStorage = (listId: number, processed: PreprocessedFilterList): RuleStorage => {
     const list = new BufferRuleList(listId, processed.filterList, false, false, false, processed.sourceMap);
@@ -28,6 +30,7 @@ const createTestRuleStorage = (listId: number, processed: PreprocessedFilterList
  *
  * @param rawFilterList Raw filter list.
  * @param rule Rule text.
+ *
  * @returns Rule index or -1 if the rule couldn't be found.
  */
 const getRawRuleIndex = (rawFilterList: string, rule: string): number => {

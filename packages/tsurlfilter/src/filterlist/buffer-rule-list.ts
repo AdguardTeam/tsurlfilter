@@ -35,7 +35,7 @@ export class BufferRuleList implements IRuleList {
     private readonly ignoreJS: boolean;
 
     /**
-     * Whether to ignore unsafe rules or not (e.g. removeheader)
+     * Whether to ignore unsafe (e.g. $removeheader) rules or not.
      */
     private readonly ignoreUnsafe: boolean;
 
@@ -53,12 +53,12 @@ export class BufferRuleList implements IRuleList {
     /**
      * Constructor of BufferRuleList.
      *
-     * @param listId - List identifier.
-     * @param inputRules - String with filtering rules (one per line).
-     * @param ignoreCosmetic - (Optional) True to ignore cosmetic rules.
-     * @param ignoreJS - (Optional) True to ignore JS rules.
-     * @param ignoreUnsafe - (Optional) True to ignore unsafe rules.
-     * @param sourceMap - (Optional) Source map for the filter list.
+     * @param listId List identifier.
+     * @param inputRules String with filtering rules (one per line).
+     * @param ignoreCosmetic (Optional) True to ignore cosmetic rules.
+     * @param ignoreJS (Optional) True to ignore JS rules.
+     * @param ignoreUnsafe (Optional) True to ignore unsafe rules.
+     * @param sourceMap (Optional) Source map for the filter list.
      */
     constructor(
         listId: number,
@@ -89,7 +89,7 @@ export class BufferRuleList implements IRuleList {
     }
 
     /**
-     * @return - The rule list identifier
+     * @returns The rule list identifier.
      */
     getId(): number {
         return this.id;
@@ -98,7 +98,9 @@ export class BufferRuleList implements IRuleList {
     /**
      * Creates a new rules scanner that reads the list contents.
      *
-     * @return - Scanner object.
+     * @param scannerType The type of scanner to create.
+     *
+     * @returns Scanner object.
      */
     newScanner(scannerType: ScannerType): RuleScanner {
         const reader = new BufferReader(this.rulesBuffer.createCopyWithOffset(0));
@@ -118,7 +120,8 @@ export class BufferRuleList implements IRuleList {
      * null.
      *
      * @param ruleIdx Rule index.
-     * @return Rule node or `null`.
+     *
+     * @returns Rule node or `null`.
      */
     retrieveRuleNode(ruleIdx: number): AnyRule | null {
         try {

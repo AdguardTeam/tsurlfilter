@@ -445,6 +445,14 @@ describe('NetworkRule constructor', () => {
         expect(rule.getText()).toEqual('||example.com^$all');
     });
 
+    /**
+     * Checks if a network rule modifier is enabled or disabled.
+     *
+     * @param name The name of the modifier.
+     * @param option The network rule option.
+     * @param enabled Whether the modifier should be enabled.
+     * @param allowlist Whether the rule is an allowlist rule.
+     */
     function checkModifier(name: string, option: NetworkRuleOption, enabled: boolean, allowlist = false): void {
         let ruleText = `||example.org^$${name}`;
         if (allowlist || (option & NetworkRuleGroupOptions.AllowlistOnly) === option) {
@@ -501,6 +509,13 @@ describe('NetworkRule constructor', () => {
         checkModifier('all', NetworkRuleOption.Popup, true);
     });
 
+    /**
+     * Checks if a network rule matches the given request type.
+     *
+     * @param name The name of the request type.
+     * @param requestType The request type to check.
+     * @param permitted Whether the request type should be permitted.
+     */
     function checkRequestType(name: string, requestType: RequestType, permitted: boolean): void {
         const rule = createNetworkRule(`||example.org^$${name}`, 0);
         if (permitted) {
@@ -558,6 +573,13 @@ describe('NetworkRule constructor', () => {
         expect(rule.getRestrictedRequestTypes()).toEqual(RequestType.NotSet);
     });
 
+    /**
+     * Checks whether the badfilter modifier negates the given rule.
+     *
+     * @param rule Rule to negate.
+     * @param badfilter Badfilter rule.
+     * @param expected Expected result.
+     */
     function assertBadfilterNegates(rule: string, badfilter: string, expected: boolean): void {
         const r = createNetworkRule(rule, -1);
         expect(r).toBeTruthy();
@@ -1406,6 +1428,13 @@ describe('NetworkRule.match', () => {
 });
 
 describe('NetworkRule.isHigherPriority', () => {
+    /**
+     * Compares the priority of two network rules.
+     *
+     * @param left The left rule to compare.
+     * @param right The right rule to compare.
+     * @param expected The expected result of the comparison.
+     */
     function compareRulesPriority(left: string, right: string, expected: boolean): void {
         const l = createNetworkRule(left, -1);
         const r = createNetworkRule(right, -1);

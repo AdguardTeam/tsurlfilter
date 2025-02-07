@@ -1,6 +1,6 @@
 /* eslint-disable import/no-mutable-exports */
 /**
- * Logger interface
+ * Logger interface.
  */
 export interface ILogger {
     error(message?: string): void;
@@ -10,14 +10,14 @@ export interface ILogger {
 }
 
 /**
- * Export logger implementation
+ * Export logger implementation.
  */
 export let logger: ILogger = console;
 
 /**
- * Set logger implementation
+ * Set logger implementation.
  *
- * @param loggerImpl
+ * @param loggerImpl The logger implementation to set.
  */
 export function setLogger(loggerImpl: ILogger): void {
     logger = loggerImpl;

@@ -17,8 +17,9 @@ export class ListCache {
     }
 
     /**
-     * @param key - Cache key.
-     * @return - Rule found for specified key or undefined if nothing found.
+     * @param key Cache key.
+     *
+     * @returns - Rule found for specified key or undefined if nothing found.
      */
     public get(key: number): IRule | undefined {
         return this.cache.get(key);
@@ -27,8 +28,8 @@ export class ListCache {
     /**
      * Stores the rule for the specified key in the cache.
      *
-     * @param key - Cache key.
-     * @param rule - Cached value.
+     * @param key Cache key.
+     * @param rule Cached value.
      */
     public set(key: number, rule: IRule): void {
         this.cache.set(key, rule);

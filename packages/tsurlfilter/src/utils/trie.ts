@@ -1,5 +1,5 @@
 /**
- * Prefix tree implementation
+ * Prefix tree implementation.
  */
 export class TrieNode {
     /**
@@ -7,7 +7,7 @@ export class TrieNode {
      * - undefined in case of no children
      * - an instance of TrieNode in case of lonely child
      * - a map where key is a character code and value is it's trie node.
-    */
+     */
     private children: Map<number, TrieNode> | TrieNode | undefined;
 
     /**
@@ -24,7 +24,7 @@ export class TrieNode {
     /**
      * Creates an instance of a TrieNode with the specified char code.
      *
-     * @param code
+     * @param code The character code for this TrieNode.
      */
     constructor(code: number) {
         this.code = code;
@@ -33,7 +33,7 @@ export class TrieNode {
     /**
      * Attaches data to this TrieNode.
      *
-     * @param data
+     * @param data The data to attach to this TrieNode.
      */
     attach(data: number): void {
         if (!this.data) {
@@ -46,8 +46,8 @@ export class TrieNode {
     /**
      * Adds the specified string to the Trie and attaches data to it.
      *
-     * @param str string to add.
-     * @param data data to attach to the leaf node.
+     * @param str String to add.
+     * @param data Data to attach to the leaf node.
      */
     public add(str: string, data: number): void {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -70,8 +70,10 @@ export class TrieNode {
      * This method collects all the data that's attached on the way and returns as
      * a result.
      *
-     * @param str string to check.
-     * @param start index in str where to start traversing from.
+     * @param str String to check.
+     * @param start Index in str where to start traversing from.
+     *
+     * @returns An array of numbers collected from the trie nodes.
      */
     traverse(str: string, start: number): number[] {
         const result: number[] = [];
@@ -96,8 +98,10 @@ export class TrieNode {
     /**
      * Traverses this TrieNode and it's children using the specified search string and all substrings.
      *
-     * @param str string to check
-     * @param len max length to check
+     * @param str String to check.
+     * @param len Max length to check.
+     *
+     * @returns Array of numbers collected from the trie nodes.
      */
     public traverseAll(str: string, len: number): number[] {
         const data: number[] = [];
@@ -115,8 +119,9 @@ export class TrieNode {
      * Returns a child node with the specified character code or
      * undefined if not found.
      *
-     * @param code character code
-     * @returns child node or undefined.
+     * @param code Character code.
+     *
+     * @returns Child node or undefined.
      */
     private getChild(code: number): TrieNode | undefined {
         const { children } = this;
@@ -138,8 +143,9 @@ export class TrieNode {
     /**
      * Adds a new child node with the specified character code.
      *
-     * @param code character code.
-     * @returns the newly created TrieNode.
+     * @param code Character code.
+     *
+     * @returns The newly created TrieNode.
      */
     private addChild(code: number): TrieNode {
         const node = new TrieNode(code);

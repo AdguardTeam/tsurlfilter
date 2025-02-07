@@ -1,6 +1,6 @@
 /**
  * @file Smaller utility functions that cannot be classified in other files here,
- * but it is not worth creating a separate file for them
+ * but it is not worth creating a separate file for them.
  */
 
 import { EMPTY_STRING, TAB } from '../common/constants';

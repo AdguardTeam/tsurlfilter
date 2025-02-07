@@ -2,7 +2,7 @@ import { type NetworkRule } from '../rules/network-rule';
 import { type HostRule } from '../rules/host-rule';
 
 /**
- * DnsResult contains a network rule and host rules matching request
+ * DnsResult contains a network rule and host rules matching request.
  */
 export class DnsResult {
     /**
@@ -11,7 +11,7 @@ export class DnsResult {
     public basicRule: NetworkRule | null = null;
 
     /**
-     * Host rules
+     * Host rules.
      */
     public hostRules: HostRule[] = [];
 }

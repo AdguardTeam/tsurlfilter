@@ -6,12 +6,16 @@ import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
 
 /**
+ * @typedef {import('./cosmetic-engine').CosmeticEngine} CosmeticEngine
+ */
+
+/**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
- * It is primarily used by the {@see CosmeticEngine}.
+ * It is primarily used by the {@link CosmeticEngine}.
  */
 export class CosmeticLookupTable {
     /**
-     * Map with rules indices grouped by the permitted domains names
+     * Map with rules indices grouped by the permitted domains names.
      */
     private byHostname: Map<number, number[]>;
 
@@ -29,20 +33,20 @@ export class CosmeticLookupTable {
 
     /**
      * Map with allowlist rules indices. Key is the rule content.
-     * More information about allowlist here:
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions}
      */
     private allowlist: Map<string, number[]>;
 
     /**
-     * Storage for the filtering rules
+     * Storage for the filtering rules.
      */
     private readonly ruleStorage: RuleStorage;
 
     /**
-     * Creates a new instance
+     * Creates a new instance.
      *
-     * @param storage rules storage. We store "rule indexes" in the lookup table which
+     * @param storage Rules storage. We store "rule indexes" in the lookup table which
      * can be used to retrieve the full rules from the storage.
      */
     constructor(storage: RuleStorage) {
@@ -54,7 +58,8 @@ export class CosmeticLookupTable {
     }
 
     /**
-     * Adds rule to the allowlist map
+     * Adds rule to the allowlist map.
+     *
      * @param key Can be used any string, but here we use ruleContent, scriptlet content, or scriptlet name.
      * @param storageIdx Index of the rule.
      */
@@ -68,9 +73,10 @@ export class CosmeticLookupTable {
     }
 
     /**
-     * Adds rule to the appropriate collection
-     * @param rule
-     * @param storageIdx
+     * Adds rule to the appropriate collection.
+     *
+     * @param rule Rule to add.
+     * @param storageIdx Index of the rule in the storage.
      */
     addRule(rule: CosmeticRule, storageIdx: number): void {
         if (rule.isAllowlist()) {
@@ -116,8 +122,11 @@ export class CosmeticLookupTable {
     }
 
     /**
-     * Finds rules by hostname
-     * @param request
+     * Finds rules by hostname.
+     *
+     * @param request Request to check.
+     *
+     * @returns Array of matching cosmetic rules.
      */
     findByHostname(request: Request): CosmeticRule[] {
         const result = [] as CosmeticRule[];
@@ -151,6 +160,7 @@ export class CosmeticLookupTable {
      *
      * @param content Content of the scriptlet. Empty string '' searches for scriptlets allowlisted globally.
      * @param request Request details to match against allowlist rules.
+     *
      * @returns True if allowlisted by a matching rule or a generic rule. False otherwise.
      */
     isScriptletAllowlisted = (content: string, request: Request) => {
@@ -180,8 +190,11 @@ export class CosmeticLookupTable {
 
     /**
      * Checks if the rule is disabled on the specified hostname.
-     * @param request
-     * @param rule
+     *
+     * @param request Request to check.
+     * @param rule Rule to check.
+     *
+     * @returns True if the rule is disabled on the specified hostname.
      */
     isAllowlisted(request: Request, rule: CosmeticRule): boolean {
         if (rule.isScriptlet) {

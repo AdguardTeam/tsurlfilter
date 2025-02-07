@@ -4,6 +4,10 @@ import { type ConvertedRules } from '../converted-result';
 import { DeclarativeRuleConverter } from './abstract-rule-converter';
 
 /**
+ * @typedef {import('../rules-grouper').RulesGroup} RulesGroup
+ */
+
+/**
  * Describes how to convert all rules that are not grouped
  * for separate conversion.
  *

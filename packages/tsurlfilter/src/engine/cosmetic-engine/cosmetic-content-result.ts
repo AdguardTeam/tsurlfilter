@@ -2,23 +2,24 @@ import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { type Request } from '../../request';
 
 /**
- * Cosmetic results interface
+ * Cosmetic results interface.
  */
 export interface CosmeticContentResult {
     /**
-     * Append rule to result
-     * @param rule to add
-     * @param request used to provide domain information to scriptlet rule
+     * Append rule to result.
+     *
+     * @param rule Rules to add.
+     * @param request Used to provide domain information to scriptlet rule.
      */
     append(rule: CosmeticRule, request?: Request): void;
 
     /**
-     * Collection of generic (domain insensitive) rules
+     * Collection of generic (domain insensitive) rules.
      */
     generic: CosmeticRule[];
 
     /**
-     * Collection of domain specific rules
+     * Collection of domain specific rules.
      */
     specific: CosmeticRule[];
 }

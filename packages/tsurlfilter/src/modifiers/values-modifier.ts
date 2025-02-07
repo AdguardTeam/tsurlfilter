@@ -2,21 +2,21 @@ import { SEPARATOR } from '../common/constants';
 import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
- * Permitted/restricted values modifier
+ * Permitted/restricted values modifier.
  */
 export interface IValuesModifier extends IAdvancedModifier {
     /**
-     * Permitted values
+     * Permitted values.
      */
     getPermitted(): string[] | null;
 
     /**
-     * Restricted values
+     * Restricted values.
      */
     getRestricted(): string[] | null;
 
     /**
-     * Checks if value matches this modifier
+     * Checks if value matches this modifier.
      *
      * @param value
      */
@@ -24,26 +24,30 @@ export interface IValuesModifier extends IAdvancedModifier {
 }
 
 /**
- * This is the base class representing double values modifiers
+ * This is the base class representing double values modifiers.
  */
 export class BaseValuesModifier implements IValuesModifier {
-    /** list of permitted values or null */
+    /**
+     * List of permitted values or null.
+     */
     protected permitted: string[] | null;
 
-    /** list of restricted values or null */
+    /**
+     * List of restricted values or null.
+     */
     protected restricted: string[] | null;
 
     /**
-     * Value
+     * Value.
      */
     private readonly value: string;
 
     /**
-     * Parses the values string
+     * Parses the values string.
      *
-     * @param values - values string
+     * @param values Values string.
      *
-     * @throws an error if the string is empty or invalid
+     * @throws An error if the string is empty or invalid.
      */
     constructor(values: string) {
         if (!values) {

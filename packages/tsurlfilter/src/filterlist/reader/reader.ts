@@ -7,7 +7,7 @@ export interface IReader<T = AnyRule> {
     /**
      * Reads the next element from the data.
      *
-     * @return line string or null.
+     * @returns Line string or null.
      */
     readNext(): T | null;
 

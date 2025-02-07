@@ -1,7 +1,7 @@
 /**
- * Counts the number of bits in the number and returns it
+ * Counts the number of bits in the number and returns it.
  *
- * @param a number to count bits
+ * @param a Number to count bits.
  *
  * @returns The number of bits in the number.
  */
@@ -17,12 +17,12 @@ export function getBitCount(a: number): number {
 }
 
 /**
- * Count the number of bits enabled in a number based on a bit mask
+ * Count the number of bits enabled in a number based on a bit mask.
  *
- * @param base Base number to check
- * @param mask Mask to check
+ * @param base Base number to check.
+ * @param mask Mask to check.
  *
- * @returns The number of bits enabled in the base number based on the mask
+ * @returns The number of bits enabled in the base number based on the mask.
  *
  * @example
  * countEnabledBits(0b100, 0b110); // 1

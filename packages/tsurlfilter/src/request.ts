@@ -6,7 +6,7 @@ import { type RequestType } from './request-type';
 import { type HTTPMethod } from './modifiers/method-modifier';
 
 /**
- * Request represents a web request with all it's necessary properties
+ * Request represents a web request with all it's necessary properties.
  */
 export class Request {
     /**
@@ -16,7 +16,7 @@ export class Request {
     public static readonly MAX_URL_MATCH_LENGTH = 2000;
 
     /**
-     * Request type
+     * Request type.
      */
     public readonly requestType: RequestType;
 
@@ -33,22 +33,22 @@ export class Request {
     public readonly url: string;
 
     /**
-     * Request identifier
+     * Request identifier.
      */
     public requestId: number | undefined;
 
     /**
-     * Status code
+     * Status code.
      */
     public statusCode: number | undefined;
 
     /**
-     * Method name
+     * Method name.
      */
     public method: HTTPMethod | undefined;
 
     /**
-     * Request tab identifier
+     * Request tab identifier.
      */
     public tabId: number | undefined;
 
@@ -60,12 +60,12 @@ export class Request {
     public readonly urlLowercase: string;
 
     /**
-     * Request's hostname
+     * Request's hostname.
      */
     public readonly hostname: string;
 
     /**
-     * Request's domain (eTLD+1)
+     * Request's domain (eTLD+1).
      */
     public readonly domain: string;
 
@@ -85,48 +85,48 @@ export class Request {
     public readonly sourceDomain: string | null;
 
     /**
-     * the request is for a given Hostname, and not for a URL, and we don't really know what protocol it is.
+     * The request is for a given Hostname, and not for a URL, and we don't really know what protocol it is.
      * This can be true for DNS requests, or for HTTP CONNECT, or SNI matching.
      */
     public isHostnameRequest = false;
 
     /**
-     * List of subdomains parsed from hostname
+     * List of subdomains parsed from hostname.
      */
     public subdomains: string[];
 
     /**
-     * List of source subdomains parsed from source hostname
+     * List of source subdomains parsed from source hostname.
      */
     public sourceSubdomains: string[];
 
     /**
-     * List of client tags
+     * List of client tags.
      */
     public clientTags: string[] | undefined;
 
     /**
-     * DNS type
+     * DNS type.
      */
     public dnsType: string | undefined;
 
     /**
-     * Client name
+     * Client name.
      */
     public clientName: string | undefined;
 
     /**
-     * Client IP
+     * Client IP.
      */
     public clientIP: string | undefined;
 
     /**
-     * Creates an instance of a Request
+     * Creates an instance of a Request.
      *
-     * @param url - request URL
-     * @param sourceUrl - source URL
-     * @param requestType - request type
-     * @param method - request method
+     * @param url Request URL.
+     * @param sourceUrl Source URL.
+     * @param requestType Request type.
+     * @param method Request method.
      *
      * @throws
      */
@@ -170,8 +170,11 @@ export class Request {
     }
 
     /**
-     * We cut the url in performance purposes
-     * @param url
+     * We cut the url in performance purposes.
+     *
+     * @param url The URL to be compacted.
+     *
+     * @returns The compacted URL or null if the input URL is null.
      */
     private static compactUrl(url: string | null): string | null {
         let compacted = url;
@@ -183,11 +186,12 @@ export class Request {
     }
 
     /**
-    * Splits subdomains and returns all subdomains (including the hostname itself)
-    *
-    * @param tldResult
-    * @returns array of subdomains
-    */
+     * Splits subdomains and returns all subdomains (including the hostname itself).
+     *
+     * @param tldResult Result of `tldts.parse()`.
+     *
+     * @returns Array of subdomains.
+     */
     private static getSubdomains(tldResult: IResult): string[] {
         const {
             domain,

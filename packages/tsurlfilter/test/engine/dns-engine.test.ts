@@ -11,6 +11,8 @@ describe('General DNS engine tests', () => {
      *
      * @param listId Filter list ID.
      * @param processed Preprocessed filter list.
+     *
+     * @returns RuleStorage instance.
      */
     const createTestRuleStorage = (listId: number, processed: PreprocessedFilterList): RuleStorage => {
         const list = new BufferRuleList(listId, processed.filterList, false, false, false, processed.sourceMap);
@@ -22,6 +24,7 @@ describe('General DNS engine tests', () => {
      *
      * @param rawFilterList Raw filter list.
      * @param rule Rule text.
+     *
      * @returns Rule index or -1 if the rule couldn't be found.
      */
     const getRawRuleIndex = (rawFilterList: string, rule: string): number => {

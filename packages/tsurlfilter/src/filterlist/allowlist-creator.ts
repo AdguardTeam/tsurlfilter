@@ -8,6 +8,7 @@ import { createAllowlistRuleNode } from '../rules/allowlist';
  *
  * @param listId List ID.
  * @param domains List of domains to create allowlist rules for.
+ *
  * @returns BufferRuleList instance.
  */
 export const createAllowlistRuleList = (listId: number, domains: string[]): BufferRuleList => {
