@@ -48,7 +48,6 @@ module.exports = {
         'jsdoc/require-param-type': 'off',
         'jsdoc/no-undefined-types': 'off',
         'jsdoc/require-returns-type': 'off',
-        'jsdoc/tag-lines': 'off',
         'jsdoc/require-throws': 'error',
         'jsdoc/check-tag-names': ['error', { definedTags: ['jest-environment'] }],
         'jsdoc/require-jsdoc': [
@@ -75,6 +74,61 @@ module.exports = {
         ],
         'jsdoc/require-description-complete-sentence': ['error'],
         'jsdoc/require-returns': ['error'],
+        'jsdoc/require-hyphen-before-param-description': ['error', 'never'],
+        'jsdoc/multiline-blocks': ['error', {
+            noSingleLineBlocks: true,
+            singleLineTags: [
+                'inheritdoc',
+            ],
+        }],
+        'jsdoc/tag-lines': [
+            'error',
+            'any',
+            {
+                startLines: 1,
+            },
+        ],
+        'jsdoc/sort-tags': ['error', {
+            linesBetween: 1,
+            tagSequence: [
+                {
+                    tags: [
+                        'file',
+                    ],
+                },
+                {
+                    tags: [
+                        'template',
+                    ],
+                },
+                {
+                    tags: [
+                        'see',
+                    ],
+                },
+                {
+                    tags: [
+                        'param',
+                    ],
+                },
+                {
+                    tags: [
+                        'returns',
+                    ],
+                },
+                {
+                    tags: [
+                        'throws',
+                    ],
+                },
+                {
+                    tags: [
+                        'example',
+                    ],
+                },
+            ],
+        }],
+
         '@typescript-eslint/consistent-type-imports': [
             'error',
             {

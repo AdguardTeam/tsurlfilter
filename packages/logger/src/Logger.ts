@@ -70,36 +70,42 @@ export type WriterMethod = (...args: any[]) => void;
 export interface Writer {
     /**
      * Log method.
+     *
      * @param args
      */
     log: WriterMethod;
 
     /**
      * Info method.
+     *
      * @param args
      */
     info: WriterMethod;
 
     /**
      * Error method.
+     *
      * @param args
      */
     error: WriterMethod;
 
     /**
      * Trace method.
+     *
      * @param args
      */
     trace?: WriterMethod;
 
     /**
      * Group collapsed method.
+     *
      * @param args
      */
     groupCollapsed?: WriterMethod;
 
     /**
      * Group end method.
+     *
      * @param args
      */
     groupEnd?: WriterMethod;
@@ -118,6 +124,7 @@ export class Logger {
 
     /**
      * Constructor.
+     *
      * @param writer Writer object.
      */
     constructor(writer: Writer = console) {
@@ -171,6 +178,7 @@ export class Logger {
 
     /**
      * Getter for log level.
+     *
      * @returns Logger level.
      */
     public get currentLevel(): LogLevel {
@@ -181,6 +189,7 @@ export class Logger {
      * Setter for log level. With this method log level can be updated dynamically.
      *
      * @param logLevel Logger level.
+     *
      * @throws Error if log level is not supported.
      */
     public set currentLevel(logLevel: LogLevel) {
@@ -195,8 +204,10 @@ export class Logger {
      * Converts error to string, and adds stack trace.
      *
      * @param error Error to print.
-     * @private
+     *
      * @returns Error message.
+     *
+     * @private
      */
     private static errorToString(error: Error): string {
         const message = getErrorMessage(error);
@@ -209,6 +220,7 @@ export class Logger {
      * @param level Logger level.
      * @param method Logger method.
      * @param args Printed arguments.
+     *
      * @private
      */
     private print(
