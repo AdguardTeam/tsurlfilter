@@ -1,7 +1,9 @@
 /**
  * Pads a number with leading zeros.
+ *
  * @param num The number to pad.
  * @param size The number of digits to pad to.
+ *
  * @returns The padded number.
  */
 const pad = (num: number, size = 2): string => {
@@ -12,6 +14,7 @@ const pad = (num: number, size = 2): string => {
  * Formats a date into an ISO 8601-like string with milliseconds.
  *
  * @param {Date|number} date The date object or timestamp to format.
+ *
  * @returns {string} The formatted date string.
  */
 export const formatTime = (date: Date | number): string => {
