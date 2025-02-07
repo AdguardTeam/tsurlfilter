@@ -15,8 +15,9 @@ import { CodePoint, ImaginaryCodePoint } from '../../common/enums/code-points';
  *
  * Consume a string token from a stream of code points. It returns either a <string-token> or <bad-string-token>.
  *
- * @param context Reference to the tokenizer context instance
  * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-string-token}
+ *
+ * @param context Reference to the tokenizer context instance
  */
 export const consumeStringToken: TokenizerContextFunction = (context: TokenizerContext): void => {
     // This algorithm may be called with an ending code point, which denotes the code point that ends the string.

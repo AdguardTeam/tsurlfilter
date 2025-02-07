@@ -14,7 +14,9 @@ const UBO_JS_MARKER = '+js(';
  * performance of the CSS tokenizer.
  *
  * @param content Filter list content
+ *
  * @returns CSS parts from the filter list
+ *
  * @note Not too accurate, not too fast, but good enough for generate data for the benchmark
  */
 export const extractAdblockCss = (content: string) => {

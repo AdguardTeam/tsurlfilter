@@ -13,8 +13,10 @@ import { type TokenizerContext } from '../../common/context';
  * Consume an ident sequence from a stream of code points. It returns a string containing the largest name that can be
  * formed from adjacent code points in the stream, starting from the first.
  *
- * @param context Reference to the tokenizer context instance
  * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-name}
+ *
+ * @param context Reference to the tokenizer context instance
+ *
  * @note This algorithm does not do the verification of the first few code points that are necessary to ensure the
  * returned code points would constitute an <ident-token>. If that is the intended use, ensure that the stream
  * starts with an ident sequence before calling this algorithm.

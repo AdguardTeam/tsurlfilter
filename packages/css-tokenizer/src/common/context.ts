@@ -88,8 +88,9 @@ export class TokenizerContext {
     /**
      * § 3.3. Preprocessing the input stream
      *
-     * @param source Source string to preprocess
      * @see {@link https://www.w3.org/TR/css-syntax-3/#input-preprocessing}
+     *
+     * @param source Source string to preprocess
      */
     private preprocess(source: string): void {
         const len = source.length;
@@ -147,6 +148,7 @@ export class TokenizerContext {
      * Gets the corresponding custom function handler for the given function name hash
      *
      * @param hash Function name hash
+     *
      * @returns Corresponding custom function handler or `undefined` if not found
      */
     public getFunctionHandler(hash: number): TokenizerContextFunction | undefined {
@@ -157,6 +159,7 @@ export class TokenizerContext {
      * Checks if the custom function handler is registered for the given function name hash
      *
      * @param hash Custom function name hash
+     *
      * @returns `true` if the custom function handler is registered, `false` otherwise
      */
     public hasFunctionHandler(hash: number): boolean {
@@ -203,7 +206,9 @@ export class TokenizerContext {
      * Returns the code point at the given relative offset
      *
      * @param relativeOffset Relative offset
+     *
      * @returns Code point at the relative offset or `undefined` if the offset is out of bounds
+     *
      * @note Relative offset compared to the current offset. 1 means the next code point, -1 means the previous code
      * point, 2 means the code point after the next code point, etc.
      */
@@ -255,6 +260,7 @@ export class TokenizerContext {
      * Consumes the given number of code points
      *
      * @param n Number of code points to consume (default: 1)
+     *
      * @note Negative numbers are allowed (they will move the cursor backwards)
      * @note No protection against out of bounds for performance reasons
      */
@@ -329,6 +335,7 @@ export class TokenizerContext {
      * fast-check function names.
      *
      * @param start Start offset
+     *
      * @returns Calculated hash
      */
     public getHashFrom(start: number): number {

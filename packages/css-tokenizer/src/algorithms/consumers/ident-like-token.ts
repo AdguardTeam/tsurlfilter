@@ -17,8 +17,10 @@ const URL_FUNCTION_HASH = 193422222; // getStringHash('url')
  * Consume an ident-like token from a stream of code points. It returns an <ident-token>, <function-token>, <url-token>,
  * or <bad-url-token>.
  *
- * @param context Reference to the tokenizer context instance
  * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-an-ident-like-token}
+ *
+ * @param context Reference to the tokenizer context instance
+ *
  * @note We extended the algorithm to allow custom function handlers, but the tokenizer still strictly follows the spec.
  */
 export const consumeIdentLikeToken: TokenizerContextFunction = (context: TokenizerContext): void => {

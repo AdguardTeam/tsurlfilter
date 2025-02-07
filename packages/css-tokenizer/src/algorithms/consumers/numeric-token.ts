@@ -16,8 +16,9 @@ import { CodePoint } from '../../common/enums/code-points';
  * Consume a numeric token from a stream of code points. It returns either a <number-token>, <percentage-token>, or
  * <dimension-token>.
  *
- * @param context Reference to the tokenizer context instance
  * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-numeric-token}
+ *
+ * @param context Reference to the tokenizer context instance
  */
 export const consumeNumericToken: TokenizerContextFunction = (context: TokenizerContext): void => {
     const start = context.offset;

@@ -18,13 +18,13 @@ const EMPTY_STRING = '';
  *
  * @param ident CSS identifier to decode.
  *
+ * @returns Decoded CSS identifier.
+ *
  * @example
  * ```ts
  * decodeIdent(String.raw`\00075\00072\0006C`); // 'url'
  * decodeIdent('url'); // 'url'
  * ```
- *
- * @returns Decoded CSS identifier.
  */
 export const decodeIdent = (ident: string): string => {
     const decodedIdent: string[] = [];

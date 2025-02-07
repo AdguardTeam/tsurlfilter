@@ -56,6 +56,7 @@ const EXT_CSS_PSEUDO_HANDLERS = new Map<number, TokenizerContextFunction>([
  * @param onToken Tokenizer callback which is called for each token found in source code
  * @param onError Error callback which is called when a parsing error is found (optional)
  * @param functionHandlers Custom function handlers (optional)
+ *
  * @note If you specify custom function handlers, they will be merged with the default function handlers. If you
  * duplicate a function handler, the custom one will be used instead of the default one, so you can override the default
  * function handlers this way, if you want to.

@@ -11,7 +11,9 @@ import { extractAdblockCss } from './extract-adblock-css';
  * Helper function to fetch a file contents from a URL
  *
  * @param url File URL to fetch
+ *
  * @returns File contents
+ *
  * @throws If the file could not be fetched
  */
 const fetchFile = async (url: string) => {
@@ -24,6 +26,7 @@ const fetchFile = async (url: string) => {
  * Helper function to download resources from the web
  *
  * @param resources Resources to download
+ *
  * @returns Downloaded resources
  */
 export const downloadResources = async (resources: ResourceConfigs): Promise<Resource[]> => {

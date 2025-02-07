@@ -6,6 +6,7 @@ import { type PseudoValues } from './test-creator';
  * Helper function to generate token expectations for values that should be tokenized as delim tokens.
  *
  * @param inputs Inputs to generate delim pseudo values for.
+ *
  * @returns Expected token data for each input.
  */
 export const generateDelimStream = (inputs: string[]): PseudoValues => {

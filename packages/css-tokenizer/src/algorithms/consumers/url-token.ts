@@ -17,8 +17,9 @@ import { ErrorMessage } from '../../common/enums/error-messages';
  * in the middle of a <bad-url-token> rather than a <url-token>. It returns nothing; its sole use is to consume enough
  * of the input stream to reach a recovery point where normal tokenizing can resume.
  *
- * @param context Tokenizer context
  * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-remnants-of-bad-url}
+ *
+ * @param context Tokenizer context
  */
 function consumeBadUrlRemnants(context: TokenizerContext): void {
     // Repeatedly consume the next input code point from the stream:
@@ -48,9 +49,10 @@ function consumeBadUrlRemnants(context: TokenizerContext): void {
 /**
  * Helper function for consuming a bad url token.
  *
+ * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-remnants-of-bad-url}
+ *
  * @param context Tokenizer context
  * @param start Token start offset
- * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-remnants-of-bad-url}
  */
 function consumeBadUrlToken(context: TokenizerContext, start: number): void {
     consumeBadUrlRemnants(context);
@@ -62,9 +64,11 @@ function consumeBadUrlToken(context: TokenizerContext, start: number): void {
  *
  * Consume a url token from a stream of code points. It returns either a <url-token> or a <bad-url-token>.
  *
+ * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-url-token}
+ *
  * @param context Reference to the tokenizer context instance
  * @param start Token start offset
- * @see {@link https://www.w3.org/TR/css-syntax-3/#consume-url-token}
+ *
  * @note This algorithm assumes that the initial "url(" has already been consumed. This algorithm also assumes that
  * it’s being called to consume an "unquoted" value, like url(foo). A quoted value, like url("foo"), is parsed as a
  * <function-token>. Consume an ident-like token automatically handles this distinction; this algorithm shouldn’t be

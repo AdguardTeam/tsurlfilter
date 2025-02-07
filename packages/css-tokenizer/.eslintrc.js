@@ -60,27 +60,65 @@ module.exports = {
         'jsdoc/require-returns-type': 'off',
         'jsdoc/require-throws': 'error',
         'jsdoc/require-file-overview': 'error',
+        'jsdoc/require-returns': ['error'],
+        'jsdoc/require-hyphen-before-param-description': ['error', 'never'],
         'jsdoc/tag-lines': [
-            'warn',
+            'error',
             'any',
             {
                 startLines: 1,
             },
         ],
         'jsdoc/check-tag-names': [
-            'warn',
+            'error',
             {
                 // Define additional tags
                 // https://github.com/gajus/eslint-plugin-jsdoc/blob/main/docs/rules/check-tag-names.md#definedtags
                 definedTags: ['note'],
             },
         ],
+        'jsdoc/sort-tags': ['error', {
+            linesBetween: 1,
+            tagSequence: [
+                {
+                    tags: [
+                        'file',
+                    ],
+                },
+                {
+                    tags: [
+                        'see',
+                    ],
+                },
+                {
+                    tags: [
+                        'param',
+                    ],
+                },
+                {
+                    tags: [
+                        'returns',
+                    ],
+                },
+                {
+                    tags: [
+                        'throws',
+                    ],
+                },
+                {
+                    tags: [
+                        'example',
+                    ],
+                },
+            ],
+        }],
         'arrow-body-style': 'off',
         'no-await-in-loop': 'off',
         // Force proper import and export of types
         '@typescript-eslint/consistent-type-imports': [
             'error',
             {
+                prefer: 'type-imports',
                 fixStyle: 'inline-type-imports',
             },
         ],

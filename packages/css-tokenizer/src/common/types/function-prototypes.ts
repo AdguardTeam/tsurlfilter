@@ -13,6 +13,7 @@ import { type TokenType } from '../enums/token-types';
  * @param end Token end offset
  * @param props Other token properties (if any)
  * @param stop Function to halt the tokenization process
+ *
  * @note Hash tokens have a type flag set to either "id" or "unrestricted". The type flag defaults to "unrestricted" if
  * not otherwise set
  */
@@ -28,10 +29,11 @@ export type OnTokenCallback = (
  * Callback which is called when a parsing error is found. According to the spec, parsing errors are not fatal and
  * therefore the tokenizer is quite permissive, but if needed, the error callback can be used.
  *
+ * @see {@link https://www.w3.org/TR/css-syntax-3/#error-handling}
+ *
  * @param message Error message
  * @param start Error start offset
  * @param end Error end offset
- * @see {@link https://www.w3.org/TR/css-syntax-3/#error-handling}
  */
 export type OnErrorCallback = (message: string, start: number, end: number) => void;
 

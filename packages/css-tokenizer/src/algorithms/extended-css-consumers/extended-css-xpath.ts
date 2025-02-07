@@ -1,5 +1,6 @@
 /**
  * @file Custom tokenizing logic for Extended CSS's `:xpath()` pseudo-class
+ *
  * @note `:xpath()` is a bit tricky, because it can contain unescaped parentheses inside strings in the XPath
  * expression.
  */

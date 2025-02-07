@@ -12,7 +12,9 @@ import { CodePoint } from '../common/enums/code-points';
  * @param code Code point to check
  * @param min Minimum code point
  * @param max Maximum code point
+ *
  * @returns `true` if code point is between `min` and `max`, `false` otherwise
+ *
  * @note Boundaries are inclusive
  * @note This function is used instead of `code >= min && code <= max` because TypeScript doesn't allow to compare
  * `number | undefined` with `number` (even though it's perfectly valid in JavaScript)
@@ -28,7 +30,9 @@ function isBetween(code: number | undefined, min: number, max: number): boolean 
  *
  * @param code Code point to check
  * @param min Minimum code point
+ *
  * @returns `true` if code point is greater than `min`, `false` otherwise
+ *
  * @note This function is used instead of `code > min` because TypeScript doesn't allow to compare
  * `number | undefined` with `number` (even though it's perfectly valid in JavaScript)
  */
@@ -43,7 +47,9 @@ function isGreaterThan(code: number | undefined, min: number): boolean {
  *
  * @param code Code point to check
  * @param min Minimum code point
+ *
  * @returns `true` if code point is greater than or equal to `min`, `false` otherwise
+ *
  * @note This function is used instead of `code >= min` because TypeScript doesn't allow to compare
  * `number | undefined` with `number` (even though it's perfectly valid in JavaScript)
  */
@@ -56,9 +62,11 @@ function isGreaterThanOrEqual(code: number | undefined, min: number): boolean {
 /**
  * Check if character code is a digit
  *
- * @param code Character code
- * @returns `true` if character code is a digit, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#digit}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a digit, `false` otherwise
  */
 export function isDigit(code: number | undefined): boolean {
     // A code point between U+0030 DIGIT ZERO (0) and U+0039 DIGIT NINE (9) inclusive.
@@ -68,9 +76,11 @@ export function isDigit(code: number | undefined): boolean {
 /**
  * Check if character code is a hex digit
  *
- * @param code Character code
- * @returns `true` if character code is a hex digit, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#hex-digit}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a hex digit, `false` otherwise
  */
 export function isHexDigit(code: number | undefined): boolean {
     // A digit, or a code point between U+0041 LATIN CAPITAL LETTER A (A) and U+0046 LATIN CAPITAL LETTER F (F)
@@ -83,9 +93,11 @@ export function isHexDigit(code: number | undefined): boolean {
 /**
  * Check if character code is an uppercase letter
  *
- * @param code Character code
- * @returns `true` if character code is an uppercase letter, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#uppercase-letter}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is an uppercase letter, `false` otherwise
  */
 export function isUppercaseLetter(code: number | undefined): boolean {
     // A code point between U+0041 LATIN CAPITAL LETTER A (A) and U+005A LATIN CAPITAL LETTER Z (Z) inclusive.
@@ -95,9 +107,11 @@ export function isUppercaseLetter(code: number | undefined): boolean {
 /**
  * Check if character code is a lowercase letter
  *
- * @param code Character code
- * @returns `true` if character code is a lowercase letter, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#lowercase-letter}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a lowercase letter, `false` otherwise
  */
 export function isLowercaseLetter(code: number | undefined): boolean {
     // A code point between U+0061 LATIN SMALL LETTER A (a) and U+007A LATIN SMALL LETTER Z (z) inclusive.
@@ -107,9 +121,11 @@ export function isLowercaseLetter(code: number | undefined): boolean {
 /**
  * Check if character code is a letter
  *
- * @param code Character code
- * @returns `true` if character code is a letter, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#letter}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a letter, `false` otherwise
  */
 export function isLetter(code: number | undefined): boolean {
     // An uppercase letter or a lowercase letter.
@@ -119,9 +135,11 @@ export function isLetter(code: number | undefined): boolean {
 /**
  * Check if character code is a non-ASCII code point
  *
- * @param code Character code
- * @returns `true` if character code is a non-ASCII code point, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#non-ascii-code-point}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a non-ASCII code point, `false` otherwise
  */
 export function isNonAsciiCodePoint(code: number | undefined): boolean {
     // A code point with a value equal to or greater than U+0080 <control>.
@@ -131,9 +149,11 @@ export function isNonAsciiCodePoint(code: number | undefined): boolean {
 /**
  * Check if character code is a name code point
  *
- * @param code Character code
- * @returns `true` if character code is a name start code point, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#ident-start-code-point}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a name start code point, `false` otherwise
  */
 export function isIdentStartCodePoint(code: number | undefined): boolean {
     // A letter, a non-ASCII code point, or U+005F LOW LINE (_).
@@ -143,9 +163,11 @@ export function isIdentStartCodePoint(code: number | undefined): boolean {
 /**
  * Check if character code is a name code point
  *
- * @param code Character code
- * @returns `true` if character code is a name code point, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#ident-code-point}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a name code point, `false` otherwise
  */
 export function isIdentCodePoint(code: number | undefined): boolean {
     // An ident-start code point, a digit, or U+002D HYPHEN-MINUS (-).
@@ -155,9 +177,11 @@ export function isIdentCodePoint(code: number | undefined): boolean {
 /**
  * Check if character code is a non-printable code point
  *
- * @param code Character code
- * @returns `true` if character code is a non-printable code point, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#non-printable-code-point}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a non-printable code point, `false` otherwise
  */
 export function isNonPrintableCodePoint(code: number | undefined): boolean {
     // A code point between U+0000 NULL and U+0008 BACKSPACE inclusive, or U+000B LINE TABULATION, or a code point
@@ -171,9 +195,11 @@ export function isNonPrintableCodePoint(code: number | undefined): boolean {
 /**
  * Check if character code is a newline
  *
- * @param code Character code
- * @returns `true` if character code is a newline, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#newline}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a newline, `false` otherwise
  */
 export function isNewline(code: number | undefined): boolean {
     // U+000A LINE FEED. Note that U+000D CARRIAGE RETURN and U+000C FORM FEED are not included in this definition, as
@@ -184,9 +210,11 @@ export function isNewline(code: number | undefined): boolean {
 /**
  * Check if character code is a whitespace
  *
- * @param code Character code
- * @returns `true` if character code is a whitespace, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#whitespace}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a whitespace, `false` otherwise
  */
 export function isWhitespace(code: number | undefined): boolean {
     // A newline, U+0009 CHARACTER TABULATION, or U+0020 SPACE.
@@ -196,9 +224,11 @@ export function isWhitespace(code: number | undefined): boolean {
 /**
  * Check if character code is a leading surrogate
  *
- * @param code Character code
- * @returns `true` if character code is a leading surrogate, `false` otherwise
  * @see {@link https://infra.spec.whatwg.org/#surrogate}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a leading surrogate, `false` otherwise
  */
 export function isLeadingSurrogate(code: number | undefined): boolean {
     return isBetween(code, CodePoint.LeadingSurrogateStart, CodePoint.LeadingSurrogateEnd);
@@ -207,9 +237,11 @@ export function isLeadingSurrogate(code: number | undefined): boolean {
 /**
  * Check if character code is a trailing surrogate
  *
- * @param code Character code
- * @returns `true` if character code is a trailing surrogate, `false` otherwise
  * @see {@link https://infra.spec.whatwg.org/#surrogate}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a trailing surrogate, `false` otherwise
  */
 export function isTrailingSurrogate(code: number | undefined): boolean {
     return isBetween(code, CodePoint.TrailingSurrogateStart, CodePoint.TrailingSurrogateEnd);
@@ -218,9 +250,11 @@ export function isTrailingSurrogate(code: number | undefined): boolean {
 /**
  * Check if character code is a surrogate
  *
- * @param code Character code
- * @returns `true` if character code is a surrogate, `false` otherwise
  * @see {@link https://infra.spec.whatwg.org/#surrogate}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is a surrogate, `false` otherwise
  */
 export function isSurrogate(code: number | undefined): boolean {
     return isLeadingSurrogate(code) || isTrailingSurrogate(code);
@@ -229,9 +263,11 @@ export function isSurrogate(code: number | undefined): boolean {
 /**
  * Check if character code is greater than maximum allowed code point
  *
- * @param code Character code
- * @returns `true` if character code is greater than maximum allowed code point, `false` otherwise
  * @see {@link https://www.w3.org/TR/css-syntax-3/#maximum-allowed-code-point}
+ *
+ * @param code Character code
+ *
+ * @returns `true` if character code is greater than maximum allowed code point, `false` otherwise
  */
 export function isGreaterThanMaxAllowedCodePoint(code: number | undefined): boolean {
     return isGreaterThan(code, CodePoint.MaxCodePoint);
@@ -258,6 +294,7 @@ export function isGreaterThanMaxAllowedCodePoint(code: number | undefined): bool
  * Check if character code is a BOM (Byte Order Mark)
  *
  * @param code Character code to check
+ *
  * @returns `true` if character code is a BOM, `false` otherwise
  */
 export function isBOM(code: number | undefined): boolean {
@@ -267,10 +304,13 @@ export function isBOM(code: number | undefined): boolean {
 /**
  * § 4.3.8. Check if two code points are a valid escape
  *
+ * @see {@link https://www.w3.org/TR/css-syntax-3/#starts-with-a-valid-escape}
+ *
  * @param a First code point
  * @param b Second code point
+ *
  * @returns `true` if the code points are a valid escape, `false` otherwise
- * @see {@link https://www.w3.org/TR/css-syntax-3/#starts-with-a-valid-escape}
+ *
  * @note This algorithm will not consume any additional code point.
  */
 export const checkForValidEscape = (a: number | undefined, b: number | undefined): boolean => {
@@ -287,11 +327,14 @@ export const checkForValidEscape = (a: number | undefined, b: number | undefined
 /**
  * § 4.3.9. Check if three code points would start an ident sequence
  *
+ * @see {@link https://www.w3.org/TR/css-syntax-3/#would-start-an-identifier}
+ *
  * @param a First code point
  * @param b Second code point
  * @param c Third code point
+ *
  * @returns `true` if the next code points would start an identifier, `false` otherwise
- * @see {@link https://www.w3.org/TR/css-syntax-3/#would-start-an-identifier}
+ *
  * @note This algorithm will not consume any additional code points.
  */
 export const checkForIdentStart = (a: number | undefined, b: number | undefined, c: number | undefined): boolean => {
@@ -324,11 +367,14 @@ export const checkForIdentStart = (a: number | undefined, b: number | undefined,
 /**
  * § 4.3.10. Check if three code points would start a number
  *
+ * @see {@link https://www.w3.org/TR/css-syntax-3/#starts-with-a-number}
+ *
  * @param a First code point
  * @param b Second code point
  * @param c Third code point
+ *
  * @returns `true` if the next code points would start a number, `false` otherwise
- * @see {@link https://www.w3.org/TR/css-syntax-3/#starts-with-a-number}
+ *
  * @note This algorithm will not consume any additional code points.
  */
 export const checkForNumberStart = (a: number | undefined, b: number | undefined, c: number | undefined): boolean => {
