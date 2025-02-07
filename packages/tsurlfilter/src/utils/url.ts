@@ -1,7 +1,9 @@
 /**
- * Splits url into parts
+ * Splits url into parts.
  *
- * @param url
+ * @param url The URL to be checked.
+ *
+ * @returns An object containing the path, query, and hash of the URL.
  */
 function splitUrl(url: string): { path: string; query: string; hash: string } {
     let strippedUrl = url;
@@ -28,9 +30,11 @@ function splitUrl(url: string): { path: string; query: string; hash: string } {
 }
 
 /**
- * Normalizes url query parameters
+ * Normalizes url query parameters.
  *
- * @param query
+ * @param query The query string to be normalized.
+ *
+ * @returns The normalized query string.
  */
 function normalizeQuery(query: string): string {
     // Cleanup empty params (p0=0&=2&=3)
@@ -49,11 +53,13 @@ function normalizeQuery(query: string): string {
 }
 
 /**
- * Removes query params from url by regexp
+ * Removes query params from url by regexp.
  *
- * @param url
- * @param regExp
- * @param invert remove every parameter in url except the ones matched regexp
+ * @param url The URL from which query parameters will be removed.
+ * @param regExp The regular expression to match query parameters.
+ * @param invert Remove every parameter in url except the ones matched regexp.
+ *
+ * @returns The URL with the specified query parameters removed.
  */
 export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = false): string {
     const searchIndex = url.indexOf('?');
@@ -66,8 +72,9 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
 
     /**
      * We are checking both regular param and decoded param, in case if regexp
-     * contains decoded params and url contains encoded params:
-     * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3015
+     * contains decoded params and url contains encoded params.
+     *
+     * @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3015}
      */
     let modifiedQuery;
     if (invert) {
@@ -101,8 +108,11 @@ export function cleanUrlParamByRegExp(url: string, regExp: RegExp, invert = fals
 }
 
 /**
- * Extract relative part from hierarchical structured URL
- * @param url
+ * Extract relative part from hierarchical structured URL.
+ *
+ * @param url The URL from which the relative part will be extracted.
+ *
+ * @returns The relative part of the URL or null if not found.
  */
 export const getRelativeUrl = (url: string): string | null => {
     const i = url.indexOf('/', url.indexOf('://') + 3);
@@ -113,6 +123,7 @@ export const getRelativeUrl = (url: string): string | null => {
  * Checks if url is http or websocket.
  *
  * @param url Request url.
+ *
  * @returns True if url starts with http{s?} or ws.
  */
 export function isHttpOrWsRequest(url: string): boolean {

@@ -1,15 +1,14 @@
 import { type IValueListModifier } from './value-list-modifier';
 
 /**
- * To modifier class.
+ * `$to` modifier class.
  * Rules with $to modifier are limited to requests made to the specified domains and their subdomains.
  *
- * Learn more about it here:
- * https://adguard.com/kb/general/ad-filtering/create-own-filters/#to-modifier
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#to-modifier}
  */
 export class ToModifier implements IValueListModifier<string> {
     /**
-     * Domains separator
+     * Domains separator.
      */
     private static PIPE_SEPARATOR = '|';
 
@@ -24,7 +23,9 @@ export class ToModifier implements IValueListModifier<string> {
     readonly restrictedValues: string[] | null;
 
     /**
-     * Constructor
+     * Constructor.
+     *
+     * @param domainsStr String with domains separated by `|`.
      */
     constructor(domainsStr: string) {
         if (!domainsStr) {

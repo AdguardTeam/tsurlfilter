@@ -32,15 +32,17 @@ export interface IRuleList {
      * null.
      *
      * @param ruleIdx Rule index.
-     * @return Rule node or `null`.
+     *
+     * @returns Rule node or `null`.
      */
     retrieveRuleNode(ruleIdx: number): AnyRule | null
 
     /**
      * Finds the rule source index by its index.
      *
-     * @param ruleIdx rule index.
-     * @return rule source index or RULE_INDEX_NONE (-1).
+     * @param ruleIdx Rule index.
+     *
+     * @returns Rule source index or RULE_INDEX_NONE (-1).
      */
     retrieveRuleSourceIndex(ruleIdx: number): number;
 

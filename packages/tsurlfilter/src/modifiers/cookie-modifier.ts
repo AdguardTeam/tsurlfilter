@@ -1,51 +1,51 @@
 import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
- * Cookie modifier class
+ * Cookie modifier class.
  *
  * Learn more about it here:
- * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/961
+ * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/961.
  */
 export class CookieModifier implements IAdvancedModifier {
     /**
-     * Cookie name maxAge
+     * Cookie `maxAge` name.
      */
     private static MAX_AGE = 'maxAge';
 
     /**
-     * Cookie name sameSite
+     * Cookie `sameSite` name.
      */
     private static SAME_SITE = 'sameSite';
 
     /**
-     * Option value
+     * Option value.
      */
     private readonly optionValue: string;
 
     /**
-     * Regexp value
+     * Regexp value.
      */
     private readonly regex: RegExp | null;
 
     /**
-     * Cookie name
+     * Cookie name.
      */
     private readonly cookieName: string | null;
 
     /**
-     * Cookie sameSite value
+     * Cookie `sameSite` value.
      */
     private readonly sameSite: string | null;
 
     /**
-     * Cookie maxAge value
+     * Cookie `maxAge` value.
      */
     private readonly maxAge: number | null;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param value
+     * @param value Value of the modifier.
      */
     constructor(value: string) {
         // Save the source text of the option modifier
@@ -92,38 +92,47 @@ export class CookieModifier implements IAdvancedModifier {
     }
 
     /**
-     * Modifier value
+     * Gets modifier value.
+     *
+     * @returns Modifier value.
      */
     getValue(): string {
         return this.optionValue;
     }
 
     /**
-     * First cookie name
+     * First cookie name.
+     *
+     * @returns The first cookie name.
      */
     getCookieName(): string | null {
         return this.cookieName;
     }
 
     /**
-     * Max age cookie value
+     * Max age cookie value.
+     *
+     * @returns The max age cookie value.
      */
     getMaxAge(): number | null {
         return this.maxAge;
     }
 
     /**
-     * Same site cookie value
+     * Same site cookie value.
+     *
+     * @returns The same site cookie value.
      */
     getSameSite(): string | null {
         return this.sameSite;
     }
 
     /**
-     * Checks if cookie with the specified name matches this option
+     * Checks if cookie with the specified name matches this option.
      *
-     * @param {string} name Cookie name
-     * @return {boolean} true if it does
+     * @param name Cookie name.
+     *
+     * @returns True if matches, false otherwise.
      */
     matches(name: string | null): boolean {
         if (!name) {
@@ -141,9 +150,9 @@ export class CookieModifier implements IAdvancedModifier {
     }
 
     /**
-     * Checks if cookie rule has an empty $cookie option
+     * Checks if cookie rule has an empty $cookie option.
      *
-     * @return {boolean} True if $cookie option is empty
+     * @returns True if $cookie option is empty.
      */
     isEmpty(): boolean {
         return !this.regex && !this.cookieName;
@@ -153,6 +162,7 @@ export class CookieModifier implements IAdvancedModifier {
      * Checks if the given modifier is an instance of CookieModifier.
      *
      * @param m The modifier to check.
+     *
      * @returns True if the modifier is an instance of CookieModifier, false otherwise.
      */
     public static isCookieModifier = (m: IAdvancedModifier): m is CookieModifier => {

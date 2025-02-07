@@ -5,7 +5,7 @@ import { BaseValuesModifier } from '../values-modifier';
  */
 export class CtagModifier extends BaseValuesModifier {
     /**
-     * The list of allowed tags
+     * The list of allowed tags.
      */
     private static ALLOWED_TAGS = [
         // By device type:
@@ -37,9 +37,9 @@ export class CtagModifier extends BaseValuesModifier {
     ];
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param value
+     * @param value Value of the modifier.
      */
     constructor(value: string) {
         super(value);
@@ -48,7 +48,7 @@ export class CtagModifier extends BaseValuesModifier {
     }
 
     /**
-     * Validates tag values
+     * Validates tag values.
      */
     private validate(): void {
         if (!this.getValue()) {

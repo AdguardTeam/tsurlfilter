@@ -6,7 +6,7 @@ import { type IAdvancedModifier } from './advanced-modifier';
  */
 export class RemoveHeaderModifier implements IAdvancedModifier {
     /**
-     * List of forbidden headers
+     * List of forbidden headers.
      */
     private static FORBIDDEN_HEADERS = [
         'access-control-allow-origin',
@@ -60,22 +60,22 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     ];
 
     /**
-     * Request prefix
+     * Request prefix.
      */
     private static REQUEST_PREFIX = 'request:';
 
     /**
-     * Prefixed headers are applied to request headers
+     * Prefixed headers are applied to request headers.
      */
     private readonly isRequestModifier: boolean;
 
     /**
-     * Effective header name to be removed
+     * Effective header name to be removed.
      */
     private readonly applicableHeaderName: string | null;
 
     /**
-     * Value
+     * Value.
      */
     private readonly value: string;
 
@@ -85,10 +85,10 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     private readonly valid: boolean;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param value
-     * @param isAllowlist
+     * @param value Value of the modifier.
+     * @param isAllowlist Whether the rule is an allowlist rule or not.
      */
     constructor(value: string, isAllowlist: boolean) {
         this.value = value.toLowerCase();
@@ -108,14 +108,18 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     }
 
     /**
-     * Modifier value
+     * Modifier value.
+     *
+     * @returns The value of the modifier.
      */
     public getValue(): string {
         return this.value;
     }
 
     /**
-     * Modifier validity
+     * Modifier validity.
+     *
+     * @returns True if the rule is valid, false otherwise.
      */
     public get isValid(): boolean {
         return this.valid;
@@ -125,6 +129,7 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
      * Checks if the given modifier is an instance of RemoveHeaderModifier.
      *
      * @param m The modifier to check.
+     *
      * @returns True if the modifier is an instance of RemoveHeaderModifier, false otherwise.
      */
     public static isRemoveHeaderModifier = (m: IAdvancedModifier): m is RemoveHeaderModifier => {
@@ -132,9 +137,12 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     };
 
     /**
-     * Returns effective header name to be removed
+     * Returns effective header name to be removed.
      *
-     * @param isRequestHeaders
+     * @param isRequestHeaders Flag to determine that the header is a *request* header,
+     * otherwise *response* header.
+     *
+     * @returns The applicable header name if valid, otherwise null.
      */
     public getApplicableHeaderName(isRequestHeaders: boolean): string | null {
         if (!this.applicableHeaderName) {
@@ -149,9 +157,11 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
     }
 
     /**
-     * Some headers are forbidden to remove
+     * Some headers are forbidden to remove.
      *
-     * @param headerName
+     * @param headerName Header name to check.
+     *
+     * @returns True if the header is allowed to be removed, false otherwise.
      */
     private static isAllowedHeader(headerName: string): boolean {
         return !this.FORBIDDEN_HEADERS.includes(headerName);

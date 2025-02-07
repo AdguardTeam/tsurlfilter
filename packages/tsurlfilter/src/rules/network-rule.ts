@@ -39,83 +39,162 @@ import { EMPTY_STRING } from '../common/constants';
 /**
  * NetworkRuleOption is the enumeration of various rule options.
  * In order to save memory, we store some options as a flag.
- * https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rule-modifiers
+ *
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#basic-rule-modifiers}
  */
 export enum NetworkRuleOption {
-    /** No value is set. Syntax sugar to simplify code. */
+    /**
+     * No value is set. Syntax sugar to simplify code.
+     */
     NotSet = 0,
-    /** $third-party modifier */
+
+    /**
+     * $third-party modifier.
+     */
     ThirdParty = 1,
-    /** $match-case modifier */
+
+    /**
+     * $match-case modifier.
+     */
     MatchCase = 1 << 1,
-    /** $important modifier */
+
+    /**
+     * $important modifier.
+     */
     Important = 1 << 2,
 
     // Allowlist rules modifiers
     // Each of them can disable part of the functionality
 
-    /** $elemhide modifier */
+    /**
+     * $elemhide modifier.
+     */
     Elemhide = 1 << 3,
-    /** $generichide modifier */
+
+    /**
+     * $generichide modifier.
+     */
     Generichide = 1 << 4,
-    /** $specifichide modifier */
+
+    /**
+     * $specifichide modifier.
+     */
     Specifichide = 1 << 5,
-    /** $genericblock modifier */
+
+    /**
+     * $genericblock modifier.
+     */
     Genericblock = 1 << 6,
-    /** $jsinject modifier */
+
+    /**
+     * $jsinject modifier.
+     */
     Jsinject = 1 << 7,
-    /** $urlblock modifier */
+
+    /**
+     * $urlblock modifier.
+     */
     Urlblock = 1 << 8,
-    /** $content modifier */
+
+    /**
+     * $content modifier.
+     */
     Content = 1 << 9,
-    /** $extension modifier */
+
+    /**
+     * $extension modifier.
+     */
     Extension = 1 << 10,
-    /** $stealth modifier */
+
+    /**
+     * $stealth modifier.
+     */
     Stealth = 1 << 11,
 
     // Other modifiers
 
-    /** $popup modifier */
+    /**
+     * $popup modifier.
+     */
     Popup = 1 << 12,
-    /** $csp modifier */
+
+    /**
+     * $csp modifier.
+     */
     Csp = 1 << 13,
-    /** $replace modifier */
+
+    /**
+     * $replace modifier.
+     */
     Replace = 1 << 14,
-    /** $cookie modifier */
+
+    /**
+     * $cookie modifier.
+     */
     Cookie = 1 << 15,
-    /** $redirect modifier */
+
+    /**
+     * $redirect modifier.
+     */
     Redirect = 1 << 16,
-    /** $badfilter modifier */
+
+    /**
+     * $badfilter modifier.
+     */
     Badfilter = 1 << 17,
-    /** $removeparam modifier */
+
+    /**
+     * $removeparam modifier.
+     */
     RemoveParam = 1 << 18,
-    /** $removeheader modifier */
+
+    /**
+     * $removeheader modifier.
+     */
     RemoveHeader = 1 << 19,
-    /** $jsonprune modifier */
+
+    /**
+     * $jsonprune modifier.
+     */
     JsonPrune = 1 << 20,
-    /** $hls modifier */
+
+    /**
+     * $hls modifier.
+     */
     Hls = 1 << 21,
 
     // Compatibility dependent
-    /** $network modifier */
+    /**
+     * $network modifier.
+     */
     Network = 1 << 22,
 
-    /** dns modifiers */
+    /**
+     * Dns modifiers.
+     */
     Client = 1 << 23,
     DnsRewrite = 1 << 24,
     DnsType = 1 << 25,
     Ctag = 1 << 26,
 
-    /* $method modifier */
+    /**
+     * $method modifier.
+     */
     Method = 1 << 27,
 
-    /* $to modifier */
+    /**
+     * $to modifier.
+     */
     To = 1 << 28,
 
-    /* $permissions modifier */
+    /**
+     * $permissions modifier.
+     */
     Permissions = 1 << 29,
 
-    /* $header modifier */
+    /**
+     * $header modifier.
+     */
     Header = 1 << 30,
 }
 
@@ -124,7 +203,9 @@ export enum NetworkRuleOption {
  * needed for validation.
  */
 export enum NetworkRuleGroupOptions {
-    /** Allowlist-only modifiers */
+    /**
+     * Allowlist-only modifiers.
+     */
     AllowlistOnly = NetworkRuleOption.Elemhide
         | NetworkRuleOption.Genericblock
         | NetworkRuleOption.Generichide
@@ -135,7 +216,9 @@ export enum NetworkRuleGroupOptions {
         | NetworkRuleOption.Extension
         | NetworkRuleOption.Stealth,
 
-    /** Options supported by host-level network rules * */
+    /**
+     * Options supported by host-level network rules.
+     */
     OptionHostLevelRules = NetworkRuleOption.Important
         | NetworkRuleOption.Badfilter
         | NetworkRuleOption.Client
@@ -144,7 +227,7 @@ export enum NetworkRuleGroupOptions {
         | NetworkRuleOption.Ctag,
 
     /**
-     * Cosmetic option modifiers
+     * Cosmetic option modifiers.
      */
     CosmeticOption = NetworkRuleOption.Elemhide
     | NetworkRuleOption.Generichide
@@ -153,10 +236,10 @@ export enum NetworkRuleGroupOptions {
     | NetworkRuleOption.Content,
 
     /**
-     * Removeparam compatible modifiers
+     * Removeparam compatible modifiers.
      *
      * $removeparam rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
-     * except $document (using by default) and this list of modifiers:
+     * except $document (using by default) and this list of modifiers.
      */
     RemoveParamCompatibleOptions = NetworkRuleOption.RemoveParam
         | NetworkRuleOption.ThirdParty
@@ -165,10 +248,10 @@ export enum NetworkRuleGroupOptions {
         | NetworkRuleOption.Badfilter,
 
     /**
-     * Removeheader compatible modifiers
+     * Removeheader compatible modifiers.
      *
      * $removeheader rules are compatible only with content type modifiers ($subdocument, $script, $stylesheet, etc)
-     * except $document (using by default) and this list of modifiers:
+     * except $document (using by default) and this list of modifiers.
      */
     RemoveHeaderCompatibleOptions = NetworkRuleOption.RemoveHeader
         | NetworkRuleOption.ThirdParty
@@ -178,16 +261,16 @@ export enum NetworkRuleGroupOptions {
         | NetworkRuleOption.Badfilter,
 
     /**
-     * Permissions compatible modifiers
+     * Permissions compatible modifiers.
      *
-     * $permissions is compatible with the limited list of modifiers: $domain, $important, and $subdocument
+     * $permissions is compatible with the limited list of modifiers: $domain, $important, and $subdocument.
      */
     PermissionsCompatibleOptions = NetworkRuleOption.Permissions
         | NetworkRuleOption.Important
         | NetworkRuleOption.Badfilter,
 
     /**
-     * Header compatible modifiers
+     * Header compatible modifiers.
      *
      * $header is compatible with the limited list of modifiers: $csp and $removeheader (on response headers).
      */
@@ -200,7 +283,8 @@ export enum NetworkRuleGroupOptions {
 
 /**
  * Basic network filtering rule.
- * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules
+ *
+ * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
  */
 export class NetworkRule implements IRule {
     private readonly ruleIndex: number;
@@ -212,8 +296,9 @@ export class NetworkRule implements IRule {
     private readonly pattern: Pattern;
 
     /**
-     * Domains in denyallow modifier providing exceptions for permitted domains
-     * https://github.com/AdguardTeam/CoreLibs/issues/1304
+     * Domains in denyallow modifier providing exceptions for permitted domains.
+     *
+     * @see {@link https://github.com/AdguardTeam/CoreLibs/issues/1304}
      */
     private denyAllowDomains: string[] | null = null;
 
@@ -238,37 +323,37 @@ export class NetworkRule implements IRule {
     private restrictedRequestTypes: RequestType = RequestType.NotSet;
 
     /**
-     * Rule Advanced modifier
+     * Rule Advanced modifier.
      */
     private advancedModifier: IAdvancedModifier | null = null;
 
     /**
-     * Rule Domain modifier
+     * Rule Domain modifier.
      */
     private domainModifier: DomainModifier | null = null;
 
     /**
-     * Rule App modifier
+     * Rule App modifier.
      */
     private appModifier: IAppModifier | null = null;
 
     /**
-     * Rule Method modifier
+     * Rule Method modifier.
      */
     private methodModifier: IValueListModifier<HTTPMethod> | null = null;
 
     /**
-     * Rule header modifier
+     * Rule header modifier.
      */
     private headerModifier: HeaderModifier | null = null;
 
     /**
-     * Rule To modifier
+     * Rule To modifier.
      */
     private toModifier: IValueListModifier<string> | null = null;
 
     /**
-     * Rule Stealth modifier
+     * Rule Stealth modifier.
      */
     private stealthModifier: StealthModifier | null = null;
 
@@ -387,17 +472,17 @@ export class NetworkRule implements IRule {
     public static readonly MASK_ALLOWLIST = MASK_ALLOWLIST;
 
     /**
-     * Mark that negates options
+     * Mark that negates options.
      */
     public static readonly NOT_MARK = NOT_MARK;
 
     /**
-     * Rule options
+     * Rule options.
      */
     public static readonly OPTIONS = NETWORK_RULE_OPTIONS;
 
     /**
-     * Rule options that can be negated
+     * Rule options that can be negated.
      */
     public static readonly NEGATABLE_OPTIONS = new Set([
         // General options
@@ -447,10 +532,20 @@ export class NetworkRule implements IRule {
     private ruleText: string;
 
     // TODO: Remove .getText() completely
+    /**
+     * Returns the rule text.
+     *
+     * @returns The rule text.
+     */
     getText(): string {
         return this.ruleText;
     }
 
+    /**
+     * Returns the rule index.
+     *
+     * @returns Rule index.
+     */
     getIndex(): number {
         return this.ruleIndex;
     }
@@ -468,7 +563,7 @@ export class NetworkRule implements IRule {
      * Returns all options that are used in the rule, regardless of whether they are
      * enabled or disabled.
      *
-     * @return Set of option names
+     * @returns Set of option names.
      */
     getUsedOptionNames(): Set<string> {
         return this.usedOptionNames;
@@ -489,7 +584,9 @@ export class NetworkRule implements IRule {
 
     /**
      * Returns rule pattern,
-     * which currently is used only in the rule validator module
+     * which currently is used only in the rule validator module.
+     *
+     * @returns Rule pattern.
      */
     getPattern(): string {
         return this.pattern.pattern;
@@ -498,6 +595,8 @@ export class NetworkRule implements IRule {
     /**
      * Returns `true` if the rule is "allowlist", e.g. if it disables other
      * rules when the pattern matches the request.
+     *
+     * @returns True if the rule is an allowlist rule.
      */
     isAllowlist(): boolean {
         return this.allowlist;
@@ -507,8 +606,10 @@ export class NetworkRule implements IRule {
      * Checks if the rule is a document-level allowlist rule with $urlblock or
      * $genericblock or $content.
      * This means that the rule is supposed to disable or modify blocking
-     * of the page subrequests.
+     * of the page sub-requests.
      * For instance, `@@||example.org^$urlblock` unblocks all sub-requests.
+     *
+     * @returns True if the rule is a document-level allowlist rule with specific modifiers.
      */
     isDocumentLevelAllowlistRule(): boolean {
         if (!this.isAllowlist()) {
@@ -522,6 +623,8 @@ export class NetworkRule implements IRule {
 
     /**
      * Checks if the rule completely disables filtering.
+     *
+     * @returns True if the rule completely disables filtering.
      */
     isFilteringDisabled(): boolean {
         if (!this.isAllowlist()) {
@@ -537,6 +640,8 @@ export class NetworkRule implements IRule {
     /**
      * The longest part of pattern without any special characters.
      * It is used to improve the matching performance.
+     *
+     * @returns The longest part of the pattern without any special characters.
      */
     getShortcut(): string {
         return this.pattern.shortcut;
@@ -544,7 +649,10 @@ export class NetworkRule implements IRule {
 
     /**
      * Gets list of permitted domains.
-     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier}
+     *
+     * @returns List of permitted domains or null if none.
      */
     getPermittedDomains(): string[] | null {
         if (this.domainModifier) {
@@ -555,7 +663,10 @@ export class NetworkRule implements IRule {
 
     /**
      * Gets list of restricted domains.
-     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier}
+     *
+     * @returns List of restricted domains or null if none.
      */
     getRestrictedDomains(): string[] | null {
         if (this.domainModifier) {
@@ -566,7 +677,10 @@ export class NetworkRule implements IRule {
 
     /**
      * Gets list of denyAllow domains.
-     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#denyallow-modifier
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#denyallow-modifier}
+     *
+     * @returns List of denyAllow domains or null if none.
      */
     getDenyAllowDomains(): string[] | null {
         return this.denyAllowDomains;
@@ -574,7 +688,10 @@ export class NetworkRule implements IRule {
 
     /**
      * Get list of permitted $to domains.
-     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#to-modifier
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#to-modifier}
+     *
+     * @returns List of permitted $to domains or null if none.
      */
     getPermittedToDomains(): string[] | null {
         if (this.toModifier) {
@@ -585,7 +702,10 @@ export class NetworkRule implements IRule {
 
     /**
      * Get list of restricted $to domains.
-     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#to-modifier
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#to-modifier}
+     *
+     * @returns List of restricted $to domains or null if none.
      */
     getRestrictedToDomains(): string[] | null {
         if (this.toModifier) {
@@ -596,7 +716,10 @@ export class NetworkRule implements IRule {
 
     /**
      * Gets list of permitted domains.
-     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app}
+     *
+     * @returns List of permitted domains or null if none.
      */
     getPermittedApps(): string[] | null {
         if (this.appModifier) {
@@ -607,7 +730,10 @@ export class NetworkRule implements IRule {
 
     /**
      * Gets list of restricted domains.
-     * See https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#app}
+     *
+     * @returns List of restricted domains or null if none.
      */
     getRestrictedApps(): string[] | null {
         if (this.appModifier) {
@@ -618,7 +744,10 @@ export class NetworkRule implements IRule {
 
     /**
      * Gets list of permitted methods.
-     * See https://kb.adguard.com/general/how-to-create-your-own-ad-filters#method-modifier
+     *
+     * @see {@link https://kb.adguard.com/general/how-to-create-your-own-ad-filters#method-modifier}
+     *
+     * @returns List of permitted methods or null if none.
      */
     getRestrictedMethods(): HTTPMethod[] | null {
         if (this.methodModifier) {
@@ -629,7 +758,10 @@ export class NetworkRule implements IRule {
 
     /**
      * Gets list of restricted methods.
-     * See https://kb.adguard.com/general/how-to-create-your-own-ad-filters#method-modifier
+     *
+     * @see {@link https://kb.adguard.com/general/how-to-create-your-own-ad-filters#method-modifier}
+     *
+     * @returns List of restricted methods or null if none.
      */
     getPermittedMethods(): HTTPMethod[] | null {
         if (this.methodModifier) {
@@ -641,6 +773,8 @@ export class NetworkRule implements IRule {
     /**
      * Flag with all permitted request types.
      * The value {@link RequestType.NotSet} here means "all request types are allowed".
+     *
+     * @returns The flag with all permitted request types.
      */
     getPermittedRequestTypes(): RequestType {
         return this.permittedRequestTypes;
@@ -649,27 +783,35 @@ export class NetworkRule implements IRule {
     /**
      * Flag with all restricted request types.
      * The value {@link RequestType.NotSet} here means "no type of request is restricted".
+     *
+     * @returns The flag with all restricted request types.
      */
     getRestrictedRequestTypes(): RequestType {
         return this.restrictedRequestTypes;
     }
 
     /**
-     * Advanced modifier
+     * Advanced modifier.
+     *
+     * @returns The advanced modifier or null if none.
      */
     getAdvancedModifier(): IAdvancedModifier | null {
         return this.advancedModifier;
     }
 
     /**
-     * Stealth modifier
+     * Stealth modifier.
+     *
+     * @returns The stealth modifier or null if none.
      */
     getStealthModifier(): StealthModifier | null {
         return this.stealthModifier;
     }
 
     /**
-     * Advanced modifier value
+     * Advanced modifier value.
+     *
+     * @returns The advanced modifier value or null if none.
      */
     getAdvancedModifierValue(): string | null {
         return this.advancedModifier && this.advancedModifier.getValue();
@@ -677,6 +819,8 @@ export class NetworkRule implements IRule {
 
     /**
      * Retrieves the header modifier value.
+     *
+     * @returns The header modifier value or null if none.
      */
     getHeaderModifierValue(): HttpHeaderMatcher | null {
         if (!this.headerModifier) {
@@ -686,8 +830,11 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * isRegexRule returns true if rule's pattern is a regular expression.
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#regexp-support
+     * Returns true if rule's pattern is a regular expression.
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#regexp-support}
+     *
+     * @returns True if the rule pattern is a regular expression.
      */
     isRegexRule(): boolean {
         return (
@@ -698,8 +845,11 @@ export class NetworkRule implements IRule {
 
     /**
      * Checks if this filtering rule matches the specified request.
-     * @param request - request to check.
-     * @param useShortcut - the flag to use this rule shortcut
+     *
+     * @param request Request to check.
+     * @param useShortcut The flag to use this rule shortcut.
+     *
+     * @returns True if the rule matches the request.
      *
      * In case we use Trie in lookup table, we don't need to use shortcut cause we already check if request's url
      * includes full rule shortcut.
@@ -763,15 +913,18 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * matchShortcut simply checks if shortcut is a substring of the URL.
-     * @param request - request to check.
+     * Simply checks if shortcut is a substring of the URL.
+     *
+     * @param request Request to check.
+     *
+     * @returns True if the shortcut is a substring of the URL.
      */
     private matchShortcut(request: Request): boolean {
         return request.urlLowercase.indexOf(this.getShortcut()) >= 0;
     }
 
     /**
-     * Check if request matches domain modifier by request referrer (general case) or by request target
+     * Check if request matches domain modifier by request referrer (general case) or by request target.
      *
      * In some cases the $domain modifier can match not only the referrer domain, but also the target domain.
      * This happens when the following is true (1 AND ((2 AND 3) OR 4):
@@ -779,11 +932,15 @@ export class NetworkRule implements IRule {
      * 1) The request has $document request type (not subdocument)
      * 2) The rule's pattern doesn't match any particular domain(s)
      * 3) The rule's pattern doesn't contain regular expressions
-     * 4) The $domain modifier contains only excluded domains (e.g., $domain=~example.org|~example.com)
+     * 4) The $domain modifier contains only excluded domains (e.g., $domain=~example.org|~example.com).
      *
      * When all these conditions are met, the domain modifier will match both the referrer domain and the target domain.
-     * https://github.com/AdguardTeam/tsurlfilter/issues/45
-     * @param request
+     *
+     * @see {@link https://github.com/AdguardTeam/tsurlfilter/issues/45}
+     *
+     * @param request The request to check.
+     *
+     * @returns True if the rule matches the domain modifier.
      */
     matchDomainModifier(request: Request): boolean {
         if (!this.domainModifier) {
@@ -811,8 +968,11 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * checks if the filtering rule is allowed on this domain.
-     * @param domain
+     * Checks if the filtering rule is allowed on this domain.
+     *
+     * @param domain The request's domain.
+     *
+     * @returns True if the rule must be applied to the request.
      */
     private matchDenyAllowDomains(domain: string): boolean {
         if (!this.denyAllowDomains) {
@@ -832,7 +992,8 @@ export class NetworkRule implements IRule {
      * Checks if the request domain matches the specified conditions.
      *
      * @param domain The request's domain.
-     * @return true if the request domain matches the permitted domains and does not match the restricted domains.
+     *
+     * @returns True if the request domain matches the permitted domains and does not match the restricted domains.
      */
     private matchToModifier(domain: string): boolean {
         if (!this.toModifier) {
@@ -856,9 +1017,11 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Return TRUE if this rule matches with the tags associated with a client
+     * Return `true` if this rule matches with the tags associated with a client.
      *
-     * @param clientTags
+     * @param clientTags Client tags.
+     *
+     * @returns True if the rule matches the client tags.
      */
     private matchClientTags(clientTags: string[] | undefined): boolean {
         const advancedModifier = this.getAdvancedModifier();
@@ -875,10 +1038,12 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * returns TRUE if the rule matches with the specified client
+     * Returns TRUE if the rule matches with the specified client.
      *
-     * @param clientName
-     * @param clientIP
+     * @param clientName The name of the client.
+     * @param clientIP The IP address of the client.
+     *
+     * @returns True if the rule matches the client.
      */
     private matchClient(clientName: string | undefined, clientIP: string | undefined): boolean {
         const advancedModifier = this.getAdvancedModifier();
@@ -895,9 +1060,11 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Return TRUE if this rule matches with the request dnstype
+     * Return `true` if this rule matches with the request DNS type.
      *
-     * @param dnstype
+     * @param dnstype The DNS type to check.
+     *
+     * @returns True if the rule matches the DNS type.
      */
     private matchDnsType(dnstype: string | undefined): boolean {
         const advancedModifier = this.getAdvancedModifier();
@@ -914,19 +1081,11 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Checks if rule has permitted apps
-     */
-    private hasPermittedApps(): boolean {
-        if (!this.appModifier) {
-            return false;
-        }
-
-        return this.appModifier!.permittedApps !== null && this.appModifier!.permittedApps.length > 0;
-    }
-
-    /**
-     * matchRequestType checks if the request's type matches the rule properties
-     * @param requestType - request type to check.
+     * Checks if the request's type matches the rule properties.
+     *
+     * @param requestType Request type to check.
+     *
+     * @returns True if the rule must be applied to the request.
      */
     private matchRequestType(requestType: RequestType): boolean {
         if (this.permittedRequestTypes !== RequestType.NotSet) {
@@ -947,6 +1106,10 @@ export class NetworkRule implements IRule {
     /**
      * In case of $removeparam, $permissions modifier,
      * we only allow it to target other content types if the rule has an explicit content-type modifier.
+     *
+     * @param requestType Request type to check.
+     *
+     * @returns True if the rule must be applied to the request.
      */
     private matchRequestTypeExplicit(requestType: RequestType): boolean {
         if (this.permittedRequestTypes === RequestType.NotSet
@@ -960,10 +1123,11 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Checks if request's method matches with the rule
+     * Checks if request's method matches with the rule.
      *
-     * @param method request's method
-     * @returns true, if rule must be applied to the request
+     * @param method Request's method.
+     *
+     * @returns True, if rule must be applied to the request.
      */
     private matchMethod(method: HTTPMethod | undefined): boolean {
         if (!method || !MethodModifier.isHTTPMethod(method)) {
@@ -973,7 +1137,7 @@ export class NetworkRule implements IRule {
         /**
          * Request's method must be either explicitly
          * permitted or not be included in list of restricted methods
-         * for the rule to apply
+         * for the rule to apply.
          */
         const permittedMethods = this.getPermittedMethods();
         if (permittedMethods?.includes(method)) {
@@ -986,10 +1150,11 @@ export class NetworkRule implements IRule {
 
     /**
      * Checks if request's response headers matches with
-     * the rule's $header modifier value
+     * the rule's $header modifier value.
      *
-     * @param responseHeadersItems request's response headers
-     * @returns true, if rule must be applied to the request
+     * @param responseHeadersItems Request's response headers.
+     *
+     * @returns True, if rule must be applied to the request.
      */
     matchResponseHeaders(responseHeadersItems: HttpHeadersItem[] | undefined): boolean {
         if (!responseHeadersItems || responseHeadersItems.length === 0) {
@@ -1037,6 +1202,10 @@ export class NetworkRule implements IRule {
 
     /**
      * Checks if a network rule is too general.
+     *
+     * @param node AST node of the network rule.
+     *
+     * @returns True if the rule is too general.
      */
     public static isTooGeneral(node: NetworkRuleNode): boolean {
         return !(node.modifiers?.children?.length) && node.pattern.value.length < 4;
@@ -1049,11 +1218,11 @@ export class NetworkRule implements IRule {
      *
      * @param node AST node of the network rule.
      * @param filterListId ID of the filter list this rule belongs to.
-     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * @param ruleIndex Line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
      *
-     * @throws error if it fails to parse the rule.
+     * @throws Error if it fails to parse the rule.
      */
     constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
@@ -1082,12 +1251,12 @@ export class NetworkRule implements IRule {
 
     /**
      * Parses the options string and saves them.
-     * More on the rule modifiers:
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers
      *
-     * @param options - Modifier list node.
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers}
      *
-     * @throws an error if there is an unsupported modifier
+     * @param options Modifier list node.
+     *
+     * @throws An error if there is an unsupported modifier.
      */
     private loadOptions(options: ModifierList): void {
         for (const option of options.children) {
@@ -1108,7 +1277,9 @@ export class NetworkRule implements IRule {
      * Returns true if rule contains (enabled or disabled) specified option.
      * Please note, that options have three state: enabled, disabled, undefined.
      *
-     * @param option - rule option to check.
+     * @param option Rule option to check.
+     *
+     * @returns True if rule contains (enabled or disabled) specified option.
      */
     hasOption(option: NetworkRuleOption): boolean {
         return this.isOptionEnabled(option) || this.isOptionDisabled(option);
@@ -1116,6 +1287,8 @@ export class NetworkRule implements IRule {
 
     /**
      * Returns true if rule has at least one cosmetic option enabled.
+     *
+     * @returns True if the rule has at least one cosmetic option enabled.
      */
     hasCosmeticOption(): boolean {
         return (this.enabledOptions & NetworkRuleGroupOptions.CosmeticOption) !== 0;
@@ -1125,16 +1298,20 @@ export class NetworkRule implements IRule {
      * Returns true if the specified option is enabled.
      * Please note, that options have three state: enabled, disabled, undefined.
      *
-     * @param option - rule option to check.
+     * @param option Rule option to check.
+     *
+     * @returns True if the specified option is enabled.
      */
     isOptionEnabled(option: NetworkRuleOption): boolean {
         return (this.enabledOptions & option) === option;
     }
 
     /**
-     * Returns true if one and only option is enabled
+     * Returns true if one and only option is enabled.
      *
-     * @param option
+     * @param option Rule option to check.
+     *
+     * @returns True if the specified option is enabled.
      */
     isSingleOptionEnabled(option: NetworkRuleOption): boolean {
         return this.enabledOptions === option;
@@ -1144,15 +1321,21 @@ export class NetworkRule implements IRule {
      * Returns true if the specified option is disabled.
      * Please note, that options have three state: enabled, disabled, undefined.
      *
-     * @param option - rule option to check.
+     * @param option Rule option to check.
+     *
+     * @returns True if the specified option is disabled.
      */
     isOptionDisabled(option: NetworkRuleOption): boolean {
         return (this.disabledOptions & option) === option;
     }
 
     /**
-     * Checks if the rule has higher priority that the specified rule
-     * allowlist + $important > $important > redirect > allowlist > basic rules
+     * Checks if the rule has higher priority that the specified rule:
+     * `allowlist + $important` > `$important` > `redirect` > `allowlist` > `basic rules`.
+     *
+     * @param r Rule to compare with.
+     *
+     * @returns True if the rule has higher priority than `r`.
      */
     isHigherPriority(r: NetworkRule): boolean {
         return this.priorityWeight > r.priorityWeight;
@@ -1163,15 +1346,19 @@ export class NetworkRule implements IRule {
      * "generic" means that the rule is not restricted to a limited set of domains
      * Please note that it might be forbidden on some domains, though.
      *
-     * @return {boolean}
+     * @returns True if the rule is considered "generic".
      */
     isGeneric(): boolean {
         return !this.domainModifier?.hasPermittedDomains();
     }
 
     /**
-     * Returns true if this rule negates the specified rule
-     * Only makes sense when this rule has a `badfilter` modifier
+     * Returns true if this rule negates the specified rule.
+     * Only makes sense when this rule has a `badfilter` modifier.
+     *
+     * @param specifiedRule Rule to check.
+     *
+     * @returns True if this rule negates the specified rule.
      */
     negatesBadfilter(specifiedRule: NetworkRule): boolean {
         if (!this.isOptionEnabled(NetworkRuleOption.Badfilter)) {
@@ -1214,7 +1401,9 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Checks if this rule can be used for hosts-level blocking
+     * Checks if this rule can be used for hosts-level blocking.
+     *
+     * @returns True if the rule can be used for hosts-level blocking.
      */
     isHostLevelNetworkRule(): boolean {
         if (this.domainModifier?.hasPermittedDomains() || this.domainModifier?.hasRestrictedDomains()) {
@@ -1242,11 +1431,11 @@ export class NetworkRule implements IRule {
     /**
      * Enables or disables the specified option.
      *
-     * @param option - option to enable or disable.
-     * @param enabled - true to enable, false to disable.
-     * @param skipRestrictions - skip options allowlist/blacklist restrictions
+     * @param option Option to enable or disable.
+     * @param enabled True to enable, false to disable.
+     * @param skipRestrictions Skip options allowlist/blacklist restrictions.
      *
-     * @throws an error if the option we're trying to enable cannot be.
+     * @throws An error if the option we're trying to enable cannot be.
      * For instance, you cannot enable $elemhide for blacklist rules.
      */
     private setOptionEnabled(option: NetworkRuleOption, enabled: boolean, skipRestrictions = false): void {
@@ -1270,8 +1459,8 @@ export class NetworkRule implements IRule {
      * "Permits" means that the rule will match **only** the types that are permitted.
      * "Restricts" means that the rule will match **all but restricted**.
      *
-     * @param requestType - request type.
-     * @param permitted - true if it's permitted (whic)
+     * @param requestType Request type.
+     * @param permitted True if it's permitted (whic).
      */
     private setRequestType(requestType: RequestType, permitted: boolean): void {
         if (permitted) {
@@ -1282,9 +1471,9 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Sets and validates exceptionally allowed domains presented in $denyallow modifier
+     * Sets and validates exceptionally allowed domains presented in $denyallow modifier.
      *
-     * @param optionValue
+     * @param optionValue Denyallow modifier value.
      */
     private setDenyAllowDomains(optionValue: string): void {
         const domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
@@ -1306,14 +1495,15 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Loads the specified modifier:
-     * https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers
+     * Loads the specified modifier.
      *
-     * @param optionName - modifier name.
-     * @param optionValue - modifier value.
-     * @param exception - true if the modifier is negated.
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules-modifiers}
      *
-     * @throws an error if there is an unsupported modifier
+     * @param optionName Modifier name.
+     * @param optionValue Modifier value.
+     * @param exception True if the modifier is negated.
+     *
+     * @throws An error if there is an unsupported modifier.
      */
     private loadOption(optionName: string, optionValue: string, exception = false): void {
         const { OPTIONS, NEGATABLE_OPTIONS } = NetworkRule;
@@ -1675,7 +1865,6 @@ export class NetworkRule implements IRule {
      * @see {@link NetworkRule.AllowlistRuleWeight}
      * @see {@link NetworkRule.RedirectRuleWeight}
      * @see {@link NetworkRule.ImportantRuleWeight}
-     *
      * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-counting}
      */
     private calculatePriorityWeight() {
@@ -1723,8 +1912,7 @@ export class NetworkRule implements IRule {
          * adds the modifier `$document`.
          * Similarly, specific exceptions add `$document,subdocument`.
          *
-         * Learn more about it here:
-         * https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-2
+         * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#priority-category-2}
          */
         if (this.permittedRequestTypes !== RequestType.NotSet) {
             const numberOfPermittedRequestTypes = getBitCount(this.permittedRequestTypes);
@@ -1786,7 +1974,7 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Validates rule options
+     * Validates rule options.
      */
     private validateOptions(): void {
         if (this.advancedModifier instanceof RemoveParamModifier) {

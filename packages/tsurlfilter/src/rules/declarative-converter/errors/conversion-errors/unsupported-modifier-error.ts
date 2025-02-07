@@ -1,6 +1,12 @@
 import { type NetworkRule } from '../../../network-rule';
 
 /**
+ * @typedef {import(
+ *   '../../grouped-rules-converters/abstract-rule-converter'
+ * ).DeclarativeRuleConverter} DeclarativeRuleConverter
+ */
+
+/**
  * Describes an error when a source network rule contains some of
  * the unsupported modifiers.
  *

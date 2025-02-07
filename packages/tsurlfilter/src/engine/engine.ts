@@ -15,7 +15,7 @@ import { CosmeticRule } from '../rules/cosmetic-rule';
 import { RequestType } from '../request-type';
 
 /**
- * Engine represents the filtering engine with all the loaded rules
+ * Engine represents the filtering engine with all the loaded rules.
  */
 export class Engine {
     /**
@@ -26,31 +26,32 @@ export class Engine {
     private static REQUEST_CACHE_SIZE = 500;
 
     /**
-     * Basic filtering rules engine
+     * Basic filtering rules engine.
      */
     private readonly networkEngine: NetworkEngine;
 
     /**
-     * Cosmetic rules engine
+     * Cosmetic rules engine.
      */
     private readonly cosmeticEngine: CosmeticEngine;
 
     /**
-     * Rules storage
+     * Rules storage.
      */
     private readonly ruleStorage: RuleStorage;
 
     /**
-     * Request results cache
+     * Request results cache.
      */
     private readonly resultCache: LRUCache<string, MatchingResult>;
 
     /**
      * Creates an instance of an Engine
-     * Parses the filtering rules and creates a filtering engine of them
+     * Parses the filtering rules and creates a filtering engine of them.
      *
-     * @param ruleStorage storage
-     * @param skipStorageScan create an instance without storage scanning
+     * @param ruleStorage Storage.
+     * @param skipStorageScan Create an instance without storage scanning.
+     *
      * @throws
      */
     constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
@@ -61,7 +62,7 @@ export class Engine {
     }
 
     /**
-     * Loads rules to engine
+     * Loads rules to engine.
      */
     loadRules(): void {
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
@@ -72,9 +73,9 @@ export class Engine {
     }
 
     /**
-     * Async loads rules to engine
+     * Async loads rules to engine.
      *
-     * @param chunkSize size of rules chunk to load at a time
+     * @param chunkSize Size of rules chunk to load at a time.
      */
     async loadRulesAsync(chunkSize: number): Promise<void> {
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
@@ -102,9 +103,10 @@ export class Engine {
     /**
      * Matches the specified request against the filtering engine and returns the matching result.
      *
-     * @param request - request to check
-     * @param frameRule - source document rule or null
-     * @return matching result
+     * @param request Request to check.
+     * @param frameRule Source document rule or null.
+     *
+     * @returns Matching result.
      */
     matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult {
         let cacheKey = `${request.url}#${request.sourceHostname}#${request.requestType}`;
@@ -115,8 +117,7 @@ export class Engine {
 
         /**
          * Add frame url text to the key to avoid caching,
-         * because allowlist rules are not stored in the engine
-         * AG-12694
+         * because allowlist rules are not stored in the engine. AG-12694.
          */
         if (frameRule) {
             cacheKey += `#${frameRule.getIndex()}`;
@@ -136,7 +137,9 @@ export class Engine {
     /**
      * Matches current frame and returns document-level allowlist rule if found.
      *
-     * @param frameUrl
+     * @param frameUrl The URL of the frame to match.
+     *
+     * @returns Document-level allowlist rule if found, otherwise null.
      */
     matchFrame(frameUrl: string): NetworkRule | null {
         const sourceRequest = new Request(frameUrl, '', RequestType.Document);
@@ -157,27 +160,30 @@ export class Engine {
     }
 
     /**
-     * Gets cosmetic result for the specified hostname and cosmetic options
+     * Gets cosmetic result for the specified hostname and cosmetic options.
      *
-     * @param request host to check
-     * @param option mask of enabled cosmetic types
-     * @return cosmetic result
+     * @param request Host to check.
+     * @param option Mask of enabled cosmetic types.
+     *
+     * @returns Cosmetic result.
      */
     getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult {
         return this.cosmeticEngine.match(request, option);
     }
 
     /**
-     * Gets rules count
+     * Gets rules count.
+     *
+     * @returns The total number of rules.
      */
     getRulesCount(): number {
         return this.networkEngine.rulesCount + this.cosmeticEngine.rulesCount;
     }
 
     /**
-     * Adds rules to engines
+     * Adds rules to engines.
      *
-     * @param indexedRule
+     * @param indexedRule Rule to add.
      */
     private addRule(indexedRule: IndexedStorageRule | null): void {
         if (indexedRule) {

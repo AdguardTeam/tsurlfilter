@@ -1,5 +1,5 @@
 /**
- * @file Known CSS / Extended CSS elements
+ * @file Known CSS / Extended CSS elements.
  */
 
 /**
@@ -11,18 +11,18 @@
  */
 export const SUPPORTED_EXT_CSS_PSEUDO_CLASSES = new Set([
     /**
-     * Pseudo-classes :is(), and :not() may use native implementation
-     * so they are not listed here
-     * https://github.com/AdguardTeam/ExtendedCss#extended-css-is
-     * https://github.com/AdguardTeam/ExtendedCss#extended-css-not
+     * Pseudo-classes :is(), and :not() may use native implementation.
+     *
+     * @see {@link https://github.com/AdguardTeam/ExtendedCss#extended-css-is}
+     * @see {@link https://github.com/AdguardTeam/ExtendedCss#extended-css-not}
      */
     /**
-     * :has() should also be conditionally considered as extended and should not be in this list
-     * https://github.com/AdguardTeam/ExtendedCss#extended-css-has
-     * but there is a bug with content blocker in safari
-     * https://bugs.webkit.org/show_bug.cgi?id=248868
+     * :has() should also be conditionally considered as extended and should not be in this list,
+     * for details check: https://github.com/AdguardTeam/ExtendedCss#extended-css-has,
+     * but there is a bug with content blocker in safari:
+     * for details check: https://bugs.webkit.org/show_bug.cgi?id=248868.
      *
-     * TODO: remove 'has' later
+     * TODO: remove 'has' later.
      */
     '-abp-contains', // alias for 'contains'
     '-abp-has', // alias for 'has'

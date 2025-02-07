@@ -92,7 +92,7 @@ const esmConfig = {
 /**
  * Declarative converter should be built separately
  * because it has some regexp which are not supported in Safari browser
- * so it throws an error in safari-web-extension. AG-21568
+ * so it throws an error in safari-web-extension. AG-21568.
  */
 const esmDeclarativeConverterConfig = {
     input: 'src/rules/declarative-converter/index.ts',

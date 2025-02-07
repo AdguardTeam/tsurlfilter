@@ -6,7 +6,7 @@ export const TSURLFILTER_VERSION = pkgJSON.version;
  * Compatibility types are used to configure engine for better support of different libraries
  * For example:
  *  extension doesn't support $app modifier. So if we set in configuration CompatibilityTypes.Extension,
- *  engine would ignore rules with $app modifier
+ *  engine would ignore rules with $app modifier.
  */
 export enum CompatibilityTypes {
     Extension = 1 << 0,
@@ -15,32 +15,32 @@ export enum CompatibilityTypes {
 }
 
 /**
- * Configuration interface
+ * Configuration interface.
  */
 export interface IConfiguration {
     /**
-     * {'extension'|'corelibs'} engine application type
+     * {'extension'|'corelibs'} engine application type.
      */
     engine: string | null;
 
     /**
-     * {string} version
+     * {string} version.
      */
     version: string | null;
 
     /**
-     * {boolean} verbose flag
+     * {boolean} verbose flag.
      */
     verbose: boolean;
 
     /**
-     * Compatibility type
+     * Compatibility type.
      */
     compatibility: CompatibilityTypes | null;
 }
 
 /**
- * Application configuration class
+ * Application configuration class.
  */
 class Configuration implements IConfiguration {
     private defaultConfig: IConfiguration = {
@@ -51,22 +51,22 @@ class Configuration implements IConfiguration {
     };
 
     /**
-     * {'extension'|'corelibs'} engine application type
+     * {'extension'|'corelibs'} engine application type.
      */
     public engine: string | null = null;
 
     /**
-     * {string} version
+     * {string} version.
      */
     public version: string | null = null;
 
     /**
-     * {boolean} verbose flag
+     * {boolean} verbose flag.
      */
     public verbose = false;
 
     /**
-     * compatibility flag
+     * Compatibility flag.
      */
     public compatibility: CompatibilityTypes | null = CompatibilityTypes.Extension;
 
@@ -87,9 +87,11 @@ type Partial<T> = {
 export let config = new Configuration();
 
 /**
- * Checks config is compatible with input level
- * @param compatibilityLevel
- * @private
+ * Checks config is compatible with input level.
+ *
+ * @param compatibilityLevel Compatibility level to check against.
+ *
+ * @returns True if compatible, otherwise false.
  */
 export function isCompatibleWith(compatibilityLevel: CompatibilityTypes): boolean {
     if (config.compatibility === null) {

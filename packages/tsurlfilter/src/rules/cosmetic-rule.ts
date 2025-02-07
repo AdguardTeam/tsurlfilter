@@ -29,7 +29,7 @@ import { validateDeclarationList } from './css/declaration-list-validator';
 import { getErrorMessage } from '../common/error';
 
 /**
- * Init script params
+ * Init script params.
  */
 interface InitScriptParams {
     debug?: boolean,
@@ -37,7 +37,7 @@ interface InitScriptParams {
 }
 
 /**
- * Get scriptlet data response type
+ * Get scriptlet data response type.
  */
 export type ScriptletData = {
     params: Source,
@@ -45,7 +45,7 @@ export type ScriptletData = {
 };
 
 /**
- * Script data type
+ * Script data type.
  */
 type ScriptData = {
     code: string | null,
@@ -107,21 +107,21 @@ class ScriptletParams {
  */
 const enum CosmeticRuleModifier {
     /**
-     * $domain modifier
+     * `$domain` modifier.
      *
      * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-domain-modifier}
      */
     Domain = 'domain',
 
     /**
-     * $path modifier
+     * `$path` modifier.
      *
      * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-path-modifier}
      */
     Path = 'path',
 
     /**
-     * $url modifier
+     * `$url` modifier.
      *
      * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-url-modifier}
      */
@@ -149,7 +149,7 @@ interface ValidationResult {
 }
 
 /**
- * Represents processed modifiers
+ * Represents processed modifiers.
  */
 interface ProcessedModifiers {
     domainModifier?: DomainModifier;
@@ -158,25 +158,29 @@ interface ProcessedModifiers {
 }
 
 /**
+ * @typedef {import('./cosmetic-result').CosmeticResult} CosmeticResult
+ */
+
+/**
  * Implements a basic cosmetic rule.
  *
- * Cosmetic rules syntax are almost similar and looks like this:
+ * Cosmetic rules syntax are almost similar and looks like this.
  * ```
  * rule = [domains] "marker" content
  * domains = [domain0, domain1[, ...[, domainN]]]
  * ```
  *
- * The rule type is defined by the `marker` value, you can find the list of them
- * in the {@see CosmeticRuleMarker} enumeration.
+ * The rule type is defined by the `type` property, you can find the list of them
+ * in the {@link CosmeticRuleType} enumeration.
  *
  * What matters, though, is what's in the `content` part of it.
  *
- * Examples:
- * * `example.org##.banner` -- element hiding rule
- * * `example.org#$#.banner { display: block; }` -- CSS rule
- * * `example.org#%#window.x=1;` -- JS rule
- * * `example.org#%#//scriptlet('scriptlet-name')` -- Scriptlet rule
- * * `example.org$$div[id="test"]` -- HTML filtering rule
+ * @example
+ * `example.org##.banner` -- element hiding rule
+ * `example.org#$#.banner { display: block; }` -- CSS rule
+ * `example.org#%#window.x=1;` -- JS rule
+ * `example.org#%#//scriptlet('scriptlet-name')` -- Scriptlet rule
+ * `example.org$$div[id="test"]` -- HTML filtering rule
  */
 export class CosmeticRule implements IRule {
     private readonly ruleIndex: number;
@@ -205,34 +209,36 @@ export class CosmeticRule implements IRule {
      * $url modifier pattern. It is only set if $url modifier is specified for this rule,
      * but $path and $domain modifiers are not.
      *
-     * TODO add this to test cases
+     * TODO: add this to test cases.
      */
     public urlModifier: Pattern | undefined;
 
     /**
-     * Js script to execute
+     * Js script to execute.
      */
     public script: string | undefined = undefined;
 
     /**
-     * Object with script code ready to execute and debug, domain values
+     * Object with script code ready to execute and debug, domain values.
+     *
      * @private
      */
     private scriptData: ScriptData | null = null;
 
     /**
-     * Object with scriptlet function and params
+     * Object with scriptlet function and params.
+     *
      * @private
      */
     private scriptletData: ScriptletData | null = null;
 
     /**
-     * Scriptlet parameters
+     * Scriptlet parameters.
      */
     public scriptletParams: ScriptletParams;
 
     /**
-     * If the rule contains scriptlet content
+     * If the rule contains scriptlet content.
      */
     public isScriptlet = false;
 
@@ -246,21 +252,29 @@ export class CosmeticRule implements IRule {
 
     /**
      * Returns the rule content.
+     *
+     * @returns The content of the rule.
      */
     getContent(): string {
         return this.content;
     }
 
     /**
-     * Cosmetic rule type (always present)
+     * Cosmetic rule type (always present).
+     *
+     * @returns The type of the cosmetic rule.
      */
     getType(): CosmeticRuleType {
         return this.type;
     }
 
     /**
-     * Allowlist means that this rule is meant to disable other rules.
-     * For instance, https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#elemhide-exceptions
+     * Allowlist means that this rule is meant to disable other rules,
+     * i.e. an exception rule.
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#elemhide-exceptions}
+     *
+     * @returns True if the rule is an allowlist rule, false otherwise.
      */
     isAllowlist(): boolean {
         return this.allowlist;
@@ -268,9 +282,11 @@ export class CosmeticRule implements IRule {
 
     /**
      * Returns script ready to execute or null
-     * Rebuilds scriptlet script if debug or domain params change
-     * @param options script options
-     * @returns script code or null
+     * Rebuilds scriptlet script if debug or domain params change.
+     *
+     * @param options Script options.
+     *
+     * @returns Script code or null.
      */
     getScript(options: InitScriptParams = {}): string | null {
         const { debug = false, frameUrl } = options;
@@ -297,6 +313,8 @@ export class CosmeticRule implements IRule {
 
     /**
      * Gets list of permitted domains.
+     *
+     * @returns List of permitted domains or null if no domain modifier is set.
      */
     getPermittedDomains(): string[] | null {
         if (this.domainModifier) {
@@ -307,6 +325,8 @@ export class CosmeticRule implements IRule {
 
     /**
      * Gets list of restricted domains.
+     *
+     * @returns List of restricted domains or null if no domain modifier is set.
      */
     getRestrictedDomains(): string[] | null {
         if (this.domainModifier) {
@@ -320,12 +340,17 @@ export class CosmeticRule implements IRule {
      * "generic" means that the rule is not restricted to a limited set of domains
      * Please note that it might be forbidden on some domains, though.
      *
-     * @return {boolean}
+     * @returns True if the rule is generic, false otherwise.
      */
     isGeneric(): boolean {
         return !this.domainModifier?.hasPermittedDomains();
     }
 
+    /**
+     * Checks if the rule is ExtendedCss.
+     *
+     * @returns True if the rule is ExtendedCss, false otherwise.
+     */
     isExtendedCss(): boolean {
         return this.extendedCss;
     }
@@ -333,9 +358,11 @@ export class CosmeticRule implements IRule {
     /**
      * Processes cosmetic rule modifiers, e.g. `$path`.
      *
-     * @param ruleNode Cosmetic rule node to process
-     * @returns Processed modifiers ({@link ProcessedModifiers}) or `null` if there are no modifiers
      * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#modifiers-for-non-basic-type-of-rules}
+     *
+     * @param ruleNode Cosmetic rule node to process.
+     *
+     * @returns Processed modifiers ({@link ProcessedModifiers}) or `null` if there are no modifiers.
      */
     private static processModifiers(ruleNode: AnyCosmeticRule): ProcessedModifiers | null {
         // Do nothing if there are no modifiers in the rule node
@@ -429,8 +456,9 @@ export class CosmeticRule implements IRule {
     /**
      * Validates cosmetic rule node.
      *
-     * @param ruleNode Cosmetic rule node to validate
-     * @returns Validation result ({@link ValidationResult})
+     * @param ruleNode Cosmetic rule node to validate.
+     *
+     * @returns Validation result {@link ValidationResult}.
      */
     private static validate(ruleNode: AnyCosmeticRule): ValidationResult {
         const result: ValidationResult = {
@@ -534,8 +562,9 @@ export class CosmeticRule implements IRule {
      * Checks if the domain list contains any domains, but returns `false` if only
      * the wildcard domain is specified.
      *
-     * @param domainListNode Domain list node to check
-     * @returns `true` if the domain list contains any domains, `false` otherwise
+     * @param domainListNode Domain list node to check.
+     *
+     * @returns `true` if the domain list contains any domains, `false` otherwise.
      */
     private static isAnyDomainSpecified(domainListNode: DomainList): boolean {
         if (domainListNode.children.length > 0) {
@@ -556,11 +585,11 @@ export class CosmeticRule implements IRule {
      *
      * @param node AST node of the cosmetic rule.
      * @param filterListId ID of the filter list this rule belongs to.
-     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * @param ruleIndex Line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
      *
-     * @throws error if it fails to parse the rule.
+     * @throws Error if it fails to parse the rule.
      */
     constructor(node: AnyCosmeticRule, filterListId: number, ruleIndex: number = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
@@ -627,7 +656,9 @@ export class CosmeticRule implements IRule {
     /**
      * Match returns true if this rule can be used on the specified request.
      *
-     * @param request - request to check
+     * @param request Request to check.
+     *
+     * @returns True if the rule matches the request, false otherwise.
      */
     match(request: Request): boolean {
         if (!this.domainModifier
@@ -662,6 +693,8 @@ export class CosmeticRule implements IRule {
     /**
      * Returns the scriptlet's data consisting of the scriptlet function and its arguments.
      * This method is supposed to be used in the manifest V3 extension.
+     *
+     * @returns The scriptlet data or null if not available.
      */
     getScriptletData(): ScriptletData | null {
         if (this.scriptletData) {
@@ -676,7 +709,7 @@ export class CosmeticRule implements IRule {
     /**
      * Updates this.scriptData and this.scriptletData when it is necessary in a lazy way.
      *
-     * @param options
+     * @param options Initialization options for the script.
      */
     initScript(options: InitScriptParams = {}) {
         const { debug = false, frameUrl } = options;

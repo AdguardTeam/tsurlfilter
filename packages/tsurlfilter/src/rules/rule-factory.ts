@@ -10,29 +10,29 @@ import { getErrorMessage } from '../common/error';
 import { createAllowlistRuleNode } from './allowlist';
 
 /**
- * Rule builder class
+ * Rule builder class.
  */
 export class RuleFactory {
     /**
      * Creates rule of suitable class from text string
-     * It returns null if the line is empty or if it is a comment
+     * It returns null if the line is empty or if it is a comment.
      *
      * TODO: Pack `ignore*` parameters and `silent` into one object with flags.
      *
-     * @param inputRule rule string
-     * @param filterListId list id
-     * @param ruleIndex line start index in the source filter list; it will be used to find the original rule text
+     * @param node Rule node.
+     * @param filterListId List id.
+     * @param ruleIndex Line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
-     * the rule does not have source index
-     * @param ignoreNetwork do not create network rules
-     * @param ignoreCosmetic do not create cosmetic rules
-     * @param ignoreHost do not create host rules
+     * the rule does not have source index.
+     * @param ignoreNetwork Do not create network rules.
+     * @param ignoreCosmetic Do not create cosmetic rules.
+     * @param ignoreHost Do not create host rules.
      * @param silent Log the error for `true`, otherwise throw an exception on
-     * a rule creation
+     * a rule creation.
+     *
+     * @returns IRule object or null.
      *
      * @throws Error when `silent` flag is passed as false on rule creation error.
-     *
-     * @return IRule object or null
      */
     public static createRule(
         node: AnyRule,
@@ -99,6 +99,9 @@ export class RuleFactory {
      * Creates allowlist rule for domain.
      *
      * @param domain Domain name.
+     * @param filterListId List id.
+     * @param ruleIndex Line start index in the source filter list.
+     *
      * @returns Allowlist rule or null.
      */
     public static createAllowlistRule(

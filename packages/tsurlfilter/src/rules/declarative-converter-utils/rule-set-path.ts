@@ -52,7 +52,8 @@ export function getRuleSetPath(ruleSetId: string | number, baseDir?: string): st
  * extracts the last part if it contains slashes, removes a defined prefix if present,
  * and validates whether the remaining part is a numeric string.
  *
- * @param ruleSetId - The rule set ID or path to process.
+ * @param ruleSetId The rule set ID or path to process.
+ *
  * @returns The extracted rule set ID as a number, or `null` if the ID cannot be extracted.
  */
 export function extractRuleSetId(ruleSetId: string): number | null {

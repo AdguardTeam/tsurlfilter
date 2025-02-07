@@ -8,17 +8,17 @@ import { isString, unescapeChar } from '../utils/string-utils';
 import { WILDCARD } from '../common/constants';
 
 /**
- * Comma separator
+ * Comma separator.
  */
 export const COMMA_SEPARATOR = ',';
 
 /**
- * Pipe separator
+ * Pipe separator.
  */
 export const PIPE_SEPARATOR = '|';
 
 /**
- * Processed domain list
+ * Processed domain list.
  */
 export interface ProcessedDomainList {
     restrictedDomains: string[];
@@ -30,15 +30,18 @@ export interface ProcessedDomainList {
  * with domains restrictions.
  *
  * There are two options how you can add a domain restriction:
- * * `$domain` modifier: https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#domain-modifier
- * * domains list for the cosmetic rules
+ * - `$domain` modifier;
+ * - domains list for the cosmetic rules.
+ *
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#domain-modifier}
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#cosmetic-rules}
  *
  * The only difference between them is that in one case we use `|` as a separator,
  * and in the other case - `,`.
  *
- * Examples:
- * * `||example.org^$domain=example.com|~sub.example.com` -- network rule
- * * `example.com,~sub.example.com##banner` -- cosmetic rule
+ * @example
+ * `||example.org^$domain=example.com|~sub.example.com` -- network rule
+ * `example.com,~sub.example.com##banner` -- cosmetic rule
  */
 export class DomainModifier {
     /**
@@ -55,8 +58,9 @@ export class DomainModifier {
      * Processes domain list node, which means extracting permitted and restricted
      * domains from it.
      *
-     * @param domainListNode Domain list node to process
-     * @returns Processed domain list (permitted and restricted domains) ({@link ProcessedDomainList})
+     * @param domainListNode Domain list node to process.
+     *
+     * @returns Processed domain list (permitted and restricted domains) ({@link ProcessedDomainList}).
      */
     public static processDomainList(domainListNode: DomainList): ProcessedDomainList {
         const result: ProcessedDomainList = {
@@ -89,7 +93,7 @@ export class DomainModifier {
      * @param domains Domain list string or AGTree DomainList node.
      * @param separator Separator — `,` or `|`.
      *
-     * @throws An error if the domains string is empty or invalid
+     * @throws An error if the domains string is empty or invalid.
      */
     constructor(domains: string | DomainList, separator: typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR) {
         let processed: ProcessedDomainList;
@@ -152,14 +156,18 @@ export class DomainModifier {
     }
 
     /**
-     * Checks if rule has permitted domains
+     * Checks if rule has permitted domains.
+     *
+     * @returns True if the rule has permitted domains.
      */
     public hasPermittedDomains(): boolean {
         return !!this.permittedDomains && this.permittedDomains.length > 0;
     }
 
     /**
-     * Checks if rule has restricted domains
+     * Checks if rule has restricted domains.
+     *
+     * @returns True if the rule has restricted domains.
      */
     public hasRestrictedDomains(): boolean {
         return !!this.restrictedDomains && this.restrictedDomains.length > 0;
@@ -167,6 +175,8 @@ export class DomainModifier {
 
     /**
      * Gets list of permitted domains.
+     *
+     * @returns List of permitted domains or null if none.
      */
     public getPermittedDomains(): string[] | null {
         return this.permittedDomains;
@@ -174,19 +184,21 @@ export class DomainModifier {
 
     /**
      * Gets list of restricted domains.
+     *
+     * @returns List of restricted domains or null if none.
      */
     public getRestrictedDomains(): string[] | null {
         return this.restrictedDomains;
     }
 
     /**
-     * isDomainOrSubdomainOfAny checks if `domain` is the same or a subdomain
+     * Checks if `domain` is the same or a subdomain
      * of any of `domains`.
      *
-     * @param domain - domain to check
-     * @param domains - domains list to check against
+     * @param domain Domain to check.
+     * @param domains Domains list to check against.
      *
-     * @returns true if `domain` is the same or a subdomain of any of `domains`
+     * @returns True if `domain` is the same or a subdomain of any of `domains`.
      */
     public static isDomainOrSubdomainOfAny(domain: string, domains: string[]): boolean {
         for (let i = 0; i < domains.length; i += 1) {
@@ -208,7 +220,7 @@ export class DomainModifier {
                      * (for instance, they're stored in the CompilationCache in V8/Chromium),
                      * so calling the constructor here should not be a problem.
                      *
-                     * TODO use SimpleRegex.patternFromString(d) after it is refactored to not add 'g' flag
+                     * TODO: use SimpleRegex.patternFromString(d) after it is refactored to not add 'g' flag.
                      */
                     const domainPattern = new RegExp(d.slice(1, -1));
                     if (domainPattern.test(domain)) {
@@ -225,34 +237,34 @@ export class DomainModifier {
     }
 
     /**
-     * Checks if domain ends with wildcard
+     * Checks if domain ends with wildcard.
      *
-     * @param domain domain string to check
+     * @param domain Domain string to check.
      *
-     * @returns true if domain ends with wildcard
+     * @returns True if domain ends with wildcard.
      */
     public static isWildcardDomain(domain: string): boolean {
         return domain.endsWith('.*');
     }
 
     /**
-     * Checks if domain string does not ends with wildcard and is not regex pattern
+     * Checks if domain string does not ends with wildcard and is not regex pattern.
      *
-     * @param domain domain string to check
+     * @param domain Domain string to check.
      *
-     * @returns true if given domain is a wildcard or regexp pattern
+     * @returns True if given domain is a wildcard or regexp pattern.
      */
     public static isWildcardOrRegexDomain(domain: string): boolean {
         return DomainModifier.isWildcardDomain(domain) || SimpleRegex.isRegexPattern(domain);
     }
 
     /**
-     * Checks if wildcard matches domain
+     * Checks if wildcard matches domain.
      *
-     * @param wildcard
-     * @param domainNameToCheck
+     * @param wildcard The wildcard pattern to match against the domain.
+     * @param domainNameToCheck The domain name to check against the wildcard pattern.
      *
-     * @returns true if wildcard matches domain
+     * @returns True if wildcard matches domain.
      */
     private static matchAsWildcard(wildcard: string, domainNameToCheck: string): boolean {
         const wildcardedDomainToCheck = DomainModifier.genTldWildcard(domainNameToCheck);
@@ -265,11 +277,15 @@ export class DomainModifier {
     }
 
     /**
-     * Generates from domain tld wildcard e.g. google.com -> google.* ; youtube.co.uk -> youtube.*
+     * Generates from domain tld wildcard.
      *
-     * @param domainName
+     * @param domainName The domain name to generate the TLD wildcard for.
      *
-     * @returns string is empty if tld for provided domain name doesn't exists
+     * @returns String is empty if tld for provided domain name doesn't exists.
+     *
+     * @example
+     * `google.com` -> `google.*`
+     * `youtube.co.uk` -> `youtube.*`
      */
     private static genTldWildcard(domainName: string): string {
         // To match eTld like "com.ru" we use allowPrivateDomains wildcard

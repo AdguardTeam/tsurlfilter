@@ -19,8 +19,11 @@ export class SeqScanLookupTable implements ILookupTable {
     private rules: NetworkRule[] = [];
 
     /**
-     * addRule implements the ILookupTable interface for SeqScanLookupTable.
-     * @param rule
+     * Implements the ILookupTable interface for SeqScanLookupTable.
+     *
+     * @param rule Rule to add.
+     *
+     * @returns True if the rule was added.
      */
     addRule(rule: NetworkRule): boolean {
         if (!this.rules.includes(rule)) {
@@ -34,6 +37,8 @@ export class SeqScanLookupTable implements ILookupTable {
 
     /**
      * Implements the ILookupTable interface method.
+     *
+     * @returns Count of rules added to this lookup table.
      */
     getRulesCount(): number {
         return this.rulesCount;
@@ -41,7 +46,10 @@ export class SeqScanLookupTable implements ILookupTable {
 
     /**
      * Implements the ILookupTable interface method.
-     * @param request
+     *
+     * @param request Request to check.
+     *
+     * @returns Array of matching rules.
      */
     matchAll(request: Request): NetworkRule[] {
         const result = [];

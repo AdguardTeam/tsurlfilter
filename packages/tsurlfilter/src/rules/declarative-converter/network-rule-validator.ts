@@ -9,6 +9,10 @@ import type { RedirectModifier } from '../../modifiers/redirect-modifier';
 import { UnsupportedModifierError } from './errors/conversion-errors/unsupported-modifier-error';
 
 /**
+ * @typedef {import('../../engine/matching-result').MatchingResult} MatchingResult
+ */
+
+/**
  * Validator for each {@link NetworkRuleOption}.
  * By default, rule is supported, when all keys other than `name` are not set.
  */

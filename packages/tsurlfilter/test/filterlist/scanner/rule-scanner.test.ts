@@ -12,6 +12,7 @@ import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
  *
  * @param rawFilterList Raw filter list.
  * @param rule Rule text.
+ *
  * @returns Rule index or -1 if the rule couldn't be found.
  */
 const getRawRuleIndex = (rawFilterList: string, rule: string): number => {

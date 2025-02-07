@@ -11,12 +11,12 @@ module.exports = {
         'import',
         'import-newlines',
         '@typescript-eslint',
-        'jsdoc',
     ],
     extends: [
         'airbnb-base',
         'airbnb-typescript/base',
         'plugin:@typescript-eslint/eslint-recommended',
+        'plugin:jsdoc/recommended',
     ],
     ignorePatterns: [
         'dist',
@@ -38,19 +38,11 @@ module.exports = {
         '@typescript-eslint/interface-name-prefix': 'off',
         'arrow-body-style': 'off',
 
-        'jsdoc/check-tag-names': [
-            'warn',
-            {
-                // Define additional tags
-                // https://github.com/gajus/eslint-plugin-jsdoc/blob/main/docs/rules/check-tag-names.md#definedtags
-                definedTags: ['note'],
-            },
-        ],
-
         // Force proper import and export of types
         '@typescript-eslint/consistent-type-imports': [
             'error',
             {
+                prefer: 'type-imports',
                 fixStyle: 'inline-type-imports',
             },
         ],
@@ -60,5 +52,82 @@ module.exports = {
                 fixMixedExportsWithInlineTypeSpecifier: true,
             },
         ],
+
+        // types described in ts
+        'jsdoc/require-param-type': 'off',
+        'jsdoc/no-undefined-types': 'off',
+        'jsdoc/require-returns-type': 'off',
+        'jsdoc/require-description-complete-sentence': [
+            'error',
+            {
+                abbreviations: [
+                    'e.g.',
+                    'i.e.',
+                ],
+            },
+        ],
+        'jsdoc/require-hyphen-before-param-description': ['error', 'never'],
+        'jsdoc/multiline-blocks': ['error', {
+            noSingleLineBlocks: true,
+            singleLineTags: [
+                'inheritdoc',
+            ],
+        }],
+        'jsdoc/check-tag-names': [
+            'warn',
+            {
+                // Define additional tags
+                // https://github.com/gajus/eslint-plugin-jsdoc/blob/main/docs/rules/check-tag-names.md#definedtags
+                definedTags: ['note'],
+            },
+        ],
+        'jsdoc/require-returns': ['error'],
+        'jsdoc/tag-lines': [
+            'error',
+            'any',
+            {
+                startLines: 1,
+            },
+        ],
+        'jsdoc/sort-tags': ['error', {
+            linesBetween: 1,
+            tagSequence: [
+                {
+                    tags: [
+                        'file',
+                    ],
+                },
+                {
+                    tags: [
+                        'template',
+                    ],
+                },
+                {
+                    tags: [
+                        'see',
+                    ],
+                },
+                {
+                    tags: [
+                        'param',
+                    ],
+                },
+                {
+                    tags: [
+                        'returns',
+                    ],
+                },
+                {
+                    tags: [
+                        'throws',
+                    ],
+                },
+                {
+                    tags: [
+                        'example',
+                    ],
+                },
+            ],
+        }],
     },
 };

@@ -42,9 +42,14 @@ const readFileByLines = (filePath: string) => {
 };
 
 /**
- * Finds nearest parent row in the table of contents
+ * Finds nearest parent row in the table of contents.
+ *
+ * @param tableOfContents The table of contents as an array of strings.
+ * @param indentLeft The indentation string to match parent rows.
+ *
+ * @returns The link to the nearest parent row.
  */
-const findParentLink = (tableOfContents: string[], indentLeft: string) => {
+const findParentLink = (tableOfContents: string[], indentLeft: string): string => {
     const parentRow = tableOfContents
         .slice()
         .reverse()
@@ -63,7 +68,11 @@ const findParentLink = (tableOfContents: string[], indentLeft: string) => {
 };
 
 /**
- * Converts provided bunch of text rules to Declarative rules
+ * Converts provided bunch of text rules to Declarative rules.
+ *
+ * @param rules Text rules to be converted.
+ *
+ * @returns Declarative rules.
  */
 const convertTxtToRules = async (
     rules: string[],
@@ -92,8 +101,14 @@ const convertTxtToRules = async (
 };
 
 /**
- * From provided line of text generate one row to the table of contents
- * and id for link, e.g.:
+ * From provided line of text generate one row to the table of contents and id for link.
+ *
+ * @param txt The text to be parsed.
+ * @param tableOfContents The table of contents as an array of strings.
+ *
+ * @returns The row for the table of contents and the link to the text.
+ *
+ * @example
  * '# Description' -> ['1. [Description](#description)', '<a name="description"></a>']
  */
 const parseRowAndLinkFromText = (

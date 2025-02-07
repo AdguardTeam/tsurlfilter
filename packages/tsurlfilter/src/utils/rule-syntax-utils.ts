@@ -9,16 +9,18 @@ import { DomainModifier } from '../modifiers/domain-modifier';
 type RulesUnion = NetworkRule | CosmeticRule;
 
 /**
- * Module with miscellaneous syntax utils exposed in API
+ * Module with miscellaneous syntax utils exposed in API.
  */
 export class RuleSyntaxUtils {
     private static DUMMY_FILTER_ID = 0;
 
     /**
-     * Checks if rule can be matched by domain
+     * Checks if rule can be matched by domain.
      *
-     * @param node Rule node
-     * @param domain Domain to check
+     * @param node Rule node.
+     * @param domain Domain to check.
+     *
+     * @returns True if the rule can be matched by the domain, false otherwise.
      */
     public static isRuleForDomain(node: AnyRule, domain: string): boolean {
         const rule = RuleFactory.createRule(node, this.DUMMY_FILTER_ID) as RulesUnion | null;
@@ -33,10 +35,12 @@ export class RuleSyntaxUtils {
     }
 
     /**
-     * Checks if rule can be matched by URL
+     * Checks if rule can be matched by URL.
      *
-     * @param node Rule node
-     * @param url URL to check
+     * @param node Rule node.
+     * @param url URL to check.
+     *
+     * @returns True if the rule can be matched by the URL, false otherwise.
      */
     public static isRuleForUrl(node: AnyRule, url: string): boolean {
         const domain = getHostname(url);

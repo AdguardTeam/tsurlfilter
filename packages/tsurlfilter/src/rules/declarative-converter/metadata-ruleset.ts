@@ -8,6 +8,10 @@ import { getRuleSetId } from '../declarative-converter-utils';
 import { createMetadataRule, type MetadataRule } from './metadata-rule';
 
 /**
+ * @typedef {import('./rule-set').RuleSetByteRangeCategory} RuleSetByteRangeCategory
+ */
+
+/**
  * Metadata ruleset ID.
  */
 export const METADATA_RULESET_ID = 0;

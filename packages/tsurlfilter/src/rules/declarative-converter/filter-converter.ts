@@ -1,3 +1,11 @@
+/**
+ * @typedef {import('./errors/unavailable-sources-errors').UnavailableFilterSourceError} UnavailableFilterSourceError
+ */
+
+/**
+ * @typedef {import('./declarative-rule').DeclarativeRule} DeclarativeRule
+ */
+
 /* eslint-disable jsdoc/require-description-complete-sentence  */
 /**
  * @file Describes the conversion from a filter list {@link IFilter}
@@ -130,6 +138,7 @@ interface IFilterConverter {
      * is not available OR some of {@link ResourcesPathError},
      * {@link EmptyOrNegativeNumberOfRulesError},
      * {@link NegativeNumberOfRulesError}.
+     *
      * @see {@link DeclarativeFilterConverter#checkConverterOptions}
      * for details.
      *

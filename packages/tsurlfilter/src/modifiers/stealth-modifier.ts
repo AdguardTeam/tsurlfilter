@@ -64,8 +64,7 @@ export const STEALTH_MODE_FILTER_ID = -1;
  * Stealth modifier class.
  * Rules with $stealth modifier will disable specified stealth options for matched requests.
  *
- * Learn more about it here:
- * https://adguard.com/kb/general/ad-filtering/create-own-filters/#stealth-modifier
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#stealth-modifier}
  */
 export class StealthModifier {
     private readonly PIPE_SEPARATOR = '|';
@@ -75,9 +74,9 @@ export class StealthModifier {
     /**
      * Parses the options string and creates a new stealth modifier instance.
      *
-     * @param optionsStr options string
+     * @param optionsStr Options string.
      *
-     * @throws SyntaxError on inverted stealth options, which are not supported
+     * @throws SyntaxError on inverted stealth options, which are not supported.
      */
     constructor(optionsStr: string) {
         if (optionsStr.trim().length === 0) {
@@ -129,8 +128,9 @@ export class StealthModifier {
     /**
      * Checks if the given string is a valid $stealth option, supported by browser extension.
      *
-     * @param option - Option name
-     * @returns True if the given string is a valid $stealth option
+     * @param option Option name.
+     *
+     * @returns True if the given string is a valid $stealth option.
      */
     private static isSupportedStealthOption = (
         option: string,
@@ -138,8 +138,10 @@ export class StealthModifier {
 
     /**
      * Checks if the given string is a valid $stealth option.
-     * @param option
-     * @returns
+     *
+     * @param option Option name.
+     *
+     * @returns True if the given string is a valid $stealth option.
      */
     private static isValidStealthOption = (
         option: string,
@@ -148,7 +150,7 @@ export class StealthModifier {
     /**
      * Checks if this stealth modifier has values.
      *
-     * @returns True if this stealth modifier has at least one value
+     * @returns True if this stealth modifier has at least one value.
      */
     public hasValues(): boolean {
         return this.options !== StealthOption.NotSet;
@@ -157,8 +159,9 @@ export class StealthModifier {
     /**
      * Checks if this stealth modifier is disabling the given stealth option.
      *
-     * @param optionName - Stealth option name
-     * @returns True if this stealth modifier is disabling the given stealth option
+     * @param optionName Stealth option name.
+     *
+     * @returns True if this stealth modifier is disabling the given stealth option.
      */
     public hasStealthOption(optionName: StealthOptionName): boolean {
         const option = StealthOption[optionName];

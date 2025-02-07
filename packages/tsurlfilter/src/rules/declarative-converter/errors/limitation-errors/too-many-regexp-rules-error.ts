@@ -1,4 +1,8 @@
 /**
+ * @typedef {import('../../source-map').Source} Source
+ */
+
+/**
  * Describes an error when the maximum number of regexp rules is reached.
  */
 export class TooManyRegexpRulesError extends Error {

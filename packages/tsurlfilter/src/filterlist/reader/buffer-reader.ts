@@ -19,7 +19,7 @@ export class BufferReader implements IReader {
     /**
      * Constructor of a BufferReader.
      *
-     * @param buffer - Uint8Array that contains a UTF-8 encoded string.
+     * @param buffer Uint8Array that contains a UTF-8 encoded string.
      */
     constructor(buffer: InputByteBuffer) {
         this.buffer = buffer;
@@ -27,9 +27,9 @@ export class BufferReader implements IReader {
     }
 
     /**
-     * Reads the next line in the buffer
+     * Reads the next line in the buffer.
      *
-     * @return text or null on end
+     * @returns Text or null on end.
      */
     public readNext(): AnyRule | null {
         // If the next byte is 0, it means that there's nothing to read.

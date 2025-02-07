@@ -16,12 +16,11 @@ export enum HTTPMethod {
  * Method modifier class.
  * Rules with $method modifier will be applied only to requests with specified methods.
  *
- * Learn more about it here:
- * https://adguard.com/kb/general/ad-filtering/create-own-filters/#method-modifier
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#method-modifier}
  */
 export class MethodModifier implements IValueListModifier<HTTPMethod> {
     /**
-     * Request methods separator
+     * Request methods separator.
      */
     private static PIPE_SEPARATOR = '|';
 
@@ -36,9 +35,9 @@ export class MethodModifier implements IValueListModifier<HTTPMethod> {
     public readonly restrictedValues: HTTPMethod[] | null;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param value
+     * @param methodsStr Value of the modifier.
      */
     constructor(methodsStr: string) {
         if (methodsStr === '') {

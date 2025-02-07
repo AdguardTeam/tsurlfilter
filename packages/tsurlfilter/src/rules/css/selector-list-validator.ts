@@ -18,7 +18,9 @@ import { type CssValidationResult } from './css-validation-result';
  * and determines if the selector is an Extended CSS selector.
  *
  * @param selectorList Selector list to validate.
+ *
  * @returns Validation result, see {@link CssValidationResult}.
+ *
  * @note This is a basic validation for the most necessary things, it does not guarantee that the CSS is completely
  * valid.
  */

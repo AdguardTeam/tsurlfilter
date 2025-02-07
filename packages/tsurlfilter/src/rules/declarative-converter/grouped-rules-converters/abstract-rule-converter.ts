@@ -144,12 +144,13 @@ import { getErrorMessage } from '../../../common/error';
  * Contains the generic logic for converting a {@link NetworkRule}
  * into a {@link DeclarativeRule}.
  *
- * Descendant classes must override the {@link convert} method,
+ * Descendant classes must override the {@link DeclarativeRuleConverter.convert} method,
  * where some logic must be defined for each rule type.
  *
- * Also descendant classes can use {@link convertRules}, {@link convertRule} and
- * {@link groupConvertedRules} methods, which contains the general logic of
- * transformation and grouping of rules.
+ * Also descendant classes can use {@link DeclarativeRuleConverter.convertRules},
+ * {@link DeclarativeRuleConverter.convertRule}
+ * and {@link DeclarativeRuleConverter.groupConvertedRules} methods, which contains
+ * the general logic of transformation and grouping of rules.
  */
 export abstract class DeclarativeRuleConverter {
     /**
@@ -778,9 +779,7 @@ export abstract class DeclarativeRuleConverter {
      * - {@link UnsupportedRegexpError} if the regexp is not supported
      * by RE2 syntax (@see {@link https://github.com/google/re2/wiki/Syntax}),
      * - {@link EmptyDomainsError} if the declarative rule has empty domains
-     * while the original rule has non-empty domains,
-     * - {@link NonAsciiUrlFilterError} if condition `urlFilter` contains non-ASCII characters,
-     * or null if no errors are found.
+     * while the original rule has non-empty domains.
      */
     private static async checkDeclarativeRuleApplicable(
         networkRule: NetworkRule,

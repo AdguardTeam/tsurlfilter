@@ -2,43 +2,43 @@ import { SimpleRegex } from './simple-regex';
 import { type Request } from '../request';
 
 /**
- * Rule pattern class
+ * Rule pattern class.
  *
  * This class parses rule pattern text to simple fields.
  */
 export class Pattern {
     /**
-     * Original pattern text
+     * Original pattern text.
      */
     public readonly pattern: string;
 
     /**
-     * Shortcut string
+     * Shortcut string.
      */
     public readonly shortcut: string;
 
     /**
-     * If this pattern already prepared indicator
+     * If this pattern already prepared indicator.
      */
     private prepared: boolean | undefined;
 
     /**
-     * Parsed hostname
+     * Parsed hostname.
      */
     private hostname: string | undefined;
 
     /**
-     * Parsed regular expression
+     * Parsed regular expression.
      */
     private regex: RegExp | undefined;
 
     /**
-     * Invalid regex flag
+     * Invalid regex flag.
      */
     private regexInvalid: boolean | undefined;
 
     /**
-     * Domain specific pattern flag
+     * Domain specific pattern flag.
      */
     private patternDomainSpecific: boolean | undefined;
 
@@ -50,14 +50,15 @@ export class Pattern {
     private patternShortcut: boolean | undefined;
 
     /**
-     * If pattern is match-case regex
+     * If pattern is match-case regex.
      */
     private readonly matchcase: boolean | undefined;
 
     /**
-     * Constructor
-     * @param pattern
-     * @param matchcase
+     * Constructor.
+     *
+     * @param pattern Pattern.
+     * @param matchcase Flag for case-sensitive matching, default is false.
      */
     constructor(pattern: string, matchcase = false) {
         this.pattern = pattern;
@@ -68,10 +69,11 @@ export class Pattern {
     /**
      * Checks if this rule pattern matches the specified request.
      *
-     * @param request - request to check
-     * @param shortcutMatched if true, it means that the request already matches
+     * @param request Request to check.
+     * @param shortcutMatched If true, it means that the request already matches
      * this pattern's shortcut and we don't need to match it again.
-     * @returns true if pattern matches
+     *
+     * @returns True if pattern matches.
      */
     public matchPattern(request: Request, shortcutMatched: boolean): boolean {
         this.prepare();
@@ -108,8 +110,9 @@ export class Pattern {
      * Checks if this rule pattern matches the specified relative path string.
      * This method is used in cosmetic rules to implement the $path modifier matching logic.
      *
-     * @param path - path to check
-     * @returns true if pattern matches
+     * @param path Path to check.
+     *
+     * @returns True if pattern matches.
      */
     public matchPathPattern(path: string): boolean {
         this.prepare();
@@ -136,15 +139,18 @@ export class Pattern {
     }
 
     /**
-     * matchShortcut simply checks if shortcut is a substring of the URL.
-     * @param request - request to check.
+     * Simply checks if shortcut is a substring of the URL.
+     *
+     * @param str Shortcut to check.
+     *
+     * @returns True if the shortcut is a substring of the URL.
      */
     private matchShortcut(str: string): boolean {
         return str.indexOf(this.shortcut) >= 0;
     }
 
     /**
-     * Prepares this pattern
+     * Prepares this pattern.
      */
     private prepare(): void {
         if (this.prepared) {
@@ -181,7 +187,7 @@ export class Pattern {
     }
 
     /**
-     * Compiles this pattern regex
+     * Compiles this pattern regex.
      */
     private compileRegex(): void {
         const regexText = SimpleRegex.patternToRegexp(this.pattern);
@@ -199,9 +205,11 @@ export class Pattern {
     /**
      * Checks if we should match hostnames and not the URL
      * this is important for the cases when we use urlfilter for DNS-level blocking
-     * Note, that even though we may work on a DNS-level, we should still sometimes match full URL instead
+     * Note, that even though we may work on a DNS-level, we should still sometimes match full URL instead.
      *
-     * @param request
+     * @param request Request to check.
+     *
+     * @returns True if the hostname should be matched.
      */
     private shouldMatchHostname(request: Request): boolean {
         if (!request.isHostnameRequest) {
@@ -212,7 +220,9 @@ export class Pattern {
     }
 
     /**
-     * In case pattern starts with the following it targets some specific domain
+     * In case pattern starts with the following it targets some specific domain.
+     *
+     * @returns True if the pattern targets a specific domain.
      */
     public isPatternDomainSpecific(): boolean {
         if (this.patternDomainSpecific === undefined) {

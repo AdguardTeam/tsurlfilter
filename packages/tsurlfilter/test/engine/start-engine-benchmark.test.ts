@@ -36,6 +36,12 @@ describe('Start Engine Benchmark', () => {
 
     let result: Record<string, string>;
 
+    /**
+     * Runs benchmark.
+     *
+     * @param title Title.
+     * @param cb Callback.
+     */
     function runBenchmark(title: string, cb: () => number): void {
         const measurements = [];
         let i = ROUNDS;

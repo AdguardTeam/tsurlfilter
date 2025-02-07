@@ -1,6 +1,6 @@
 /**
  * Http headers item type represents incoming response headers.
- * To be used for headers matching
+ * To be used for headers matching.
  */
 export type HttpHeadersItem = {
     /**
@@ -31,8 +31,7 @@ export type HttpHeaderMatcher = {
  * The $header modifier allows matching the HTTP response
  * by a specific header with (optionally) a specific value.
  *
- * Learn more about it here:
- * https://adguard.com/kb/general/ad-filtering/create-own-filters/#header-modifier
+ * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#header-modifier}
  */
 export class HeaderModifier {
     /**
@@ -58,7 +57,8 @@ export class HeaderModifier {
     public readonly value: string | RegExp | null;
 
     /**
-     * Constructor
+     * Constructor.
+     *
      * @param headerStr Header modifier value.
      */
     constructor(headerStr: string) {
@@ -89,8 +89,9 @@ export class HeaderModifier {
     }
 
     /**
-     * Returns header modifier value
-     * @returns header modifier value
+     * Returns header modifier value.
+     *
+     * @returns Header modifier value.
      */
     public getHeaderModifierValue(): HttpHeaderMatcher {
         return {
