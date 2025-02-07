@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [3.0.0-alpha.5] - 2024-02-07
+
+### Changed
+
+- No `semver` usage in `agent-parser` to improve code speed, reduce bundle size
+  and avoid issues with ESM imports.
+
+[3.0.0-alpha.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.0.0-alpha.5
+
 ## [3.0.0-alpha.4] - 2024-02-03
 
 ### Changed

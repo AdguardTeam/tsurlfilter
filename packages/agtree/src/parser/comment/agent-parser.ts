@@ -1,9 +1,3 @@
-/* eslint-disable no-param-reassign */
-// eslint-disable-next-line import/extensions
-import valid from 'semver/functions/valid.js';
-// eslint-disable-next-line import/extensions
-import coerce from 'semver/functions/coerce.js';
-
 import { StringUtils } from '../../utils/string';
 import { type Agent, type Value } from '../../nodes';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
@@ -28,13 +22,22 @@ import { getAdblockSyntax } from '../../common/agent-common';
  */
 export class AgentParser extends BaseParser {
     /**
+     * Regex to match a version inside a string.
+     */
+    private static readonly VERSION_REGEX = /\b\d+\.\d+(\.\d+)?\b/;
+
+    /**
      * Checks if the string is a valid version.
+     *
+     * The string can have a version in formats like
+     * [Adblock Plus 2.0], or [Adblock Plus 3.1; AdGuard].
      *
      * @param str String to check
      * @returns `true` if the string is a valid version, `false` otherwise
      */
     private static isValidVersion(str: string): boolean {
-        return valid(coerce(str)) !== null;
+        // Check if the string contains a valid version pattern
+        return AgentParser.VERSION_REGEX.test(str);
     }
 
     /**
