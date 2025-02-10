@@ -77,7 +77,8 @@ const validateExtraction = async (
 
     const reference = await fs.promises
         .readFile(referencePath, 'utf8')
-        .then((r: string) => r.split('\n'));
+        .then((r: string) => r.split('\n'))
+        .then((r: string[]) => r.filter((s) => !s.startsWith('!')));
 
     if (shortcuts.length !== reference.length) {
         throw new Error('Result length is not equal to reference.');

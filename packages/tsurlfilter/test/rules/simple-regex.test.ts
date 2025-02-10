@@ -60,9 +60,6 @@ describe('SimpleRegex.extractShortcut', () => {
         shortcut = SimpleRegex.extractShortcut('/(https:\\/\\/)142\\.91\\.159\\..{100,}/');
         expect(shortcut).toEqual('142.91.159.');
 
-        shortcut = SimpleRegex.extractShortcut('/(https?:\\/\\/)142\\.91\\.159\\..{100,}/');
-        expect(shortcut).toEqual('');
-
         shortcut = SimpleRegex.extractShortcut('/^https:\\/\\/sm\\.l/');
         expect(shortcut).toEqual('sm.l');
 
@@ -95,6 +92,70 @@ describe('SimpleRegex.extractShortcut', () => {
             '/^http(s|):\/\/([a-z0-9-\.]+|)+[a-z0-9-]+\.[a-z]+\/adManager\/(css|js)\/[A-z]+\.(css|js)$/',
         );
         expect(shortcut).toEqual('admanager');
+
+        // ignore disjunctions
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3105
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(example|test)\\.org/');
+        expect(shortcut).toEqual('.org');
+
+        shortcut = SimpleRegex.extractShortcut('/(regular|bold)\\.woff2$/');
+        expect(shortcut).toEqual('.woff2');
+
+        shortcut = SimpleRegex.extractShortcut('/(regular|bold).woff2$/');
+        expect(shortcut).toEqual('woff2');
+
+        // ignore named backreferences: \k<name>
+        shortcut = SimpleRegex.extractShortcut('/\\k<example>/');
+        expect(shortcut).toEqual('');
+
+        // ignore named groups
+        shortcut = SimpleRegex.extractShortcut('/(?<thisisaverylongname>example)\\.org/');
+        // TODO: Improve extractor to output 'example.org' here
+        // Currently we collect tokens from groups, but we do not check if the two tokens are connected
+        expect(shortcut).toEqual('example');
+
+        // ignore negative lookbehind
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(?<!thisisaverylongnegativelookbehind)example\\.org/');
+        expect(shortcut).toEqual('example.org');
+
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(?<!thisisaverylongnegativelookbehind)example.org/');
+        expect(shortcut).toEqual('example');
+
+        // ignore negative lookahead
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/example(?!thisisaverylongnegativeahead).org/');
+        expect(shortcut).toEqual('example');
+
+        // ignore \cX control characters
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/example\\cX.org/');
+        expect(shortcut).toEqual('example');
+
+        // ignore \uXXXX unicode characters
+        shortcut = SimpleRegex.extractShortcut('/\\u0041/');
+        expect(shortcut).toEqual('');
+
+        // ignore \xXX hex characters
+        shortcut = SimpleRegex.extractShortcut('/\\x41/');
+        expect(shortcut).toEqual('');
+
+        // ignore \0 null character
+        shortcut = SimpleRegex.extractShortcut('/^\\0/');
+        expect(shortcut).toEqual('');
+
+        // tricky case: 'aa' token collected from the first alternative, but the whole group should be ignored
+        shortcut = SimpleRegex.extractShortcut('/(aa_bb|cc)d/');
+        expect(shortcut).toEqual('d');
+
+        // the whole root group should be ignored
+        shortcut = SimpleRegex.extractShortcut('/aa_bb|cc|d/');
+        expect(shortcut).toEqual('');
+
+        // the whole root group should be ignored, including (?:d)
+        shortcut = SimpleRegex.extractShortcut('/aa_bb|cc(?:d)/');
+        expect(shortcut).toEqual('');
+
+        // in this case, 'd' is a fixed token, can be used as a shortcut
+        shortcut = SimpleRegex.extractShortcut('/(aa_bb|cc)(?:d)/');
+        expect(shortcut).toEqual('d');
     });
 
     it('works if it discards incorrect patterns', () => {
@@ -102,13 +163,13 @@ describe('SimpleRegex.extractShortcut', () => {
         expect(shortcut).toEqual('');
 
         shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/[a-z]?example.org/');
-        expect(shortcut).toEqual('');
+        expect(shortcut).toEqual('example');
 
-        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(!?test.)example.org/');
-        expect(shortcut).toEqual('');
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(?<!test.)example.org/');
+        expect(shortcut).toEqual('example');
 
-        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/(!?test.)example.org/');
-        expect(shortcut).toEqual('');
+        shortcut = SimpleRegex.extractShortcut('/^http:\\/\\/test.(?!example\\.)org/');
+        expect(shortcut).toEqual('test');
     });
 });
 

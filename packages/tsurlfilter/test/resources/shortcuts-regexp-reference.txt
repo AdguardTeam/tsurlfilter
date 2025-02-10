@@ -1,320 +1,640 @@
+! /consent.[\s\S]*.de/
 consent
+! /\/wp-content\/[a-f0-9]{32}.js/
 content/
-
-support
-mybook
-
+! /der-windows-papst.de\/.{32}\?ver/
+windows
+! /\/(support_banner.*|sidebar-your-brand-on-your-links.*|sidebar-how-to-build-a-brand|sidebar-stop-using-generic-links.*)\.(jpg|png)/
+/
+! /(mybook-new|sign-book2)\.(jpg|png)/
+.
+! /^https:\/\/[0-9a-z]{7,25}\.com\/v2(?:\/0\/)?(?=[0-9a-z_-]{0,84}[A-Z])(?=[a-zA-Z_-]{0,84}[0-9])[0-9a-zA-Z_-]{54,85}(#\?v=[0-9a-f]{32})?$/
+.com/v2
+! /:\/\/shatter-box\.com\/wp-content\/uploads\/[A-Za-z0-9]+\/[A-Za-z0-9]+\.js/
 content/uploads/
+! /:\/\/studopedia\.(org|su|info)\/\w{32}.js/
 studopedia.
+! /^142\.91\.159\.(1[5-9]\d|2[0-4]\d|250):(80|443)$/
 142.91.159.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+! /^https?:\/\/[0-9a-z]{8,}\.xyz\/.*/
+.xyz/
+! /^https?:\/\/[0-9a-z]{8,}\.com\/.*/
+.com/
+! /^https?:\/\/[0-9a-z]{8,}\.com\/.*/
+.com/
+! /^https?:\/\/[0-9a-z]{8,}\.com\/.*/
+.com/
+! /^https?:\/\/.*\.(jpg|jpeg|gif|png|php|svg|ico|js|txt|css|srt)/
+.
+! /^https?:\/\/.*\.(club|net|xyz|top|casa)\//
+.
+! /^https?:\/\/.*\.(jpg|gif|png|php|svg|ico|js|txt|css)/
+.
+! /^https?:\/\/.*\.(club|bid|biz|xyz|site|pro|info|online|icu|monster|buzz|website|biz|re|casa|top|one|space|network|live|systems|ml|world|life|co)\/.*/
+.
+! /^https?:\/\/.*\.(jpg|gif|png|php|svg|ico|js|txt|css)/
+.
+! /^https?:\/\/.*\.(club|net|xyz|com)\//
+.
+! /^https?:\/\/(.+?\.)?videogamesblogger\.com\/wp-content\/uploads\/.*[a-zA-Z0-9]{8,}\.*/
+videogamesblogger.com/wp
+! /^https?:\/\/.*\.(jpg|png|php|html|svg|ico|js)/
+.
+! /^https?:\/\/.*\.(jpg|png|php|html|svg|ico|js)/
+.
+! /^https?:\/\/.*\.(jpg|png|php|html|svg|ico)/
+.
+! /^https?:\/\/([0-9a-z\-]+\.)?(9anime|animeland|animenova|animeplus|animetoon|animewow|gamestorrent|goodanime|gogoanime|igg-games|kimcartoon|mangapanda|mangareader|memecenter|readcomiconline|toonget|toonova|watchcartoononline)\.[a-z]{2,4}\/(?!([Ss]cripts|[Uu]ploads|[Ii]mages|assets|combined|content|cover|img|static|thumbs|wp-content|wp-includes))(.*)/
+.
+! /^https?:\/\/([0-9a-z\-]+\.)?(9anime|animeland|animenova|animeplus|animetoon|animewow|gamestorrent|goodanime|gogoanime|igg-games|kimcartoon|memecenter|readcomiconline|toonget|toonova|watchcartoononline)\.[a-z]{2,4}\/(?!([Ss]cripts|[Uu]ploads|[Ii]mages|assets|combined|content|cover|img|static|thumbs|wp-content|wp-includes))(.*)/
+.
+! /^https?:\/\/([0-9a-z\-]+\.)?(9anime|animeland|animenova|animeplus|animetoon|animewow|gamestorrent|goodanime|gogoanime|igg-games|kimcartoon|memecenter|readcomiconline|toonget|toonova|watchcartoononline)\.[a-z]{2,4}\/(?!([Ss]cripts|[Uu]ploads|[Ii]mages|combined|content|cover|img|static|thumbs|wp-content|wp-includes))(.*)/
+.
+! /^https:\/\/[a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z]+\.com\/[a-z\/][a-z\/]+\?id=19[0-9][0-9][0-9][0-9][0-9]$/
+.com/
+! /^https?:\/\/[0-9a-z]{13,14}\.cloudfront\.net\/\?[a-z]{3,5}=\d{6}$/
+.cloudfront.net/
+! /nilesoft.org\/assets\/js\/lib\/[a-f0-9]+$/
 org/assets/js/lib/
+! /fontyukle.net\/js\/\w+.js/
 fontyukle
-
-
+! /^https?:\/\/cdn\.http\.anno\.channel4\.com\/m\/[\s\S]*?_[\s\S]*_\d+\.mp4/
+cdn.http.anno.channel4.com/m/
+! /^https?:\/\/anonymousemail\.me\/[\S]{3,10}\.js$/
+anonymousemail.me/
+! /\/[a-z0-9][a-z0-9]\/[a-z0-9][a-z0-9]\/[a-z0-9][a-z0-9]\/.*\.js/
 .js
+! /:\/\/[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9].[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9].com\/.*.js/
 com/
+! /\/\/s5o.ru\/source\/_desktop\/assets\/[0-9][0-9][0-9][0-9].(jpg)/
 desktop/assets/
+! /\/\/s5o.ru\/source\/_desktop\/assets\/[0-9].(jpg)/
 desktop/assets/
+! /\/\/s5o.ru\/source\/_desktop\/assets\/[0-9][0-9][0-9][0-9].(png)/
 desktop/assets/
+! /\/\/s5o.ru\/source\/_desktop\/assets\/[0-9].(png)/
 desktop/assets/
+! /\:\/\/[a-z0-9]*.[a-z]*\/[0-9]*\//
 /
+! /^https:\/\/banker\.az\/wp-content\/uploads\/[0-9]{4}\/[0-9]{2}\/[0-9]{3}x[0-9]{3}\./
 content/uploads/
+! /sport.cz\/[-_a-zA-Z0-9]{20,}\/[-_a-zA-Z0-9]{3,}\/[-_a-zA-Z0-9]{20,}./
 sport
+! /idnes.cz\/[-_a-zA-Z0-9]{20,}\/[-_a-zA-Z0-9]{20,}\/[-_a-zA-Z0-9]{20,}\/[-_a-zA-Z0-9]{20,}/
 idnes
+! /aktualne.cz\/[-_a-zA-Z0-9]{20,}/
 aktualne
+! /^https:\/\/es\.ylilauta\.org\/files\/[a-z0-9]+\/[a-z0-9]+\/[a-z0-9]+\.jpg/
 es.ylilauta.org/files/
+! /prixa.*\.net\/media\/(Parvo|Ratop|Riddh)\/[A-Za-z0-9-_]+.(gif|jpg)/
 .net/media/
+! /prixa.*\.net\/media\/[0-9A-Za-z-_]*.(gif|jpg)/
 .net/media/
-bantengmerahnew
+! /\/(bantengmerahNEW|.*-Anichin)\.gif$/
+.gif
+! /\/js\/_[a-zA-Z]{17}\.js$/
 /js/
+! /^https:\/\/[a-z]{2,14}\.wp\.pl\/[a-zA-Z0-9_-]{200,}/
 .wp.pl/
+! /1688porn.tv\/.*[-\/]\d+x\d+.*\.gif/
 1688porn
-
+! /thaihubx.tv\/(?!.*(animated)).*\.gif/
+thaihubx
+! /\/uploads\/\d+\/\d+\/[A-D0-9]{8}-.*\.gif/
 /uploads/
+! /139.45.197.24\d/
 139
-
-
-
+! /\/(?:[0-9a-f]{2}\/){3}[0-9a-f]{32}\.js/
+.js
+! /^https?:\/\/[0-9a-z]*\.?[-0-9a-z]{4,}\.[a-z]{2,11}\/(?:[0-9a-z]{6,8}\/)?\/?(?:article\d{4}\.doc)?\?[ou]=[0-9a-z]{7}&[ou]=[0-9a-z]{7}/
+article
+! /^https?:\/\/[0-9a-z]*\.?[-0-9a-z][-0-9a-z][-0-9a-z][-0-9a-z]+\.[a-z][a-z]+\/([0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]+\/)?\/?\?[ou]=[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]&[ou]=[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]/
+.
+! /^https:\/\/[0-9a-f]{10}\.[0-9a-f]{10}\.com\/[0-9a-f]{32}\.js$/
 .com/
-
+! /^https:\/\/[a-z-]{8,15}\.(?:com|net|tv|xyz)\/(?:40[01]|50?0?)\/\d{6,7}\??\S*$/
+.
+! /\/t\/[0-9]{3}\/[0-9]{3}\/a[0-9]{4,9}\.js$/
 /t/
-
-
+! /^https?:\/\/[0-9a-z]{13,14}\.cloudfront\.net\/\?[a-z]{3,5}=\d{6}$/
+.cloudfront.net/
+! /\/[0-9][0-9][0-9][0-9][0-9]\?version_name=[a-z]$/
+version
+! /[0-9a-f]{32}\/invoke\.js/
 /invoke.js
+! /^https:\/\/[a-z]{3,5}\.[a-z]{10,14}\.top\/[a-z]{10,16}\/[a-z]{5,6}$/
 .top/
+! /^https:\/\/[a-z]{2,5}\.[a-z]{10,14}\.com\/[a-zA-Z0-9]{10,16}\/[a-zA-Z]{5,6}$/
 .com/
+! /^https:\/\/[a-z][a-z][a-z]+\.[a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z]+\.top\/[a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z]+\/[a-z][a-z][a-z][a-z][a-z]+$/
 .top/
+! /^https:\/\/[a-z][a-z]+\.[a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z]+\.com\/[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]+\/[a-zA-Z][a-zA-Z][a-zA-Z][a-zA-Z][a-zA-Z]+$/
 .com/
+! /^https:\/\/[a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z]+\.com\/[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]+\/[a-zA-Z][a-zA-Z][a-zA-Z][a-zA-Z][a-zA-Z]+$/
 .com/
-
+! /\/[a-z]{4,}\/(?!holly7)(?!siksik7)[0-9a-z]{3,}\d\.\d{1,2}\.\d{1,2}\.[0-9a-f]{32}\.js$/
 .js
+! /\.[a-z]{3,5}\/[0-9a-z]{8,12}\/[0-9a-z]{8,12}\.js$/
+.js
+! //[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]+/[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]+.js$/
 js
+! /\/t[a-f0-9v]{10,13}\.js$/
 .js
-
-readcomiconline
-
+! /(toonget|kickassanime|watchanime|(the)?watchcartoons?online|readcomiconline|kimcartoon|kiss-anime|9anime|gogoanimes?|toonova|animeflv|animeplus|goodanime|animewow|animenova|animetoon|mangapanda|memecenter|mangareader|mangafreak)\.[a-z]{2,4}\/[s\S]*\/[-_a-zA-Z0-9]{22,}/
+.
+! /(readcomiconline|kimcartoon|kiss-anime|9anime|gogoanime|toonova|animeflv|animeplus|goodanime|animewow|animenova|animetoon|mangapanda|memecenter|mangareader)\.[a-z]{2,4}\/[-_a-zA-Z0-9]{3,}\/[-_a-zA-Z0-9]{20,}.(gif|jpg|png)/
+.
+! /^https?:\/\/[a-z-]{6,}\.(?:com?|pro|info|xyz)\/[a-d][-\.\/_A-Za-z][DHWXm][-\.\/_A-Za-z][59FVZ][-\.\/_A-Za-z][6swyz][-\.\/_A-Za-z][-\/_0-9a-zA-Z][-\.\/_A-Za-z][-\/_0-9a-zA-Z]{22,162}$/
+.
+! /.com\/[a-z0-9][a-z0-9]\/[a-z0-9][a-z0-9]\/.*.js$/
 com/
+! /\/[0-9][0-9][0-9][0-9][0-9]$/
 /
+! /\/[0-9][0-9][0-9][0-9][0-9][0-9][0-9]$/
 /
+! /^(?!.*(statically.io|sharecast.ws|bunnycdn.ru|bootstrapcdn.com|cdn.ampproject.org|cloudflare.com|cdn.staticfile.org|disqus.com|disquscdn.com|dmca.com|ebacdn.com|facebook.net|fastlylb.net|fbcdn.net|fluidplayer.com|fontawesome.com|github.io|google.com|googleapis.com|googletagmanager.com|gstatic.com|jquery.com|jsdelivr.net|jwpcdn.com|jwplatform.com|polyfill.io|recaptcha.net|shrink.pe|twitter.com|ulogin.ru|unpkg.com|userapi.com|vidazoo.com|vk.com|yandex.|yastatic.net|ytimg.com|zencdn.net|player|youtube.com|cackle.me|googleoptimize.com|vuukle.com|chatango.com|twimg.com|google-analytics.com|hcaptcha.com|raincaptcha.com|media-imdb.com|blogger.com|hwcdn.net|instagram.com|wp.com|imgsmail.ru)).*$/
 
+! /\/js\/[a-z]j\.js$/
 /js/
+! /^https:\/\/www\.[a-z]{8,9}\.com\/[a-z]+\.js$/
 .com/
+! /^https:\/\/ik\.imagekit\.io\/[a-z0-9]+\/[a-zA-Z0-9_]+\.(jpg|png)\?updatedAt=/
+ik.imagekit.io/
+! /^(?!.*(swarm.video|alexsports.store|googleusercontent.com)).*$/
 
-
+! /^https:\/\/www\.sextu\.com\/([a-z]{9,12})\/([a-z]{9,12})\.js$/
 www.sextu.com/
+! /\.com\/\d+/[0-9a-z]+\.js$/
 .com/
+! /hentai2w.com/[0-9a-z]*.php/
 hentai2w
+! /\/static\/[0-9a-z]+/[0-9a-z]+\.js$/
 /static/
+! /^https:\/\/[a-z]{10}\.com/
 .com
+! /[a-z]{8,}.com\/[a-z]{4,}.(css|png|json|js)/
 com/
-
+! /\/img\/(?!new).+\.gif/
+/img/
+! /jdforum\.net\/images\/.*(_final|green)\.gif/
 jdforum.net/images/
+! /\.com\/[0-9a-z]{12,}\/[0-9a-z]{12,}\.js$/
 .com/
-
+! /^https:\/\/x?1337x\.(?:eu|g3g\.sbs|gd|to|se|unblockit\.name|st)\/(?:css\/)?(?:images\/)?[0-9a-z]+\.(?:gif|jpe?g|png)/
+images/
+! /\.tv\/[0-9a-z]{12}\.js$/
 .tv/
-
-
-
+! /^https?:\/\/s3\.us-east-1\.amazonaws\.com\/[0-9a-f]{50,}\/[0-9a-f]{10}$/
+1.amazonaws.com/
+! /^https?:\/\/[0-9a-f]{50,}\.s3\.amazonaws\.com\/[0-9a-f]{10}$/
+.s3.amazonaws.com/
+! /fakethebitch\.com\/\d?\.php/
+fakethebitch.com/
+! /\.com\/[_0-9a-zA-Z]+\.jpg$/
 .com/
+! /\.com\/[A-Za-z]{9,}\/[A-Za-z]{9,}\.js$/
 .com/
-technologies
+! /\/(Zen-Technologies|solar-group)\.gif/
+.gif
+! /\.com\/[a-zA-Z]{10}\.js$/
 .com/
+! /\/\d{5}$/
 /
-
-negotiaition
-
+! /n0cvd19n0fun\/(?:336x768-|dsw\d|s[a-z]_w3_).*/
+n0cvd19n0fun/
+! /\/(banner_|prodamy|negotiaition).*\.(jpg|png|gif)/
+/
+! /\/[0-9a-z]{5,9}\.js(\?[a-z]{3})?$/
 .js
+! /\/[0-9a-f]{12}\.js$/
+.js
+! /^(?!.*(doodcdn.com|cloudflare.com|google.com)).*$/
 
-
+! /(?:buzz|com|icu|net|site|xyz)\/(?!shrinker).*/
+/
+! /dodgersexcartoons.com\/images\/\w\w\/.*.gif$/
 dodgersexcartoons
-
-
-newser
-pornpictureshq.com/
-
-
-
-js
-
-fmovies
-
+! /\/(200x200|160600[a-z]?|rectangle)\.(gif|png)/
 /
-camgirlbay
-camwhores
-
-
-
-ancensored
-
-com/javascripts/
-pornrabbit
-gaypornium
-gaypornium
-
-
-
-briefmenow
-moozpussy
-zoompussy
-camwhoreshd
-eporner
-
-
-
-.com/
-.vidzi.tv/
-nt.st
-/
-
-
-
-
-.com/
-
-
-
-.com/
-/invoke.js
-
-
-.com/
-.net/
-.com/
-.net/
-
-
-
-secureserver
-meitui
-meitui
-
-net/g
-dbp
-.s/src/
-
-
-
-
-
-
-
-
-
-
-
-
-com
-
-
-octavius
-
-
-
-kinopoisk.ru/
-template
-ru/uploads/ba
-/uploads/
-wind10
-zodiak
-winline
-//cq
-.ru/
-/
-baner.png
-/
-/
-czvetnaya
-by/img/ban
-xyz/images/
-
-mediaget
-branding
-vkdjmini
-
-
-whatsapp
-rastyazhka
-/728
-stargate
-
-moneyveo240x400
-.js
-mybrazz.club/js
-ru/
-maxpark
-newsland
-
-
-
-bigfangroup
-xhdporno.net/js/
-jopastik
-omskinform.ru/
-pornoberloga
-stabs2
-www.oka.fm/
-
-online
-
-/js
-
-
-
-js
-js
-
-
-ua/templates/newscastlered
-patriot
-ua/images/
-ua/images/
-
-
+! /\/wp-content\/uploads\/.*(trustbadge[0-9]?writingtool|animatedpoof).*\.(png|gif)/
 content/uploads/
-mobileplanet
-info
-
-license
-
-
-quotenmeter
-trinken.de/
-vvs.glomex.com/
-vvs.glomex.com/
-bullads
-microsoftxboxone
-
-
-
-
-
-
-/product/
-
-
-
-
-
-.net/
-
-octopass
-
-
-
-
-
-
-
-
-
-3aym
-ru/
-
-
-
-
-160600
-tvcanales
-ddmix
-ddmix
-
-.com/cscript/
-resources
+! /newser.com\/[a-zA-Z]{5,}\/[a-zA-Z]{3,}\/[a-zA-Z]{5,}.js/
+newser
+! /pornpictureshq\.com\/[A-Za-z]+\d+\.html/
+pornpictureshq.com/
+! /^https?:\/\/(www\.)?pornorips\.com\/[a-z\d]+\.js$/
+pornorips.com/
+! /^https?:\/\/(www\.)?lesbianexpert\.com\/[a-z\d]+\.js$/
+lesbianexpert.com/
+! /^https?:\/\/[a-z0-9]+\.rumormillnews\.com\/images\/(make_my_day.JPG|banner3kevinremade.jpeg|banner3kevinremade.jpeg|africanfamily3.jpg|acm-homeworkshop.jpg)/
+.rumormillnews.com/images/
+! /[a-z0-9]{32,}.js/
+js
+! /^https?:\/\/ftopx\.com\/[a-z\d]+\.js$/
+ftopx.com/
+! /:\/\/fmovies.[a-z]+\/[A-Za-z0-9]+$/
+fmovies
+! /^https?:\/\/(www\.)?bunnylust\.com\/[a-z\d]+\.js$/
+bunnylust.com/
+! /:\/\/[A-Za-z-0-9]+.[a-z]+\/[A-Za-z-0-9]+\/\d+$/
 /
-lastpass
-/js/
-latest/dist/script.min.js
-emirates.com/
+! /camgirlbay.net\/[a-z]{1,2}[1-9]{1,4}[a-z]{1,2}[1-9]{1,4}[\s\S]*.js/
+camgirlbay
+! /camwhores.adult\/[a-z]{1,2}[1-9]{1,4}[a-z]{1,2}[1-9]{1,4}[\s\S]*.js/
+camwhores
+! /^https?:\/\/(ww.\.)?m4ufree\.tv(\/[a-z\d]{0,2}){3}\/[a-z\d]+\.js$/
+m4ufree.tv
+! /^https?:\/\/(www\.)?pornhd\.com\/[a-z\d]+\.js$/
+pornhd.com/
+! /^https?:\/\/hentaigo\.com\/[a-z\d]+\.js$/
+hentaigo.com/
+! /ancensored.com\/js\/[-_a-zA-Z0-9]{12,}.js/
+ancensored
+! /^https?:\/\/anysex\.com\/[a-zA-Z]{1,4}\/[a-zA-Z]+\.php$/
+anysex.com/
+! /simply-hentai.com\/javascripts\/[_-a-zA-Z0-9]{5,}.js/
+com/javascripts/
+! /pornrabbit.com\/[a-z0-9]{1,2}.php/
+pornrabbit
+! /gaypornium.com\/bfs[0-9]{1,2}.gif/
+gaypornium
+! /gaypornium.com\/[0-9]{1,2}.gif/
+gaypornium
+! /^https?:\/\/xxximage\.org\/[a-z\d]+\.js$/
+xxximage.org/
+! /^https?:\/\/imageboom\.net\/[a-z\d]+\.js$/
+imageboom.net/
+! /^https?:\/\/chyoa\.com\/[a-zA-Z\d]{1,15}\/[a-zA-Z\d]{1,15}\.js$/
+chyoa.com/
+! /briefmenow.org\/img\/pa[0-9]{1}.jpg/
+briefmenow
+! /moozpussy.com\/[a-z]{1,13}[0-9]{1,13}[a-z]{1,13}[\s\S]*.js/
+moozpussy
+! /zoompussy.com\/[a-z]{1,13}[0-9]{1,13}[a-z]{1,13}[\s\S]*.js/
+zoompussy
+! /camwhoreshd.com\/[a-z]{1,2}[0-9]{1,2}[a-z]{1,2}[0-9]{1,2}[\S\s]*.js/
+camwhoreshd
+! /www.eporner.com\/[^xhr][^comment][1-9]{0,3}[a-z]{0,3}/
+eporner
+! /^https?:\/\/picturelol\.com\/[a-z\d]+\.(js)$/
+picturelol.com/
+! /^https?:\/\/zoomgirls\.net\/[a-z\d]+\.(js)$/
+zoomgirls.net/
+! /^https?:\/\/(www\.)?x?1337x\.(to|st|ws|eu)\/js\/[a-z]{12,25}\.js$/
+1337x.
+! /\.com\/[A-Za-z]{3}\.png$/
 .com/
+! /\.vidzi\.tv\/([a-f0-9]{2})\/([a-f0-9]{2})\/([a-f0-9]{2})\/\1\2\3([a-f0-9]{26})\.js/
+.vidzi.tv/
+! /..nt.nt\.st.+p.ay\..+/
+nt.st
+! /\/....\//
+/
+! /^https?:\/\/(?:[a-z]{2}\.)?[0-9a-z]{5,16}\.[a-z]{3,7}\/[a-z](?=[a-z]{0,25}[0-9A-Z])[0-9a-zA-Z]{3,26}\/\d{4,5}(?:\?[_v]=\d+)?$/
+.
+! /^https?:\/\/(?:[a-z]{2}\.)?[0-9a-z]{5,16}\.[a-z]{3,7}\/[a-z](?=[a-z]{0,25}[0-9A-Z])[0-9a-zA-Z]{3,26}\/\d{4,5}(?:\?[_v]=\d+)?$/
+.
+! /^https?:\/\/www\.[a-z]{8,14}\.(bid|club|co|com|me|pro|info)\/[a-z]{1,12}\.js$/
+www.
+! /\/[0-9a-z]{5,8}\/[0-9a-z]{1,3}\/[0-9a-z]{5,8}\/(?:[0-9a-f]{2}\/){3}[0-9a-f]{32}\.js$/
+.js
+! /\/[A-Z]{1,3}\/[-0-9a-z]{5,}\.com\/\d{1,3}\/\d+$/
+.com/
+! /\/[A-Z]{1,3}\/[-0-9a-z]{5,}\.com\/(?:[0-9a-f]{2}\/){3}[0-9a-f]{32}\.js$/
+.com/
+! /^https?:\/\/(?:www\.|[a-z0-9]{7,10}\.)?[a-z0-9-]{5,}\.(?:com|bid|link|live|online|top|club)\/\/?(?:[a-z0-9]{2}\/){2,3}[a-f0-9]{32}\.js/
+.js
+! /^https?:\/\/(?:www\.|[a-z0-9]{7,10}\.)?[a-z0-9-]{5,}\.(?:com|bid|link|live|online|top|club)\/\/?(?:[a-z0-9]{2}\/){2,3}[a-f0-9]{32}\.js/
+.js
+! /^https:\/\/[a-z0-9-][a-z0-9-][a-z0-9-][a-z0-9-][a-z0-9-]+\.com\/[0-9a-f][0-9a-f]\/[0-9a-f][0-9a-f]\/[0-9a-f][0-9a-f]\/[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]\.js/
+.com/
+! /^https:\/\/[a-z0-9-][a-z0-9-][a-z0-9-][a-z0-9-][a-z0-9-]+\.com\/[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]\/invoke\.js/
+/invoke.js
+! /(?:com|net)\/[a-z-]{3,10}\.html$/
+.html
+! /(?:com|net)\/[0-9a-f]{12}\.js$/
+.js
+! /\.com\/[a-z-]+\.html$/
+.com/
+! /\.net\/[a-z-]+\.html$/
+.net/
+! /\.com\/[0-9a-f]+\.js$/
+.com/
+! /\.net\/[0-9a-f]+\.js$/
+.net/
+! /http(s?):\/\/.+\.com\/([0-9][0-9][0-9]+)\/$/
+.com/
+! /pcbeta\.com\/data\/cache\/(?:common)?_[a-z]{14}\.js\?/
+pcbeta.com/data/cache/
+! /^(?!.*(statically.io|sharecast.ws|bunnycdn.ru|bootstrapcdn.com|cdn.ampproject.org|cloudflare.com|cdn.staticfile.org|disqus.com|disquscdn.com|dmca.com|ebacdn.com|facebook.net|fastlylb.net|fbcdn.net|fluidplayer.com|fontawesome.com|github.io|google.com|googleapis.com|googletagmanager.com|gstatic.com|jquery.com|jsdelivr.net|jwpcdn.com|jwplatform.com|polyfill.io|recaptcha.net|shrink.pe|twitter.com|ulogin.ru|unpkg.com|userapi.com|vidazoo.com|vk.com|yandex.|yastatic.net|ytimg.com|zencdn.net|player|youtube.com|cackle.me|googleoptimize.com|vuukle.com|chatango.com|twimg.com|google-analytics.com|hcaptcha.com|raincaptcha.com|media-imdb.com|blogger.com|hwcdn.net|instagram.com|wp.com|imgsmail.ru)).*$/
+
+! /secureserver.net\/.*[-\/]\d+x\d+\.gif/
+secureserver
+! /meitui.org\/[a-z][a-z].js/
+meitui
+! /meitui.org\/[a-z].js/
+meitui
+! /\/upload\/[a-z0-9]{7}\/[0-9]+-[0-9]?\/[a-z0-9]{32}\.gif/
+/upload/
+! /dngz.net\/g\d+.js/
+net/g
+! /dbp/pre/
+dbp
+! /\.s\/src\/[a-z0-9]*.js/
+.s/src/
+! /(\.com|.at.ua|\.clan\.su|\.ru|narod\.ru|3dn\.ru|\.net|my1\.ru|do\.am|moy\.su|\.info|\.tv|mrcmirgorod\.com\.ua|\.su)\/\?[A-Za-z0-9%]{80,}$/
+/
+! /(\.com|.at.ua|\.clan\.su|\.ru|narod\.ru|3dn\.ru|\.net|my1\.ru|do\.am|moy\.su|\.info|\.tv|mrcmirgorod\.com\.ua|\.su|\.org\.ua|usite\.pro)\/[A-Za-z0-9_%]{3,12}\?[A-Za-z0-9%]{70,100}$/
+/
+! /(\.com|.at.ua|\.clan\.su|\.ru|narod\.ru|3dn\.ru|\.net|my1\.ru|do\.am|moy\.su|\.info|\.tv|mrcmirgorod\.com\.ua|\.su|\.org\.ua|usite\.pro)\/[A-Za-z0-9_%]{3,12}\/.*\?[A-Za-z0-9%]{70,100}$/
+/
+! /ucoz\.(net|org|ru|com|ua)\/[A-Za-z0-9_%]{3,12}\?[A-Za-z0-9%]{70,100}$/
+ucoz.
+! /ucoz\.(net|org|ru|com|ua)\/[A-Za-z0-9_%]{3,12}\/.*\?[A-Za-z0-9%]{70,100}$/
+ucoz.
+! /usite\.(pro|org|ru|com|ua)\/[A-Za-z0-9_%]{3,12}\/.*\?[A-Za-z0-9%]{70,100}$/
+usite.
+! /clan.su\/\?[A-Za-z0-9]+%21.+%5E/
+clan
+! /\.com\/jsonp\.php\?[A-Za-z0-9]{300,}/
+.com/jsonp.php
+! /^http(s?):\/\/[a-z]{6}\..*\/[a-z0-9]{3,30}\/[a-z0-9]{5,}\.php$/
+.php
+! /^http(s?):\/\/[A-Za-z0-9]{6}\.[A-Za-z0-9]{3}\/[A-Za-z0-9]{30,}\.php$/
+.php
+! /^http(s?):\/\/[A-Za-z0-9]{6}\.[A-Za-z0-9]{3}\/[A-Za-z0-9-.]{6}\/[A-Za-z0-9-.\/]{25,}\.php$/
+.php
+! /^http(s?):\/\/([A-Za-z0-9-.]+\/){5,}[A-Za-z0-9_-]+$/
+/
+! /.(com|ru|xyz)\/[a-z0-9]+\/[a-z0-9]+\/[a-z0-9]+\/[a-z0-9]+\/[a-z0-9]+$/
+/
+! /^(?!.*(statically.io|sharecast.ws|bunnycdn.ru|bootstrapcdn.com|cdn.ampproject.org|cloudflare.com|cdn.staticfile.org|disqus.com|disquscdn.com|dmca.com|ebacdn.com|facebook.net|fastlylb.net|fbcdn.net|fluidplayer.com|fontawesome.com|github.io|google.com|googleapis.com|googletagmanager.com|gstatic.com|jquery.com|jsdelivr.net|jwpcdn.com|jwplatform.com|polyfill.io|recaptcha.net|shrink.pe|twitter.com|ulogin.ru|unpkg.com|userapi.com|vidazoo.com|vk.com|yandex.|yastatic.net|ytimg.com|zencdn.net|player|youtube.com|cackle.me|googleoptimize.com|vuukle.com|chatango.com|twimg.com|google-analytics.com|hcaptcha.com|raincaptcha.com|media-imdb.com|blogger.com|hwcdn.net|instagram.com|wp.com|imgsmail.ru)).*$/
+
+! /:\/\/([a-z-]{4,10}\.)?(?!aniqit|kodikapi)[a-z0-9]{4,}\.(video|com|in\.net|link|tech|ru)/
+.
+! /https:\/\/(e|octavius).mail.ru\/api\/v\d$/
+ru/api/v
+! /rustorka.\w+\/forum\/(?!login.php)/
+rustorka
+! /naylo.top\/forum\/(?!login.php)/
+top/forum/
+! /games-pc.top\/forum\/(?!login.php)/
+top/forum/
+! /kinopoisk\.ru\/\w+\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]{100,}/
+kinopoisk.ru/
+! /src/Template/Block/Banner*/
+template
+! /ogrom.ru\/uploads\/ba\d+.png/
+ru/uploads/ba
+! /\/uploads\/.*\/(bananza|playcash|adcombo|igaming)/
+/uploads/
+! /wind10.ru\/\w*\.js/
+wind10
+! /\/(Zodiak_horiz|banner_SV-okna|pravo_by)\.(jpg|gif)/
+/
+! /\/(fribet-winline-banner|akcia-winline)\.(gif|jpg)/
+/
+! /\/\/cq.ru\/\d{3}\w{1}\d{1}$/
+//cq
+! /\.ru\/\d{10,}.js/
+.ru/
+! /\/\d{3}$/
+/
+! /\/\d{10}_[yads]{2}baner\.png/
+baner.png
+! /\/[a-z0-9]{28,32}\/.*\w$/
+/
+! /\/[a-z0-9]{28,32}\/.*\w$/
+/
+! /\/(banner.*|d[0-9]-[0-9]|perepis-czvetnaya)\.jpg/
+.jpg
+! /nb.by\/img\/ban\d\//
+by/img/ban
+! /my-torrent.xyz\/images\/(\d|(\w\d))./
+xyz/images/
+! /^https?:\/\/(?!image\.)[a-z0-9]{0,6}\.fhserv\.ru/
+.fhserv.ru
+! /images\/(lave[0-9]+|ban_stat[0-9]+|mediaget_rbt)\.(gif|png)/
+images/
+! /\/(pioneer_branding_|Raundap_).*\.(jpg|gif)/
+/
+! /\/img\/(vkdjmini|tc)\.(jpg|png)/
+/img/
+! /\/[0-9]{2}-banner[0-9]?\.gif/
+banner
+! /\/((referral-|adimage-temp-)[0-9]{19}\.(gif|png))|(\/imageproxy\.php\?.*\/[a-z0-9]{8,12}\.(gif|jpg))/
+/
+! /(946|01|378X96-1|370-1|%D0%91%D0%B8%D0%B7%D0%BD%D0%B5%D1%81-%D0%BB%D0%B0%D0%BD%D1%87-1200-%D0%BD%D0%B0-500-%D0%BF%D0%BA%D1%81\.-2|WhatsApp-Image-2020-08-12-at-12\.59\.32|WhatsApp-Image-2020-01-20-at-11\.51\.19|1200%D1%85100_%D0%90%D0%BD%D0%B3%D0%B0%D1%80%D1%81%D0%BA)\.(gif|jpg|jpeg)/
+.
+! /(rastyazhka_1_Teplodar|TVER_11_noyabrya|187_5)\.(gif|jpg)/
+.
+! /\/728(|mkd)\.gif/
+/728
+! /content/stargate/
+stargate
+! /reshimvse\.com\/img\/\d+[a-z]?\./
+reshimvse.com/img/
+! /(banner|Moneyveo240x400)\./
+.
+! /\/\d+\.js$/
+.js
+! /mybrazz\.club\/js\d+.*/
+mybrazz.club/js
+! /:\/\/[\w\d]+.ru\/\d+.js/
+ru/
+! /:\/\/maxpark.com\/.+\/\d+\//
+maxpark
+! /:\/\/newsland.com\/.+\/\d+\//
+newsland
+! /[a-z0-9]{32,}/
+
+! /[a-zA-Z0-9]{35,}/
+
+! /[a-zA-Z0-9]{35,}/
+
+! /^(http|https):\/\/(bigfangroup.org)\/js\/[a-z0-9_]*\.js$/
+bigfangroup
+! /http:\/\/xhdporno\.net\/js\/[a-z0-9]+\.js/
+xhdporno.net/js/
+! /jopastik.com/js/[a-z0-9]{6}.js/
+jopastik
+! /omskinform\.ru\/[a-z0-9]{12,15}\/[A-Za-z0-9]*_[A-Za-z0-9]*[A-Za-z0-9].+gif/
+omskinform.ru/
+! /pornoberloga.com\/js\/[a-zA-Z0-9]{6,8}.js/
+pornoberloga
+! /stabs2.clock.ru\/pr\d+\//
+stabs2
+! /www\.oka\.fm\/.+\/(yuzhnyj4.gif|cel.gif|tehnoplyus.jpg|na_chb_foto_250_250.jpg|ugzemli.gif|istorii.gif|advokat.jpg|odejda-shkola.gif|russkij-svet.jpg|dveri.gif|Festival_shlyapok_2.jpg)/
+www.oka.fm/
+! /\.l2top.ru\/.*\/.*\?(count|type|nojs)/
+.l2top
+! /:\/\/[^\s]+(.club|.com|.online|.ru)\//
+/
+! /\/js\/(compiled|compressed|all)\.js\?/
+/js/
+! /\/js[a-z0-9]+\/[a-z0-9]{0,14}\.js/
+/js
+! /\/js\/\d+\/\d+\/\d+\/\d+\?r=/
+/js/
+! /\/js\/\d+\/\d+\?r=/
+/js/
+! /\/js\/\d+\?r=/
+/js/
+! /\/[A-Za-z0-9-.]+\/[A-Za-z0-9_-]{2,4}.js$/
+js
+! /\/[A-Za-z0-9-.]+\/[A-Za-z0-9_-]{2,4}.js$/
+js
+! /^(?!.*(google\.com|gstatic\.com|googleapis\.com|recaptcha\.net|ytimg\.com|dmca\.com|:\/\/static.)).*$/
+static
+! /^https:\/\/rutrk.org(?!.*(\/logo\/)).*$/
+rutrk
+! /u-news.com.ua\/templates\/NewsCastleRed_u-news\/js\/n\d+.js/
+ua/templates/newscastlered
+! /\/(patriot|pryadun|header-ads-bg)\.(jpg|png)/
+/
+! /vp.donetsk.ua\/images\/((\d+\/\d+)|(\d+)|(\d+\/Anna))\/[A-Za-z0-9-_%]+.gif/
+ua/images/
+! /hi.dn.ua\/images\/[A-Za-z0-9-_]*.(gif|jpg|jpeg)/
+ua/images/
+! /\/images[0-9]?\/(560h110|[a-z]{4,6}-banner.*)\.gif/
+/images
+! /\/images\/b\/(?!youtube-logo\.jpg).*\.(gif|jpg|png)/
+/images/b/
+! /rivnenews.com.ua\/wp-content\/uploads\/.*(_ads\.|_rekl-|_rekl.).*/
+content/uploads/
+! /\/(kupit-telefon-v-harkove-so-sklada-mobileplanet|internet-magazin-zhenskoy-obuvi-v-ukraine|besplatka|kloomba)\.(gif|jpg)/
+/
+! /[a-z]{8,}\.(com|info|xyz)/
+.
+! /^(https?|wss?):\/\/([0-9a-z\._-]+)\.(accountant|bid|cf|click|club|com|cricket|date|download|faith|fun|ga|gdn|gq|info|life|link|loan|men|ml|network|online|ovh|party|pro|pw|racing|review|rocks|ru|science|site|space|stream|tk|top|trade|uk|webcam|website|win|xyz|zone)\.\/(.*)/
+./
+! /\/(license|script)\.\d{1,5}\.js/
+.js
+! /^(?!.*(statically.io|sharecast.ws|bunnycdn.ru|bootstrapcdn.com|cdn.ampproject.org|cloudflare.com|cdn.staticfile.org|disqus.com|disquscdn.com|dmca.com|ebacdn.com|facebook.net|fastlylb.net|fbcdn.net|fluidplayer.com|fontawesome.com|github.io|google.com|googleapis.com|googletagmanager.com|gstatic.com|jquery.com|jsdelivr.net|jwpcdn.com|jwplatform.com|polyfill.io|recaptcha.net|shrink.pe|twitter.com|ulogin.ru|unpkg.com|userapi.com|vidazoo.com|vk.com|yandex.|yastatic.net|ytimg.com|zencdn.net|player|youtube.com|cackle.me|googleoptimize.com|vuukle.com|chatango.com|twimg.com|google-analytics.com|hcaptcha.com|raincaptcha.com|media-imdb.com|blogger.com|hwcdn.net|instagram.com|wp.com|imgsmail.ru)).*$/
+
+! /\/\/[a-z]{6,}\.com\/[a-zA-Z0-9]{5,}-?[a-zA-Z0-9.]{6,}[\s\S]*\/[a-zA-Z0-9]{10,}/
+.com/
+! /quotenmeter.de\/[-_a-zA-Z0-9]{30,}\.js/
+quotenmeter
+! /^https:\/\/www\.essen-und-trinken\.de\/[a-z]{10,}\.js$/
+trinken.de/
+! /\:\/\/config-vvs\.glomex\.com\/[a-z0-9]*\.js/
+vvs.glomex.com/
+! /\:\/\/config-vvs\.glomex\.com\/[a-z0-9]*\.js/
+vvs.glomex.com/
+! /[0-9a-z]{10,}.[a-z]{3,}\/[\s\S]*.js#ns=bullads/
+bullads
+! /commoncfm/images/microsoftxboxone/
+microsoftxboxone
+! /\.com\/index\.php\?t=[0-9a-f]{64}$/
+.com/index.php
+! /\.com\/(?:[a-z]{2,}-)+p-\d{4,6}\.html\?(?:page_source|prevRef|re[fl])=/
+.com/
+! /^https:\/\/(?!www)[a-z]{3,}\.[a-z]{8,}\.com\/index\.php\?main_page=product_info(&stl=\d)?&(?:cPath|products_id)=/
+.com/index.php
+! /^https?:\/\/(?!www)[a-z]{3,5}\.[0-9a-z]{4,10}\.[a-z]{2,6}\/[a-z]{3,15}\/(?=[a-z]{0,9}[0-9A-Z])[0-9A-z]{10}\.html$/
+.html
+! /\.(?:cn|icu|top|pro)\/Personal\/member\/Login\/index\.php\?oneTimeAccessID=/
+/personal/member/login/index.php
+! /^https?:\/\/([-0-9a-z]{3,}\.)?[a-z]{8,}\.[a-z]{3,6}\/product\/\d{6,}(\.html)?$/
+/product/
+! /^https:\/\/[0-9a-z][-0-9a-z][-0-9a-z]+\.[a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z][a-z]+\.[a-z][a-z][a-z]+\/product\/\[0-9][0-9][0-9][0-9][0-9][0-9]+\.html$/
+/product/
+! /^(?!.*(statically.io|sharecast.ws|bunnycdn.ru|bootstrapcdn.com|cdn.ampproject.org|cloudflare.com|cdn.staticfile.org|disqus.com|disquscdn.com|dmca.com|ebacdn.com|facebook.net|fastlylb.net|fbcdn.net|fluidplayer.com|fontawesome.com|github.io|google.com|googleapis.com|googletagmanager.com|gstatic.com|jquery.com|jsdelivr.net|jwpcdn.com|jwplatform.com|polyfill.io|recaptcha.net|shrink.pe|twitter.com|ulogin.ru|unpkg.com|userapi.com|vidazoo.com|vk.com|yandex.|yastatic.net|ytimg.com|zencdn.net|player|youtube.com|cackle.me|googleoptimize.com|vuukle.com|chatango.com|twimg.com|google-analytics.com|hcaptcha.com|raincaptcha.com|media-imdb.com|blogger.com|hwcdn.net|instagram.com|wp.com|imgsmail.ru)).*$/
+
+! /\/js\/(?:anime|comic|doujin|game)Ranking/
+ranking
+! /\/pc(?:max)?728(?:200)?[a-z]?\.png$/
+.png
+! /\/bv\.php\?no=2(?:6[79]|7[37]|9[12])$/
+/bv.php
+! /\/uploads\/\d{4}\/\d{2}\/[0-9a-z]{6,}_[_A-Za-z]{0,15}ba?nn?e?r[_0-9a-z]{0,15}\.?\.(?:jp|pn)g$/
+/uploads/
+! /\.net\/[-a-z]{2,6}0\d{2}\.html$/
+.net/
+! /\/shinbun\/[0-9a-z]{3,12}200(280)?\.(?:jpg|png)$/
+/shinbun/
+! /\/bnr_side_(kiso3|octopass)\.jpg/
+/bnr
+! /\/Newcoronavirus_upld_(?:[12]\d|5|6\d?|7[1-4]?|8)\./
+/newcoronavirus
+! /\/Nonwovenmask_upld_(?:[124]\d|6|7|8|9)\./
+/nonwovenmask
+! /\/right\/(?:[a-z]+([a-z_]+\d{2})?|[0-9a-z_-]*(?:bnr|banner)[0-9a-z-_]*)\.(?:gif|jpg|png)$/
+/right/
+! /dcms_media\/image\/(?:bownow|[%_0-9A-Z]{30,})\.(?:png|jpg)$/
+media/image/
+! /\/kyodopress_cms\/wp-content\/(themes\/kyodopress\/img_banner\/(?!bn_newspaper\.gif)|banners).*/
+themes/kyodopress/img
+! /^https?:\/\/[0-9a-z]{6,10}\.duckdns/
+.duckdns
+! /^https?:\/\/[0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z][0-9a-z]+\.duckdns/
+.duckdns
+! /\/uploads\/\d{4}\/\d{2}\/(?!85466|banner)[_0-9a-zA-Z]+\.(?:gif|jpg)$/
+/uploads/
+! /\/slade[0-9]?\.js/
+/slade
+! /jx.3aym.cn\/[0-9]{1,6}.gif/
+3aym
+! /:\/\/[A-Za-z0-9]+.ru\/[A-Za-z0-9]{20,25}.js/
+ru/
+! /^https?:\/\/m\.anysex\.com\/[a-zA-Z]{1,4}\/[a-zA-Z]+\.php$/
+m.anysex.com/
+! /\/icons_addtoany\/(?!a2a|bookmark|print)[a-z]+/
+addtoany/
+! /^(?!.*(statically.io|sharecast.ws|bunnycdn.ru|bootstrapcdn.com|cdn.ampproject.org|cloudflare.com|cdn.staticfile.org|disqus.com|disquscdn.com|dmca.com|ebacdn.com|facebook.net|fastlylb.net|fbcdn.net|fluidplayer.com|fontawesome.com|github.io|google.com|googleapis.com|googletagmanager.com|gstatic.com|jquery.com|jsdelivr.net|jwpcdn.com|jwplatform.com|polyfill.io|recaptcha.net|shrink.pe|twitter.com|ulogin.ru|unpkg.com|userapi.com|vidazoo.com|vk.com|yandex.|yastatic.net|ytimg.com|zencdn.net|player|youtube.com|cackle.me|googleoptimize.com|vuukle.com|chatango.com|twimg.com|google-analytics.com|hcaptcha.com|raincaptcha.com|media-imdb.com|blogger.com|hwcdn.net|instagram.com|wp.com|imgsmail.ru)).*$/
+
+! /zubby.com\/[a-z-]+-\d+\/\?_=/
+zubby
+! /\/img\/(160600|72890)\.png/
+/img/
+! /qvncc.tvcanales.cf\/js\/[_-a-zA-Z0-9]{5,}.js/
+tvcanales
+! /^https:\/\/(ddmix.net)\/[a-z0-9_]*\.js/
+ddmix
+! /^https:\/\/(ddmix.net)\/js\/[a-z0-9_]*\.js/
+ddmix
+! /^https:\/\/[0-9a-z]{7,25}\.com\/v2(?:\/0\/)?(?=[0-9a-z_-]{0,84}[A-Z])(?=[a-zA-Z_-]{0,84}[0-9])[0-9a-zA-Z_-]{54,85}(#\?v=[0-9a-f]{32})?$/
+.com/v2
+! /^https:\/\/cs\d{3}\.\w+\.com\/cscript\/\d{3}\/[\w\d]+\.js$/
+.com/cscript/
+! /\/(public|resources|static|assets)\/([a-f0-9]){28,31}$/
+/
+! /\/-[A-z0-9]+\/[A-z0-9]+\/[A-z0-9]+\/[A-z0-9]+\/[A-z0-9]+\/[A-z0-9]+\/[A-z0-9]+\/[A-z0-9]+$/
+/
+! /lastpass.com(\/[\w\d-]{2,10}){6,10}\/[\w]{3,5}$/
+lastpass
+! /\/js\/[a-z]{3}\d\.js$/
+/js/
+! /^https:\/\/cdn\.jsdelivr\.net\/npm\/([a-z]|-|_){4,22}@latest\/dist\/script\.min\.js$/
+latest/dist/script.min.js
+! /emirates\.com\/([A-Za-z0-9]+\/){4,}[A-Za-z0-9]{4,}$/
+emirates.com/
+! /\.com\/[-_0-9a-zA-Z]{4,}\/[-\/_0-9a-zA-Z]{25,}$/
+.com/
+! /:\/\/rkn.gov.ru\/[a-g0-9]{30,}.gif/
 rkn
+! /^(?!.*(statically.io|sharecast.ws|bunnycdn.ru|bootstrapcdn.com|cdn.ampproject.org|cloudflare.com|cdn.staticfile.org|disqus.com|disquscdn.com|dmca.com|ebacdn.com|facebook.net|fastlylb.net|fbcdn.net|fluidplayer.com|fontawesome.com|github.io|google.com|googleapis.com|googletagmanager.com|gstatic.com|jquery.com|jsdelivr.net|jwpcdn.com|jwplatform.com|polyfill.io|recaptcha.net|shrink.pe|twitter.com|ulogin.ru|unpkg.com|userapi.com|vidazoo.com|vk.com|yandex.|yastatic.net|ytimg.com|zencdn.net|player|youtube.com|cackle.me|googleoptimize.com|vuukle.com|chatango.com|twimg.com|google-analytics.com|hcaptcha.com|raincaptcha.com|media-imdb.com|blogger.com|hwcdn.net|instagram.com|wp.com|imgsmail.ru)).*$/
 
+! /cdn.itemci.com\/storage\/images\/content\/[-a-z0-9]{10,}\.(jpg|gif)/
 com/storage/images/content/
+! /^https:\/\/filmizletv\..*/BH[0-9]+\.mp4/
 filmizletv.
+! /^https:\/\/filmizletv\..*\/su(b|p)erbet/
 filmizletv.
-bettogoal
-
-dikey
+! /\/(1xbbb|bettogoal)\.webp/
+.webp
+! /\/(.*-980X100|980-x120-.*|kirni_yenireklam-[0-9]?|teknogold|1080x120|ezic|giynik-sonnnnn-[0-9]?)\.(gif|jpg|png)/
+/
+! /(dikey|horay)\.jpg/
+.jpg
+! /320volt\.com\/images\/(pcbway-turkiye-pcb-uretim|jlc-pcb-service|PCBONLINE-PCB-assembly|robolink-elektronik-market|direncnet-2)\.(gif|png)/
 320volt.com/images/
+! /\/youtubemp3donusturucu.co\/\d+.js/
 /youtubemp3donusturucu
-
-
-footicimax
+! /\/.*banner(-\d)?\.(gif|jpg)/
+banner
+! /frmtr\.com\/images\/\w{0,2}\d?.gif/
+frmtr.com/images/
+! /(lftstatic|footicimax)\.gif/
+.gif

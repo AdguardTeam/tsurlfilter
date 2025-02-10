@@ -92,7 +92,7 @@ export function splitByDelimiterWithEscapeCharacter(
  * @param startIndex Index to start checking from.
  * @param substr Substring to check.
  *
- * @returns True if it starts with the specified substring, false otherwise.
+ * @returns Boolean true if it does start.
  */
 export function startsAtIndexWith(str: string, startIndex: number, substr: string): boolean {
     if (str.length - startIndex < substr.length) {
@@ -181,11 +181,11 @@ export function fastHash(str: string): number {
 /**
  * Look for any symbol from "chars" array starting at "start" index or from the start of the string.
  *
- * @param str String to search.
+ * @param str   String to search.
  * @param chars Chars to search for.
  * @param start Start index (optional, inclusive).
  *
- * @returns Int index of the element found, or -1 if not found.
+ * @returns Int Index of the element found or -1 if not.
  */
 export function indexOfAny(str: string, chars: string[], start = 0): number {
     if (str.length <= start) {
@@ -224,7 +224,7 @@ export function replaceAll(str: string, find: string, replace: string): string {
  * @param left Array.
  * @param right Array.
  *
- * @returns True on equality.
+ * @returns {boolean} True on equality.
  */
 export function stringArraysEquals(left: string[] | null, right: string[] | null): boolean {
     if (!left || !right) {
@@ -250,7 +250,7 @@ export function stringArraysEquals(left: string[] | null, right: string[] | null
  * @param left Array.
  * @param right Array.
  *
- * @returns True on equality.
+ * @returns {boolean} True on equality.
  */
 export function stringArraysHaveIntersection(left: string[] | null, right: string[] | null): boolean {
     if (!left || !right) {
@@ -374,3 +374,56 @@ export function getUtf8EncodedLength(str: string): number {
 
     return byteLength;
 }
+
+/**
+ * Finds the next occurrence of a specified character in a string that is not preceded by an escape (`\`).
+ *
+ * @param str The input string to search within.
+ * @param char The character to find in the string.
+ * @param [startIndex] The index to start searching from.
+ *
+ * @returns The index of the next unescaped occurrence of the character, or the length of the string if not found.
+ */
+export const findNextUnescapedIndex = (str: string, char: string, startIndex = 0): number => {
+    let i = str.indexOf(char, startIndex);
+
+    while (i !== -1 && str[i - 1] === '\\') {
+        i = str.indexOf(char, i + 1);
+    }
+
+    return i === -1 ? str.length : i;
+};
+
+/**
+ * Determines whether a given Unicode code point corresponds to a numeric digit (0-9).
+ *
+ * @param codePoint The Unicode code point to check.
+ *
+ * @returns `true` if the code point represents a numeric character (0-9), otherwise `false`.
+ */
+export const isNumber = (codePoint: number): boolean => {
+    return codePoint >= 48 && codePoint <= 57;
+};
+
+/**
+ * Determines whether a given Unicode code point corresponds to an alphabetical letter (a-z, A-Z).
+ *
+ * @param codePoint The Unicode code point to check.
+ *
+ * @returns `true` if the code point represents an alphabetic character, otherwise `false`.
+ */
+export const isAlpha = (codePoint: number): boolean => {
+    const codePointLower = codePoint | 0x20;
+    return codePointLower >= 97 && codePointLower <= 122;
+};
+
+/**
+ * Determines whether a given Unicode code point corresponds to an alphanumeric character (a-z, A-Z, 0-9).
+ *
+ * @param codePoint The Unicode code point to check.
+ *
+ * @returns `true` if the code point represents an alphanumeric character, otherwise `false`.
+ */
+export const isAlphaNumeric = (codePoint: number): boolean => {
+    return isAlpha(codePoint) || isNumber(codePoint);
+};
