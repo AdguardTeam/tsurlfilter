@@ -1,5 +1,10 @@
 /* eslint-disable prefer-regex-literals */
-import { replaceAll, splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
+import {
+    findNextUnescapedIndex,
+    isAlphaNumeric,
+    replaceAll,
+    splitByDelimiterWithEscapeCharacter,
+} from '../utils/string-utils';
 
 // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/regexp
 // should be escaped . * + ? ^ $ { } ( ) | [ ] / \
@@ -125,73 +130,6 @@ export class SimpleRegex {
     private static readonly rePatternSpecialCharacters: RegExp = new RegExp('[*^|]');
 
     /**
-     * Set of named character classes.
-     */
-    private static readonly NAMED_CHARACTER_CLASSES = new Set(['w', 'W', 'd', 'D', 's', 'S']);
-
-    /**
-     * Character class open bracket.
-     */
-    private static readonly CHARACTER_CLASS_OPEN = '[';
-
-    /**
-     * Character class close bracket.
-     */
-    private static readonly CHARACTER_CLASS_CLOSE = ']';
-
-    /**
-     * Quantity open bracket.
-     */
-    private static readonly QUANTITY_OPEN = '{';
-
-    /**
-     * Quantity close bracket.
-     */
-    private static readonly QUANTITY_CLOSE = '}';
-
-    /**
-     * Escape character.
-     */
-    private static readonly ESCAPE = '\\';
-
-    /**
-     * Checks if char is valid for regexp shortcut – is alphanumeric or escaped period or forward slash.
-     *
-     * @param str String.
-     * @param i Index of char.
-     *
-     * @returns  true if char is valid for regexp shortcut.
-     */
-    private static isValidRegexpShortcutChar = (str: string, i: number) => {
-        const charCode = str.charCodeAt(i);
-        if (SimpleRegex.isAlphaNumericChar(charCode)) {
-            return true;
-        }
-
-        // Escaped period or escaped forward slash are allowed in regexp shortcut
-        if (i > 0 && str[i - 1] === '\\') {
-            if (charCode === 46 || charCode === 47) {
-                return true;
-            }
-        }
-
-        return false;
-    };
-
-    /**
-     * Checks if char is alpha-numeric.
-     *
-     * @param charCode Char code.
-     *
-     * @returns True if char is alpha-numeric.
-     */
-    private static isAlphaNumericChar = (charCode: number) => {
-        return (charCode > 47 && charCode < 58) // numeric (0-9)
-                || (charCode > 64 && charCode < 91) // upper alpha (A-Z)
-                || (charCode > 96 && charCode < 123); // lower alpha (a-z)
-    };
-
-    /**
      * Extracts the shortcut from the rule's pattern.
      * Shortcut is the longest substring of the pattern that does not contain
      * any special characters.
@@ -231,102 +169,269 @@ export class SimpleRegex {
     }
 
     /**
-     * Extracts the longest substring from a regex pattern that does not contain
-     * any special characters.
-     * Discards complex regex patterns early if they contain characters or constructs unsuitable for shortcuts.
+     * Extracts the longest substring from the provided regex pattern that does not
+     * contain any special regex symbols or constructs that invalidate it for use
+     * as a quick match shortcut.
+     * The pattern is expected to be enclosed in forward slashes (e.g., `/example/`),
+     * and may optionally contain a protocol marker (`://`),
+     * which is ignored to prevent trivial matches like "http".
      *
-     * @param pattern Network rule's pattern (regex).
+     * This method discards many complex regex features (e.g., groups, character
+     * classes, certain escaped sequences) when forming the shortcut, and always
+     * returns the result in lower-case. If no valid substring is found, it returns
+     * an empty string.
      *
-     * @returns The extracted shortcut or an empty string if none could be found.
+     * @param pattern The input regex pattern, including the enclosing slashes.
+     * For example: `/https?:\\/\\/example\\.com/`.
+     *
+     * @returns The longest valid substring usable as a shortcut, or an empty string if none is found.
      */
-    private static extractRegexpShortcut(pattern: string): string {
-        // Remove the enclosing '/' regex markers
-        let reText = pattern.slice(this.MASK_REGEX_RULE.length, -this.MASK_REGEX_RULE.length);
+    public static extractRegexpShortcut(pattern: string): string {
+        const { length } = pattern;
 
-        // Early exit for empty or complex patterns
-
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/978
-        if (!reText || reText.includes('?')) {
+        if (
+            !pattern
+            // length should be at least 3: "/x/", "//" does not make sense
+            || length < 3
+            // regex pattern should start and end with '/'
+            || pattern[0] !== '/'
+            || pattern[length - 1] !== '/'
+        ) {
             return '';
         }
 
-        // Remove protocol to avoid trivial shortcuts like "http"
-        const protocolIndex = reText.indexOf(protocolMarker);
-        if (protocolIndex > -1) {
-            reText = reText.slice(protocolIndex + protocolMarker.length);
-        }
+        const protocolIndex = pattern.indexOf(protocolMarker);
+
+        /**
+         * `i` is our primary index into the pattern;
+         * we skip the initial `/` or jump after the protocol marker `://`.
+         */
+        let i = protocolIndex !== -1
+            ? protocolIndex + protocolMarker.length
+            : 1;
 
         let longestToken = '';
+        let longestTokenInGroup = '';
         let currentToken = '';
 
         /**
-         * Resets the current token, updating the longest token if needed.
+         * Resets `currentToken` and updates `longestTokenInGroup` if `currentToken` is longer.
          */
-        const resetToken = () => {
-            if (currentToken.length > longestToken.length) {
-                longestToken = currentToken;
+        const resetCurrentToken = () => {
+            if (currentToken.length > longestTokenInGroup.length) {
+                longestTokenInGroup = currentToken;
             }
 
             currentToken = '';
         };
 
-        let inEscape = false;
-
-        for (let i = 0; i < reText.length; i += 1) {
-            const char = reText[i];
-
-            // Handle special character classes (e.g., \d, \w)
-            if (inEscape && SimpleRegex.NAMED_CHARACTER_CLASSES.has(char)) {
-                resetToken();
-                i += 1; // Skip the named character class
-                continue;
+        /**
+         * Resets `longestTokenInGroup` and updates `longestToken` if `longestTokenInGroup` is longer.
+         */
+        const resetGroupToken = () => {
+            if (longestTokenInGroup.length > longestToken.length) {
+                longestToken = longestTokenInGroup;
             }
 
-            // Handle escape sequences
-            if (char === SimpleRegex.ESCAPE) {
-                inEscape = true;
-                continue;
-            } else {
-                inEscape = false;
-            }
+            longestTokenInGroup = '';
+        };
 
-            // Handle character classes (e.g., [a-z])
-            if (char === SimpleRegex.CHARACTER_CLASS_OPEN && !inEscape) {
-                resetToken();
+        /**
+         * Track parenthesis group nesting.
+         */
+        let groupBalance = 0;
 
-                let closingIndex = reText.indexOf(SimpleRegex.CHARACTER_CLASS_CLOSE, i);
-                while (closingIndex > 0 && reText[closingIndex - 1] === SimpleRegex.ESCAPE) {
-                    closingIndex = reText.indexOf(SimpleRegex.CHARACTER_CLASS_CLOSE, closingIndex + 1);
+        /**
+         * Skip everything up to the closing parenthesis for the current group
+         * (including nested groups).
+         * This method moves `i` to the position of the closing parenthesis.
+         */
+        const ignoreCurrentGroup = () => {
+            // Ignoring group means we should drop the current token
+            currentToken = '';
+            longestTokenInGroup = '';
+            const startBalance = groupBalance;
+            while (i < length) {
+                // If `(` is not escaped, increment group count
+                if (pattern[i] === '(' && pattern[i - 1] !== '\\') {
+                    groupBalance += 1;
                 }
 
-                i = closingIndex >= 0 ? closingIndex : reText.length;
-                continue;
-            }
+                // If `)` is not escaped, decrement group count
+                if (pattern[i] === ')' && pattern[i - 1] !== '\\') {
+                    groupBalance -= 1;
 
-            if (char === SimpleRegex.QUANTITY_OPEN && !inEscape) {
-                resetToken();
-
-                // Handle quantifiers
-                let closingIndex = reText.indexOf(SimpleRegex.QUANTITY_CLOSE, i);
-                while (closingIndex > 0 && reText[closingIndex - 1] === SimpleRegex.ESCAPE) {
-                    closingIndex = reText.indexOf(SimpleRegex.QUANTITY_CLOSE, closingIndex + 1);
+                    // Once we return to the level before this group started, stop
+                    if (groupBalance < startBalance) {
+                        break;
+                    }
                 }
 
-                i = closingIndex >= 0 ? closingIndex : reText.length;
-                continue;
+                i += 1;
+            }
+        };
+
+        while (i < length) {
+            const char = pattern[i];
+
+            // 1) Handle escaped sequences
+            if (char === '\\') {
+                // Skip the backslash
+                i += 1;
+
+                const escaped = pattern[i];
+
+                switch (escaped) {
+                    // Ignore predefined character classes: \d, \D, \s, \S, \w, \W
+                    case 'd':
+                    case 'D':
+                    case 's':
+                    case 'S':
+                    case 'w':
+                    case 'W':
+
+                    // Ignore special characters: \t, \r, \n, \v, \f, \b, \0
+                    // eslint-disable-next-line no-fallthrough
+                    case 't':
+                    case 'r':
+                    case 'n':
+                    case 'v':
+                    case 'f':
+                    case 'b':
+                    case '0':
+                        resetCurrentToken();
+                        i += 1;
+                        continue;
+
+                    // Ignore control characters: \cX — control character X
+                    case 'c':
+                        resetCurrentToken();
+                        // skip 'c' and the following character
+                        i += 2;
+                        continue;
+
+                    // Ignore \xhh
+                    case 'x':
+                        resetCurrentToken();
+                        // skip 'x' and the following 2 characters
+                        i += 3;
+                        continue;
+
+                    // Ignore \uhhhh
+                    case 'u':
+                        resetCurrentToken();
+                        // skip 'u' and the following 4 characters
+                        i += 5;
+                        continue;
+
+                    // Ignore named backreference: \k<...>
+                    case 'k':
+                        resetCurrentToken();
+                        // skip 'k'
+                        i += 1;
+                        if (pattern[i] === '<') {
+                            // Skip until the closing '>'
+                            i = findNextUnescapedIndex(pattern, '>', i) + 1;
+                        }
+                        continue;
+
+                    // Special case: add escaped '.' or '/' to the current token
+                    case '.':
+                    case '/':
+                        currentToken += escaped;
+                        i += 1;
+                        continue;
+
+                    default:
+                        resetCurrentToken();
+                        i += 1;
+                        continue;
+                }
             }
 
-            // Build the current token if the character is valid
-            if (SimpleRegex.isValidRegexpShortcutChar(reText, i)) {
-                currentToken += char;
-                if (i === reText.length - 1) {
-                    // Handle case where token ends at the last character
-                    resetToken();
-                }
-            } else {
-                resetToken();
+            // 2) Handle "regular" characters (i.e., not after a backslash)
+            switch (char) {
+                // Ignore custom character classes, like [xyz], [^xyz], [\b], [a-z], etc.
+                case '[':
+                    resetCurrentToken();
+                    i = findNextUnescapedIndex(pattern, ']', i) + 1;
+                    continue;
+
+                // Ignore disjunctions (alternations), like a|b|c
+                // Note: shortcut should be present in all possible tested strings,
+                // this is why we ignore disjunctions
+                case '|':
+                    ignoreCurrentGroup();
+                    continue;
+
+                // Ignore specific quantifiers, like x{n}, x{n,}, x{n,m}
+                case '{':
+                    resetCurrentToken();
+                    i = findNextUnescapedIndex(pattern, '}', i) + 1;
+                    continue;
+
+                // Handle group open
+                case '(':
+                    resetCurrentToken();
+                    resetGroupToken();
+                    groupBalance += 1;
+
+                    // Skip `(`
+                    i += 1;
+
+                    // Ignore negative lookahead: (?!...) and negative lookbehind: (?<!...)
+                    // Negative lookbehind and lookahead contain data that should not be present in the tested strings,
+                    // this is why we ignore them
+                    if (pattern.indexOf('?!', i) === i || pattern.indexOf('?<!', i) === i) {
+                        ignoreCurrentGroup();
+                    }
+
+                    // Ignore name section from named groups: (?<...>
+                    if (pattern.indexOf('?<', i) === i) {
+                        // Skip until the closing '>'
+                        i = findNextUnescapedIndex(pattern, '>', i + 2) + 1;
+                    }
+                    continue;
+
+                // Handle group close
+                case ')':
+                    resetCurrentToken();
+                    resetGroupToken();
+                    groupBalance -= 1;
+                    // Skip `)`
+                    i += 1;
+                    continue;
+
+                // Handle special regex symbols: . * + ? ^ $ /
+                case '.':
+                case '*':
+                case '+':
+                case '?':
+                case '^':
+                case '$':
+                case '/':
+                    resetCurrentToken();
+                    i += 1;
+                    continue;
+
+                default:
+                    // For performance, let's check if it's a valid token char
+                    // Note: isValidRegexpShortcutChar checks for alphanumeric or
+                    // escaped '.' or '/'
+                    if (isAlphaNumeric(char.charCodeAt(0))) {
+                        currentToken += char;
+                    } else {
+                        // If it's not a valid char for a shortcut, reset
+                        resetCurrentToken();
+                    }
+                    i += 1;
+                    break;
             }
         }
+
+        // Finalize the last token
+        resetCurrentToken();
+        resetGroupToken();
 
         return longestToken.toLowerCase();
     }
