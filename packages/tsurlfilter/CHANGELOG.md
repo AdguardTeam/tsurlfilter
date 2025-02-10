@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Unload methods for `RuleSet` and `Filter` in the declarative converter.
+
 ### Changed
 
 - Updated [@adguard/agtree] to `v3.0.0-alpha.5`.

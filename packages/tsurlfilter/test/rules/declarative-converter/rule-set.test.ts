@@ -1,6 +1,9 @@
 import { RuleParser } from '@adguard/agtree';
+import { jest } from '@jest/globals';
 
 import {
+    type IFilter,
+    type Filter,
     IndexedNetworkRuleWithHash,
     RuleSet,
     type RuleSetContentProvider,
@@ -191,5 +194,116 @@ describe('RuleSet', () => {
             filterId,
         });
         expect(d2.find((d) => d.id === dRuleId)).toStrictEqual(d1[1]);
+    });
+
+    it('unloads content correctly', async () => {
+        const content = [
+            '||example.com^$document',
+            '||example.net##h1',
+            '@@||example.io^',
+        ];
+
+        const ruleSet = await createRuleSet(content);
+
+        // Load content
+        await ruleSet.getDeclarativeRules();
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(true);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.size).toBeGreaterThan(0);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'sourceMap')?.value).not.toBeUndefined();
+
+        // Unload content
+        ruleSet.unloadContent();
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(false);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.size).toBe(0);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'sourceMap')?.value).toBeUndefined();
+    });
+
+    it('does not return stale content after unload', async () => {
+        const content = [
+            '||example.com^$document',
+            '||example.net##h1',
+            '@@||example.io^',
+        ];
+
+        const ruleSet = await createRuleSet(content);
+
+        // Load content
+        await ruleSet.getDeclarativeRules();
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(true);
+
+        // Unload content
+        ruleSet.unloadContent();
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(false);
+
+        // Reload content after unloading
+        await ruleSet.getDeclarativeRules();
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(true);
+    });
+
+    it('waits for initialization before unloading', async () => {
+        let resolveInit: () => void;
+        const initPromise = new Promise<void>((resolve) => {
+            resolveInit = resolve;
+        });
+
+        const ruleSetContent: RuleSetContentProvider = {
+            loadSourceMap: async () => {
+                await initPromise;
+                return new SourceMap([]);
+            },
+            loadFilterList: async () => [],
+            loadDeclarativeRules: async () => [],
+        };
+
+        const ruleSet = new RuleSet(
+            'testRuleSet',
+            0,
+            0,
+            0,
+            ruleSetContent,
+            [],
+            new RulesHashMap([]),
+        );
+
+        // Start loading content
+        const loadPromise = ruleSet.getDeclarativeRules();
+
+        // Call unloadContent while loading is still in progress
+        ruleSet.unloadContent();
+
+        // Resolve the initialization
+        resolveInit!();
+        await loadPromise;
+
+        // Ensure that content is still correctly unloaded after the fetch completes
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'initialized')?.value).toBe(false);
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'sourceMap')?.value).toBeUndefined();
+    });
+
+    it('ensures filterList filters are unloaded', async () => {
+        const content = [
+            '||example.com^$document',
+            '||example.net##h1',
+            '@@||example.io^',
+        ];
+
+        const ruleSet = await createRuleSet(content);
+        await ruleSet.getDeclarativeRules();
+
+        // Mock `unloadContent` for all filters
+        const unloadSpies: jest.SpiedFunction<IFilter['unloadContent']>[] = [];
+
+        Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.forEach((filter: Filter) => {
+            const spy = jest.spyOn(filter, 'unloadContent');
+            unloadSpies.push(spy);
+        });
+
+        ruleSet.unloadContent();
+
+        // Ensure all filters' `unloadContent` methods were called
+        unloadSpies.forEach((spy) => expect(spy).toHaveBeenCalled());
+
+        // Ensure filterList is cleared
+        expect(Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.size).toBe(0);
     });
 });
