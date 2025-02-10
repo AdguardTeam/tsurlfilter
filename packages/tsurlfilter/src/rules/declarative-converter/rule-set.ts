@@ -153,6 +153,12 @@ export interface IRuleSet {
     getDeclarativeRules(): Promise<DeclarativeRule[]>;
 
     /**
+     * Unload ruleset content.
+     * This method can be used to free memory until the content is needed again.
+     */
+    unloadContent(): void;
+
+    /**
      * Serializes rule set to primitives values with lazy load.
      *
      * @returns Serialized rule set.
@@ -428,6 +434,34 @@ export class RuleSet implements IRuleSet {
             this.initializerPromise = undefined;
         });
         await this.initializerPromise;
+    }
+
+    /** @inheritdoc */
+    public unloadContent(): void {
+        // If content is not initialized, there is nothing to unload
+        if (!this.initialized && !this.initializerPromise) {
+            return;
+        }
+
+        // If initialization is in progress
+        if (this.initializerPromise) {
+            this.initializerPromise.finally(() => {
+                this.unloadContent();
+            });
+            return;
+        }
+
+        // Safely unload all filters in the filter list
+        this.filterList.forEach((filter) => filter.unloadContent());
+
+        // Clear loaded resources
+        this.sourceMap = undefined;
+        this.declarativeRules = [];
+        this.filterList.clear();
+
+        // Mark the content as unloaded
+        this.initialized = false;
+        this.initializerPromise = undefined;
     }
 
     /** @inheritdoc */

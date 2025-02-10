@@ -8,7 +8,9 @@ import { UnavailableFilterSourceError } from './errors/unavailable-sources-error
  * String source for filter content.
  */
 type IStringSourceProvider = {
-    // Return content from string source
+    /**
+     * Returns filter content.
+     */
     getContent: () => Promise<PreprocessedFilterList>;
 };
 
@@ -18,21 +20,41 @@ type IStringSourceProvider = {
 export interface IFilter {
     /**
      * Return filter id.
+     *
+     * @returns Filter id.
      */
     getId(): number;
 
     /**
-     * Returns original rule for provided index.
+     * Returns original rule text by index.
+     *
+     * @param index Rule index.
+     *
+     * @returns Original filtering rule by provided identifier.
+     *
+     * @throws Error {@link UnavailableFilterSourceError} if content is not available.
      */
     getRuleByIndex(index: number): Promise<string>;
 
     /**
-     * Returns filter's content.
+     * Returns the original filter rules with lazy loading.
+     *
+     * @returns List of original filter rules.
+     *
+     * @throws Error {@link UnavailableFilterSourceError} if content is not available.
      */
     getContent(): Promise<PreprocessedFilterList>;
 
     /**
+     * Unload filter content.
+     * This method can be used to free memory until the content is needed again.
+     */
+    unloadContent(): void;
+
+    /**
      * Returns if the filter is trusted or not.
+     *
+     * @returns True if the filter is trusted, false otherwise.
      */
     isTrusted(): boolean;
 }
@@ -42,13 +64,24 @@ export interface IFilter {
  * with lazy content loading.
  */
 export class Filter implements IFilter {
-    // Id of filter
+    /**
+     * ID of filter.
+     */
     private readonly id: number;
 
-    // Content of filter, lazy load
+    /**
+     * Content of filter (lazy loading).
+     */
     private content: PreprocessedFilterList | null = null;
 
-    // Provider of filter content
+    /**
+     * Promise for content loading.
+     */
+    private contentLoadingPromise: Promise<PreprocessedFilterList> | null = null;
+
+    /**
+     * Provider of filter content.
+     */
     private source: IStringSourceProvider;
 
     /**
@@ -73,50 +106,47 @@ export class Filter implements IFilter {
         this.trusted = trusted;
     }
 
-    /**
-     * Filter id.
-     *
-     * @returns Filter id.
-     */
+    /** @inheritdoc */
     public getId(): number {
         return this.id;
     }
 
-    /**
-     * Returns the original filter rules with lazy loading.
-     *
-     * @throws UnavailableFilterSourceError if content is not available.
-     *
-     * @returns List of original filter rules.
-     */
+    /** @inheritdoc */
     public async getContent(): Promise<PreprocessedFilterList> {
+        // If content is already loaded, return it
         if (this.content) {
             return this.content;
         }
 
-        try {
-            this.content = await this.source.getContent();
-
-            if (!this.content || this.content.rawFilterList.length === 0 || this.content.filterList.length === 0) {
-                throw new Error('Loaded empty content');
-            }
-
-            return this.content;
-        } catch (e) {
-            throw new UnavailableFilterSourceError('Filter content is unavailable', this.id, e as Error);
+        // If content is currently loading, return the existing promise
+        if (this.contentLoadingPromise) {
+            return this.contentLoadingPromise;
         }
+
+        // Assign the promise immediately to avoid race conditions
+        this.contentLoadingPromise = (async (): Promise<PreprocessedFilterList> => {
+            try {
+                const content = await this.source.getContent();
+
+                if (!content || content.rawFilterList.length === 0 || content.filterList.length === 0) {
+                    throw new Error('Loaded empty content');
+                }
+
+                // Assign content and clear the loading promise
+                this.content = content;
+                this.contentLoadingPromise = null;
+                return content;
+            } catch (e) {
+                // Reset the loading promise so future calls can retry
+                this.contentLoadingPromise = null;
+                throw new UnavailableFilterSourceError('Filter content is unavailable', this.id, e as Error);
+            }
+        })();
+
+        return this.contentLoadingPromise;
     }
 
-    /**
-     * Returns original filtering rule by provided id with lazy load.
-     *
-     * @param index Rule index.
-     *
-     * @throws Error {@link UnavailableFilterSourceError} if content is
-     * not available.
-     *
-     * @returns Original filtering rule by provided identifier.
-     */
+    /** @inheritdoc */
     public async getRuleByIndex(index: number): Promise<string> {
         const content = await this.getContent();
 
@@ -126,12 +156,28 @@ export class Filter implements IFilter {
         return sourceRule;
     }
 
-    /**
-     * Returns if the filter is trusted or not.
-     *
-     * @returns True if the filter is trusted, false otherwise.
-     */
+    /** @inheritdoc */
     public isTrusted(): boolean {
         return this.trusted;
+    }
+
+    /** @inheritdoc */
+    public unloadContent(): void {
+        // If content is not loaded and not loading, there is nothing to unload
+        if (!this.content && !this.contentLoadingPromise) {
+            return;
+        }
+
+        // If loading is in progress
+        if (this.contentLoadingPromise) {
+            this.contentLoadingPromise.finally(() => {
+                this.unloadContent();
+            });
+            return;
+        }
+
+        // Unload content
+        this.content = null;
+        this.contentLoadingPromise = null;
     }
 }
