@@ -7,16 +7,17 @@ import {
     vi,
 } from 'vitest';
 
-import { TabContext, type TabInfoMV3 } from '../../../../src/lib/mv3/tabs/tab-context';
+import { TabContext } from '../../../../src/lib/mv3/tabs/tab-context';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { FrameMV3 } from '../../../../src/lib/mv3/tabs/frame';
 import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
 import { Frames } from '../../../../src/lib/common/tabs/frames';
+import { type TabInfo } from '../../../../src/lib/common/tabs/tabs-api';
 
 vi.mock('../../../../src/lib/mv3/background/engine-api');
 
 describe('TabContext', () => {
-    let tabInfo: TabInfoMV3;
+    let tabInfo: TabInfo;
     let tabContext: TabContext;
 
     beforeEach(() => {
@@ -24,7 +25,7 @@ describe('TabContext', () => {
             id: 123,
             status: 'complete',
             url: 'https://example.com',
-        } as TabInfoMV3;
+        } as TabInfo;
 
         tabContext = new TabContext(tabInfo);
     });

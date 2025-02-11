@@ -8,7 +8,7 @@ import {
 } from 'vitest';
 
 import { FrameMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
-import { TabContext, type TabInfoMV2 } from '../../../../../src/lib/mv2/background/tabs/tab-context';
+import { TabContext } from '../../../../../src/lib/mv2/background/tabs/tab-context';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
 import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
@@ -16,6 +16,7 @@ import { appContext } from '../../../../../src/lib/mv2/background/app-context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
 import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
 import { Frames } from '../../../../../src/lib/common/tabs/frames';
+import { type TabInfo } from '../../../../../src/lib/common/tabs/tabs-api';
 
 vi.mock('../../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../../src/lib/mv2/background/engine-api');
@@ -24,7 +25,7 @@ vi.mock('../../../../../src/lib/mv2/background/stealth-api');
 vi.mock('../../../../../src/lib/mv2/background/app-context');
 
 describe('TabContext', () => {
-    let tabInfo: TabInfoMV2;
+    let tabInfo: TabInfo;
     let tabContext: TabContext;
     let documentApi: DocumentApi;
 
@@ -33,7 +34,7 @@ describe('TabContext', () => {
             id: 123,
             status: 'complete',
             url: 'https://example.com',
-        } as TabInfoMV2;
+        } as TabInfo;
 
         const allowlist = new Allowlist();
         const engineApi = new EngineApi(allowlist, appContext, stealthApi);

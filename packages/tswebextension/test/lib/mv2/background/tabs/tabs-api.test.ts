@@ -17,9 +17,10 @@ import { appContext } from '../../../../../src/lib/mv2/background/app-context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
 import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
 import { TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';
-import { TabContext, type TabInfoMV2 } from '../../../../../src/lib/mv2/background/tabs/tab-context';
+import { TabContext } from '../../../../../src/lib/mv2/background/tabs/tab-context';
 import { FrameMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
 import { Frames } from '../../../../../src/lib/common/tabs/frames';
+import { type TabInfo } from '../../../../../src/lib/common/tabs/tabs-api';
 
 vi.mock('../../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../../src/lib/mv2/background/engine-api');
@@ -44,7 +45,7 @@ describe('TabsApi', () => {
     });
 
     const createTestTabContext = (): TabContext => {
-        return new TabContext({} as TabInfoMV2, documentApi);
+        return new TabContext({} as TabInfo, documentApi);
     };
 
     describe('start method', () => {
@@ -222,7 +223,7 @@ describe('TabsApi', () => {
         it('should update all current tabs main frame rules', async () => {
             const tabId = 1;
 
-            browser.tabs.query.resolves([{ id: tabId } as TabInfoMV2]);
+            browser.tabs.query.resolves([{ id: tabId } as TabInfo]);
 
             const spy = vi.spyOn(tabsApi, 'updateTabMainFrameRule');
 

@@ -7,12 +7,12 @@ import { defaultFilteringLog, type FilteringLog } from '../filtering-log';
 
 import { type FrameCommon } from './frame';
 import { Frames } from './frames';
-import { type TabInfoCommon } from './tabs-api';
+import { type TabInfo } from './tabs-api';
 
 /**
  * Tab context common class.
  */
-export class TabContextCommon<F extends FrameCommon, T extends TabInfoCommon> {
+export class TabContextCommon<F extends FrameCommon> {
     /**
      * Frames context.
      *
@@ -70,7 +70,7 @@ export class TabContextCommon<F extends FrameCommon, T extends TabInfoCommon> {
      * @param filteringLog Filtering log.
      */
     constructor(
-        public info: T,
+        public info: TabInfo,
         protected readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
         this.createdAtMs = Date.now();
@@ -81,7 +81,7 @@ export class TabContextCommon<F extends FrameCommon, T extends TabInfoCommon> {
      *
      * @param tabInfo Tab info.
      */
-    public updateTabInfo(tabInfo: T): void {
+    public updateTabInfo(tabInfo: TabInfo): void {
         this.info = tabInfo;
     }
 
@@ -123,7 +123,7 @@ export class TabContextCommon<F extends FrameCommon, T extends TabInfoCommon> {
      *
      * @returns True if the tab is a browser tab, otherwise returns false.
      */
-    public static isBrowserTab(tab: Tabs.Tab): tab is TabInfoCommon {
+    public static isBrowserTab(tab: Tabs.Tab): tab is TabInfo {
         return typeof tab.id === 'number' && tab.id !== browser.tabs.TAB_ID_NONE;
     }
 
