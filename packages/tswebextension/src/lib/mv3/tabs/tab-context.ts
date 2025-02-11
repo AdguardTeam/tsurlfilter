@@ -1,21 +1,16 @@
 import { type FilteringLog, defaultFilteringLog } from '../../common/filtering-log';
 import { isHttpOrWsRequest } from '../../common/utils/url';
 import { TabContextCommon } from '../../common/tabs/tab-context';
-import { type TabInfoCommon } from '../../common/tabs/tabs-api';
+import { type TabInfo } from '../../common/tabs/tabs-api';
 import { DocumentApi } from '../background/document-api';
 import { MAIN_FRAME_ID } from '../../common/constants';
 
 import { FrameMV3 } from './frame';
 
 /**
- * Tab info for MV3.
- */
-export type TabInfoMV3 = TabInfoCommon;
-
-/**
  * Tab context.
  */
-export class TabContext extends TabContextCommon<FrameMV3, TabInfoMV3> {
+export class TabContext extends TabContextCommon<FrameMV3> {
     /**
      * Context constructor.
      *
@@ -23,7 +18,7 @@ export class TabContext extends TabContextCommon<FrameMV3, TabInfoMV3> {
      * @param filteringLog Filtering Log API.
      */
     constructor(
-        public info: TabInfoMV3,
+        public info: TabInfo,
         protected readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
         super(info, filteringLog);
@@ -37,7 +32,7 @@ export class TabContext extends TabContextCommon<FrameMV3, TabInfoMV3> {
      *
      * @returns Tab context for new tab.
      */
-    public static createNewTabContext(tab: TabInfoMV3): TabContext {
+    public static createNewTabContext(tab: TabInfo): TabContext {
         const tabContext = new TabContext(tab);
 
         // In some cases, tab is created while browser navigation processing.

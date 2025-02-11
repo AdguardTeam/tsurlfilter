@@ -16,7 +16,7 @@ import { TabContextCommon } from './tab-context';
  * We need tab id in the tab information, otherwise we do not process it.
  * For example developer tools tabs.
  */
-export type TabInfoCommon = Tabs.Tab & {
+export type TabInfo = Tabs.Tab & {
     /**
      * Tab id.
      */
@@ -56,7 +56,7 @@ export type TabFrameRequestContextCommon = {
 /**
  * Tabs API common class.
  */
-export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextCommon<F, TabInfoCommon>> {
+export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextCommon<F>> {
     public context = new Map<number, T>();
 
     public onCreate = new EventChannel<T>();

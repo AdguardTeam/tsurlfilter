@@ -2,26 +2,15 @@ import { MAIN_FRAME_ID } from '../../../common/constants';
 import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { isHttpOrWsRequest } from '../../../common/utils/url';
 import { TabContextCommon } from '../../../common/tabs/tab-context';
-import { type TabInfoCommon } from '../../../common/tabs/tabs-api';
+import { type TabInfo } from '../../../common/tabs/tabs-api';
 import { type DocumentApi } from '../document-api';
 
 import { FrameMV2 } from './frame';
 
 /**
- * Tab info for MV2.
- */
-export type TabInfoMV2 = TabInfoCommon & {
-    // TODO: may not be used so can be removed (so there will be no need in TabInfoMV2/TabInfoMV3) AG-39551.
-    /**
-     * Tab creation timestamp in milliseconds.
-     */
-    createdAtMs?: number,
-};
-
-/**
  * Tab context for MV2.
  */
-export class TabContext extends TabContextCommon<FrameMV2, TabInfoMV2> {
+export class TabContext extends TabContextCommon<FrameMV2> {
     /**
      * Context constructor.
      *
@@ -30,7 +19,7 @@ export class TabContext extends TabContextCommon<FrameMV2, TabInfoMV2> {
      * @param filteringLog Filtering Log API.
      */
     constructor(
-        public info: TabInfoMV2,
+        public info: TabInfo,
         private readonly documentApi: DocumentApi,
         protected readonly filteringLog: FilteringLog = defaultFilteringLog,
     ) {
@@ -46,7 +35,7 @@ export class TabContext extends TabContextCommon<FrameMV2, TabInfoMV2> {
      *
      * @returns Tab context for new tab.
      */
-    public static createNewTabContext(tab: TabInfoMV2, documentApi: DocumentApi): TabContext {
+    public static createNewTabContext(tab: TabInfo, documentApi: DocumentApi): TabContext {
         const tabContext = new TabContext(tab, documentApi);
 
         // In some cases, tab is created while browser navigation processing.

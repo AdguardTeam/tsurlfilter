@@ -17,3 +17,4 @@ export { type EventChannelListener, type EventChannelInterface, EventChannel } f
 export {
     isHttpRequest, getDomain, isHttpOrWsRequest, isExtensionUrl,
 } from './utils/url';
+export { type TabInfo } from './tabs/tabs-api';
