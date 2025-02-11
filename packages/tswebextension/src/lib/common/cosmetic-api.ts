@@ -366,7 +366,7 @@ export class CosmeticApiCommon {
      */
     protected static logScriptRules(
         params: LogJsRulesParams,
-        predicate: (cosmeticResult: CosmeticRule) => boolean,
+        // predicate: (cosmeticResult: CosmeticRule) => boolean,
     ): void {
         const {
             tabId,
@@ -376,7 +376,7 @@ export class CosmeticApiCommon {
             timestamp,
         } = params;
 
-        const scriptRules = cosmeticResult.getScriptRules().filter(predicate);
+        const scriptRules = cosmeticResult.getScriptRules();
 
         for (const scriptRule of scriptRules) {
             if (scriptRule.isGeneric()) {

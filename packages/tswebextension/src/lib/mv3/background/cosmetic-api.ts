@@ -1,4 +1,4 @@
-import { type ScriptletData, type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
+import { type ScriptletData, type CosmeticResult } from '@adguard/tsurlfilter';
 
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { getErrorMessage } from '../../common/error';
@@ -10,7 +10,6 @@ import { tabsApi } from '../tabs/tabs-api';
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { ScriptingApi } from './scripting-api';
-import { localScriptRulesService } from './services/local-script-rules-service';
 
 /**
  * Data for JS and scriptlets rules for MV3.
@@ -67,9 +66,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 const scriptletData = rule.getScriptletData();
 
                 if (scriptletData) {
-                    scriptletDataList.push(
-                        scriptletData,
-                    );
+                    scriptletDataList.push(scriptletData);
                 }
             } else {
                 // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
@@ -156,36 +153,11 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         try {
-            await Promise.all(scriptTexts.map((scriptText) => {
-                /**
-                 * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
-                 *
-                 * This is STEP 4.1: Selecting only local script functions which were pre-built into the extension.
-                 */
-
-                /**
-                 * Here we check if the script text is local to guarantee that we do not execute remote code.
-                 */
-                const isLocalScript = localScriptRulesService.isLocalScript(scriptText);
-                if (!isLocalScript) {
-                    return;
-                }
-
-                /**
-                 * Here we get the function associated with the script text.
-                 */
-                const localScriptFunction = localScriptRulesService.getLocalScriptFunction(scriptText);
-                if (!localScriptFunction) {
-                    return;
-                }
-
-                // eslint-disable-next-line consistent-return
-                return ScriptingApi.executeScriptFunc({
-                    tabId,
-                    frameId,
-                    scriptFunction: localScriptFunction,
-                });
-            }));
+            await ScriptingApi.executeScriptFunc({
+                tabId,
+                frameId,
+                scriptTexts,
+            });
         } catch (e) {
             logger.debug('[applyJsFuncsByTabAndFrame] error occurred during injection', getErrorMessage(e));
         }
@@ -211,15 +183,12 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
 
         try {
-            await Promise.all(scriptletDataList.map((scriptletData) => {
-                // eslint-disable-next-line consistent-return
-                return ScriptingApi.executeScriptlet({
-                    tabId,
-                    frameId,
-                    scriptletData,
-                    domainName: getDomain(frameContext.url),
-                });
-            }));
+            await ScriptingApi.executeScriptlet({
+                tabId,
+                frameId,
+                scriptletDataList,
+                domainName: getDomain(frameContext.url),
+            });
         } catch (e) {
             // TODO: getErrorMessage may not be needed since logger should handle arg types
             logger.debug('[applyScriptletsByTabAndFrame] error occurred during injection', getErrorMessage(e));
@@ -257,18 +226,6 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Predicate to filter out non-local script rules.
-     *
-     * @param rule Cosmetic rule.
-     *
-     * @returns True if the rule is a local script rule, otherwise false.
-     */
-    private static shouldSanitizeScriptRule(rule: CosmeticRule): boolean {
-        const ruleText = rule.getContent();
-        return localScriptRulesService.isLocalScript(ruleText);
-    }
-
-    /**
      * Logs js rules applied to specific frame.
      *
      * We need a separate function for logging because script rules can be logged before injection
@@ -279,9 +236,6 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param params Data for js rule logging.
      */
     public static logScriptRules(params: LogJsRulesParams): void {
-        super.logScriptRules(
-            params,
-            CosmeticApi.shouldSanitizeScriptRule,
-        );
+        super.logScriptRules(params);
     }
 }

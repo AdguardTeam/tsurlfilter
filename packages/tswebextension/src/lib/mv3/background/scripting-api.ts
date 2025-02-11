@@ -1,10 +1,10 @@
 import { type ScriptletData } from '@adguard/tsurlfilter';
 import { type Source } from '@adguard/scriptlets';
 
-import { BACKGROUND_TAB_ID } from '../../common/constants';
+import { BACKGROUND_TAB_ID, MAIN_FRAME_ID } from '../../common/constants';
 
 import { appContext } from './app-context';
-import { type LocalScriptFunction } from './services/local-script-rules-service';
+import { UserScriptsManager } from './user-scripts';
 
 /**
  * Parameters for applying CSS rules.
@@ -30,9 +30,9 @@ export type ExecuteScriptFuncParams = {
     frameId: number,
 
     /**
-     * The script function to be executed.
+     * The script functions to be executed.
      */
-    scriptFunction: LocalScriptFunction,
+    scriptTexts: string[],
 };
 
 /**
@@ -50,9 +50,9 @@ export type ExecuteScriptletParams = {
     frameId: number,
 
     /**
-     * The scriptlet data to be executed.
+     * List of the scriptlets data to be executed.
      */
-    scriptletData: ScriptletData,
+    scriptletDataList: ScriptletData[],
 
     /**
      * The domain name of the frame.
@@ -92,38 +92,36 @@ export class ScriptingApi {
      * @param params Parameters for executing the scriptlet.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
-     * @param params.scriptletData The scriptlet data to be executed.
+     * @param params.scriptletDataList List of the scriptlets data to be executed.
      * @param params.domainName The domain name of the frame. Used for debugging.
      *
      * @returns Promise that resolves when the script is executed.
      */
-    public static async executeScriptlet(
-        {
-            tabId,
-            frameId,
-            scriptletData,
-            domainName,
-        }: ExecuteScriptletParams,
-    ): Promise<void> {
+    public static async executeScriptlet({
+        tabId,
+        frameId,
+        scriptletDataList,
+        domainName,
+    }: ExecuteScriptletParams): Promise<void> {
         // There is no reason to inject a script into the background page
         if (tabId === BACKGROUND_TAB_ID) {
             return;
         }
 
-        const params: Source = {
-            ...scriptletData.params,
-            uniqueId: String(appContext.startTimeMs),
-            verbose: appContext.configuration?.settings.debugScriptlets || false,
-            domainName: domainName ?? undefined,
-        };
+        const scriptTexts = scriptletDataList.map((scriptletData) => {
+            const params: Source = {
+                ...scriptletData.params,
+                uniqueId: String(appContext.startTimeMs),
+                verbose: appContext.configuration?.settings.debugScriptlets || false,
+                domainName: domainName ?? undefined,
+            };
 
-        await chrome.scripting.executeScript({
-            target: { tabId, frameIds: [frameId] },
-            func: scriptletData.func,
-            injectImmediately: true,
-            world: 'MAIN',
-            args: [params, scriptletData.params.args],
+            return `
+                (${scriptletData.func.toString()})(...${JSON.stringify([params, scriptletData.params.args])});
+            `;
         });
+
+        await UserScriptsManager.updateExecutor(scriptTexts, frameId === MAIN_FRAME_ID);
     }
 
     /**
@@ -132,30 +130,21 @@ export class ScriptingApi {
      * @param params Parameters for executing the script.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
-     * @param params.scriptFunction The script function to be executed.
+     * @param params.scriptTexts The scripts functions to be executed.
      *
      * @returns Promise that resolves when the script is executed.
      */
     public static async executeScriptFunc({
         tabId,
         frameId,
-        scriptFunction,
+        scriptTexts,
     }: ExecuteScriptFuncParams): Promise<void> {
         // There is no reason to inject a script into the background page
         if (tabId === BACKGROUND_TAB_ID) {
             return;
         }
 
-        /**
-         * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
-         *
-         * This is STEP 4.2: Apply JS functions from pre-built filters — via chrome.scripting API.
-         */
-        await chrome.scripting.executeScript({
-            target: { tabId, frameIds: [frameId] },
-            func: scriptFunction,
-            injectImmediately: true,
-            world: 'MAIN',
-        });
+        // FIXME: Find a way to inject scripts into the specified frame.
+        await UserScriptsManager.updateExecutor(scriptTexts, frameId === MAIN_FRAME_ID);
     }
 }
