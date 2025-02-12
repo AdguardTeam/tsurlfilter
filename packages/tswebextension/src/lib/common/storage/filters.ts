@@ -70,7 +70,7 @@ export class FiltersStorage {
 
         for (const [filterId, filter] of Object.entries(filters)) {
             for (const [key, value] of Object.entries(filter)) {
-                data[FiltersStorage.getKey(filterId, key)] = value;
+                data[FiltersStorage.getKey(key, filterId)] = value;
             }
         }
 
