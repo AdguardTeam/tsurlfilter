@@ -188,6 +188,13 @@ describe('HybridStorage', () => {
             expect(value).toBe('value1');
         });
 
+        test('set and get with non-JSON-serializable data', async () => {
+            const arr = new Uint8Array([1, 2, 3]);
+            await storage.set('key1', arr);
+            const value = await storage.get('key1');
+            expect(value).toEqual(arr);
+        });
+
         test('remove', async () => {
             await storage.set('key2', 'value2');
             await expect(storage.get('key2')).resolves.toBe('value2');
@@ -244,6 +251,18 @@ describe('HybridStorage', () => {
             await storage.clear();
             const entries = await storage.entries();
             expect(entries).toEqual({});
+        });
+
+        test('should read data correctly if browser storage already has data', async () => {
+            // Important: browser storage may contain data that is not SuperJSON-serialized,
+            // in this case, we still need to read it correctly
+            const browserStorage = new BrowserStorage(browser.storage.local);
+            await browserStorage.set('key15', 'value15');
+            await browserStorage.set('key16', 'value16');
+
+            const hybridStorage = new HybridStorage(browser.storage.local);
+            const entries = await hybridStorage.entries();
+            expect(entries).toEqual({ key15: 'value15', key16: 'value16' });
         });
     });
 });

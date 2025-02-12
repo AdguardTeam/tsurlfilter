@@ -54,12 +54,17 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
     private static readonly TEST_IDB_VERSION = 1;
 
     /**
+     * The key used to store metadata in SuperJSON-serialized data.
+     */
+    private static readonly SUPERJSON_META_KEY = 'meta';
+
+    /**
      * Holds the instance of the selected storage mechanism.
      *
      * @note We use SuperJSON to serialize and deserialize the data when using the fallback storage mechanism,
      * because it only supports storing JSON-serializable data.
      */
-    private storage: IDBStorage<Data> | BrowserStorage<SuperJSONResult> | null = null;
+    private storage: IDBStorage<Data> | BrowserStorage<SuperJSONResult | Data> | null = null;
 
     /**
      * The storage area to use when IndexedDB is not supported.
@@ -95,7 +100,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
      *
      * @returns The storage instance to be used for data operations.
      */
-    private async getStorage(): Promise<IDBStorage<Data> | BrowserStorage<SuperJSONResult>> {
+    private async getStorage(): Promise<IDBStorage<Data> | BrowserStorage<SuperJSONResult | Data>> {
         if (this.storage) {
             return this.storage;
         }
@@ -103,7 +108,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
         if (await HybridStorage.isIDBSupported()) {
             this.storage = new IDBStorage<Data>();
         } else {
-            this.storage = new BrowserStorage<SuperJSONResult>(this.fallbackStorage);
+            this.storage = new BrowserStorage<SuperJSONResult | Data>(this.fallbackStorage);
         }
 
         return this.storage;
@@ -126,6 +131,17 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
      * @returns The deserialized data.
      */
     public static deserialize = (data: SuperJSONResult): SuperJSONValue => SuperJSON.deserialize(data);
+
+    /**
+     * Checks if the given value is a SuperJSONResult.
+     *
+     * @param value The value to check.
+     *
+     * @returns True if the value is a SuperJSONResult, false otherwise.
+     */
+    private static isSuperJSONResult(value: unknown): value is SuperJSONResult {
+        return typeof value === 'object' && value !== null && HybridStorage.SUPERJSON_META_KEY in value;
+    }
 
     /**
      * Checks if IndexedDB is supported in the current environment.
@@ -180,7 +196,19 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
 
         const serialized = HybridStorage.serialize(value);
 
-        return storage.set(key, serialized);
+        // If the serialized value contains a meta key, it means that the value provided
+        // contains special data that are not JSON-serializable and require SuperJSON serialization,
+        // like typed arrays, dates, and other complex objects.
+        // In this case, we store the SuperJSON-serialized value.
+        if (HybridStorage.SUPERJSON_META_KEY in serialized) {
+            return storage.set(key, serialized);
+        }
+
+        // If the serialized value does not contain a meta key, it means that the value
+        // provided was a primitive value or a plain object that is JSON-serializable,
+        // and it does not contain any special data that requires SuperJSON serialization.
+        // In this case, we store the value as is.
+        return storage.set(key, value);
     }
 
     /**
@@ -206,8 +234,13 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
             return undefined;
         }
 
-        // Deserialize the value before returning it.
-        return HybridStorage.deserialize(value);
+        // If the value is a SuperJSON-serialized object, we need to deserialize it.
+        if (HybridStorage.isSuperJSONResult(value)) {
+            return HybridStorage.deserialize(value);
+        }
+
+        // Otherwise, we return the value as is.
+        return value as Data;
     }
 
     /**
@@ -245,9 +278,25 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
         }
 
         const cloneData = Object.entries(data).reduce((acc, [key, value]) => {
-            acc[key] = SuperJSON.serialize(value);
+            const serialized = SuperJSON.serialize(value);
+
+            // If the serialized value contains a meta key, it means that the value provided
+            // contains special data that are not JSON-serializable and require SuperJSON serialization,
+            // like typed arrays, dates, and other complex objects.
+            // In this case, we store the SuperJSON-serialized value.
+            if (HybridStorage.SUPERJSON_META_KEY in serialized) {
+                acc[key] = serialized;
+                return acc;
+            }
+
+            // If the serialized value does not contain a meta key, it means that the value
+            // provided was a primitive value or a plain object that is JSON-serializable,
+            // and it does not contain any special data that requires SuperJSON serialization.
+            // In this case, we store the value as is.
+            acc[key] = value;
+
             return acc;
-        }, {} as Record<string, SuperJSONResult>);
+        }, {} as Record<string, SuperJSONResult | Data>);
 
         return (await storage.setMultiple(cloneData)) ?? false;
     }
@@ -279,7 +328,7 @@ export class HybridStorage<Data = unknown> implements ExtendedStorageInterface<s
         const entries = await storage.entries();
 
         return Object.entries(entries).reduce((acc, [key, value]) => {
-            acc[key] = SuperJSON.deserialize(value);
+            acc[key] = HybridStorage.isSuperJSONResult(value) ? HybridStorage.deserialize(value) : value;
             return acc;
         }, {} as Record<string, Data>);
     }
