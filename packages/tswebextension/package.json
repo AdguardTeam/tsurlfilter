@@ -53,6 +53,10 @@
     "./core-storages": {
       "types": "./dist/types/core-storages.d.ts",
       "default": "./dist/core-storages.js"
+    },
+    "./filters-storage": {
+      "types": "./dist/types/filters-storage.d.ts",
+      "default": "./dist/filters-storage.js"
     }
   },
   "bin": {
@@ -112,7 +116,7 @@
     "chrome-types": "^0.1.307",
     "commander": "11.0.0",
     "fs-extra": "11.1.1",
-    "idb": "^8.0.0",
+    "idb": "^8.0.1",
     "lodash-es": "^4.17.21",
     "lru-cache": "^11.0.2",
     "nanoid": "^5.0.9",
