@@ -142,56 +142,29 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static async applyJsFuncsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        if (!frameContext) {
+        if (!frameContext || !frameContext.preparedCosmeticResult) {
             return;
         }
 
-        const scriptTexts = frameContext.preparedCosmeticResult?.scriptTexts;
+        const {
+            scriptTexts,
+            scriptletDataList,
+        } = frameContext.preparedCosmeticResult;
 
-        if (!scriptTexts || scriptTexts.length === 0) {
+        if ((!scriptTexts || scriptTexts.length === 0) && (!scriptletDataList || scriptletDataList.length === 0)) {
             return;
         }
 
         try {
-            await ScriptingApi.executeScriptFunc({
+            await ScriptingApi.executeScripts({
                 tabId,
                 frameId,
                 scriptTexts,
-            });
-        } catch (e) {
-            logger.debug('[applyJsFuncsByTabAndFrame] error occurred during injection', getErrorMessage(e));
-        }
-    }
-
-    /**
-     * Injects js to specified tab and frame.
-     *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     */
-    public static async applyScriptletsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
-        const frameContext = tabsApi.getFrameContext(tabId, frameId);
-
-        if (!frameContext) {
-            return;
-        }
-
-        const scriptletDataList = frameContext.preparedCosmeticResult?.scriptletDataList;
-
-        if (!scriptletDataList) {
-            return;
-        }
-
-        try {
-            await ScriptingApi.executeScriptlet({
-                tabId,
-                frameId,
                 scriptletDataList,
                 domainName: getDomain(frameContext.url),
             });
         } catch (e) {
-            // TODO: getErrorMessage may not be needed since logger should handle arg types
-            logger.debug('[applyScriptletsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+            logger.debug('[applyJsFuncsByTabAndFrame] error occurred during injection', getErrorMessage(e));
         }
     }
 

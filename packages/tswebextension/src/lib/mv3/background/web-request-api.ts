@@ -372,7 +372,6 @@ export class WebRequestApi {
         }
 
         CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
-        CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
     }
 
     /**
@@ -637,7 +636,6 @@ export class WebRequestApi {
         Promise.all([
             CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
-            CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
         ]).catch((e) => logger.error(e));
     }
 }
