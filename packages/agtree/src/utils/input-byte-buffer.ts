@@ -51,6 +51,7 @@ export class InputByteBuffer extends ByteBuffer {
     constructor(chunks: Uint8Array[], cloneChunks = false, initialOffset = 0) {
         super(chunks, cloneChunks);
 
+        // TODO: Consider accepting an empty array of chunks
         // Check binary schema version
         if (chunks.length === 0) {
             throw new Error('No data in the buffer');

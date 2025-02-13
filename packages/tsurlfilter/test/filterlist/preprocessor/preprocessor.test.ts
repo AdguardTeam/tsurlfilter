@@ -387,4 +387,27 @@ describe('FilterListPreprocessor', () => {
             expect(originalRules).toEqual(expected);
         });
     });
+
+    describe('createEmptyPreprocessedFilterList', () => {
+        it('creates an empty preprocessed filter list', () => {
+            const preprocessedFilterList = FilterListPreprocessor.createEmptyPreprocessedFilterList();
+
+            expect(preprocessedFilterList).toEqual({
+                filterList: makeSerializedFilterList([]),
+                rawFilterList: '',
+                conversionMap: {},
+                sourceMap: {},
+            });
+        });
+
+        it('empty preprocessed filter list is equal to the one created by preprocess for an empty filter list', () => {
+            const emptyPreprocessedFilterList = FilterListPreprocessor.createEmptyPreprocessedFilterList();
+            const preprocessedFilterList = FilterListPreprocessor.preprocess('');
+
+            expect(emptyPreprocessedFilterList.filterList).toEqual(preprocessedFilterList.filterList);
+            expect(emptyPreprocessedFilterList.rawFilterList).toEqual(preprocessedFilterList.rawFilterList);
+            expect(emptyPreprocessedFilterList.conversionMap).toEqual(preprocessedFilterList.conversionMap);
+            expect(emptyPreprocessedFilterList.sourceMap).toEqual(preprocessedFilterList.sourceMap);
+        });
+    });
 });
