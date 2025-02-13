@@ -1,8 +1,12 @@
+import { logger } from '../../common/utils/logger';
+
 /**
  * Manager for user scripts.
  */
 export class UserScriptsManager {
     private static readonly EXECUTOR_ID = 'executor';
+
+    private static readonly EMPTY_SCRIPTS_TO_INJECT = [{ code: '' }];
 
     /**
      * Initializes the UserScriptsManager.
@@ -10,10 +14,14 @@ export class UserScriptsManager {
      * @returns A promise that resolves when the UserScriptsManager is initialized.
      */
     public static async start(): Promise<void> {
-        await UserScriptsManager.registerExecutor();
+        try {
+            await UserScriptsManager.registerExecutor();
 
-        // FIXME: Check if this is needed.
-        await chrome.userScripts.configureWorld({ csp: 'MAIN' });
+            // FIXME: Check if this is needed.
+            await chrome.userScripts.configureWorld({ csp: 'MAIN' });
+        } catch (e) {
+            logger.error('Failed to start UserScriptsManager:', e);
+        }
     }
 
     /**
@@ -23,7 +31,11 @@ export class UserScriptsManager {
      * @returns A promise that resolves when the user script is unregistered.
      */
     public static async stop(): Promise<void> {
-        await chrome.userScripts.unregister({ ids: [UserScriptsManager.EXECUTOR_ID] });
+        try {
+            await chrome.userScripts.unregister({ ids: [UserScriptsManager.EXECUTOR_ID] });
+        } catch (e) {
+            logger.error('Failed to stop UserScriptsManager:', e);
+        }
     }
 
     /**
@@ -34,15 +46,19 @@ export class UserScriptsManager {
      * @returns A promise that resolves when the user script is registered.
      */
     private static async registerExecutor(): Promise<void> {
-        await chrome.userScripts.register([{
-            id: UserScriptsManager.EXECUTOR_ID,
-            matches: ['*://*/*'],
-            allFrames: true,
-            // Code will be dynamically generated and updated.
-            js: [{ code: '' }],
-            runAt: 'document_start',
-            world: 'MAIN',
-        }]);
+        try {
+            await chrome.userScripts.register([{
+                id: UserScriptsManager.EXECUTOR_ID,
+                matches: ['*://*/*'],
+                allFrames: true,
+                // Code will be dynamically generated and updated.
+                js: UserScriptsManager.EMPTY_SCRIPTS_TO_INJECT,
+                runAt: 'document_start',
+                world: 'MAIN',
+            }]);
+        } catch (e) {
+            logger.error('Failed to register user script executor:', e);
+        }
     }
 
     /**
@@ -55,13 +71,20 @@ export class UserScriptsManager {
      * @returns A promise that resolves when the user script is updated.
      */
     static async updateExecutor(scripts: string[], allFrames: boolean): Promise<void> {
-        await chrome.userScripts.update([{
-            id: UserScriptsManager.EXECUTOR_ID,
-            matches: ['*://*/*'],
-            allFrames,
-            js: scripts.map((script) => ({ code: script })),
-            runAt: 'document_start',
-            world: 'MAIN',
-        }]);
+        try {
+            const areScriptsEmpty = scripts.length === 0 || scripts.every((script) => !script);
+            await chrome.userScripts.update([{
+                id: UserScriptsManager.EXECUTOR_ID,
+                matches: ['*://*/*'],
+                allFrames,
+                js: areScriptsEmpty
+                    ? UserScriptsManager.EMPTY_SCRIPTS_TO_INJECT
+                    : scripts.map((script) => ({ code: script })),
+                runAt: 'document_start',
+                world: 'MAIN',
+            }]);
+        } catch (e) {
+            logger.error('Failed to update user script executor:', e);
+        }
     }
 }

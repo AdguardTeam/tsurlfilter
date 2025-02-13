@@ -151,12 +151,8 @@ export class CosmeticApi extends CosmeticApiCommon {
             scriptletDataList,
         } = frameContext.preparedCosmeticResult;
 
-        if ((!scriptTexts || scriptTexts.length === 0) && (!scriptletDataList || scriptletDataList.length === 0)) {
-            return;
-        }
-
         try {
-            await ScriptingApi.executeScripts({
+            await ScriptingApi.updateScriptsToExecute({
                 tabId,
                 frameId,
                 scriptTexts,

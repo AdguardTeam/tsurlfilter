@@ -72,7 +72,7 @@ export class ScriptingApi {
     }
 
     /**
-     * Executes scripts or scriptlets within the scope of the page.
+     * Updates the scripts to execute in the tab via user scripts manager.
      *
      * @param params Parameters for executing the scripts or scriptlets.
      * @param params.tabId The ID of the tab.
@@ -83,7 +83,7 @@ export class ScriptingApi {
      *
      * @returns Promise that resolves when the scripts are executed.
      */
-    public static async executeScripts({
+    public static async updateScriptsToExecute({
         tabId,
         frameId,
         scriptTexts,
