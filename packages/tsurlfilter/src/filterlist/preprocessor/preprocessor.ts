@@ -1,3 +1,4 @@
+// TODO: Consider moving this file to the `@adguard/agtree` package
 import { OutputByteBuffer, RuleCategory } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
 import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
@@ -214,7 +215,8 @@ export class FilterListPreprocessor {
         }
 
         return {
-            filterList: (filterList as any).chunks,
+            // TODO: consider returning an empty array if the filter list is empty
+            filterList: filterList.getChunks(),
             rawFilterList,
             conversionMap,
             sourceMap,
@@ -309,10 +311,18 @@ export class FilterListPreprocessor {
      * Creates an empty preprocessed filter list.
      *
      * @returns An empty preprocessed filter list.
+     *
+     * @note It gives the same result as the {@link preprocess} method with an empty filter list:
+     * ```ts
+     * FilterListPreprocessor.preprocess('');
+     * ```
      */
     public static createEmptyPreprocessedFilterList(): PreprocessedFilterList {
+        // Note: need to use OutputByteBuffer, because it writes the schema version to the buffer
+        const buffer = new OutputByteBuffer();
         return {
-            filterList: [],
+            // TODO: consider returning an empty array
+            filterList: buffer.getChunks(),
             rawFilterList: '',
             conversionMap: {},
             sourceMap: {},
