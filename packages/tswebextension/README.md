@@ -79,7 +79,7 @@ Table of content:
                 - [openAssistant()](#openassistant)
                 - [closeAssistant()](#closeassistant)
                 - [getRulesCount()](#getrulescount)
-                - [retrieveDynamicRuleNode](#retrievedynamicrulenode)
+                - [retrieveRuleNode](#retrieverulenode)
                 - [getMessageHandler()](#getmessagehandler)
                 - [setFilteringEnabled() (MV2 only)](#setfilteringenabled-mv2-only)
                 - [setCollectHitStats() (MV2 only)](#setcollecthitstats-mv2-only)
@@ -632,11 +632,11 @@ type: `() => number`
 
 Returns number of active rules.
 
-##### retrieveDynamicRuleNode
+##### retrieveRuleNode
 
 type: `(filterId: number, ruleIndex: number): AnyRule | null`
 
-Retrieves rule node from a dynamically created filter, like stealth rules.
+Retrieves rule node from engine by filter id and rule index.
 
 ##### getMessageHandler()
 

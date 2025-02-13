@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- TODO: Check them again before release -->
 - Updated [@adguard/tsurlfilter] to `v3.2.0-alpha.0`.
-- Renamed export `RULE_SET_NAME_PREFIX` to `RULESET_NAME_PREFIX`.
+- Renamed the export `RULE_SET_NAME_PREFIX` to `RULESET_NAME_PREFIX`.
+- `retrieveDynamicRuleNode` function was renamed to `retrieveRuleNode`
+  and can now retrieve any rule node from the engine.
 
 ### Fixed
 

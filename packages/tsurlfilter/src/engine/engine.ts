@@ -1,6 +1,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-promise-executor-return */
 import { LRUCache } from 'lru-cache';
+import { type AnyRule } from '@adguard/agtree';
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
 import { Request } from '../request';
@@ -193,5 +194,19 @@ export class Engine {
                 this.cosmeticEngine.addRule(indexedRule.rule, indexedRule.index);
             }
         }
+    }
+
+    /**
+     * Retrieves a rule node by its filter list identifier and rule index.
+     *
+     * If there's no rule by that index or the rule structure is invalid, it will return null.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule node or `null`.
+     */
+    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        return this.ruleStorage.retrieveRuleNode(filterId, ruleIndex);
     }
 }
