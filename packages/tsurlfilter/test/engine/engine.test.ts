@@ -1,5 +1,6 @@
 import escapeStringRegexp from 'escape-string-regexp';
 
+import { type AnyRule, RuleGenerator } from '@adguard/agtree';
 import { Engine } from '../../src/engine/engine';
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
@@ -7,7 +8,8 @@ import { config, setConfiguration } from '../../src/configuration';
 import { CosmeticOption } from '../../src/engine/cosmetic-option';
 import { RequestType } from '../../src/request-type';
 import { Request } from '../../src/request';
-import { FilterListPreprocessor, getRuleSourceIndex } from '../../src';
+import { FilterListPreprocessor, type PreprocessedFilterList } from '../../src/filterlist/preprocessor';
+import { getRuleSourceIndex } from '../../src/filterlist/source-map';
 
 const createRequest = (url: string): Request => new Request(url, null, RequestType.Document);
 
@@ -73,6 +75,70 @@ describe('Engine Tests', () => {
 
         frameRule = engine.matchFrame('https://test.com');
         expect(frameRule).toBeNull();
+    });
+
+    it('retrieveRuleNode', () => {
+        const list1 = FilterListPreprocessor.preprocess([
+            '||example.org^$third-party',
+            '##banner',
+        ].join('\n'));
+
+        const list2 = FilterListPreprocessor.preprocess([
+            "#%#//scriptlet('set-constant', 'foo', 'bar')",
+            '#@#.yay',
+        ].join('\n'));
+
+        const engine = new Engine(new RuleStorage([
+            new BufferRuleList(1, list1.filterList, false),
+            new BufferRuleList(2, list2.filterList, false),
+        ]));
+
+        expect(engine.getRulesCount()).toBe(4);
+
+        /**
+         * Helper function to get the rule index from the source map by the rule number.
+         *
+         * @param rule Rule number, starting from 1.
+         * @param sourceMap Source map.
+         *
+         * @returns Rule index.
+         *
+         * @throws Error if the rule is not found.
+         */
+        const getRuleIndex = (rule: number, sourceMap: PreprocessedFilterList['sourceMap']): number => {
+            const ruleIndex = Object.keys(sourceMap)[rule - 1];
+
+            if (ruleIndex === undefined) {
+                throw new Error(`Rule with number ${rule} not found in source map`);
+            }
+
+            return parseInt(ruleIndex, 10);
+        };
+
+        // List 1
+        let node: AnyRule | null = engine.retrieveRuleNode(1, getRuleIndex(1, list1.sourceMap));
+        expect(node).not.toBeNull();
+        expect(RuleGenerator.generate(node!)).toStrictEqual('||example.org^$third-party');
+
+        node = engine.retrieveRuleNode(1, getRuleIndex(2, list1.sourceMap));
+        expect(node).not.toBeNull();
+        expect(RuleGenerator.generate(node!)).toStrictEqual('##banner');
+
+        // List 2
+        node = engine.retrieveRuleNode(2, getRuleIndex(1, list2.sourceMap));
+        expect(node).not.toBeNull();
+        expect(RuleGenerator.generate(node!)).toStrictEqual("#%#//scriptlet('set-constant', 'foo', 'bar')");
+
+        node = engine.retrieveRuleNode(2, getRuleIndex(2, list2.sourceMap));
+        expect(node).not.toBeNull();
+        expect(RuleGenerator.generate(node!)).toStrictEqual('#@#.yay');
+
+        // Should return null if the rule is not found, e.g. wrong filterId or ruleIndex
+        node = engine.retrieveRuleNode(1, getRuleIndex(1, list1.sourceMap) + 1);
+        expect(node).toBeNull();
+
+        node = engine.retrieveRuleNode(2000, 4);
+        expect(node).toBeNull();
     });
 });
 

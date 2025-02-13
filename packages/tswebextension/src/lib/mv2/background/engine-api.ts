@@ -12,11 +12,10 @@ import {
     Request,
     CosmeticResult,
     type CosmeticOption,
-    STEALTH_MODE_FILTER_ID,
 } from '@adguard/tsurlfilter';
 import { type AnyRule } from '@adguard/agtree';
 
-import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { USER_FILTER_ID } from '../../common/constants';
 import { getHost, isHttpRequest } from '../../common/utils/url';
 import { type MatchQuery } from '../../common/interfaces';
 
@@ -32,8 +31,6 @@ export class EngineApi {
     private static readonly ASYNC_LOAD_CHINK_SIZE = 5000;
 
     private engine: Engine | undefined;
-
-    private dynamicFilters: Map<number, IRuleList> = new Map();
 
     /**
      * Gets app filtering status.
@@ -115,13 +112,11 @@ export class EngineApi {
         const allowlistRulesList = this.allowlist.getAllowlistRules();
         if (allowlistRulesList) {
             lists.push(allowlistRulesList);
-            this.dynamicFilters.set(ALLOWLIST_FILTER_ID, allowlistRulesList);
         }
 
         const stealthModeList = this.stealthApi.getStealthModeRuleList();
         if (stealthModeList) {
             lists.push(stealthModeList);
-            this.dynamicFilters.set(STEALTH_MODE_FILTER_ID, stealthModeList);
         }
 
         const ruleStorage = new RuleStorage(lists);
@@ -239,22 +234,21 @@ export class EngineApi {
     }
 
     /**
-     * Retrieves rule node from a dynamic filter.
-     * Dynamic filters are filters that are not loaded from the storage but created on the fly.
+     * Retrieves a rule node by its filter list identifier and rule index.
      *
-     * @param filterId Filter id.
+     * If there's no rule by that index or the rule structure is invalid, it will return null.
+     *
+     * @param filterId Filter list identifier.
      * @param ruleIndex Rule index.
      *
-     * @returns Rule node or null.
+     * @returns Rule node or `null`.
      */
-    public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        const ruleList = this.dynamicFilters.get(filterId);
-
-        if (!ruleList) {
+    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        if (!this.engine) {
             return null;
         }
 
-        return ruleList.retrieveRuleNode(ruleIndex);
+        return this.engine.retrieveRuleNode(filterId, ruleIndex);
     }
 
     /**

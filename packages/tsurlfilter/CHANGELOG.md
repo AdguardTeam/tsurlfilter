@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Unload methods for `RuleSet` and `Filter` in the declarative converter.
+- `retrieveRuleNode` method to `Engine` class for retrieving rule nodes by their filter id and index.
 
 ### Changed
 

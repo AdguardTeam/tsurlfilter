@@ -739,17 +739,17 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Retrieves rule node from a dynamic filter.
-     * Dynamic filters are filters that are not loaded from the storage but
-     * created on the fly: now only for allowlist.
+     * Retrieves a rule node by its filter list identifier and rule index.
      *
-     * @param filterId Filter id.
+     * If there's no rule by that index or the rule structure is invalid, it will return null.
+     *
+     * @param filterId Filter list identifier.
      * @param ruleIndex Rule index.
      *
-     * @returns Rule node or null.
+     * @returns Rule node or `null`.
      */
     // eslint-disable-next-line class-methods-use-this
-    public retrieveDynamicRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        return engineApi.retrieveDynamicRuleNode(filterId, ruleIndex);
+    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        return engineApi.retrieveRuleNode(filterId, ruleIndex);
     }
 }

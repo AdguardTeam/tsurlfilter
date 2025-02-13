@@ -1,3 +1,4 @@
+import { type AnyRule } from '@adguard/agtree';
 import { type IRuleList } from './rule-list';
 import { RuleStorageScanner } from './scanner/rule-storage-scanner';
 import { type IRule } from '../rules/rule';
@@ -63,6 +64,24 @@ export class RuleStorage {
 
             this.listsMap.set(filterListId, list);
         });
+    }
+
+    /**
+     * Retrieves a rule node by its filter list identifier and rule index.
+     *
+     * If there's no rule by that index or the rule structure is invalid, it will return null.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule node or `null`.
+     */
+    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+        if (!this.listsMap.has(filterId)) {
+            return null;
+        }
+
+        return this.listsMap.get(filterId)!.retrieveRuleNode(ruleIndex);
     }
 
     /**
