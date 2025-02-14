@@ -1,7 +1,5 @@
-import * as pkgJSON from '../../package.json';
+import { version } from '../../package.json';
 import { COLON, DASH, DOT, SPACE, UTC_PLUS_0 } from '../common/constants';
-
-const { version } = pkgJSON;
 
 /**
  * Length of the generated patch version.
