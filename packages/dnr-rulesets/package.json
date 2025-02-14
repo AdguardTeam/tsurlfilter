@@ -13,7 +13,7 @@
     "type": "module",
     "exports": {
         ".": {
-            "types": "./dist/types/index.d.ts",
+            "types": "./dist/types/lib/index.d.ts",
             "import": "./dist/lib/index.js"
         },
         "./lib": {
