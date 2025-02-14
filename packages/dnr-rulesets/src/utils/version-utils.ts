@@ -19,9 +19,10 @@ export const getVersion = (): string => version;
  * Utility for number formatting.
  *
  * @param value numeric value
+ * @param length length of the formatted string, default is 2
  * @returns formatted string
  */
-const formatNumber = (value: number): string => String(value).padStart(2, '0');
+const formatNumber = (value: number, length = 2): string => String(value).padStart(length, '0');
 
 /**
  * Returns current date and time (UTC+0) in format `yyyymmddhhMMss`.
@@ -38,7 +39,7 @@ export const generatePatchVersion = (timestampMs: number): string => {
 
     const day = formatNumber(date.getUTCDate());
     const month = formatNumber(date.getUTCMonth() + 1); // Months are zero-based
-    const year = String(date.getUTCFullYear());
+    const year = formatNumber(date.getUTCFullYear(), 4);
     const hours = formatNumber(date.getUTCHours());
     const minutes = formatNumber(date.getUTCMinutes());
     const seconds = formatNumber(date.getUTCSeconds());
