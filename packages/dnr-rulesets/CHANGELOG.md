@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Added
 
 - [BREAKING] `unsafeRulesCount` in ruleset metadata to specify the number of unsafe rules in the ruleset.
+- `utils` entry point with `getVersion` and `getVersionTimestampMs` functions.
 
 ### Changed
 

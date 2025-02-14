@@ -1,0 +1,116 @@
+import * as pkgJSON from '../../package.json';
+
+const { version } = pkgJSON;
+
+/**
+ * Dot delimiter.
+ */
+export const DOT = '.';
+
+/**
+ * Dash delimiter.
+ */
+const DASH = '-';
+
+/**
+ * Space delimiter.
+ */
+const SPACE = ' ';
+
+/**
+ * Colon delimiter.
+ */
+const COLON = ':';
+
+/**
+ * UTC+0.
+ */
+const UTC_PLUS_0 = 'UTC+0';
+
+/**
+ * Length of the generated patch version.
+ */
+const GENERATED_PATCH_VERSION_LENGTH = 14;
+
+/**
+ * Returns the version of the package.
+ *
+ * @returns The version of the package.
+ */
+export const getVersion = (): string => version;
+
+/**
+ * Utility for number formatting.
+ *
+ * @param value numeric value
+ * @returns formatted string
+ */
+const formatNumber = (value: number): string => String(value).padStart(2, '0');
+
+/**
+ * Returns current date and time (UTC+0) in format `yyyymmddhhMMss`.
+ *
+ * @param timestampMs Timestamp in milliseconds.
+ *
+ * @returns Date and time string.
+ *
+ * @example
+ * `1739560493923` => `20250215191524`
+ */
+export const generatePatchVersion = (timestampMs: number): string => {
+    const date = new Date(timestampMs);
+
+    const day = formatNumber(date.getUTCDate());
+    const month = formatNumber(date.getUTCMonth() + 1); // Months are zero-based
+    const year = String(date.getUTCFullYear());
+    const hours = formatNumber(date.getUTCHours());
+    const minutes = formatNumber(date.getUTCMinutes());
+    const seconds = formatNumber(date.getUTCSeconds());
+
+    const patchVersion = `${year}${month}${day}${hours}${minutes}${seconds}`;
+
+    if (patchVersion.length !== GENERATED_PATCH_VERSION_LENGTH) {
+        throw new Error('Invalid generated patch version');
+    }
+
+    return patchVersion;
+};
+
+/**
+ * Returns the timestamp of the dnr-rulesets build, parsed from the version string.
+ *
+ * @returns Timestamp in milliseconds for latest build
+ * or current timestamp if version parsing fails.
+ *
+ * @example
+ * ```text
+ * version → timestamp:
+ * 1.2.20250215191524 → 1739664924000
+ * 2.0.0 → <current timestamp>
+ * ```
+ */
+export const getVersionTimestampMs = (): number => {
+    // dnr-rulesets patch versions is date and time (UTC+0) in format `yyyymmddhhMMss`
+    const patchVersion = version.split(DOT).pop();
+    if (!patchVersion || patchVersion.length !== GENERATED_PATCH_VERSION_LENGTH) {
+        return Date.now();
+    }
+
+    const dateStr = [
+        patchVersion.slice(0, 4), // yyyy
+        DASH,
+        patchVersion.slice(4, 6), // mm
+        DASH,
+        patchVersion.slice(6, 8), // dd
+        SPACE,
+        patchVersion.slice(8, 10), // hh
+        COLON,
+        patchVersion.slice(10, 12), // MM
+        COLON,
+        patchVersion.slice(12, 14), // ss
+        SPACE,
+        UTC_PLUS_0,
+    ].join('');
+
+    return Date.parse(dateStr);
+};
