@@ -1,7 +1,8 @@
 import fs from 'fs';
 
 import packageJson from '../package.json';
-import { DOT, generatePatchVersion } from '../src/utils/version-utils';
+import { DOT } from '../src/common/constants';
+import { generatePatchVersion } from '../src/utils/version-utils';
 
 const { version } = packageJson;
 

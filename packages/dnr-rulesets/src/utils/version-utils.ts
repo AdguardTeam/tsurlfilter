@@ -1,31 +1,7 @@
 import * as pkgJSON from '../../package.json';
+import { COLON, DASH, DOT, SPACE, UTC_PLUS_0 } from '../common/constants';
 
 const { version } = pkgJSON;
-
-/**
- * Dot delimiter.
- */
-export const DOT = '.';
-
-/**
- * Dash delimiter.
- */
-const DASH = '-';
-
-/**
- * Space delimiter.
- */
-const SPACE = ' ';
-
-/**
- * Colon delimiter.
- */
-const COLON = ':';
-
-/**
- * UTC+0.
- */
-const UTC_PLUS_0 = 'UTC+0';
 
 /**
  * Length of the generated patch version.
