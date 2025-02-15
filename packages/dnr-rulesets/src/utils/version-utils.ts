@@ -44,13 +44,7 @@ export const generatePatchVersion = (timestampMs: number): string => {
     const minutes = formatNumber(date.getUTCMinutes());
     const seconds = formatNumber(date.getUTCSeconds());
 
-    const patchVersion = `${year}${month}${day}${hours}${minutes}${seconds}`;
-
-    if (patchVersion.length !== GENERATED_PATCH_VERSION_LENGTH) {
-        throw new Error('Invalid generated patch version');
-    }
-
-    return patchVersion;
+    return `${year}${month}${day}${hours}${minutes}${seconds}`;
 };
 
 /**
