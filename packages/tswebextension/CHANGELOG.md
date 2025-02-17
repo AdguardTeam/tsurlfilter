@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Core storages (wrappers for `chrome.storage.local` and `IndexedDB`).
 - Possibility to get filter data from "sync storage" in MV3.
 
 ### Changed
