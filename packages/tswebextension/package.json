@@ -50,10 +50,6 @@
       "types": "./dist/types/assistant-inject.d.ts",
       "default": "./dist/assistant-inject.js"
     },
-    "./core-storages": {
-      "types": "./dist/types/core-storages.d.ts",
-      "default": "./dist/core-storages.js"
-    },
     "./filters-storage": {
       "types": "./dist/types/filters-storage.d.ts",
       "default": "./dist/filters-storage.js"
