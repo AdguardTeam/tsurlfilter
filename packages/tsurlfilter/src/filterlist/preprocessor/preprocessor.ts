@@ -179,11 +179,13 @@ export class FilterListPreprocessor {
      *
      * @param preprocessedFilterList Preprocessed filter list,
      * which contains the raw filter list and the conversion map.
+     * @param parseHosts If true, the preprocessor will parse host rules.
      *
      * @returns Preprocessed filter list with the "filterList" and "sourceMap" fields.
      */
     public static preprocessLightweight(
         preprocessedFilterList: LightweightPreprocessedFilterList,
+        parseHosts = false,
     ): PreprocessedFilterList {
         const { rawFilterList, conversionMap } = preprocessedFilterList;
         const { length } = rawFilterList;
@@ -198,12 +200,20 @@ export class FilterListPreprocessor {
             const [lineBreakIndex, lineBreakLength] = findNextLineBreakIndex(rawFilterList, inputOffset);
             const ruleText = rawFilterList.slice(inputOffset, lineBreakIndex);
 
-            const bufferOffset = filterList.currentOffset;
-
-            sourceMap[bufferOffset] = outputOffset;
-
             try {
-                RuleSerializer.serialize(RuleParser.parse(ruleText, PREPROCESSOR_AGTREE_OPTIONS), filterList);
+                const ruleNode = RuleParser.parse(ruleText, {
+                    ...PREPROCESSOR_AGTREE_OPTIONS,
+                    parseHostRules: parseHosts,
+                });
+
+                // Ignore empty lines and comments from the binary filter list
+                if (ruleNode.category !== RuleCategory.Empty && ruleNode.category !== RuleCategory.Comment) {
+                    const bufferOffset = filterList.currentOffset;
+
+                    sourceMap[bufferOffset] = outputOffset;
+
+                    RuleSerializer.serialize(ruleNode, filterList);
+                }
             } catch (error: unknown) {
                 logger.error(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
             }
