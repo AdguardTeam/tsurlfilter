@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Cosmetic rules injecting into `about:blank` iframes in MV2.
+- Scriptlets and scripts are executed too late on website reload
+  or navigation in MV2 [AdguardBrowserExtension#2855].
+
+[AdguardBrowserExtension#2855]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2855
 
 ## [3.0.0-alpha.1] - 2025-01-30
 

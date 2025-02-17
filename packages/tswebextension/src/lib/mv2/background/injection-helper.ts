@@ -1,6 +1,10 @@
+import { nanoid } from '../../common/utils/nanoid';
+
+import { isFirefox } from './utils';
+
 /**
  * Taken from:
- * {@link https://github.com/seanl-adg/InlineResourceLiteral/blob/master/index.js#L136}
+ * {@link https://github.com/seanl-adg/InlineResourceLiteral/blob/master/index.js#L136} and
  * {@link https://github.com/joliss/js-string-escape/blob/master/index.js}.
  */
 const reJsEscape = /["'\\\n\r\u2028\u2029]/g;
@@ -28,6 +32,145 @@ const escapeJs = (match: string): string => {
         default:
             return match;
     }
+};
+
+/**
+ * Builds script to inject in a safe way for Firefox.
+ *
+ * @param scriptText Script text to execute.
+ * @param variableName Variable name to check if script was executed.
+ *
+ * @returns Wrapped script text to inject on the page.
+ */
+const buildScriptTextForFirefox = (scriptText: string, variableName: string): string => {
+    /**
+     * Unique guard ID to check if a script was executed at the first attempt.
+     *
+     * `window.wrappedJSObject` is available only in Firefox
+     * and it provides access to the page's window object context from the content script.
+     * It is used to check whether the first script injection attempt was successful.
+     * So if the script was not executed, tries to use `script.src + blob`
+     * as a workaround for {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1733 | CSP issue}.
+     *
+     * @see {@link https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/Sharing_objects_with_page_scripts}
+     */
+    const guardId = nanoid();
+
+    const scriptWithGuard = `window['${guardId}'] = true;\n${scriptText}`;
+
+    const preparedScriptText = `${scriptWithGuard.replace(reJsEscape, escapeJs)}`;
+
+    return `(function() {\
+        if (window.${variableName} || document instanceof XMLDocument) {\
+            return;\
+        }\
+        var script;\
+        var blob;\
+        var url;\
+        var FRAME_REQUESTS_LIMIT = 500;\
+        var frameRequests = 0;\
+        function waitParent () {\
+            frameRequests += 1;\
+            var parent = document.head || document.documentElement;\
+            if (!parent) {\
+                return;\
+            }\
+            try {\
+                script = document.createElement("script");\
+                var textNode = document.createTextNode("${preparedScriptText}");\
+                script.appendChild(textNode);\
+                parent.appendChild(script);\
+            } catch (e) {\
+            }\
+            if (script) {\
+                script.remove();\
+            }\
+            if (window.wrappedJSObject["${guardId}"]) {\
+                delete window.wrappedJSObject["${guardId}"];\
+                window.${variableName} = true;\
+                return true;\
+            }
+            try {\
+                script = document.createElement("script");\
+                blob = new Blob(["${preparedScriptText}"], { type: "text/javascript; charset=utf-8" });\
+                url = URL.createObjectURL(blob);\
+                script.async = false;\
+                script.src = url;\
+                parent.appendChild(script);\
+            } catch (e) {\
+                script.setAttribute("type", "text/javascript");\
+                script.textContent = "${preparedScriptText}";\
+            }\
+            if (script) {\
+                if (url) {\
+                    URL.revokeObjectURL(url);\
+                }\
+                script.remove();\
+                window.${variableName} = true;\
+                return true;\
+            }\
+            if(frameRequests < FRAME_REQUESTS_LIMIT) {\
+                requestAnimationFrame(waitParent);\
+            } else {\
+                console.log("AdGuard: document.head or document.documentElement were unavailable too long");\
+            }\
+        }\
+        waitParent();\
+    })()`;
+};
+
+/**
+ * Builds script to inject in a safe way for browsers other than Firefox.
+ *
+ * @param scriptText Script text to execute.
+ * @param variableName Variable name to check if script was executed.
+ *
+ * @returns Wrapped script text to inject on the page.
+ */
+const buildScriptTextCommon = (scriptText: string, variableName: string): string => {
+    const preparedScriptText = scriptText.replace(reJsEscape, escapeJs);
+
+    return `(function() {\
+        if (window.${variableName} || document instanceof XMLDocument) {\
+            return;\
+        }\
+        var script = document.createElement("script");\
+        var blob;\
+        var url;\
+        try {\
+            var textNode = document.createTextNode("${preparedScriptText}");\
+            script.appendChild(textNode);\
+        } catch (e) {\
+            script.setAttribute("type", "text/javascript");\
+            script.textContent = "${preparedScriptText}";\
+        }\
+        var FRAME_REQUESTS_LIMIT = 500;\
+        var frameRequests = 0;\
+        function waitParent () {\
+            frameRequests += 1;\
+            var parent = document.head || document.documentElement;\
+            if (!parent) {\
+                return;\
+            }\
+            try {\
+                parent.appendChild(script);\
+                if (url) {\
+                    URL.revokeObjectURL(url);\
+                }\
+                script.remove();\
+            } catch (e) {\
+            } finally {\
+                window.${variableName} = true;\
+                return true;\
+            }\
+            if(frameRequests < FRAME_REQUESTS_LIMIT) {\
+                requestAnimationFrame(waitParent);\
+            } else {\
+                console.log("AdGuard: document.head or document.documentElement were unavailable too long");\
+            }\
+        }\
+        waitParent();\
+    })()`;
 };
 
 /**
@@ -70,50 +213,21 @@ export const buildScriptText = (scriptText: string, startTimeMs: number | undefi
      * Injecting content-script, which appends a script tag, breaks Firefox's pretty printer for xml documents.
      * Description of the issue: @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2194}.
      *
-     * CSP may prevent script execution in Firefox if script.textContent is used.
-     * That's why script.src is used as a primary way, and script.textContent is used as a fallback.
+     * IMPORTANT: Injecting script via a text node or textContent property is crucial for the injection speed.
+     * That's why it should be used as a primary way.
+     *
+     * CSP may prevent script execution in Firefox but script.src + blob is a workaround for this issue.
      * Description of the issue: @see {@link https://github.com/AdguardTeam/AdguardBrowserExtension/issues/1733}.
+     * So for Firefox:
+     * 1) text node as a script child is used as a primary way,
+     * 2) script.src + blob is used as a secondary way,
+     * 3) script.textContent is used as a final fallback.
+     *
+     * There is no such CSP issue in Chromium, so for Chromium:
+     * 1) text node as a script child is a primary way,
+     * 2) script.textContent is used as a fallback.
      */
-    return `(function() {\
-                if (window.${variableName} || document instanceof XMLDocument) {\
-                    return;\
-                }\
-                var script = document.createElement("script");\
-                var preparedScriptText = "${scriptText.replace(reJsEscape, escapeJs)}";\
-                var blob;\
-                var url;\
-                try {\
-                    blob = new Blob([preparedScriptText], { type: "text/javascript; charset=utf-8" });\
-                    url = URL.createObjectURL(blob);\
-                    script.src = url;\
-                } catch (e) {\
-                    script.setAttribute("type", "text/javascript");\
-                    script.textContent = preparedScriptText;\
-                }\
-                var FRAME_REQUESTS_LIMIT = 500;\
-                var frameRequests = 0;\
-                function waitParent () {\
-                    frameRequests += 1;\
-                    var parent = document.head || document.documentElement;\
-                    if (parent) {\
-                        try {\
-                            parent.appendChild(script);\
-                            if (url) {\
-                                URL.revokeObjectURL(url);\
-                            }\
-                            parent.removeChild(script);\
-                        } catch (e) {\
-                        } finally {\
-                            window.${variableName} = true;\
-                            return true;\
-                        }\
-                    }\
-                    if(frameRequests < FRAME_REQUESTS_LIMIT) {\
-                        requestAnimationFrame(waitParent);\
-                    } else {\
-                        console.log("AdGuard: document.head or document.documentElement were unavailable too long");\
-                    }\
-                }\
-                waitParent();\
-            })()`;
+    return isFirefox
+        ? buildScriptTextForFirefox(scriptText, variableName)
+        : buildScriptTextCommon(scriptText, variableName);
 };

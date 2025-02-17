@@ -18,34 +18,33 @@ const expectedScriptTemplate = (text: string): string => `(function() {\
         return;\
     }\
     var script = document.createElement("script");\
-    var preparedScriptText = "${text}";\
     var blob;\
-        var url;\
-        try {\
-            blob = new Blob([preparedScriptText], { type: "text/javascript; charset=utf-8" });\
-            url = URL.createObjectURL(blob);\
-            script.src = url;\
-        } catch (e) {\
-            script.setAttribute("type", "text/javascript");\
-            script.textContent = preparedScriptText;\
-        }\
+    var url;\
+    try {\
+        var textNode = document.createTextNode("${text}");\
+        script.appendChild(textNode);\
+    } catch (e) {\
+        script.setAttribute("type", "text/javascript");\
+        script.textContent = "${text}";\
+    }\
     var FRAME_REQUESTS_LIMIT = 500;\
     var frameRequests = 0;\
     function waitParent () {\
         frameRequests += 1;\
         var parent = document.head || document.documentElement;\
-        if (parent) {\
-            try {\
-                parent.appendChild(script);\
-                if (url) {\
-                    URL.revokeObjectURL(url);\
-                }\
-                parent.removeChild(script);\
-            } catch (e) {\
-            } finally {\
-                window.scriptExecuted${timestamp} = true;\
-                return true;\
+        if (!parent) {\
+            return;\
+        }\
+        try {\
+            parent.appendChild(script);\
+            if (url) {\
+                URL.revokeObjectURL(url);\
             }\
+            script.remove();\
+        } catch (e) {\
+        } finally {\
+            window.scriptExecuted${timestamp} = true;\
+            return true;\
         }\
         if(frameRequests < FRAME_REQUESTS_LIMIT) {\
             requestAnimationFrame(waitParent);\
