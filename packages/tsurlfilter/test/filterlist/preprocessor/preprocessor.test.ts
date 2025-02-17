@@ -281,6 +281,25 @@ describe('FilterListPreprocessor', () => {
                 },
             },
             {
+                name: 'should ignore comments and empty rules from binary rules',
+                actual: {
+                    rawFilterList: '||example.com^\n! this is a comment\n  \n||example.org^',
+                    conversionMap: {},
+                },
+                expected: {
+                    filterList: makeSerializedFilterList([
+                        '||example.com^',
+                        '||example.org^',
+                    ]),
+                    rawFilterList: '||example.com^\n! this is a comment\n  \n||example.org^',
+                    conversionMap: {},
+                    sourceMap: {
+                        4: 0,
+                        29: 38,
+                    },
+                },
+            },
+            {
                 name: 'converting non-AdGuard rules',
                 actual: {
                     rawFilterList: [
