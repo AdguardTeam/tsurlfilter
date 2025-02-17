@@ -15,7 +15,7 @@ import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { EngineApi } from '../../../../../src/lib/mv2/background/engine-api';
 import { appContext } from '../../../../../src/lib/mv2/background/app-context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
-import { MAIN_FRAME_ID } from '../../../../../src/lib/common/constants';
+import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../../../src/lib/common/constants';
 import { TabsApi } from '../../../../../src/lib/mv2/background/tabs/tabs-api';
 import { TabContext } from '../../../../../src/lib/mv2/background/tabs/tab-context';
 import { FrameMV2 } from '../../../../../src/lib/mv2/background/tabs/frame';
@@ -94,6 +94,7 @@ describe('TabsApi', () => {
             const url = 'https://example.com';
             const tabId = 1;
             const frameId = MAIN_FRAME_ID;
+            const parentFrameId = NO_PARENT_FRAME_ID;
             const timeStamp = Date.now();
             const parentDocumentId = '1';
 
@@ -103,6 +104,7 @@ describe('TabsApi', () => {
                 url,
                 tabId,
                 frameId,
+                parentFrameId,
                 timeStamp,
                 parentDocumentId,
             });

@@ -2,7 +2,7 @@ import browser, { type Tabs } from 'webextension-polyfill';
 import { type RequestType, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { type DocumentApi } from '../../mv2/background/document-api';
-import { MAIN_FRAME_ID } from '../constants';
+import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../constants';
 import { EventChannel } from '../utils/channels';
 import { logger } from '../utils/logger';
 import { getDomain, isHttpRequest } from '../utils/url';
@@ -68,13 +68,6 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     public onActivate = new EventChannel<T>();
 
     public onReplace = new EventChannel<T>();
-
-    /**
-     * Value of the parent frame id if no parent frame exists.
-     *
-     * @see {@link WebRequest.OnBeforeRequestDetailsType#parentFrameId}
-     */
-    protected static readonly NO_PARENT_FRAME_ID = -1;
 
     /**
      * Tabs API constructor.
@@ -336,7 +329,7 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * @returns True if the parent frame is a document-level frame.
      */
     public static isDocumentLevelFrame(parentFrameId: number): boolean {
-        return parentFrameId === TabsApiCommon.NO_PARENT_FRAME_ID;
+        return parentFrameId === NO_PARENT_FRAME_ID;
     }
 
     /**
@@ -400,6 +393,38 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
             return;
         }
         tabContext.resetBlockedRequestsCount();
+    }
+
+    /**
+     * Sets a current timestamp as `assistantInitTimestamp` of the tab context.
+     *
+     * Needed to determine later if a newly created frame is an assistant frame.
+     *
+     * @param tabId Tab id.
+     */
+    public setAssistantInitTimestamp(tabId: number): void {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        tabContext.assistantInitTimestamp = Date.now();
+    }
+
+    /**
+     * Resets tab context's `assistantInitTimestamp` to null.
+     *
+     * @param tabId Tab id.
+     */
+    public resetAssistantInitTimestamp(tabId: number): void {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        tabContext.assistantInitTimestamp = null;
     }
 
     /**
