@@ -125,40 +125,6 @@ export class TabsApi extends TabsApiCommon<FrameMV2, TabContext> {
         return `${tabId}-${frameId}`;
     }
 
-    // TODO: do the same in MV3 (AG-39527)
-    // since cosmetic rules should not be applied in the assistant frame (AG-9829)
-    /**
-     * Sets a current timestamp as `assistantInitTimestamp` of the tab context.
-     *
-     * Needed to determine later if a newly created frame is an assistant frame.
-     *
-     * @param tabId Tab id.
-     */
-    public setAssistantInitTimestamp(tabId: number): void {
-        const tabContext = this.context.get(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        tabContext.assistantInitTimestamp = Date.now();
-    }
-
-    /**
-     * Resets tab context's `assistantInitTimestamp` to null.
-     *
-     * @param tabId Tab id.
-     */
-    public resetAssistantInitTimestamp(tabId: number): void {
-        const tabContext = this.context.get(tabId);
-
-        if (!tabContext) {
-            return;
-        }
-
-        tabContext.assistantInitTimestamp = null;
-    }
-
     /**
      * Injects script code to the frame by tab id and frame id.
      *

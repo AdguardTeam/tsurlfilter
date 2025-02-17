@@ -172,13 +172,13 @@
 import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
+import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { findHeaderByName } from '../../common/utils/headers';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 
-import { Assistant } from './assistant';
 import {
     cosmeticFrameProcessor,
     documentApi,
@@ -286,13 +286,14 @@ export class WebRequestApi {
     /**
      * On before request event handler. This is the earliest event in the chain of the web request events.
      *
-     * @param details Request details.
-     * @param details.context Request context.
+     * @param data Request data.
+     * @param data.context Request context.
+     * @param data.details Event details.
      *
      * @returns Web request response or void if there is nothing to do.
      */
     private static onBeforeRequest(
-        { context }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
+        { context, details }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
     ): WebRequestEventResponse {
         if (!context) {
             return undefined;
@@ -355,9 +356,12 @@ export class WebRequestApi {
         });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            const { parentFrameId } = details;
+
             cosmeticFrameProcessor.precalculateCosmetics({
                 tabId,
                 frameId,
+                parentFrameId,
                 url: requestUrl,
                 timeStamp: timestamp,
             });
@@ -660,21 +664,20 @@ export class WebRequestApi {
      *
      * @param details Event details.
      */
-    private static async injectCosmetic(
+    private static injectCosmetic(
         details: WebNavigation.OnCommittedDetailsType
         | WebNavigation.OnDOMContentLoadedDetailsType
         | WebRequest.OnCompletedDetailsType,
-    ): Promise<void> {
+    ): void {
         const {
             tabId,
             frameId,
         } = details;
 
-        const isAssistant = await WebRequestApi.isAssistantFrame(tabId, details);
-
-        // do not inject cosmetic rules into the assistant frame
-        // TODO: fix the issue (AG-9829) in MV3
-        if (isAssistant) {
+        if (WebRequestApi.isAssistantFrame(tabId, details)) {
+            logger.debug(
+                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
+            );
             return;
         }
 
@@ -702,6 +705,7 @@ export class WebRequestApi {
         cosmeticFrameProcessor.precalculateCosmetics({
             tabId,
             frameId,
+            parentFrameId,
             url,
             timeStamp,
             /**
@@ -748,22 +752,20 @@ export class WebRequestApi {
     /**
      * Checks whether the frame is an assistant frame.
      *
+     * Needed to prevent cosmetic rules injection into the assistant frame.
+     *
      * @param tabId Tab id.
      * @param details Event details.
      *
      * @returns True if the frame is an assistant frame, false otherwise.
      */
-    private static async isAssistantFrame(
+    private static isAssistantFrame(
         tabId: number,
-        details: WebNavigation.OnCommittedDetailsType
-        | WebNavigation.OnDOMContentLoadedDetailsType
-        | WebRequest.OnCompletedDetailsType,
-    ): Promise<boolean> {
+        details: CommonAssistantDetails,
+    ): boolean {
         const tabContext = tabsApi.getTabContext(tabId);
 
-        const isAssistant = await Assistant.isAssistantFrame(details, tabContext);
-
-        return isAssistant;
+        return CommonAssistant.isAssistantFrame(details, tabContext);
     }
 
     /**

@@ -10,7 +10,7 @@ import {
 import { TabContext } from '../../../../src/lib/mv3/tabs/tab-context';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { FrameMV3 } from '../../../../src/lib/mv3/tabs/frame';
-import { MAIN_FRAME_ID } from '../../../../src/lib/common/constants';
+import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../../src/lib/common/constants';
 import { Frames } from '../../../../src/lib/common/tabs/frames';
 import { type TabInfo } from '../../../../src/lib/common/tabs/tabs-api';
 
@@ -62,6 +62,7 @@ describe('TabContext', () => {
             expect(context.frames.get(MAIN_FRAME_ID)).toEqual(new FrameMV3({
                 tabId: tabInfo.id,
                 frameId: MAIN_FRAME_ID,
+                parentFrameId: NO_PARENT_FRAME_ID,
                 url: tabInfo.pendingUrl!,
                 timeStamp: 0,
             }));

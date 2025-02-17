@@ -20,6 +20,11 @@ export type PrecalculateCosmeticProps = {
     frameId: number,
 
     /**
+     * Parent frame id.
+     */
+    parentFrameId: number,
+
+    /**
      * Frame creation timestamp.
      */
     timeStamp: number,
