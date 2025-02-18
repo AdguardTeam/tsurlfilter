@@ -1,7 +1,7 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
 import { getHostname } from 'tldts';
 import { NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
-import { RuleGenerator } from '@adguard/agtree';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { logger } from '../../../common/utils/logger';
