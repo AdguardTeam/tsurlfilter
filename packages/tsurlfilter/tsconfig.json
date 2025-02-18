@@ -4,6 +4,7 @@
     "src/**/*.ts",
     "cli/**/*.ts",
     "test/**/*.ts",
+    "test/.eslintrc.cjs",
     ".eslintrc.cjs",
     "rollup.config.ts",
     "jest.config.ts",

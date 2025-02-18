@@ -1,7 +1,15 @@
 import { jest } from '@jest/globals';
-import { OutputByteBuffer } from '@adguard/agtree';
+import {
+    type AnyRule,
+    InputByteBuffer,
+    OutputByteBuffer,
+    RuleDeserializer,
+} from '@adguard/agtree';
 import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
 import { RuleSerializer } from '@adguard/agtree/serializer';
+import { readFile } from 'node:fs/promises';
+import { omit } from 'lodash-es';
+
 import {
     FilterListPreprocessor,
     type LightweightPreprocessedFilterList,
@@ -427,6 +435,45 @@ describe('FilterListPreprocessor', () => {
             expect(emptyPreprocessedFilterList.rawFilterList).toEqual(preprocessedFilterList.rawFilterList);
             expect(emptyPreprocessedFilterList.conversionMap).toEqual(preprocessedFilterList.conversionMap);
             expect(emptyPreprocessedFilterList.sourceMap).toEqual(preprocessedFilterList.sourceMap);
+        });
+    });
+
+    describe('verify preprocess and preprocessLightweight are consistent', () => {
+        it.each([
+            '../../resources/adguard_base_filter.txt',
+            // TODO: Add more test cases
+        ])('for %s', async (filename) => {
+            const rawFilterContent = await readFile(new URL(`./${filename}`, import.meta.url), 'utf-8');
+
+            const preprocessResult = FilterListPreprocessor.preprocess(rawFilterContent);
+
+            const preprocessLightweightResult = FilterListPreprocessor.preprocessLightweight({
+                rawFilterList: preprocessResult.rawFilterList,
+                conversionMap: preprocessResult.conversionMap,
+            });
+
+            const buffer = new InputByteBuffer(preprocessResult.filterList);
+            const bufferLightweight = new InputByteBuffer(preprocessLightweightResult.filterList);
+
+            let node1: AnyRule;
+            let node2: AnyRule;
+
+            // TODO: Use scanner from AGTree once it's available (AG-39995)
+            RuleDeserializer.deserialize(buffer, node1 = {} as AnyRule);
+            RuleDeserializer.deserialize(bufferLightweight, node2 = {} as AnyRule);
+
+            while (buffer.peekUint8() !== 0 && bufferLightweight.peekUint8() !== 0) {
+                // TODO: Improve converter to handle syntax more precisely (AG-40033)
+                // Currently, if a rule is converted to AdGuard rule, it's syntax property is set to 'AdGuard',
+                // but if we stringify that rule node, then re-parse it, the syntax property will be set to 'Common'.
+                // As a workaround, we omit the syntax property when comparing the nodes.
+                expect(omit(node1, ['syntax'])).toEqual(omit(node2, ['syntax']));
+
+                RuleDeserializer.deserialize(buffer, node1 = {} as AnyRule);
+                RuleDeserializer.deserialize(bufferLightweight, node2 = {} as AnyRule);
+            }
+
+            expect(preprocessResult.sourceMap).toEqual(preprocessLightweightResult.sourceMap);
         });
     });
 });
