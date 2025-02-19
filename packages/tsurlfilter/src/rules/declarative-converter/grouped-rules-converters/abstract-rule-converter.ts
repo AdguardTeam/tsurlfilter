@@ -99,7 +99,6 @@
 
 import punycode from 'punycode/punycode.js';
 import { getRedirectFilename } from '@adguard/scriptlets/redirects';
-import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
@@ -127,7 +126,6 @@ import {
     UnsupportedRegexpError,
 } from '../errors/conversion-errors';
 import { type ConvertedRules } from '../converted-result';
-import type { IRule } from '../../rule';
 import { ResourcesPathError } from '../errors/converter-options-errors';
 import { type RedirectModifier } from '../../../modifiers/redirect-modifier';
 import { type RemoveHeaderModifier } from '../../../modifiers/remove-header-modifier';
@@ -140,7 +138,6 @@ import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
 import { EmptyDomainsError } from '../errors/conversion-errors/empty-domains-error';
 import { re2Validator } from '../re2-regexp/re2-validator';
 import { getErrorMessage } from '../../../common/error';
-import { type NetworkRuleWithNode } from '../network-rule-with-node';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -730,7 +727,7 @@ export abstract class DeclarativeRuleConverter {
      * @returns A list of declarative rules.
      */
     protected async convertRule(
-        rule: NetworkRuleWithNode,
+        rule: IndexedNetworkRuleWithHash,
         id: number,
     ): Promise<DeclarativeRule[]> {
         // If the rule is not convertible - method will throw an error.
@@ -753,7 +750,7 @@ export abstract class DeclarativeRuleConverter {
         }
 
         const conversionErr = await DeclarativeRuleConverter.checkDeclarativeRuleApplicable(
-            rule,
+            rule.rule,
             declarativeRule,
         );
         if (conversionErr) {
@@ -784,7 +781,7 @@ export abstract class DeclarativeRuleConverter {
      * while the original rule has non-empty domains.
      */
     private static async checkDeclarativeRuleApplicable(
-        networkRule: NetworkRuleWithNode,
+        networkRule: NetworkRule,
         declarativeRule: DeclarativeRule,
     ): Promise<ConversionError | null> {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
@@ -793,11 +790,11 @@ export abstract class DeclarativeRuleConverter {
             return new EmptyResourcesError('Conversion resourceTypes is empty', networkRule, declarativeRule);
         }
 
-        const permittedDomains = networkRule.rule.getPermittedDomains();
+        const permittedDomains = networkRule.getPermittedDomains();
         if (permittedDomains && permittedDomains.length > 0) {
             const { initiatorDomains } = declarativeRule.condition;
             if (!initiatorDomains || initiatorDomains.length === 0) {
-                const ruleText = RuleGenerator.generate(networkRule.node);
+                const ruleText = networkRule.getText();
                 const msg = `Conversion initiatorDomains is empty, but original rule's domains not: "${ruleText}"`;
                 return new EmptyDomainsError(msg, networkRule, declarativeRule);
             }
@@ -808,7 +805,7 @@ export abstract class DeclarativeRuleConverter {
             try {
                 await re2Validator.isRegexSupported(regexFilter);
             } catch (e) {
-                const ruleText = RuleGenerator.generate(networkRule.node);
+                const ruleText = networkRule.getText();
                 const msg = `Regex is unsupported: "${ruleText}"`;
                 return new UnsupportedRegexpError(
                     msg,
@@ -827,7 +824,6 @@ export abstract class DeclarativeRuleConverter {
      * conversion errors - returns it, otherwise adds information about
      * the original rule, packages it into a new error and returns it.
      *
-     * @param rule An error was caught while converting this rule.
      * @param index Index of {@link IndexedNetworkRuleWithHash}.
      * @param id Identifier of the desired declarative rule.
      * @param e Captured error.
@@ -835,7 +831,6 @@ export abstract class DeclarativeRuleConverter {
      * @returns Initial error or new packaged error.
      */
     private static catchErrorDuringConversion(
-        rule: IRule,
         index: number,
         id: number,
         e: unknown,
@@ -879,7 +874,8 @@ export abstract class DeclarativeRuleConverter {
             sourceMapValues: [],
         };
 
-        await Promise.all(rules.map(async ({ rule, index }: IndexedNetworkRuleWithHash) => {
+        await Promise.all(rules.map(async (rule: IndexedNetworkRuleWithHash) => {
+            const { index } = rule;
             // Here we use offset to generate unique IDs for each rule. Because
             // sometimes we convert several filters into one ruleset, that's why
             // we cannot just use the index on IndexedNetworkRuleWithHash - they
@@ -893,7 +889,7 @@ export abstract class DeclarativeRuleConverter {
                     id,
                 );
             } catch (e) {
-                const err = DeclarativeRuleConverter.catchErrorDuringConversion(rule.rule, index, id, e);
+                const err = DeclarativeRuleConverter.catchErrorDuringConversion(index, id, e);
                 res.errors.push(err);
                 return;
             }

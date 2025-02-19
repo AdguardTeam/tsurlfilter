@@ -1,6 +1,5 @@
 import { z as zod } from 'zod';
 import { RuleParser } from '@adguard/agtree/parser';
-import { RuleGenerator } from '@adguard/agtree/generator';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
@@ -543,7 +542,7 @@ export class RuleSet implements IRuleSet {
             return [];
         }
 
-        const networkRules = networkIndexedRulesWithHash.map(({ rule }) => rule.rule);
+        const networkRules = networkIndexedRulesWithHash.map(({ rule }) => rule);
 
         return networkRules;
     }
@@ -659,7 +658,7 @@ export class RuleSet implements IRuleSet {
             unsafeRulesCount: this.unsafeRulesCount,
             rulesCount: this.rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
-            badFilterRulesRaw: this.badFilterRules.map((r) => RuleGenerator.generate(r.rule.node)),
+            badFilterRulesRaw: this.badFilterRules.map((r) => r.getText()) || [],
         };
     }
 

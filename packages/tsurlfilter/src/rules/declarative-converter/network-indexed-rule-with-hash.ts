@@ -1,4 +1,4 @@
-import { type AnyRule, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
+import { RuleGenerator, type AnyRule, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
 
 import { getErrorMessage } from '../../common/error';
@@ -6,8 +6,6 @@ import { fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../network-rule';
 import { IndexedRule, type IRule } from '../rule';
 import { RuleFactory } from '../rule-factory';
-
-import { NetworkRuleWithNode } from './network-rule-with-node';
 
 /**
  * Network rule with index and hash.
@@ -30,19 +28,28 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      *
      * @see {@link https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier}
      */
-    public declare rule: NetworkRuleWithNode;
+    public declare rule: NetworkRule;
+
+    public node: NetworkRuleNode;
 
     /**
      * Constructor.
      *
      * @param rule Item of {@link NetworkRule}.
+     * @param node Network rule node.
      * @param index Rule's index.
      * @param hash Hash of the rule.
      */
-    constructor(rule: NetworkRuleWithNode, index: number, hash: number) {
+    constructor(
+        rule: NetworkRule,
+        node: NetworkRuleNode,
+        index: number,
+        hash: number,
+    ) {
         super(rule, index);
 
         this.hash = hash;
+        this.node = node;
     }
 
     /**
@@ -119,7 +126,8 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
         // If rule is not empty - pack to IndexedNetworkRuleWithHash and add it
         // to the result array.
         const indexedNetworkRuleWithHash = new IndexedNetworkRuleWithHash(
-            new NetworkRuleWithNode(networkRule, ruleConvertedToAGSyntax as NetworkRuleNode),
+            networkRule,
+            ruleConvertedToAGSyntax as NetworkRuleNode,
             lineIndex,
             hash,
         );
@@ -188,5 +196,29 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
         }
 
         return rules;
+    }
+
+    /**
+     * Returns the text representation of the rule.
+     *
+     * @returns Text representation of the rule.
+     *
+     * TODO: Remove this method when we switched to AGTree inside declarative
+     * converter.
+     */
+    getText(): string {
+        return RuleGenerator.generate(this.node);
+    }
+
+    /**
+     * Returns the list of used option names in the rule.
+     *
+     * @returns List of used option names in the rule.
+     *
+     * TODO: Remove this method when we switched to AGTree inside declarative
+     * converter.
+     */
+    getUsedOptionNames(): Set<string> {
+        return new Set<string>(this.node.modifiers?.children.map((m) => m.name.value) || []);
     }
 }
