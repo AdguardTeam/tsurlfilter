@@ -790,7 +790,7 @@ export abstract class DeclarativeRuleConverter {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
 
         if (resourceTypes?.length === 0) {
-            return new EmptyResourcesError('Conversion resourceTypes is empty', networkRule.rule, declarativeRule);
+            return new EmptyResourcesError('Conversion resourceTypes is empty', networkRule, declarativeRule);
         }
 
         const permittedDomains = networkRule.rule.getPermittedDomains();
@@ -799,7 +799,7 @@ export abstract class DeclarativeRuleConverter {
             if (!initiatorDomains || initiatorDomains.length === 0) {
                 const ruleText = RuleGenerator.generate(networkRule.node);
                 const msg = `Conversion initiatorDomains is empty, but original rule's domains not: "${ruleText}"`;
-                return new EmptyDomainsError(msg, networkRule.rule, declarativeRule);
+                return new EmptyDomainsError(msg, networkRule, declarativeRule);
             }
         }
 
@@ -812,7 +812,7 @@ export abstract class DeclarativeRuleConverter {
                 const msg = `Regex is unsupported: "${ruleText}"`;
                 return new UnsupportedRegexpError(
                     msg,
-                    networkRule.rule,
+                    networkRule,
                     declarativeRule,
                     getErrorMessage(e),
                 );
