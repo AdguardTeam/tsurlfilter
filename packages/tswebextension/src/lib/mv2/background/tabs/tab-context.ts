@@ -1,4 +1,4 @@
-import { MAIN_FRAME_ID } from '../../../common/constants';
+import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../../common/constants';
 import { defaultFilteringLog, type FilteringLog } from '../../../common/filtering-log';
 import { isHttpOrWsRequest } from '../../../common/utils/url';
 import { TabContextCommon } from '../../../common/tabs/tab-context';
@@ -50,6 +50,7 @@ export class TabContext extends TabContextCommon<FrameMV2> {
             tabContext.frames.set(MAIN_FRAME_ID, new FrameMV2({
                 tabId: tab.id,
                 frameId: MAIN_FRAME_ID,
+                parentFrameId: NO_PARENT_FRAME_ID,
                 url,
                 // timestamp is 0, so that it will be recalculated in the next event
                 timeStamp: 0,

@@ -32,6 +32,11 @@ type FrameConstructorProps = {
     frameId: number;
 
     /**
+     * Parent frame id.
+     */
+    parentFrameId: number;
+
+    /**
      * Frame creation time.
      */
     timeStamp: number;
@@ -80,6 +85,11 @@ export abstract class FrameCommon {
     public frameId: number;
 
     /**
+     * Parent frame id.
+     */
+    public parentFrameId: number;
+
+    /**
      * Frame creation time.
      */
     public timeStamp: number;
@@ -123,6 +133,7 @@ export abstract class FrameCommon {
         const {
             url,
             tabId,
+            parentFrameId,
             frameId,
             timeStamp,
             parentDocumentId,
@@ -132,6 +143,7 @@ export abstract class FrameCommon {
         this.url = url;
         this.tabId = tabId;
         this.frameId = frameId;
+        this.parentFrameId = parentFrameId;
         this.timeStamp = timeStamp;
         this.parentDocumentId = parentDocumentId;
         this.documentId = documentId;

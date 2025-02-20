@@ -140,6 +140,7 @@
 import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 
+import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { companiesDbService } from '../../common/companies-db-service';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
 import { getErrorMessage } from '../../common/error';
@@ -232,9 +233,10 @@ export class WebRequestApi {
      *
      * @param requestData Object containing request context and details.
      * @param requestData.context Request context.
+     * @param requestData.details Event details.
      */
     private static onBeforeRequest(
-        { context }: RequestData<OnBeforeRequestDetailsType>,
+        { context, details }: RequestData<OnBeforeRequestDetailsType>,
     ): void {
         if (!context) {
             return;
@@ -325,9 +327,12 @@ export class WebRequestApi {
         requestContextStorage.update(requestId, { matchingResult });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            const { parentFrameId } = details;
+
             CosmeticFrameProcessor.precalculateCosmetics({
                 tabId,
                 frameId,
+                parentFrameId,
                 url: requestUrl,
                 timeStamp: timestamp,
             });
@@ -358,8 +363,11 @@ export class WebRequestApi {
      *
      * @param event On response started event.
      * @param event.context Event context.
+     * @param event.details Event details.
      */
-    private static onResponseStarted({ context }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
+    private static onResponseStarted(
+        { context, details }: RequestData<WebRequest.OnResponseStartedDetailsType>,
+    ): void {
         if (!context) {
             return;
         }
@@ -368,6 +376,13 @@ export class WebRequestApi {
 
         if (requestType !== RequestType.Document
             && requestType !== RequestType.SubDocument) {
+            return;
+        }
+
+        if (WebRequestApi.isAssistantFrame(tabId, details)) {
+            logger.debug(
+                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
+            );
             return;
         }
 
@@ -453,12 +468,13 @@ export class WebRequestApi {
      *
      * @param details Event details.
      */
-    private static async onBeforeNavigate(
+    private static onBeforeNavigate(
         details: chrome.webNavigation.WebNavigationParentedCallbackDetails,
-    ): Promise<void> {
+    ): void {
         const {
             tabId,
             frameId,
+            parentFrameId,
             url,
             parentDocumentId,
             timeStamp,
@@ -467,6 +483,7 @@ export class WebRequestApi {
         CosmeticFrameProcessor.precalculateCosmetics({
             tabId,
             frameId,
+            parentFrameId,
             url,
             timeStamp,
             parentDocumentId,
@@ -632,6 +649,13 @@ export class WebRequestApi {
         // This is necessary mainly to update documentId
         tabsApi.updateFrameContext(tabId, frameId, { documentId });
 
+        if (WebRequestApi.isAssistantFrame(tabId, details)) {
+            logger.debug(
+                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
+            );
+            return;
+        }
+
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
         Promise.all([
@@ -639,5 +663,24 @@ export class WebRequestApi {
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
             CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
         ]).catch((e) => logger.error(e));
+    }
+
+    /**
+     * Checks whether the frame is an assistant frame.
+     *
+     * Needed to prevent cosmetic rules injection into the assistant frame.
+     *
+     * @param tabId Tab id.
+     * @param details Event details.
+     *
+     * @returns True if the frame is an assistant frame, false otherwise.
+     */
+    private static isAssistantFrame(
+        tabId: number,
+        details: CommonAssistantDetails,
+    ): boolean {
+        const tabContext = tabsApi.getTabContext(tabId);
+
+        return CommonAssistant.isAssistantFrame(details, tabContext);
     }
 }

@@ -1,5 +1,3 @@
-import browser from 'webextension-polyfill';
-
 import { CommonAssistant } from '../../common/assistant';
 
 /**
@@ -12,7 +10,7 @@ export class Assistant extends CommonAssistant {
      */
     // eslint-disable-next-line class-methods-use-this
     protected injectAssistant(tabId: number, fileUrl: string): Promise<unknown[]> {
-        return browser.scripting.executeScript({
+        return chrome.scripting.executeScript({
             target: { tabId },
             files: [fileUrl],
         });

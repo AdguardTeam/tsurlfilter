@@ -278,6 +278,7 @@ export class CosmeticFrameProcessor {
         const {
             tabId,
             frameId,
+            parentFrameId,
             url,
             timeStamp,
             parentDocumentId,
@@ -293,6 +294,7 @@ export class CosmeticFrameProcessor {
         this.tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
             tabId,
             frameId,
+            parentFrameId,
             url,
             timeStamp,
             documentId,

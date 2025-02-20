@@ -38,7 +38,6 @@ const entryPoints = {
     'css-hits-counter': 'src/lib/common/content-script/css-hits-counter.ts',
     cli: 'src/cli/index.ts',
     'mv3-utils': 'src/lib/mv3/utils/get-filter-name.ts',
-    'core-storages': 'src/lib/common/storage/core/index.ts',
     'filters-storage': 'src/lib/common/storage/public-filters.ts',
 };
 
