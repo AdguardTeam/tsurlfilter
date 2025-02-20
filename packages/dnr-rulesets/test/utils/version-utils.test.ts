@@ -4,19 +4,19 @@ describe('Utils tests', () => {
     describe('generatePatchVersion', () => {
         test.each([
             {
-                actual: 1739560493923,
+                input: 1739560493923,
                 expected: '20250214191453',
             },
             {
-                actual: 1739511493935,
+                input: 1739511493935,
                 expected: '20250214053813',
             },
             {
-                actual: 1739560443945,
+                input: 1739560443945,
                 expected: '20250214191403',
             },
-        ])('should generate patch version for $actual', ({ actual, expected }) => {
-            expect(generatePatchVersion(actual)).toBe(expected);
+        ])('should generate patch version for $input', ({ input, expected }) => {
+            expect(generatePatchVersion(input)).toBe(expected);
         });
     });
 
@@ -31,15 +31,15 @@ describe('Utils tests', () => {
         describe('generateTimestampFromVersion - generated patch version', () => {
             test.each([
                 {
-                    actual: '1.2.20250215191524',
+                    input: '1.2.20250215191524',
                     expected: 1739646924000,
                 },
                 {
-                    actual: '2.0.20250310021655',
+                    input: '2.0.20250310021655',
                     expected: 1741573015000,
                 },
-            ])('should generate timestamp from version $actual', ({ actual, expected }) => {
-                expect(generateTimestampFromVersion(actual)).toBe(expected);
+            ])('should generate timestamp from version $input', ({ input, expected }) => {
+                expect(generateTimestampFromVersion(input)).toBe(expected);
             });
         });
     });
