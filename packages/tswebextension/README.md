@@ -457,7 +457,7 @@ Enables filtering if true.
 
 type: `string`
 
-Redirect url for $document rules.
+Redirect url for `$document` modifier blocking rules.
 
 ##### assistantUrl
 
