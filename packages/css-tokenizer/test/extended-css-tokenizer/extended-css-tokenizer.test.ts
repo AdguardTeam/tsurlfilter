@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { type TokenizerContext } from '../../src/common/context';
 import { ErrorMessage } from '../../src/common/enums/error-messages';
 import { TokenType } from '../../src/common/enums/token-types';

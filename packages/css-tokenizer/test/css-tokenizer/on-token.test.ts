@@ -1,3 +1,12 @@
+import {
+    describe,
+    expect,
+    it,
+    type MockedFunction,
+    test,
+    vi,
+} from 'vitest';
+
 import { hasToken } from '../../src/utils/has-token';
 import { tokenizeExtended } from '../../src/extended-css-tokenizer';
 import { TokenType } from '../../src/common/enums/token-types';
@@ -7,7 +16,7 @@ const SAMPLE_CSS = '{ color: red; }';
 
 describe('OnTokenCallback', () => {
     it('calls the callback with the expected token types in sequence', () => {
-        const mockCallback = jest.fn();
+        const mockCallback = vi.fn();
 
         tokenizeExtended(SAMPLE_CSS, mockCallback);
 
@@ -27,7 +36,7 @@ describe('OnTokenCallback', () => {
     });
 
     it('stops the tokenization when the callback calls the stop function', () => {
-        const mockCallback: jest.MockedFunction<OnTokenCallback> = jest.fn((type, _start, _end, _props, stop) => {
+        const mockCallback: MockedFunction<OnTokenCallback> = vi.fn((type, _start, _end, _props, stop) => {
             if (type === TokenType.Ident) {
                 stop();
             }

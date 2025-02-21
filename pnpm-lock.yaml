@@ -572,15 +572,6 @@ importers:
       '@rollup/plugin-typescript':
         specifier: ^11.1.4
         version: 11.1.6(rollup@3.29.4)(typescript@5.4.2)
-      '@swc/core':
-        specifier: ^1.3.68
-        version: 1.4.8
-      '@swc/jest':
-        specifier: ^0.2.26
-        version: 0.2.29(@swc/core@1.4.8)
-      '@types/jest':
-        specifier: ^29.5.5
-        version: 29.5.12
       '@types/node':
         specifier: ^20.4.1
         version: 20.11.30
@@ -590,6 +581,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^5.61.0
         version: 5.62.0(eslint@8.54.0)(typescript@5.4.2)
+      '@vitest/coverage-v8':
+        specifier: 2.1.6
+        version: 2.1.6(vitest@2.1.6)
       eslint:
         specifier: ^8.44.0
         version: 8.54.0
@@ -608,9 +602,6 @@ importers:
       husky:
         specifier: ^8.0.3
         version: 8.0.3
-      jest:
-        specifier: ^29.6.1
-        version: 29.7.0(@types/node@20.11.30)
       markdownlint:
         specifier: ^0.31.1
         version: 0.31.1
@@ -635,6 +626,9 @@ importers:
       typescript:
         specifier: ^5.1.6
         version: 5.4.2
+      vitest:
+        specifier: ^2.1.6
+        version: 2.1.6(@types/node@20.11.30)(tsx@4.19.3)
 
   packages/dnr-rulesets:
     dependencies:
@@ -3505,13 +3499,6 @@ packages:
       - ts-node
     dev: true
 
-  /@jest/create-cache-key-function@27.5.1:
-    resolution: {integrity: sha512-dmH1yW+makpTSURTy8VzdUwFnfQh1G8R+DxO2Ho2FFmBbKFEVm+3jWdvFhE2VqB/LATCTokkP0dotjyQyw5/AQ==}
-    engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
-    dependencies:
-      '@jest/types': 27.5.1
-    dev: true
-
   /@jest/create-cache-key-function@29.7.0:
     resolution: {integrity: sha512-4QqS3LY5PBmTRHj9sAg1HLoPzqAI0uOX6wI/TRqHIcOxlFidy6YEmCQJk6FSZjNLGCeubDMfmkWL+qaLKhSGQA==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
@@ -3664,17 +3651,6 @@ packages:
       write-file-atomic: 4.0.2
     transitivePeerDependencies:
       - supports-color
-    dev: true
-
-  /@jest/types@27.5.1:
-    resolution: {integrity: sha512-Cx46iJ9QpwQTjIdq5VJu2QTMMs3QlEjI0x1QbBP5W1+nMzyc2XmimiRR/CbX9TO0cPTeUlxWMOu8mslYsJ8DEw==}
-    engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
-    dependencies:
-      '@types/istanbul-lib-coverage': 2.0.6
-      '@types/istanbul-reports': 3.0.4
-      '@types/node': 20.16.5
-      '@types/yargs': 16.0.9
-      chalk: 4.1.2
     dev: true
 
   /@jest/types@29.6.3:
@@ -6528,17 +6504,6 @@ packages:
       tslib: 2.6.2
     dev: true
 
-  /@swc/jest@0.2.29(@swc/core@1.4.8):
-    resolution: {integrity: sha512-8reh5RvHBsSikDC3WGCd5ZTd2BXKkyOdK7QwynrCH58jk2cQFhhHhFBg/jvnWZehUQe/EoOImLENc9/DwbBFow==}
-    engines: {npm: '>= 7.0.0'}
-    peerDependencies:
-      '@swc/core': '*'
-    dependencies:
-      '@jest/create-cache-key-function': 27.5.1
-      '@swc/core': 1.4.8
-      jsonc-parser: 3.2.0
-    dev: true
-
   /@swc/jest@0.2.36(@swc/core@1.10.18):
     resolution: {integrity: sha512-8X80dp81ugxs4a11z1ka43FPhP+/e+mJNXJSxiNYk8gIX/jPBtY4gQTrKu/KIoco8bzKuPI5lUxjfLiGsfvnlw==}
     engines: {npm: '>= 7.0.0'}
@@ -7079,12 +7044,6 @@ packages:
 
   /@types/yargs-parser@21.0.3:
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
-    dev: true
-
-  /@types/yargs@16.0.9:
-    resolution: {integrity: sha512-tHhzvkFXZQeTECenFoRljLBYPZJ7jAVxqqtEI0qTLOmuultnFp4I9yKE17vTuhf7BkhCu7I4XuemPgikDVuYqA==}
-    dependencies:
-      '@types/yargs-parser': 21.0.3
     dev: true
 
   /@types/yargs@17.0.32:
@@ -8751,7 +8710,7 @@ packages:
       std-env: 3.8.0
       test-exclude: 7.0.1
       tinyrainbow: 1.2.0
-      vitest: 2.1.6(@types/node@20.16.5)(terser@5.29.2)(tsx@4.19.2)
+      vitest: 2.1.6(@types/node@20.11.30)(tsx@4.19.3)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -8798,7 +8757,7 @@ packages:
       '@vitest/spy': 2.1.6
       estree-walker: 3.0.3
       magic-string: 0.30.14
-      vite: 6.0.1(@types/node@20.16.5)(terser@5.29.2)(tsx@4.19.2)
+      vite: 6.0.1(@types/node@20.11.30)(tsx@4.19.3)
     dev: true
 
   /@vitest/pretty-format@2.1.6:
@@ -22063,6 +22022,31 @@ packages:
       core-util-is: 1.0.2
       extsprintf: 1.3.0
 
+  /vite-node@2.1.6(@types/node@20.11.30)(tsx@4.19.3):
+    resolution: {integrity: sha512-DBfJY0n9JUwnyLxPSSUmEePT21j8JZp/sR9n+/gBwQU6DcQOioPdb8/pibWfXForbirSagZCilseYIwaL3f95A==}
+    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+    hasBin: true
+    dependencies:
+      cac: 6.7.14
+      debug: 4.3.7
+      es-module-lexer: 1.5.4
+      pathe: 1.1.2
+      vite: 6.0.1(@types/node@20.11.30)(tsx@4.19.3)
+    transitivePeerDependencies:
+      - '@types/node'
+      - jiti
+      - less
+      - lightningcss
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+      - tsx
+      - yaml
+    dev: true
+
   /vite-node@2.1.6(@types/node@20.16.5)(terser@5.29.2)(tsx@4.19.2):
     resolution: {integrity: sha512-DBfJY0n9JUwnyLxPSSUmEePT21j8JZp/sR9n+/gBwQU6DcQOioPdb8/pibWfXForbirSagZCilseYIwaL3f95A==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
@@ -22086,6 +22070,55 @@ packages:
       - terser
       - tsx
       - yaml
+    dev: true
+
+  /vite@6.0.1(@types/node@20.11.30)(tsx@4.19.3):
+    resolution: {integrity: sha512-Ldn6gorLGr4mCdFnmeAOLweJxZ34HjKnDm4HGo6P66IEqTxQb36VEdFJQENKxWjupNfoIjvRUnswjn1hpYEpjQ==}
+    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^18.0.0 || ^20.0.0 || >=22.0.0
+      jiti: '>=1.21.0'
+      less: '*'
+      lightningcss: ^1.21.0
+      sass: '*'
+      sass-embedded: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
+    dependencies:
+      '@types/node': 20.11.30
+      esbuild: 0.24.0
+      postcss: 8.4.49
+      rollup: 4.28.0
+      tsx: 4.19.3
+    optionalDependencies:
+      fsevents: 2.3.3
     dev: true
 
   /vite@6.0.1(@types/node@20.16.5)(terser@5.29.2)(tsx@4.19.2):
@@ -22136,6 +22169,67 @@ packages:
       tsx: 4.19.2
     optionalDependencies:
       fsevents: 2.3.3
+    dev: true
+
+  /vitest@2.1.6(@types/node@20.11.30)(tsx@4.19.3):
+    resolution: {integrity: sha512-isUCkvPL30J4c5O5hgONeFRsDmlw6kzFEdLQHLezmDdKQHy8Ke/B/dgdTMEgU0vm+iZ0TjW8GuK83DiahBoKWQ==}
+    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+    hasBin: true
+    peerDependencies:
+      '@edge-runtime/vm': '*'
+      '@types/node': ^18.0.0 || ^20.0.0 || >=22.0.0
+      '@vitest/browser': 2.1.6
+      '@vitest/ui': 2.1.6
+      happy-dom: '*'
+      jsdom: '*'
+    peerDependenciesMeta:
+      '@edge-runtime/vm':
+        optional: true
+      '@types/node':
+        optional: true
+      '@vitest/browser':
+        optional: true
+      '@vitest/ui':
+        optional: true
+      happy-dom:
+        optional: true
+      jsdom:
+        optional: true
+    dependencies:
+      '@types/node': 20.11.30
+      '@vitest/expect': 2.1.6
+      '@vitest/mocker': 2.1.6(vite@6.0.1)
+      '@vitest/pretty-format': 2.1.6
+      '@vitest/runner': 2.1.6
+      '@vitest/snapshot': 2.1.6
+      '@vitest/spy': 2.1.6
+      '@vitest/utils': 2.1.6
+      chai: 5.1.2
+      debug: 4.3.7
+      expect-type: 1.1.0
+      magic-string: 0.30.14
+      pathe: 1.1.2
+      std-env: 3.8.0
+      tinybench: 2.9.0
+      tinyexec: 0.3.1
+      tinypool: 1.0.2
+      tinyrainbow: 1.2.0
+      vite: 6.0.1(@types/node@20.11.30)(tsx@4.19.3)
+      vite-node: 2.1.6(@types/node@20.11.30)(tsx@4.19.3)
+      why-is-node-running: 2.3.0
+    transitivePeerDependencies:
+      - jiti
+      - less
+      - lightningcss
+      - msw
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+      - tsx
+      - yaml
     dev: true
 
   /vitest@2.1.6(@types/node@20.16.5)(terser@5.29.2)(tsx@4.19.2):
