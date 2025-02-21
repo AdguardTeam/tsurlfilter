@@ -38,9 +38,7 @@ export class ContentFiltering {
      * @returns Html rules or null.
      */
     private static getHtmlRules(context: RequestContext): CosmeticRule[] | null {
-        // FIXME
-        // const { cosmeticResult } = context;
-        const { cosmeticResult } = tabsApi.getFrameContext(context.tabId, context.frameId) || {};
+        const { cosmeticResult } = context;
 
         /**
          * "cosmeticResult" is defined only for Document and Subdocument request types
@@ -143,7 +141,6 @@ export class ContentFiltering {
      * @param context Request context.
      */
     public static onBeforeRequest(context: RequestContext): void {
-        // FIXME: content maybe outdated
         if (!browser.webRequest.filterResponseData
             || !ContentFiltering.isRequestMethodSupported(context)
             || ContentFiltering.hasContentExceptionRule(context)) {
