@@ -1,15 +1,23 @@
+import {
+    describe,
+    afterEach,
+    it,
+    expect,
+    vi,
+} from 'vitest';
+
 import { Logger, LogLevel } from '../src';
 import { type Writer } from '../src/Logger';
 
 describe('works', () => {
     const writer: Writer = {
-        log: jest.fn(),
-        info: jest.fn(),
-        error: jest.fn(),
+        log: vi.fn(),
+        info: vi.fn(),
+        error: vi.fn(),
     };
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('logs any message', () => {
@@ -97,10 +105,10 @@ describe('works', () => {
 
         describe('log level -- trace', () => {
             const writerWithTrace: Writer = {
-                log: jest.fn(),
-                info: jest.fn(),
-                error: jest.fn(),
-                trace: jest.fn(),
+                log: vi.fn(),
+                info: vi.fn(),
+                error: vi.fn(),
+                trace: vi.fn(),
             };
 
             it('does not print with trace method if error is called', () => {

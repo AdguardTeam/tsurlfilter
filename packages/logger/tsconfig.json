@@ -11,7 +11,7 @@
         "scripts",
         "rollup.config.ts",
         ".eslintrc.js",
-        "jest.config.ts",
+        "vitest.config.ts",
     ],
     "exclude": [
         "tests/smoke"
