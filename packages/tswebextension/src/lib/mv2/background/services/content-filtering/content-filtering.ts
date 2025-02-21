@@ -8,7 +8,6 @@ import {
 
 import { defaultFilteringLog } from '../../../../common/filtering-log';
 import { type RequestContext } from '../../request';
-import { tabsApi } from '../../api';
 
 import { ContentStringFilter } from './content-string-filter';
 import { ContentStream } from './content-stream';
