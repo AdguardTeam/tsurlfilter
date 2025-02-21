@@ -1,5 +1,11 @@
+import {
+    describe,
+    it,
+    expect,
+    type MockInstance,
+    vi,
+} from 'vitest';
 import { RuleParser } from '@adguard/agtree';
-import { jest } from '@jest/globals';
 
 import {
     type IFilter,
@@ -291,10 +297,10 @@ describe('RuleSet', () => {
         await ruleSet.getDeclarativeRules();
 
         // Mock `unloadContent` for all filters
-        const unloadSpies: jest.SpiedFunction<IFilter['unloadContent']>[] = [];
+        const unloadSpies: MockInstance<IFilter['unloadContent']>[] = [];
 
         Object.getOwnPropertyDescriptor(ruleSet, 'filterList')?.value.forEach((filter: Filter) => {
-            const spy = jest.spyOn(filter, 'unloadContent');
+            const spy = vi.spyOn(filter, 'unloadContent');
             unloadSpies.push(spy);
         });
 

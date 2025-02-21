@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import escapeStringRegexp from 'escape-string-regexp';
 
 import { CosmeticEngine } from '../../../src/engine/cosmetic-engine/cosmetic-engine';

@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { DomainModifier } from '../../src/modifiers/domain-modifier';
 import { setLogger } from '../../src';
 import { LoggerMock } from '../mocks';
@@ -56,7 +58,7 @@ describe('Domain modifier', () => {
                 },
             },
         ];
-        test.each(domainsListCases)('%s', ({ actual, expected }) => {
+        it.each(domainsListCases)('%s', ({ actual, expected }) => {
             const domainModifier = new DomainModifier(actual, COMMA_SEPARATOR);
             expect(domainModifier.permittedDomains).toStrictEqual(expected.permitted);
             expect(domainModifier.restrictedDomains).toStrictEqual(expected.restricted);
@@ -122,7 +124,7 @@ describe('Domain modifier', () => {
                 },
             },
         ];
-        test.each(modifierCases)('%s', ({ actual, expected }) => {
+        it.each(modifierCases)('%s', ({ actual, expected }) => {
             const domainModifier = new DomainModifier(actual, MODIFIER_LIST_SEPARATOR);
             expect(domainModifier.permittedDomains).toStrictEqual(expected.permitted);
             expect(domainModifier.restrictedDomains).toStrictEqual(expected.restricted);
@@ -187,7 +189,7 @@ describe('Domain modifier', () => {
                 error: HAS_INVALID_WILDCARD,
             },
         ];
-        test.each(invalidCases)('%s', ({ actual, error }) => {
+        it.each(invalidCases)('%s', ({ actual, error }) => {
             expect(() => {
                 new DomainModifier(actual, COMMA_SEPARATOR);
             }).toThrow(error);

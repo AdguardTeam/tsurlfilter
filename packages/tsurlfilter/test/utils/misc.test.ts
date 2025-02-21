@@ -1,4 +1,14 @@
-import { jest } from '@jest/globals';
+// @vitest-environment node
+
+import {
+    describe,
+    it,
+    expect,
+    beforeEach,
+    afterEach,
+    vi,
+} from 'vitest';
+
 import { TAB } from '../../src/common/constants';
 import { uint8ArrayToBase64, base64ToUint8Array, serializeJson } from '../../src/utils/misc';
 
@@ -6,10 +16,7 @@ describe('Utility Functions', () => {
     const originalWindow = global.window;
 
     beforeEach(() => {
-        jest.resetModules();
-
-        // Simulate Node.js environment
-        (global as any).window = undefined;
+        vi.resetModules();
     });
 
     afterEach(() => {

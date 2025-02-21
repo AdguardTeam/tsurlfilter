@@ -1,8 +1,10 @@
+import { describe, it, expect } from 'vitest';
+
 import { validateSelectorList } from '../../../src/rules/css/selector-list-validator';
 
 describe('Selector list validator', () => {
     describe('validateSelectorList - valid cases', () => {
-        test.each([
+        it.each([
             // [selectorList, isExtendedCss]
             ['div', false],
             ['div + p', false],
@@ -103,7 +105,7 @@ describe('Selector list validator', () => {
 
     describe('validateSelectorList - invalid cases', () => {
         // valid cases
-        test.each([
+        it.each([
             // [selectorList, isExtendedCss, errorMessage]
             // Should detect unsupported pseudo-classes
             ['div:foo', false, "Unsupported pseudo-class: ':foo'"],

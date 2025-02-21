@@ -1,4 +1,11 @@
-import { jest } from '@jest/globals';
+import {
+    describe,
+    it,
+    expect,
+    afterEach,
+    vi,
+} from 'vitest';
+
 import { StealthModifier, StealthOptionName } from '../../src/modifiers/stealth-modifier';
 import { LoggerMock } from '../mocks';
 import { setLogger } from '../../src';
@@ -8,7 +15,7 @@ describe('Stealth modifier api', () => {
     setLogger(loggerMock);
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     it('handles different constructor params', () => {

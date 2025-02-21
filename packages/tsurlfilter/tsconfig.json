@@ -12,7 +12,7 @@
         "test/.eslintrc.cjs",
         ".eslintrc.cjs",
         "rollup.config.ts",
-        "jest.config.ts",
+        "vitest.config.ts",
         "tasks/**/*.ts"
     ],
 }

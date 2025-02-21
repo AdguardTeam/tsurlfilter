@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { RuleParser } from '@adguard/agtree';
 
 import { RuleSyntaxUtils } from '../../src/utils/rule-syntax-utils';
