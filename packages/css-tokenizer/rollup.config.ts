@@ -5,6 +5,7 @@
  * ! does some additional work before and after running Rollup.
  */
 
+import { type RollupOptions } from 'rollup';
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
@@ -53,7 +54,7 @@ const commonPlugins = [
     commonjs({ sourceMap: false }),
     resolve({ preferBuiltins: false }),
     typescript({
-        tsconfig: path.join(ROOT_DIR, 'tsconfig.json'),
+        tsconfig: path.join(ROOT_DIR, 'tsconfig.build.json'),
         compilerOptions: {
             incremental: true,
             declaration: true,
@@ -66,7 +67,7 @@ const commonPlugins = [
 ];
 
 // CommonJS build configuration
-const node = {
+const node: RollupOptions = {
     input: path.join(ROOT_DIR, 'src/index.ts'),
     output: [
         {
@@ -88,7 +89,7 @@ const node = {
 
 // Merge .d.ts files (requires `tsc` to be run first,
 // because it merges .d.ts files from `dist/types` directory)
-const dts = {
+const dts: RollupOptions = {
     input: path.join(ROOT_DIR, 'dist/types/src/index.d.ts'),
     output: [
         {

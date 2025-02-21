@@ -10,7 +10,6 @@ module.exports = {
         tsconfigRootDir: path.join(__dirname),
         project: [
             './tsconfig.json',
-            './tsconfig.test.json',
         ],
     },
     plugins: [

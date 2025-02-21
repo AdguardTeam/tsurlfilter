@@ -1,6 +1,12 @@
 {
     "extends": "./tsconfig.base.json",
+    "compilerOptions": {
+        // With this tsconfig, we don't need to emit any files,
+        // we just want to check the types
+        "noEmit": true,
+    },
     "include": [
+        "src",
         "tests",
         "scripts",
         "rollup.config.ts",
@@ -8,6 +14,6 @@
         "jest.config.ts",
     ],
     "exclude": [
-        "tests/smoke/typescript"
+        "tests/smoke"
     ]
 }

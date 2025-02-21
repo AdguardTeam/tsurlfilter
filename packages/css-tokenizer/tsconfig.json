@@ -1,34 +1,21 @@
 {
+    "extends": "./tsconfig.base.json",
     "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "node",
-        "types": [
-            "node",
-            "jest"
-        ],
-        "resolveJsonModule": true,
-        "allowJs": true,
-        "declaration": true,
-        "outDir": "./dist",
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
-        "skipLibCheck": true,
-        "rootDir": "./"
+        // With this tsconfig, we don't need to emit any files,
+        // we just want to check the types
+        "noEmit": true,
     },
     "include": [
-        "./src"
+        ".eslintrc.js",
+        "jest.config.ts",
+        "jest.config.ts",
+        "rollup.config.ts",
+        "scripts/**/*.ts",
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "test/.eslintrc.js",
     ],
     "exclude": [
-        "./node_modules",
-        "./dist",
-        "./test/smoke/typescript"
+        "./test/smoke",
     ],
-    "ts-node": {
-        "swc": true,
-        "compilerOptions": {
-            "module": "CommonJS"
-        }
-    }
 }

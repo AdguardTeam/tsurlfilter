@@ -93,7 +93,7 @@
     "scripts": {
         "lint": "pnpm lint:code && pnpm lint:tsc",
         "lint:code": "eslint --cache --ignore-path .gitignore .",
-        "lint:tsc": "tsc --noEmit -p test/tsconfig.tests.json",
+        "lint:tsc": "tsc",
         "check-types": "pnpm lint:tsc",
         "prebuild": "rimraf dist && pnpm build:types",
         "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript --bundleConfigAsCjs && pnpm postbuild",
@@ -175,7 +175,6 @@
         "rollup-plugin-cleanup": "^3.2.1",
         "rollup-plugin-polyfill-node": "^0.13.0",
         "tldts-core": "^6.1.13",
-        "ts-node": "^10.9.1",
         "tslib": "^2.8.0",
         "tsx": "^4.19.2",
         "typedoc": "0.23.10",

@@ -77,6 +77,11 @@ jobs:
           # api
           npx lerna run --scope @adguard/api lint
           npx lerna run --scope @adguard/api build
+
+          # benchmarks (just linting, because benchmarks take a lot of time)
+          npx lerna run --scope agtree-benchmark lint
+          npx lerna run --scope agtree-browser-benchmark lint
+          npx lerna run --scope css-tokenizer-benchmark lint
   notify:
     needs: test
     # Run this job only if the previous job failed and the event was triggered by the 'AdguardTeam/tsurlfilter' repository
