@@ -1,9 +1,17 @@
+import {
+    afterEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
+
 import { RulesetsInjector } from '../../../src/lib/manifest/injector';
 
 describe('RulesetsInjector', () => {
     const filterNames = ['filter_1', 'filter_2'];
 
-    const mockGenerateRulesetPath = jest.fn().mockReturnValue('test');
+    const mockGenerateRulesetPath = vi.fn().mockReturnValue('test');
 
     afterEach(() => {
         mockGenerateRulesetPath.mockClear();

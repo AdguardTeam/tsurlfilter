@@ -1,14 +1,21 @@
 import fastGlob from 'fast-glob';
 import fs from 'fs';
 import path from 'path';
+import {
+    afterEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 
 import type { RulesetPathGenerator } from '../../../src/lib/manifest/injector';
 import type { Manifest } from '../../../src/lib/manifest/parser';
 import { ManifestPatcher } from '../../../src/lib/manifest/patcher';
 
-jest.mock('fs');
-jest.mock('path');
-jest.mock('fast-glob');
+vi.mock('fs');
+vi.mock('path');
+vi.mock('fast-glob');
 
 describe('ManifestPatcher', () => {
     const cwd = 'cwd';
@@ -18,15 +25,15 @@ describe('ManifestPatcher', () => {
     const filterNames = ['filter_1.txt', 'filter_2.txt'];
     const filterGlob = 'filter_+([0-9]).txt';
 
-    const mockIsAbsolute = jest.mocked(path.isAbsolute).mockReturnValue(true);
-    // jest cannot mock process.cwd() directly, so we need to use spy
-    const cwdSpy = jest.spyOn(process, 'cwd').mockReturnValue(cwd);
-    const mockResolve = jest.mocked(path.resolve);
-    const mockExistsSync = jest.mocked(fs.existsSync).mockReturnValue(true);
-    const mockRelative = jest.mocked(path.relative);
-    const mockDirname = jest.mocked(path.dirname).mockReturnValue(dir);
-    const mockGlobSync = jest.mocked(fastGlob.globSync).mockReturnValue(filterNames);
-    const mockWriteFileSync = jest.mocked(fs.writeFileSync);
+    const mockIsAbsolute = vi.mocked(path.isAbsolute).mockReturnValue(true);
+    // vitest cannot mock process.cwd() directly, so we need to use spy
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(cwd);
+    const mockResolve = vi.mocked(path.resolve);
+    const mockExistsSync = vi.mocked(fs.existsSync).mockReturnValue(true);
+    const mockRelative = vi.mocked(path.relative);
+    const mockDirname = vi.mocked(path.dirname).mockReturnValue(dir);
+    const mockGlobSync = vi.mocked(fastGlob.globSync).mockReturnValue(filterNames);
+    const mockWriteFileSync = vi.mocked(fs.writeFileSync);
 
     const manifest = {
         manifest_version: 3,
@@ -48,11 +55,11 @@ describe('ManifestPatcher', () => {
     };
 
     const mockLoader = {
-        load: jest.fn().mockReturnValue(manifest),
+        load: vi.fn().mockReturnValue(manifest),
     };
 
     const mockInjector = {
-        applyRulesets: jest.fn().mockImplementation((
+        applyRulesets: vi.fn().mockImplementation((
             generateRulesetPath: RulesetPathGenerator,
             manifest: Manifest,
             filterNames: string[],
