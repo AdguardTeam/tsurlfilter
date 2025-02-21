@@ -5,10 +5,10 @@
  * Mainly tests are taken from the old converter tests:
  * https://github.com/AdguardTeam/tsurlfilter/blob/7de315b85675ddafaa7457ee1b0c77ddc79f25f0/packages/tsurlfilter/test/rules/rule-converter.test.ts#L386
  */
+import { describe, test, expect } from 'vitest';
 
 import { RuleConversionError } from '../../src/errors/rule-conversion-error';
 import { RuleConverter } from '../../src/converter/rule';
-import '../matchers/check-conversion';
 import { RuleParser } from '../../src/parser/rule-parser';
 
 describe('Converter integration tests', () => {

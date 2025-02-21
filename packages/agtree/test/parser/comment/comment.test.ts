@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { CommentParser } from '../../../src/parser/comment/comment-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';

@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { NetworkRuleParser } from '../../../src/parser/network/network-rule-parser';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/nodes';

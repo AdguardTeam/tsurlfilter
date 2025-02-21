@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';

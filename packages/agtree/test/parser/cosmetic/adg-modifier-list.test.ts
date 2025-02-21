@@ -1,3 +1,9 @@
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
 import { sprintf } from 'sprintf-js';
 
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
@@ -197,7 +203,7 @@ describe('CosmeticRuleParser', () => {
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = jest.fn(() => CosmeticRuleParser.parse(actual));
+            const fn = vi.fn(() => CosmeticRuleParser.parse(actual));
 
             // parse should throw
             expect(fn).toThrow();

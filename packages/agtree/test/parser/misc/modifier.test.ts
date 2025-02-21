@@ -1,3 +1,10 @@
+import {
+    describe,
+    test,
+    expect,
+    it,
+} from 'vitest';
+
 import { type Modifier } from '../../../src/nodes';
 import { ModifierParser } from '../../../src/parser/misc/modifier-parser';
 import { ModifierGenerator } from '../../../src/generator/misc/modifier-generator';

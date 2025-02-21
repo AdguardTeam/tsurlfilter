@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import {
     type DomainList,

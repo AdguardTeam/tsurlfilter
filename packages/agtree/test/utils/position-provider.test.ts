@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { CRLF, EMPTY, LF } from '../../src/utils/constants';
 import { PositionProvider } from '../../src/utils/position-provider';
 

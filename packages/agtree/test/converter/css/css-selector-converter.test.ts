@@ -4,6 +4,7 @@
  * Some of these tests are taken from the ExtendedCss project:
  * @see {@link https://github.com/AdguardTeam/ExtendedCss/blob/master/test/selector/converter.test.ts}
  */
+import { describe, test, expect } from 'vitest';
 
 import { CssSelectorConverter } from '../../../src/converter/css';
 

@@ -1,8 +1,10 @@
+import { describe, expect, it } from 'vitest';
+
 import { encodeIntoPolyfill } from '../../src/utils/text-encoder-polyfill';
 import { decodeTextPolyfill } from '../../src/utils/text-decoder-polyfill';
 
 describe('Text Encoder and Decoder', () => {
-    test.each([
+    it.each([
         // test with empty string
         {
             actual: '',

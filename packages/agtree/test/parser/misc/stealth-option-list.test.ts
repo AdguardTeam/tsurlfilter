@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { StealthOptionListParser } from '../../../src/parser/misc/stealth-option-list-parser';
 import { ListNodeType, ListItemNodeType } from '../../../src/nodes';
 import { EMPTY } from '../../../src/utils/constants';

@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 import { CosmeticRuleType, RuleCategory, type JsInjectionRule } from '../../../src/nodes';
 import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';

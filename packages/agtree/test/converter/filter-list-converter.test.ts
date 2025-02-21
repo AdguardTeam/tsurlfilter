@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { FilterListParser } from '../../src/parser/filterlist-parser';
 import { NEWLINE } from '../../src/utils/constants';
 import { FilterListConverter } from '../../src/converter/filter-list';

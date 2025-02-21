@@ -1,3 +1,10 @@
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
+
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import {
@@ -1044,7 +1051,7 @@ describe('UboScriptletInjectionBodyParser', () => {
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = jest.fn(() => UboScriptletInjectionBodyParser.parse(actual));
+            const fn = vi.fn(() => UboScriptletInjectionBodyParser.parse(actual));
 
             // parse should throw
             expect(fn).toThrow();
