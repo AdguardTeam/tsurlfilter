@@ -8,6 +8,7 @@ import {
 
 import { defaultFilteringLog } from '../../../../common/filtering-log';
 import { type RequestContext } from '../../request';
+import { tabsApi } from '../../api';
 
 import { ContentStringFilter } from './content-string-filter';
 import { ContentStream } from './content-stream';
@@ -37,7 +38,9 @@ export class ContentFiltering {
      * @returns Html rules or null.
      */
     private static getHtmlRules(context: RequestContext): CosmeticRule[] | null {
-        const { cosmeticResult } = context;
+        // FIXME
+        // const { cosmeticResult } = context;
+        const { cosmeticResult } = tabsApi.getFrameContext(context.tabId, context.frameId) || {};
 
         /**
          * "cosmeticResult" is defined only for Document and Subdocument request types
@@ -140,6 +143,7 @@ export class ContentFiltering {
      * @param context Request context.
      */
     public static onBeforeRequest(context: RequestContext): void {
+        // FIXME: content maybe outdated
         if (!browser.webRequest.filterResponseData
             || !ContentFiltering.isRequestMethodSupported(context)
             || ContentFiltering.hasContentExceptionRule(context)) {

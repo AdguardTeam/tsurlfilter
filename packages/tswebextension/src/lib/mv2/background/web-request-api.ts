@@ -410,6 +410,7 @@ export class WebRequestApi {
                 thirdParty,
             );
         } else {
+            // FIXME
             ContentFiltering.onBeforeRequest(context);
         }
 
