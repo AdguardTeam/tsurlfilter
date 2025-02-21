@@ -1,3 +1,11 @@
+import {
+    describe,
+    beforeAll,
+    it,
+    expect,
+    vi,
+} from 'vitest';
+
 describe('Adguard API MV3', () => {
     beforeAll(() => {
         /**
@@ -11,7 +19,14 @@ describe('Adguard API MV3', () => {
             value: {
                 runtime: {
                     id: 'test',
-                    getManifest: jest.fn(() => ({ manifest_version: 3 })),
+                    getManifest: vi.fn(() => ({ manifest_version: 3 })),
+                },
+                storage: {
+                    // mock a dummy session storage API for tswebextension
+                    session: {
+                        get: vi.fn(async () => Promise.resolve({})),
+                        set: vi.fn(async () => Promise.resolve()),
+                    },
                 },
             },
         });
