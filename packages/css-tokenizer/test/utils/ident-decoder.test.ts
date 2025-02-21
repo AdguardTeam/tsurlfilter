@@ -1,7 +1,9 @@
+import { describe, expect, test } from 'vitest';
+
 import { decodeIdent } from '../../src/utils/ident-decoder';
 
 describe('decodeIdent', () => {
-    it.each([
+    test.each([
         // empty string
         {
             actual: '',

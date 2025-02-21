@@ -1,3 +1,5 @@
+import { describe, test } from 'vitest';
+
 import { tokenizeExtended } from '../../src/extended-css-tokenizer';
 import { TokenType } from '../../src/common/enums/token-types';
 import { ExtendedCssPseudo } from '../../src/common/enums/extended-css-pseudos';

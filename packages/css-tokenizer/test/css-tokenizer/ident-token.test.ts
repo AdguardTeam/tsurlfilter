@@ -1,5 +1,11 @@
+import {
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
+
 import { TokenType } from '../../src/common/enums/token-types';
-import { type OnTokenCallback } from '../../src/common/types/function-prototypes';
 import { tokenize } from '../../src/css-tokenizer';
 import { getFormattedTokenName } from '../../src/utils/token-names';
 
@@ -19,7 +25,7 @@ describe('ident-token', () => {
         String.raw`\\75 rl`, // Extra whitespace
         String.raw`\\0075 rl`, // Extra leading zeros and extra whitespace
     ])(`should tokenize '%s' as ${getFormattedTokenName(TokenType.Ident)}`, (actual) => {
-        const onToken: jest.MockedFunction<OnTokenCallback> = jest.fn();
+        const onToken = vi.fn();
 
         tokenize(actual, onToken);
 

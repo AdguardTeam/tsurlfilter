@@ -1,3 +1,5 @@
+import { describe, test } from 'vitest';
+
 import { TokenType } from '../../src/common/enums/token-types';
 import { addAsProp, testTokenization } from '../helpers/test-utils';
 
@@ -44,5 +46,7 @@ describe('comment-token', () => {
                 [TokenType.Comment, 32, 44],
             ],
         },
-    ]))("should tokenize '$actual' as $as", testTokenization);
+    ]))("should tokenize '$actual' as $as", (testCase) => {
+        testTokenization(testCase);
+    });
 });

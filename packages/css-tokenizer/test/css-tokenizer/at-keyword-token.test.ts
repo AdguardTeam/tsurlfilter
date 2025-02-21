@@ -1,3 +1,5 @@
+import { describe, test } from 'vitest';
+
 import { TokenType } from '../../src/common/enums/token-types';
 import { addAsProp, testTokenization } from '../helpers/test-utils';
 
@@ -18,5 +20,7 @@ describe('at-keyword-token', () => {
                 [TokenType.Semicolon, 16, 17],
             ],
         },
-    ]))("should tokenize '$actual' as $as", testTokenization);
+    ]))("should tokenize '$actual' as $as", (testCase) => {
+        testTokenization(testCase);
+    });
 });

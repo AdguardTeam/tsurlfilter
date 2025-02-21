@@ -1,3 +1,5 @@
+import { describe, test } from 'vitest';
+
 import { TokenType } from '../../src/common/enums/token-types';
 import type { TokenTest } from '../helpers/test-interfaces';
 import { addAsProp, testTokenization } from '../helpers/test-utils';
@@ -18,7 +20,9 @@ describe('delim-token', () => {
                     [TokenType.Delim, 0, 1],
                 ],
             },
-        ] as TokenTest[]))("should tokenize '$actual' as $as", testTokenization);
+        ] as TokenTest[]))("should tokenize '$actual' as $as", (testCase) => {
+            testTokenization(testCase);
+        });
     });
 
     describe("should tokenize '#' as <delim-token> if it isn't followed by a name or a hex digit", () => {
@@ -44,7 +48,9 @@ describe('delim-token', () => {
                     [TokenType.Number, 2, 3],
                 ],
             },
-        ] as TokenTest[])("should tokenize '#' as <delim-token> in '$actual'", testTokenization);
+        ] as TokenTest[])("should tokenize '#' as <delim-token> in '$actual'", (testCase) => {
+            testTokenization(testCase);
+        });
     });
 
     describe("should tokenize '+' as <delim-token> if it isn't a part of a number", () => {
@@ -70,7 +76,9 @@ describe('delim-token', () => {
                     [TokenType.Number, 2, 3],
                 ],
             },
-        ] as TokenTest[])("should tokenize '+' as <delim-token> in '$actual'", testTokenization);
+        ] as TokenTest[])("should tokenize '+' as <delim-token> in '$actual'", (testCase) => {
+            testTokenization(testCase);
+        });
     });
 
     describe("should tokenize '-' as <delim-token> if it isn't a part of a number, CDC or ident", () => {
@@ -104,7 +112,9 @@ describe('delim-token', () => {
                     [TokenType.Ident, 2, 3],
                 ],
             },
-        ] as TokenTest[])("should tokenize '-' as <delim-token> in '$actual'", testTokenization);
+        ] as TokenTest[])("should tokenize '-' as <delim-token> in '$actual'", (testCase) => {
+            testTokenization(testCase);
+        });
     });
 
     describe("should tokenize '.' as <delim-token> if it isn't a part of a number", () => {
@@ -130,7 +140,9 @@ describe('delim-token', () => {
                     [TokenType.Number, 2, 3],
                 ],
             },
-        ] as TokenTest[])("should tokenize '.' as <delim-token> in '$actual'", testTokenization);
+        ] as TokenTest[])("should tokenize '.' as <delim-token> in '$actual'", (testCase) => {
+            testTokenization(testCase);
+        });
     });
 
     describe("should tokenize '<' as <delim-token> if it isn't a part of a CDO", () => {
@@ -157,7 +169,9 @@ describe('delim-token', () => {
                     [TokenType.Ident, 3, 5],
                 ],
             },
-        ] as TokenTest[])("should tokenize '<' as <delim-token> in '$actual'", testTokenization);
+        ] as TokenTest[])("should tokenize '<' as <delim-token> in '$actual'", (testCase) => {
+            testTokenization(testCase);
+        });
     });
 
     describe("should tokenize '@' as <delim-token> if it isn't a part of an at-keyword", () => {
@@ -183,7 +197,9 @@ describe('delim-token', () => {
                     [TokenType.Ident, 2, 9],
                 ],
             },
-        ] as TokenTest[])("should tokenize '@' as <delim-token> in '$actual'", testTokenization);
+        ] as TokenTest[])("should tokenize '@' as <delim-token> in '$actual'", (testCase) => {
+            testTokenization(testCase);
+        });
     });
 
     describe("should tokenize '/' as <delim-token> if it isn't a part of a comment mark", () => {
@@ -209,7 +225,9 @@ describe('delim-token', () => {
                     [TokenType.Delim, 2, 3],
                 ],
             },
-        ] as TokenTest[])("should tokenize '/' as <delim-token> in '$actual'", testTokenization);
+        ] as TokenTest[])("should tokenize '/' as <delim-token> in '$actual'", (testCase) => {
+            testTokenization(testCase);
+        });
     });
 
     describe("should tokenize '\\' as <delim-token> if it isn't a valid escape", () => {
@@ -221,6 +239,8 @@ describe('delim-token', () => {
                     [TokenType.Whitespace, 1, 2],
                 ],
             },
-        ] as TokenTest[])("should tokenize '\\' as <delim-token> in '$actual'", testTokenization);
+        ] as TokenTest[])("should tokenize '\\' as <delim-token> in '$actual'", (testCase) => {
+            testTokenization(testCase);
+        });
     });
 });
