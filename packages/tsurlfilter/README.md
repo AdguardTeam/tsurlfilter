@@ -650,11 +650,21 @@ npx lerna run --scope=@adguard/tsurlfilter:<script>
 
 ### <a id="npm-scripts"></a>NPM scripts
 
-- `start`: Run `build` in watch mode
-- `test:watch`: Run test suite in [interactive watch mode](https://jestjs.io/docs/en/cli#--watch)
-- `test:prod`: Run linting and generate coverage
-- `build`: Generate bundles and typings, create docs
-- `lint`: Lints code
+- `lint`: Run ESLint and TSC
+- `lint:code`: Run ESLint
+- `lint:tsc`: Run TSC
+- `start` Start build in watch mode
+- `build`: Build the project
+- `build:types`: Generate types
+- `docs`: Generate documentation
+- `docs:mv3`: Generate documentation for manifest v3
+- `test`: Run tests
+- `test:light`: Run tests without benchmarks
+- `test:watch`: Run tests in watch mode
+- `test:coverage`: Run tests with coverage
+- `test:smoke`: Run smoke tests
+- `test:prod`: Run production tests, i.e lint, smoke tests, and tests
+- `report-coverage`: Report coverage to coveralls
 
 ### <a id="excluding-peer-dependencies"></a>Excluding peerDependencies
 

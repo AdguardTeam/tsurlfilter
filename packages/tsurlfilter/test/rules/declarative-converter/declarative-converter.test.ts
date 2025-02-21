@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { DeclarativeFilterConverter } from '../../../src/rules/declarative-converter/filter-converter';
 import {
     MaxScannedRulesError,

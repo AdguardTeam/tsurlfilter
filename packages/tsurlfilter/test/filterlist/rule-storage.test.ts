@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import escapeStringRegexp from 'escape-string-regexp';
 
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';

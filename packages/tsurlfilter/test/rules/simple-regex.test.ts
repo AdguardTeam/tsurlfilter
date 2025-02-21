@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { SimpleRegex } from '../../src/rules/simple-regex';
 
 describe('SimpleRegex.patternToRegexp', () => {

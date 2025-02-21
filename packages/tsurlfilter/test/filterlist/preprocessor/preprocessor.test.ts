@@ -1,4 +1,11 @@
-import { jest } from '@jest/globals';
+import {
+    describe,
+    it,
+    expect,
+    beforeAll,
+    afterAll,
+    vi,
+} from 'vitest';
 import {
     type AnyRule,
     InputByteBuffer,
@@ -45,11 +52,11 @@ const makeSerializedFilterList = (rules: string[]): Uint8Array[] => {
 describe('FilterListPreprocessor', () => {
     describe('preprocess', () => {
         beforeAll(() => {
-            jest.spyOn(console, 'error').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
         });
 
         afterAll(() => {
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
         });
 
         it.each<{ name: string, actual: string, expected: PreprocessedFilterList }>([
@@ -176,11 +183,11 @@ describe('FilterListPreprocessor', () => {
 
     describe('preprocessLightweight', () => {
         beforeAll(() => {
-            jest.spyOn(console, 'error').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
         });
 
         afterAll(() => {
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
         });
 
         it.each<{ name: string, actual: LightweightPreprocessedFilterList, expected: PreprocessedFilterList }>([

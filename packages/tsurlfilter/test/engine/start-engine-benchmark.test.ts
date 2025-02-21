@@ -1,7 +1,14 @@
+import {
+    describe,
+    it,
+    expect,
+    beforeAll,
+    afterAll,
+    vi,
+} from 'vitest';
 import console from 'console';
 import fs from 'fs';
 import os from 'os';
-import { jest } from '@jest/globals';
 import {
     BufferRuleList,
     DnsEngine,
@@ -12,6 +19,7 @@ import {
     setLogger,
 } from '../../src';
 
+// TODO: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
 // Time: Tue May 14 2024
 // Env:
 // ┌──────────────┬────────────────────────────────────────────┐
@@ -58,10 +66,10 @@ describe('Start Engine Benchmark', () => {
 
     beforeAll(() => {
         setLogger({
-            error: jest.fn(),
-            info: jest.fn(),
-            debug: jest.fn(),
-            warn: jest.fn(),
+            error: vi.fn(),
+            info: vi.fn(),
+            debug: vi.fn(),
+            warn: vi.fn(),
         });
 
         result = {};

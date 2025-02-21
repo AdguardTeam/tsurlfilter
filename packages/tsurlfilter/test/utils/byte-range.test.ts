@@ -1,23 +1,38 @@
-import { jest } from '@jest/globals';
-import { type Location } from 'jsonpos'; // Import only types
+import {
+    describe,
+    it,
+    expect,
+    vi,
+    beforeEach,
+    afterEach,
+    type MockInstance,
+} from 'vitest';
+import { jsonpos, type Location } from 'jsonpos';
+import { getUtf8EncodedLength } from '../../src/utils/string-utils';
+import { getByteRangeFor } from '../../src/utils/byte-range';
 
-const mockedJsonpos = jest.fn();
-jest.unstable_mockModule('jsonpos', () => ({
-    jsonpos: mockedJsonpos,
+vi.mock('jsonpos', () => ({
+    ...vi.importActual('jsonpos'),
+    jsonpos: vi.fn(),
 }));
 
-// eslint-disable-next-line max-len, @typescript-eslint/consistent-type-imports
-const mockedGetUtf8EncodedLength = jest.fn() as jest.MockedFunction<typeof import('../../src/utils/string-utils').getUtf8EncodedLength>;
-jest.unstable_mockModule('../../src/utils/string-utils', () => ({
-    getUtf8EncodedLength: mockedGetUtf8EncodedLength,
+vi.mock('../../src/utils/string-utils', () => ({
+    ...vi.importActual('../../src/utils/string-utils'),
+    getUtf8EncodedLength: vi.fn(),
 }));
-
-// Import the actual implementation after mocking
-const { getByteRangeFor } = await import('../../src/utils/byte-range');
 
 describe('getByteRangeFor', () => {
+    let mockedJsonpos: MockInstance<typeof jsonpos>;
+    let mockedGetUtf8EncodedLength: MockInstance<typeof getUtf8EncodedLength>;
+
     beforeEach(() => {
-        jest.clearAllMocks();
+        mockedJsonpos = vi.mocked(jsonpos);
+        mockedGetUtf8EncodedLength = vi.mocked(getUtf8EncodedLength);
+    });
+
+    afterEach(() => {
+        mockedJsonpos.mockClear();
+        mockedGetUtf8EncodedLength.mockClear();
     });
 
     it('should return correct byte range for a valid pointer path in ASCII JSON', () => {

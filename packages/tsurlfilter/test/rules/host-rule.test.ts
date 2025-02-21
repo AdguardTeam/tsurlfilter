@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { HostRuleParser, type HostRule as HostRuleNode } from '@adguard/agtree';
 import { isString } from 'lodash-es';
 

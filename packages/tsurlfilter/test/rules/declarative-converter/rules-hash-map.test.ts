@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { RulesHashMap } from '../../../src/rules/declarative-converter';
 
 describe('Rules Hash Map', () => {

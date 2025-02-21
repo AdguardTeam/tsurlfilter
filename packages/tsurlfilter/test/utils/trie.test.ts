@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { TrieNode } from '../../src/utils/trie';
 
 describe('Trie tests', () => {

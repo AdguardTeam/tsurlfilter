@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { RequestType } from '../../../src';
 import { Request } from '../../../src/request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
