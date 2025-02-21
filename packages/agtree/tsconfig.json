@@ -1,36 +1,23 @@
 {
+    "extends": "./tsconfig.base.json",
     "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "node",
-        "types": [
-            "node",
-            "jest"
-        ],
-        "resolveJsonModule": true,
-        "allowJs": true,
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
-        "skipLibCheck": true,
-        "isolatedModules": true,
-        "rootDir": "./"
+        "noEmit": true,
     },
     "include": [
-        "./src",
-        "./browser-benchmark",
-        "./scripts"
+        ".eslintrc.cjs",
+        "jest.config.ts",
+        "rollup.config.ts",
+        "scripts/**/*.ts",
+        "scripts/.eslintrc.cjs",
+        "src/compatibility-tables/extractors/.eslintrc.cjs",
+        "src/**/*.ts",
+        "test/**/*.ts",
+        "rollup.plugins.ts",
+        "rollup.config.ts",
     ],
     "exclude": [
         "./node_modules",
         "./dist",
-        "./test/smoke/typescript"
+        "./test/smoke"
     ],
-    "ts-node": {
-        "swc": true,
-        "experimentalSpecifierResolution": "node",
-        "compilerOptions": {
-            "module": "ESNext"
-        }
-    }
 }

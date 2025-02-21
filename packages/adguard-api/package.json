@@ -25,11 +25,11 @@
   "scripts": {
     "lint": "pnpm lint:eslint && pnpm check-types",
     "build": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
-    "postbuild": "pnpm types && ts-node tasks/build-txt",
+    "postbuild": "pnpm types && tsx tasks/build-txt",
     "prepush": "pnpm build",
     "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
     "lint:eslint": "eslint --cache --ignore-path .gitignore .",
-    "check-types": "tsc --project tsconfig.build.json --noemit",
+    "check-types": "tsc",
     "increment": "pnpm version patch --no-git-tag-version"
   },
   "author": "Adguard Software Ltd.",
@@ -47,6 +47,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-swc": "^0.3.0",
     "@swc/core": "^1.3.99",
+    "@types/node": "^22.13.4",
     "@types/webextension-polyfill": "0.10.7",
     "@typescript-eslint/eslint-plugin": "^6.13.1",
     "@typescript-eslint/parser": "6.13.1",
@@ -58,7 +59,7 @@
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-jsdoc": "^46.9.0",
     "rollup": "^4.6.0",
-    "ts-node": "^10.9.1",
+    "tsx": "^4.19.3",
     "typescript": "^5.3.2"
   }
 }

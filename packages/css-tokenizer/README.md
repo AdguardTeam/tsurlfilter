@@ -348,7 +348,7 @@ function getFormattedTokenName(type: TokenType): string;
 
 ## Benchmark results
 
-You can find the benchmark results in the [benchmark/RESULTS.md][benchmark-results] file.
+You can find the benchmark results in the [RESULTS.md][benchmark-results] file.
 
 ## Ideas & Questions
 
@@ -361,7 +361,7 @@ This project is licensed under the MIT license. See the [LICENSE][license-url] f
 
 [abp-ext-css]: https://help.eyeo.com/adblockplus/how-to-write-filters#elemhide-emulation
 [adg-ext-css]: https://github.com/AdguardTeam/ExtendedCss/blob/master/README.md
-[benchmark-results]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/css-tokenizer/benchmark/RESULTS.md
+[benchmark-results]: https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/benchmarks/css-tokenizer-benchmark/RESULTS.md
 [css-syntax]: https://www.w3.org/TR/css-syntax-3/
 [css-tree-issue]: https://github.com/csstree/csstree/issues/253
 [css-tree-repo]: https://github.com/csstree/csstree

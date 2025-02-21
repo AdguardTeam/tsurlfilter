@@ -1,19 +1,18 @@
 {
-  "extends": "./tsconfig.base.json",
-  "include": [
-    "src/**/*.ts",
-    "cli/**/*.ts",
-    "test/**/*.ts",
-    "test/.eslintrc.cjs",
-    ".eslintrc.cjs",
-    "rollup.config.ts",
-    "jest.config.ts",
-    "tasks/**/*.ts"
-  ],
-  "ts-node": {
-    "swc": true,
+    "extends": "./tsconfig.base.json",
     "compilerOptions": {
-      "module":"esnext",
-    }
-  }
+        // With this tsconfig, we don't need to emit any files,
+        // we just want to check the types
+        "noEmit": true,
+    },
+    "include": [
+        "src/**/*.ts",
+        "cli/**/*.ts",
+        "test/**/*.ts",
+        "test/.eslintrc.cjs",
+        ".eslintrc.cjs",
+        "rollup.config.ts",
+        "jest.config.ts",
+        "tasks/**/*.ts"
+    ],
 }

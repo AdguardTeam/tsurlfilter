@@ -94,6 +94,8 @@ expect.extend({
         let conversionResult: NodeConversionResult<AnyRule>;
 
         try {
+            // TODO: Improve types
+            // @ts-expect-error(7053)
             conversionResult = converter[method](ruleNode);
         } catch (error: unknown) {
             return {

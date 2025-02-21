@@ -3,13 +3,15 @@
         "moduleResolution": "bundler",
         "target": "esnext",
         "module": "esnext",
-        "lib": ["esnext", "dom"],
+        "lib": [
+            "esnext",
+            "dom",
+        ],
         "strict": true,
         "noUncheckedIndexedAccess": true,
         "allowJs": true,
         "experimentalDecorators": true,
         "resolveJsonModule": true,
         "esModuleInterop": true, // This will set allowSyntheticDefaultImports to true
-        "typeRoots": ["./types", "node_modules/@types", "../../node_modules/@types"],
-    }
+    },
 }

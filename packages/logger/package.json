@@ -4,12 +4,12 @@
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm build:types && pnpm build:txt",
-        "build:txt": "ts-node scripts/build-txt",
-        "build:types": "tsc --project tsconfig.base.json --declaration --emitDeclarationOnly --outdir dist/types",
+        "build:txt": "tsx scripts/build-txt",
+        "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "test": "jest",
-        "lint": "eslint --cache --ignore-path .gitignore . && tsc --noEmit",
+        "lint": "eslint --cache --ignore-path .gitignore . && tsc",
         "lint:code": "eslint --cache --ignore-path .gitignore .",
-        "lint:types": "tsc --noEmit",
+        "lint:types": "tsc",
         "test:smoke": "(cd tests/smoke/esm && pnpm test) && (cd tests/smoke/cjs && pnpm test) && (cd tests/smoke/typescript && pnpm test)",
         "increment": "pnpm version patch --no-git-tag-version"
     },
@@ -62,8 +62,8 @@
         "rimraf": "^5.0.5",
         "rollup": "^4.13.0",
         "ts-jest": "^29.1.2",
-        "ts-node": "^10.9.2",
         "tslib": "^2.6.2",
+        "tsx": "^4.19.3",
         "typescript": "^5.4.2"
     }
 }

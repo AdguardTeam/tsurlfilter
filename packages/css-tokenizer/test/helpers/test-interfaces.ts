@@ -10,7 +10,13 @@ import { type TokenType } from '../../src/common/enums/token-types';
  *
  * @todo Create a more specific type for `props` parameter, if needed & possible
  */
-export type TokenData = [type: TokenType, start: number, end: number, props?: object | undefined];
+export type TokenData = [
+    type: TokenType,
+    start: number,
+    end: number,
+    props?: Record<string, unknown>,
+    ...rest: unknown[],
+];
 
 /**
  * Error data

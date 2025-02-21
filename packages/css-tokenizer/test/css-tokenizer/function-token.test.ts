@@ -1,4 +1,5 @@
 import { TokenType } from '../../src/common/enums/token-types';
+import { type OnTokenCallback } from '../../src/common/types/function-prototypes';
 import { tokenize } from '../../src/css-tokenizer';
 import { getFormattedTokenName } from '../../src/utils/token-names';
 
