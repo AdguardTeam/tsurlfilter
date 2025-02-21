@@ -1,3 +1,10 @@
+import {
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
+
 import { OutputByteBuffer } from '../../src/utils/output-byte-buffer';
 import { InputByteBuffer } from '../../src/utils/input-byte-buffer';
 import { SimpleStorage } from '../helpers/simple-storage';
@@ -226,7 +233,7 @@ describe('ByteBuffer', () => {
             // OutputByteBuffer's constructor writes the schema version,
             // so we just need to mock the first call to writeUint32ToIndex to leave values as 0,
             // since schema version is at least 1
-            jest.spyOn(
+            vi.spyOn(
                 OutputByteBuffer.prototype,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 'writeUint32ToIndex' as any,

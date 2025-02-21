@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { EMPTY, ESCAPE_CHARACTER, SPACE } from '../../src/utils/constants';
 import { StringUtils } from '../../src/utils/string';
 

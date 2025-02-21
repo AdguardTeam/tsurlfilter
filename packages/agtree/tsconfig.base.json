@@ -4,8 +4,8 @@
         "module": "ESNext",
         "moduleResolution": "node",
         "types": [
+            "./typings/vitest-custom.d.ts",
             "node",
-            "jest"
         ],
         "resolveJsonModule": true,
         "allowJs": true,

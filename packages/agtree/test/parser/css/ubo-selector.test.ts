@@ -1,3 +1,9 @@
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
 import { sprintf } from 'sprintf-js';
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
@@ -784,7 +790,7 @@ describe('UboSelectorParser', () => {
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = jest.fn(() => UboSelectorParser.parse(actual));
+            const fn = vi.fn(() => UboSelectorParser.parse(actual));
 
             // parse should throw
             expect(fn).toThrow();

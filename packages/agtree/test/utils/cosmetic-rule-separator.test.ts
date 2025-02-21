@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { CosmeticRuleSeparator } from '../../src/nodes';
 import { EMPTY, SPACE } from '../../src/utils/constants';
 import {

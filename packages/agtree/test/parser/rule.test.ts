@@ -1,3 +1,10 @@
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
+
 import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error';
 import {
     type AnyRule,
@@ -910,7 +917,7 @@ describe('RuleParser', () => {
                 ),
             },
         ])('parser options should work for $actual', ({ options, actual, expected }) => {
-            const fn = jest.fn(() => RuleParser.parse(actual, options));
+            const fn = vi.fn(() => RuleParser.parse(actual, options));
 
             if (expected instanceof Error) {
                 // parse should throw

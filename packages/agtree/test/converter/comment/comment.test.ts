@@ -1,11 +1,12 @@
+import { describe, expect, it } from 'vitest';
+
 import { CommentRuleConverter } from '../../../src/converter/comment';
 import { CommentParser } from '../../../src/parser/comment/comment-parser';
 import { type CommentRule } from '../../../src/nodes';
-import '../../matchers/check-conversion';
 
 describe('CommentRuleConverter', () => {
     describe('convertToAdg', () => {
-        test.each([
+        it.each([
             // Leave non-affected comments as is
             {
                 actual: '! This is a comment',
@@ -66,7 +67,7 @@ describe('CommentRuleConverter', () => {
         });
     });
 
-    describe('convertToUbo', () => {
+    it('convertToUbo', () => {
         // TODO: We should implement this later
         expect(() => CommentRuleConverter.convertToUbo(
             CommentParser.parse('! this is a comment') as CommentRule,
@@ -75,7 +76,7 @@ describe('CommentRuleConverter', () => {
         );
     });
 
-    describe('convertToAbp', () => {
+    it('convertToAbp', () => {
         // TODO: We should implement this later
         expect(() => CommentRuleConverter.convertToAbp(
             CommentParser.parse('! this is a comment') as CommentRule,

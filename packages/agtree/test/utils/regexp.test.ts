@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import {
     ADBLOCK_URL_SEPARATOR_REGEX,
     ADBLOCK_URL_START_REGEX,

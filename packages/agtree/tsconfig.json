@@ -5,7 +5,7 @@
     },
     "include": [
         ".eslintrc.cjs",
-        "jest.config.ts",
+        "vitest.config.ts",
         "rollup.config.ts",
         "scripts/**/*.ts",
         "scripts/.eslintrc.cjs",

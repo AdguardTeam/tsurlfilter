@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { redirectsCompatibilityTable } from '../../src/compatibility-tables/redirects';
 import { GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
 

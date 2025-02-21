@@ -1,3 +1,10 @@
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
+
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/body/abp-snippet-injection-body-parser';
@@ -612,7 +619,7 @@ describe('AbpSnippetInjectionBodyParser', () => {
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = jest.fn(() => AbpSnippetInjectionBodyParser.parse(actual));
+            const fn = vi.fn(() => AbpSnippetInjectionBodyParser.parse(actual));
 
             // parse should throw
             expect(fn).toThrow();
