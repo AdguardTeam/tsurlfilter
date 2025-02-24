@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { Pattern } from '../../src/rules/pattern';
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';

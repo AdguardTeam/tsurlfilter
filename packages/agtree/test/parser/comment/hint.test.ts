@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { HintCommentParser } from '../../../src/parser/comment/hint-comment-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';

@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { CtagModifier } from '../../../src/modifiers/dns/ctag-modifier';
 import { createNetworkRule } from '../../helpers/rule-creator';
 

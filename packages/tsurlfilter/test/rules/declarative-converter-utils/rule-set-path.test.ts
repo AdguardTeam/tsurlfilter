@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { extractRuleSetId } from '../../../src/rules/declarative-converter-utils';
 
 describe('Ruleset path', () => {

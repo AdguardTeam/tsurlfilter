@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { RawRuleConverter } from '../../src/converter/raw-rule';
 
 describe('Raw rule converter wrapper should work correctly', () => {

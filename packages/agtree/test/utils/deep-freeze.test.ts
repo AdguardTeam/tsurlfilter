@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { deepFreeze } from '../../src/utils/deep-freeze';
 
 // Sample interface for better type checking in tests

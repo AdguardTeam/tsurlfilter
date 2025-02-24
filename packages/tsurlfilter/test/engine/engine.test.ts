@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import escapeStringRegexp from 'escape-string-regexp';
 
 import { type AnyRule, RuleGenerator } from '@adguard/agtree';
@@ -169,7 +170,7 @@ describe('TestEngine - postponed load rules', () => {
     });
 });
 
-describe('TestEngine - configuration', () => {
+it('TestEngine - configuration', () => {
     const rules = ['||example.org^$third-party'];
     const processed = FilterListPreprocessor.preprocess(rules.join('\n'));
     const list = new BufferRuleList(1, processed.filterList, false, false, false, processed.sourceMap);

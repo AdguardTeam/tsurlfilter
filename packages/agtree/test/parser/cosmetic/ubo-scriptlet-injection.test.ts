@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 import { CosmeticRuleType, RuleCategory, type ScriptletInjectionRule } from '../../../src/nodes';
 import { UboScriptletInjectionBodyParser } from '../../../src/parser/cosmetic/body/ubo-scriptlet-injection-body-parser';

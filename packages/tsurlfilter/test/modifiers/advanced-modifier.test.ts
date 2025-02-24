@@ -1,5 +1,8 @@
 /* eslint-disable max-len */
-import { NetworkRuleOption, RemoveHeaderModifier } from '../../src';
+import { describe, it, expect } from 'vitest';
+
+import { NetworkRuleOption } from '../../src/rules/network-rule';
+import { RemoveHeaderModifier } from '../../src/modifiers/remove-header-modifier';
 import { ReplaceModifier } from '../../src/modifiers/replace-modifier';
 import { CspModifier } from '../../src/modifiers/csp-modifier';
 import { CookieModifier } from '../../src/modifiers/cookie-modifier';

@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { CodePoint } from '../../src/common/enums/code-points';
 import { TokenType } from '../../src/common/enums/token-types';
 import { tokenize } from '../../src/css-tokenizer';
@@ -130,7 +132,9 @@ describe('URLs', () => {
                     [TokenType.CloseParenthesis, 24, 25],
                 ],
             },
-        ]))("should tokenize '$actual' as $as", testTokenization);
+        ]))("should tokenize '$actual' as $as", (testCase) => {
+            testTokenization(testCase);
+        });
     });
 
     describe('should tokenize invalid inputs as <bad-url-token>', () => {

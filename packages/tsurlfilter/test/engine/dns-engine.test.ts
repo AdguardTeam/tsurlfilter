@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import escapeStringRegexp from 'escape-string-regexp';
 
 import { FilterListPreprocessor, type PreprocessedFilterList, getRuleSourceIndex } from '../../src';

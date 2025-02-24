@@ -1,4 +1,13 @@
-import { jest } from '@jest/globals';
+import {
+    describe,
+    it,
+    expect,
+    beforeEach,
+    afterAll,
+    vi,
+    type MockedFunction,
+} from 'vitest';
+
 import { fetchExtensionResourceText } from '../../src';
 import { type ByteRange } from '../../src/utils/byte-range';
 
@@ -6,7 +15,7 @@ describe('fetchExtensionResourceText', () => {
     const originalFetch = global.fetch;
 
     beforeEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     afterAll(() => {
@@ -18,9 +27,9 @@ describe('fetchExtensionResourceText', () => {
         const mockResponseText = 'Sample content without byte range';
 
         // Mock the fetch function
-        global.fetch = jest.fn(() => Promise.resolve({
+        global.fetch = vi.fn(() => Promise.resolve({
             text: () => Promise.resolve(mockResponseText),
-        } as Response)) as jest.Mock<typeof fetch>;
+        } as Response)) as MockedFunction<typeof fetch>;
 
         const result = await fetchExtensionResourceText(url);
 
@@ -34,9 +43,9 @@ describe('fetchExtensionResourceText', () => {
         const mockResponseText = 'Sample content with byte range';
 
         // Mock the fetch function
-        global.fetch = jest.fn(() => Promise.resolve({
+        global.fetch = vi.fn(() => Promise.resolve({
             text: () => Promise.resolve(mockResponseText),
-        } as Response)) as jest.Mock<typeof fetch>;
+        } as Response)) as MockedFunction<typeof fetch>;
 
         const expectedHeaders = {
             Range: `bytes=${byteRange.start}-${byteRange.end}`,
@@ -53,7 +62,7 @@ describe('fetchExtensionResourceText', () => {
         const mockError = new Error('Network error');
 
         // Mock the fetch function to throw an error
-        global.fetch = jest.fn(() => Promise.reject(mockError)) as jest.Mock<typeof fetch>;
+        global.fetch = vi.fn(() => Promise.reject(mockError)) as MockedFunction<typeof fetch>;
 
         await expect(fetchExtensionResourceText(url)).rejects.toThrow('Network error');
     });
@@ -62,12 +71,12 @@ describe('fetchExtensionResourceText', () => {
         const url = 'https://example.com/resource.txt';
 
         // Mock the fetch function to return a non-OK response
-        global.fetch = jest.fn(() => Promise.resolve({
+        global.fetch = vi.fn(() => Promise.resolve({
             ok: false,
             status: 404,
             statusText: 'Not Found',
             text: () => Promise.resolve(''),
-        } as Response)) as jest.Mock<typeof fetch>;
+        } as Response)) as MockedFunction<typeof fetch>;
 
         const result = await fetchExtensionResourceText(url);
 
@@ -80,9 +89,9 @@ describe('fetchExtensionResourceText', () => {
         const mockResponseText = 'Sample content';
 
         // Mock the fetch function
-        global.fetch = jest.fn(() => Promise.resolve({
+        global.fetch = vi.fn(() => Promise.resolve({
             text: () => Promise.resolve(mockResponseText),
-        } as Response)) as jest.Mock<typeof fetch>;
+        } as Response)) as MockedFunction<typeof fetch>;
 
         const result = await fetchExtensionResourceText(url, undefined);
 

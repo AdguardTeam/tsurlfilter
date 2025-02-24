@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { DomainUtils } from '../../src/utils/domain';
 
 describe('Domain utils', () => {

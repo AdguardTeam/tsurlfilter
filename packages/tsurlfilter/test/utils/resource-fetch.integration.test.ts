@@ -1,4 +1,15 @@
-import { createServer, type Server } from 'http';
+/* eslint-disable import/no-extraneous-dependencies */
+// @vitest-environment jsdom
+import {
+    describe,
+    it,
+    expect,
+    beforeAll,
+    afterAll,
+} from 'vitest';
+import { setupServer } from 'msw/node';
+import { http, HttpResponse } from 'msw';
+
 import { Buffer } from 'buffer';
 import { getByteRangeFor } from '../../src/utils/byte-range';
 import { fetchExtensionResourceText } from '../../src/utils/resource-fetch';
@@ -15,75 +26,60 @@ const sampleJson = `
 }
 `;
 
+// Convert JSON to a Buffer
+const sampleJsonBuffer = Buffer.from(sampleJson, 'utf8');
+
+// Setup MSW server
+const server = setupServer(
+    http.get('http://localhost/resource', ({ request }) => {
+        const rangeHeader = request.headers.get('Range');
+        const totalLength = sampleJsonBuffer.length;
+
+        // No "Range" header => send the entire JSON
+        if (!rangeHeader) {
+            return HttpResponse.json(JSON.parse(sampleJsonBuffer.toString('utf8')));
+        }
+
+        // If "Range" header exists => parse it
+        const matches = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
+        if (!matches) {
+            return HttpResponse.text('Invalid range', { status: 416 });
+        }
+
+        const start = parseInt(matches[1], 10);
+        const end = matches[2] ? parseInt(matches[2], 10) : totalLength - 1;
+
+        // Validate the range
+        if (start >= totalLength || end >= totalLength || start > end) {
+            return HttpResponse.text('Invalid range', { status: 416 });
+        }
+
+        return HttpResponse.json(
+            JSON.parse(sampleJsonBuffer.subarray(start, end + 1).toString('utf8')),
+            {
+                status: 206,
+                headers: {
+                    'Content-Range': `bytes ${start}-${end}/${totalLength}`,
+                    'Content-Length': (end - start + 1).toString(),
+                },
+            },
+        );
+    }),
+);
+
+beforeAll(() => server.listen());
+afterAll(() => server.close());
+
 describe('fetchExtensionResourceText', () => {
-    let server: Server;
-    let serverUrl: string;
-
-    beforeAll((done) => {
-        // Convert sampleJson to a Buffer
-        const sampleJsonBuffer = Buffer.from(sampleJson, 'utf8');
-
-        server = createServer((req, res) => {
-            const rangeHeader = req.headers.range;
-            const totalLength = sampleJsonBuffer.length;
-
-            if (!rangeHeader) {
-                res.setHeader('Content-Length', totalLength);
-                res.end(sampleJsonBuffer);
-                return;
-            }
-
-            const matches = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
-            if (!matches) {
-                // Range Not Satisfiable
-                res.statusCode = 416;
-                res.end();
-                return;
-            }
-
-            const start = parseInt(matches[1], 10);
-            const end = matches[2] ? parseInt(matches[2], 10) : totalLength - 1;
-
-            // Validate the range
-            if (start >= totalLength || end >= totalLength || start > end) {
-                // Range Not Satisfiable
-                res.statusCode = 416;
-                res.end();
-                return;
-            }
-
-            // Partial Content
-            res.statusCode = 206;
-            res.setHeader('Content-Range', `bytes ${start}-${end}/${totalLength}`);
-            res.setHeader('Content-Length', end - start + 1);
-            res.end(sampleJsonBuffer.subarray(start, end + 1));
-        });
-
-        server.listen(0, () => {
-            const address = server.address();
-            if (typeof address === 'object' && address !== null) {
-                const { port } = address;
-                serverUrl = `http://localhost:${port}`;
-                done();
-            } else {
-                throw new Error('Failed to start server');
-            }
-        });
-    });
-
-    afterAll((done) => {
-        server.close(done);
-    });
-
     it('should fetch text by specifying ranges', async () => {
-        // Use getByteRangeFor to get the byte range of "/nested/key"
+        // Get the byte range for "/nested/key"
         const pointerPath = '/nested/key';
         const byteRange = getByteRangeFor(sampleJson, pointerPath);
 
-        // Use fetchExtensionResourceText to fetch the value at that byte range
-        const fetchedText = await fetchExtensionResourceText(serverUrl, byteRange);
+        // Make the request to "http://localhost/resource"
+        const fetchedText = await fetchExtensionResourceText('http://localhost/resource', byteRange);
 
-        // The expected value is "value", including the quotes as in the JSON string
+        // The value in the JSON is "value", including the quotes
         expect(fetchedText).toBe('"value"');
     });
 });

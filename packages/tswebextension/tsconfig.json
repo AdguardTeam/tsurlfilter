@@ -9,19 +9,18 @@
         "vitest.config.ts",
         "vitest.setup.ts",
         "tasks/constants.ts",
+        "test"
     ],
     "exclude": [
-        "test",
-        "**/*.test.ts",
-        "**/*.spec.ts"
+        "test/smoke",
     ],
     "compilerOptions": {
+        // With this tsconfig, we don't need to emit any files,
+        // we just want to check the types
+        "noEmit": true,
         "baseUrl": ".",
         "paths": {
             "*": ["src/*"]
         }
     },
-    "ts-node": {
-        "swc": true
-    }
 }

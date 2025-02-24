@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { AgentCommentParser } from '../../../src/parser/comment/agent-comment-parser';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { EMPTY, SPACE } from '../../../src/utils/constants';

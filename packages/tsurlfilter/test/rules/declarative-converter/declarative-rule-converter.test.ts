@@ -1,3 +1,10 @@
+import {
+    describe,
+    it,
+    expect,
+    beforeAll,
+} from 'vitest';
+
 import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../src/modifiers/permissions-modifier';
 import { ResourceType } from '../../../src/rules/declarative-converter/declarative-rule';

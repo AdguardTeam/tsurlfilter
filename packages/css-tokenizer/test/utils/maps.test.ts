@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { mergeMaps } from '../../src/utils/maps';
 
 describe('Map utils', () => {

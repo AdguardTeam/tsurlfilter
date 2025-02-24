@@ -1,3 +1,10 @@
+import {
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
+
 import { TokenType } from '../../src/common/enums/token-types';
 import { tokenize } from '../../src/css-tokenizer';
 import { getFormattedTokenName } from '../../src/utils/token-names';
@@ -18,7 +25,7 @@ describe('function-token', () => {
         String.raw`\\66 unc(`, // Extra whitespace
         String.raw`\\0066 unc(`, // Extra leading zeros and extra whitespace
     ])(`should tokenize '%s' as ${getFormattedTokenName(TokenType.Function)}`, (actual) => {
-        const onToken: jest.MockedFunction<OnTokenCallback> = jest.fn();
+        const onToken = vi.fn();
 
         tokenize(actual, onToken);
 

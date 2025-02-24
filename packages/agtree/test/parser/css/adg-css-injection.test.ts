@@ -1,3 +1,9 @@
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
 import { sprintf } from 'sprintf-js';
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
@@ -343,7 +349,7 @@ describe('AdgCssInjectionParser', () => {
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = jest.fn(() => AdgCssInjectionParser.parse(actual));
+            const fn = vi.fn(() => AdgCssInjectionParser.parse(actual));
 
             // parse should throw
             expect(fn).toThrow();

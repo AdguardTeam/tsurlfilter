@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { InputByteBuffer } from '@adguard/agtree';
 import escapeStringRegexp from 'escape-string-regexp';
 

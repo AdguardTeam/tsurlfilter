@@ -49,7 +49,7 @@ module.exports = {
         'jsdoc/no-undefined-types': 'off',
         'jsdoc/require-returns-type': 'off',
         'jsdoc/require-throws': 'error',
-        'jsdoc/check-tag-names': ['error', { definedTags: ['jest-environment'] }],
+        'jsdoc/check-tag-names': ['error'],
         'jsdoc/require-jsdoc': [
             'error',
             {

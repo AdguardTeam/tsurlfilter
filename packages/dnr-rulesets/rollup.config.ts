@@ -41,7 +41,7 @@ const typesConfig = {
         preserveModulesRoot: 'src',
     },
     plugins: [
-        dts({ tsconfig: 'tsconfig.rollup.json' }),
+        dts({ tsconfig: 'tsconfig.build.json' }),
     ],
 };
 

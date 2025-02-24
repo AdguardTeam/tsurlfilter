@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { NEWLINE } from '../../src/utils/constants';
 import { RawFilterListConverter } from '../../src/converter/raw-filter-list';
 

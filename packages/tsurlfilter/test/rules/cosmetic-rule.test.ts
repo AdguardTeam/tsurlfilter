@@ -1,7 +1,12 @@
 /* eslint-disable max-len */
+import {
+    describe,
+    it,
+    expect,
+    vi,
+} from 'vitest';
 import { type Source } from '@adguard/scriptlets';
 import { CosmeticRuleType } from '@adguard/agtree';
-import { jest } from '@jest/globals';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
@@ -823,7 +828,7 @@ describe('Javascript rules', () => {
         const rule = createCosmeticRule(jsRule, 0);
         let verbose = true;
 
-        jest.spyOn(rule, 'initScript');
+        vi.spyOn(rule, 'initScript');
 
         expect(rule.initScript).toBeCalledTimes(0);
 
@@ -860,7 +865,7 @@ describe('Javascript rules', () => {
         const verbose = false;
         let frameUrl = 'https://example.com';
 
-        jest.spyOn(rule, 'initScript');
+        vi.spyOn(rule, 'initScript');
 
         expect(rule.initScript).toBeCalledTimes(0);
 

@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { InputByteBuffer } from '@adguard/agtree';
 import escapeStringRegexp from 'escape-string-regexp';
 
@@ -123,7 +124,7 @@ describe('RuleStorageScanner Test', () => {
 
 // Note: this is needed because some special filter lists have negative IDs,
 // like the internal Stealth Mode's filter list which has ID -1.
-describe('Check negative filter list ID', () => {
+it('Check negative filter list ID', () => {
     const processed = FilterListPreprocessor.preprocess('||example.org');
     const reader = new BufferReader(new InputByteBuffer(processed.filterList));
     const scanner = new RuleScanner(reader, -1, {

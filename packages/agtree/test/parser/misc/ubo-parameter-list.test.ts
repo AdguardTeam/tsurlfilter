@@ -1,3 +1,10 @@
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
+
 import { COMMA } from '../../../src/utils/constants';
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
@@ -71,7 +78,7 @@ describe('UboParameterListParser', () => {
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = jest.fn(() => UboParameterListParser.parse(actual, defaultParserOptions, 0, COMMA, true));
+            const fn = vi.fn(() => UboParameterListParser.parse(actual, defaultParserOptions, 0, COMMA, true));
 
             // parse should throw
             expect(fn).toThrow();

@@ -1,3 +1,10 @@
+import {
+    describe,
+    expect,
+    test,
+    vi,
+} from 'vitest';
+
 import { OutputByteBuffer } from '../../src/utils/output-byte-buffer';
 import { InputByteBuffer } from '../../src/utils/input-byte-buffer';
 import { SimpleStorage } from '../helpers/simple-storage';
@@ -47,7 +54,11 @@ describe('ByteBuffer', () => {
                 output.writeString(value);
             } else {
                 const methodName = `write${type}`;
+                // TODO: Improve types
+                // @ts-expect-error(7053)
                 if (typeof output[methodName] === 'function') {
+                    // TODO: Improve types
+                    // @ts-expect-error(7053)
                     output[methodName](value);
                 }
             }
@@ -63,7 +74,11 @@ describe('ByteBuffer', () => {
                 expect(input.readString()).toBe(value);
             } else {
                 const methodName = `read${type}`;
+                // TODO: Improve types
+                // @ts-expect-error(7053)
                 if (typeof input[methodName] === 'function') {
+                    // TODO: Improve types
+                    // @ts-expect-error(7053)
                     expect(input[methodName]()).toBe(value);
                 }
             }
@@ -218,9 +233,10 @@ describe('ByteBuffer', () => {
             // OutputByteBuffer's constructor writes the schema version,
             // so we just need to mock the first call to writeUint32ToIndex to leave values as 0,
             // since schema version is at least 1
-            jest.spyOn(
+            vi.spyOn(
                 OutputByteBuffer.prototype,
-                'writeUint32ToIndex',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                'writeUint32ToIndex' as any,
             ).mockImplementationOnce(() => {
                 // do nothing, so leave values as 0, but return 4 to simulate writing of 4 bytes
                 return 4;

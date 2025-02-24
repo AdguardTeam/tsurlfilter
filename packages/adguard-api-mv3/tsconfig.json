@@ -1,6 +1,9 @@
 {
     "extends": "./tsconfig.base.json",
     "compilerOptions": {
+        // With this tsconfig, we don't need to emit any files,
+        // we just want to check the types
+        "noEmit": true,
         "baseUrl": ".",
     },
     "include": [
@@ -12,11 +15,4 @@
         "jest.config.ts",
         ".eslintrc.js"
     ],
-    "ts-node": {
-        "swc": true,
-        "compilerOptions": {
-            "module": "nodenext",
-            "moduleResolution": "nodenext"
-        }
-    }
 }

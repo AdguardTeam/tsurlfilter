@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { type HostRule, NetworkRuleType, RuleCategory } from '../../../src/nodes';
 import { HostRuleParser } from '../../../src/parser/network/host-rule-parser';
