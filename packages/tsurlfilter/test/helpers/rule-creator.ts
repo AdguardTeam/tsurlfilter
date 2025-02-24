@@ -14,6 +14,7 @@ import {
     RULE_INDEX_NONE,
     RuleFactory,
 } from '../../src';
+import { NetworkRuleWithNode } from '../../src/rules/declarative-converter/network-rule-with-node';
 
 /**
  * Helper function to create a network rule from a string or a parsed node.
@@ -42,6 +43,38 @@ export const createNetworkRule = (
     }
 
     return new NetworkRule(node, filterListId, ruleIndex);
+};
+
+/**
+ * Helper function to create a network rule from a string or a parsed node.
+ * This is needed because the default API for creating a network rule only accepts nodes,
+ * but it's more convenient to create rules from strings.
+ *
+ * @param rule Rule string or parsed node.
+ * @param filterListId Filter list ID (optional, default is 0).
+ * @param ruleIndex Rule index (optional, default is {@link RULE_INDEX_NONE}).
+ *
+ * @returns Network rule with node instance.
+ *
+ * @throws Error if the rule is not a valid network rule.
+ */
+export const createNetworkRuleWithNode = (
+    rule: string | NetworkRuleNode,
+    filterListId = 0,
+    ruleIndex = RULE_INDEX_NONE,
+): NetworkRuleWithNode => {
+    let node: NetworkRuleNode;
+
+    if (isString(rule)) {
+        node = NetworkRuleParser.parse(rule.trim());
+    } else {
+        node = rule;
+    }
+
+    return new NetworkRuleWithNode(
+        new NetworkRule(node, filterListId, ruleIndex),
+        node,
+    );
 };
 
 /**
