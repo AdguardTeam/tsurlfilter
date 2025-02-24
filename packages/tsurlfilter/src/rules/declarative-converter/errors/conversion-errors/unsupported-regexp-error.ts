@@ -1,5 +1,5 @@
-import { type NetworkRule } from '../../../network-rule';
 import { type DeclarativeRule } from '../../declarative-rule';
+import { type NetworkRuleWithNode } from '../../network-rule-with-node';
 
 import { InvalidDeclarativeRuleError } from './invalid-declarative-rule-error';
 
@@ -15,13 +15,13 @@ export class UnsupportedRegexpError extends InvalidDeclarativeRuleError {
      * regexp syntax error.
      *
      * @param message Message of error.
-     * @param networkRule {@link NetworkRule}.
+     * @param networkRule {@link NetworkRuleWithNode}.
      * @param declarativeRule {@link DeclarativeRule}.
      * @param reason Describes a reason of the error.
      */
     constructor(
         message: string,
-        networkRule: NetworkRule,
+        networkRule: NetworkRuleWithNode,
         declarativeRule: DeclarativeRule,
         reason?: string,
     ) {
