@@ -14,6 +14,7 @@ import {
     RequestType,
     CosmeticResult,
     HTTPMethod,
+    type NetworkRule,
 } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
@@ -132,7 +133,7 @@ describe('Content filtering', () => {
         expect(contentStringFilterConstructorSpy).toBeCalledTimes(1);
         expect(contentStringFilterConstructorSpy.mock.results[0].value).not.toBeNull();
         expect(
-            contentStringFilterConstructorSpy.mock.results[0].value.map((rule) => rule.getIndex()),
+            contentStringFilterConstructorSpy.mock.results[0].value.map((rule: NetworkRule) => rule.getIndex()),
         ).toEqual(expectedSortedRules);
     });
 });
