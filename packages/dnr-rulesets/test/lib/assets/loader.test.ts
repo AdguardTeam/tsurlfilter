@@ -1,11 +1,20 @@
 import { copy } from 'fs-extra';
 import path from 'path';
 import process from 'process';
+import {
+    afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 
 import { AssetsLoader } from '../../../src/lib/assets/loader';
 
-jest.mock('path');
-jest.mock('fs-extra');
+vi.mock('path', { spy: true });
+vi.mock('process', { spy: true });
+vi.mock('fs-extra');
 
 describe('load', () => {
     const dest = 'dest';
@@ -13,9 +22,9 @@ describe('load', () => {
     const to = 'to';
     const filtersRelativePath = '../../filters';
 
-    const mockResolve = jest.mocked(path.resolve);
-    const mockCopy = jest.mocked(copy);
-    const cwdSpy = jest.spyOn(process, 'cwd').mockReturnValue('cwd');
+    const mockResolve = vi.mocked(path.resolve);
+    const mockCopy = vi.mocked(copy);
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('cwd');
 
     beforeEach(() => {
         mockResolve
