@@ -10,9 +10,10 @@
         "src/**/*.ts",
         "tasks/**/*.ts",
         "e2e/**/*.ts",
+        "e2e/.eslintrc.js",
         "constants.ts",
         "rollup.config.ts",
-        "jest.config.ts",
+        "vitest.config.ts",
         ".eslintrc.js"
     ],
 }
