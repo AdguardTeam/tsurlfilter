@@ -410,6 +410,16 @@ export class WebRequestApi {
                 thirdParty,
             );
         } else {
+            const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+            // Note: In the code above, we pre-calculate cosmetics for the request,
+            // which may update the frame context with the cosmetic result,
+            // but it does not update the request context.
+            // So we need to update the request context with the cosmetic result from the frame context, if needed.
+            if (frameContext) {
+                context.cosmeticResult = frameContext.cosmeticResult;
+            }
+
             ContentFiltering.onBeforeRequest(context);
         }
 
