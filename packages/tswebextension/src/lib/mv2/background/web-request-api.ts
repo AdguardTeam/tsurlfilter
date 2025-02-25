@@ -25,6 +25,8 @@
  * At {@link RequestEvents.onHeadersReceived}, the response headers are handled in the same way,
  * and also the 'trusted-types' directive is modified for CSP headers, @see {@link TrustedTypesService}.
  *
+ * At {@link RequestEvents.onCompleted}, cosmetics are injected for subdocuments in Firefox.
+ *
  * The specified {@link RequestContext} will be removed from {@link requestContextStorage}
  * on {@link RequestEvents.onCompleted} or {@link RequestEvents.onErrorOccurred} events.
  *
@@ -106,10 +108,11 @@
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- * Removes the request information       │                             │
- * from {@link requestContextStorage}.   │         onCompleted         │
- *                                       │                             │
- *                                       └─────────────────────────────┘.
+ * Injects cosmetics for subdocuments    │                             │
+ * in Firefox (AG-40169). Logs script    │         onCompleted         │
+ * rules for main and sub frames.        │                             │
+ * Removes the request information       └─────────────────────────────┘
+ * from {@link requestContextStorage}.
  *
  *                                       ┌─────────────────────────────┐
  * Remove the request information        │                             │
@@ -130,8 +133,8 @@
  * Update main frame data with           │                             │
  * {@link updateMainFrameData}           │       onBeforeNavigate      │
  * and pre-calculate cosmetics           │                             │
- * so it can be applied later.           │                             │
- *                                       └──────────────┬──────────────┘
+ * so it can be applied later.           └──────────────┬──────────────┘
+ *                                                      │
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
  * Try injecting CSS and JS rules        │                             │
@@ -203,7 +206,7 @@ import {
 import { SanitizeApi } from './sanitize-api';
 import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs';
-import { isOpera } from './utils/browser-detector';
+import { isFirefox, isOpera } from './utils/browser-detector';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -611,9 +614,11 @@ export class WebRequestApi {
      *
      * @param event The event that occurred upon completion of the request.
      * @param event.context The context of the completed event.
+     * @param event.details The details of the completed event.
      */
     private static onCompleted({
         context,
+        details,
     }: RequestData<WebRequest.OnCompletedDetailsType>): void {
         if (!context) {
             return;
@@ -627,6 +632,14 @@ export class WebRequestApi {
             timestamp,
             contentType,
         } = context;
+
+        /**
+         * Trying to inject cosmetics for sub frames in Firefox as soon as possible
+         * because webNavigation events (where we also inject cosmetics) can be fired too late. AG-40169.
+         */
+        if (isFirefox || requestType === RequestType.SubDocument) {
+            WebRequestApi.injectCosmetic(details);
+        }
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const frameContext = tabsApi.getFrameContext(tabId, frameId);

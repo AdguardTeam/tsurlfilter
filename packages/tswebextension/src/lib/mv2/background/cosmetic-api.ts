@@ -335,7 +335,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             // Retry injection if it fails
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
                 setTimeout(() => {
-                    CosmeticApi.applyJsByTabAndFrame(tabId, frameId, tries + 1);
+                    CosmeticApi.applyCssByTabAndFrame(tabId, frameId, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
                 logger.debug('[applyCssByTabAndFrame] error occurred during injection', e);
