@@ -527,4 +527,29 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
         const tabContext = this.getTabContext(tabId);
         return tabContext?.getFrameContextByDocumentId(documentId);
     }
+
+    /**
+     * Sets main frame rule for the tab context and for the frame context.
+     *
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     * @param frameRule Frame rule.
+     */
+    public setMainFrameRule(
+        tabId: number,
+        frameId: number,
+        frameRule: NetworkRule | null,
+    ): void {
+        const tabContext = this.getTabContext(tabId);
+
+        if (tabContext && frameId === MAIN_FRAME_ID) {
+            tabContext.mainFrameRule = frameRule;
+        }
+
+        if (frameRule) {
+            this.updateFrameContext(tabId, frameId, { frameRule } as Partial<F>);
+        } else {
+            this.updateFrameContext(tabId, frameId, { frameRule: undefined } as Partial<F>);
+        }
+    }
 }

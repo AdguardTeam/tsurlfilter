@@ -167,10 +167,6 @@ import { StealthService } from './services/stealth-service';
 /**
  * API for applying rules from background service by handling
  * Web Request API and web navigation events.
- *
- * Calculates matchingResult and cosmeticResult and saves them to the cache
- * related to pair tabId+documentId to save execution time of future requests
- * cosmetic rules from content-script.
  */
 export class WebRequestApi {
     /**
@@ -262,16 +258,12 @@ export class WebRequestApi {
             return;
         }
 
-        // We do not check for exists request context here (as it was in MV2),
-        // because in MV3 $removeparam rules are applied by browser and does not
-        // require page reload after the applying.
-        if (requestType === RequestType.Document) {
-            // dispatch filtering log reload event
-            defaultFilteringLog.publishEvent({
-                type: FilteringEventType.TabReload,
-                data: { tabId },
-            });
-        }
+        /**
+         * We use here referrerUrl as frameUrl for all type of requests, because
+         * we have pre-process for this in {@link RequestEvents.handleOnBeforeRequest},
+         * where we can set `referrerUrl` to `requestUrl` for prerender requests.
+         */
+        const frameUrl = referrerUrl;
 
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.SendRequest,
@@ -280,7 +272,7 @@ export class WebRequestApi {
                 eventId,
                 requestUrl,
                 requestDomain: getDomain(requestUrl),
-                frameUrl: referrerUrl,
+                frameUrl,
                 frameDomain: getDomain(referrerUrl),
                 requestType: contentType,
                 timestamp,
@@ -290,23 +282,15 @@ export class WebRequestApi {
         });
 
         let frameRule;
-        let frameUrl = referrerUrl;
 
         /**
-         * Determine frameRule for different request types:
-         * - for Document requests, use DocumentApi to match against requestUrl and update frameUrl;
-         * - for SubDocument requests, use DocumentApi to match against referrerUrl;
-         * - for all other requests, get the frame rule from tabsApi.
-         *
-         * The referrerUrl is calculated in {@link RequestEvents.handleOnBeforeRequest} before this point.
+         * For Document and Subdocument requests, we match frame, because
+         * these requests are first (in page lifecycle), but for other requests
+         * we get the frame rule from tabsApi, assuming the frame rule is
+         * already in the tab context.
          */
-        if (requestType === RequestType.Document) {
-            frameRule = DocumentApi.matchFrame(requestUrl);
-            // We suppose that all document request are first party requests and
-            // that's why we set frameUrl to requestUrl.
-            frameUrl = requestUrl;
-        } else if (requestType === RequestType.SubDocument) {
-            frameRule = DocumentApi.matchFrame(referrerUrl);
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            frameRule = DocumentApi.matchFrame(frameUrl);
         } else {
             frameRule = tabsApi.getTabFrameRule(tabId);
         }

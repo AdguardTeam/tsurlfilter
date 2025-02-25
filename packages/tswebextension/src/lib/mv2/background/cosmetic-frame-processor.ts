@@ -8,6 +8,7 @@ import {
     type HandleSubFrameWithUrlProps,
     type HandleMainFrameProps,
 } from '../../common/cosmetic-frame-processor';
+import { DocumentLifecycle } from '../../common/interfaces';
 
 import { documentApi } from './api';
 import { appContext } from './app-context';
@@ -179,9 +180,7 @@ export class CosmeticFrameProcessor {
 
         const mainFrameRule = documentApi.matchFrame(url);
 
-        if (mainFrameRule) {
-            this.tabsApi.updateFrameContext(tabId, frameId, { frameRule: mainFrameRule });
-        }
+        this.tabsApi.setMainFrameRule(tabId, frameId, mainFrameRule);
 
         const result = this.engineApi.matchRequest({
             requestUrl: url,
@@ -231,9 +230,12 @@ export class CosmeticFrameProcessor {
             frameId,
             url,
             parentDocumentId,
+            documentLifecycle,
         } = props;
 
-        const isMainFrame = frameId === MAIN_FRAME_ID;
+        // Prerender main frame request can have other that 0 id.
+        const isMainFrame = (!parentDocumentId && documentLifecycle === DocumentLifecycle.Prerender)
+            || frameId === MAIN_FRAME_ID;
 
         if (isMainFrame) {
             this.handleMainFrame({
@@ -289,8 +291,8 @@ export class CosmeticFrameProcessor {
             return;
         }
 
-        // set in the beginning to let other events know that cosmetic result will be calculated in this event to
-        // avoid double calculation
+        // Set in the beginning to let other events know that cosmetic result
+        // will be calculated in this event to avoid double calculation.
         this.tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
             tabId,
             frameId,
