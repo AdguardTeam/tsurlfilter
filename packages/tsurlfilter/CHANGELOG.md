@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reworked the shortcut extractor for regular expressions. It now correctly handles disjunctions,
   named groups, character classes, and other complex patterns. [AdguardBrowserExtension#3105].
 
+### Removed
+
+- `getText` and `getUsedOptionNames` methods from `NetworkRule` class.
+
 [AdguardBrowserExtension#3105]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3105
 
 ## [3.1.0-alpha.8] - 2025-01-30

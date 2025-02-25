@@ -437,7 +437,7 @@ describe('DeclarativeRuleConverter', () => {
         const networkRule = createNetworkRuleWithNode(regexpRuleText, filterId);
 
         const expectedError = new UnsupportedRegexpError(
-            `Regex is unsupported: "${networkRule.rule.getText()}"`,
+            `Regex is unsupported: "${regexpRuleText}"`,
             networkRule,
             // Note that the declarative rule will be "undefined" due to
             // a conversion error, but this will not prevent error checking
@@ -469,7 +469,7 @@ describe('DeclarativeRuleConverter', () => {
         const networkRule = createNetworkRuleWithNode(regexpRuleText, filterId);
 
         const expectedError = new UnsupportedRegexpError(
-            `Regex is unsupported: "${networkRule.rule.getText()}"`,
+            `Regex is unsupported: "${regexpRuleText}"`,
             networkRule,
             // Note that the declarative rule will be "undefined" due to
             // a conversion error, but this will not prevent error checking
