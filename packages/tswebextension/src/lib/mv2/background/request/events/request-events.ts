@@ -11,6 +11,7 @@ import CookieUtils from '../../services/cookie-filtering/utils';
 import { type TabFrameRequestContextMV2 } from '../../tabs/tabs-api';
 import { isFirefox } from '../../utils';
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
+import { DocumentLifecycle } from '../../../../common/interfaces';
 
 import { RequestEvent, type RequestData } from './request-event';
 
@@ -23,12 +24,29 @@ type ChromiumBrowser = typeof browser & {
     }
 };
 
+export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
+    /**
+     * The UUID of the document making the request.
+     *
+     * TODO: Use this for store matchingResult.
+     */
+    documentId?: string;
+    /**
+     * The document lifecycle of the frame.
+     *
+     * Available from Chrome 106+.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle
+     */
+    documentLifecycle?: DocumentLifecycle
+};
+
 /**
  * Request events class.
  */
 export class RequestEvents {
     public static onBeforeRequest = new RequestEvent<
-        WebRequest.OnBeforeRequestDetailsType,
+        OnBeforeRequestDetailsType,
         WebRequest.OnBeforeRequestOptions
     >();
 
@@ -161,8 +179,8 @@ export class RequestEvents {
      * @returns Request data.
      */
     private static handleOnBeforeRequest(
-        details: WebRequest.OnBeforeRequestDetailsType,
-    ): RequestData<WebRequest.OnBeforeRequestDetailsType> {
+        details: OnBeforeRequestDetailsType,
+    ): RequestData<OnBeforeRequestDetailsType> {
         const {
             requestId,
             type,
@@ -172,6 +190,7 @@ export class RequestEvents {
             initiator,
             method,
             timeStamp,
+            documentLifecycle,
         } = details;
 
         let { url, frameId } = details;
@@ -197,6 +216,7 @@ export class RequestEvents {
         const { requestType, contentType } = getRequestType(type);
 
         const isDocumentRequest = requestType === RequestType.Document;
+        const isPrerenderRequest = documentLifecycle === DocumentLifecycle.Prerender;
 
         // Pre-rendered documents can have a frame ID other than zero
         frameId = isDocumentRequest ? MAIN_FRAME_ID : details.frameId;
@@ -229,13 +249,29 @@ export class RequestEvents {
             });
         }
 
-        const referrerUrl = originUrl
+        // We rely on browser-provided values as the source of truth
+        let referrerUrl = originUrl
             || initiator
-            // Comparison of the requested url with the tab frame url in case of
-            // a navigation change from the browser address bar.
-            || tabsApi.getTabMainFrame(tabId)?.url
-            || tabsApi.getTabFrame(tabId, requestFrameId)?.url
-            || url;
+            || '';
+
+        /**
+         * For prerender document requests, use the request URL itself, because
+         * for prerender request `originUrl` and `initiator` are both undefined.
+         */
+        if (!referrerUrl && isPrerenderRequest && isDocumentRequest) {
+            referrerUrl = url;
+        }
+
+        /**
+         * If we still do not determine referrerUrl, try to extract url from the
+         * tab context or fallback to the request URL.
+         */
+        if (!referrerUrl) {
+            // Try to get referrer from tab state during address bar navigation.
+            referrerUrl = tabsApi.getTabMainFrame(tabId)?.url
+                || tabsApi.getTabFrame(tabId, requestFrameId)?.url
+                || url;
+        }
 
         // Retrieve the rest part of the request context for record all fields.
         const requestContext = requestContextStorage.create(requestId, {

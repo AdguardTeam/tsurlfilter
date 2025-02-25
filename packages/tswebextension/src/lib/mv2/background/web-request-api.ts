@@ -175,6 +175,7 @@
 import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
+import { type DocumentLifecycle } from '../../common/interfaces';
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
@@ -207,6 +208,7 @@ import { SanitizeApi } from './sanitize-api';
 import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs';
 import { isFirefox, isOpera } from './utils/browser-detector';
+import { type OnBeforeRequestDetailsType } from './request/events/request-events';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -215,6 +217,22 @@ export type InjectCosmeticParams = {
     tabId: number,
     timestamp: number,
     url: string,
+};
+
+type OnBeforeNavigateDetailsType = WebNavigation.OnBeforeNavigateDetailsType & {
+    /**
+     * The UUID of the document making the request.
+     * TODO: Use this field instead of generating it in the code.
+     */
+    documentId?: string;
+    /**
+     * The document lifecycle of the frame.
+     *
+     * Available from Chrome 106+.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle
+     */
+    documentLifecycle?: DocumentLifecycle
 };
 
 /**
@@ -296,7 +314,7 @@ export class WebRequestApi {
      * @returns Web request response or void if there is nothing to do.
      */
     private static onBeforeRequest(
-        { context, details }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
+        { context, details }: RequestData<OnBeforeRequestDetailsType>,
     ): WebRequestEventResponse {
         if (!context) {
             return undefined;
@@ -320,6 +338,13 @@ export class WebRequestApi {
             return undefined;
         }
 
+        /**
+         * We use here referrerUrl as frameUrl for all type of requests, because
+         * we have pre-process for this in {@link RequestEvents.handleOnBeforeRequest},
+         * where we can set `referrerUrl` to `requestUrl` for prerender requests.
+         */
+        const frameUrl = referrerUrl;
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.SendRequest,
             data: {
@@ -327,8 +352,8 @@ export class WebRequestApi {
                 eventId,
                 requestUrl,
                 requestDomain: getDomain(requestUrl),
-                frameUrl: referrerUrl,
-                frameDomain: getDomain(referrerUrl),
+                frameUrl,
+                frameDomain: getDomain(frameUrl),
                 requestType: contentType,
                 timestamp,
                 requestThirdParty: thirdParty,
@@ -336,27 +361,33 @@ export class WebRequestApi {
             },
         });
 
-        let frameRule = tabsApi.getTabFrameRule(tabId);
-        // If filtering is disabled for the main frame, we don't need to check the subdocument frame.
-        if (!frameRule?.isFilteringDisabled() && requestType === RequestType.SubDocument) {
-            frameRule = documentApi.matchFrame(referrerUrl);
+        let frameRule;
+
+        /**
+         * For Document and Subdocument requests, we match frame, because
+         * these requests are first (in page lifecycle), but for other requests
+         * we get the frame rule from tabsApi, assuming the frame rule is
+         * already in the tab context.
+         */
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            frameRule = documentApi.matchFrame(frameUrl);
+        } else {
+            frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
-        const result = engineApi.matchRequest({
+        const matchingResult = engineApi.matchRequest({
             requestUrl,
-            frameUrl: referrerUrl,
+            frameUrl,
             requestType,
             frameRule,
             method,
         });
 
-        if (!result) {
+        if (!matchingResult) {
             return undefined;
         }
 
-        requestContextStorage.update(requestId, {
-            matchingResult: result,
-        });
+        requestContextStorage.update(requestId, { matchingResult });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const { parentFrameId } = details;
@@ -365,18 +396,17 @@ export class WebRequestApi {
                 tabId,
                 frameId,
                 parentFrameId,
+                documentId: details.documentId,
                 url: requestUrl,
                 timeStamp: timestamp,
             });
         }
 
-        const basicResult = result.getBasicResult();
-
         // For a $replace rule, response will be undefined since we need to get
         // the response in order to actually apply $replace rules to it.
         const response = RequestBlockingApi.getBlockingResponse({
-            rule: basicResult,
-            popupRule: result.getPopupRule(),
+            rule: matchingResult.getBasicResult(),
+            popupRule: matchingResult.getPopupRule(),
             eventId,
             requestId,
             requestUrl,
@@ -712,12 +742,14 @@ export class WebRequestApi {
      *
      * @param details Event details.
      */
-    private static onBeforeNavigate(details: WebNavigation.OnBeforeNavigateDetailsType): void {
+    private static onBeforeNavigate(details: OnBeforeNavigateDetailsType): void {
         const {
             frameId,
             tabId,
             timeStamp,
             url,
+            documentId,
+            documentLifecycle,
             parentFrameId,
             // supported by Chrome 106+
             // but not supported by Firefox so it is calculated based on tabId and frameId
@@ -725,12 +757,16 @@ export class WebRequestApi {
             parentDocumentId,
         } = details;
 
+        // TODO: Check, should we record this event for filtering log.
+
         cosmeticFrameProcessor.precalculateCosmetics({
             tabId,
             frameId,
             parentFrameId,
             url,
             timeStamp,
+            documentLifecycle,
+            documentId,
             /**
              * Use parentDocumentId if it is defined, otherwise:
              * - if parent frame is a document-level frame, use undefined
