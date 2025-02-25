@@ -152,8 +152,6 @@ If you're using Visual Studio Code for development, it may be easier to work wit
 if you use the workspace functionality.
 To do this, create a `tsurlfilter.code-workspace` file in the monorepo root directory.
 
-`jest.runMode` and `jest.enable` would be useful to those that use [Jest][jestplugin] plugin.
-
 ```json
 {
     "folders": [
@@ -165,12 +163,6 @@ To do this, create a `tsurlfilter.code-workspace` file in the monorepo root dire
         { "path": "packages/examples/adguard-api" },
         { "path": "packages/examples/tswebextension-mv2" },
         { "path": "packages/examples/tswebextension-mv3" }
-    ],
-    "settings": {
-        "jest.runMode": "on-demand",
-        "jest.enable": true
-    }
+    ]
 }
 ```
-
-[jestplugin]: https://marketplace.visualstudio.com/items?itemName=Orta.vscode-jest

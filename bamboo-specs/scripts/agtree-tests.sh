@@ -32,7 +32,7 @@ pnpm --filter @adguard/agtree check-types
 # Check code with ESLint
 pnpm --filter @adguard/agtree lint
 
-# Run tests with Jest
+# Run tests with Vitest
 pnpm --filter @adguard/agtree test
 
 # Run smoke tests

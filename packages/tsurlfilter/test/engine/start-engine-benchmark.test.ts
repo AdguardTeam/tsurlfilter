@@ -9,6 +9,7 @@ import {
 import console from 'console';
 import fs from 'fs';
 import os from 'os';
+import path from 'path';
 import {
     BufferRuleList,
     DnsEngine,
@@ -18,6 +19,9 @@ import {
     RuleStorage,
     setLogger,
 } from '../../src';
+
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
+const __dirname = new URL('.', import.meta.url).pathname;
 
 // TODO: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
 // Time: Tue May 14 2024
@@ -91,7 +95,9 @@ describe('Start Engine Benchmark', () => {
     });
 
     it('starts engine', async () => {
-        const rulesFilePath = './test/resources/adguard_base_filter.txt';
+        // If we run the tests from the Vitest workspace, we need to set the correct path
+        // See https://github.com/vitest-dev/vitest/issues/5277
+        const rulesFilePath = path.join(__dirname, '../resources/adguard_base_filter.txt');
 
         const rawFilterList = await fs.promises.readFile(rulesFilePath, 'utf8');
         const processed = FilterListPreprocessor.preprocess(rawFilterList);
@@ -112,7 +118,9 @@ describe('Start Engine Benchmark', () => {
     });
 
     it('starts network engine', async () => {
-        const rulesFilePath = './test/resources/adguard_base_filter.txt';
+        // If we run the tests from the Vitest workspace, we need to set the correct path
+        // See https://github.com/vitest-dev/vitest/issues/5277
+        const rulesFilePath = path.join(__dirname, '../resources/adguard_base_filter.txt');
 
         const rawFilterList = await fs.promises.readFile(rulesFilePath, 'utf8');
         const processed = FilterListPreprocessor.preprocess(rawFilterList);
@@ -133,8 +141,10 @@ describe('Start Engine Benchmark', () => {
     });
 
     it('starts dns engine', async () => {
-        const rulesFilePath = './test/resources/adguard_sdn_filter.txt';
-        const hostsFilePath = './test/resources/hosts';
+        // If we run the tests from the Vitest workspace, we need to set the correct path
+        // See https://github.com/vitest-dev/vitest/issues/5277
+        const rulesFilePath = path.join(__dirname, '../resources/adguard_sdn_filter.txt');
+        const hostsFilePath = path.join(__dirname, '../resources/hosts');
 
         const rulesText = await fs.promises.readFile(rulesFilePath, 'utf8');
         const rulesProcessed = FilterListPreprocessor.preprocess(rulesText);

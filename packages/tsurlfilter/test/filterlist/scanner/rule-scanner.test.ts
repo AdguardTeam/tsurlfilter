@@ -3,10 +3,14 @@ import { InputByteBuffer } from '@adguard/agtree';
 import escapeStringRegexp from 'escape-string-regexp';
 
 import { readFile } from 'fs/promises';
+import path from 'path';
 import { FilterListPreprocessor, getRuleSourceIndex } from '../../../src';
 import { BufferReader } from '../../../src/filterlist/reader/buffer-reader';
 import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
 import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
+
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
+const __dirname = new URL('.', import.meta.url).pathname;
 
 /**
  * Helper function to get the rule index from the raw filter list by the rule text.
@@ -68,7 +72,9 @@ describe('TestRuleScannerOfBufferReader', () => {
 
 describe('TestRuleScannerOfFileReader', () => {
     it('works if scanner is fine with file reader', async () => {
-        const hostsPath = './test/resources/hosts';
+        // If we run the tests from the Vitest workspace, we need to set the correct path
+        // See https://github.com/vitest-dev/vitest/issues/5277
+        const hostsPath = path.join(__dirname, '../../resources/hosts');
         const content = await readFile(hostsPath, 'utf-8');
         const processed = FilterListPreprocessor.preprocess(content, true);
         const reader = new BufferReader(new InputByteBuffer(processed.filterList));
