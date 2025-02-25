@@ -23,7 +23,7 @@ describe('MatchingResult constructor', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        expect(basicResult!.getText()).toEqual(ruleText);
+        expect(basicResult).toMatchNetworkRule(createNetworkRule(ruleText, 0));
     });
 
     it('works if allowlist rule is found', () => {
@@ -41,7 +41,7 @@ describe('MatchingResult constructor', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        expect(basicResult!.getText()).toEqual(sourceRuleText);
+        expect(basicResult).toMatchNetworkRule(createNetworkRule(sourceRuleText, 0));
     });
 
     it('works if document-level rule has lower priority than basic rule', () => {
@@ -58,7 +58,7 @@ describe('MatchingResult constructor', () => {
         expect(result.documentRule).toBeTruthy();
 
         const basicResult = result.getBasicResult();
-        expect(basicResult!.getText()).toEqual(ruleText);
+        expect(basicResult).toMatchNetworkRule(createNetworkRule(ruleText, 0));
     });
 
     it('works if allowlist document-level rule is found', () => {
@@ -76,7 +76,7 @@ describe('MatchingResult constructor', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        expect(basicResult!.getText()).toEqual(sourceRuleText);
+        expect(basicResult).toMatchNetworkRule(createNetworkRule(sourceRuleText, 0));
     });
 
     it('works if allowlist non-document-level rule is not found', () => {
@@ -285,7 +285,7 @@ describe('MatchingResult constructor handling badfilter modifier', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        expect(basicResult!.getText()).toEqual('||example.org^');
+        expect(basicResult).toMatchNetworkRule(createNetworkRule('||example.org^', 0));
     });
 
     it('checks badfilter for a distinct domain', () => {
@@ -337,7 +337,7 @@ describe('MatchingResult constructor handling csp rules', () => {
         expect(result).toBeTruthy();
         const cspRules = result.getCspRules();
         expect(cspRules.length).toBe(1);
-        expect(cspRules[0].getText()).toBe(cspRule);
+        expect(cspRules[0]).toMatchNetworkRule(createNetworkRule(cspRule, 0));
     });
 
     it('works if csp directive allowlist rule is found', () => {
@@ -350,7 +350,7 @@ describe('MatchingResult constructor handling csp rules', () => {
         expect(result).toBeTruthy();
         const cspRules = result.getCspRules();
         expect(cspRules.length).toBe(1);
-        expect(cspRules[0].getText()).toBe(directiveAllowlistRule);
+        expect(cspRules[0]).toMatchNetworkRule(createNetworkRule(directiveAllowlistRule, 0));
     });
 
     it('works if csp global allowlist rule is found', () => {
@@ -364,7 +364,7 @@ describe('MatchingResult constructor handling csp rules', () => {
         expect(result).toBeTruthy();
         const cspRules = result.getCspRules();
         expect(cspRules.length).toBe(1);
-        expect(cspRules[0].getText()).toBe(globalAllowlistRule);
+        expect(cspRules[0]).toMatchNetworkRule(createNetworkRule(globalAllowlistRule, 0));
     });
 
     it('works if csp wrong directive allowlist rule is not found', () => {
@@ -377,7 +377,7 @@ describe('MatchingResult constructor handling csp rules', () => {
         expect(result).toBeTruthy();
         const cspRules = result.getCspRules();
         expect(cspRules.length).toBe(1);
-        expect(cspRules[0].getText()).toBe(cspRule);
+        expect(cspRules[0]).toMatchNetworkRule(createNetworkRule(cspRule, 0));
     });
 });
 
@@ -398,7 +398,7 @@ describe('MatchingResult constructor handling $permissions rules', () => {
 
         const permissionsRules = matchingResult.getPermissionsPolicyRules();
         expect(permissionsRules.length).toBe(1);
-        expect(permissionsRules[0].getText()).toBe(expectedRules[0].getText());
+        expect(permissionsRules[0]).toEqual(expectedRules[0]);
     });
 
     it('finds global allowlist rule', () => {
@@ -538,7 +538,7 @@ describe('MatchingResult constructor handling replace rules', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        expect(basicResult!.getText()).toEqual('@@||example.org^$content');
+        expect(basicResult).toMatchNetworkRule(createNetworkRule(ruleTexts[1], 0));
     });
 
     it('work if @@||example.org^$document will be found', () => {
@@ -557,8 +557,8 @@ describe('MatchingResult constructor handling replace rules', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
-        expect(basicResult!.getText()).toEqual('@@||example.org^$document');
-        expect(result.cosmeticExceptionRule!.getText()).toEqual('@@||example.org^$document');
+        expect(basicResult).toMatchNetworkRule(createNetworkRule(ruleTexts[1], 0));
+        expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(ruleTexts[1], 0));
     });
 
     it('checks only $document and $content rules disable $replace', () => {
@@ -594,8 +594,8 @@ describe('MatchingResult constructor handling cookie rules', () => {
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(rules.length);
-        expect(cookieRules[0].getText()).toBe(cookieRuleTextOne);
-        expect(cookieRules[1].getText()).toBe(cookieRuleTextTwo);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(cookieRuleTextOne, 0));
+        expect(cookieRules[1]).toMatchNetworkRule(createNetworkRule(cookieRuleTextTwo, 0));
     });
 
     it('works if cookie allowlist rule is ok', () => {
@@ -609,8 +609,8 @@ describe('MatchingResult constructor handling cookie rules', () => {
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(3);
-        expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistTextOne);
-        expect(cookieRules[1].getText()).toBe(cookieRuleTextTwo);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(cookieRuleAllowlistTextOne, 0));
+        expect(cookieRules[1]).toMatchNetworkRule(createNetworkRule(cookieRuleTextTwo, 0));
     });
 
     it('works if cookie allowlist rule is ok', () => {
@@ -625,8 +625,8 @@ describe('MatchingResult constructor handling cookie rules', () => {
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(4);
-        expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistTextOne);
-        expect(cookieRules[1].getText()).toBe(cookieRuleAllowlistTextTwo);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(cookieRuleAllowlistTextOne, 0));
+        expect(cookieRules[1]).toMatchNetworkRule(createNetworkRule(cookieRuleAllowlistTextTwo, 0));
     });
 
     it('works if cookie allowlist all rule is ok', () => {
@@ -642,7 +642,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(4);
-        expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistText);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(cookieRuleAllowlistText, 0));
     });
 
     it('works if cookie allowlist regexp rule is ok', () => {
@@ -657,8 +657,8 @@ describe('MatchingResult constructor handling cookie rules', () => {
         expect(result).toBeTruthy();
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(4);
-        expect(cookieRules[0].getText()).toBe(cookieRuleAllowlistTextOne);
-        expect(cookieRules[1].getText()).toBe(cookieRuleAllowlistRegexpText);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(cookieRuleAllowlistTextOne, 0));
+        expect(cookieRules[1]).toMatchNetworkRule(createNetworkRule(cookieRuleAllowlistRegexpText, 0));
     });
 
     it('returns empty list if document allowlist rule added', () => {
@@ -683,7 +683,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(2);
-        expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(importBlockingRuleText, 0));
     });
 
     it('checks $cookie rule is negated by regex allowlist', () => {
@@ -697,7 +697,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(2);
-        expect(cookieRules[0].getText()).toBe(allowlistRuleText);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(allowlistRuleText, 0));
     });
 
     it('checks $cookie-$important rule negates regex allowlist', () => {
@@ -710,7 +710,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(2);
-        expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(importBlockingRuleText, 0));
     });
 
     it('respects $cookie-$important rules - empty option', () => {
@@ -723,7 +723,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(2);
-        expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(importBlockingRuleText, 0));
     });
 
     it('respects $cookie-$important rules - allowlist empty option', () => {
@@ -736,7 +736,7 @@ describe('MatchingResult constructor handling cookie rules', () => {
         const result = new MatchingResult(rules, null);
         const cookieRules = result.getCookieRules();
         expect(cookieRules).toHaveLength(2);
-        expect(cookieRules[0].getText()).toBe(importBlockingRuleText);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(importBlockingRuleText, 0));
     });
 });
 
@@ -754,7 +754,7 @@ describe('MatchingResult constructor handling stealth modifier', () => {
 
         const stealthRule = result.getStealthRule();
         expect(stealthRule).toBe(rule);
-        expect(stealthRule?.getText()).toBe(ruleText);
+        expect(stealthRule).toMatchNetworkRule(createNetworkRule(ruleText, 0));
     });
 
     it('manages stealth rules with single and multiple options', () => {
@@ -794,11 +794,11 @@ describe('MatchingResult constructor handling stealth modifier', () => {
 
         expect(result).toBeTruthy();
         expect(result.basicRule).not.toBeNull();
-        expect(result.basicRule!.getText()).toBe(ruleText);
+        expect(result.basicRule).toMatchNetworkRule(createNetworkRule(ruleText, 0));
         expect(result.documentRule).toBeNull();
         expect(result.stealthRules).not.toBeNull();
         const rule = result.stealthRules![0];
-        expect(rule.getText()).toBe(stealthRuleText);
+        expect(rule).toMatchNetworkRule(createNetworkRule(stealthRuleText, 0));
     });
 });
 
@@ -812,7 +812,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const result = new MatchingResult(rules, null);
         const resultRule = result.getBasicResult();
         expect(resultRule).toBeTruthy();
-        expect(resultRule!.getText()).toBe('||8s8.eu^*fa.js$script,redirect=noopjs');
+        expect(resultRule).toMatchNetworkRule(createNetworkRule('||8s8.eu^*fa.js$script,redirect=noopjs', 0));
     });
 
     it('works if allowlisted redirect rule with same option is omitted', () => {
@@ -827,7 +827,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const result = new MatchingResult(rules, null);
         const resultRule = result.getBasicResult();
         expect(resultRule).toBeTruthy();
-        expect(resultRule!.getText()).toBe('||ya.ru$redirect=2x2-transparent.png,image');
+        expect(resultRule).toMatchNetworkRule(createNetworkRule('||ya.ru$redirect=2x2-transparent.png,image', 0));
     });
 
     it('works if allowlist rule omit all resource types', () => {
@@ -854,7 +854,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const result = new MatchingResult(rules, null);
         const resultRule = result.getBasicResult();
         expect(resultRule).toBeTruthy();
-        expect(resultRule!.getText()).toBe('||ya.ru$redirect=1x1-transparent.gif');
+        expect(resultRule).toMatchNetworkRule(createNetworkRule('||ya.ru$redirect=1x1-transparent.gif', 0));
     });
 
     it('checks that it is possible to exclude all redirects with `@@$redirect` rule', () => {
@@ -883,7 +883,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
-        expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document');
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule('@@||ya.ru$document', 0));
     });
 
     it('checks that it is possible to exclude all redirects with important allowlist rule', () => {
@@ -897,7 +897,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
-        expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document,important');
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule('@@||ya.ru$document,important', 0));
     });
 
     it('checks that important redirect rule negates allowlist rule', () => {
@@ -911,7 +911,9 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
-        expect(result.getBasicResult()!.getText()).toBe('||ya.ru$redirect=2x2-transparent.png,important');
+        expect(result.getBasicResult()).toMatchNetworkRule(
+            createNetworkRule('||ya.ru$redirect=2x2-transparent.png,important', 0),
+        );
     });
 
     it('checks that important allowlist rule negates important redirect rule', () => {
@@ -925,7 +927,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
-        expect(result.getBasicResult()!.getText()).toBe('@@||ya.ru$document,important');
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule('@@||ya.ru$document,important', 0));
     });
 
     it('checks that common allowlist rule negates redirect rule without $important', () => {
@@ -937,7 +939,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
-        expect(result.getBasicResult()!.getText()).toBe('@@||*/redirect-exception-test.js');
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule('@@||*/redirect-exception-test.js', 0));
     });
 
     it('checks that common allowlist rule not negates redirect rule with $important', () => {
@@ -949,7 +951,9 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
-        expect(result.getBasicResult()!.getText()).toBe('||*/redirect-exception-test.js$redirect=noopjs,important');
+        expect(result.getBasicResult()).toEqual(
+            createNetworkRule('||*/redirect-exception-test.js$redirect=noopjs,important', 0),
+        );
     });
 
     it('checks that common allowlist rule with $important negates redirect rule', () => {
@@ -961,7 +965,9 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const rules = ruleTexts.map((rule) => createNetworkRule(rule, 0));
 
         const result = new MatchingResult(rules, null);
-        expect(result.getBasicResult()!.getText()).toBe('@@||*/redirect-exception-test.js$important');
+        expect(result.getBasicResult()).toMatchNetworkRule(
+            createNetworkRule('@@||*/redirect-exception-test.js$important', 0),
+        );
     });
 
     it('checks that redirect allowlist rule negates redirect rule', () => {
@@ -987,7 +993,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
         const result = new MatchingResult(rules, null);
         const resultRule = result.getBasicResult();
         expect(resultRule).toBeTruthy();
-        expect(resultRule!.getText()).toBe('*$script,redirect-rule=noopjs,domain=example.org');
+        expect(resultRule).toMatchNetworkRule(createNetworkRule('*$script,redirect-rule=noopjs,domain=example.org', 0));
     });
 
     it('checks if redirect and redirect-rule modifiers are ok together', () => {
@@ -1001,7 +1007,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
         const result = new MatchingResult(rules, null);
         const found = result.getBasicResult();
         expect(found).not.toBeNull();
-        expect(found!.getText()).toBe('||example.org^$redirect=noopjs');
+        expect(found).toMatchNetworkRule(createNetworkRule('||example.org^$redirect=noopjs', 0));
     });
 
     it('checks if redirect and redirect-rule modifiers are ok together with blocking rule', () => {
@@ -1016,7 +1022,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
         const result = new MatchingResult(rules, null);
         const found = result.getBasicResult();
         expect(found).not.toBeNull();
-        expect(found!.getText()).toBe('||example.org^$redirect=noopjs');
+        expect(found).toMatchNetworkRule(createNetworkRule('||example.org^$redirect=noopjs', 0));
     });
 
     it('checks if redirect and redirect-rule modifiers are ok together with different priorities', () => {
@@ -1035,7 +1041,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
         const result = new MatchingResult(rules, null);
         const found = result.getBasicResult();
         expect(found).not.toBeNull();
-        expect(found!.getText()).toBe('||ya.ru$redirect=nooptext,image');
+        expect(found).toMatchNetworkRule(createNetworkRule('||ya.ru$redirect=nooptext,image', 0));
     });
 
     it('returns redirect-rule if there is blocking rule', () => {
@@ -1078,8 +1084,8 @@ describe('MatchingResult constructor handling removeparam rules', () => {
         const result = new MatchingResult(rules, null);
         const found = result.getRemoveParamRules();
         expect(found.length).toBe(2);
-        expect(found.filter((x) => x.getText() === '||example.org^$removeparam=p0')).toHaveLength(1);
-        expect(found.filter((x) => x.getText() === '@@||example.org^$removeparam=p1')).toHaveLength(1);
+        expect(found.filter((x) => x.getAdvancedModifier()?.getValue() === 'p0')).toHaveLength(1);
+        expect(found.filter((x) => x.getAdvancedModifier()?.getValue() === 'p1')).toHaveLength(1);
     });
 
     it('works if important removeparam rule is more important than allowlist rule', () => {
@@ -1093,7 +1099,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
         const result = new MatchingResult(rules, null);
         const found = result.getRemoveParamRules();
         expect(found.length).toBe(1);
-        expect(found.filter((x) => x.getText() === '||example.org$important,removeparam=p1')).toHaveLength(1);
+        expect(found.filter((x) => x.getAdvancedModifier()?.getValue() === 'p1')).toHaveLength(1);
     });
 
     it('work if @@||example.org^$removeparam will disable all $removeparam rules matching ||example.org^.', () => {
@@ -1108,7 +1114,7 @@ describe('MatchingResult constructor handling removeparam rules', () => {
 
         const found = result.getRemoveParamRules();
         expect(found.length).toBe(1);
-        expect(found[0].getText()).toBe(allowlistRule);
+        expect(found[0]).toMatchNetworkRule(createNetworkRule(allowlistRule, 0));
     });
 
     it('works if inverted removeparam rule is found', () => {
@@ -1173,7 +1179,7 @@ describe('MatchingResult constructor handling removeheader rules', () => {
 
         const found = result.getRemoveHeaderRules();
         expect(found.length).toBe(1);
-        expect(found[0].getText()).toBe(allowlistRule);
+        expect(found[0]).toMatchNetworkRule(createNetworkRule(allowlistRule, 0));
     });
 
     it('work if document allowlist rule will disable all $removeheader rules ', () => {
@@ -1224,9 +1230,9 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
         let rules = [createNetworkRule(basicRuleText, 0), createNetworkRule(cosmeticExceptionRuleText, 0)];
         let result = new MatchingResult(rules, null);
 
-        expect(result.basicRule?.getText()).toBe(basicRuleText);
+        expect(result.basicRule).toMatchNetworkRule(createNetworkRule(basicRuleText, 0));
 
-        expect(result.cosmeticExceptionRule?.getText()).toBe(cosmeticExceptionRuleText);
+        expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(cosmeticExceptionRuleText, 0));
         expect(result.getCosmeticOption()).toEqual(
             CosmeticOption.CosmeticOptionSpecificCSS
             | CosmeticOption.CosmeticOptionJS
@@ -1239,8 +1245,8 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
         rules = [createNetworkRule(basicRuleText, 0), createNetworkRule(cosmeticExceptionRuleText, 0)];
         result = new MatchingResult(rules, null);
 
-        expect(result.basicRule?.getText()).toBe(basicRuleText);
-        expect(result.cosmeticExceptionRule?.getText()).toBe(cosmeticExceptionRuleText);
+        expect(result.basicRule).toMatchNetworkRule(createNetworkRule(basicRuleText, 0));
+        expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(cosmeticExceptionRuleText, 0));
         expect(result.getCosmeticOption()).toEqual(
             CosmeticOption.CosmeticOptionGenericCSS
             | CosmeticOption.CosmeticOptionJS
@@ -1253,8 +1259,8 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
         rules = [createNetworkRule(basicRuleText, 0), createNetworkRule(cosmeticExceptionRuleText, 0)];
         result = new MatchingResult(rules, null);
 
-        expect(result.basicRule?.getText()).toBe(basicRuleText);
-        expect(result.cosmeticExceptionRule?.getText()).toBe(cosmeticExceptionRuleText);
+        expect(result.basicRule).toMatchNetworkRule(createNetworkRule(basicRuleText, 0));
+        expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(cosmeticExceptionRuleText, 0));
         expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionJS | CosmeticOption.CosmeticOptionHtml);
     });
 
@@ -1270,9 +1276,9 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
         ];
         const result = new MatchingResult(rules, null);
 
-        expect(result.basicRule?.getText()).toBe(basicRuleText);
+        expect(result.basicRule).toMatchNetworkRule(createNetworkRule(basicRuleText, 0));
 
-        expect(result.cosmeticExceptionRule?.getText()).toBe(mixedRule);
+        expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(mixedRule, 0));
         expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionHtml);
     });
 
@@ -1281,9 +1287,9 @@ describe('MatchingResult constructor handling cosmetic exception rules', () => {
 
         const result = new MatchingResult([createNetworkRule(rule, 0)], null);
 
-        expect(result.basicRule?.getText()).toBe(rule);
+        expect(result.basicRule).toMatchNetworkRule(createNetworkRule(rule, 0));
 
-        expect(result.cosmeticExceptionRule?.getText()).toBe(rule);
+        expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(rule, 0));
         expect(result.getCosmeticOption()).toEqual(CosmeticOption.CosmeticOptionNone);
     });
 });
@@ -1306,7 +1312,7 @@ describe('getResponseHeadersResult', () => {
         const matchingResult = new MatchingResult(rules, null);
         const headersResult = matchingResult.getResponseHeadersResult(responseHeaders);
         expect(headersResult).toBeTruthy();
-        expect(headersResult?.getText()).toBe(matchingRule);
+        expect(headersResult).toMatchNetworkRule(createNetworkRule(matchingRule, 0));
     });
 
     it('returns null if no rules are found', () => {
@@ -1417,6 +1423,6 @@ describe('getResponseHeadersResult', () => {
 
         const matchingResult = new MatchingResult(rules, null);
         const headersResult = matchingResult.getResponseHeadersResult(responseHeaders);
-        expect(headersResult?.getText()).toBe('||example.org$header=$header=etag:y,important');
+        expect(headersResult).toMatchNetworkRule(createNetworkRule('||example.org$header=$header=etag:y,important', 0));
     });
 });
