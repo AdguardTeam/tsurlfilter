@@ -29,7 +29,7 @@ pnpm --filter @adguard/css-tokenizer check-types
 # ESLint & Markdownlint
 pnpm --filter @adguard/css-tokenizer lint
 
-# Run tests with Jest
+# Run tests with Vitest
 pnpm --filter @adguard/css-tokenizer test
 
 echo "@adguard/css-tokenizer tests completed"
