@@ -51,7 +51,7 @@ export class StealthService {
     /**
      * Required permissions for the stealth options related to browser settings.
      */
-    private static readonly REQUIRED_PERMISSIONS = ['privacy'];
+    private static readonly REQUIRED_PERMISSIONS: chrome.runtime.ManifestPermissions[] = ['privacy'];
 
     /**
      * Scope of the applied browser setting related to the stealth options.
@@ -603,7 +603,10 @@ export class StealthService {
             const setting = chrome.privacy.network.webRTCIPHandlingPolicy;
 
             if (isWebRTCDisabled) {
-                await StealthService.setSetting(setting, 'disable_non_proxied_udp');
+                await StealthService.setSetting(
+                    setting,
+                    chrome.privacy.IPHandlingPolicy.DISABLE_NON_PROXIED_UDP,
+                );
             } else {
                 await StealthService.clearSetting(setting);
             }
@@ -632,24 +635,13 @@ export class StealthService {
      *
      * @throws Error if the setting is not controllable or controlled by other extensions.
      */
-    private static async setSetting(
-        setting: chrome.types.ChromeSetting,
-        value: unknown,
+    private static async setSetting<T>(
+        setting: chrome.types.ChromeSetting<T>,
+        value: T,
     ): Promise<void> {
         await StealthService.validateLevelOfControl(setting);
 
-        return new Promise((resolve, reject) => {
-            setting.set({
-                value,
-                scope: StealthService.SETTING_SCOPE,
-            }, () => {
-                if (chrome.runtime.lastError) {
-                    reject(chrome.runtime.lastError);
-                } else {
-                    resolve();
-                }
-            });
-        });
+        return setting.set({ value, scope: StealthService.SETTING_SCOPE });
     }
 
     /**
@@ -661,18 +653,11 @@ export class StealthService {
      *
      * @throws Error if something went wrong.
      */
-    private static async getSetting(
-        setting: chrome.types.ChromeSetting,
-    ): Promise<chrome.types.ChromeSettingGetResultDetails> {
-        return new Promise((resolve, reject) => {
-            setting.get({}, (details) => {
-                if (chrome.runtime.lastError) {
-                    reject(chrome.runtime.lastError);
-                } else {
-                    resolve(details);
-                }
-            });
-        });
+    private static async getSetting<T>(
+        setting: chrome.types.ChromeSetting<T>,
+    ): Promise<chrome.types.ChromeSettingGetResult<T>> {
+        // TODO: Check, should we use ChromeSettingGetDetails.incognito flag?
+        return setting.get({});
     }
 
     /**
@@ -684,22 +669,12 @@ export class StealthService {
      *
      * @throws Error if something went wrong.
      */
-    private static async clearSetting(
-        setting: chrome.types.ChromeSetting,
+    private static async clearSetting<T>(
+        setting: chrome.types.ChromeSetting<T>,
     ): Promise<void> {
         await StealthService.validateLevelOfControl(setting);
 
-        return new Promise((resolve, reject) => {
-            setting.clear({
-                scope: StealthService.SETTING_SCOPE,
-            }, () => {
-                if (chrome.runtime.lastError) {
-                    reject(chrome.runtime.lastError);
-                } else {
-                    resolve();
-                }
-            });
-        });
+        return setting.clear({ scope: StealthService.SETTING_SCOPE });
     }
 
     /**
@@ -709,8 +684,8 @@ export class StealthService {
      *
      * @throws Error, if setting is not controllable.
      */
-    private static async validateLevelOfControl(
-        setting: chrome.types.ChromeSetting,
+    private static async validateLevelOfControl<T>(
+        setting: chrome.types.ChromeSetting<T>,
     ): Promise<void> {
         const { levelOfControl } = await StealthService.getSetting(setting);
 
