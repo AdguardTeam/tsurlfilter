@@ -146,8 +146,8 @@ export class FilterListPreprocessor {
                     outputOffset += ruleText.length + lineBreakLength;
                 }
             } catch (error: unknown) {
-                // If error level is used, an error will be thrown in browser extension (AG-37460),
-                // that's why info level is used
+                // TODO: Integrate Logger library to be able to set log level AG-40234
+                // Log issues just as an info AG-37460
                 logger.info(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
 
                 // Add invalid rules as is to the converted filter list,
@@ -215,7 +215,9 @@ export class FilterListPreprocessor {
                     RuleSerializer.serialize(ruleNode, filterList);
                 }
             } catch (error: unknown) {
-                logger.error(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
+                // TODO: Integrate Logger library to be able to set log level AG-40234
+                // Log issues just as an info AG-37460
+                logger.info(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
             }
 
             outputOffset += ruleText.length + lineBreakLength;

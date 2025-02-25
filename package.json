@@ -20,7 +20,8 @@
     "clean": "lerna clean -y && rm -rf node_modules"
   },
   "devDependencies": {
-    "lerna": "8.1.8"
+    "lerna": "8.1.8",
+    "vitest": "^2.1.9"
   },
   "pnpm": {
     "overrides": {

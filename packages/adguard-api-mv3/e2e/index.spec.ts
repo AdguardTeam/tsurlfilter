@@ -1,3 +1,11 @@
+import {
+    describe,
+    beforeAll,
+    it,
+    expect,
+    vi,
+} from 'vitest';
+
 describe('Adguard API MV3', () => {
     beforeAll(() => {
         /**
@@ -11,7 +19,14 @@ describe('Adguard API MV3', () => {
             value: {
                 runtime: {
                     id: 'test',
-                    getManifest: jest.fn(() => ({ manifest_version: 3 })),
+                    getManifest: vi.fn(() => ({ manifest_version: 3 })),
+                },
+                storage: {
+                    // mock a dummy session storage API for tswebextension
+                    session: {
+                        get: vi.fn(async () => Promise.resolve({})),
+                        set: vi.fn(async () => Promise.resolve()),
+                    },
                 },
             },
         });
@@ -21,6 +36,8 @@ describe('Adguard API MV3', () => {
      * We expect the library to be imported in any browser extension context, not just the service worker.
      */
     it('Should not throw error on import outside of service worker', async () => {
+        // @ts-expect-error(2307)
+        // eslint-disable-next-line import/extensions
         const { AdguardApi } = await import('../dist/adguard-api');
         const adguardApi = await AdguardApi.create();
 
