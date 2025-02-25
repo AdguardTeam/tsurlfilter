@@ -743,8 +743,8 @@ importers:
         specifier: ^6.0.2
         version: 6.0.3
       '@types/chrome':
-        specifier: ^0.0.296
-        version: 0.0.296
+        specifier: ^0.0.305
+        version: 0.0.305
       '@types/webextension-polyfill':
         specifier: ^0.10.7
         version: 0.10.7
@@ -825,8 +825,8 @@ importers:
         specifier: ^6.0.2
         version: 6.0.3
       '@types/chrome':
-        specifier: ^0.0.296
-        version: 0.0.296
+        specifier: ^0.0.305
+        version: 0.0.305
       '@types/webextension-polyfill':
         specifier: ^0.12.0
         version: 0.12.1
@@ -919,8 +919,8 @@ importers:
         specifier: ^1.3.76
         version: 1.10.18(@swc/helpers@0.5.15)
       '@types/chrome':
-        specifier: ^0.0.263
-        version: 0.0.263
+        specifier: ^0.0.305
+        version: 0.0.305
       '@types/react':
         specifier: ^17.0.80
         version: 17.0.83
@@ -1019,8 +1019,8 @@ importers:
         specifier: ^1.3.76
         version: 1.10.18(@swc/helpers@0.5.15)
       '@types/chrome':
-        specifier: ^0.0.260
-        version: 0.0.260
+        specifier: ^0.0.305
+        version: 0.0.305
       '@types/fs-extra':
         specifier: ^11.0.1
         version: 11.0.4
@@ -1217,9 +1217,12 @@ importers:
       '@swc/core':
         specifier: 1.4.8
         version: 1.4.8
+      '@swc/jest':
+        specifier: 0.2.36
+        version: 0.2.36(@swc/core@1.4.8)
       '@types/chrome':
-        specifier: ^0.0.268
-        version: 0.0.268
+        specifier: ^0.0.305
+        version: 0.0.305
       '@types/ip6addr':
         specifier: 0.2.3
         version: 0.2.3
@@ -1359,7 +1362,7 @@ importers:
         specifier: 2.11.0
         version: 2.11.0
       chrome-types:
-        specifier: ^0.1.307
+        specifier: ^0.1.342
         version: 0.1.342
       commander:
         specifier: 11.0.0
@@ -1420,8 +1423,8 @@ importers:
         specifier: ^1.10.1
         version: 1.10.18(@swc/helpers@0.5.15)
       '@types/chrome':
-        specifier: ^0.0.287
-        version: 0.0.287
+        specifier: ^0.0.305
+        version: 0.0.305
       '@types/fs-extra':
         specifier: ^11.0.1
         version: 11.0.4
@@ -2732,11 +2735,30 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
+  /@jest/create-cache-key-function@29.7.0:
+    resolution: {integrity: sha512-4QqS3LY5PBmTRHj9sAg1HLoPzqAI0uOX6wI/TRqHIcOxlFidy6YEmCQJk6FSZjNLGCeubDMfmkWL+qaLKhSGQA==}
+    engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    dependencies:
+      '@jest/types': 29.6.3
+    dev: true
+
   /@jest/schemas@29.6.3:
     resolution: {integrity: sha512-mo5j5X+jIZmJQveBKeS/clAueipV7KgiX1vMgCxam1RNYiqE1w62n0/tJJnHtjW8ZHcQco5gY85jA3mi0L+nSA==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
     dependencies:
       '@sinclair/typebox': 0.27.8
+    dev: true
+
+  /@jest/types@29.6.3:
+    resolution: {integrity: sha512-u3UPsIilWKOM3F9CXtrG8LEJmNxwoCQC/XVj4IKYXvvpx7QIi/Kg1LI5uDmDpKlac62NUtX7eLjRh+jVZcLOzw==}
+    engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+    dependencies:
+      '@jest/schemas': 29.6.3
+      '@types/istanbul-lib-coverage': 2.0.6
+      '@types/istanbul-reports': 3.0.4
+      '@types/node': 20.17.19
+      '@types/yargs': 17.0.33
+      chalk: 4.1.2
     dev: true
 
   /@jridgewell/gen-mapping@0.3.8:
@@ -4374,6 +4396,18 @@ packages:
       tslib: 2.8.1
     dev: true
 
+  /@swc/jest@0.2.36(@swc/core@1.4.8):
+    resolution: {integrity: sha512-8X80dp81ugxs4a11z1ka43FPhP+/e+mJNXJSxiNYk8gIX/jPBtY4gQTrKu/KIoco8bzKuPI5lUxjfLiGsfvnlw==}
+    engines: {npm: '>= 7.0.0'}
+    peerDependencies:
+      '@swc/core': '*'
+    dependencies:
+      '@jest/create-cache-key-function': 29.7.0
+      '@swc/core': 1.4.8
+      '@swc/counter': 0.1.3
+      jsonc-parser: 3.3.1
+    dev: true
+
   /@swc/types@0.1.17:
     resolution: {integrity: sha512-V5gRru+aD8YVyCOMAjMpWR1Ui577DD5KSJsHP8RAxopAH22jFz6GZd/qxqjO6MJHQhcsjvjOFXyDhyLQUnMveQ==}
     dependencies:
@@ -4437,36 +4471,8 @@ packages:
     resolution: {integrity: sha512-cKio2eFB3v7qmKcvIHLUMw/dIx/8bhWPuzpzRT4unCPRTD8VdA9Zb0afxpcxOqR4PixRS7yT42FqGS8BYL8g1w==}
     dev: true
 
-  /@types/chrome@0.0.260:
-    resolution: {integrity: sha512-lX6QpgfsZRTDpNcCJ+3vzfFnFXq9bScFRTlfhbK5oecSAjamsno+ejFTCbNtc5O/TPnVK9Tja/PyecvWQe0F2w==}
-    dependencies:
-      '@types/filesystem': 0.0.36
-      '@types/har-format': 1.2.16
-    dev: true
-
-  /@types/chrome@0.0.263:
-    resolution: {integrity: sha512-As0vzv99ov3M6ZR7R6VzhMWFZXkPMrFrCEXXVrMN576Cm70fTkj7Df2CF+qEo170JepX50pd11cX6O4DSAtl2Q==}
-    dependencies:
-      '@types/filesystem': 0.0.36
-      '@types/har-format': 1.2.16
-    dev: true
-
-  /@types/chrome@0.0.268:
-    resolution: {integrity: sha512-7N1QH9buudSJ7sI8Pe4mBHJr5oZ48s0hcanI9w3wgijAlv1OZNUZve9JR4x42dn5lJ5Sm87V1JNfnoh10EnQlA==}
-    dependencies:
-      '@types/filesystem': 0.0.36
-      '@types/har-format': 1.2.16
-    dev: true
-
-  /@types/chrome@0.0.287:
-    resolution: {integrity: sha512-wWhBNPNXZHwycHKNYnexUcpSbrihVZu++0rdp6GEk5ZgAglenLx+RwdEouh6FrHS0XQiOxSd62yaujM1OoQlZQ==}
-    dependencies:
-      '@types/filesystem': 0.0.36
-      '@types/har-format': 1.2.16
-    dev: true
-
-  /@types/chrome@0.0.296:
-    resolution: {integrity: sha512-EWVcJlIXi2PzKfnzOXkIfySMFkdOQ6DiKkhbuHeuvTxOcVYeUBXbfiExSJ5EDS4M0gAChO/15tDHqMWP47muYw==}
+  /@types/chrome@0.0.305:
+    resolution: {integrity: sha512-bTdl6Co33lKk4jktVfpYgtrrAiHIipwaiQKaytPSn3DQx4ACz+MbtNK6JXicIxHyuzV6S3RcyGICsR8fEZ9M0g==}
     dependencies:
       '@types/filesystem': 0.0.36
       '@types/har-format': 1.2.16
@@ -4586,6 +4592,22 @@ packages:
 
   /@types/ip6addr@0.2.3:
     resolution: {integrity: sha512-oe7hzc+P9DU6+gql8+bLKuUf4WL4aakyCSXZMZq2cjhhGK75qYwH1zJ4s94XOlnb4cAhrGKwnbrmMBaqDK8+Ww==}
+    dev: true
+
+  /@types/istanbul-lib-coverage@2.0.6:
+    resolution: {integrity: sha512-2QF/t/auWm0lsy8XtKVPG19v3sSOQlJe/YHZgfjb/KBBHOGSV+J2q/S671rcq9uTBrLAXmZpqJiaQbMT+zNU1w==}
+    dev: true
+
+  /@types/istanbul-lib-report@3.0.3:
+    resolution: {integrity: sha512-NQn7AHQnk/RSLOxrBbGyJM/aVQ+pjj5HCgasFxc0K/KhoATfQ/47AyUl15I2yBUpihjmas+a+VJBOqecrFH+uA==}
+    dependencies:
+      '@types/istanbul-lib-coverage': 2.0.6
+    dev: true
+
+  /@types/istanbul-reports@3.0.4:
+    resolution: {integrity: sha512-pk2B1NWalF9toCRu6gjBzR69syFjP4Od8WRAX+0mmf9lAjCRicLOWc+ZrxZHx/0XRjotgkF9t6iaMJ+aXcOdZQ==}
+    dependencies:
+      '@types/istanbul-lib-report': 3.0.3
     dev: true
 
   /@types/js-yaml@4.0.9:
@@ -4745,7 +4767,7 @@ packages:
   /@types/sinon-chrome@2.2.11:
     resolution: {integrity: sha512-hmpjlIDwIi8LLYdzZMh9+oj6k4mM7hD3dEC2a5vzYbNvIEIqDLxED8WhfroqLzLHLYV3ni5N1fLOEF0fmaFpqA==}
     dependencies:
-      '@types/chrome': 0.0.287
+      '@types/chrome': 0.0.305
       '@types/sinon': 17.0.3
     dev: true
 
@@ -4781,6 +4803,16 @@ packages:
 
   /@types/webextension-polyfill@0.12.1:
     resolution: {integrity: sha512-xPTFWwQ8BxPevPF2IKsf4hpZNss4LxaOLZXypQH4E63BDLmcwX/RMGdI4tB4VO4Nb6xDBH3F/p4gz4wvof1o9w==}
+    dev: true
+
+  /@types/yargs-parser@21.0.3:
+    resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
+    dev: true
+
+  /@types/yargs@17.0.33:
+    resolution: {integrity: sha512-WpxBCKWPLr4xSsHgz511rFJAM+wS28w2zEO1QDNY5zM/S8ok70NNfztH0xwhqKyaK0OHCbN98LDAZuy1ctxDkA==}
+    dependencies:
+      '@types/yargs-parser': 21.0.3
     dev: true
 
   /@types/yauzl@2.9.2:
@@ -5826,7 +5858,7 @@ packages:
       std-env: 3.8.0
       test-exclude: 7.0.1
       tinyrainbow: 1.2.0
-      vitest: 2.1.9(@types/node@18.19.76)(msw@2.7.1)
+      vitest: 2.1.9(@types/node@20.17.19)
     transitivePeerDependencies:
       - supports-color
     dev: true
