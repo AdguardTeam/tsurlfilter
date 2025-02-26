@@ -1,3 +1,5 @@
+import { type DocumentLifecycle } from './interfaces';
+
 /**
  * Precalculate cosmetic props.
  *
@@ -35,9 +37,16 @@ export type PrecalculateCosmeticProps = {
     parentDocumentId?: string
 
     /**
-     * Document id.
+     * The UUID of the document making the request.
      */
     documentId?: string,
+
+    /**
+     * The document lifecycle of the frame.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle.
+     */
+    documentLifecycle?: DocumentLifecycle,
 };
 
 /**

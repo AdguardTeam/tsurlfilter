@@ -1,7 +1,5 @@
 import browser, { type Tabs } from 'webextension-polyfill';
-import { type NetworkRule } from '@adguard/tsurlfilter';
 
-import { MAIN_FRAME_ID } from '../../common/constants';
 import { TabsApiCommon, type TabFrameRequestContextCommon } from '../../common/tabs/tabs-api';
 import { isHttpOrWsRequest } from '../../common/utils/url';
 import { DocumentApi } from '../background/document-api';
@@ -88,27 +86,6 @@ export class TabsApi extends TabsApiCommon<FrameMV3, TabContext> {
         return url === undefined
             || url === ''
             || url === 'about:blank';
-    }
-
-    /**
-     * Sets main frame rule for the tab context and for the frame context.
-     *
-     * @param tabId Tab ID.
-     * @param frameId Frame ID.
-     * @param frameRule Frame rule.
-     */
-    public setMainFrameRule(tabId: number, frameId: number, frameRule: NetworkRule | null): void {
-        const tabContext = this.getTabContext(tabId);
-
-        if (tabContext && frameId === MAIN_FRAME_ID) {
-            tabContext.mainFrameRule = frameRule;
-        }
-
-        if (frameRule) {
-            this.updateFrameContext(tabId, frameId, { frameRule });
-        } else {
-            this.updateFrameContext(tabId, frameId, { frameRule: undefined });
-        }
     }
 }
 

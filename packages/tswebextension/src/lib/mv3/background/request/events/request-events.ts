@@ -1,12 +1,14 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
 import { RequestType, type HTTPMethod } from '@adguard/tsurlfilter';
 
+import { defaultFilteringLog, FilteringEventType } from '../../../../common/filtering-log';
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { tabsApi, type TabFrameRequestContextMV3 } from '../../../tabs/tabs-api';
 import { getRequestType } from '../../../../common/request-type';
 import { MAIN_FRAME_ID } from '../../../../common/constants';
 import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url';
 import { nanoid } from '../../../../common/utils/nanoid';
+import { DocumentLifecycle } from '../../../../common/interfaces';
 
 import { RequestEvent, type RequestData } from './request-event';
 
@@ -19,23 +21,17 @@ type ChromiumBrowser = typeof browser & {
     }
 };
 
-export enum DocumentLifecycle {
-    /**
-     * See {@link https://developer.chrome.com/docs/web-platform/prerender-pages#how_is_a_page_prerendered}.
-     */
-    Prerender = 'prerender',
-    Active = 'active',
-    Cached = 'cached',
-    Pending_deletion = 'pending_deletion',
-}
-
 export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
     /**
      * The UUID of the document making the request.
      */
     documentId?: string;
     /**
-     *  The document lifecycle of the frame.
+     * The document lifecycle of the frame.
+     *
+     * Available from Chrome 106+.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle
      */
     documentLifecycle?: DocumentLifecycle
 };
@@ -232,22 +228,34 @@ export class RequestEvents {
             tabId,
         };
 
+        // We do not check for exists request context here (as it was in MV2),
+        // because in MV3 $removeparam rules are applied by browser and does not
+        // require page reload after the applying.
+        if (isDocumentRequest) {
+            // dispatch filtering log reload event
+            defaultFilteringLog.publishEvent({
+                type: FilteringEventType.TabReload,
+                data: { tabId },
+            });
+        }
+
         // We rely on browser-provided values as the source of truth
         let referrerUrl = originUrl
             || initiator
             || '';
 
         /**
-         * For requests without a referrer, we need to determine the appropriate referrer URL.
-         * - For prerender document requests, use the request URL itself;
-         * - Otherwise, try to get the referrer from either:
-         *   1. The tab's main frame URL;
-         *   2. The specific frame URL;
-         *   3. Fallback to the request URL.
+         * For prerender document requests, use the request URL itself, because
+         * for prerender request `originUrl` and `initiator` are both undefined.
          */
         if (!referrerUrl && isPrerenderRequest && isDocumentRequest) {
             referrerUrl = url;
         }
+
+        /**
+         * If we still do not determine referrerUrl, try to extract url from the
+         * tab context or fallback to the request URL.
+         */
         if (!referrerUrl) {
             // Try to get referrer from tab state during address bar navigation.
             referrerUrl = tabsApi.getTabMainFrame(tabId)?.url

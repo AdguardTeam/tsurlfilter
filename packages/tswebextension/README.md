@@ -124,7 +124,7 @@ Table of content:
 
 | Browser                     | Version |
 |-----------------------------|---------|
-| Chromium-based browsers MV2 | 79      |
+| Chromium-based browsers MV2 | 106     |
 | Chromium-based browsers MV3 | 121     |
 | Firefox                     | 78      |
 | Firefox Mobile              | 113     |
