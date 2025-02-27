@@ -159,9 +159,6 @@ export class TsWebExtension implements AppInterface<
             // Add tabs listeners
             await tabsApi.start();
 
-            // Initialize user scripts manager.
-            await UserScriptsManager.start();
-
             // Compute and save matching result for tabs, opened before app initialization.
             await TabsCosmeticInjector.processOpenTabs();
 
@@ -251,9 +248,6 @@ export class TsWebExtension implements AppInterface<
 
         // Remove tabs listeners and clear context storage
         tabsApi.stop();
-
-        // Unregister user scripts manager.
-        await UserScriptsManager.stop();
 
         appContext.isAppStarted = false;
         this.isStarted = false;

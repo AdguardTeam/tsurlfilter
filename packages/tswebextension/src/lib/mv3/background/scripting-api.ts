@@ -95,10 +95,10 @@ export class ScriptingApi {
             return;
         }
 
-        let combinedScriptTexts: string[] = [];
+        let scripts: string[] = [];
 
         if (scriptTexts) {
-            combinedScriptTexts = combinedScriptTexts.concat(scriptTexts);
+            scripts = scripts.concat(scriptTexts);
         }
 
         if (scriptletDataList) {
@@ -115,9 +115,17 @@ export class ScriptingApi {
                 `;
             });
 
-            combinedScriptTexts = combinedScriptTexts.concat(scriptletTexts);
+            scripts = scripts.concat(scriptletTexts);
         }
 
-        await UserScriptsManager.updateExecutor(combinedScriptTexts, frameId === MAIN_FRAME_ID);
+        if (scripts.length === 0) {
+            return;
+        }
+
+        await UserScriptsManager.executeScripts({
+            frameId,
+            tabId,
+            scripts,
+        });
     }
 }
