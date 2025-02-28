@@ -14,7 +14,8 @@ stages:
       jobs:
         - DoNothing
 
-# Since auto-build is being run only for a stable branch now — 'stable/dnr-rulesets' —
+# Since auto-build is being run only for a stable branches now:
+# 'stable/dnr-rulesets' or 'stable/dnr-rulesets-2.0' —
 # we should skip the build stage for other branches.
 DoNothing:
   key: NOTHING
@@ -68,13 +69,14 @@ notifications: &notifications
           name: Build webhook
           url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
-# Run plan only for 'stable/dnr-rulesets' branch.
+# Run plan only for 'stable/dnr-rulesets' or 'stable/dnr-rulesets-2.0' branch.
 # Override is needed to skip the build stage for other branches,
 # because even if branches are not supposed to be run for PRs (due to 'create: manually' above),
 # build was triggered by 'cron' anyway.
 branch-overrides:
   -
-    stable/dnr-rulesets:
+    # 'stable/dnr-rulesets' or 'stable/dnr-rulesets-2.0'
+    stable/dnr-rulesets.*:
       stages:
         - Build:
             - Build
@@ -103,8 +105,9 @@ branch-overrides:
 
                   BRANCH="${bamboo.planRepository.branchName}"
 
-                  # Deploy package from "stable/dnr-rulesets" branch only
-                  if [ $BRANCH != "stable/dnr-rulesets" ]
+                  # Deploy package from "stable/dnr-rulesets" or
+                  # "stable/dnr-rulesets-2.0" branches only
+                  if [ $BRANCH != "stable/dnr-rulesets" ] && [ $BRANCH != "stable/dnr-rulesets-2.0" ]
                   then
                     echo "deployment is not supported on branch ${BRANCH}, skipping"
                     exit 0;
@@ -157,13 +160,6 @@ branch-overrides:
                   exec 2>&1
 
                   ls -la
-
-                  BRANCH="${bamboo.planRepository.branchName}"
-                  if [ $BRANCH != "stable/dnr-rulesets" ]
-                  then
-                    echo "nothing to clean on branch ${BRANCH}, skipping"
-                    exit 0;
-                  fi
 
                   echo "Size before cleanup:" && du -h | tail -n 1
 
