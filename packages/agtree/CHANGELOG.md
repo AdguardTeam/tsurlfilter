@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 The version is the same as [3.0.0-alpha.5], just removed `alpha` channel.
 
+[3.0.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.0.1
+
 ## [3.0.0-alpha.5] - 2025-02-07
 
 ### Changed
