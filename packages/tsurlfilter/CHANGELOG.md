@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [3.2.0] - 2025-02-28
 
 ### Added
 
@@ -14,13 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated [@adguard/agtree] to `v3.0.0-alpha.5`.
+- Updated [@adguard/agtree] to `v3.0.1`.
+- Updated [@adguard/scriptlets] to `v2.1.5`.
 
 ### Fixed
 
 - Reworked the shortcut extractor for regular expressions. It now correctly handles disjunctions,
   named groups, character classes, and other complex patterns. [AdguardBrowserExtension#3105].
 
+[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.2.0
 [AdguardBrowserExtension#3105]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3105
 
 ## [3.1.0-alpha.8] - 2025-01-30
