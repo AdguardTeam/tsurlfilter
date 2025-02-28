@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## [3.0.0] - 2025-02-28
+## [3.0.1] - 2025-02-28
 
 The version is the same as [3.0.0-alpha.5], just removed `alpha` channel.
 
