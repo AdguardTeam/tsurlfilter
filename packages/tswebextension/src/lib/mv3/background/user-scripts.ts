@@ -11,6 +11,15 @@ export interface ExecuteScriptsParams {
  */
 export class UserScriptsManager {
     /**
+     * Indicates whether user scripts are supported in the current browser.
+     *
+     * @returns `true` if user scripts are supported, `false` otherwise.
+     */
+    static get isUserScriptsSupported(): boolean {
+        return !!chrome.userScripts;
+    }
+
+    /**
      * Executes a list of user scripts in a specified tab and frame.
      *
      * @param params The parameters for executing the scripts.
