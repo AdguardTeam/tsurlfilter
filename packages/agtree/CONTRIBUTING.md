@@ -49,18 +49,18 @@ During development, you can use the following commands (listed in `package.json`
 - `pnpm check-types` - check type definitions with [TypeScript][typescript].
 - `pnpm clean` - remove the `dist` folder.
 - `pnpm clean-types` - remove the `dist/types` folder.
-- `pnpm coverage` - run tests with [Jest][jest] and generate a code coverage report.
+- `pnpm coverage` - run tests with [Vitest][vitest] and generate a code coverage report.
 - `pnpm increment` - increment the version of the library in `package.json` (patch version by default).
 - `pnpm lint` - run all linters.
 - `pnpm lint:md` - lint the markdown files with [markdownlint][markdownlint].
 - `pnpm lint:ts` - lint the code with [ESLint][eslint].
 - `pnpm precommit` - run all checks before committing.
-- `pnpm test` - run tests with [Jest][jest].
+- `pnpm test` - run tests with [Vitest][vitest].
 
 [contribute]: https://adguard.com/contribute.html
 [eslint]: https://eslint.org/
 [git]: https://git-scm.com/
-[jest]: https://jestjs.io/
+[vitest]: https://vitest.dev
 [main-dev-guide]: https://github.com/AdguardTeam/tsurlfilter#development
 [markdownlint]: markdownlint
 [nodejs]: https://nodejs.org/en/

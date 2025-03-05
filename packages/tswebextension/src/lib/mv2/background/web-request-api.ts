@@ -25,6 +25,8 @@
  * At {@link RequestEvents.onHeadersReceived}, the response headers are handled in the same way,
  * and also the 'trusted-types' directive is modified for CSP headers, @see {@link TrustedTypesService}.
  *
+ * At {@link RequestEvents.onCompleted}, cosmetics are injected for subdocuments in Firefox.
+ *
  * The specified {@link RequestContext} will be removed from {@link requestContextStorage}
  * on {@link RequestEvents.onCompleted} or {@link RequestEvents.onErrorOccurred} events.
  *
@@ -106,10 +108,11 @@
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- * Removes the request information       │                             │
- * from {@link requestContextStorage}.   │         onCompleted         │
- *                                       │                             │
- *                                       └─────────────────────────────┘.
+ * Injects cosmetics for subdocuments    │                             │
+ * in Firefox (AG-40169). Logs script    │         onCompleted         │
+ * rules for main and sub frames.        │                             │
+ * Removes the request information       └─────────────────────────────┘
+ * from {@link requestContextStorage}.
  *
  *                                       ┌─────────────────────────────┐
  * Remove the request information        │                             │
@@ -130,8 +133,8 @@
  * Update main frame data with           │                             │
  * {@link updateMainFrameData}           │       onBeforeNavigate      │
  * and pre-calculate cosmetics           │                             │
- * so it can be applied later.           │                             │
- *                                       └──────────────┬──────────────┘
+ * so it can be applied later.           └──────────────┬──────────────┘
+ *                                                      │
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
  * Try injecting CSS and JS rules        │                             │
@@ -172,13 +175,14 @@
 import browser, { type WebRequest, type WebNavigation } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter/es/request-type';
 
+import { type DocumentLifecycle } from '../../common/interfaces';
+import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { FRAME_DELETION_TIMEOUT_MS, MAIN_FRAME_ID } from '../../common/constants';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { findHeaderByName } from '../../common/utils/headers';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, getDomain } from '../../common/utils/url';
 
-import { Assistant } from './assistant';
 import {
     cosmeticFrameProcessor,
     documentApi,
@@ -203,7 +207,8 @@ import {
 import { SanitizeApi } from './sanitize-api';
 import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs';
-import { isOpera } from './utils/browser-detector';
+import { isFirefox, isOpera } from './utils/browser-detector';
+import { type OnBeforeRequestDetailsType } from './request/events/request-events';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -212,6 +217,22 @@ export type InjectCosmeticParams = {
     tabId: number,
     timestamp: number,
     url: string,
+};
+
+type OnBeforeNavigateDetailsType = WebNavigation.OnBeforeNavigateDetailsType & {
+    /**
+     * The UUID of the document making the request.
+     * TODO: Use this field instead of generating it in the code.
+     */
+    documentId?: string;
+    /**
+     * The document lifecycle of the frame.
+     *
+     * Available from Chrome 106+.
+     *
+     * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle
+     */
+    documentLifecycle?: DocumentLifecycle
 };
 
 /**
@@ -286,13 +307,14 @@ export class WebRequestApi {
     /**
      * On before request event handler. This is the earliest event in the chain of the web request events.
      *
-     * @param details Request details.
-     * @param details.context Request context.
+     * @param data Request data.
+     * @param data.context Request context.
+     * @param data.details Event details.
      *
      * @returns Web request response or void if there is nothing to do.
      */
     private static onBeforeRequest(
-        { context }: RequestData<WebRequest.OnBeforeRequestDetailsType>,
+        { context, details }: RequestData<OnBeforeRequestDetailsType>,
     ): WebRequestEventResponse {
         if (!context) {
             return undefined;
@@ -316,6 +338,13 @@ export class WebRequestApi {
             return undefined;
         }
 
+        /**
+         * We use here referrerUrl as frameUrl for all type of requests, because
+         * we have pre-process for this in {@link RequestEvents.handleOnBeforeRequest},
+         * where we can set `referrerUrl` to `requestUrl` for prerender requests.
+         */
+        const frameUrl = referrerUrl;
+
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.SendRequest,
             data: {
@@ -323,8 +352,8 @@ export class WebRequestApi {
                 eventId,
                 requestUrl,
                 requestDomain: getDomain(requestUrl),
-                frameUrl: referrerUrl,
-                frameDomain: getDomain(referrerUrl),
+                frameUrl,
+                frameDomain: getDomain(frameUrl),
                 requestType: contentType,
                 timestamp,
                 requestThirdParty: thirdParty,
@@ -332,44 +361,52 @@ export class WebRequestApi {
             },
         });
 
-        let frameRule = tabsApi.getTabFrameRule(tabId);
-        // If filtering is disabled for the main frame, we don't need to check the subdocument frame.
-        if (!frameRule?.isFilteringDisabled() && requestType === RequestType.SubDocument) {
-            frameRule = documentApi.matchFrame(referrerUrl);
+        let frameRule;
+
+        /**
+         * For Document and Subdocument requests, we match frame, because
+         * these requests are first (in page lifecycle), but for other requests
+         * we get the frame rule from tabsApi, assuming the frame rule is
+         * already in the tab context.
+         */
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            frameRule = documentApi.matchFrame(frameUrl);
+        } else {
+            frameRule = tabsApi.getTabFrameRule(tabId);
         }
 
-        const result = engineApi.matchRequest({
+        const matchingResult = engineApi.matchRequest({
             requestUrl,
-            frameUrl: referrerUrl,
+            frameUrl,
             requestType,
             frameRule,
             method,
         });
 
-        if (!result) {
+        if (!matchingResult) {
             return undefined;
         }
 
-        requestContextStorage.update(requestId, {
-            matchingResult: result,
-        });
+        requestContextStorage.update(requestId, { matchingResult });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            const { parentFrameId } = details;
+
             cosmeticFrameProcessor.precalculateCosmetics({
                 tabId,
                 frameId,
+                parentFrameId,
+                documentId: details.documentId,
                 url: requestUrl,
                 timeStamp: timestamp,
             });
         }
 
-        const basicResult = result.getBasicResult();
-
         // For a $replace rule, response will be undefined since we need to get
         // the response in order to actually apply $replace rules to it.
         const response = RequestBlockingApi.getBlockingResponse({
-            rule: basicResult,
-            popupRule: result.getPopupRule(),
+            rule: matchingResult.getBasicResult(),
+            popupRule: matchingResult.getPopupRule(),
             eventId,
             requestId,
             requestUrl,
@@ -406,6 +443,16 @@ export class WebRequestApi {
                 thirdParty,
             );
         } else {
+            const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+            // Note: In the code above, we pre-calculate cosmetics for the request,
+            // which may update the frame context with the cosmetic result,
+            // but it does not update the request context.
+            // So we need to update the request context with the cosmetic result from the frame context, if needed.
+            if (frameContext) {
+                context.cosmeticResult = frameContext.cosmeticResult;
+            }
+
             ContentFiltering.onBeforeRequest(context);
         }
 
@@ -597,9 +644,11 @@ export class WebRequestApi {
      *
      * @param event The event that occurred upon completion of the request.
      * @param event.context The context of the completed event.
+     * @param event.details The details of the completed event.
      */
     private static onCompleted({
         context,
+        details,
     }: RequestData<WebRequest.OnCompletedDetailsType>): void {
         if (!context) {
             return;
@@ -613,6 +662,14 @@ export class WebRequestApi {
             timestamp,
             contentType,
         } = context;
+
+        /**
+         * Trying to inject cosmetics for sub frames in Firefox as soon as possible
+         * because webNavigation events (where we also inject cosmetics) can be fired too late. AG-40169.
+         */
+        if (isFirefox || requestType === RequestType.SubDocument) {
+            WebRequestApi.injectCosmetic(details);
+        }
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
@@ -660,21 +717,20 @@ export class WebRequestApi {
      *
      * @param details Event details.
      */
-    private static async injectCosmetic(
+    private static injectCosmetic(
         details: WebNavigation.OnCommittedDetailsType
         | WebNavigation.OnDOMContentLoadedDetailsType
         | WebRequest.OnCompletedDetailsType,
-    ): Promise<void> {
+    ): void {
         const {
             tabId,
             frameId,
         } = details;
 
-        const isAssistant = await WebRequestApi.isAssistantFrame(tabId, details);
-
-        // do not inject cosmetic rules into the assistant frame
-        // TODO: fix the issue (AG-9829) in MV3
-        if (isAssistant) {
+        if (WebRequestApi.isAssistantFrame(tabId, details)) {
+            logger.debug(
+                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
+            );
             return;
         }
 
@@ -686,12 +742,14 @@ export class WebRequestApi {
      *
      * @param details Event details.
      */
-    private static onBeforeNavigate(details: WebNavigation.OnBeforeNavigateDetailsType): void {
+    private static onBeforeNavigate(details: OnBeforeNavigateDetailsType): void {
         const {
             frameId,
             tabId,
             timeStamp,
             url,
+            documentId,
+            documentLifecycle,
             parentFrameId,
             // supported by Chrome 106+
             // but not supported by Firefox so it is calculated based on tabId and frameId
@@ -699,11 +757,16 @@ export class WebRequestApi {
             parentDocumentId,
         } = details;
 
+        // TODO: Check, should we record this event for filtering log.
+
         cosmeticFrameProcessor.precalculateCosmetics({
             tabId,
             frameId,
+            parentFrameId,
             url,
             timeStamp,
+            documentLifecycle,
+            documentId,
             /**
              * Use parentDocumentId if it is defined, otherwise:
              * - if parent frame is a document-level frame, use undefined
@@ -748,22 +811,20 @@ export class WebRequestApi {
     /**
      * Checks whether the frame is an assistant frame.
      *
+     * Needed to prevent cosmetic rules injection into the assistant frame.
+     *
      * @param tabId Tab id.
      * @param details Event details.
      *
      * @returns True if the frame is an assistant frame, false otherwise.
      */
-    private static async isAssistantFrame(
+    private static isAssistantFrame(
         tabId: number,
-        details: WebNavigation.OnCommittedDetailsType
-        | WebNavigation.OnDOMContentLoadedDetailsType
-        | WebRequest.OnCompletedDetailsType,
-    ): Promise<boolean> {
+        details: CommonAssistantDetails,
+    ): boolean {
         const tabContext = tabsApi.getTabContext(tabId);
 
-        const isAssistant = await Assistant.isAssistantFrame(details, tabContext);
-
-        return isAssistant;
+        return CommonAssistant.isAssistantFrame(details, tabContext);
     }
 
     /**

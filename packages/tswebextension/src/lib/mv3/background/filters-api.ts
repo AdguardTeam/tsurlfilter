@@ -231,11 +231,11 @@ export default class FiltersApi {
 
         // Persist changes to storage
         if (Object.keys(filtersToSync).length > 0) {
-            await FiltersStorage.setMultipleFilters(filtersToSync);
+            await FiltersStorage.setMultiple(filtersToSync);
         }
 
         if (filtersToRemove.length > 0) {
-            await FiltersStorage.removeMultipleFilters(filtersToRemove);
+            await FiltersStorage.removeMultiple(filtersToRemove);
         }
 
         logger.info(
@@ -256,7 +256,7 @@ export default class FiltersApi {
      */
     public static loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
         try {
-            const result = await FiltersStorage.getFilter(filterId);
+            const result = await FiltersStorage.get(filterId);
 
             if (!result) {
                 throw new Error(`Filter with id ${filterId} not found`);

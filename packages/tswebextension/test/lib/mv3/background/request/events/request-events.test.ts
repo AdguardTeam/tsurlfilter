@@ -10,9 +10,9 @@ import { HTTPMethod } from '@adguard/tsurlfilter';
 
 import {
     RequestEvents,
-    DocumentLifecycle,
     type OnBeforeRequestDetailsType,
 } from '../../../../../../src/lib/mv3/background/request/events/request-events';
+import { DocumentLifecycle } from '../../../../../../src/lib/common/interfaces';
 
 describe('Request Events', () => {
     const commonRequestData: OnBeforeRequestDetailsType = {

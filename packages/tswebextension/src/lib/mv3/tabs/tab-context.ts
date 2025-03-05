@@ -3,7 +3,7 @@ import { isHttpOrWsRequest } from '../../common/utils/url';
 import { TabContextCommon } from '../../common/tabs/tab-context';
 import { type TabInfo } from '../../common/tabs/tabs-api';
 import { DocumentApi } from '../background/document-api';
-import { MAIN_FRAME_ID } from '../../common/constants';
+import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../../common/constants';
 
 import { FrameMV3 } from './frame';
 
@@ -47,6 +47,7 @@ export class TabContext extends TabContextCommon<FrameMV3> {
             tabContext.frames.set(MAIN_FRAME_ID, new FrameMV3({
                 tabId: tab.id,
                 frameId: MAIN_FRAME_ID,
+                parentFrameId: NO_PARENT_FRAME_ID,
                 url,
                 // timestamp is 0, so that it will be recalculated in the next event
                 timeStamp: 0,

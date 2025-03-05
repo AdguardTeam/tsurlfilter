@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { FilterListPreprocessor } from '../../../src';
 import { Filter } from '../../../src/rules/declarative-converter';
 

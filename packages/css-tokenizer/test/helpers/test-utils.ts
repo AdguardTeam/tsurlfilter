@@ -1,3 +1,5 @@
+import { expect } from 'vitest';
+
 import { getFormattedTokenName } from '../../src/utils/token-names';
 import { type TokenType } from '../../src/common/enums/token-types';
 import { type TokenData, type TokenTest } from './test-interfaces';

@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
+import { describe, test, expect } from 'vitest';
+
 import { CosmeticRuleConverter } from '../../../src/converter/cosmetic';
-import '../../matchers/check-conversion';
 
 describe('Cosmetic rule modifiers conversion', () => {
     describe('uBO to ADG', () => {

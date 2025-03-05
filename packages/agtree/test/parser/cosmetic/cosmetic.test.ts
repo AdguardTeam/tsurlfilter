@@ -1,4 +1,11 @@
 /* eslint-disable max-len */
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
+
 import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
@@ -82,7 +89,7 @@ describe('CosmeticRuleParser - general tests', () => {
             // specified domain list and extra space after the separator
             ...separators.map((separator) => `${domainList}${separator} `),
         ])("should throw error for '%s'", (actual) => {
-            const fn = jest.fn(() => CosmeticRuleParser.parse(actual));
+            const fn = vi.fn(() => CosmeticRuleParser.parse(actual));
 
             // parse should throw
             expect(fn).toThrow();

@@ -1,4 +1,10 @@
 import {
+    describe,
+    expect,
+    it,
+} from 'vitest';
+
+import {
     type Manifest,
     ManifestParser,
 } from '../../../src/lib/manifest/parser';

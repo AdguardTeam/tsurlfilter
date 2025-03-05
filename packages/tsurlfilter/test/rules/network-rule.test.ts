@@ -1,4 +1,5 @@
 /* eslint-disable max-len */
+import { describe, it, expect } from 'vitest';
 import {
     NetworkRuleOption,
     Request,
@@ -1571,7 +1572,7 @@ describe('NetworkRule.isHigherPriority', () => {
                 });
             });
 
-            test.each(cases)(
+            it.each(cases)(
                 '%s is a higher priority than %s, expected: %s',
                 (left: string, right: string, expectedResult: boolean) => {
                     compareRulesPriority(left, right, expectedResult);

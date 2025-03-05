@@ -1,3 +1,9 @@
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
@@ -187,7 +193,7 @@ describe('CssTokenStream', () => {
         const actual = 'div { display: none !important';
         const offset = 2;
 
-        const fn = jest.fn(() => new CssTokenStream(actual, offset));
+        const fn = vi.fn(() => new CssTokenStream(actual, offset));
 
         expect(() => fn()).toThrow();
 

@@ -64,6 +64,7 @@ export class TabsCosmeticInjector {
             const {
                 url,
                 frameId,
+                parentFrameId,
                 parentDocumentId,
                 documentId,
             } = frameDetails;
@@ -71,6 +72,7 @@ export class TabsCosmeticInjector {
             tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
                 tabId,
                 frameId,
+                parentFrameId,
                 url,
                 timeStamp: currentTime,
                 parentDocumentId,
@@ -80,6 +82,7 @@ export class TabsCosmeticInjector {
             CosmeticFrameProcessor.handleFrame({
                 tabId,
                 frameId,
+                parentFrameId,
                 url,
                 timeStamp: currentTime,
                 parentDocumentId,

@@ -1,3 +1,10 @@
+import {
+    describe,
+    test,
+    expect,
+    vi,
+} from 'vitest';
+
 import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error';
 import { RuleParser } from '../../src/parser/rule-parser';
 import { NodeExpectContext, type NodeExpectFn } from '../helpers/node-utils';
@@ -47,7 +54,7 @@ describe('Toggleable syntax', () => {
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = jest.fn(() => RuleParser.parse(actual, {
+            const fn = vi.fn(() => RuleParser.parse(actual, {
                 ...defaultParserOptions,
                 parseUboSpecificRules: false,
             }));
@@ -89,7 +96,7 @@ describe('Toggleable syntax', () => {
                 },
             },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
-            const fn = jest.fn(() => RuleParser.parse(actual, {
+            const fn = vi.fn(() => RuleParser.parse(actual, {
                 ...defaultParserOptions,
                 parseAbpSpecificRules: false,
             }));

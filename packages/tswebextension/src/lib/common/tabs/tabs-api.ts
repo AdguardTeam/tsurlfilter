@@ -2,7 +2,7 @@ import browser, { type Tabs } from 'webextension-polyfill';
 import { type RequestType, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { type DocumentApi } from '../../mv2/background/document-api';
-import { MAIN_FRAME_ID } from '../constants';
+import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../constants';
 import { EventChannel } from '../utils/channels';
 import { logger } from '../utils/logger';
 import { getDomain, isHttpRequest } from '../utils/url';
@@ -68,13 +68,6 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     public onActivate = new EventChannel<T>();
 
     public onReplace = new EventChannel<T>();
-
-    /**
-     * Value of the parent frame id if no parent frame exists.
-     *
-     * @see {@link WebRequest.OnBeforeRequestDetailsType#parentFrameId}
-     */
-    protected static readonly NO_PARENT_FRAME_ID = -1;
 
     /**
      * Tabs API constructor.
@@ -336,7 +329,7 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * @returns True if the parent frame is a document-level frame.
      */
     public static isDocumentLevelFrame(parentFrameId: number): boolean {
-        return parentFrameId === TabsApiCommon.NO_PARENT_FRAME_ID;
+        return parentFrameId === NO_PARENT_FRAME_ID;
     }
 
     /**
@@ -400,6 +393,38 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
             return;
         }
         tabContext.resetBlockedRequestsCount();
+    }
+
+    /**
+     * Sets a current timestamp as `assistantInitTimestamp` of the tab context.
+     *
+     * Needed to determine later if a newly created frame is an assistant frame.
+     *
+     * @param tabId Tab id.
+     */
+    public setAssistantInitTimestamp(tabId: number): void {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        tabContext.assistantInitTimestamp = Date.now();
+    }
+
+    /**
+     * Resets tab context's `assistantInitTimestamp` to null.
+     *
+     * @param tabId Tab id.
+     */
+    public resetAssistantInitTimestamp(tabId: number): void {
+        const tabContext = this.context.get(tabId);
+
+        if (!tabContext) {
+            return;
+        }
+
+        tabContext.assistantInitTimestamp = null;
     }
 
     /**
@@ -501,5 +526,30 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     public getByDocumentId(tabId: number, documentId: string): F | undefined {
         const tabContext = this.getTabContext(tabId);
         return tabContext?.getFrameContextByDocumentId(documentId);
+    }
+
+    /**
+     * Sets main frame rule for the tab context and for the frame context.
+     *
+     * @param tabId Tab ID.
+     * @param frameId Frame ID.
+     * @param frameRule Frame rule.
+     */
+    public setMainFrameRule(
+        tabId: number,
+        frameId: number,
+        frameRule: NetworkRule | null,
+    ): void {
+        const tabContext = this.getTabContext(tabId);
+
+        if (tabContext && frameId === MAIN_FRAME_ID) {
+            tabContext.mainFrameRule = frameRule;
+        }
+
+        if (frameRule) {
+            this.updateFrameContext(tabId, frameId, { frameRule } as Partial<F>);
+        } else {
+            this.updateFrameContext(tabId, frameId, { frameRule: undefined } as Partial<F>);
+        }
     }
 }

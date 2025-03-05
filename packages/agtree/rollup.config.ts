@@ -53,7 +53,9 @@ export const commonPlugins = [
     json({ preferConst: true }),
     resolve({ preferBuiltins: false }),
     commonjs({ sourceMap: false }),
-    typescript(),
+    typescript({
+        tsconfig: path.resolve(ROOT_DIR, 'tsconfig.build.json'),
+    }),
 ];
 
 const main = {

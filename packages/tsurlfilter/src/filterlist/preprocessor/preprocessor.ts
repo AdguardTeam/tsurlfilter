@@ -1,3 +1,4 @@
+// TODO: Consider moving this file to the `@adguard/agtree` package
 import { OutputByteBuffer, RuleCategory } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
 import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
@@ -145,8 +146,8 @@ export class FilterListPreprocessor {
                     outputOffset += ruleText.length + lineBreakLength;
                 }
             } catch (error: unknown) {
-                // If error level is used, an error will be thrown in browser extension (AG-37460),
-                // that's why info level is used
+                // TODO: Integrate Logger library to be able to set log level AG-40234
+                // Log issues just as an info AG-37460
                 logger.info(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
 
                 // Add invalid rules as is to the converted filter list,
@@ -178,11 +179,13 @@ export class FilterListPreprocessor {
      *
      * @param preprocessedFilterList Preprocessed filter list,
      * which contains the raw filter list and the conversion map.
+     * @param parseHosts If true, the preprocessor will parse host rules.
      *
      * @returns Preprocessed filter list with the "filterList" and "sourceMap" fields.
      */
     public static preprocessLightweight(
         preprocessedFilterList: LightweightPreprocessedFilterList,
+        parseHosts = false,
     ): PreprocessedFilterList {
         const { rawFilterList, conversionMap } = preprocessedFilterList;
         const { length } = rawFilterList;
@@ -197,14 +200,24 @@ export class FilterListPreprocessor {
             const [lineBreakIndex, lineBreakLength] = findNextLineBreakIndex(rawFilterList, inputOffset);
             const ruleText = rawFilterList.slice(inputOffset, lineBreakIndex);
 
-            const bufferOffset = filterList.currentOffset;
-
-            sourceMap[bufferOffset] = outputOffset;
-
             try {
-                RuleSerializer.serialize(RuleParser.parse(ruleText, PREPROCESSOR_AGTREE_OPTIONS), filterList);
+                const ruleNode = RuleParser.parse(ruleText, {
+                    ...PREPROCESSOR_AGTREE_OPTIONS,
+                    parseHostRules: parseHosts,
+                });
+
+                // Ignore empty lines and comments from the binary filter list
+                if (ruleNode.category !== RuleCategory.Empty && ruleNode.category !== RuleCategory.Comment) {
+                    const bufferOffset = filterList.currentOffset;
+
+                    sourceMap[bufferOffset] = outputOffset;
+
+                    RuleSerializer.serialize(ruleNode, filterList);
+                }
             } catch (error: unknown) {
-                logger.error(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
+                // TODO: Integrate Logger library to be able to set log level AG-40234
+                // Log issues just as an info AG-37460
+                logger.info(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
             }
 
             outputOffset += ruleText.length + lineBreakLength;
@@ -214,7 +227,8 @@ export class FilterListPreprocessor {
         }
 
         return {
-            filterList: (filterList as any).chunks,
+            // TODO: consider returning an empty array if the filter list is empty
+            filterList: filterList.getChunks(),
             rawFilterList,
             conversionMap,
             sourceMap,
@@ -309,10 +323,18 @@ export class FilterListPreprocessor {
      * Creates an empty preprocessed filter list.
      *
      * @returns An empty preprocessed filter list.
+     *
+     * @note It gives the same result as the {@link preprocess} method with an empty filter list:
+     * ```ts
+     * FilterListPreprocessor.preprocess('');
+     * ```
      */
     public static createEmptyPreprocessedFilterList(): PreprocessedFilterList {
+        // Note: need to use OutputByteBuffer, because it writes the schema version to the buffer
+        const buffer = new OutputByteBuffer();
         return {
-            filterList: [],
+            // TODO: consider returning an empty array
+            filterList: buffer.getChunks(),
             rawFilterList: '',
             conversionMap: {},
             sourceMap: {},

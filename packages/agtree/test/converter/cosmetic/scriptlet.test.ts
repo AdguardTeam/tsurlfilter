@@ -1,7 +1,13 @@
+import {
+    describe,
+    test,
+    expect,
+    it,
+} from 'vitest';
+
 import { RuleParser } from '../../../src/parser/rule-parser';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
 import { type ScriptletInjectionRule } from '../../../src/nodes';
-import '../../matchers/check-conversion';
 
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {
@@ -291,7 +297,7 @@ describe('Scriptlet conversion', () => {
         });
     });
 
-    describe('convertToAbp', () => {
+    it('convertToAbp', () => {
         // TODO: We should implement this later
         expect(() => ScriptletRuleConverter.convertToAbp(
             RuleParser.parse('#%#//scriptlet(\'test\')') as ScriptletInjectionRule,

@@ -14,6 +14,7 @@ node_modules
 .idea
 
 # VS code settings and workspace project
-.vscode
+.vscode/*
+!.vscode/extensions.json
 tsurlfilter.code-workspace
 Makefile

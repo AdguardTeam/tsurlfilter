@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { DnsTypeModifier } from '../../../src/modifiers/dns/dnstype-modifier';
 import { createNetworkRule } from '../../helpers/rule-creator';
 

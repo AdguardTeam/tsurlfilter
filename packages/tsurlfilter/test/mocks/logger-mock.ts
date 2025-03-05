@@ -1,12 +1,12 @@
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 import { type ILogger } from '../../src';
 
 export class LoggerMock implements ILogger {
-    public error = jest.fn();
+    public error = vi.fn();
 
-    public warn = jest.fn();
+    public warn = vi.fn();
 
-    public debug = jest.fn();
+    public debug = vi.fn();
 
-    public info = jest.fn();
+    public info = vi.fn();
 }

@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { scriptletsCompatibilityTable } from '../../src/compatibility-tables/scriptlets';
 import { GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
 

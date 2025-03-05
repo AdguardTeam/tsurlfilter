@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { LogicalExpressionParser } from '../../src/parser/misc/logical-expression-parser';
 import { LogicalExpressionUtils } from '../../src/utils/logical-expression';
 

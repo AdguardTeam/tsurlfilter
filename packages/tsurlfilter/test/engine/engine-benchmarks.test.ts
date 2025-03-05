@@ -1,4 +1,13 @@
 /* eslint-disable max-len */
+import {
+    describe,
+    it,
+    expect,
+    beforeAll,
+    afterAll,
+    beforeEach,
+    afterEach,
+} from 'vitest';
 import fs from 'fs';
 import zlib from 'zlib';
 import console from 'console';
@@ -278,6 +287,7 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
     return totalMatches;
 }
 
+// TODO: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
 describe('Benchmarks', () => {
     beforeAll(() => {
         /* eslint-disable @typescript-eslint/no-unused-vars */

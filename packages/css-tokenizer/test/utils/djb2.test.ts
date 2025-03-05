@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { getStringHash } from '../../src/utils/djb2';
 
 describe('djb2', () => {

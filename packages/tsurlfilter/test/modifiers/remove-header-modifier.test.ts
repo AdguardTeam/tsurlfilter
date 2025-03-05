@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { RemoveHeaderModifier } from '../../src/modifiers/remove-header-modifier';
 import { createNetworkRule } from '../helpers/rule-creator';
 

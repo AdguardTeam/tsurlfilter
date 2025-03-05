@@ -5,21 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [3.0.0] - 2025-02-28
 
 ### Added
 
-- Core storages (wrappers for `chrome.storage.local` and `IndexedDB`).
+- Possibility to get filter data from "sync storage" in MV3.
 
 ### Changed
 
-<!-- TODO: Check them again before release -->
-- Updated [@adguard/tsurlfilter] to `v3.2.0-alpha.0`.
-- Renamed export `RULE_SET_NAME_PREFIX` to `RULESET_NAME_PREFIX`.
+- Updated [@adguard/tsurlfilter] to `v3.2.0`.
+- Updated [@adguard/scriptlets] to `v2.1.5`.
+- Updated [@adguard/agtree] to `v3.0.1`.
+- Renamed the export `RULE_SET_NAME_PREFIX` to `RULESET_NAME_PREFIX`.
+- `retrieveDynamicRuleNode` function was renamed to `retrieveRuleNode`
+  and can now retrieve any rule node from the engine.
+- Minimum supported Chromium-based MV2 browsers version now 106+ for support
+  prerender requests.
 
 ### Fixed
 
 - Cosmetic rules injecting into `about:blank` iframes in MV2.
+- Scriptlets and scripts are executed too late on website reload
+  or navigation in MV2 [AdguardBrowserExtension#2855].
+- Do not inject cosmetic rules into the Assistant frame in MV3.
+
+[3.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.0.0
+[AdguardBrowserExtension#2855]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2855
 
 ## [3.0.0-alpha.1] - 2025-01-30
 

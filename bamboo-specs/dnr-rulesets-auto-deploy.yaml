@@ -9,18 +9,19 @@ release-naming:
   applies-to-branches: true
 
 environments:
-  - npmjs
+  - npmjs 1.X
+  - npmjs 2.X
 
-npmjs:
-  docker:
+npmjs 1.X:
+  docker: &docker
     image: adguard/node-ssh:18.19--0
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  # run auto-deploy only after successful build
+  # run auto-deploy only after successful build on branch for 1.X
   triggers:
     - build-success:
         branch: stable-dnr-rulesets
-  tasks:
+  tasks: &tasks
     - checkout:
         force-clean-build: 'true'
     - artifact-download:
@@ -42,13 +43,23 @@ npmjs:
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
             npm publish dnr-rulesets.tgz --access public
-  requirements:
+  requirements: &requirements
     - adg-docker: 'true'
     - extension: 'true'
-  notifications:
+  notifications: &notifications
     - events:
         - deployment-started-and-finished
       recipients:
         - webhook:
             name: Deploy webhook
             url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+npmjs 2.X:
+  docker: *docker
+  # run auto-deploy only after successful build on branch for 2.X
+  triggers:
+    - build-success:
+        branch: stable-dnr-rulesets-2.0
+  tasks: *tasks
+  requirements: *requirements
+  notifications: *notifications

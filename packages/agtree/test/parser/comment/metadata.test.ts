@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { MetadataCommentParser } from '../../../src/parser/comment/metadata-comment-parser';
 import { EMPTY, SPACE } from '../../../src/utils/constants';
 import { defaultParserOptions } from '../../../src/parser/options';

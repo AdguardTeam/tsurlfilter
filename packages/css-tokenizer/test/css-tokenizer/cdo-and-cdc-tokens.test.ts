@@ -1,3 +1,5 @@
+import { describe, test } from 'vitest';
+
 import { TokenType } from '../../src/common/enums/token-types';
 import { addAsProp, testTokenization } from '../helpers/test-utils';
 
@@ -15,5 +17,7 @@ describe('cdo-token and cdc-token', () => {
                 [TokenType.Cdc, 0, 3],
             ],
         },
-    ]))("should tokenize '$actual' as $as", testTokenization);
+    ]))("should tokenize '$actual' as $as", (testCase) => {
+        testTokenization(testCase);
+    });
 });

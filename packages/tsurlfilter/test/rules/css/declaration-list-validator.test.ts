@@ -1,8 +1,10 @@
+import { describe, it, expect } from 'vitest';
+
 import { validateDeclarationList } from '../../../src/rules/css/declaration-list-validator';
 
 describe('Declaration list validator', () => {
     describe('validateDeclarationList - valid cases', () => {
-        test.each([
+        it.each([
             // [declarationList, isExtendedCss]
             ['{ padding: 0 }', false],
             ['{ padding: 0 !important; }', false],
@@ -23,7 +25,7 @@ describe('Declaration list validator', () => {
 
     describe('validateDeclarationList - invalid cases', () => {
         // valid cases
-        test.each([
+        it.each([
             // [declarationList, isExtendedCss, errorMessage]
             // should detect forbidden functions
             ['{ background: url(http://example.org/image.png) }', false, "Using 'url()' is not allowed"],

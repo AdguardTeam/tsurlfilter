@@ -17,7 +17,7 @@
         "@adguard/dnr-rulesets": "workspace:^",
         "@adguard/tswebextension": "workspace:^",
         "@types/archiver": "^6.0.2",
-        "@types/chrome": "^0.0.296",
+        "@types/chrome": "^0.0.305",
         "@types/webextension-polyfill": "^0.12.0",
         "@typescript-eslint/eslint-plugin": "^5.41.0",
         "@typescript-eslint/parser": "^5.41.0",

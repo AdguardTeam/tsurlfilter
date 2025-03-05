@@ -1,4 +1,5 @@
 /* eslint-disable no-console, no-plusplus */
+import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import console from 'console';
 import { NetworkRuleParser } from '@adguard/agtree';
@@ -127,6 +128,7 @@ const runBench = async (
     console.log(`Heap growth, kB used: ${finalMemory.heapUsed}`);
 };
 
+// TODO: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
 describe('Benchmarks', () => {
     it('runs SimpleRegex.extractRegexpShortcut', async () => {
         const patterns = await getPatterns(FilePath.AdguardRegexpPatternNetworkRules);

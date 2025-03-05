@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { MethodListParser } from '../../../src/parser/misc/method-list-parser';
 import { ListNodeType, ListItemNodeType } from '../../../src/nodes';
 import { EMPTY } from '../../../src/utils/constants';

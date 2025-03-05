@@ -1,3 +1,5 @@
+import { describe, test, expect } from 'vitest';
+
 import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
 import { type ModifierList } from '../../../src/nodes';
 import { EMPTY, SPACE } from '../../../src/utils/constants';

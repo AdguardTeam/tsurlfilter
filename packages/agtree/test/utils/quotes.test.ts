@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { QuoteType, QuoteUtils } from '../../src/utils/quotes';
 
 describe('Quote utils', () => {

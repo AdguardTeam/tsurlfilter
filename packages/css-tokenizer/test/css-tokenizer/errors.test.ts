@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest';
+
 import { ErrorMessage } from '../../src/common/enums/error-messages';
 import { tokenize } from '../../src/css-tokenizer';
 import type { ErrorData } from '../helpers/test-interfaces';

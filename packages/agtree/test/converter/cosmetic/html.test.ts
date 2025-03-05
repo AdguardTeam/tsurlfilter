@@ -1,11 +1,15 @@
+import {
+    describe,
+    test,
+    expect,
+    it,
+} from 'vitest';
 import { sprintf } from 'sprintf-js';
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
 import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
 import { type HtmlFilteringRule } from '../../../src/nodes';
 import { RuleParser } from '../../../src/parser/rule-parser';
-
-import '../../matchers/check-conversion';
 
 describe('HtmlRuleConverter', () => {
     describe('convertToAdg', () => {
@@ -290,7 +294,7 @@ describe('HtmlRuleConverter', () => {
         });
     });
 
-    describe('convertToUbo', () => {
+    it('convertToUbo', () => {
         // TODO: We should implement this later
         expect(() => HtmlRuleConverter.convertToUbo(
             RuleParser.parse('$$script') as HtmlFilteringRule,
@@ -299,7 +303,7 @@ describe('HtmlRuleConverter', () => {
         );
     });
 
-    describe('convertToAbp', () => {
+    it('convertToAbp', () => {
         // Adblock Plus currently doesn't support HTML filtering rules
         expect(() => HtmlRuleConverter.convertToAbp(
             RuleParser.parse('$$script') as HtmlFilteringRule,

@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { NetworkRule } from '../../src/rules/network-rule';
 import { HostRule } from '../../src/rules/host-rule';

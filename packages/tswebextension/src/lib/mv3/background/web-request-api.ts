@@ -140,6 +140,7 @@
 import browser, { type WebNavigation, type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 
+import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { companiesDbService } from '../../common/companies-db-service';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
 import { getErrorMessage } from '../../common/error';
@@ -166,10 +167,6 @@ import { StealthService } from './services/stealth-service';
 /**
  * API for applying rules from background service by handling
  * Web Request API and web navigation events.
- *
- * Calculates matchingResult and cosmeticResult and saves them to the cache
- * related to pair tabId+documentId to save execution time of future requests
- * cosmetic rules from content-script.
  */
 export class WebRequestApi {
     /**
@@ -232,9 +229,10 @@ export class WebRequestApi {
      *
      * @param requestData Object containing request context and details.
      * @param requestData.context Request context.
+     * @param requestData.details Event details.
      */
     private static onBeforeRequest(
-        { context }: RequestData<OnBeforeRequestDetailsType>,
+        { context, details }: RequestData<OnBeforeRequestDetailsType>,
     ): void {
         if (!context) {
             return;
@@ -260,16 +258,12 @@ export class WebRequestApi {
             return;
         }
 
-        // We do not check for exists request context here (as it was in MV2),
-        // because in MV3 $removeparam rules are applied by browser and does not
-        // require page reload after the applying.
-        if (requestType === RequestType.Document) {
-            // dispatch filtering log reload event
-            defaultFilteringLog.publishEvent({
-                type: FilteringEventType.TabReload,
-                data: { tabId },
-            });
-        }
+        /**
+         * We use here referrerUrl as frameUrl for all type of requests, because
+         * we have pre-process for this in {@link RequestEvents.handleOnBeforeRequest},
+         * where we can set `referrerUrl` to `requestUrl` for prerender requests.
+         */
+        const frameUrl = referrerUrl;
 
         defaultFilteringLog.publishEvent({
             type: FilteringEventType.SendRequest,
@@ -278,7 +272,7 @@ export class WebRequestApi {
                 eventId,
                 requestUrl,
                 requestDomain: getDomain(requestUrl),
-                frameUrl: referrerUrl,
+                frameUrl,
                 frameDomain: getDomain(referrerUrl),
                 requestType: contentType,
                 timestamp,
@@ -288,23 +282,15 @@ export class WebRequestApi {
         });
 
         let frameRule;
-        let frameUrl = referrerUrl;
 
         /**
-         * Determine frameRule for different request types:
-         * - for Document requests, use DocumentApi to match against requestUrl and update frameUrl;
-         * - for SubDocument requests, use DocumentApi to match against referrerUrl;
-         * - for all other requests, get the frame rule from tabsApi.
-         *
-         * The referrerUrl is calculated in {@link RequestEvents.handleOnBeforeRequest} before this point.
+         * For Document and Subdocument requests, we match frame, because
+         * these requests are first (in page lifecycle), but for other requests
+         * we get the frame rule from tabsApi, assuming the frame rule is
+         * already in the tab context.
          */
-        if (requestType === RequestType.Document) {
-            frameRule = DocumentApi.matchFrame(requestUrl);
-            // We suppose that all document request are first party requests and
-            // that's why we set frameUrl to requestUrl.
-            frameUrl = requestUrl;
-        } else if (requestType === RequestType.SubDocument) {
-            frameRule = DocumentApi.matchFrame(referrerUrl);
+        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            frameRule = DocumentApi.matchFrame(frameUrl);
         } else {
             frameRule = tabsApi.getTabFrameRule(tabId);
         }
@@ -325,9 +311,12 @@ export class WebRequestApi {
         requestContextStorage.update(requestId, { matchingResult });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+            const { parentFrameId } = details;
+
             CosmeticFrameProcessor.precalculateCosmetics({
                 tabId,
                 frameId,
+                parentFrameId,
                 url: requestUrl,
                 timeStamp: timestamp,
             });
@@ -358,8 +347,11 @@ export class WebRequestApi {
      *
      * @param event On response started event.
      * @param event.context Event context.
+     * @param event.details Event details.
      */
-    private static onResponseStarted({ context }: RequestData<WebRequest.OnResponseStartedDetailsType>): void {
+    private static onResponseStarted(
+        { context, details }: RequestData<WebRequest.OnResponseStartedDetailsType>,
+    ): void {
         if (!context) {
             return;
         }
@@ -368,6 +360,13 @@ export class WebRequestApi {
 
         if (requestType !== RequestType.Document
             && requestType !== RequestType.SubDocument) {
+            return;
+        }
+
+        if (WebRequestApi.isAssistantFrame(tabId, details)) {
+            logger.debug(
+                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
+            );
             return;
         }
 
@@ -452,12 +451,13 @@ export class WebRequestApi {
      *
      * @param details Event details.
      */
-    private static async onBeforeNavigate(
+    private static onBeforeNavigate(
         details: chrome.webNavigation.WebNavigationParentedCallbackDetails,
-    ): Promise<void> {
+    ): void {
         const {
             tabId,
             frameId,
+            parentFrameId,
             url,
             parentDocumentId,
             timeStamp,
@@ -466,6 +466,7 @@ export class WebRequestApi {
         CosmeticFrameProcessor.precalculateCosmetics({
             tabId,
             frameId,
+            parentFrameId,
             url,
             timeStamp,
             parentDocumentId,
@@ -631,11 +632,37 @@ export class WebRequestApi {
         // This is necessary mainly to update documentId
         tabsApi.updateFrameContext(tabId, frameId, { documentId });
 
+        if (WebRequestApi.isAssistantFrame(tabId, details)) {
+            logger.debug(
+                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
+            );
+            return;
+        }
+
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
         Promise.all([
             CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
         ]).catch((e) => logger.error(e));
+    }
+
+    /**
+     * Checks whether the frame is an assistant frame.
+     *
+     * Needed to prevent cosmetic rules injection into the assistant frame.
+     *
+     * @param tabId Tab id.
+     * @param details Event details.
+     *
+     * @returns True if the frame is an assistant frame, false otherwise.
+     */
+    private static isAssistantFrame(
+        tabId: number,
+        details: CommonAssistantDetails,
+    ): boolean {
+        const tabContext = tabsApi.getTabContext(tabId);
+
+        return CommonAssistant.isAssistantFrame(details, tabContext);
     }
 }

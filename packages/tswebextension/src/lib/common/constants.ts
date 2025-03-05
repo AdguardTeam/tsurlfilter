@@ -44,3 +44,10 @@ export const FRAME_DELETION_TIMEOUT_MS = 3000;
  * Document level frame id.
  */
 export const MAIN_FRAME_ID = 0;
+
+/**
+ * Value of the parent frame id if no parent frame exists.
+ *
+ * @see {@link https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/onBeforeRequest#parentframeid}
+ */
+export const NO_PARENT_FRAME_ID = -1;
