@@ -224,7 +224,10 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param params Data for js rule logging.
      */
     public static logScriptRules(params: LogJsRulesParams): void {
-        super.logScriptRules(params);
+        super.logScriptRules(
+            params,
+            CosmeticApi.shouldSanitizeScriptRule,
+        );
     }
 
     /**

@@ -1,4 +1,4 @@
-import { type ScriptletData, type CosmeticResult } from '@adguard/tsurlfilter';
+import { type ScriptletData, type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { getErrorMessage } from '../../common/error';
@@ -10,6 +10,8 @@ import { tabsApi } from '../tabs/tabs-api';
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { ScriptingApi } from './scripting-api';
+import { localScriptRulesService } from './services/local-script-rules-service';
+import { UserScriptsApi } from './user-scripts';
 
 /**
  * Data for JS and scriptlets rules for MV3.
@@ -142,25 +144,80 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static async applyJsFuncsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        if (!frameContext || !frameContext.preparedCosmeticResult) {
+        const scriptTexts = frameContext?.preparedCosmeticResult?.scriptTexts;
+
+        if (!scriptTexts || scriptTexts.length === 0) {
             return;
         }
 
-        const {
-            scriptTexts,
-            scriptletDataList,
-        } = frameContext.preparedCosmeticResult;
-
         try {
-            await ScriptingApi.updateScriptsToExecute({
-                tabId,
-                frameId,
-                scriptTexts,
-                scriptletDataList,
-                domainName: getDomain(frameContext.url),
-            });
+            await Promise.all(scriptTexts.map((scriptText) => {
+                /**
+                 * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+                 *
+                 * This is STEP 4.1: Selecting only local script functions which were pre-built into the extension.
+                 */
+
+                /**
+                 * Here we check if the script text is local to guarantee that we do not execute remote code.
+                 */
+                const isLocalScript = localScriptRulesService.isLocalScript(scriptText);
+                if (!isLocalScript) {
+                    return;
+                }
+
+                /**
+                 * Here we get the function associated with the script text.
+                 */
+                const localScriptFunction = localScriptRulesService.getLocalScriptFunction(scriptText);
+                if (!localScriptFunction) {
+                    return;
+                }
+
+                // eslint-disable-next-line consistent-return
+                return ScriptingApi.executeScriptFunc({
+                    tabId,
+                    frameId,
+                    scriptFunction: localScriptFunction,
+                });
+            }));
         } catch (e) {
             logger.debug('[applyJsFuncsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+        }
+    }
+
+    /**
+     * Injects js to specified tab and frame.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     */
+    public static async applyScriptletsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+        if (!frameContext) {
+            return;
+        }
+
+        const scriptletDataList = frameContext.preparedCosmeticResult?.scriptletDataList;
+
+        if (!scriptletDataList) {
+            return;
+        }
+
+        try {
+            await Promise.all(scriptletDataList.map((scriptletData) => {
+                // eslint-disable-next-line consistent-return
+                return ScriptingApi.executeScriptlet({
+                    tabId,
+                    frameId,
+                    scriptletData,
+                    domainName: getDomain(frameContext.url),
+                });
+            }));
+        } catch (e) {
+            // TODO: getErrorMessage may not be needed since logger should handle arg types
+            logger.debug('[applyScriptletsByTabAndFrame] error occurred during injection', getErrorMessage(e));
         }
     }
 
@@ -195,6 +252,55 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Injects js functions and scriptlets to specified tab and frame.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     */
+    public static async applyJsFuncsAndScriptletsByTabAndFrame(
+        tabId: number,
+        frameId: number,
+    ): Promise<void> {
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+        if (!frameContext || !frameContext.preparedCosmeticResult) {
+            return;
+        }
+
+        const {
+            scriptTexts,
+            scriptletDataList,
+        } = frameContext.preparedCosmeticResult;
+
+        try {
+            await ScriptingApi.executeScriptsViaUserScripts({
+                tabId,
+                frameId,
+                scriptTexts,
+                scriptletDataList,
+                domainName: getDomain(frameContext.url),
+            });
+        } catch (e) {
+            logger.debug(
+                '[applyJsFuncsAndScriptletsByTabAndFrame] error occurred during injection',
+                getErrorMessage(e),
+            );
+        }
+    }
+
+    /**
+     * Predicate to filter out non-local script rules.
+     *
+     * @param rule Cosmetic rule.
+     *
+     * @returns True if the rule is a local script rule, otherwise false.
+     */
+    private static shouldSanitizeScriptRule(rule: CosmeticRule): boolean {
+        const ruleText = rule.getContent();
+        return localScriptRulesService.isLocalScript(ruleText);
+    }
+
+    /**
      * Logs js rules applied to specific frame.
      *
      * We need a separate function for logging because script rules can be logged before injection
@@ -205,6 +311,14 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param params Data for js rule logging.
      */
     public static logScriptRules(params: LogJsRulesParams): void {
-        super.logScriptRules(params);
+        const filterFn = UserScriptsApi.isUserScriptsSupported
+            // via userScripts API we can inject any script
+            ? (): boolean => { return true; }
+            : CosmeticApi.shouldSanitizeScriptRule;
+
+        super.logScriptRules(
+            params,
+            filterFn,
+        );
     }
 }

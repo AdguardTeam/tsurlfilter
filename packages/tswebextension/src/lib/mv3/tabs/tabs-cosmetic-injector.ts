@@ -108,6 +108,7 @@ export class TabsCosmeticInjector {
             Promise.all([
                 CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
                 CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+                CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
             ]).catch((e) => logger.error(e));
 
             const frameContext = tabsApi.getFrameContext(tabId, frameId);

@@ -164,7 +164,6 @@ export class CosmeticFrameProcessor {
 
         tabsApi.setMainFrameRule(tabId, frameId, mainFrameRule);
 
-        // FIXME: Double matching request. First in onBeforeRequest, then here.
         const result = engineApi.matchRequest({
             requestUrl: url,
             frameUrl: url,

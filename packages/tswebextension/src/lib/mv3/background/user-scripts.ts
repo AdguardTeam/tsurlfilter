@@ -1,15 +1,15 @@
 import { logger } from '../../common/utils/logger';
 
-export interface ExecuteScriptsParams {
+interface ExecuteScriptsParams {
     scripts: string[];
     tabId: number;
     frameId: number;
 }
 
 /**
- * Manager for user scripts.
+ * Api for executing user scripts.
  */
-export class UserScriptsManager {
+export class UserScriptsApi {
     /**
      * Indicates whether user scripts are supported in the current browser.
      *

@@ -26,14 +26,21 @@ describe('TabsCosmeticInjector', () => {
     beforeAll(async () => {
         await extSessionStorage.init();
         appContext.startTimeMs = Date.now();
+
+        // FIXME: Add mock for chrome.userScripts API
     });
 
     beforeEach(() => {
         vi.spyOn(CosmeticApi, 'applyCssByTabAndFrame');
         vi.spyOn(CosmeticApi, 'applyJsFuncsByTabAndFrame');
+        vi.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
+        vi.spyOn(CosmeticApi, 'applyJsFuncsAndScriptletsByTabAndFrame');
         vi.spyOn(CosmeticApi, 'logScriptRules');
         vi.spyOn(ScriptingApi, 'insertCSS');
         // TODO (Slava): add tests for executeScriptText. AG-39122
+        vi.spyOn(ScriptingApi, 'executeScriptFunc');
+        vi.spyOn(ScriptingApi, 'executeScriptlet');
+        vi.spyOn(ScriptingApi, 'executeScriptsViaUserScripts');
     });
 
     afterEach(() => {
@@ -76,6 +83,8 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
 
+            expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+
             const expectedLogParams = {
                 url,
                 tabId,
@@ -95,6 +104,7 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
             expect(CosmeticApi.applyJsFuncsByTabAndFrame).not.toBeCalled();
+            expect(CosmeticApi.applyScriptletsByTabAndFrame).not.toBeCalled();
 
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
@@ -113,7 +123,10 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
             expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
             expect(ScriptingApi.insertCSS).not.toBeCalled();
+            expect(ScriptingApi.executeScriptFunc).not.toBeCalled();
+            expect(ScriptingApi.executeScriptlet).not.toBeCalled();
 
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
