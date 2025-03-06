@@ -16,7 +16,11 @@ export class UserScriptsApi {
      * @returns `true` if user scripts are supported, `false` otherwise.
      */
     static get isUserScriptsSupported(): boolean {
-        return chrome.userScripts?.execute !== undefined;
+        try {
+            return chrome.userScripts?.execute !== undefined;
+        } catch (e) {
+            return false;
+        }
     }
 
     /**
