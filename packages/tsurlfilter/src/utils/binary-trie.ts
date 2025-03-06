@@ -74,6 +74,9 @@ export class BinaryTrie {
             buffer.addUint8(offset, node.children.size);
             offset += 1; // Uint8Array.BYTES_PER_ELEMENT
 
+            // Sort children by their character code before writing them.
+            const sortedChildren = Array.from(node.children.values()).sort((a, b) => a.code - b.code);
+
             /**
              * Writes child entry to the buffer.
              *
@@ -84,14 +87,17 @@ export class BinaryTrie {
                 buffer.addUint8(offset, child.code);
                 offset += 1; // Uint8Array.BYTES_PER_ELEMENT
 
-                // Set child position.
+                // Set child position
                 buffer.addUint32(offset, cursor);
                 offset += 4; // Uint32Array.BYTES_PER_ELEMENT
                 cursor += BinaryTrie.getByteSize(child);
             };
 
-            node.children.forEach(createChildEntry);
-            node.children.forEach(createNode);
+            // First write all child entries (key + offset) in sorted order
+            sortedChildren.forEach(createChildEntry);
+
+            // Then recursively create the children themselves in the same sorted order
+            sortedChildren.forEach(createNode);
         };
 
         createNode(root);
@@ -152,19 +158,35 @@ export class BinaryTrie {
     private static findChild(charCode: number, buffer: ByteBuffer, offset: number): number {
         let cursor = offset + 4; // Uint32Array.BYTES_PER_ELEMENT
 
-        let children = buffer.getUint8(cursor);
-        cursor += 1; // Uint8Array.BYTES_PER_ELEMENT
+        // Read the number of children
+        const children = buffer.getUint8(cursor);
+        cursor += 1;
 
-        while (children > 0) {
-            const childKey = buffer.getUint8(cursor);
-            cursor += 1; // Uint8Array.BYTES_PER_ELEMENT
+        if (children === 0) {
+            return -1;
+        }
 
-            if (childKey === charCode) {
-                return buffer.getUint32(cursor);
+        // Each child record is 5 bytes: 1 for childKey, 4 for childOffset
+        // So the block of child data starts here:
+        const start = cursor;
+        const recordSize = 5;
+
+        let low = 0;
+        let high = children - 1;
+
+        while (low <= high) {
+            const mid = (low + high) >>> 1;
+            const recordOffset = start + mid * recordSize;
+            const key = buffer.getUint8(recordOffset);
+
+            if (key < charCode) {
+                low = mid + 1;
+            } else if (key > charCode) {
+                high = mid - 1;
+            } else {
+                // Found the matching key, read the offset (4 bytes)
+                return buffer.getUint32(recordOffset + 1);
             }
-
-            cursor += 4; // Uint32Array.BYTES_PER_ELEMENT
-            children -= 1;
         }
 
         return -1;
