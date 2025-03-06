@@ -1163,8 +1163,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       '@adguard/scriptlets':
-        specifier: ^2.1.5
-        version: 2.1.5
+        specifier: ^2.1.6
+        version: 2.1.6
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1350,8 +1350,8 @@ importers:
         specifier: workspace:^
         version: link:../logger
       '@adguard/scriptlets':
-        specifier: ^2.1.5
-        version: 2.1.5
+        specifier: ^2.1.6
+        version: 2.1.6
       '@adguard/tsurlfilter':
         specifier: workspace:^
         version: link:../tsurlfilter
@@ -1591,8 +1591,8 @@ packages:
       js-yaml: 3.14.1
     dev: false
 
-  /@adguard/scriptlets@2.1.5:
-    resolution: {integrity: sha512-m6H49aJi3SxuAYQuHyWTyW47qog+QKoxjb+4kjEO1h9VocDfYlJKhPRgvG+Se84O/xS8EJt9ksnJ/IknlLl+2A==}
+  /@adguard/scriptlets@2.1.6:
+    resolution: {integrity: sha512-Kod4RVgj+fEo1VrPnsMVzGVQJihakjSKEzTe0B5Sz027flFzo7/O5hOgSEuJV9yg2RMl6HgcQeb6xWZWKJ2abw==}
     dependencies:
       '@adguard/agtree': link:packages/agtree
       js-yaml: 3.14.1
