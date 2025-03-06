@@ -8,39 +8,26 @@ export class TrieNode {
      * - an instance of TrieNode in case of lonely child
      * - a map where key is a character code and value is it's trie node.
      */
-    private children: Map<number, TrieNode> | TrieNode | undefined;
+    public children: Map<number, TrieNode> | TrieNode | undefined;
 
     /**
      * Character code of this TrieNode.
      */
-    private code: number;
+    public code: number;
 
     /**
      * Data, attached to this trie node. When trie traversal is being done,
      * data from all trie nodes is collected.
      */
-    private data: number[] | undefined;
+    public data: number | undefined;
 
     /**
      * Creates an instance of a TrieNode with the specified char code.
      *
-     * @param code The character code for this TrieNode.
+     * @param code Character code.
      */
     constructor(code: number) {
         this.code = code;
-    }
-
-    /**
-     * Attaches data to this TrieNode.
-     *
-     * @param data The data to attach to this TrieNode.
-     */
-    attach(data: number): void {
-        if (!this.data) {
-            this.data = [];
-        }
-
-        this.data.push(data);
     }
 
     /**
@@ -62,18 +49,40 @@ export class TrieNode {
 
             root = next;
         }
-        root.attach(data);
+
+        root.data = data;
     }
 
     /**
-     * Traverses this TrieNode and it's children using the specified search string.
+     * Searches for the specified string in the Trie and returns the attached data.
+     *
+     * @param input String to search.
+     *
+     * @returns Attached data or -1 if not found.
+     */
+    public search(input: string): number {
+        let current: TrieNode = this;
+        for (let i = 0; i < input.length; i += 1) {
+            const c = input.charCodeAt(i);
+            const next = current.getChild(c);
+            if (!next) {
+                return -1;
+            }
+            current = next;
+        }
+
+        return current.data ?? -1;
+    }
+
+    /**
+     * Traverses this TrieNode, and it's children using the specified search string.
      * This method collects all the data that's attached on the way and returns as
      * a result.
      *
      * @param str String to check.
      * @param start Index in str where to start traversing from.
      *
-     * @returns An array of numbers collected from the trie nodes.
+     * @returns Array of attached data.
      */
     traverse(str: string, start: number): number[] {
         const result: number[] = [];
@@ -86,8 +95,8 @@ export class TrieNode {
             if (!next) {
                 break;
             }
-            if (next.data) {
-                result.push(...next.data);
+            if (typeof next.data === 'number') {
+                result.push(next.data);
             }
             current = next;
         }
@@ -96,12 +105,12 @@ export class TrieNode {
     }
 
     /**
-     * Traverses this TrieNode and it's children using the specified search string and all substrings.
+     * Traverses this TrieNode, and it's children using the specified search string and all substrings.
      *
      * @param str String to check.
      * @param len Max length to check.
      *
-     * @returns Array of numbers collected from the trie nodes.
+     * @returns Array of attached data.
      */
     public traverseAll(str: string, len: number): number[] {
         const data: number[] = [];
