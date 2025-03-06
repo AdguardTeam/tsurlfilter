@@ -32,15 +32,23 @@ describe('TabsCosmeticInjector', () => {
 
     beforeEach(() => {
         vi.spyOn(CosmeticApi, 'applyCssByTabAndFrame');
-        vi.spyOn(CosmeticApi, 'applyJsFuncsByTabAndFrame');
-        vi.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
-        vi.spyOn(CosmeticApi, 'applyJsFuncsAndScriptletsByTabAndFrame');
         vi.spyOn(CosmeticApi, 'logScriptRules');
         vi.spyOn(ScriptingApi, 'insertCSS');
         // TODO (Slava): add tests for executeScriptText. AG-39122
+
+        // These methods will be used if userScripts available.
+        vi.spyOn(CosmeticApi, 'applyJsFuncsAndScriptletsByTabAndFrame');
+        vi.spyOn(ScriptingApi, 'executeScriptsViaUserScripts');
+
+        // These methods will be used if userScripts are not available.
+        vi.spyOn(CosmeticApi, 'applyJsFuncsByTabAndFrame');
+        vi.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
         vi.spyOn(ScriptingApi, 'executeScriptFunc');
         vi.spyOn(ScriptingApi, 'executeScriptlet');
-        vi.spyOn(ScriptingApi, 'executeScriptsViaUserScripts');
+
+        // Just an empty object to pass the check in the code that
+        // chrome.userScripts is available.
+        vi.mock('chrome.userScripts', {});
     });
 
     afterEach(() => {
@@ -80,9 +88,7 @@ describe('TabsCosmeticInjector', () => {
             await TabsCosmeticInjector.processOpenTabs();
 
             expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-
             expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-
             expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
 
             const expectedLogParams = {
