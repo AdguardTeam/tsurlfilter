@@ -106,7 +106,7 @@ export class TabsCosmeticInjector {
                 CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
             ];
 
-            if (UserScriptsApi.isUserScriptsSupported) {
+            if (UserScriptsApi.areUserScriptsSupported) {
                 tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
             } else {
                 tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));

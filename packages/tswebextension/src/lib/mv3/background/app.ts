@@ -34,6 +34,7 @@ import { type LocalScriptFunctionData, localScriptRulesService } from './service
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
+import { UserScriptsApi } from './user-scripts';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -755,5 +756,14 @@ export class TsWebExtension implements AppInterface<
     // eslint-disable-next-line class-methods-use-this
     public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
         return engineApi.retrieveRuleNode(filterId, ruleIndex);
+    }
+
+    /**
+     * Indicates whether user scripts are supported in the current browser.
+     *
+     * @returns `true` if user scripts are supported, `false` otherwise.
+     */
+    public static get areUserScriptsSupported(): boolean {
+        return UserScriptsApi.areUserScriptsSupported;
     }
 }

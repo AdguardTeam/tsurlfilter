@@ -15,7 +15,7 @@ export class UserScriptsApi {
      *
      * @returns `true` if user scripts are supported, `false` otherwise.
      */
-    static get isUserScriptsSupported(): boolean {
+    public static get areUserScriptsSupported(): boolean {
         try {
             return chrome.userScripts?.execute !== undefined;
         } catch (e) {
@@ -37,7 +37,7 @@ export class UserScriptsApi {
      *
      * @throws Will log an error if the script execution fails.
      */
-    static async executeScripts({
+    public static async executeScripts({
         scripts,
         tabId,
         frameId,

@@ -311,7 +311,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param params Data for js rule logging.
      */
     public static logScriptRules(params: LogJsRulesParams): void {
-        const filterFn = UserScriptsApi.isUserScriptsSupported
+        const filterFn = UserScriptsApi.areUserScriptsSupported
             // via userScripts API we can inject any script
             ? (): boolean => { return true; }
             : CosmeticApi.shouldSanitizeScriptRule;

@@ -371,7 +371,7 @@ export class WebRequestApi {
             return;
         }
 
-        if (UserScriptsApi.isUserScriptsSupported) {
+        if (UserScriptsApi.areUserScriptsSupported) {
             CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId);
         } else {
             CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
@@ -649,7 +649,7 @@ export class WebRequestApi {
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
         ];
 
-        if (UserScriptsApi.isUserScriptsSupported) {
+        if (UserScriptsApi.areUserScriptsSupported) {
             tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
         } else {
             tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));
