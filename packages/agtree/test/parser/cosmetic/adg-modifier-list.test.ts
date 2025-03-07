@@ -119,7 +119,12 @@ describe('CosmeticRuleParser', () => {
                 },
             },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
-            expect(CosmeticRuleParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
+            expect(
+                CosmeticRuleParser.parse(actual, {
+                    ...defaultParserOptions,
+                    parseModifierValues: false,
+                }),
+            ).toMatchObject(expectedFn(new NodeExpectContext(actual)));
         });
     });
 

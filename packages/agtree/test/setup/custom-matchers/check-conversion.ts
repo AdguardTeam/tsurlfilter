@@ -173,7 +173,31 @@ const toBeConvertedProperly = (
     }
 
     // Finally, we should compare the stringified versions of the nodes
-    expect(conversionResult.result.map(RuleGenerator.generate)).toEqual(receivedParsed.expected);
+    try {
+        expect(conversionResult.result.map(RuleGenerator.generate)).toEqual(receivedParsed.expected);
+    } catch (error: unknown) {
+        const message = getErrorMessage(error);
+
+        // Include actual and expected values in the result,
+        // because it helps to the Vitest extension to display the diff in the UI
+        let actual: unknown | undefined;
+        let expected: unknown | undefined;
+
+        if (Object.prototype.hasOwnProperty.call(error, 'actual')) {
+            actual = (error as unknown as { actual: unknown }).actual;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(error, 'expected')) {
+            expected = (error as unknown as { expected: unknown }).expected;
+        }
+
+        return {
+            pass: false,
+            message: () => message,
+            actual,
+            expected,
+        };
+    }
 
     return {
         pass: true,

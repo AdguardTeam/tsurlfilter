@@ -127,9 +127,26 @@ const toBeSerializedAndDeserializedProperly = async (
             message: () => 'Serialization and deserialization passed',
         };
     } catch (error: unknown) {
+        const message = getErrorMessage(error);
+
+        // Include actual and expected values in the result,
+        // because it helps to the Vitest extension to display the diff in the UI
+        let actual: unknown | undefined;
+        let expected: unknown | undefined;
+
+        if (Object.prototype.hasOwnProperty.call(error, 'actual')) {
+            actual = (error as unknown as { actual: unknown }).actual;
+        }
+
+        if (Object.prototype.hasOwnProperty.call(error, 'expected')) {
+            expected = (error as unknown as { expected: unknown }).expected;
+        }
+
         return {
             pass: false,
-            message: () => getErrorMessage(error),
+            message: () => message,
+            actual,
+            expected,
         };
     }
 };

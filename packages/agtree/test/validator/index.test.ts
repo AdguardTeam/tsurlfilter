@@ -7,6 +7,7 @@ import { StringUtils } from '../../src/utils/string';
 import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
 import { AdblockSyntax } from '../../src/utils/adblockers';
 import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-items-parser';
+import { defaultParserOptions } from '../../src/parser';
 
 /**
  * Returns modifier AST node for given rawModifier.
@@ -20,7 +21,10 @@ const getModifier = (rawModifier: string | Modifier): Modifier => {
     let modifier: Modifier;
     if (StringUtils.isString(rawModifier)) {
         // no try..catch used here in purpose
-        modifier = ModifierParser.parse(rawModifier);
+        modifier = ModifierParser.parse(rawModifier, {
+            ...defaultParserOptions,
+            parseModifierValues: false, // FIXME: workaround
+        });
     } else {
         modifier = rawModifier;
     }
