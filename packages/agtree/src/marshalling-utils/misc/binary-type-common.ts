@@ -63,6 +63,8 @@ export const BinaryTypeMarshallingMap = {
     ExpressionVariableNode: 47,
     ExpressionOperatorNode: 48,
     ExpressionParenthesisNode: 49,
+
+    ModifierValueNode: 50,
 } as const;
 
 // intentionally naming the variable the same as the type

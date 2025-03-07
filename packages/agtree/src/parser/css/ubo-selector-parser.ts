@@ -14,10 +14,10 @@ import {
     OPEN_PARENTHESIS,
 } from '../../utils/constants';
 import {
-    type ModifierList,
     type Value,
-    type Modifier,
     type UboSelector,
+    type UboModifierList,
+    type UboModifier,
 } from '../../nodes';
 import { tokenizeFnBalanced } from './balancing';
 import { type TokenData } from './css-token-stream';
@@ -272,7 +272,7 @@ export class UboSelectorParser extends BaseParser {
      */
     public static parse(raw: string, options = defaultParserOptions, baseOffset = 0): UboSelector {
         // Prepare helper variables
-        const modifiers: ModifierList = {
+        const modifiers: UboModifierList = {
             type: 'ModifierList',
             children: [],
         };
@@ -558,7 +558,7 @@ export class UboSelectorParser extends BaseParser {
                             value.end = baseOffset + lastStackedModifier.valueEnd!;
                         }
 
-                        const modifier: Modifier = {
+                        const modifier: UboModifier = {
                             type: 'Modifier',
                             name: modifierName,
                             value,

@@ -1,6 +1,7 @@
 import type { Modifier } from '../../nodes';
 import { EMPTY, MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
+import { ModifierValueGenerator } from './modifier-value-generator';
 
 /**
  * Generator for modifier nodes.
@@ -23,7 +24,7 @@ export class ModifierGenerator extends BaseGenerator {
 
         if (modifier.value !== undefined) {
             result += MODIFIER_ASSIGN_OPERATOR;
-            result += modifier.value.value;
+            result += ModifierValueGenerator.generate(modifier.value);
         }
 
         return result;

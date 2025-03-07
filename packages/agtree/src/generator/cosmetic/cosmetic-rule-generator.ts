@@ -13,6 +13,7 @@ import { type AnyCosmeticRule } from '../../nodes';
 import { BaseGenerator } from '../base-generator';
 import { CosmeticRulePatternGenerator } from './cosmetic-rule-pattern-generator';
 import { CosmeticRuleBodyGenerator } from './cosmetic-rule-body-generator';
+import { ModifierValueGenerator } from '../misc/modifier-value-generator';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
@@ -55,7 +56,7 @@ export class CosmeticRuleGenerator extends BaseGenerator {
                 result += modifier.name.value;
                 if (modifier.value) {
                     result += OPEN_PARENTHESIS;
-                    result += modifier.value.value;
+                    result += ModifierValueGenerator.generate(modifier.value);
                     result += CLOSE_PARENTHESIS;
                 }
             });

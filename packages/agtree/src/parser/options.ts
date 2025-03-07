@@ -3,6 +3,12 @@
  */
 
 /**
+ * Modifier value contexts. Used to determine how to parse modifier values.
+ */
+// FIXME: add more contexts
+export type ModifierContext = 'RawValue' | 'PipeSeparatedDomainList';
+
+/**
  * Common options for all parsers.
  */
 export interface ParserOptions {
@@ -41,12 +47,24 @@ export interface ParserOptions {
      * Whether to parse host rules.
      */
     parseHostRules?: boolean;
+
+    /**
+     * Whether to parse modifier values.
+     * Only takes effect on `ModifierParser`.
+     */
+    parseModifierValues?: boolean;
+
+    /**
+     * Modifier contexts.
+     * Only takes effect on `ModifierParser`.
+     */
+    modifierContexts?: Record<string, ModifierContext>;
 }
 
 /**
  * Default parser options.
  */
-export const defaultParserOptions: ParserOptions = Object.freeze({
+export const defaultParserOptions: ParserOptions = {
     tolerant: false,
     isLocIncluded: true,
     parseAbpSpecificRules: true,
@@ -54,4 +72,14 @@ export const defaultParserOptions: ParserOptions = Object.freeze({
     includeRaws: true,
     ignoreComments: false,
     parseHostRules: false,
-});
+    parseModifierValues: true,
+    modifierContexts: {
+        // FIXME: add more contexts
+        domain: 'PipeSeparatedDomainList',
+    },
+};
+
+/**
+ * Freezes the default parser options to avoid accidental modifications.
+ */
+Object.freeze(defaultParserOptions);

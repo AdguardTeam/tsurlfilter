@@ -10,6 +10,7 @@ import {
     ModifierNodeMarshallingMap,
 } from '../../marshalling-utils/misc/modifier-common';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { ModifierValueSerializer } from './modifier-value-serializer';
 
 /**
  * `ModifierSerializer` is responsible for serializing modifiers.
@@ -32,7 +33,7 @@ export class ModifierSerializer extends BaseSerializer {
 
         if (!isUndefined(node.value)) {
             buffer.writeUint8(ModifierNodeMarshallingMap.Value);
-            ValueSerializer.serialize(
+            ModifierValueSerializer.serialize(
                 node.value,
                 buffer,
                 FREQUENT_REDIRECT_MODIFIERS_SERIALIZATION_MAP.get(node.name.value),

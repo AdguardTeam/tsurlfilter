@@ -1,10 +1,11 @@
-import { MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
+import { MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER, PIPE } from '../../utils/constants';
 import { StringUtils } from '../../utils/string';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { type Modifier, type Value } from '../../nodes';
-import { defaultParserOptions } from '../options';
+import { type Modifier, type Value, type ModifierValue } from '../../nodes';
 import { BaseParser } from '../base-parser';
 import { ValueParser } from './value-parser';
+import { DomainListParser } from './domain-list-parser';
+import { defaultParserOptions } from '../options';
 
 /**
  * `ModifierParser` is responsible for parsing modifiers.
@@ -62,7 +63,7 @@ export class ModifierParser extends BaseParser {
         }
 
         let modifier: Value;
-        let value: Value | undefined;
+        let value: ModifierValue | undefined;
 
         // If there is no assignment operator, the whole modifier is the name
         // without a value
@@ -95,11 +96,35 @@ export class ModifierParser extends BaseParser {
             // Skip whitespace after the assignment operator
             const valueStart = StringUtils.skipWS(raw, assignmentIndex + MODIFIER_ASSIGN_OPERATOR.length);
 
-            value = ValueParser.parse(
-                raw.slice(valueStart, modifierEnd),
-                options,
-                baseOffset + valueStart,
-            );
+            // Parse modifier value
+            if (options.parseModifierValues && options.modifierContexts) {
+                const context = options.modifierContexts[modifier.value];
+
+                switch (context) {
+                    case 'PipeSeparatedDomainList':
+                        value = DomainListParser.parse(
+                            raw.slice(valueStart, modifierEnd),
+                            options,
+                            baseOffset + valueStart,
+                            PIPE,
+                        );
+                        break;
+                    case 'RawValue':
+                    default:
+                        value = ValueParser.parse(
+                            raw.slice(valueStart, modifierEnd),
+                            options,
+                            baseOffset + valueStart,
+                        );
+                        break;
+                }
+            } else {
+                value = ValueParser.parse(
+                    raw.slice(valueStart, modifierEnd),
+                    options,
+                    baseOffset + valueStart,
+                );
+            }
         }
 
         const result: Modifier = {

@@ -2,7 +2,7 @@
  * @file Utility functions for working with modifier nodes
  */
 
-import { type Modifier, type ModifierList } from '../nodes';
+import { type ModifierValue, type Modifier, type ModifierList } from '../nodes';
 import { isUndefined } from '../utils/type-guards';
 import { clone } from '../utils/clone';
 
@@ -14,7 +14,11 @@ import { clone } from '../utils/clone';
  * @param exception Whether the modifier is an exception
  * @returns Modifier node
  */
-export function createModifierNode(name: string, value: string | undefined = undefined, exception = false): Modifier {
+export function createModifierNode(
+    name: string,
+    value: ModifierValue | string | undefined = undefined,
+    exception = false,
+): Modifier {
     const result: Modifier = {
         type: 'Modifier',
         exception,
@@ -25,10 +29,7 @@ export function createModifierNode(name: string, value: string | undefined = und
     };
 
     if (!isUndefined(value)) {
-        result.value = {
-            type: 'Value',
-            value,
-        };
+        result.value = typeof value === 'string' ? { type: 'Value', value } : value;
     }
 
     return result;

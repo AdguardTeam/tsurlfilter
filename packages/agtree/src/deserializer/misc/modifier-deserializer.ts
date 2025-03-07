@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import { NULL } from '../../utils/constants';
-import { type Value, type Modifier } from '../../nodes';
+import { type Value, type Modifier, type ModifierValue } from '../../nodes';
 import { ValueDeserializer } from './value-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import {
@@ -10,6 +10,7 @@ import {
 } from '../../marshalling-utils/misc/modifier-common';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { ModifierValueDeserializer } from './modifier-value-deserializer';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,
@@ -65,34 +66,49 @@ export class ModifierDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case ModifierNodeMarshallingMap.Name:
-                    // eslint-disable-next-line max-len
-                    ValueDeserializer.deserialize(buffer, node.name = {} as Value, getFrequentModifiersDeserializationMap());
+                case ModifierNodeMarshallingMap.Name: {
+                    ValueDeserializer.deserialize(
+                        buffer,
+                        node.name = {} as Value,
+                        getFrequentModifiersDeserializationMap(),
+                    );
                     break;
+                }
 
-                case ModifierNodeMarshallingMap.Value:
+                case ModifierNodeMarshallingMap.Value: {
                     if (node.name) {
-                        // eslint-disable-next-line max-len
-                        ValueDeserializer.deserialize(buffer, node.value = {} as Value, getFrequentValuesDeserializationMaps().get(node.name.value));
+                        ModifierValueDeserializer.deserialize(
+                            buffer,
+                            node.value = {} as ModifierValue,
+                            getFrequentValuesDeserializationMaps().get(node.name.value),
+                        );
                     } else {
-                        ValueDeserializer.deserialize(buffer, node.value = {} as Value);
+                        ModifierValueDeserializer.deserialize(
+                            buffer,
+                            node.value = {} as ModifierValue,
+                        );
                     }
                     break;
+                }
 
-                case ModifierNodeMarshallingMap.Exception:
+                case ModifierNodeMarshallingMap.Exception: {
                     node.exception = buffer.readUint8() === 1;
                     break;
+                }
 
-                case ModifierNodeMarshallingMap.Start:
+                case ModifierNodeMarshallingMap.Start: {
                     node.start = buffer.readUint32();
                     break;
+                }
 
-                case ModifierNodeMarshallingMap.End:
+                case ModifierNodeMarshallingMap.End: {
                     node.end = buffer.readUint32();
                     break;
+                }
 
-                default:
+                default: {
                     throw new Error(`Invalid property: ${prop}.`);
+                }
             }
 
             prop = buffer.readUint8();

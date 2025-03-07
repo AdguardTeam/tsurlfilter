@@ -777,6 +777,11 @@ export interface ModifierList extends Node {
 }
 
 /**
+ * Represents a modifier value node.
+ */
+export type ModifierValue = Value | DomainList;
+
+/**
  * Represents a modifier.
  *
  * @example
@@ -800,7 +805,7 @@ export interface Modifier extends Node {
     /**
      * Modifier value (optional)
      */
-    value?: Value;
+    value?: ModifierValue;
 }
 
 /**
@@ -1378,6 +1383,20 @@ export interface HostRule extends NetworkRuleBase {
 }
 
 /**
+ * Represents a uBO modifier.
+ */
+export interface UboModifier extends Modifier {
+    value?: Value;
+}
+
+/**
+ * Represents a list of uBO modifiers.
+ */
+export interface UboModifierList extends ModifierList {
+    children: UboModifier[];
+}
+
+/**
  * Interface for parsed uBO selector.
  */
 export interface UboSelector extends Node {
@@ -1394,5 +1413,5 @@ export interface UboSelector extends Node {
     /**
      * List of uBO modifiers applied to the selector.
      */
-    modifiers?: ModifierList;
+    modifiers?: UboModifierList;
 }

@@ -287,13 +287,26 @@ const validateListItemsModifier = (
     const modifierName = modifier.name.value;
     const defaultInvalidValueResult = getValueRequiredValidationResult(modifierName);
 
-    if (!modifier.value?.value) {
+    if (!modifier.value) {
         return defaultInvalidValueResult;
     }
 
     let theList: PipeSeparatedList;
     try {
-        theList = listParser(modifier.value.value, defaultParserOptions, 0, PIPE);
+        switch (modifier.value.type) {
+            case 'Value': {
+                theList = listParser(modifier.value.value, defaultParserOptions, 0, PIPE);
+                break;
+            }
+            case 'DomainList': {
+                theList = modifier.value;
+                break;
+            }
+            default: {
+                // During normal operation, this should never happen
+                throw new Error('Unexpected modifier value type');
+            }
+        }
     } catch (e: unknown) {
         if (e instanceof AdblockSyntaxError) {
             return {
@@ -424,8 +437,19 @@ const validatePipeSeparatedStealthOptions = (modifier: Modifier): ValidationResu
  */
 const validateCspValue = (modifier: Modifier): ValidationResult => {
     const modifierName = modifier.name.value;
-    if (!modifier.value?.value) {
-        return getValueRequiredValidationResult(modifierName);
+
+    if (!modifier.value) {
+        return getValueRequiredValidationResult(modifier.name.value);
+    }
+
+    if (modifier.value?.type !== 'Value') {
+        return getInvalidValidationResult(
+            `Unexpected modifier value type: '${modifier.value?.type}'`,
+        );
+    }
+
+    if (!modifier.value.value) {
+        return getValueRequiredValidationResult(modifier.name.value);
     }
 
     // $csp modifier value may contain multiple directives
@@ -628,7 +652,17 @@ const validateSinglePermission = (
  * @returns Validation result.
  */
 const validatePermissions = (modifier: Modifier): ValidationResult => {
-    if (!modifier.value?.value) {
+    if (!modifier.value) {
+        return getValueRequiredValidationResult(modifier.name.value);
+    }
+
+    if (modifier.value?.type !== 'Value') {
+        return getInvalidValidationResult(
+            `Unexpected modifier value type: '${modifier.value?.type}'`,
+        );
+    }
+
+    if (!modifier.value.value) {
         return getValueRequiredValidationResult(modifier.name.value);
     }
 
@@ -659,7 +693,17 @@ const validatePermissions = (modifier: Modifier): ValidationResult => {
  * @returns Validation result.
  */
 const validateReferrerPolicy = (modifier: Modifier): ValidationResult => {
-    if (!modifier.value?.value) {
+    if (!modifier.value) {
+        return getValueRequiredValidationResult(modifier.name.value);
+    }
+
+    if (modifier.value?.type !== 'Value') {
+        return getInvalidValidationResult(
+            `Unexpected modifier value type: '${modifier.value?.type}'`,
+        );
+    }
+
+    if (!modifier.value.value) {
         return getValueRequiredValidationResult(modifier.name.value);
     }
 
@@ -722,8 +766,19 @@ export const validateValue = (
 
     const modifierName = modifier.name.value;
 
-    if (!modifier.value?.value) {
-        return getValueRequiredValidationResult(modifierName);
+    // FIXME
+    if (!modifier.value) {
+        return getValueRequiredValidationResult(modifier.name.value);
+    }
+
+    if (modifier.value?.type !== 'Value') {
+        return getInvalidValidationResult(
+            `Unexpected modifier value type: '${modifier.value?.type}'`,
+        );
+    }
+
+    if (!modifier.value.value) {
+        return getValueRequiredValidationResult(modifier.name.value);
     }
 
     let regExp: RegExp;

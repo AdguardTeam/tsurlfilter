@@ -17,6 +17,7 @@ import { StringUtils } from '../../../utils/string';
 import { MultiValueMap } from '../../../utils/multi-value-map';
 import { clone } from '../../../utils/clone';
 import { type ConversionResult, createConversionResult } from '../../base-interfaces/conversion-result';
+import { ModifierValueGenerator } from '../../../generator/misc/modifier-value-generator';
 
 const UBO_MATCHES_PATH_OPERATOR = 'matches-path';
 const ADG_PATH_MODIFIER = 'path';
@@ -55,9 +56,16 @@ export class AdgCosmeticRuleModifierConverter {
                     throw new RuleConversionError(`'${UBO_MATCHES_PATH_OPERATOR}' operator requires a value`);
                 }
 
-                const value = RegExpUtils.isRegexPattern(modifier.value.value)
-                    ? StringUtils.escapeCharacters(modifier.value.value, SPECIAL_MODIFIER_REGEX_CHARS)
-                    : modifier.value.value;
+                let value: string | undefined;
+
+                if (modifier.value?.type === 'Value' && RegExpUtils.isRegexPattern(modifier.value.value)) {
+                    value = StringUtils.escapeCharacters(
+                        modifier.value.value,
+                        SPECIAL_MODIFIER_REGEX_CHARS,
+                    );
+                } else {
+                    value = ModifierValueGenerator.generate(modifier.value);
+                }
 
                 // Convert uBO's `:matches-path(...)` operator to ADG's `$path=...` modifier
                 conversionMap.add(
