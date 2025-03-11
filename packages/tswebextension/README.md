@@ -204,6 +204,7 @@ In the content script, we need access to `@adguard/assistant` only when the user
 Same approach with dynamic injecting we use for stealth options GPC and Hide
 Document Referrer. Handlers for these options will dynamically register content
 scripts via `scripting.registerContentScript`.
+
 ## API
 
 The main idea of the library is to provide a common interface for different browsers and manifest versions.
@@ -457,7 +458,7 @@ Enables filtering if true.
 
 type: `string`
 
-Redirect url for $document rules.
+Redirect url for blocking rules with `$document` modifier.
 
 ##### assistantUrl
 
