@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased <!-- release/browser-extension-v5.2 -->
 
+### Added
+
+- `filterId` query param to `documentBlockingPageUrl` for MV2.
+
 ## [3.0.1] - 2025-03-06
 
 ### Changed
