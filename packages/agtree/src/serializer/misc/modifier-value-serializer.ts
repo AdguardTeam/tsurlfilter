@@ -4,6 +4,9 @@ import { ValueSerializer } from './value-serializer';
 import { BaseSerializer } from '../base-serializer';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 import { DomainListSerializer } from './domain-list-serializer';
+import { AppListSerializer } from './app-list-serializer';
+import { MethodListSerializer } from './method-list-serializer';
+import { StealthOptionListSerializer } from './stealth-option-list-serializer';
 
 /**
  * `ModifierValueSerializer` is responsible for serializing modifier values.
@@ -34,6 +37,30 @@ export class ModifierValueSerializer extends BaseSerializer {
                     node,
                     buffer,
                     frequentValuesMap,
+                );
+                break;
+            }
+
+            case 'AppList': {
+                AppListSerializer.serialize(
+                    node,
+                    buffer,
+                );
+                break;
+            }
+
+            case 'MethodList': {
+                MethodListSerializer.serialize(
+                    node,
+                    buffer,
+                );
+                break;
+            }
+
+            case 'StealthOptionList': {
+                StealthOptionListSerializer.serialize(
+                    node,
+                    buffer,
                 );
                 break;
             }

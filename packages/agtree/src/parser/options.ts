@@ -6,7 +6,11 @@
  * Modifier value contexts. Used to determine how to parse modifier values.
  */
 // FIXME: add more contexts
-export type ModifierContext = 'RawValue' | 'PipeSeparatedDomainList';
+export type ModifierContext = 'RawValue'
+| 'PipeSeparatedDomainList'
+| 'AppList'
+| 'MethodList'
+| 'StealthOptionList';
 
 /**
  * Common options for all parsers.
@@ -75,7 +79,13 @@ export const defaultParserOptions: ParserOptions = {
     parseModifierValues: true,
     modifierContexts: {
         // FIXME: add more contexts
+        app: 'AppList',
+        denyallow: 'PipeSeparatedDomainList',
         domain: 'PipeSeparatedDomainList',
+        from: 'PipeSeparatedDomainList',
+        method: 'MethodList',
+        stealth: 'StealthOptionList',
+        to: 'PipeSeparatedDomainList',
     },
 };
 

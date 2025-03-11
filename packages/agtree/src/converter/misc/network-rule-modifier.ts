@@ -178,7 +178,7 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
                         ? modifierConversion.exception(modifierNode.exception || false)
                         : createConversionResult(modifierNode.exception, false);
 
-                    const value = modifierConversion.value && modifierNode.value
+                    const value = modifierConversion.value
                         ? modifierConversion.value(modifierNode.value)
                         : createConversionResult(modifierNode.value, false);
 
@@ -199,28 +199,28 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
 
             // Handle special case: resource redirection modifiers
             if (REDIRECT_MODIFIERS.has(modifierNode.name.value)) {
-                // Redirect modifiers can't be negated
+                // Redirect modifiers cannot be negated
                 if (modifierNode.exception === true) {
                     throw new RuleConversionError(
                         `Modifier '${modifierNode.name.value}' cannot be negated`,
                     );
                 }
 
-                if (modifierNode.value?.type !== 'Value') {
+                // Special case: for exception rules, $redirect without value is allowed,
+                // and in this case it means an exception for all redirects
+                if (!modifierNode.value && !isException) {
                     throw new RuleConversionError(
-                        `Invalid value for '${modifierNode.name.value}' modifier`,
+                        `No redirect resource specified for '${modifierNode.name.value}' modifier`,
                     );
                 }
 
                 // Convert the redirect resource name to ADG format
-                const redirectResource = modifierNode.value?.value;
+                let redirectResource: string | undefined;
 
-                // Special case: for exception rules, $redirect without value is allowed,
-                // and in this case it means an exception for all redirects
-                if (!redirectResource && !isException) {
-                    throw new RuleConversionError(
-                        `No redirect resource specified for '${modifierNode.name.value}' modifier`,
-                    );
+                if (modifierNode.value?.type === 'Value') {
+                    redirectResource = modifierNode.value.value;
+                } else if (!isUndefined(modifierNode.value)) {
+                    redirectResource = ModifierValueGenerator.generate(modifierNode.value);
                 }
 
                 // Leave $redirect and $redirect-rule modifiers as is, but convert $rewrite to $redirect
@@ -278,15 +278,15 @@ export class NetworkRuleModifierListConverter extends BaseConverter {
 
                 modifierListClone.children = modifierListClone.children.filter((modifierNode) => {
                     if (modifierNode.name.value === CSP_MODIFIER) {
-                        if (modifierNode.value?.type !== 'Value') {
+                        if (!modifierNode.value) {
                             throw new RuleConversionError(
-                                `Invalid value for '${CSP_MODIFIER}' modifier`,
+                                '$csp modifier value is missing',
                             );
                         }
 
-                        if (!modifierNode.value.value) {
+                        if (modifierNode.value?.type !== 'Value') {
                             throw new RuleConversionError(
-                                '$csp modifier value is missing',
+                                `Invalid value for '${CSP_MODIFIER}' modifier`,
                             );
                         }
 

@@ -58,6 +58,13 @@ export {
     type HostnameList,
     type HostRule,
     type AnyNetworkRule,
+    type ModifierValue,
+    type Method,
+    type MethodList,
+    type StealthOption,
+    type StealthOptionList,
+    type App,
+    type AppList,
 } from './nodes';
 export { AdblockSyntaxError } from './errors/adblock-syntax-error';
 export { AgentCommentParser } from './parser/comment/agent-comment-parser';

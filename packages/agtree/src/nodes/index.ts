@@ -779,7 +779,7 @@ export interface ModifierList extends Node {
 /**
  * Represents a modifier value node.
  */
-export type ModifierValue = Value | DomainList;
+export type ModifierValue = Value | DomainList | AppList | MethodList | StealthOptionList;
 
 /**
  * Represents a modifier.

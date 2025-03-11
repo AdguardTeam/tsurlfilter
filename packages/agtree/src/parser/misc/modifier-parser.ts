@@ -6,6 +6,9 @@ import { BaseParser } from '../base-parser';
 import { ValueParser } from './value-parser';
 import { DomainListParser } from './domain-list-parser';
 import { defaultParserOptions } from '../options';
+import { AppListParser } from './app-list-parser';
+import { MethodListParser } from './method-list-parser';
+import { StealthOptionListParser } from './stealth-option-list-parser';
 
 /**
  * `ModifierParser` is responsible for parsing modifiers.
@@ -107,6 +110,27 @@ export class ModifierParser extends BaseParser {
                             options,
                             baseOffset + valueStart,
                             PIPE,
+                        );
+                        break;
+                    case 'AppList':
+                        value = AppListParser.parse(
+                            raw.slice(valueStart, modifierEnd),
+                            options,
+                            baseOffset + valueStart,
+                        );
+                        break;
+                    case 'MethodList':
+                        value = MethodListParser.parse(
+                            raw.slice(valueStart, modifierEnd),
+                            options,
+                            baseOffset + valueStart,
+                        );
+                        break;
+                    case 'StealthOptionList':
+                        value = StealthOptionListParser.parse(
+                            raw.slice(valueStart, modifierEnd),
+                            options,
+                            baseOffset + valueStart,
                         );
                         break;
                     case 'RawValue':

@@ -27,7 +27,7 @@ const getSeparatorDeserializationMap = () => {
  */
 export class DomainListDeserializer extends BaseDeserializer {
     /**
-     * Deserializes a modifier list node from binary format.
+     * Deserializes a domain list node from binary format.
      *
      * @param buffer ByteBuffer for reading binary data.
      * @param node Destination node.
