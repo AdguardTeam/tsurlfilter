@@ -1718,9 +1718,6 @@ export class NetworkRule implements IRule {
             // $cookie
             case OPTIONS.COOKIE:
                 this.setOptionEnabled(NetworkRuleOption.Cookie, true);
-                if (!optionValue) {
-                    throw new SyntaxError('Invalid modifier: $cookie requires a value');
-                }
                 this.advancedModifier = new CookieModifier(optionValue);
                 break;
             // $redirect
@@ -1742,17 +1739,11 @@ export class NetworkRule implements IRule {
             // $removeparam
             case OPTIONS.REMOVEPARAM:
                 this.setOptionEnabled(NetworkRuleOption.RemoveParam, true);
-                if (!optionValue) {
-                    throw new SyntaxError('Invalid modifier: $removeparam requires a value');
-                }
                 this.advancedModifier = new RemoveParamModifier(optionValue);
                 break;
             // $removeheader
             case OPTIONS.REMOVEHEADER:
                 this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
-                if (!optionValue) {
-                    throw new SyntaxError('Invalid modifier: $removeheader requires a value');
-                }
                 this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isAllowlist());
                 break;
             // $permissions

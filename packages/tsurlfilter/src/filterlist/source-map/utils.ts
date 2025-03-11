@@ -46,13 +46,33 @@ export const getRuleSourceText = (lineStartIndex: number, source: string): strin
 /**
  * Helper function to get the rule source index (line start index in the source) from the source map by the rule index.
  *
- * @param ruleIdx Rule index.
+ * @param ruleBinaryIdx Rule index in the binary filter list.
  * @param sourceMap Source map.
  *
  * @returns Rule source index or RULE_INDEX_NONE (-1).
  *
  * @note Similar to `Array.prototype.indexOf`, we return -1 if the rule index is not found.
  */
-export const getRuleSourceIndex = (ruleIdx: number, sourceMap: FilterListSourceMap): number => {
-    return sourceMap[ruleIdx] ?? RULE_INDEX_NONE;
+export const getRuleSourceIndex = (ruleBinaryIdx: number, sourceMap: FilterListSourceMap): number => {
+    return sourceMap[ruleBinaryIdx] ?? RULE_INDEX_NONE;
+};
+
+/**
+ * Helper function to get the rule binary index from the source map by the rule source index.
+ *
+ * @param ruleSourceIdx Rule source index.
+ * @param sourceMap Source map.
+ *
+ * @returns Rule binary index or RULE_INDEX_NONE (-1).
+ *
+ * @note Similar to `Array.prototype.indexOf`, we return -1 if the rule source index is not found.
+ */
+export const getRuleBinaryIndex = (ruleSourceIdx: number, sourceMap: FilterListSourceMap): number => {
+    for (const [binaryIdx, sourceIdx] of Object.entries(sourceMap)) {
+        if (sourceIdx === ruleSourceIdx) {
+            return Number(binaryIdx);
+        }
+    }
+
+    return RULE_INDEX_NONE;
 };

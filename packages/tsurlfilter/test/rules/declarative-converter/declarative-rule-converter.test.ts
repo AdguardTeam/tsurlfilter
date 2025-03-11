@@ -1427,8 +1427,7 @@ describe('DeclarativeRuleConverter', () => {
             } = await DeclarativeRulesConverter.convert(
                 [filter],
             );
-            expect(declarativeRules.length).toBe(1);
-            expect(declarativeRules[0]).toEqual({
+            expect(declarativeRules).toEqual([{
                 id: expect.any(Number),
                 priority: 1,
                 action: {
@@ -1446,7 +1445,7 @@ describe('DeclarativeRuleConverter', () => {
                     urlFilter: '||example.com',
                     resourceTypes: allResourcesTypes,
                 },
-            });
+            }]);
         });
 
         it('decline conversion $cookie rules with parameters', async () => {

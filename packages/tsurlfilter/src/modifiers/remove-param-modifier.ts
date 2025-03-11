@@ -26,7 +26,11 @@ export class RemoveParamModifier implements IAdvancedModifier {
      */
     private readonly valueRegExp: RegExp;
 
-    private static getRawRemoveParam(value: string | ModifierValue): string {
+    private static getRawRemoveParam(value: string | ModifierValue | undefined): string {
+        if (value === undefined) {
+            return '';
+        }
+
         if (isString(value)) {
             return value;
         }
@@ -43,7 +47,7 @@ export class RemoveParamModifier implements IAdvancedModifier {
      *
      * @param value The value used to initialize the modifier.
      */
-    constructor(value: string | ModifierValue) {
+    constructor(value: string | ModifierValue | undefined) {
         let rawValue = RemoveParamModifier.getRawRemoveParam(value);
 
         this.value = rawValue;

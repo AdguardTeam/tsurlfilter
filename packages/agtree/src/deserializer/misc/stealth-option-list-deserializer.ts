@@ -8,9 +8,9 @@ import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-ty
 import { StealthOptionListMarshallingMap } from '../../marshalling-utils/misc/stealth-option-list-common';
 
 /**
- * `StealthListDeserializer` is responsible for deserializing a stealth option list.
+ * `StealthOptionListDeserializer` is responsible for deserializing a stealth option list.
  */
-export class StealthListDeserializer extends BaseDeserializer {
+export class StealthOptionListDeserializer extends BaseDeserializer {
     /**
      * Deserializes a stealth option list node from binary format.
      *

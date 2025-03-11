@@ -20,6 +20,7 @@ import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2
 import { createNetworkRule } from '../../helpers/rule-creator';
 
 import { createFilter } from './helpers';
+import { getRuleBinaryIndex } from '../../../src/filterlist/source-map';
 
 const allResourcesTypes = Object.values(ResourceType);
 
@@ -775,7 +776,9 @@ describe('DeclarativeConverter', () => {
             const actualErr = limitations[0];
             const expectedMsg = 'After conversion, too many declarative rules remain: '
                 + `4 exceeds the limit provided - ${maxNumberOfRules}`;
-            const expectedErr = new TooManyRulesError(expectedMsg, [53], maxNumberOfRules, 1);
+            const content = await filter.getContent();
+            const binaryIndex = getRuleBinaryIndex(rules[0].length + 1, content.sourceMap);
+            const expectedErr = new TooManyRulesError(expectedMsg, [binaryIndex], maxNumberOfRules, 1);
 
             expect(actualErr).toStrictEqual(expectedErr);
             expect(actualErr).toBeInstanceOf(TooManyRulesError);

@@ -86,7 +86,11 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
      */
     private readonly valid: boolean;
 
-    private static getRawRemoveHeader(value: string | ModifierValue): string {
+    private static getRawRemoveHeader(value: string | ModifierValue | undefined): string {
+        if (value === undefined) {
+            return '';
+        }
+
         if (isString(value)) {
             return value;
         }
@@ -104,7 +108,7 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
      * @param value Value of the modifier.
      * @param isAllowlist Whether the rule is an allowlist rule or not.
      */
-    constructor(value: string | ModifierValue, isAllowlist: boolean) {
+    constructor(value: string | ModifierValue | undefined, isAllowlist: boolean) {
         const rawRemoveHeader = RemoveHeaderModifier.getRawRemoveHeader(value);
         this.value = rawRemoveHeader.toLowerCase();
 

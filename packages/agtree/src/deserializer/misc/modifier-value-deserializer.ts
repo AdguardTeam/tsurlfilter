@@ -1,10 +1,12 @@
 /* eslint-disable no-param-reassign */
-import { type Value, type DomainList, type ModifierValue } from '../../nodes';
+import { type Value, type DomainList, type ModifierValue, MethodList, StealthOptionList } from '../../nodes';
 import { ValueDeserializer } from './value-deserializer';
 import { BaseDeserializer } from '../base-deserializer';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
 import { DomainListDeserializer } from './domain-list-deserializer';
+import { MethodListDeserializer } from './method-list-deserializer';
+import { StealthOptionListDeserializer } from './stealth-option-list-deserializer';
 
 /**
  * `ModifierValueDeserializer` is responsible for deserializing modifiers.
@@ -40,6 +42,22 @@ export class ModifierValueDeserializer extends BaseDeserializer {
                     buffer,
                     node as Value,
                     frequentValuesMap,
+                );
+                break;
+            }
+
+            case BinaryTypeMarshallingMap.MethodListNode: {
+                MethodListDeserializer.deserialize(
+                    buffer,
+                    node as MethodList,
+                );
+                break;
+            }
+
+            case BinaryTypeMarshallingMap.StealthOptionListNode: {
+                StealthOptionListDeserializer.deserialize(
+                    buffer,
+                    node as StealthOptionList,
                 );
                 break;
             }

@@ -44,7 +44,11 @@ export class CookieModifier implements IAdvancedModifier {
      */
     private readonly maxAge: number | null;
 
-    private static getRawCookie(value: string | ModifierValue): string {
+    private static getRawCookie(value: string | ModifierValue | undefined): string {
+        if (value === undefined) {
+            return '';
+        }
+
         if (isString(value)) {
             return value;
         }
@@ -61,7 +65,7 @@ export class CookieModifier implements IAdvancedModifier {
      *
      * @param value Value of the modifier.
      */
-    constructor(value: string | ModifierValue) {
+    constructor(value: string | ModifierValue | undefined) {
         // Save the source text of the option modifier
         this.optionValue = CookieModifier.getRawCookie(value);
 
