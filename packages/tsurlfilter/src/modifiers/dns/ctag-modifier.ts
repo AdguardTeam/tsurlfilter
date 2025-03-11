@@ -1,3 +1,5 @@
+import { type ModifierValue } from '@adguard/agtree';
+import { isString } from '../../utils/string-utils';
 import { BaseValuesModifier } from '../values-modifier';
 
 /**
@@ -41,8 +43,18 @@ export class CtagModifier extends BaseValuesModifier {
      *
      * @param value Value of the modifier.
      */
-    constructor(value: string) {
-        super(value);
+    constructor(value: string | ModifierValue) {
+        let rawValue;
+
+        if (isString(value)) {
+            rawValue = value;
+        } else if (value.type === 'Value') {
+            rawValue = value.value;
+        } else {
+            throw new Error('Invalid $client rule: value must be a value');
+        }
+
+        super(rawValue);
 
         this.validate();
     }

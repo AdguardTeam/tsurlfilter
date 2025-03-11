@@ -1,4 +1,6 @@
+import { type ModifierValue, type StealthOptionList, StealthOptionListParser } from '@adguard/agtree';
 import { logger } from '../utils/logger';
+import { isString } from '../utils/string-utils';
 
 /**
  * Array of all stealth options available, even those which are not supported by browser extension.
@@ -67,60 +69,67 @@ export const STEALTH_MODE_FILTER_ID = -1;
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#stealth-modifier}
  */
 export class StealthModifier {
-    private readonly PIPE_SEPARATOR = '|';
-
     public readonly options = StealthOption.NotSet;
+
+    private static getStealthOptionListNode = (stealthOptions: string | ModifierValue): StealthOptionList => {
+        if (isString(stealthOptions)) {
+            if (!stealthOptions) {
+                throw new Error('Stealth list cannot be empty');
+            }
+
+            return StealthOptionListParser.parse(stealthOptions);
+        }
+
+        if (stealthOptions.type !== 'StealthOptionList') {
+            throw new Error('Unsupported modifier value type');
+        }
+
+        return stealthOptions;
+    };
 
     /**
      * Parses the options string and creates a new stealth modifier instance.
      *
-     * @param optionsStr Options string.
+     * @param stealthOptions Options string.
      *
      * @throws SyntaxError on inverted stealth options, which are not supported.
      */
-    constructor(optionsStr: string) {
-        if (optionsStr.trim().length === 0) {
-            return;
-        }
+    constructor(stealthOptions: string | ModifierValue) {
+        const stealthOptionListNode = StealthModifier.getStealthOptionListNode(stealthOptions);
 
-        // This prevents parsing invalid syntax as rule without supported options
-        if (optionsStr.includes(',')) {
-            throw new SyntaxError(`Invalid separator of stealth options used: "${optionsStr}"`);
-        }
+        let options = StealthOption.NotSet;
 
-        const tokens = optionsStr.split(this.PIPE_SEPARATOR);
-
-        for (let i = 0; i < tokens.length; i += 1) {
-            const optionName = tokens[i].trim();
-            if (optionName === '') {
-                continue;
+        stealthOptionListNode.children.forEach((option) => {
+            if (option.value === '') {
+                return;
             }
 
-            if (optionName.startsWith('~')) {
-                throw new SyntaxError(`Inverted $stealth modifier values are not allowed: "${optionsStr}"`);
+            if (option.exception) {
+                throw new SyntaxError(`Inverted stealth options are not allowed: "${stealthOptionListNode}"`);
             }
 
-            if (!StealthModifier.isValidStealthOption(optionName)) {
-                throw new SyntaxError(`Invalid $stealth option in modifier value: "${optionsStr}"`);
+            if (!StealthModifier.isValidStealthOption(option.value)) {
+                throw new SyntaxError(`Invalid stealth option in modifier value: "${stealthOptionListNode}"`);
             }
 
-            // Skip options which are not supported by browser extension
-            if (!StealthModifier.isSupportedStealthOption(optionName)) {
-                continue;
+            if (!StealthModifier.isSupportedStealthOption(option.value)) {
+                return;
             }
 
-            const option = StealthOption[optionName];
+            const stealthOption = StealthOption[option.value as StealthOptionName];
 
-            if (this.options & option) {
-                logger.debug(`Duplicate $stealth modifier value "${optionName}" in "${optionsStr}"`);
+            if (this.options & stealthOption) {
+                logger.debug(`Duplicate stealth modifier value "${option.value}" in "${stealthOptionListNode}"`);
             }
 
-            this.options |= option;
-        }
+            options |= stealthOption;
+        });
+
+        this.options = options;
 
         if (this.options === StealthOption.NotSet) {
             // eslint-disable-next-line max-len
-            const msg = `$stealth modifier does not contain any options supported by browser extension: "${optionsStr}"`;
+            const msg = `$stealth modifier does not contain any options supported by browser extension: "${stealthOptionListNode}"`;
             logger.debug(msg);
         }
     }

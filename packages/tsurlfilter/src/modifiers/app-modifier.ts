@@ -1,4 +1,5 @@
-import { SEPARATOR } from '../common/constants';
+import { type AppList, AppListParser, type ModifierValue } from '@adguard/agtree';
+import { isString } from '../utils/string-utils';
 
 export interface IAppModifier {
     permittedApps: string[] | null;
@@ -27,6 +28,26 @@ export class AppModifier implements IAppModifier {
      */
     public readonly restrictedApps: string[] | null;
 
+    private static getAppListNode = (apps: string | ModifierValue): AppList => {
+        if (isString(apps)) {
+            if (!apps) {
+                throw new Error('App list cannot be empty');
+            }
+
+            return AppListParser.parse(apps);
+        }
+
+        if (apps.type !== 'AppList') {
+            throw new Error('Unsupported modifier value type');
+        }
+
+        if (apps.children.length === 0) {
+            throw new Error('App list cannot be empty');
+        }
+
+        return apps;
+    };
+
     /**
      * Parses the `apps` string.
      *
@@ -34,33 +55,25 @@ export class AppModifier implements IAppModifier {
      *
      * @throws An error if the app string is empty or invalid.
      */
-    constructor(apps: string) {
-        if (!apps) {
-            throw new SyntaxError('$app modifier cannot be empty');
-        }
+    constructor(apps: string | ModifierValue) {
+        const appListNode = AppModifier.getAppListNode(apps);
 
         const permittedApps: string[] = [];
         const restrictedApps: string[] = [];
 
-        const parts = apps.split(SEPARATOR);
-        for (let i = 0; i < parts.length; i += 1) {
-            let app = parts[i];
-            let restricted = false;
-            if (app.startsWith('~')) {
-                restricted = true;
-                app = app.substring(1).trim();
-            }
+        appListNode.children.forEach((appNode) => {
+            const app = appNode.value;
 
-            if (app === '') {
+            if (!app) {
                 throw new SyntaxError(`Empty app specified in "${apps}"`);
             }
 
-            if (restricted) {
+            if (appNode.exception) {
                 restrictedApps.push(app);
             } else {
                 permittedApps.push(app);
             }
-        }
+        });
 
         this.restrictedApps = restrictedApps.length > 0 ? restrictedApps : null;
         this.permittedApps = permittedApps.length > 0 ? permittedApps : null;

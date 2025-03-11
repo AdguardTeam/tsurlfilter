@@ -9,7 +9,6 @@ import {
     CosmeticRuleType,
     type DomainList,
     DomainUtils,
-    PIPE_MODIFIER_SEPARATOR,
     QuoteUtils,
     ADG_SCRIPTLET_MASK,
     QuoteType,
@@ -397,12 +396,12 @@ export class CosmeticRule implements IRule {
             // Mark the modifier as used by adding it to the set
             usedModifiers.add(modifierName);
 
-            const modifierValue = modifierNode.value?.value || EMPTY_STRING;
+            const modifierValue = modifierNode.value;
 
             // Every modifier should have a value at the moment, so for simplicity we throw an error here if the
             // modifier value is not present.
             // TODO: Improve this when we decide to add modifiers without values
-            if (modifierValue.length < 1 && modifierName !== CosmeticRuleModifier.Path) {
+            if (!modifierValue && modifierName !== CosmeticRuleModifier.Path) {
                 throw new SyntaxError(`'$${modifierName}' modifier should have a value`);
             }
 
@@ -413,15 +412,39 @@ export class CosmeticRule implements IRule {
                         throw new SyntaxError(`'$${modifierName}' modifier is not allowed in a domain-specific rule`);
                     }
 
-                    result.domainModifier = new DomainModifier(modifierValue, PIPE_MODIFIER_SEPARATOR);
+                    if (!modifierValue) {
+                        throw new SyntaxError(`'$${modifierName}' modifier should have a value`);
+                    }
+
+                    if (modifierValue.type === 'DomainList') {
+                        result.domainModifier = new DomainModifier(modifierValue, COMMA_DOMAIN_LIST_SEPARATOR);
+                        break;
+                    }
+
+                    if (modifierValue.type === 'Value') {
+                        result.domainModifier = new DomainModifier(modifierValue.value, COMMA_DOMAIN_LIST_SEPARATOR);
+                    }
+
                     break;
 
                 case CosmeticRuleModifier.Path:
+                    if (ruleNode.domains.children.length > 0) {
+                        throw new SyntaxError(`'$${modifierName}' modifier is not allowed in a domain-specific rule`);
+                    }
+
+                    if (!modifierValue) {
+                        throw new SyntaxError(`'$${modifierName}' modifier should have a value`);
+                    }
+
+                    if (modifierValue.type !== 'Value') {
+                        throw new SyntaxError(`'$${modifierName}' modifier should have a value`);
+                    }
+
                     result.pathModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
+                        SimpleRegex.isRegexPattern(modifierValue.value)
                             // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                            ? SimpleRegex.unescapeRegexSpecials(modifierValue.value, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
+                            : modifierValue.value,
                     );
                     break;
 
@@ -430,11 +453,19 @@ export class CosmeticRule implements IRule {
                         throw new SyntaxError(`'$${modifierName}' modifier is not allowed in a domain-specific rule`);
                     }
 
+                    if (!modifierValue) {
+                        throw new SyntaxError(`'$${modifierName}' modifier should have a value`);
+                    }
+
+                    if (modifierValue.type !== 'Value') {
+                        throw new SyntaxError(`'$${modifierName}' modifier should have a value`);
+                    }
+
                     result.urlModifier = new Pattern(
-                        SimpleRegex.isRegexPattern(modifierValue)
+                        SimpleRegex.isRegexPattern(modifierValue.value)
                             // eslint-disable-next-line max-len
-                            ? SimpleRegex.unescapeRegexSpecials(modifierValue, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
-                            : modifierValue,
+                            ? SimpleRegex.unescapeRegexSpecials(modifierValue.value, SimpleRegex.reModifierPatternEscapedSpecialCharacters)
+                            : modifierValue.value,
                     );
                     break;
 

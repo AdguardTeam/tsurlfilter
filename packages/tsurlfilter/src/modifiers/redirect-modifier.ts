@@ -1,5 +1,7 @@
 import { isRedirectResourceCompatibleWithAdg } from '@adguard/scriptlets/validators';
+import { type ModifierValue } from '@adguard/agtree';
 import { type IAdvancedModifier } from './advanced-modifier';
+import { isString } from '../utils/string-utils';
 
 /**
  * Redirect modifier class.
@@ -16,6 +18,18 @@ export class RedirectModifier implements IAdvancedModifier {
      */
     readonly isRedirectingOnlyBlocked: boolean = false;
 
+    private static getRawRedirect(value: string | ModifierValue): string {
+        if (isString(value)) {
+            return value;
+        }
+
+        if (value.type !== 'Value') {
+            throw new Error('Invalid $redirect rule: value must be a value');
+        }
+
+        return value.value;
+    }
+
     /**
      * Constructor.
      *
@@ -23,10 +37,12 @@ export class RedirectModifier implements IAdvancedModifier {
      * @param isAllowlist Is allowlist rule.
      * @param isRedirectingOnlyBlocked Is redirect-rule modifier.
      */
-    constructor(value: string, isAllowlist: boolean, isRedirectingOnlyBlocked = false) {
-        RedirectModifier.validate(value, isAllowlist);
+    constructor(value: string | ModifierValue, isAllowlist: boolean, isRedirectingOnlyBlocked = false) {
+        const rawRedirect = RedirectModifier.getRawRedirect(value);
 
-        this.redirectTitle = value;
+        RedirectModifier.validate(rawRedirect, isAllowlist);
+
+        this.redirectTitle = rawRedirect;
         this.isRedirectingOnlyBlocked = isRedirectingOnlyBlocked;
     }
 

@@ -1,4 +1,4 @@
-import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
+import { type ModifierValue, type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { type IRule, RULE_INDEX_NONE } from './rule';
@@ -34,7 +34,6 @@ import { DnsTypeModifier } from '../modifiers/dns/dnstype-modifier';
 import { CtagModifier } from '../modifiers/dns/ctag-modifier';
 import { Pattern } from './pattern';
 import { countEnabledBits, getBitCount } from '../utils/bit-utils';
-import { EMPTY_STRING } from '../common/constants';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -1260,13 +1259,7 @@ export class NetworkRule implements IRule {
      */
     private loadOptions(options: ModifierList): void {
         for (const option of options.children) {
-            let value = EMPTY_STRING;
-
-            if (option.value && option.value.value) {
-                value = option.value.value;
-            }
-
-            this.loadOption(option.name.value, value, option.exception);
+            this.loadOption(option.name.value, option.value, option.exception);
             this.usedOptionNames.add(option.name.value);
         }
 
@@ -1475,7 +1468,7 @@ export class NetworkRule implements IRule {
      *
      * @param optionValue Denyallow modifier value.
      */
-    private setDenyAllowDomains(optionValue: string): void {
+    private setDenyAllowDomains(optionValue: string | ModifierValue): void {
         const domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
         if (domainModifier.restrictedDomains && domainModifier.restrictedDomains.length > 0) {
             throw new SyntaxError(
@@ -1505,7 +1498,7 @@ export class NetworkRule implements IRule {
      *
      * @throws An error if there is an unsupported modifier.
      */
-    private loadOption(optionName: string, optionValue: string, exception = false): void {
+    private loadOption(optionName: string, optionValue: ModifierValue | undefined, exception = false): void {
         const { OPTIONS, NEGATABLE_OPTIONS } = NetworkRule;
 
         if (optionName.startsWith(OPTIONS.NOOP)) {
@@ -1544,26 +1537,41 @@ export class NetworkRule implements IRule {
                 break;
             // $domain
             case OPTIONS.DOMAIN:
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $domain requires a value');
+                }
                 this.domainModifier = new DomainModifier(optionValue, PIPE_SEPARATOR);
                 break;
             // $denyallow
             case OPTIONS.DENYALLOW:
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $denyallow requires a value');
+                }
                 this.setDenyAllowDomains(optionValue);
                 break;
             // $method modifier
             case OPTIONS.METHOD: {
                 this.setOptionEnabled(NetworkRuleOption.Method, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $denyallow requires a value');
+                }
                 this.methodModifier = new MethodModifier(optionValue);
                 break;
             }
             // $header modifier
             case OPTIONS.HEADER:
                 this.setOptionEnabled(NetworkRuleOption.Header, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $header requires a value');
+                }
                 this.headerModifier = new HeaderModifier(optionValue);
                 break;
             // $to modifier
             case OPTIONS.TO: {
                 this.setOptionEnabled(NetworkRuleOption.To, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $to requires a value');
+                }
                 this.toModifier = new ToModifier(optionValue);
                 break;
             }
@@ -1632,6 +1640,9 @@ export class NetworkRule implements IRule {
             // $stealth
             case OPTIONS.STEALTH:
                 this.setOptionEnabled(NetworkRuleOption.Stealth, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $stealth requires a value');
+                }
                 this.stealthModifier = new StealthModifier(optionValue);
                 break;
             // $popup
@@ -1691,41 +1702,65 @@ export class NetworkRule implements IRule {
             // $csp
             case OPTIONS.CSP:
                 this.setOptionEnabled(NetworkRuleOption.Csp, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $csp requires a value');
+                }
                 this.advancedModifier = new CspModifier(optionValue, this.isAllowlist());
                 break;
             // $replace
             case OPTIONS.REPLACE:
                 this.setOptionEnabled(NetworkRuleOption.Replace, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $replace requires a value');
+                }
                 this.advancedModifier = new ReplaceModifier(optionValue);
                 break;
             // $cookie
             case OPTIONS.COOKIE:
                 this.setOptionEnabled(NetworkRuleOption.Cookie, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $cookie requires a value');
+                }
                 this.advancedModifier = new CookieModifier(optionValue);
                 break;
             // $redirect
             case OPTIONS.REDIRECT:
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $redirect requires a value');
+                }
                 this.advancedModifier = new RedirectModifier(optionValue, this.isAllowlist());
                 break;
             // $redirect-rule
             case OPTIONS.REDIRECTRULE:
                 this.setOptionEnabled(NetworkRuleOption.Redirect, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $redirect-rule requires a value');
+                }
                 this.advancedModifier = new RedirectModifier(optionValue, this.isAllowlist(), true);
                 break;
             // $removeparam
             case OPTIONS.REMOVEPARAM:
                 this.setOptionEnabled(NetworkRuleOption.RemoveParam, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $removeparam requires a value');
+                }
                 this.advancedModifier = new RemoveParamModifier(optionValue);
                 break;
             // $removeheader
             case OPTIONS.REMOVEHEADER:
                 this.setOptionEnabled(NetworkRuleOption.RemoveHeader, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $removeheader requires a value');
+                }
                 this.advancedModifier = new RemoveHeaderModifier(optionValue, this.isAllowlist());
                 break;
             // $permissions
             case OPTIONS.PERMISSIONS:
                 this.setOptionEnabled(NetworkRuleOption.Permissions, true);
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $permissions requires a value');
+                }
                 this.advancedModifier = new PermissionsModifier(optionValue, this.isAllowlist());
                 break;
             // $jsonprune
@@ -1767,6 +1802,9 @@ export class NetworkRule implements IRule {
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $client modifier');
                 }
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $client requires a value');
+                }
                 this.setOptionEnabled(NetworkRuleOption.Client, true);
                 this.advancedModifier = new ClientModifier(optionValue);
                 break;
@@ -1774,6 +1812,9 @@ export class NetworkRule implements IRule {
             case OPTIONS.DNSREWRITE:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $dnsrewrite modifier');
+                }
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $dnsrewrite requires a value');
                 }
                 this.setOptionEnabled(NetworkRuleOption.DnsRewrite, true);
                 this.advancedModifier = new DnsRewriteModifier(optionValue);
@@ -1783,6 +1824,9 @@ export class NetworkRule implements IRule {
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $dnstype modifier');
                 }
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $dnstype requires a value');
+                }
                 this.setOptionEnabled(NetworkRuleOption.DnsType, true);
                 this.advancedModifier = new DnsTypeModifier(optionValue);
                 break;
@@ -1791,6 +1835,9 @@ export class NetworkRule implements IRule {
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $ctag modifier');
                 }
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $ctag requires a value');
+                }
                 this.setOptionEnabled(NetworkRuleOption.Ctag, true);
                 this.advancedModifier = new CtagModifier(optionValue);
                 break;
@@ -1798,6 +1845,9 @@ export class NetworkRule implements IRule {
             case OPTIONS.APP:
                 if (isCompatibleWith(CompatibilityTypes.Extension)) {
                     throw new SyntaxError('Extension doesn\'t support $app modifier');
+                }
+                if (!optionValue) {
+                    throw new SyntaxError('Invalid modifier: $app requires a value');
                 }
                 this.appModifier = new AppModifier(optionValue);
                 break;

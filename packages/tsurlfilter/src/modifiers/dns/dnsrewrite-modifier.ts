@@ -1,3 +1,5 @@
+import { type ModifierValue } from '@adguard/agtree';
+import { isString } from '../../utils/string-utils';
 import { type IAdvancedModifier } from '../advanced-modifier';
 
 /**
@@ -19,8 +21,14 @@ export class DnsRewriteModifier implements IAdvancedModifier {
      *
      * @param value Modifier value.
      */
-    constructor(value: string) {
-        this.value = value;
+    constructor(value: string | ModifierValue) {
+        if (isString(value)) {
+            this.value = value;
+        } else if (value.type === 'Value') {
+            this.value = value.value;
+        } else {
+            throw new Error('Invalid $client rule: value must be a value');
+        }
     }
 
     /**

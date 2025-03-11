@@ -2,7 +2,9 @@
 import isCidr from 'is-cidr';
 import isIp from 'is-ip';
 import { contains } from 'cidr-tools';
+import { type ModifierValue } from '@adguard/agtree';
 import { BaseValuesModifier } from '../values-modifier';
+import { isString } from '../../utils/string-utils';
 
 /**
  * Netmasks class.
@@ -42,8 +44,18 @@ export class ClientModifier extends BaseValuesModifier {
      *
      * @param value Value of the modifier.
      */
-    constructor(value: string) {
-        super(value);
+    constructor(value: string | ModifierValue) {
+        let rawValue;
+
+        if (isString(value)) {
+            rawValue = value;
+        } else if (value.type === 'Value') {
+            rawValue = value.value;
+        } else {
+            throw new Error('Invalid $client rule: value must be a value');
+        }
+
+        super(rawValue);
 
         const permitted = this.getPermitted();
         if (permitted) {

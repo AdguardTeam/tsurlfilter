@@ -1,4 +1,5 @@
-import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
+import { type ModifierValue } from '@adguard/agtree';
+import { isString, splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
 import { type IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
 
@@ -16,13 +17,25 @@ export class ReplaceModifier implements IAdvancedModifier {
      */
     private readonly replaceApply: (input: string) => string;
 
+    private static getRawReplace(value: string | ModifierValue): string {
+        if (isString(value)) {
+            return value;
+        }
+
+        if (value.type !== 'Value') {
+            throw new Error('Invalid $replace rule: value must be a value');
+        }
+
+        return value.value;
+    }
+
     /**
      * Constructor.
      *
      * @param value Replace modifier value.
      */
-    constructor(value: string) {
-        const parsed = ReplaceModifier.parseReplaceOption(value);
+    constructor(value: string | ModifierValue) {
+        const parsed = ReplaceModifier.parseReplaceOption(ReplaceModifier.getRawReplace(value));
 
         this.replaceOption = parsed.optionText;
         this.replaceApply = parsed.apply;

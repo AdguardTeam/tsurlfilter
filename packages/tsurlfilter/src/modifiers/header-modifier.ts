@@ -1,3 +1,6 @@
+import { type ModifierValue } from '@adguard/agtree';
+import { isString } from '../utils/string-utils';
+
 /**
  * Http headers item type represents incoming response headers.
  * To be used for headers matching.
@@ -59,9 +62,19 @@ export class HeaderModifier {
     /**
      * Constructor.
      *
-     * @param headerStr Header modifier value.
+     * @param header Header modifier value.
      */
-    constructor(headerStr: string) {
+    constructor(header: string | ModifierValue) {
+        let headerStr;
+
+        if (isString(header)) {
+            headerStr = header;
+        } else if (header.type === 'Value') {
+            headerStr = header.value;
+        } else {
+            throw new Error('Unsupported modifier value type');
+        }
+
         if (headerStr === '') {
             throw new SyntaxError('$header modifier value cannot be empty');
         }

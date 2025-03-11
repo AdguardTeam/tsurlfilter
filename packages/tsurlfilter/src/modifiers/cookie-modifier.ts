@@ -1,4 +1,6 @@
+import { type ModifierValue } from '@adguard/agtree';
 import { type IAdvancedModifier } from './advanced-modifier';
+import { isString } from '../utils/string-utils';
 
 /**
  * Cookie modifier class.
@@ -42,14 +44,26 @@ export class CookieModifier implements IAdvancedModifier {
      */
     private readonly maxAge: number | null;
 
+    private static getRawCookie(value: string | ModifierValue): string {
+        if (isString(value)) {
+            return value;
+        }
+
+        if (value.type !== 'Value') {
+            throw new Error('Invalid $CSP rule: value must be a string');
+        }
+
+        return value.value;
+    }
+
     /**
      * Constructor.
      *
      * @param value Value of the modifier.
      */
-    constructor(value: string) {
+    constructor(value: string | ModifierValue) {
         // Save the source text of the option modifier
-        this.optionValue = value || '';
+        this.optionValue = CookieModifier.getRawCookie(value);
 
         this.regex = null;
         this.cookieName = null;

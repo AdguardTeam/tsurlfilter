@@ -1,5 +1,5 @@
 import { getPublicSuffix } from 'tldts';
-import { type DomainList } from '@adguard/agtree';
+import { type ModifierValue, type DomainList } from '@adguard/agtree';
 import { defaultParserOptions, DomainListParser } from '@adguard/agtree/parser';
 
 import { logger } from '../utils/logger';
@@ -95,7 +95,7 @@ export class DomainModifier {
      *
      * @throws An error if the domains string is empty or invalid.
      */
-    constructor(domains: string | DomainList, separator: typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR) {
+    constructor(domains: string | ModifierValue, separator: typeof COMMA_SEPARATOR | typeof PIPE_SEPARATOR) {
         let processed: ProcessedDomainList;
 
         if (isString(domains)) {
@@ -112,6 +112,10 @@ export class DomainModifier {
 
             processed = DomainModifier.processDomainList(node);
         } else {
+            if (domains.type !== 'DomainList') {
+                throw new SyntaxError('Invalid modifier value type');
+            }
+
             // domain list node stores the separator
             if (separator !== domains.separator) {
                 throw new SyntaxError('Separator mismatch');

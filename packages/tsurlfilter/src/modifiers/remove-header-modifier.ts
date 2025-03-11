@@ -1,4 +1,6 @@
+import { type ModifierValue } from '@adguard/agtree';
 import { type IAdvancedModifier } from './advanced-modifier';
+import { isString } from '../utils/string-utils';
 
 /**
  * Headers filtering modifier class.
@@ -84,14 +86,27 @@ export class RemoveHeaderModifier implements IAdvancedModifier {
      */
     private readonly valid: boolean;
 
+    private static getRawRemoveHeader(value: string | ModifierValue): string {
+        if (isString(value)) {
+            return value;
+        }
+
+        if (value.type !== 'Value') {
+            throw new Error('Invalid $removeheader rule: value must be a value');
+        }
+
+        return value.value;
+    }
+
     /**
      * Constructor.
      *
      * @param value Value of the modifier.
      * @param isAllowlist Whether the rule is an allowlist rule or not.
      */
-    constructor(value: string, isAllowlist: boolean) {
-        this.value = value.toLowerCase();
+    constructor(value: string | ModifierValue, isAllowlist: boolean) {
+        const rawRemoveHeader = RemoveHeaderModifier.getRawRemoveHeader(value);
+        this.value = rawRemoveHeader.toLowerCase();
 
         if (!isAllowlist && !this.value) {
             throw new SyntaxError('Invalid $removeheader rule, removeheader value must not be empty');

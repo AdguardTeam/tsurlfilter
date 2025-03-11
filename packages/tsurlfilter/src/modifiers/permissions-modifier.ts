@@ -1,4 +1,6 @@
+import { type ModifierValue } from '@adguard/agtree';
 import { type IAdvancedModifier } from './advanced-modifier';
+import { isString } from '../utils/string-utils';
 
 export const PERMISSIONS_POLICY_HEADER_NAME = 'Permissions-Policy';
 
@@ -24,14 +26,28 @@ export class PermissionsModifier implements IAdvancedModifier {
      */
     private static readonly RE_SEPARATOR_REPLACE = new RegExp(`(\\\\${COMMA_SEPARATOR}|\\${PIPE_SEPARATOR})`, 'g');
 
+    private static getRawPermissionPolicyDirective(value: string | ModifierValue): string {
+        if (isString(value)) {
+            return value;
+        }
+
+        if (value.type !== 'Value') {
+            throw new Error('Invalid $permissions rule: value must be a value');
+        }
+
+        return value.value;
+    }
+
     /**
      * Constructor.
      *
-     * @param permissionPolicyStr The permission policy string to be set.
+     * @param permissionPolicy The permission policy string to be set.
      * @param isAllowlist Indicates if the permission policy is for an allowlist.
      */
-    constructor(permissionPolicyStr: string, isAllowlist: boolean) {
-        this.permissionPolicyDirective = permissionPolicyStr
+    constructor(permissionPolicy: string | ModifierValue, isAllowlist: boolean) {
+        const rawPermissionPolicy = PermissionsModifier.getRawPermissionPolicyDirective(permissionPolicy);
+
+        this.permissionPolicyDirective = rawPermissionPolicy
             .replace(PermissionsModifier.RE_SEPARATOR_REPLACE, COMMA_SEPARATOR);
 
         PermissionsModifier.validatePermissionPolicyDirective(this.permissionPolicyDirective, isAllowlist);

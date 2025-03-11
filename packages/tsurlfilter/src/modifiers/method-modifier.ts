@@ -1,4 +1,7 @@
+import { type MethodList, MethodListParser, type ModifierValue } from '@adguard/agtree';
+import { ListItemsGenerator } from '@adguard/agtree/generator';
 import { type IValueListModifier } from './value-list-modifier';
+import { isString } from '../utils/string-utils';
 
 export enum HTTPMethod {
     GET = 'GET',
@@ -34,41 +37,54 @@ export class MethodModifier implements IValueListModifier<HTTPMethod> {
      */
     public readonly restrictedValues: HTTPMethod[] | null;
 
+    private static getMethodListNode = (methods: string | ModifierValue): MethodList => {
+        if (isString(methods)) {
+            if (!methods) {
+                throw new Error('Method list cannot be empty');
+            }
+
+            return MethodListParser.parse(methods);
+        }
+
+        if (methods.type !== 'MethodList') {
+            throw new Error('Unsupported modifier value type');
+        }
+
+        if (methods.children.length === 0) {
+            throw new Error('Method list cannot be empty');
+        }
+
+        return methods;
+    };
+
     /**
      * Constructor.
      *
-     * @param methodsStr Value of the modifier.
+     * @param methods Value of the modifier.
      */
-    constructor(methodsStr: string) {
-        if (methodsStr === '') {
-            throw new SyntaxError('$method modifier value cannot be empty');
-        }
-
+    constructor(methods: string | ModifierValue) {
         const permittedMethods: HTTPMethod[] = [];
         const restrictedMethods: HTTPMethod[] = [];
 
-        const parts = methodsStr.toUpperCase().split(MethodModifier.PIPE_SEPARATOR);
-        for (let i = 0; i < parts.length; i += 1) {
-            let method = parts[i].trim();
-            let restricted = false;
-            if (method.startsWith('~')) {
-                restricted = true;
-                method = method.substring(1);
+        const methodListNode = MethodModifier.getMethodListNode(methods);
+
+        methodListNode.children.forEach((methodNode) => {
+            const upperCaseValue = methodNode.value.toUpperCase();
+
+            if (!MethodModifier.isHTTPMethod(upperCaseValue)) {
+                throw new SyntaxError(`Invalid $method modifier value: ${upperCaseValue}`);
             }
 
-            if (!MethodModifier.isHTTPMethod(method)) {
-                throw new SyntaxError(`Invalid $method modifier value: ${method}`);
-            }
-
-            if (restricted) {
-                restrictedMethods.push(method);
+            if (methodNode.exception) {
+                restrictedMethods.push(upperCaseValue);
             } else {
-                permittedMethods.push(method);
+                permittedMethods.push(upperCaseValue);
             }
-        }
+        });
 
         if (restrictedMethods.length > 0 && permittedMethods.length > 0) {
-            throw new SyntaxError(`Negated values cannot be mixed with non-negated values: ${methodsStr}`);
+            // eslint-disable-next-line max-len
+            throw new SyntaxError(`Negated values cannot be mixed with non-negated values: ${ListItemsGenerator.generate(methodListNode.children, MethodModifier.PIPE_SEPARATOR)}`);
         }
 
         this.restrictedValues = restrictedMethods.length > 0 ? restrictedMethods : null;

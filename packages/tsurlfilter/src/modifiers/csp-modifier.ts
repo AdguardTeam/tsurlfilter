@@ -1,4 +1,6 @@
+import { type ModifierValue } from '@adguard/agtree';
 import { type IAdvancedModifier } from './advanced-modifier';
+import { isString } from '../utils/string-utils';
 
 export const CSP_HEADER_NAME = 'Content-Security-Policy';
 
@@ -18,14 +20,26 @@ export class CspModifier implements IAdvancedModifier {
      */
     private readonly isAllowlist: boolean;
 
+    private static getRawCspDirective(value: string | ModifierValue): string {
+        if (isString(value)) {
+            return value;
+        }
+
+        if (value.type !== 'Value') {
+            throw new Error('Invalid $CSP rule: value must be a string');
+        }
+
+        return value.value;
+    }
+
     /**
      * Constructor.
      *
      * @param value Value of the modifier.
      * @param isAllowlist Whether the rule is an allowlist rule or not.
      */
-    constructor(value: string, isAllowlist: boolean) {
-        this.cspDirective = value;
+    constructor(value: string | ModifierValue, isAllowlist: boolean) {
+        this.cspDirective = CspModifier.getRawCspDirective(value);
         this.isAllowlist = isAllowlist;
 
         this.validateCspDirective();

@@ -1,6 +1,8 @@
+import { type ModifierValue } from '@adguard/agtree';
 import { cleanUrlParamByRegExp } from '../utils/url';
 import { type IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
+import { isString } from '../utils/string-utils';
 
 /**
  * Query parameters filtering modifier class.
@@ -24,18 +26,31 @@ export class RemoveParamModifier implements IAdvancedModifier {
      */
     private readonly valueRegExp: RegExp;
 
+    private static getRawRemoveParam(value: string | ModifierValue): string {
+        if (isString(value)) {
+            return value;
+        }
+
+        if (value.type !== 'Value') {
+            throw new Error('Invalid $removeparam rule: value must be a value');
+        }
+
+        return value.value;
+    }
+
     /**
      * Constructor.
      *
      * @param value The value used to initialize the modifier.
      */
-    constructor(value: string) {
-        this.value = value;
+    constructor(value: string | ModifierValue) {
+        let rawValue = RemoveParamModifier.getRawRemoveParam(value);
 
-        let rawValue = value;
+        this.value = rawValue;
+
         // TODO: Seems like negation not using in valueRegExp
-        if (value.startsWith('~')) {
-            rawValue = value.substring(1);
+        if (rawValue.startsWith('~')) {
+            rawValue = rawValue.slice(1);
             this.mv3Valid = false;
         }
 
