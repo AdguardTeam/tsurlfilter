@@ -132,7 +132,7 @@ export class ByteBuffer {
      * @param value Uint32 value to set.
      */
     public addUint32(byteOffset: number, value: number): void {
-        if (!this.hasCapacity(byteOffset + 3 /** Uint32Array.BYTES_PER_ELEMENT - 1. */)) {
+        while (!this.hasCapacity(byteOffset + 3 /** Uint32Array.BYTES_PER_ELEMENT - 1. */)) {
             this.allocate();
         }
 

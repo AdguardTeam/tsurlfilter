@@ -1171,6 +1171,9 @@ importers:
       commander:
         specifier: 9.4.1
         version: 9.4.1
+      doublearray:
+        specifier: ^0.0.2
+        version: 0.0.2
       is-cidr:
         specifier: 4.0.2
         version: 4.0.2
@@ -1223,6 +1226,9 @@ importers:
       '@types/chrome':
         specifier: ^0.0.305
         version: 0.0.305
+      '@types/doublearray':
+        specifier: ^0.0.32
+        version: 0.0.32
       '@types/ip6addr':
         specifier: 0.2.3
         version: 0.2.3
@@ -4499,6 +4505,10 @@ packages:
       '@types/node': 20.17.19
     dev: true
 
+  /@types/doublearray@0.0.32:
+    resolution: {integrity: sha512-HloTru3I3a55runIVqZX1YBQi2L5A4peNQPh33yshzB4ttt1qHCnHPkuhy9Djy/cTx7i5xJvxItKRPCmvnfpGw==}
+    dev: true
+
   /@types/download@8.0.1:
     resolution: {integrity: sha512-t5DjMD6Y1DxjXtEHl7Kt+nQn9rOmVLYD8p4Swrcc5QpgyqyqR2gXTIK6RwwMnNeFJ+ZIiIW789fQKzCrK7AOFA==}
     dependencies:
@@ -5855,7 +5865,7 @@ packages:
       std-env: 3.8.0
       test-exclude: 7.0.1
       tinyrainbow: 1.2.0
-      vitest: 2.1.9(@types/node@20.17.19)
+      vitest: 2.1.9(@types/node@18.19.76)(msw@2.7.1)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -8376,6 +8386,10 @@ packages:
     resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
     engines: {node: '>=12'}
     dev: true
+
+  /doublearray@0.0.2:
+    resolution: {integrity: sha512-aw55FtZzT6AmiamEj2kvmR6BuFqvYgKZUkfQ7teqVRNqD5UE0rw8IeW/3gieHNKQ5sPuDKlljWEn4bzv5+1bHw==}
+    dev: false
 
   /download@8.0.0:
     resolution: {integrity: sha512-ASRY5QhDk7FK+XrQtQyvhpDKanLluEEQtWl/J7Lxuf/b+i8RYh997QeXvL85xitrmRKVlx9c7eTrcRdq2GS4eA==}
