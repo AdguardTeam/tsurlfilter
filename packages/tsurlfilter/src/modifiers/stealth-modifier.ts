@@ -1,6 +1,7 @@
 import { type ModifierValue, type StealthOptionList, StealthOptionListParser } from '@adguard/agtree';
 import { logger } from '../utils/logger';
 import { isString } from '../utils/string-utils';
+import { ListItemsGenerator } from '@adguard/agtree/generator';
 
 /**
  * Array of all stealth options available, even those which are not supported by browser extension.
@@ -73,10 +74,6 @@ export class StealthModifier {
 
     private static getStealthOptionListNode = (stealthOptions: string | ModifierValue): StealthOptionList => {
         if (isString(stealthOptions)) {
-            if (!stealthOptions) {
-                throw new Error('Stealth list cannot be empty');
-            }
-
             return StealthOptionListParser.parse(stealthOptions);
         }
 
@@ -97,6 +94,10 @@ export class StealthModifier {
     constructor(stealthOptions: string | ModifierValue) {
         const stealthOptionListNode = StealthModifier.getStealthOptionListNode(stealthOptions);
 
+        if (stealthOptionListNode.children.length === 0) {
+            return;
+        }
+
         let options = StealthOption.NotSet;
 
         stealthOptionListNode.children.forEach((option) => {
@@ -105,11 +106,11 @@ export class StealthModifier {
             }
 
             if (option.exception) {
-                throw new SyntaxError(`Inverted stealth options are not allowed: "${stealthOptionListNode}"`);
+                throw new SyntaxError(`Inverted stealth options are not allowed: '${stealthOptionListNode}'`);
             }
 
             if (!StealthModifier.isValidStealthOption(option.value)) {
-                throw new SyntaxError(`Invalid stealth option in modifier value: "${stealthOptionListNode}"`);
+                throw new SyntaxError(`Invalid stealth option in modifier value: '${stealthOptionListNode}'`);
             }
 
             if (!StealthModifier.isSupportedStealthOption(option.value)) {
@@ -119,7 +120,7 @@ export class StealthModifier {
             const stealthOption = StealthOption[option.value as StealthOptionName];
 
             if (this.options & stealthOption) {
-                logger.debug(`Duplicate stealth modifier value "${option.value}" in "${stealthOptionListNode}"`);
+                logger.debug(`Duplicate stealth modifier value '${option.value}' in '${stealthOptionListNode}'`);
             }
 
             options |= stealthOption;
@@ -128,8 +129,12 @@ export class StealthModifier {
         this.options = options;
 
         if (this.options === StealthOption.NotSet) {
+            const generatedOptions = ListItemsGenerator.generate(
+                stealthOptionListNode.children,
+                stealthOptionListNode.separator,
+            );
             // eslint-disable-next-line max-len
-            const msg = `$stealth modifier does not contain any options supported by browser extension: "${stealthOptionListNode}"`;
+            const msg = `$stealth modifier does not contain any options supported by browser extension: "${generatedOptions}"`;
             logger.debug(msg);
         }
     }

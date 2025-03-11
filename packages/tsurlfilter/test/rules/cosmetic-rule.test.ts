@@ -188,6 +188,8 @@ describe('Element hiding rules constructor', () => {
         // rule = createCosmeticRule('[$,path=qwerty]example.com###banner', 0);
         // expect(rule.pathModifier?.pattern).toEqual('qwerty');
 
+        // https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-path-modifier
+        // - "[$path]example.com##.textad hides a div with the class textad at the main page of example.com"
         rule = createCosmeticRule('[$path]###banner', 0);
         expect(rule.pathModifier?.pattern).toEqual('');
 

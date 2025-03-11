@@ -8,6 +8,7 @@ import { FilterListPreprocessor, getRuleSourceIndex } from '../../../src';
 import { BufferReader } from '../../../src/filterlist/reader/buffer-reader';
 import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
 import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
+import { getRuleBinaryIndex } from '../../../src/filterlist/source-map/utils';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = new URL('.', import.meta.url).pathname;
@@ -132,11 +133,16 @@ describe('Rule Scanner Flags', () => {
         ).toEqual(
             getRawRuleIndex(filterList, '||example.org^$removeheader=header-name'),
         );
+        const binaryIndex = getRuleBinaryIndex(
+            getRawRuleIndex(filterList, '||example.org^$removeheader=header-name'),
+            processed.sourceMap,
+        );
+        expect(indexedRule!.index).toBe(binaryIndex);
 
         expect(scanner.scan()).toBeTruthy();
 
         indexedRule = scanner.getRule();
-        expect(indexedRule!.index).toBe(142);
+        expect(indexedRule!.index).toBe(143);
         expect(
             getRuleSourceIndex(indexedRule!.rule!.getIndex(), processed.sourceMap),
         ).toEqual(
@@ -180,7 +186,11 @@ describe('Rule Scanner Flags', () => {
         expect(scanner.scan()).toBeTruthy();
 
         indexedRule = scanner.getRule();
-        expect(indexedRule!.index).toBe(142);
+        const binaryIndex = getRuleBinaryIndex(
+            getRawRuleIndex(filterList, '||two.org'),
+            processed.sourceMap,
+        );
+        expect(indexedRule!.index).toBe(binaryIndex);
         expect(
             getRuleSourceIndex(indexedRule!.rule!.getIndex(), processed.sourceMap),
         ).toEqual(

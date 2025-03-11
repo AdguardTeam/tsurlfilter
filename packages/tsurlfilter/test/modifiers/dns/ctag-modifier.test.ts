@@ -30,7 +30,7 @@ describe('NetworkRule - ctag rules', () => {
 
         expect(() => {
             createNetworkRule('||example.org^$ctag', 0);
-        }).toThrow(new SyntaxError('Modifier cannot be empty'));
+        }).toThrow(new SyntaxError('Invalid modifier: $ctag requires a value'));
 
         expect(() => {
             createNetworkRule('||example.org^$ctag=|', 0);

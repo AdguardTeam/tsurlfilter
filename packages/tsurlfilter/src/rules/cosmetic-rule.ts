@@ -428,12 +428,12 @@ export class CosmeticRule implements IRule {
                     break;
 
                 case CosmeticRuleModifier.Path:
-                    if (ruleNode.domains.children.length > 0) {
-                        throw new SyntaxError(`'$${modifierName}' modifier is not allowed in a domain-specific rule`);
-                    }
 
                     if (!modifierValue) {
-                        throw new SyntaxError(`'$${modifierName}' modifier should have a value`);
+                        // https://adguard.com/kb/general/ad-filtering/create-own-filters/#non-basic-path-modifier
+                        // [$path]example.com##.textad hides a div with the class textad at the main page of example.com
+                        result.pathModifier = new Pattern('');
+                        break;
                     }
 
                     if (modifierValue.type !== 'Value') {

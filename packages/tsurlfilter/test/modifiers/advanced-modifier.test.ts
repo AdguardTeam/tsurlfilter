@@ -279,7 +279,7 @@ describe('NetworkRule - redirect rules', () => {
     it('works if it throws empty redirect rule', () => {
         expect(() => {
             createNetworkRule('example.org/ads.js$script,redirect', 0);
-        }).toThrow(new SyntaxError('Invalid $redirect rule, redirect value must not be empty'));
+        }).toThrow(new SyntaxError('Invalid modifier: $redirect requires a value'));
     });
 
     it('works if it throws incorrect rule', () => {
@@ -311,7 +311,7 @@ describe('NetworkRule - redirect-rule rules', () => {
     it('works if it throws empty redirect-rule rule', () => {
         expect(() => {
             createNetworkRule('example.org/ads.js$script,redirect-rule', 0);
-        }).toThrow(new SyntaxError('Invalid $redirect rule, redirect value must not be empty'));
+        }).toThrow(new SyntaxError('Invalid modifier: $redirect-rule requires a value'));
     });
 
     it('works if it throws incorrect rule', () => {

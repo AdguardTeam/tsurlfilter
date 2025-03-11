@@ -18,9 +18,9 @@ import {
 import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 import { createNetworkRule } from '../../helpers/rule-creator';
+import { getRuleBinaryIndex } from '../../../src/filterlist/source-map';
 
 import { createFilter } from './helpers';
-import { getRuleBinaryIndex } from '../../../src/filterlist/source-map';
 
 const allResourcesTypes = Object.values(ResourceType);
 
@@ -614,12 +614,14 @@ describe('DeclarativeConverter', () => {
         });
 
         it('in one filter — unsafe first but basic (safe) rules come first after conversion', async () => {
-            const filter = createFilter([
+            const rules = [
                 '||example.com^$removeheader=test',
                 '||example.net^$removeheader=test',
                 '||example1.org^',
                 '||example2.org^',
-            ]);
+            ];
+
+            const filter = createFilter(rules);
 
             const maxNumberOfRules = 4;
             const maxNumberOfUnsafeRules = 1;
@@ -686,7 +688,9 @@ describe('DeclarativeConverter', () => {
             const actualErr = limitations[0];
             const expectedMsg = 'After conversion, too many unsafe rules remain: '
                 + `2 exceeds the limit provided - ${maxNumberOfUnsafeRules}`;
-            const expectedErr = new TooManyUnsafeRulesError(expectedMsg, [53], maxNumberOfUnsafeRules, 1);
+            const content = await filter.getContent();
+            const binaryIndex = getRuleBinaryIndex(rules[0].length + 1, content.sourceMap);
+            const expectedErr = new TooManyUnsafeRulesError(expectedMsg, [binaryIndex], maxNumberOfUnsafeRules, 1);
 
             expect(actualErr).toStrictEqual(expectedErr);
             expect(actualErr).toBeInstanceOf(TooManyUnsafeRulesError);
