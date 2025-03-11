@@ -141,7 +141,7 @@ export const settingsConfigValidator = zod.object({
     filteringEnabled: zod.boolean(),
 
     /**
-     * Redirect url for $document rules.
+     * Redirect url for blocking rules with `$document` modifier.
      */
     documentBlockingPageUrl: zod.string().optional(),
 
