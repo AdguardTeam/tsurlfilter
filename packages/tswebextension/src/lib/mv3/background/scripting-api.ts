@@ -56,18 +56,12 @@ export type ExecuteScriptletParams = ExecuteTarget & {
 /**
  * Parameters for executing script function or scriptlet.
  */
-type ExecuteScriptParams = ExecuteTarget
-& Pick<ExecuteScriptletParams, 'domainName'>
+export type ExecuteCombinedScriptParams = ExecuteTarget
 & {
     /**
-     * The script functions to be executed.
+     * Combined script text to be injected.
      */
-    scriptTexts?: string[],
-
-    /**
-     * List of the scriptlets data to be executed.
-     */
-    scriptletDataList?: ScriptletData[],
+    scriptText?: string,
 };
 
 /**
@@ -107,14 +101,12 @@ export class ScriptingApi {
      *
      * @returns Promise that resolves when the script is executed.
      */
-    public static async executeScriptlet(
-        {
-            tabId,
-            frameId,
-            scriptletData,
-            domainName,
-        }: ExecuteScriptletParams,
-    ): Promise<void> {
+    public static async executeScriptlet({
+        tabId,
+        frameId,
+        scriptletData,
+        domainName,
+    }: ExecuteScriptletParams): Promise<void> {
         // There is no reason to inject a script into the background page
         if (tabId === BACKGROUND_TAB_ID) {
             return;
@@ -176,55 +168,24 @@ export class ScriptingApi {
      * @param params Parameters for executing the scripts or scriptlets.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
-     * @param params.scriptTexts The script functions to be executed.
-     * @param params.scriptletDataList List of the scriptlets data to be executed.
-     * @param params.domainName The domain name of the frame. Used for debugging.
+     * @param params.scriptText Combined script text to be injected.
      *
      * @returns Promise that resolves when the scripts are executed.
      */
     public static async executeScriptsViaUserScripts({
         tabId,
         frameId,
-        scriptTexts,
-        scriptletDataList,
-        domainName,
-    }: ExecuteScriptParams): Promise<void> {
+        scriptText,
+    }: ExecuteCombinedScriptParams): Promise<void> {
         // There is no reason to inject a script into the background page
         if (tabId === BACKGROUND_TAB_ID) {
-            return;
-        }
-
-        let scripts: string[] = [];
-
-        if (scriptTexts) {
-            scripts = scripts.concat(scriptTexts);
-        }
-
-        if (scriptletDataList) {
-            const scriptletTexts = scriptletDataList.map((scriptletData) => {
-                const params: Source = {
-                    ...scriptletData.params,
-                    uniqueId: String(appContext.startTimeMs),
-                    verbose: appContext.configuration?.settings.debugScriptlets || false,
-                    domainName: domainName ?? undefined,
-                };
-
-                return `
-                    (${scriptletData.func.toString()})(...${JSON.stringify([params, scriptletData.params.args])});
-                `;
-            });
-
-            scripts = scripts.concat(scriptletTexts);
-        }
-
-        if (scripts.length === 0) {
             return;
         }
 
         await UserScriptsApi.executeScripts({
             frameId,
             tabId,
-            scripts,
+            scriptText,
         });
     }
 }

@@ -88,6 +88,45 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Builds scripts from cosmetic rules.
+     *
+     * @param rules Cosmetic rules.
+     * @param frameUrl Frame url.
+     *
+     * @returns Script text or empty string if no script rules are passed.
+     *
+     * @todo Move to common class when a way to use appContext in common
+     * class will be found.
+     */
+    public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string {
+        const uniqueScriptStrings = new Set<string>();
+
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
+        const debug = appContext?.configuration?.settings?.debugScriptlets;
+
+        // FIXME (Slava, in another pr): check scriptlets logging in mv3;
+        // few conditions should be followed:
+        // 1) scriptlet rules should be logged when filtering log is opened
+        // 2) only one domain should be logged for scriptlet rules with multiple domains,
+        //    e.g. `example1.com,example2.com,example3.com#%#//scriptlet('foo')` -> `example.com1#%#//scriptlet('foo')`
+        const scriptParams = {
+            debug,
+            frameUrl,
+        };
+
+        rules.forEach((rule) => {
+            const scriptStr = rule.getScript(scriptParams);
+            if (scriptStr) {
+                uniqueScriptStrings.add(scriptStr);
+            }
+        });
+
+        const scriptText = CosmeticApi.combineScripts(uniqueScriptStrings);
+
+        return CosmeticApi.wrapScriptText(scriptText);
+    }
+
+    /**
      * Returns content script data for applying cosmetic.
      *
      * @param frameUrl Frame url.
@@ -267,18 +306,17 @@ export class CosmeticApi extends CosmeticApiCommon {
             return;
         }
 
-        const {
-            scriptTexts,
-            scriptletDataList,
-        } = frameContext.preparedCosmeticResult;
+        const { scriptText } = frameContext.preparedCosmeticResult;
+
+        if (!scriptText) {
+            return;
+        }
 
         try {
             await ScriptingApi.executeScriptsViaUserScripts({
                 tabId,
                 frameId,
-                scriptTexts,
-                scriptletDataList,
-                domainName: getDomain(frameContext.url),
+                scriptText,
             });
         } catch (e) {
             logger.debug(

@@ -1,10 +1,6 @@
 import { logger } from '../../common/utils/logger';
 
-interface ExecuteScriptsParams {
-    scripts: string[];
-    tabId: number;
-    frameId: number;
-}
+import { type ExecuteCombinedScriptParams } from './scripting-api';
 
 /**
  * Api for executing user scripts.
@@ -27,8 +23,7 @@ export class UserScriptsApi {
      * Executes a list of user scripts in a specified tab and frame.
      *
      * @param params The parameters for executing the scripts.
-     * @param params.scripts An array of strings, each representing a script
-     * to be executed.
+     * @param params.scriptText Combined scripts and scriptlets texts to be injected.
      * @param params.tabId The ID of the tab where the scripts will be executed.
      * @param params.frameId The ID of the frame within the tab where the scripts will
      * be executed.
@@ -38,10 +33,10 @@ export class UserScriptsApi {
      * @throws Will log an error if the script execution fails.
      */
     public static async executeScripts({
-        scripts,
+        scriptText,
         tabId,
         frameId,
-    }: ExecuteScriptsParams): Promise<void> {
+    }: ExecuteCombinedScriptParams): Promise<void> {
         try {
             await chrome.userScripts.execute({
                 target: {
@@ -49,11 +44,11 @@ export class UserScriptsApi {
                     tabId,
                 },
                 injectImmediately: true,
-                js: scripts.map((script) => ({ code: script })),
+                js: [{ code: scriptText }],
                 world: 'MAIN',
             });
         } catch (e) {
-            logger.error(`Failed to execute user script to frameId#tabId (${frameId}#${tabId}) :`, e);
+            logger.error(`Failed to execute user script to tabId#frameId (${tabId}#${frameId}) :`, e);
         }
     }
 }

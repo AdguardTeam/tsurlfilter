@@ -111,7 +111,6 @@ describe('TabsCosmeticInjector', () => {
             vi.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
             vi.spyOn(Date, 'now').mockReturnValue(timestamp);
 
-            console.error('TabsCosmeticInjector.processOpenTabs call');
             await TabsCosmeticInjector.processOpenTabs();
 
             expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
