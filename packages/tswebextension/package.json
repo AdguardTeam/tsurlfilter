@@ -1,6 +1,6 @@
 {
   "name": "@adguard/tswebextension",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "This is a TypeScript library that implements AdGuard's extension API",
   "type": "module",
   "main": "dist/index.js",
@@ -109,7 +109,7 @@
     "@adguard/assistant": "^4.3.70",
     "@adguard/extended-css": "^2.1.1",
     "@adguard/logger": "workspace:^",
-    "@adguard/scriptlets": "^2.1.5",
+    "@adguard/scriptlets": "^2.1.6",
     "@adguard/tsurlfilter": "workspace:^",
     "bowser": "2.11.0",
     "chrome-types": "^0.1.342",
