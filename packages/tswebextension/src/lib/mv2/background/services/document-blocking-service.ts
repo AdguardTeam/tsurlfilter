@@ -145,6 +145,7 @@ export class DocumentBlockingService {
             this.documentBlockingPageUrl,
             requestUrl,
             ruleText,
+            rule.getFilterListId(),
         );
 
         // Chrome doesn't allow to show extension pages in incognito mode
@@ -205,20 +206,22 @@ export class DocumentBlockingService {
      *
      * @param documentBlockingPageUrl Url of document-blocking page.
      * @param requestUrl Processed request url.
-     * @param rule Matched rule.
+     * @param ruleText Rule text.
+     * @param filterListId Filter list id.
      *
      * @returns Document blocking page url with required params.
      */
     private static createBlockingUrl(
         documentBlockingPageUrl: string,
         requestUrl: string,
-        rule: NetworkRule,
+        ruleText: string,
+        filterListId: number,
     ): string {
         const url = new URL(documentBlockingPageUrl);
 
         url.searchParams.set('url', requestUrl);
-        url.searchParams.set('rule', rule.getText());
-        url.searchParams.set('filterId', rule.getFilterListId().toString());
+        url.searchParams.set('rule', ruleText);
+        url.searchParams.set('filterId', filterListId.toString());
 
         return url.toString();
     }
