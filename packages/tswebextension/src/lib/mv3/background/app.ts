@@ -763,7 +763,7 @@ export class TsWebExtension implements AppInterface<
      *
      * @returns `true` if user scripts API is supported, `false` otherwise.
      */
-    public static get isUserScriptsSupported(): boolean {
+    public static get isUserScriptsApiSupported(): boolean {
         return UserScriptsApi.isSupported;
     }
 }
