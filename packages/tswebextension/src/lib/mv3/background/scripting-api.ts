@@ -5,7 +5,7 @@ import { BACKGROUND_TAB_ID } from '../../common/constants';
 
 import { appContext } from './app-context';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
-import { UserScriptsApi } from './user-scripts';
+import { UserScriptsApi } from './user-scripts-api';
 
 /**
  * Parameters for applying CSS rules.

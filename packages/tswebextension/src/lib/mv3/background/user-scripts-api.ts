@@ -4,14 +4,16 @@ import { type ExecuteCombinedScriptParams } from './scripting-api';
 
 /**
  * Api for executing user scripts.
+ *
+ * @see {@link https://developer.chrome.com/docs/extensions/reference/api/userScripts}
  */
 export class UserScriptsApi {
     /**
-     * Indicates whether user scripts are supported in the current browser.
+     * Indicates whether user scripts API is supported in the current browser.
      *
-     * @returns `true` if user scripts are supported, `false` otherwise.
+     * @returns `true` if user scripts API is supported, `false` otherwise.
      */
-    public static get areUserScriptsSupported(): boolean {
+    public static get isSupported(): boolean {
         try {
             return chrome.userScripts?.execute !== undefined;
         } catch (e) {

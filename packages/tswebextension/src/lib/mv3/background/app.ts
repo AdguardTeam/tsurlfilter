@@ -34,7 +34,7 @@ import { type LocalScriptFunctionData, localScriptRulesService } from './service
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
-import { UserScriptsApi } from './user-scripts';
+import { UserScriptsApi } from './user-scripts-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult,
@@ -759,11 +759,11 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Indicates whether user scripts are supported in the current browser.
+     * Indicates whether user scripts API is supported in the current browser.
      *
-     * @returns `true` if user scripts are supported, `false` otherwise.
+     * @returns `true` if user scripts API is supported, `false` otherwise.
      */
-    public static get areUserScriptsSupported(): boolean {
-        return UserScriptsApi.areUserScriptsSupported;
+    public static get isUserScriptsSupported(): boolean {
+        return UserScriptsApi.isSupported;
     }
 }

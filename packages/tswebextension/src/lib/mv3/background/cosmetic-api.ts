@@ -11,7 +11,7 @@ import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { ScriptingApi } from './scripting-api';
 import { localScriptRulesService } from './services/local-script-rules-service';
-import { UserScriptsApi } from './user-scripts';
+import { UserScriptsApi } from './user-scripts-api';
 
 /**
  * Data for JS and scriptlets rules for MV3.
@@ -349,9 +349,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param params Data for js rule logging.
      */
     public static logScriptRules(params: LogJsRulesParams): void {
-        const filterFn = UserScriptsApi.areUserScriptsSupported
+        const filterFn = UserScriptsApi.isSupported
             // via userScripts API we can inject any script
-            ? (): boolean => { return true; }
+            ? (): boolean => true
             : CosmeticApi.shouldSanitizeScriptRule;
 
         super.logScriptRules(

@@ -15,7 +15,7 @@ import { appContext } from './app-context';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
 import { CosmeticApi } from './cosmetic-api';
-import { UserScriptsApi } from './user-scripts';
+import { UserScriptsApi } from './user-scripts-api';
 
 /**
  * Cosmetic frame processor.
@@ -186,10 +186,10 @@ export class CosmeticFrameProcessor {
         const partialFrameContext: Partial<FrameMV3> = { matchingResult, cosmeticResult };
 
         /**
-         * If user scripts are supported, we should store one combined script
+         * If user scripts API is supported, we should store one combined script
          * text, because it will be injected once and it is more efficient.
          */
-        if (UserScriptsApi.areUserScriptsSupported) {
+        if (UserScriptsApi.isSupported) {
             const scriptText = CosmeticApi.getScriptText(cosmeticResult.getScriptRules());
 
             partialFrameContext.preparedCosmeticResult = {

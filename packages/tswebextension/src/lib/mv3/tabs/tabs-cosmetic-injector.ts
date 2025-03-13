@@ -6,7 +6,7 @@ import { CosmeticApi } from '../background/cosmetic-api';
 import { CosmeticFrameProcessor } from '../background/cosmetic-frame-processor';
 import { ContentType } from '../../common/request-type';
 import { appContext } from '../background/app-context';
-import { UserScriptsApi } from '../background/user-scripts';
+import { UserScriptsApi } from '../background/user-scripts-api';
 
 import { FrameMV3 } from './frame';
 import { tabsApi } from './tabs-api';
@@ -106,7 +106,7 @@ export class TabsCosmeticInjector {
                 CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
             ];
 
-            if (UserScriptsApi.areUserScriptsSupported) {
+            if (UserScriptsApi.isSupported) {
                 tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
             } else {
                 tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));

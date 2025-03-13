@@ -163,7 +163,7 @@ import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { StealthService } from './services/stealth-service';
-import { UserScriptsApi } from './user-scripts';
+import { UserScriptsApi } from './user-scripts-api';
 
 /**
  * API for applying rules from background service by handling
@@ -371,7 +371,7 @@ export class WebRequestApi {
             return;
         }
 
-        if (UserScriptsApi.areUserScriptsSupported) {
+        if (UserScriptsApi.isSupported) {
             CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId);
         } else {
             CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
@@ -649,7 +649,7 @@ export class WebRequestApi {
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
         ];
 
-        if (UserScriptsApi.areUserScriptsSupported) {
+        if (UserScriptsApi.isSupported) {
             tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
         } else {
             tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));
