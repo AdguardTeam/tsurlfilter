@@ -146,6 +146,14 @@ describe('Cosmetic rule modifiers conversion', () => {
     });
     describe('ADG to uBO', () => {
         test.each([
+            // No value
+            {
+                actual: '[$path]example.com##.foo',
+                expected: [
+                    'example.com##:matches-path(/^/$/) .foo',
+                ],
+                shouldConvert: true,
+            },
             // Basic cases
             {
                 actual: '[$path=/bar]example.com##.foo',
