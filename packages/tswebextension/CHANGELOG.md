@@ -10,9 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `filterId` query param to `documentBlockingPageUrl` for MV2.
-- Added support for Chrome's User Scripts API that allows more reliable script
+- Support for Chrome's User Scripts API that allows more reliable script
   injection in MV3 if developer mode is enabled.
-- Added static getter `areUserScriptsSupported` to check if the current browser
+- Static getter `areUserScriptsSupported` to check if the current browser
   supports User Scripts API.
 
 ## [3.0.1] - 2025-03-06
