@@ -23,6 +23,8 @@ import {
     createNodeConversionResult,
     type ConversionResult,
 } from '../base-interfaces/conversion-result';
+import { UboCosmeticRuleModifierConverter } from './rule-modifiers/ubo';
+import { clone } from '../../utils/clone';
 
 /**
  * Cosmetic rule converter class (also known as "non-basic rule converter")
@@ -135,6 +137,25 @@ export class CosmeticRuleConverter extends RuleConverterBase {
                 );
             }
             return ScriptletRuleConverter.convertToUbo(rule);
+        }
+
+        let convertedModifiers: ConversionResult<ModifierList> | undefined;
+
+        // Convert cosmetic rule modifiers, if any
+        if (rule.modifiers) {
+            if (rule.syntax === AdblockSyntax.Abp) {
+                // TODO: Implement once ABP starts supporting cosmetic rule modifiers
+                throw new RuleConversionError('ABP does not support cosmetic rule modifiers');
+            } else if (rule.syntax === AdblockSyntax.Adg) {
+                convertedModifiers = UboCosmeticRuleModifierConverter.convertFromAdg(rule.modifiers);
+            }
+        }
+
+        if (convertedModifiers && convertedModifiers.isConverted) {
+            const result = clone(rule);
+            result.modifiers = convertedModifiers.result;
+            result.syntax = AdblockSyntax.Ubo;
+            return createNodeConversionResult([result], true);
         }
 
         return createNodeConversionResult([rule], false);
