@@ -1,6 +1,7 @@
 import browser, { type WebRequest } from 'webextension-polyfill';
 import { getHostname } from 'tldts';
 import { NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { defaultFilteringLog, FilteringEventType } from '../../../common/filtering-log';
 import { logger } from '../../../common/utils/logger';
@@ -8,6 +9,7 @@ import { isChromium } from '../utils/browser-detector';
 import { type ConfigurationMV2 } from '../configuration';
 import { type TabsApi } from '../tabs/tabs-api';
 import { ContentType } from '../../../common/request-type';
+import { type EngineApi } from '../engine-api';
 
 /**
  * Params for {@link DocumentBlockingService.getDocumentBlockingResponse}.
@@ -43,19 +45,30 @@ type GetDocumentBlockingResponseParams = {
  * extension pages.
  */
 export class DocumentBlockingService {
-    // base url of document blocking page
+    /**
+     * Text for unknown rule.
+     */
+    private static readonly UNKNOWN_RULE_TEXT = '<Could not retrieve rule text>';
+
+    /**
+     * Base url of document blocking page.
+     */
     private documentBlockingPageUrl: string | undefined;
 
-    // list of domain names of sites, which should be excluded from document blocking
+    /**
+     * List of domain names of sites, which should be excluded from document blocking.
+     */
     private trustedDomains: string[] = [];
 
     /**
      * Creates instance of {@link DocumentBlockingService}.
      *
      * @param tabsApi Wrapper around browser.tabs API.
+     * @param engineApi Engine API.
      */
     constructor(
         private readonly tabsApi: TabsApi,
+        private readonly engineApi: EngineApi,
     ) {}
 
     /**
@@ -118,11 +131,21 @@ export class DocumentBlockingService {
             return { cancel: true };
         }
 
+        // Get rule node from engine API
+        const ruleNode = this.engineApi.retrieveRuleNode(rule.getFilterListId(), rule.getIndex());
+
+        // Generate rule text or use default text.
+        // Practically, we should always have a rule text, but just in case we have a fallback.
+        const ruleText = ruleNode
+            ? RuleGenerator.generate(ruleNode)
+            : DocumentBlockingService.UNKNOWN_RULE_TEXT;
+
         // get document blocking url with required params
         const blockingUrl = DocumentBlockingService.createBlockingUrl(
             this.documentBlockingPageUrl,
             requestUrl,
-            rule,
+            ruleText,
+            rule.getFilterListId(),
         );
 
         // Chrome doesn't allow to show extension pages in incognito mode
@@ -183,20 +206,22 @@ export class DocumentBlockingService {
      *
      * @param documentBlockingPageUrl Url of document-blocking page.
      * @param requestUrl Processed request url.
-     * @param rule Matched rule.
+     * @param ruleText Rule text.
+     * @param filterListId Filter list id.
      *
      * @returns Document blocking page url with required params.
      */
     private static createBlockingUrl(
         documentBlockingPageUrl: string,
         requestUrl: string,
-        rule: NetworkRule,
+        ruleText: string,
+        filterListId: number,
     ): string {
         const url = new URL(documentBlockingPageUrl);
 
         url.searchParams.set('url', requestUrl);
-        url.searchParams.set('rule', rule.getText());
-        url.searchParams.set('filterId', rule.getFilterListId().toString());
+        url.searchParams.set('rule', ruleText);
+        url.searchParams.set('filterId', filterListId.toString());
 
         return url.toString();
     }

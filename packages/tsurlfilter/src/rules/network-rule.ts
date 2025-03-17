@@ -358,11 +358,6 @@ export class NetworkRule implements IRule {
     private stealthModifier: StealthModifier | null = null;
 
     /**
-     * Options used by the rule, regardless of whether they are enabled or disabled.
-     */
-    private usedOptionNames: Set<string> = new Set();
-
-    /**
      * Rule priority, which is needed when the engine has to choose between
      * several rules matching the query. This value is calculated based on
      * the rule modifiers enabled or disabled and rounded up
@@ -484,7 +479,7 @@ export class NetworkRule implements IRule {
     /**
      * Rule options that can be negated.
      */
-    public static readonly NEGATABLE_OPTIONS = new Set([
+    public static readonly NEGATABLE_OPTIONS: ReadonlySet<string> = new Set([
         // General options
         NetworkRule.OPTIONS.FIRST_PARTY,
         NetworkRule.OPTIONS.THIRD_PARTY,
@@ -513,7 +508,7 @@ export class NetworkRule implements IRule {
     /**
      * Advanced option modifier names.
      */
-    public static readonly ADVANCED_OPTIONS = new Set([
+    public static readonly ADVANCED_OPTIONS: ReadonlySet<string> = new Set([
         NetworkRule.OPTIONS.CSP,
         NetworkRule.OPTIONS.REPLACE,
         NetworkRule.OPTIONS.COOKIE,
@@ -527,19 +522,6 @@ export class NetworkRule implements IRule {
         NetworkRule.OPTIONS.DNSTYPE,
         NetworkRule.OPTIONS.CTAG,
     ]);
-
-    // TODO: Remove .getText() completely
-    private ruleText: string;
-
-    // TODO: Remove .getText() completely
-    /**
-     * Returns the rule text.
-     *
-     * @returns The rule text.
-     */
-    getText(): string {
-        return this.ruleText;
-    }
 
     /**
      * Returns the rule index.
@@ -557,16 +539,6 @@ export class NetworkRule implements IRule {
      */
     getFilterListId(): number {
         return this.filterListId;
-    }
-
-    /**
-     * Returns all options that are used in the rule, regardless of whether they are
-     * enabled or disabled.
-     *
-     * @returns Set of option names.
-     */
-    getUsedOptionNames(): Set<string> {
-        return this.usedOptionNames;
     }
 
     /**
@@ -1226,8 +1198,6 @@ export class NetworkRule implements IRule {
      */
     constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
-        // TODO: Remove this completely
-        this.ruleText = RuleGenerator.generate(node);
         this.filterListId = filterListId;
         this.allowlist = node.exception;
 
@@ -1267,7 +1237,6 @@ export class NetworkRule implements IRule {
             }
 
             this.loadOption(option.name.value, value, option.exception);
-            this.usedOptionNames.add(option.name.value);
         }
 
         this.validateOptions();

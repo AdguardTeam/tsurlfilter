@@ -62,7 +62,7 @@ export class NetworkRulesScanner {
             res.errors = res.errors.concat(errors);
 
             const badFilterRules = rules.filter(({ rule }) => {
-                return rule.isOptionEnabled(NetworkRuleOption.Badfilter);
+                return rule.rule.isOptionEnabled(NetworkRuleOption.Badfilter);
             });
 
             return {

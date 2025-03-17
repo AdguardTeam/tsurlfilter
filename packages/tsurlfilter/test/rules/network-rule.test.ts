@@ -76,7 +76,7 @@ describe('NetworkRule constructor', () => {
     it('works when it creates simple rules properly', () => {
         const rule = createNetworkRule('||example.org^', 0);
         expect(rule.getFilterListId()).toEqual(0);
-        expect(rule.getText()).toEqual('||example.org^');
+        expect(rule.getPattern()).toEqual('||example.org^');
         expect(rule.isAllowlist()).toEqual(false);
         expect(rule.getShortcut()).toEqual('example.org');
         expect(rule.isRegexRule()).toEqual(false);
@@ -88,7 +88,10 @@ describe('NetworkRule constructor', () => {
     it('works when it creates rule with $all', () => {
         const rule = createNetworkRule('||example.org^$all', 0);
         expect(rule.getFilterListId()).toEqual(0);
-        expect(rule.getText()).toEqual('||example.org^$all');
+        expect(rule.getPattern()).toEqual('||example.org^');
+        expect(rule.getPermittedRequestTypes()).toEqual(
+            Object.values(RequestType).reduce((acc, val) => acc | val, 0 as number),
+        );
         expect(rule.isAllowlist()).toEqual(false);
         expect(rule.getShortcut()).toEqual('example.org');
         expect(rule.isRegexRule()).toEqual(false);
@@ -432,7 +435,8 @@ describe('NetworkRule constructor', () => {
     it('works when it handles wide rules with $domain properly', () => {
         const rule = createNetworkRule('$domain=ya.ru', 0);
         expect(rule.getFilterListId()).toEqual(0);
-        expect(rule.getText()).toEqual('$domain=ya.ru');
+        expect(rule.getPattern()).toEqual('');
+        expect(rule.getPermittedDomains()).toEqual(['ya.ru']);
     });
 
     it('checks $all modifier compatibility', () => {
@@ -443,7 +447,10 @@ describe('NetworkRule constructor', () => {
     it('works when it handles $all modifier', () => {
         const rule = createNetworkRule('||example.com^$all', 0);
         expect(rule.getFilterListId()).toEqual(0);
-        expect(rule.getText()).toEqual('||example.com^$all');
+
+        expect(rule.getPermittedRequestTypes()).toEqual(
+            Object.values(RequestType).reduce((acc, val) => acc | val, 0 as number),
+        );
     });
 
     /**
@@ -1592,35 +1599,6 @@ describe('NetworkRule.isFilteringDisabled', () => {
 
     it.each(cases)('should return $expected for rule $rule', ({ rule, expected }) => {
         expect((createNetworkRule(rule, 0)).isFilteringDisabled()).toBe(expected);
-    });
-});
-
-describe('NetworkRule.getUsedOptionNames', () => {
-    it.each([
-        // No options
-        {
-            rule: '||example.org^',
-            expected: [],
-        },
-        // 1 option
-        {
-            rule: '||example.org^$important',
-            expected: ['important'],
-        },
-        // Multiple options
-        {
-            rule: '||example.org^$important,script,important',
-            expected: ['important', 'script'],
-        },
-        // Options with values
-        {
-            rule: '||example.org^$important,script,important,domain=example.com',
-            expected: ['important', 'script', 'domain'],
-        },
-    ])('should return $expected for rule $rule', ({ rule, expected }) => {
-        expect(
-            Array.from((createNetworkRule(rule, 0)).getUsedOptionNames()),
-        ).toEqual(expected);
     });
 });
 
