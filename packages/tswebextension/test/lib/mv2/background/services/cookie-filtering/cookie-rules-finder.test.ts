@@ -37,7 +37,7 @@ describe('Cookie rules - lookup rules', () => {
             createNetworkRule('$cookie=test', 0),
         ], false);
         expect(rule).not.toBeNull();
-        expect(rule!.getText()).toBe('$cookie=test');
+        expect(rule).toEqual(createNetworkRule('$cookie=test'));
 
         rule = CookieRulesFinder.lookupNotModifyingRule('test', [
             createNetworkRule('$cookie=test;maxAge=15;sameSite=lax', 0),

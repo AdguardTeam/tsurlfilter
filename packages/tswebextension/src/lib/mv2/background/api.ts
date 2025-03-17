@@ -30,7 +30,7 @@ export const tabsApi = new TabsApi(documentApi);
 
 export const cosmeticFrameProcessor = new CosmeticFrameProcessor(engineApi, tabsApi);
 
-export const documentBlockingService = new DocumentBlockingService(tabsApi);
+export const documentBlockingService = new DocumentBlockingService(tabsApi, engineApi);
 
 export const messagesApi = new MessagesApi(tabsApi, defaultFilteringLog);
 

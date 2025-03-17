@@ -14,6 +14,7 @@ import {
     RequestType,
     CosmeticResult,
     HTTPMethod,
+    type NetworkRule,
 } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule, createNetworkRule } from '../../../../../helpers/rule-creator';
@@ -111,5 +112,28 @@ describe('Content filtering', () => {
         });
 
         expect(ContentStream.prototype.init).toBeCalledTimes(0);
+    });
+
+    it('check sorting of replace rules', () => {
+        const replaceRules = [
+            createNetworkRule('||example.org^$replace=/test3/test4/g', 1, 1),
+            createNetworkRule('||example.org^$replace=/test1/test2/g', 1, 2),
+            createNetworkRule('||example.org^$replace=/test2/test3/g', 1, 3),
+        ];
+
+        const expectedSortedRules: number[] = [2, 3, 1];
+
+        const contentStringFilterConstructorSpy = vi.spyOn(ContentFiltering, 'getReplaceRules' as any);
+
+        ContentFiltering.onBeforeRequest({
+            ...requestContext,
+            matchingResult: new MatchingResult(replaceRules, null),
+        });
+
+        expect(contentStringFilterConstructorSpy).toBeCalledTimes(1);
+        expect(contentStringFilterConstructorSpy.mock.results[0].value).not.toBeNull();
+        expect(
+            contentStringFilterConstructorSpy.mock.results[0].value.map((rule: NetworkRule) => rule.getIndex()),
+        ).toEqual(expectedSortedRules);
     });
 });

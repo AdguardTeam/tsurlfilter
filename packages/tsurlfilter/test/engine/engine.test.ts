@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import escapeStringRegexp from 'escape-string-regexp';
-
 import { type AnyRule, RuleGenerator } from '@adguard/agtree';
+
 import { Engine } from '../../src/engine/engine';
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
@@ -11,6 +11,7 @@ import { RequestType } from '../../src/request-type';
 import { Request } from '../../src/request';
 import { FilterListPreprocessor, type PreprocessedFilterList } from '../../src/filterlist/preprocessor';
 import { getRuleSourceIndex } from '../../src/filterlist/source-map';
+import { createCosmeticRule, createNetworkRule } from '../helpers/rule-creator';
 
 const createRequest = (url: string): Request => new Request(url, null, RequestType.Document);
 
@@ -67,12 +68,12 @@ describe('Engine Tests', () => {
         const result = engine.matchRequest(request);
 
         expect(result.basicRule).not.toBeNull();
-        expect(result.basicRule!.getText()).toBe(ruleText);
+        expect(result.basicRule).toMatchNetworkRule(createNetworkRule(ruleText));
         expect(result.documentRule).toBeNull();
 
         let frameRule = engine.matchFrame('https://example.org');
         expect(frameRule).not.toBeNull();
-        expect(frameRule!.getText()).toBe(ruleText);
+        expect(frameRule).toMatchNetworkRule(createNetworkRule(ruleText));
 
         frameRule = engine.matchFrame('https://test.com');
         expect(frameRule).toBeNull();
@@ -204,14 +205,14 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
 
         expect(result.basicRule).toBeNull();
         expect(result.documentRule).toBeNull();
-        expect(result.replaceRules && result.replaceRules.length).toBe(1);
-        expect(result.replaceRules && result.replaceRules[0].getText()).toBe(replaceRule);
-        expect(result.cspRules && result.cspRules.length).toBe(1);
-        expect(result.cspRules && result.cspRules[0].getText()).toBe(cspRule);
-        expect(result.cookieRules && result.cookieRules.length).toBe(1);
-        expect(result.cookieRules && result.cookieRules[0].getText()).toBe(cookieRule);
-        expect(result.removeParamRules && result.removeParamRules.length).toBe(1);
-        expect(result.removeParamRules && result.removeParamRules[0].getText()).toBe(removeParamRule);
+        expect(result.replaceRules?.length).toBe(1);
+        expect(result.replaceRules?.[0]).toMatchNetworkRule(createNetworkRule(replaceRule));
+        expect(result.cspRules?.length).toBe(1);
+        expect(result.cspRules?.[0]).toMatchNetworkRule(createNetworkRule(cspRule));
+        expect(result.cookieRules?.length).toBe(1);
+        expect(result.cookieRules?.[0]).toMatchNetworkRule(createNetworkRule(cookieRule));
+        expect(result.removeParamRules?.length).toBe(1);
+        expect(result.removeParamRules?.[0]).toMatchNetworkRule(createNetworkRule(removeParamRule));
         expect(result.stealthRules).toBeNull();
     });
 
@@ -247,7 +248,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         );
         const result = engine.matchRequest(request);
 
-        expect(result.getBasicResult()!.getText()).toBe(redirectRule);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(redirectRule));
     });
 });
 
@@ -309,7 +310,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
         );
         const basicResult = engine.matchRequest(request).getBasicResult();
         expect(basicResult).not.toBeNull();
-        expect(basicResult!.getText()).toBe('||ya.ru$redirect=1x1-transparent.gif');
+        expect(basicResult).toMatchNetworkRule(createNetworkRule('||ya.ru$redirect=1x1-transparent.gif'));
     });
 
     it('checks that it is possible to exclude all redirects with `@@$redirect` rule', () => {
@@ -379,7 +380,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
         );
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe('||example.org^$redirect-rule=noopjs');
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule('||example.org^$redirect-rule=noopjs'));
 
         request = new Request(
             'https://example.org/index.js',
@@ -449,7 +450,7 @@ describe('TestEngineMatchRequest - document modifier', () => {
         let request = new Request('http://example.org/', null, RequestType.Document);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(documentBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(documentBlockingRuleText));
 
         request = new Request('http://other.org/', null, RequestType.Document);
         result = engine.matchRequest(request);
@@ -471,12 +472,12 @@ describe('TestEngineMatchRequest - document modifier', () => {
         let request = new Request('http://example.org/', null, RequestType.Document);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(documentBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(documentBlockingRuleText));
 
         request = new Request('http://example.org/', null, RequestType.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(documentBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(documentBlockingRuleText));
 
         request = new Request('http://example.org/', null, RequestType.Image);
         result = engine.matchRequest(request);
@@ -496,7 +497,7 @@ describe('TestEngineMatchRequest - all modifier', () => {
         let request = new Request('http://example.org/', null, RequestType.Document);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(allBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(allBlockingRuleText));
 
         request = new Request('http://other.org/', null, RequestType.Document);
         result = engine.matchRequest(request);
@@ -504,7 +505,7 @@ describe('TestEngineMatchRequest - all modifier', () => {
 
         request = new Request('http://example.org/', null, RequestType.Image);
         result = engine.matchRequest(request);
-        expect(result.getBasicResult()!.getText()).toBe(allBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(allBlockingRuleText));
     });
 });
 
@@ -523,29 +524,29 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
-        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingRuleText));
+        expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
 
         // Tests matching a script request; expects to match the basic blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
-        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingRuleText));
+        expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
 
         // Tests matching an image request; expects to match the basic blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
-        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingRuleText));
+        expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
 
         // Tests matching a document request; expects to match the popup blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(blockingRuleText);
-        expect(result.getPopupRule()!.getText()).toBe(popupBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingRuleText));
+        expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
     });
 
     it('match requests against all and popup blocking rules', () => {
@@ -562,29 +563,29 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
-        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
+        expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
 
         // Tests matching a script request; expects to match the all-encompassing blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
-        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
+        expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
 
         // Tests matching an image request; expects to match the all-encompassing blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
-        expect(result.getPopupRule()!.getText()).toEqual(popupBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
+        expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
 
         // Tests matching a document request; expects to match the popup blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
-        expect(result.getBasicResult()!.getText()).toBe(blockingAllRuleText);
-        expect(result.getPopupRule()!.getText()).toBe(popupBlockingRuleText);
+        expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
+        expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
     });
 });
 
@@ -801,12 +802,12 @@ describe('$urlblock modifier', () => {
 
         const frameRule = engine.matchFrame('http://example.org');
         expect(frameRule).not.toBeNull();
-        expect(frameRule!.getText()).toBe(urlblock);
+        expect(frameRule).toMatchNetworkRule(createNetworkRule(urlblock));
 
         const request = new Request('http://example.com/image.png', 'http://example.org', RequestType.Image);
         const result = engine.matchRequest(request, frameRule).getBasicResult();
         expect(result).toBeTruthy();
-        expect(result?.getText()).toEqual(important);
+        expect(result).toMatchNetworkRule(createNetworkRule(important));
     });
 });
 
@@ -847,7 +848,7 @@ describe('$genericblock modifier', () => {
 
         const frameRule = engine.matchFrame('https://domain.com');
         expect(frameRule).not.toBeNull();
-        expect(frameRule!.getText()).toBe(genericblockRule);
+        expect(frameRule).toMatchNetworkRule(createNetworkRule(genericblockRule));
 
         const result = engine.matchRequest(new Request(
             'https://example.org',
@@ -856,7 +857,7 @@ describe('$genericblock modifier', () => {
         ), frameRule);
 
         expect(result.basicRule).toBeNull();
-        expect(result.documentRule!.getText()).toBe(genericblockRule);
+        expect(result.documentRule).toMatchNetworkRule(createNetworkRule(genericblockRule));
     });
 });
 
@@ -1020,7 +1021,7 @@ describe('$specifichide modifier', () => {
         expect(cosmeticResult).toBeTruthy();
         expect(cosmeticResult.elementHiding.specific).toHaveLength(0);
         expect(cosmeticResult.elementHiding.generic).toHaveLength(1);
-        // expect(cosmeticResult.elementHiding.generic[0].getText()).toBe(genericElemhideRule);
+        expect(cosmeticResult.elementHiding.generic[0]).toMatchCosmeticRule(createCosmeticRule(genericElemhideRule));
         expect(cosmeticResult.elementHiding.generic).toHaveLength(1);
         expect(
             getRawRuleIndex(processed.rawFilterList, genericElemhideRule),
@@ -1058,7 +1059,7 @@ describe('Stealth cookie rules', () => {
         let request = new Request('http://example.org', '', RequestType.Document);
         let result = engine.matchRequest(request);
         let cookieRules = result.getCookieRules();
-        expect(cookieRules[0].getText()).toBe(stealthCookieRule);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(stealthCookieRule));
 
         const allowlistRule = '@@||example.org^$stealth,removeparam,cookie';
         list = new BufferRuleList(1, FilterListPreprocessor.preprocess([
@@ -1069,6 +1070,6 @@ describe('Stealth cookie rules', () => {
         request = new Request('http://example.org', '', RequestType.Document);
         result = engine.matchRequest(request);
         cookieRules = result.getCookieRules();
-        expect(cookieRules[0].getText()).toBe(allowlistRule);
+        expect(cookieRules[0]).toMatchNetworkRule(createNetworkRule(allowlistRule));
     });
 });
