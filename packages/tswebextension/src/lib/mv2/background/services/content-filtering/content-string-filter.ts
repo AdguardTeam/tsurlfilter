@@ -6,6 +6,7 @@ import { FilteringEventType, type FilteringLog } from '../../../../common/filter
 import { nanoid } from '../../../../common/utils/nanoid';
 import { getDomain } from '../../../../common/utils/url';
 import { type RequestContext } from '../../request';
+import { logger } from '../../../../common/utils/logger';
 
 import { documentParser } from './doc-parser';
 import { HtmlRuleParser } from './rule/html-rule-parser';
@@ -99,6 +100,12 @@ export class ContentStringFilter implements ContentStringFilterInterface {
             const rule = this.htmlRules![i];
 
             const parsed = HtmlRuleParser.parse(rule);
+
+            if (!parsed) {
+                logger.info(`Ignoring rule with invalid HTML selector: ${rule.getContent()}`);
+                continue;
+            }
+
             const elements = new HtmlRuleSelector(parsed).getMatchedElements(doc);
             if (elements) {
                 for (let j = 0; j < elements.length; j += 1) {
