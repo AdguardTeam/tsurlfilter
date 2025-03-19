@@ -58,17 +58,22 @@ export const commonPlugins = [
     }),
 ];
 
+/**
+ * Extracted separately as they are also utilized for generating typedocs.
+ */
+export const entryPoints = [
+    'src/index.ts',
+    'src/parser/index.ts',
+    'src/generator/index.ts',
+    'src/serializer/index.ts',
+    'src/deserializer/index.ts',
+    'src/converter/index.ts',
+    'src/utils/index.ts',
+];
+
 const main = {
     cache: false,
-    input: [
-        'src/index.ts',
-        'src/parser/index.ts',
-        'src/generator/index.ts',
-        'src/serializer/index.ts',
-        'src/deserializer/index.ts',
-        'src/converter/index.ts',
-        'src/utils/index.ts',
-    ],
+    input: entryPoints,
     output: [
         {
             dir: distDir,
