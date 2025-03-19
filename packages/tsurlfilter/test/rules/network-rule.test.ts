@@ -217,6 +217,26 @@ describe('NetworkRule constructor', () => {
         }).not.toThrow();
 
         expect(() => {
+            createNetworkRule('||baddomain.com^$header=h1,script', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            createNetworkRule('||baddomain.com^$header=h1,document', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            createNetworkRule('||baddomain.com^$header=h1,third-party', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            createNetworkRule('||baddomain.com^$header=h1,match-case', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            createNetworkRule('||baddomain.com^$header=h1,domain=example.org', 0);
+        }).not.toThrow();
+
+        expect(() => {
             createNetworkRule('||baddomain.com^$header=h1,removeheader=request:param', 0);
         }).toThrow(new SyntaxError('Request headers removal of $removeheaders is not compatible with $header rules.'));
 
@@ -404,20 +424,6 @@ describe('NetworkRule constructor', () => {
 
         // TODO: add more specific jsonprune tests during the implementation
         // https://github.com/AdguardTeam/tsurlfilter/issues/72
-    });
-
-    it('checks header modifier compatibility', () => {
-        let correct;
-
-        correct = createNetworkRule('||example.com^$header=set-cookie:foo', 0);
-        expect(correct).toBeTruthy();
-
-        // TODO(leleka.s) header modifier supports only limited set of modifiers
-        // correct = createNetworkRule('://www.*.com/*.css|$script,third-party,header=link:/ads.re/>;rel=preconnect/', 0);
-        // expect(correct).toBeTruthy();
-
-        correct = createNetworkRule('@@||example.com^$header=set-cookie', 0);
-        expect(correct).toBeTruthy();
     });
 
     it('checks to modifier compatibility', () => {
