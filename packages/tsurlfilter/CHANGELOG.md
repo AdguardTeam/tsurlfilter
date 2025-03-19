@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Compatibility of `$header` modifier with `$match-case` and `$third-party` modifiers [AdguardBrowserExtension#2942].
+- Compatibility of `$header` modifier with `$match-case`
+  and `$third-party` modifiers in MV2 [AdguardBrowserExtension#2942].
 
 ### Removed
 
