@@ -5,6 +5,7 @@
 coverage
 dist
 node_modules
+docs
 
 # Release file for npm.
 *.tgz
