@@ -289,6 +289,13 @@ describe('Cosmetic rule modifiers conversion', () => {
                 ],
                 shouldConvert: true,
             },
+            {
+                actual: '[$domain=/example.(com|org)/]##.banner',
+                expected: [
+                    '/example.(com|org)/##.banner',
+                ],
+                shouldConvert: true,
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(CosmeticRuleConverter, 'convertToUbo');
         });

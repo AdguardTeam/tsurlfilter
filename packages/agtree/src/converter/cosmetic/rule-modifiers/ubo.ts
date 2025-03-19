@@ -1,5 +1,5 @@
 /**
- * @file Cosmetic rule modifier converter from ADG to UBO
+ * @file Cosmetic rule modifier converter from ADG to uBO
  */
 
 import {
@@ -57,7 +57,7 @@ export class UboCosmeticRuleModifierConverter {
         let domainList: DomainList | null = null;
 
         modifierList.children.forEach((modifier, index) => {
-            // $domain=...
+            // Special case: ADG's $domain modifier
             if (modifier.name.value === ADG_DOMAINS_MODIFIER) {
                 if (!domainList) {
                     domainList = {
@@ -68,10 +68,17 @@ export class UboCosmeticRuleModifierConverter {
                         end: modifier.end,
                     };
                 }
+                let convertedDomainList: string;
 
-                const convertedDomainList = modifier.value?.value
-                    .split(DOMAIN_MODIFIER_SEPARATOR)
-                    .join(DOMAIN_LIST_SEPARATOR) ?? '';
+                if (!modifier.value) {
+                    convertedDomainList = '';
+                } else if (RegExpUtils.isRegexPattern(modifier.value.value)) {
+                    convertedDomainList = modifier.value.value;
+                } else {
+                    convertedDomainList = modifier.value.value
+                        .split(DOMAIN_MODIFIER_SEPARATOR)
+                        .join(DOMAIN_LIST_SEPARATOR);
+                }
 
                 domainList.children.push({
                     type: 'Domain',
@@ -84,7 +91,7 @@ export class UboCosmeticRuleModifierConverter {
                 conversionMap.add(index, null);
                 return;
             }
-            // $path=...
+            // Special case: ADG's $path modifier
             if (modifier.name.value === ADG_PATH_MODIFIER) {
                 let value: string | undefined;
                 let { exception } = modifier;
