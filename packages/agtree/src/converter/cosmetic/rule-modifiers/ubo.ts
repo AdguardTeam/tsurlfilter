@@ -2,7 +2,12 @@
  * @file Cosmetic rule modifier converter from ADG to UBO
  */
 
-import { type Modifier, type ModifierList } from '../../../nodes';
+import {
+    type DomainList,
+    ListNodeType,
+    type Modifier,
+    type ModifierList,
+} from '../../../nodes';
 import { createModifierNode } from '../../../ast-utils/modifiers';
 import { RegExpUtils } from '../../../utils/regexp';
 import {
@@ -18,6 +23,9 @@ import { type ConversionResult, createConversionResult } from '../../base-interf
 
 const UBO_MATCHES_PATH_OPERATOR = 'matches-path';
 const ADG_PATH_MODIFIER = 'path';
+const ADG_DOMAINS_MODIFIER = 'domain';
+const DOMAIN_MODIFIER_SEPARATOR = '|';
+const DOMAIN_LIST_SEPARATOR = ',';
 
 /**
  * Special characters in modifier regexps that should be escaped
@@ -43,10 +51,39 @@ export class UboCosmeticRuleModifierConverter {
      * @throws If the modifier list cannot be converted
      * @see {@link https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#cosmetic-filter-operators}
      */
-    public static convertFromAdg(modifierList: ModifierList): ConversionResult<ModifierList> {
-        const conversionMap = new MultiValueMap<number, Modifier>();
+    // eslint-disable-next-line max-len
+    public static convertFromAdg(modifierList: ModifierList): ConversionResult<{ modifierList: ModifierList, domains?: DomainList }> {
+        const conversionMap = new MultiValueMap<number, Modifier | null>();
+        let domainList: DomainList | null = null;
 
         modifierList.children.forEach((modifier, index) => {
+            // $domain=...
+            if (modifier.name.value === ADG_DOMAINS_MODIFIER) {
+                if (!domainList) {
+                    domainList = {
+                        type: ListNodeType.DomainList,
+                        separator: ',',
+                        children: [],
+                        start: modifier.start,
+                        end: modifier.end,
+                    };
+                }
+
+                const convertedDomainList = modifier.value?.value
+                    .split(DOMAIN_MODIFIER_SEPARATOR)
+                    .join(DOMAIN_LIST_SEPARATOR) ?? '';
+
+                domainList.children.push({
+                    type: 'Domain',
+                    value: convertedDomainList,
+                    start: modifier.start,
+                    end: modifier.end,
+                    exception: false,
+                });
+
+                conversionMap.add(index, null);
+                return;
+            }
             // $path=...
             if (modifier.name.value === ADG_PATH_MODIFIER) {
                 let value: string | undefined;
@@ -81,7 +118,6 @@ export class UboCosmeticRuleModifierConverter {
             }
         });
 
-        // FIXME: Handle domains modifier as regular domain list in Ubo
         // Check if we have any converted modifiers
         if (conversionMap.size) {
             const modifierListClone = clone(modifierList);
@@ -91,12 +127,12 @@ export class UboCosmeticRuleModifierConverter {
                 const convertedModifier = conversionMap.get(index);
 
                 return convertedModifier ?? modifier;
-            }).flat();
+            }).flat().filter((modifier): modifier is Modifier => modifier !== null);
 
-            return createConversionResult(modifierListClone, true);
+            return createConversionResult({ modifierList: modifierListClone, domains: domainList || undefined }, true);
         }
 
-        // Otherwise, just return the original modifier list
-        return createConversionResult(modifierList, false);
+        // Otherwise, just return the original modifier list without any changes
+        return createConversionResult({ modifierList, domains: undefined }, false);
     }
 }

@@ -6,6 +6,7 @@ import {
     type AnyCosmeticRule,
     type AnyRule,
     CosmeticRuleType,
+    type DomainList,
     type ModifierList,
     RuleCategory,
 } from '../../nodes';
@@ -139,7 +140,7 @@ export class CosmeticRuleConverter extends RuleConverterBase {
             return ScriptletRuleConverter.convertToUbo(rule);
         }
 
-        let convertedModifiers: ConversionResult<ModifierList> | undefined;
+        let convertedModifiers: ConversionResult<{ modifierList: ModifierList, domains?: DomainList }> | undefined;
 
         // Convert cosmetic rule modifiers, if any
         if (rule.modifiers) {
@@ -153,8 +154,13 @@ export class CosmeticRuleConverter extends RuleConverterBase {
 
         if (convertedModifiers && convertedModifiers.isConverted) {
             const result = clone(rule);
-            result.modifiers = convertedModifiers.result;
+            result.modifiers = convertedModifiers.result.modifierList;
             result.syntax = AdblockSyntax.Ubo;
+
+            if (convertedModifiers.result.domains) {
+                result.domains = convertedModifiers.result.domains;
+            }
+
             return createNodeConversionResult([result], true);
         }
 

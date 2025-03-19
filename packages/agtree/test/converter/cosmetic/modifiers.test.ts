@@ -146,6 +146,7 @@ describe('Cosmetic rule modifiers conversion', () => {
     });
     describe('ADG to uBO', () => {
         test.each([
+            // [$path=....] modifier
             // No value
             {
                 actual: '[$path]example.com##.foo',
@@ -170,7 +171,6 @@ describe('Cosmetic rule modifiers conversion', () => {
                 ],
                 shouldConvert: true,
             },
-
             // Basic negation cases
             {
                 actual: '[$path=/^((?!a).)*$/]example.com##.foo',
@@ -257,6 +257,35 @@ describe('Cosmetic rule modifiers conversion', () => {
                 actual: String.raw`[$path=/\/(sub1|sub2)\/page\.html/]example.org#$?#p:contains(/[\w\W]{30,}/) { background: #ff0033 !important; }`,
                 expected: [
                     String.raw`example.org#$?#:matches-path(/\\/(sub1|sub2)\\/page\\.html/) p:contains(/[\w\W]{30,}/):style(background: #ff0033 !important;)`,
+                ],
+                shouldConvert: true,
+            },
+            // [$domain=....] modifier
+            {
+                actual: '[$domain=example.com]##.textad',
+                expected: [
+                    'example.com##.textad',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: '[$domain=example.com]#@#.textad',
+                expected: [
+                    'example.com#@#.textad',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: '[$domain=example.com|example.org]###adblock',
+                expected: [
+                    'example.com,example.org###adblock',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: '[$domain=example.com|example.org]#@##adblock',
+                expected: [
+                    'example.com,example.org#@##adblock',
                 ],
                 shouldConvert: true,
             },
