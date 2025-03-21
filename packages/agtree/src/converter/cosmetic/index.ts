@@ -26,6 +26,7 @@ import {
 } from '../base-interfaces/conversion-result';
 import { UboCosmeticRuleModifierConverter } from './rule-modifiers/ubo';
 import { clone } from '../../utils/clone';
+import { COMMA } from '../../utils';
 
 /**
  * Cosmetic rule converter class (also known as "non-basic rule converter")
@@ -159,6 +160,7 @@ export class CosmeticRuleConverter extends RuleConverterBase {
 
             if (convertedModifiers.result.domains) {
                 result.domains = convertedModifiers.result.domains;
+                result.domains.separator = COMMA;
             }
 
             return createNodeConversionResult([result], true);

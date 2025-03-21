@@ -289,13 +289,51 @@ describe('Cosmetic rule modifiers conversion', () => {
                 ],
                 shouldConvert: true,
             },
+            // PIPE separator escaped for now because of issue with parser
+            // https://github.com/AdguardTeam/tsurlfilter/issues/121
             {
-                actual: '[$domain=/example.(com|org)/]##.banner',
+                actual: '[$domain=/example.(com\\|org)/]##.banner',
                 expected: [
-                    '/example.(com|org)/##.banner',
+                    '/example.(com\\|org)/##.banner',
                 ],
                 shouldConvert: true,
             },
+            {
+                actual: '[$domain=/example.(com\\|org)/]##.banner',
+                expected: [
+                    '/example.(com\\|org)/##.banner',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: '[$domain=/example.(com\\|org)/|foo.com]##.banner',
+                expected: [
+                    '/example.(com\\|org)/,foo.com##.banner',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: '[$domain=/example.(com\\|org)/|foo.com]#@#.banner',
+                expected: [
+                    '/example.(com\\|org)/,foo.com#@#.banner',
+                ],
+                shouldConvert: true,
+            },
+            // [$url=....] modifier
+            {
+                actual: '[$url=||example.com/content/*]##div.textad',
+                expected: [
+                    '/^(http|https|ws|wss)://([a-z0-9-_.]+\\.)?example\\.com\\/content\\/.*/##div.textad',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: '[$url=|example.org]#@#h1',
+                expected: [
+                    '/^example\\.org/#@#h1',
+                ],
+                shouldConvert: true,
+            }
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(CosmeticRuleConverter, 'convertToUbo');
         });

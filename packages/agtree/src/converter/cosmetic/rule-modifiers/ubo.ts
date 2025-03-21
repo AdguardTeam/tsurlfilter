@@ -2,6 +2,7 @@
  * @file Cosmetic rule modifier converter from ADG to uBO
  */
 
+import { DomainListParser } from '../../../parser/misc/domain-list-parser';
 import {
     type DomainList,
     ListNodeType,
@@ -13,8 +14,10 @@ import { RegExpUtils } from '../../../utils/regexp';
 import {
     CLOSE_SQUARE_BRACKET,
     COMMA,
+    PIPE,
     ESCAPE_CHARACTER,
     OPEN_SQUARE_BRACKET,
+    REGEX_MARKER,
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
 import { MultiValueMap } from '../../../utils/multi-value-map';
@@ -24,8 +27,8 @@ import { type ConversionResult, createConversionResult } from '../../base-interf
 const UBO_MATCHES_PATH_OPERATOR = 'matches-path';
 const ADG_PATH_MODIFIER = 'path';
 const ADG_DOMAINS_MODIFIER = 'domain';
-const DOMAIN_MODIFIER_SEPARATOR = '|';
-const DOMAIN_LIST_SEPARATOR = ',';
+const ADG_APP_MODIFIER = 'app';
+const ADG_URL_MODIFIER = 'url'
 
 /**
  * Special characters in modifier regexps that should be escaped
@@ -57,40 +60,70 @@ export class UboCosmeticRuleModifierConverter {
         let domainList: DomainList | null = null;
 
         modifierList.children.forEach((modifier, index) => {
+
+            // Special case: ADG's $app modifier
+            if (modifier.name.value === ADG_APP_MODIFIER) {
+                throw new Error('The $app modifier is not supported by uBO');
+            }
+
             // Special case: ADG's $domain modifier
             if (modifier.name.value === ADG_DOMAINS_MODIFIER) {
                 if (!domainList) {
                     domainList = {
                         type: ListNodeType.DomainList,
-                        separator: ',',
+                        separator: COMMA,
                         children: [],
                         start: modifier.start,
                         end: modifier.end,
                     };
                 }
-                let convertedDomainList: string;
-
-                if (!modifier.value) {
-                    convertedDomainList = '';
-                } else if (RegExpUtils.isRegexPattern(modifier.value.value)) {
-                    convertedDomainList = modifier.value.value;
-                } else {
-                    convertedDomainList = modifier.value.value
-                        .split(DOMAIN_MODIFIER_SEPARATOR)
-                        .join(DOMAIN_LIST_SEPARATOR);
+            
+                if(!modifier?.value?.value){
+                    return;
                 }
-
-                domainList.children.push({
-                    type: 'Domain',
-                    value: convertedDomainList,
-                    start: modifier.start,
-                    end: modifier.end,
-                    exception: false,
-                });
+                
+                domainList = DomainListParser.parse(modifier.value.value, {}, modifier.start, PIPE);
 
                 conversionMap.add(index, null);
                 return;
             }
+
+            // Special case: ADG's $url modifier
+            if (modifier.name.value === ADG_URL_MODIFIER) {
+                if (!domainList) {
+                    domainList = {
+                        type: ListNodeType.DomainList,
+                        separator: COMMA,
+                        children: [],
+                        start: modifier.start,
+                        end: modifier.end,
+                    };
+                }
+
+                if (!modifier?.value?.value) {
+                    return;
+                }
+
+                const regexDomainValue = RegExpUtils.patternToRegexp(modifier.value.value);
+
+                domainList = {
+                    type: ListNodeType.DomainList,
+                    separator: COMMA,
+                    children: [
+                        {
+                            type: 'Domain',
+                            value: REGEX_MARKER + regexDomainValue + REGEX_MARKER,
+                            exception: modifier?.exception ?? false,
+                        },
+                    ],
+                    start: modifier.start,
+                    end: modifier.end,
+                };
+
+                conversionMap.add(index, null);
+                return;
+            }
+            
             // Special case: ADG's $path modifier
             if (modifier.name.value === ADG_PATH_MODIFIER) {
                 let value: string | undefined;
