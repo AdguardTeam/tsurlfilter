@@ -175,7 +175,7 @@ describe('Cosmetic rule modifiers conversion', () => {
             {
                 actual: '[$path=/^((?!a).)*$/]example.com##.foo',
                 expected: [
-                    'example.com##:not(:matches-path(/^((?!a).)*$/)) .foo',
+                    'example.com##:not(:matches-path(/a/)) .foo',
                 ],
                 shouldConvert: true,
             },
@@ -183,7 +183,7 @@ describe('Cosmetic rule modifiers conversion', () => {
             {
                 actual: '[$path=/^((?!\\/page).)*$/]example.com##.foo',
                 expected: [
-                    String.raw`example.com##:not(:matches-path(/^((?!\\/page).)*$/)) .foo`,
+                    String.raw`example.com##:not(:matches-path(/\\/page/)) .foo`,
                 ],
                 shouldConvert: true,
             },
@@ -214,14 +214,14 @@ describe('Cosmetic rule modifiers conversion', () => {
             {
                 actual: '[$path=/^((?!\\/(sub1|sub2)\\/page\\.html).)*$/]ya.ru##p',
                 expected: [
-                    String.raw`ya.ru##:not(:matches-path(/^((?!\\/(sub1|sub2)\\/page\\.html).)*$/)) p`,
+                    String.raw`ya.ru##:not(:matches-path(/\\/(sub1|sub2)\\/page\\.html/)) p`,
                 ],
                 shouldConvert: true,
             },
             {
                 actual: '[$path=/^((?!\\/page).)*$/]ya.ru##p',
                 expected: [
-                    String.raw`ya.ru##:not(:matches-path(/^((?!\\/page).)*$/)) p`,
+                    String.raw`ya.ru##:not(:matches-path(/\\/page/)) p`,
                 ],
                 shouldConvert: true,
             },
@@ -235,7 +235,7 @@ describe('Cosmetic rule modifiers conversion', () => {
             {
                 actual: '[$path=/^((?!\\/search\\?q=.*?tbm=shop).)*$/]www.google.*###test',
                 expected: [
-                    String.raw`www.google.*##:not(:matches-path(/^((?!\\/search\\?q=.*?tbm=shop).)*$/)) #test`,
+                    String.raw`www.google.*##:not(:matches-path(/\\/search\\?q=.*?tbm=shop/)) #test`,
                 ],
                 shouldConvert: true,
             },
@@ -249,7 +249,7 @@ describe('Cosmetic rule modifiers conversion', () => {
             {
                 actual: '[$path=/^((?!\\/page).)*$/]example.com#@$#h1 { background-color: blue !important }',
                 expected: [
-                    String.raw`example.com#@$#:not(:matches-path(/^((?!\\/page).)*$/)) h1:style(background-color: blue !important)`,
+                    String.raw`example.com#@$#:not(:matches-path(/\\/page/)) h1:style(background-color: blue !important)`,
                 ],
                 shouldConvert: true,
             },
