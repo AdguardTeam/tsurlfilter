@@ -52,9 +52,6 @@ export class CosmeticRuleGenerator extends BaseGenerator {
         // uBO rule modifiers
         if (node.syntax === AdblockSyntax.Ubo && node.modifiers) {
             node.modifiers.children.forEach((modifier) => {
-                if (!modifier) {
-                    return;
-                }
                 if (modifier.exception) {
                     result += COLON;
                     result += CSS_NOT_PSEUDO;

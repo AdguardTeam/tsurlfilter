@@ -137,7 +137,7 @@ export class UboCosmeticRuleModifierConverter {
                 } else if (RegExpUtils.isNegatedRegexPattern(modifier.value.value)) {
                     exception = true;
                     value = StringUtils.escapeCharacters(
-                        RegExpUtils.removeNegationFromRegexPattern(modifier.value.value),
+                        modifier.value.value,
                         SPECIAL_MODIFIER_REGEX_CHARS,
                     );
                 } else {
