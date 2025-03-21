@@ -24,7 +24,6 @@ import { isHttpOrWsRequest, isHttpRequest, getHost } from '../../common/utils/ur
 
 import { allowlistApi } from './allowlist-api';
 import { type ConfigurationMV3 } from './configuration';
-import { DocumentApi } from './document-api';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 
