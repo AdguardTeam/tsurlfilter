@@ -194,13 +194,6 @@ export class EngineApi {
 
         const frameUrl = getHost(url);
 
-        // Checks if an allowlist rule exists at the document level,
-        // then discards all cosmetic rules.
-        const allowlistFrameRule = DocumentApi.matchFrame(url);
-        if (allowlistFrameRule) {
-            return new CosmeticResult();
-        }
-
         const request = new Request(url, frameUrl, RequestType.Document);
 
         return this.engine.getCosmeticResult(request, option);
