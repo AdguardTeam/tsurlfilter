@@ -167,6 +167,20 @@ export class RegExpUtils {
     }
 
     /**
+     * Ensures that a pattern is wrapped in slashes.
+     *
+     * @param pattern Pattern to ensure slashes for
+     * @returns pattern with slashes
+     */
+    public static ensureSlashes(pattern: string): string {
+        let result = pattern.trim();
+        if (!RegExpUtils.isRegexPattern(result)) {
+            result = `${REGEX_MARKER}${result}${REGEX_MARKER}`;
+        }
+        return result;
+    }
+
+    /**
      * Converts a basic adblock rule pattern to a RegExp pattern. Based on
      * https://github.com/AdguardTeam/tsurlfilter/blob/9b26e0b4a0e30b87690bc60f7cf377d112c3085c/packages/tsurlfilter/src/rules/simple-regex.ts#L219
      *

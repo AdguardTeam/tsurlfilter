@@ -2,22 +2,15 @@
  * @file Cosmetic rule modifier converter from ADG to uBO
  */
 
-import { DomainListParser } from '../../../parser/misc/domain-list-parser';
-import {
-    type DomainList,
-    ListNodeType,
-    type Modifier,
-    type ModifierList,
-} from '../../../nodes';
+import { type DomainList, type Modifier, type ModifierList } from '../../../nodes';
 import { createModifierNode } from '../../../ast-utils/modifiers';
+import { createDomainList } from '../../../ast-utils/domains';
 import { RegExpUtils } from '../../../utils/regexp';
 import {
     CLOSE_SQUARE_BRACKET,
     COMMA,
-    PIPE,
     ESCAPE_CHARACTER,
     OPEN_SQUARE_BRACKET,
-    REGEX_MARKER,
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
 import { MultiValueMap } from '../../../utils/multi-value-map';
@@ -29,6 +22,8 @@ const ADG_PATH_MODIFIER = 'path';
 const ADG_DOMAINS_MODIFIER = 'domain';
 const ADG_APP_MODIFIER = 'app';
 const ADG_URL_MODIFIER = 'url';
+// https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#subjectmatches-patharg
+const MAIN_PAGE_MATCHER = '/^/$/';
 
 /**
  * Special characters in modifier regexps that should be escaped
@@ -62,69 +57,34 @@ export class UboCosmeticRuleModifierConverter {
         modifierList.children.forEach((modifier, index) => {
             let value: string | undefined;
             let { exception } = modifier;
-            let regexDomainValue: string;
-            // Special case: ADG's $app modifier
             switch (modifier.name.value) {
+                // Special case: ADG's $app modifier
                 case ADG_APP_MODIFIER:
                     throw new Error('The $app modifier is not supported by uBO');
-
+                // Special case: ADG's $domain modifier
                 case ADG_DOMAINS_MODIFIER:
+                    domainList = createDomainList(modifier, ADG_DOMAINS_MODIFIER);
+
                     if (!domainList) {
-                        domainList = {
-                            type: ListNodeType.DomainList,
-                            separator: COMMA,
-                            children: [],
-                            start: modifier.start,
-                            end: modifier.end,
-                        };
+                        break;
                     }
-
-                    if (!modifier?.value?.value) {
-                        return;
-                    }
-
-                    domainList = DomainListParser.parse(modifier.value.value, {}, modifier.start, PIPE);
 
                     conversionMap.add(index, null);
                     break;
-
+                // Special case: ADG's $url modifier
                 case ADG_URL_MODIFIER:
+                    domainList = createDomainList(modifier, ADG_URL_MODIFIER);
+
                     if (!domainList) {
-                        domainList = {
-                            type: ListNodeType.DomainList,
-                            separator: COMMA,
-                            children: [],
-                            start: modifier.start,
-                            end: modifier.end,
-                        };
+                        break;
                     }
-
-                    if (!modifier?.value?.value) {
-                        return;
-                    }
-
-                    regexDomainValue = RegExpUtils.patternToRegexp(modifier.value.value);
-
-                    domainList = {
-                        type: ListNodeType.DomainList,
-                        separator: COMMA,
-                        children: [
-                            {
-                                type: 'Domain',
-                                value: REGEX_MARKER + regexDomainValue + REGEX_MARKER,
-                                exception: modifier?.exception ?? false,
-                            },
-                        ],
-                        start: modifier.start,
-                        end: modifier.end,
-                    };
 
                     conversionMap.add(index, null);
                     break;
-
+                // Special case: ADG's $path modifier
                 case ADG_PATH_MODIFIER:
                     if (!modifier.value) {
-                        value = '/^/$/';
+                        value = MAIN_PAGE_MATCHER;
                     } else if (RegExpUtils.isNegatedRegexPattern(modifier.value.value)) {
                         exception = true;
                         value = StringUtils.escapeCharacters(
