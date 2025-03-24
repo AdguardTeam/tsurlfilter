@@ -179,7 +179,6 @@ describe('Cosmetic rule modifiers conversion', () => {
                 ],
                 shouldConvert: true,
             },
-            // FIXME: Double-check this:
             {
                 actual: '[$path=/^((?!\\/page).)*$/]example.com##.foo',
                 expected: [

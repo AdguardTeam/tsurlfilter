@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [3.0.2] - 2025-03-24
+
+### Added
+
+- Converter of ADG cosmetic rule modifier list to uBO.
+
+[3.0.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.0.2
+
+## [3.0.0-alpha.5] - 2025-02-07
+
 ## [3.0.1] - 2025-02-28
 
 The version is the same as [3.0.0-alpha.5], just removed `alpha` channel.

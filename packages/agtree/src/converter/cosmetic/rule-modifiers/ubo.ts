@@ -28,7 +28,7 @@ const UBO_MATCHES_PATH_OPERATOR = 'matches-path';
 const ADG_PATH_MODIFIER = 'path';
 const ADG_DOMAINS_MODIFIER = 'domain';
 const ADG_APP_MODIFIER = 'app';
-const ADG_URL_MODIFIER = 'url'
+const ADG_URL_MODIFIER = 'url';
 
 /**
  * Special characters in modifier regexps that should be escaped
@@ -60,101 +60,94 @@ export class UboCosmeticRuleModifierConverter {
         let domainList: DomainList | null = null;
 
         modifierList.children.forEach((modifier, index) => {
-
+            let value: string | undefined;
+            let { exception } = modifier;
+            let regexDomainValue: string;
             // Special case: ADG's $app modifier
-            if (modifier.name.value === ADG_APP_MODIFIER) {
-                throw new Error('The $app modifier is not supported by uBO');
-            }
+            switch (modifier.name.value) {
+                case ADG_APP_MODIFIER:
+                    throw new Error('The $app modifier is not supported by uBO');
 
-            // Special case: ADG's $domain modifier
-            if (modifier.name.value === ADG_DOMAINS_MODIFIER) {
-                if (!domainList) {
+                case ADG_DOMAINS_MODIFIER:
+                    if (!domainList) {
+                        domainList = {
+                            type: ListNodeType.DomainList,
+                            separator: COMMA,
+                            children: [],
+                            start: modifier.start,
+                            end: modifier.end,
+                        };
+                    }
+
+                    if (!modifier?.value?.value) {
+                        return;
+                    }
+
+                    domainList = DomainListParser.parse(modifier.value.value, {}, modifier.start, PIPE);
+
+                    conversionMap.add(index, null);
+                    break;
+
+                case ADG_URL_MODIFIER:
+                    if (!domainList) {
+                        domainList = {
+                            type: ListNodeType.DomainList,
+                            separator: COMMA,
+                            children: [],
+                            start: modifier.start,
+                            end: modifier.end,
+                        };
+                    }
+
+                    if (!modifier?.value?.value) {
+                        return;
+                    }
+
+                    regexDomainValue = RegExpUtils.patternToRegexp(modifier.value.value);
+
                     domainList = {
                         type: ListNodeType.DomainList,
                         separator: COMMA,
-                        children: [],
+                        children: [
+                            {
+                                type: 'Domain',
+                                value: REGEX_MARKER + regexDomainValue + REGEX_MARKER,
+                                exception: modifier?.exception ?? false,
+                            },
+                        ],
                         start: modifier.start,
                         end: modifier.end,
                     };
-                }
-            
-                if(!modifier?.value?.value){
-                    return;
-                }
-                
-                domainList = DomainListParser.parse(modifier.value.value, {}, modifier.start, PIPE);
 
-                conversionMap.add(index, null);
-                return;
-            }
+                    conversionMap.add(index, null);
+                    break;
 
-            // Special case: ADG's $url modifier
-            if (modifier.name.value === ADG_URL_MODIFIER) {
-                if (!domainList) {
-                    domainList = {
-                        type: ListNodeType.DomainList,
-                        separator: COMMA,
-                        children: [],
-                        start: modifier.start,
-                        end: modifier.end,
-                    };
-                }
+                case ADG_PATH_MODIFIER:
+                    if (!modifier.value) {
+                        value = '/^/$/';
+                    } else if (RegExpUtils.isNegatedRegexPattern(modifier.value.value)) {
+                        exception = true;
+                        value = StringUtils.escapeCharacters(
+                            RegExpUtils.removeNegationFromRegexPattern(modifier.value.value),
+                            SPECIAL_MODIFIER_REGEX_CHARS,
+                        );
+                    } else {
+                        value = RegExpUtils.isRegexPattern(modifier.value.value)
+                            ? StringUtils.escapeCharacters(modifier.value.value, SPECIAL_MODIFIER_REGEX_CHARS)
+                            : modifier.value.value;
+                    }
 
-                if (!modifier?.value?.value) {
-                    return;
-                }
-
-                const regexDomainValue = RegExpUtils.patternToRegexp(modifier.value.value);
-
-                domainList = {
-                    type: ListNodeType.DomainList,
-                    separator: COMMA,
-                    children: [
-                        {
-                            type: 'Domain',
-                            value: REGEX_MARKER + regexDomainValue + REGEX_MARKER,
-                            exception: modifier?.exception ?? false,
-                        },
-                    ],
-                    start: modifier.start,
-                    end: modifier.end,
-                };
-
-                conversionMap.add(index, null);
-                return;
-            }
-            
-            // Special case: ADG's $path modifier
-            if (modifier.name.value === ADG_PATH_MODIFIER) {
-                let value: string | undefined;
-                let { exception } = modifier;
-
-                if (!modifier.value) {
-                    // To only match the main page but not any of the subpages,
-                    // use: example.com##:matches-path(/^/$/) p
-                    // From: https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#subjectmatches-patharg
-                    value = '/^/$/';
-                } else if (RegExpUtils.isNegatedRegexPattern(modifier.value.value)) {
-                    exception = true;
-                    value = StringUtils.escapeCharacters(
-                        RegExpUtils.removeNegationFromRegexPattern(modifier.value.value),
-                        SPECIAL_MODIFIER_REGEX_CHARS,
+                    conversionMap.add(
+                        index,
+                        createModifierNode(
+                            UBO_MATCHES_PATH_OPERATOR,
+                            value,
+                            exception,
+                        ),
                     );
-                } else {
-                    value = RegExpUtils.isRegexPattern(modifier.value.value)
-                        ? StringUtils.escapeCharacters(modifier.value.value, SPECIAL_MODIFIER_REGEX_CHARS)
-                        : modifier.value.value;
-                }
-
-                // Convert ADG's `$path=...` operator to Ubo's `:matches-path(...)` modifier
-                conversionMap.add(
-                    index,
-                    createModifierNode(
-                        UBO_MATCHES_PATH_OPERATOR,
-                        value,
-                        exception,
-                    ),
-                );
+                    break;
+                default:
+                    break;
             }
         });
 
