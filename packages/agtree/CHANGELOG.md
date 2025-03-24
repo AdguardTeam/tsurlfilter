@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
-- Converter of ADG cosmetic rule modifier list to uBO.
+- Converter of `ADG` cosmetic rule modifier list to `uBO`.
 
 [3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.0
 
