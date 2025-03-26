@@ -26,7 +26,7 @@ import { type ConversionResult, createConversionResult } from '../../base-interf
  * Regular expression pattern for matching the main page
  * https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#subjectmatches-patharg
  */
-const MAIN_PAGE_MATCHER = '/^/$/';
+const UBO_MAIN_PAGE_MATCHER = '/^/$/';
 
 /**
  * Special characters in modifier regexps that should be escaped
@@ -88,7 +88,7 @@ export class UboCosmeticRuleModifierConverter {
                 // Special case: ADG's $path modifier
                 case ADG_PATH_MODIFIER:
                     if (!modifier.value) {
-                        value = MAIN_PAGE_MATCHER;
+                        value = UBO_MAIN_PAGE_MATCHER;
                     } else if (RegExpUtils.isNegatedRegexPattern(modifier.value.value)) {
                         exception = true;
                         value = StringUtils.escapeCharacters(

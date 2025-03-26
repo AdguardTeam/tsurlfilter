@@ -170,14 +170,26 @@ export class RegExpUtils {
      * Ensures that a pattern is wrapped in slashes.
      *
      * @param pattern Pattern to ensure slashes for
-     * @returns pattern with slashes
+     * @returns Pattern with slashes
      */
     public static ensureSlashes(pattern: string): string {
-        let result = pattern.trim();
-        if (!RegExpUtils.isRegexPattern(result)) {
-            result = `${REGEX_MARKER}${result}${REGEX_MARKER}`;
+        const result = pattern.trim();
+        const starts = result.startsWith(REGEX_MARKER);
+        const ends = result.endsWith(REGEX_MARKER);
+        // If already wrapped properly, just return it.
+        if (starts && ends) {
+            return result;
         }
-        return result;
+        // If neither the start nor the end has the marker, add both.
+        if (!starts && !ends) {
+            return `${REGEX_MARKER}${result}${REGEX_MARKER}`;
+        }
+        // If it only has an ending marker, add one to the start.
+        if (!starts) {
+            return `${REGEX_MARKER}${result}`;
+        }
+        // If it only has a starting marker, add one to the end.
+        return `${result}${REGEX_MARKER}`;
     }
 
     /**
