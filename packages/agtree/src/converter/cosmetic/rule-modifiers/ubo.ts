@@ -8,21 +8,24 @@ import { createDomainList } from '../../../ast-utils/domains';
 import { RegExpUtils } from '../../../utils/regexp';
 import {
     CLOSE_SQUARE_BRACKET,
-    COMMA,
+    COMMA_DOMAIN_LIST_SEPARATOR,
     ESCAPE_CHARACTER,
     OPEN_SQUARE_BRACKET,
+    ADG_APP_MODIFIER,
+    ADG_DOMAINS_MODIFIER,
+    ADG_URL_MODIFIER,
+    UBO_MATCHES_PATH_OPERATOR,
+    ADG_PATH_MODIFIER,
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
 import { MultiValueMap } from '../../../utils/multi-value-map';
 import { clone } from '../../../utils/clone';
 import { type ConversionResult, createConversionResult } from '../../base-interfaces/conversion-result';
 
-const UBO_MATCHES_PATH_OPERATOR = 'matches-path';
-const ADG_PATH_MODIFIER = 'path';
-const ADG_DOMAINS_MODIFIER = 'domain';
-const ADG_APP_MODIFIER = 'app';
-const ADG_URL_MODIFIER = 'url';
-// https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#subjectmatches-patharg
+/**
+ * Regular expression pattern for matching the main page
+ * https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#subjectmatches-patharg
+ */
 const MAIN_PAGE_MATCHER = '/^/$/';
 
 /**
@@ -31,7 +34,7 @@ const MAIN_PAGE_MATCHER = '/^/$/';
 const SPECIAL_MODIFIER_REGEX_CHARS = new Set([
     OPEN_SQUARE_BRACKET,
     CLOSE_SQUARE_BRACKET,
-    COMMA,
+    COMMA_DOMAIN_LIST_SEPARATOR,
     ESCAPE_CHARACTER,
 ]);
 
@@ -49,8 +52,9 @@ export class UboCosmeticRuleModifierConverter {
      * @throws If the modifier list cannot be converted
      * @see {@link https://github.com/gorhill/uBlock/wiki/Procedural-cosmetic-filters#cosmetic-filter-operators}
      */
-    // eslint-disable-next-line max-len
-    public static convertFromAdg(modifierList: ModifierList): ConversionResult<{ modifierList: ModifierList, domains?: DomainList }> {
+    public static convertFromAdg(
+        modifierList: ModifierList,
+    ): ConversionResult<{ modifierList: ModifierList, domains?: DomainList }> {
         const conversionMap = new MultiValueMap<number, Modifier | null>();
         let domainList: DomainList | null = null;
 
@@ -116,11 +120,13 @@ export class UboCosmeticRuleModifierConverter {
             const modifierListClone = clone(modifierList);
 
             // Replace the original modifiers with the converted ones
-            modifierListClone.children = modifierListClone.children.map((modifier, index) => {
-                const convertedModifier = conversionMap.get(index);
-
-                return convertedModifier ?? modifier;
-            }).flat().filter((modifier): modifier is Modifier => modifier !== null);
+            modifierListClone.children = modifierListClone.children
+                .map((modifier, index) => {
+                    const convertedModifier = conversionMap.get(index);
+                    return convertedModifier ?? modifier;
+                })
+                .flat()
+                .filter((modifier): modifier is Modifier => modifier !== null);
 
             return createConversionResult({ modifierList: modifierListClone, domains: domainList || undefined }, true);
         }

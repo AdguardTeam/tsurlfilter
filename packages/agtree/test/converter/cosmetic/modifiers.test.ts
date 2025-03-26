@@ -346,7 +346,7 @@ describe('Cosmetic rule modifiers conversion', () => {
                     '/^example\\.org$/#@#h1',
                 ],
                 shouldConvert: true,
-            }
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(CosmeticRuleConverter, 'convertToUbo');
         });
