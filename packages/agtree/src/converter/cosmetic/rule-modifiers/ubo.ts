@@ -4,7 +4,7 @@
 
 import { type DomainList, type Modifier, type ModifierList } from '../../../nodes';
 import { createModifierNode } from '../../../ast-utils/modifiers';
-import { createDomainList } from '../../../ast-utils/domains';
+import { createDomainList, parseDomains } from '../../../ast-utils/domains';
 import { RegExpUtils } from '../../../utils/regexp';
 import {
     CLOSE_SQUARE_BRACKET,
@@ -16,6 +16,7 @@ import {
     ADG_URL_MODIFIER,
     UBO_MATCHES_PATH_OPERATOR,
     ADG_PATH_MODIFIER,
+    PIPE_MODIFIER_SEPARATOR,
 } from '../../../utils/constants';
 import { StringUtils } from '../../../utils/string';
 import { MultiValueMap } from '../../../utils/multi-value-map';
@@ -65,26 +66,40 @@ export class UboCosmeticRuleModifierConverter {
                 // Special case: ADG's $app modifier
                 case ADG_APP_MODIFIER:
                     throw new Error('The $app modifier is not supported by uBO');
-                // Special case: ADG's $domain modifier
-                case ADG_DOMAINS_MODIFIER:
-                    domainList = createDomainList(modifier, ADG_DOMAINS_MODIFIER);
-
+                // Special case: ADG's $domains modifier
+                case ADG_DOMAINS_MODIFIER: {
+                    // Use PIPE_MODIFIER_SEPARATOR for domain lists
+                    const domains = parseDomains(modifier.value?.value ?? '', PIPE_MODIFIER_SEPARATOR);
+                    domainList = createDomainList(
+                        domains,
+                        ADG_DOMAINS_MODIFIER,
+                        PIPE_MODIFIER_SEPARATOR,
+                        modifier.start,
+                        modifier.end,
+                    );
                     if (!domainList) {
                         break;
                     }
-
                     conversionMap.add(index, null);
                     break;
+                }
                 // Special case: ADG's $url modifier
-                case ADG_URL_MODIFIER:
-                    domainList = createDomainList(modifier, ADG_URL_MODIFIER);
-
+                case ADG_URL_MODIFIER: {
+                    // Use COMMA_DOMAIN_LIST_SEPARATOR for URL lists
+                    const domains = parseDomains(modifier.value?.value ?? '', COMMA_DOMAIN_LIST_SEPARATOR);
+                    domainList = createDomainList(
+                        domains,
+                        ADG_URL_MODIFIER,
+                        COMMA_DOMAIN_LIST_SEPARATOR,
+                        modifier.start,
+                        modifier.end,
+                    );
                     if (!domainList) {
                         break;
                     }
-
                     conversionMap.add(index, null);
                     break;
+                }
                 // Special case: ADG's $path modifier
                 case ADG_PATH_MODIFIER:
                     if (!modifier.value) {
@@ -100,7 +115,6 @@ export class UboCosmeticRuleModifierConverter {
                             ? StringUtils.escapeCharacters(modifier.value.value, SPECIAL_MODIFIER_REGEX_CHARS)
                             : modifier.value.value;
                     }
-
                     conversionMap.add(
                         index,
                         createModifierNode(

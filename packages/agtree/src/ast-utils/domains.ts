@@ -3,54 +3,75 @@
  */
 
 import {
-    type Modifier,
     type DomainList,
     ListNodeType,
     ListItemNodeType,
+    type DomainListSeparator,
 } from '../nodes';
 import { DomainListParser } from '../parser/misc/domain-list-parser';
 import { RegExpUtils } from '../utils/regexp';
-import {
-    COMMA_DOMAIN_LIST_SEPARATOR,
-    PIPE_MODIFIER_SEPARATOR,
-    ADG_DOMAINS_MODIFIER,
-    ADG_URL_MODIFIER,
-} from '../utils/constants';
+import { ADG_DOMAINS_MODIFIER, NEGATION_MARKER, ADG_URL_MODIFIER } from '../utils/constants';
 
 /**
- * Creates a domain list based on the provided modifier and type.
+ * Helper function that parses a raw string of domains into an array of domain items.
  *
- * @param modifier - modifier containing the value to be parsed.
- * @param type - type of list to create, either 'domain' or 'url'.
- * @returns `DomainList` object if the modifier value is valid, otherwise `null`.
+ * @param value - The raw domain string (e.g. "example.com|~test.com").
+ * @param separator - The separator used in the string (e.g. "|" or ",").
+ * @returns An array of { domain: domain, exception: exception } objects.
+ */
+export function parseDomains(value: string, separator: string) {
+    return value
+        .split(separator)
+        .map((domain) => domain.trim())
+        .filter(Boolean)
+        .map((domain) => ({
+            domain: domain.startsWith(NEGATION_MARKER) ? domain.slice(1) : domain,
+            exception: domain.startsWith(NEGATION_MARKER),
+        }));
+}
+
+/**
+ * Creates a domain list from an array of domain objects.
  *
- * If the type is 'domain', the function parses the modifier value using `DomainListParser`.
- * If the type is 'url', the function converts the modifier value to a regular expression.
+ * @param domains - Array of objects, each with a `domain` string and optional `exception` flag.
+ * @param type - The type of list to create: either 'domain' or 'url'.
+ * @param separator - The separator to use between domains.
+ * @param start - The start position (e.g. from the modifier).
+ * @param end - The end position.
+ * @returns A DomainList object if the domains array is valid, otherwise null.
  */
 export function createDomainList(
-    modifier: Modifier,
+    domains: { domain: string, exception?: boolean }[],
     type: typeof ADG_DOMAINS_MODIFIER | typeof ADG_URL_MODIFIER,
+    separator: DomainListSeparator,
+    start: number | undefined,
+    end: number | undefined,
 ): DomainList | null {
-    if (!modifier?.value?.value) {
+    if (!domains || domains.length === 0) {
         return null;
     }
     if (type === ADG_DOMAINS_MODIFIER) {
-        return DomainListParser.parse(modifier.value.value, {}, modifier.start, PIPE_MODIFIER_SEPARATOR);
+        // Convert each domain to its string representation. Exceptions are prefixed with "~".
+        const domainStr = domains
+            .map(({ domain, exception }) => (exception ? `${NEGATION_MARKER}${domain}` : domain))
+            .join(separator);
+        return DomainListParser.parse(domainStr, {}, start, separator);
     }
     if (type === ADG_URL_MODIFIER) {
-        const regexDomainValue = RegExpUtils.patternToRegexp(modifier.value.value);
+        const children = domains.map(({ domain, exception }) => {
+            const regexDomainValue = RegExpUtils.patternToRegexp(domain);
+            return {
+                type: ListItemNodeType.Domain,
+                value: RegExpUtils.ensureSlashes(regexDomainValue),
+                exception: exception ?? false,
+            };
+        });
         return {
             type: ListNodeType.DomainList,
-            separator: COMMA_DOMAIN_LIST_SEPARATOR,
-            children: [
-                {
-                    type: ListItemNodeType.Domain,
-                    value: RegExpUtils.ensureSlashes(regexDomainValue),
-                    exception: modifier?.exception ?? false,
-                },
-            ],
-            start: modifier.start,
-            end: modifier.end,
+            separator,
+            children,
+            start,
+            end,
         };
     }
     return null;
