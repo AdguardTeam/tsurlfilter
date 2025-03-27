@@ -19,9 +19,9 @@ const MAX_URL_LENGTH = 1024 * 16;
 
 type ChromiumBrowser = typeof browser & {
     webRequest: {
-        OnHeadersReceivedOptions: unknown
-        OnBeforeSendHeadersOptions: unknown
-    }
+        OnHeadersReceivedOptions: unknown;
+        OnBeforeSendHeadersOptions: unknown;
+    };
 };
 
 export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
@@ -38,7 +38,7 @@ export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType &
      *
      * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle
      */
-    documentLifecycle?: DocumentLifecycle
+    documentLifecycle?: DocumentLifecycle;
 };
 
 /**

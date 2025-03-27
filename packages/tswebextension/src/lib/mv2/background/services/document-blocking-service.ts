@@ -15,16 +15,16 @@ import { type EngineApi } from '../engine-api';
  * Params for {@link DocumentBlockingService.getDocumentBlockingResponse}.
  */
 type GetDocumentBlockingResponseParams = {
-    tabId: number,
-    eventId: string,
-    rule: NetworkRule,
-    referrerUrl: string,
-    requestUrl: string,
+    tabId: number;
+    eventId: string;
+    rule: NetworkRule;
+    referrerUrl: string;
+    requestUrl: string;
 
     /**
      * Request id.
      */
-    requestId: string,
+    requestId: string;
 };
 
 /**

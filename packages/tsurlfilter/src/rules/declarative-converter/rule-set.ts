@@ -22,8 +22,8 @@ import { type ByteRangeMap } from './metadata-ruleset';
  * identifier of that rule.
  */
 export type SourceRuleAndFilterId = {
-    sourceRule: string,
-    filterId: number,
+    sourceRule: string;
+    filterId: number;
 };
 
 /**
@@ -32,8 +32,8 @@ export type SourceRuleAndFilterId = {
  * from dynamic rulesets.
  */
 export type UpdateStaticRulesOptions = {
-    rulesetId: string,
-    disableRuleIds: number[],
+    rulesetId: string;
+    disableRuleIds: number[];
 };
 
 /**
@@ -178,16 +178,16 @@ export interface IRuleSet {
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
-    serializeCompact(prettyPrint?: boolean): Promise<{ result: string, byteRangeMap: ByteRangeMap }>;
+    serializeCompact(prettyPrint?: boolean): Promise<{ result: string; byteRangeMap: ByteRangeMap }>;
 }
 
 /**
  * Rule set content's provider for lazy load data.
  */
 export type RuleSetContentProvider = {
-    loadSourceMap: () => Promise<ISourceMap>,
-    loadFilterList: () => Promise<IFilter[]>,
-    loadDeclarativeRules: () => Promise<DeclarativeRule[]>,
+    loadSourceMap: () => Promise<ISourceMap>;
+    loadFilterList: () => Promise<IFilter[]>;
+    loadDeclarativeRules: () => Promise<DeclarativeRule[]>;
 };
 
 const serializedRuleSetLazyDataValidator = zod.strictObject({
@@ -214,32 +214,32 @@ type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
  * raw filters.
  */
 export type SerializedRuleSet = {
-    id: string,
+    id: string;
     /**
      * Metadata needed for instant creating ruleset.
      */
-    data: string,
+    data: string;
     /**
      * Metadata needed for lazy load some data to ruleset to find and show
      * source rules when declarative filtering log is enabled.
      */
-    lazyData: string,
+    lazyData: string;
 };
 
 /**
  * A deserialized rule set with loaded data and provider for lazy loading data.
  */
 export type DeserializedRuleSet = {
-    id: string,
+    id: string;
     /**
      * Metadata needed for instant creating ruleset.
      */
-    data: SerializedRuleSetData,
+    data: SerializedRuleSetData;
     /**
      * Metadata needed for lazy load some data to ruleset to find and show
      * source rules when declarative filtering log is enabled.
      */
-    ruleSetContentProvider: RuleSetContentProvider,
+    ruleSetContentProvider: RuleSetContentProvider;
 };
 
 /**
@@ -696,7 +696,7 @@ export class RuleSet implements IRuleSet {
     }
 
     /** @inheritdoc */
-    public async serializeCompact(prettyPrint = true): Promise<{ result: string, byteRangeMap: ByteRangeMap }> {
+    public async serializeCompact(prettyPrint = true): Promise<{ result: string; byteRangeMap: ByteRangeMap }> {
         try {
             await this.loadContent();
         } catch (e) {

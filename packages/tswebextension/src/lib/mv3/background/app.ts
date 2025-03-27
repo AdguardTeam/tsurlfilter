@@ -36,17 +36,17 @@ import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
 
 type ConfigurationResult = {
-    staticFiltersStatus: UpdateStaticFiltersResult,
-    staticFilters: IRuleSet[],
-    dynamicRules?: ConversionResult
-    stealthResult?: StealthConfigurationResult,
+    staticFiltersStatus: UpdateStaticFiltersResult;
+    staticFilters: IRuleSet[];
+    dynamicRules?: ConversionResult;
+    stealthResult?: StealthConfigurationResult;
 };
 
 type FiltersUpdateInfo = {
-    staticFilters: IFilter[],
-    customFilters: IFilter[],
-    filtersIdsToEnable: number[]
-    filtersIdsToDisable: number[],
+    staticFilters: IFilter[];
+    customFilters: IFilter[];
+    filtersIdsToEnable: number[];
+    filtersIdsToDisable: number[];
 };
 
 // Reexport types
