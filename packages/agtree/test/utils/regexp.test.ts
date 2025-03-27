@@ -145,7 +145,7 @@ describe('RegExpUtils', () => {
             },
             {
                 pattern: '  abc  ',
-                expected: '/abc/',
+                expected: '/  abc  /',
             },
             {
                 pattern: '/abc/',
