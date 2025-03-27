@@ -55,7 +55,7 @@ describe('Cosmetic rule modifiers conversion', () => {
             },
 
             // Test cases from
-            // https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/agtree/test/converter/cosmetic/modifiers.test.ts
+            // https://github.com/AdguardTeam/tsurlfilter/blob/9b26e0b4a0e30b87690bc60f7cf377d112c3085c/packages/tsurlfilter/test/rules/rule-converter.test.ts
             {
                 actual: 'ya.ru##:matches-path(/page)p',
                 expected: [
@@ -186,9 +186,6 @@ describe('Cosmetic rule modifiers conversion', () => {
                 ],
                 shouldConvert: true,
             },
-
-            // Test cases from
-            // https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/agtree/test/converter/cosmetic/modifiers.test.ts
             {
                 actual: '[$path=/page]ya.ru##p',
                 expected: [
