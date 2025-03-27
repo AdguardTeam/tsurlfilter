@@ -29,7 +29,7 @@ export interface AppInterface<
     /**
      * Fires on filtering log event.
      */
-    onFilteringLogEvent: EventChannelInterface<FilteringLogEvent>,
+    onFilteringLogEvent: EventChannelInterface<FilteringLogEvent>;
 
     /**
      * Fires when a rule has been created from the helper.

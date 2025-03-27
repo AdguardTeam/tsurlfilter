@@ -31,12 +31,12 @@ export type ContentScriptCookieRulesData = {
     /**
      * Is app started.
      */
-    isAppStarted: boolean,
+    isAppStarted: boolean;
 
     /**
      * Cookie rules to apply.
      */
-    cookieRules: CookieRule[] | undefined,
+    cookieRules: CookieRule[] | undefined;
 };
 
 /**

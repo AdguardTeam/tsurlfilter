@@ -18,7 +18,7 @@ import { AdblockSyntax } from '../utils/adblockers';
  * @template T Compatibility data schema.
  */
 export type ProductRecords<T> = {
-    [key: string]: T
+    [key: string]: T;
 };
 
 /**
@@ -49,7 +49,7 @@ export type RowsByProduct<T> = RowByProduct<T>[];
  * @template T Compatibility data schema.
  */
 type SinglePlatformRecords<T> = {
-    [key: string]: T
+    [key: string]: T;
 };
 
 /**

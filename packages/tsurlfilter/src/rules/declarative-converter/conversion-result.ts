@@ -10,21 +10,21 @@ export interface ConversionResult {
     /**
      * Rule set with all the information about the declarative rules.
      */
-    ruleSet: IRuleSet,
+    ruleSet: IRuleSet;
     /**
      * Errors that may have occurred during the conversion.
      */
-    errors: (ConversionError | Error)[],
+    errors: (ConversionError | Error)[];
     /**
      * If the resulting declarative rules have been truncated,
      * information about it will be found in the limitations section.
      */
-    limitations: LimitationError[],
+    limitations: LimitationError[];
     /**
      * If there were $badfilter rules in the input raw dynamic rules and a list
      * of already converted declarative rules from static filters, the result of
      * the conversion can contain a list of declarative rules that
      * should be canceled.
      */
-    declarativeRulesToCancel?: UpdateStaticRulesOptions[],
+    declarativeRulesToCancel?: UpdateStaticRulesOptions[];
 }

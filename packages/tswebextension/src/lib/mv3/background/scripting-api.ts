@@ -10,9 +10,9 @@ import { type LocalScriptFunction } from './services/local-script-rules-service'
  * Parameters for applying CSS rules.
  */
 export type InsertCSSParams = {
-    tabId: number,
-    frameId: number,
-    cssText: string,
+    tabId: number;
+    frameId: number;
+    cssText: string;
 };
 
 /**
@@ -22,17 +22,17 @@ export type ExecuteScriptFuncParams = {
     /**
      * The ID of the tab.
      */
-    tabId: number,
+    tabId: number;
 
     /**
      * The ID of the frame.
      */
-    frameId: number,
+    frameId: number;
 
     /**
      * The script function to be executed.
      */
-    scriptFunction: LocalScriptFunction,
+    scriptFunction: LocalScriptFunction;
 };
 
 /**
@@ -42,22 +42,22 @@ export type ExecuteScriptletParams = {
     /**
      * The ID of the tab.
      */
-    tabId: number,
+    tabId: number;
 
     /**
      * The ID of the frame.
      */
-    frameId: number,
+    frameId: number;
 
     /**
      * The scriptlet data to be executed.
      */
-    scriptletData: ScriptletData,
+    scriptletData: ScriptletData;
 
     /**
      * The domain name of the frame.
      */
-    domainName: string | null,
+    domainName: string | null;
 };
 
 /**

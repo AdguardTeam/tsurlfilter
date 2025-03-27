@@ -2,7 +2,7 @@ import { ZodError } from 'zod';
 import { fromZodError } from 'zod-validation-error';
 
 type ErrorWithMessage = {
-    message: string
+    message: string;
 };
 
 /**

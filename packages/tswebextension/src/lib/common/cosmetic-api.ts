@@ -14,27 +14,27 @@ export type LogJsRulesParams = {
     /**
      * Tab id.
      */
-    tabId: number,
+    tabId: number;
 
     /**
      * Cosmetic result.
      */
-    cosmeticResult: CosmeticResult,
+    cosmeticResult: CosmeticResult;
 
     /**
      * Url.
      */
-    url: string,
+    url: string;
 
     /**
      * Content type.
      */
-    contentType: ContentType,
+    contentType: ContentType;
 
     /**
      * Timestamp.
      */
-    timestamp: number,
+    timestamp: number;
 };
 
 /**
@@ -44,17 +44,17 @@ export type ContentScriptCosmeticData = {
     /**
      * Is app started.
      */
-    isAppStarted: boolean,
+    isAppStarted: boolean;
 
     /**
      * Are hits stats collected.
      */
-    areHitsStatsCollected: boolean,
+    areHitsStatsCollected: boolean;
 
     /**
      * Extended css rules to apply.
      */
-    extCssRules: string[] | null,
+    extCssRules: string[] | null;
 };
 
 /**

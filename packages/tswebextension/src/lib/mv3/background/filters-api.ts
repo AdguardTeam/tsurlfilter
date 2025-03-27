@@ -22,7 +22,7 @@ import { type ConfigurationMV3 } from './configuration';
 import { RuleSetsLoaderApi } from './rule-sets-loader-api';
 
 export type UpdateStaticFiltersResult = {
-    errors: FailedEnableRuleSetsError[],
+    errors: FailedEnableRuleSetsError[];
 };
 
 const loadFilterContentValidator = zod.function()

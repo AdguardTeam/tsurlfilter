@@ -9,9 +9,9 @@ import { VALIDATION_ERROR_PREFIX } from './constants';
  * - otherwise `{ valid: true, error: <invalidity reason> }`
  */
 export type ValidationResult = {
-    valid: boolean,
-    error?: string,
-    warn?: string,
+    valid: boolean;
+    error?: string;
+    warn?: string;
 };
 
 /**

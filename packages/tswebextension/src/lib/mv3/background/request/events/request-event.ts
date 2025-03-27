@@ -6,7 +6,7 @@ import { type RequestContext } from '../request-context-storage';
  * Extended {@link EventCallback} argument data.
  */
 export interface RequestData<Details> {
-    details: Details,
+    details: Details;
     context?: RequestContext;
 }
 

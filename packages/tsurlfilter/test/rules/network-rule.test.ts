@@ -1457,8 +1457,8 @@ describe('NetworkRule.isHigherPriority', () => {
     }
 
     type PriorityTestCase = {
-        key: string,
-        cases: [string, string, boolean][],
+        key: string;
+        cases: [string, string, boolean][];
     };
 
     const priorityCases: PriorityTestCase[] = [

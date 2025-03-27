@@ -21,19 +21,19 @@ type NetworkOptionValidator = {
     /**
      * Just for correct errors.
      */
-    name: string,
+    name: string;
     /**
      * If rule contains only this modifier - it's conversion can be skipped.
      */
-    skipConversion?: true,
+    skipConversion?: true;
     /**
      * If rule partially supported with some additional checks.
      */
-    customChecks?: ((r: NetworkRuleWithNode, name: string) => UnsupportedModifierError | null)[],
+    customChecks?: ((r: NetworkRuleWithNode, name: string) => UnsupportedModifierError | null)[];
     /**
      * If rule is not supported at all.
      */
-    notSupported?: true,
+    notSupported?: true;
 };
 
 /**

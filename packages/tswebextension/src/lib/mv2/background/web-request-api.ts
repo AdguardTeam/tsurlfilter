@@ -213,10 +213,10 @@ import { type OnBeforeRequestDetailsType } from './request/events/request-events
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
 export type InjectCosmeticParams = {
-    frameId: number,
-    tabId: number,
-    timestamp: number,
-    url: string,
+    frameId: number;
+    tabId: number;
+    timestamp: number;
+    url: string;
 };
 
 type OnBeforeNavigateDetailsType = WebNavigation.OnBeforeNavigateDetailsType & {
@@ -232,7 +232,7 @@ type OnBeforeNavigateDetailsType = WebNavigation.OnBeforeNavigateDetailsType & {
      *
      * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle
      */
-    documentLifecycle?: DocumentLifecycle
+    documentLifecycle?: DocumentLifecycle;
 };
 
 /**

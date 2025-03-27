@@ -327,7 +327,7 @@ describe('Benchmarks', () => {
      *
      * @returns Formatted memory usage.
      */
-    function formatMemory(mem: { heapTotal: number, heapUsed: number }): string {
+    function formatMemory(mem: { heapTotal: number; heapUsed: number }): string {
         /**
          * Formats bytes.
          *

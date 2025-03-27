@@ -42,23 +42,23 @@ export type DeclarativeRuleInfo = {
      * Source rule list and filter id. Sometimes one declarative rule can be
      * generated from multiple source rules, that's why we use array here.
      */
-    sourceRules: SourceRuleAndFilterId[],
+    sourceRules: SourceRuleAndFilterId[];
     /**
      * DNR rule.
      */
-    declarativeRuleJson: string,
+    declarativeRuleJson: string;
 };
 
 /**
  * Additional network rule info.
  */
 type AdditionalNetworkRuleInfo = {
-    isAllowlist: boolean,
-    isImportant: boolean,
-    isDocumentLevel: boolean,
-    isCsp: boolean,
-    isCookie: boolean,
-    advancedModifier: string | null,
+    isAllowlist: boolean;
+    isImportant: boolean;
+    isDocumentLevel: boolean;
+    isCsp: boolean;
+    isCookie: boolean;
+    advancedModifier: string | null;
 };
 
 /**
@@ -87,38 +87,38 @@ type WithEventId = {
  * {@link SendRequestEvent} Event data.
  */
 export type SendRequestEventData = {
-    tabId: number,
-    requestUrl: string,
-    requestDomain: string | null,
-    frameUrl: string,
-    frameDomain: string | null,
-    requestType: ContentType,
-    timestamp: number,
-    requestThirdParty: boolean,
-    method: string,
+    tabId: number;
+    requestUrl: string;
+    requestDomain: string | null;
+    frameUrl: string;
+    frameDomain: string | null;
+    requestType: ContentType;
+    timestamp: number;
+    requestThirdParty: boolean;
+    method: string;
 } & WithEventId;
 
 /**
  * Dispatched by WebRequestApi manifest v2 module on request in onBeforeRequest event handler.
  */
 export type SendRequestEvent = {
-    type: FilteringEventType.SendRequest,
-    data: SendRequestEventData,
+    type: FilteringEventType.SendRequest;
+    data: SendRequestEventData;
 };
 
 /**
  * {@link TabReloadEvent} Event data.
  */
 export type PageReloadEventData = {
-    tabId: number,
+    tabId: number;
 };
 
 /**
  * Dispatched by WebRequestApi manifest v2 module on document request type handling in onBeforeRequest event handler.
  */
 export type TabReloadEvent = {
-    type: FilteringEventType.TabReload,
-    data: PageReloadEventData,
+    type: FilteringEventType.TabReload;
+    data: PageReloadEventData;
 };
 
 /**
@@ -128,32 +128,32 @@ export type ApplyBasicRuleEventData = {
     /**
      * Tab id.
      */
-    tabId: number,
+    tabId: number;
 
     /**
      * Request id.
      */
-    requestId: string,
+    requestId: string;
 
     /**
      * Request url.
      */
-    requestUrl: string,
+    requestUrl: string;
 
     /**
      * Frame url.
      */
-    frameUrl: string,
+    frameUrl: string;
 
     /**
      * Request type.
      */
-    requestType: ContentType,
+    requestType: ContentType;
 
     /**
      * Category name from companiesdb matched by the request.
      */
-    companyCategoryName?: string,
+    companyCategoryName?: string;
 
     /**
      * Flag indicating that the request is assuredly blocked.
@@ -162,7 +162,7 @@ export type ApplyBasicRuleEventData = {
      * because they are wrongly detected as blocked,
      * i.e. truly blocked requests in MV3 are logged during onErrorOccurred event.
      */
-    isAssuredlyBlocked?: boolean,
+    isAssuredlyBlocked?: boolean;
 }
 & RuleInfoOptional
 & AdditionalNetworkRuleInfo
@@ -173,52 +173,52 @@ export type ApplyBasicRuleEventData = {
  * handler.
  */
 export type ApplyBasicRuleEvent = {
-    type: FilteringEventType.ApplyBasicRule,
-    data: ApplyBasicRuleEventData,
+    type: FilteringEventType.ApplyBasicRule;
+    data: ApplyBasicRuleEventData;
 };
 
 /**
  * {@link ApplyCspRuleEvent} Event data.
  */
 export type ApplyCspRuleEventData = {
-    tabId: number,
-    requestUrl: string,
-    frameUrl: string,
-    frameDomain: string | null,
-    requestType: ContentType,
-    timestamp: number,
+    tabId: number;
+    requestUrl: string;
+    frameUrl: string;
+    frameDomain: string | null;
+    requestType: ContentType;
+    timestamp: number;
 } & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
 
 /**
  * Dispatched by manifest v2 csp service.
  */
 export type ApplyCspRuleEvent = {
-    type: FilteringEventType.ApplyCspRule,
-    data: ApplyCspRuleEventData,
+    type: FilteringEventType.ApplyCspRule;
+    data: ApplyCspRuleEventData;
 };
 
 export type ApplyPermissionsRuleEventData = ApplyCspRuleEventData;
 
 export type ApplyPermissionsRuleEvent = {
-    type: FilteringEventType.ApplyPermissionsRule,
-    data: ApplyPermissionsRuleEventData,
+    type: FilteringEventType.ApplyPermissionsRule;
+    data: ApplyPermissionsRuleEventData;
 };
 
 /**
  * {@link ApplyCosmeticRuleEvent} Event data.
  */
 export type ApplyCosmeticRuleEventData = {
-    tabId: number,
-    filterId: number,
-    ruleIndex: number,
-    element: string,
-    frameUrl: string,
-    frameDomain: string,
-    requestType: ContentType,
-    timestamp: number,
-    cssRule: boolean,
-    scriptRule: boolean,
-    contentRule: boolean,
+    tabId: number;
+    filterId: number;
+    ruleIndex: number;
+    element: string;
+    frameUrl: string;
+    frameDomain: string;
+    requestType: ContentType;
+    timestamp: number;
+    cssRule: boolean;
+    scriptRule: boolean;
+    contentRule: boolean;
 } & WithEventId;
 
 /**
@@ -226,38 +226,38 @@ export type ApplyCosmeticRuleEventData = {
  * apply.
  */
 export type ApplyCosmeticRuleEvent = {
-    type: FilteringEventType.ApplyCosmeticRule,
-    data: ApplyCosmeticRuleEventData,
+    type: FilteringEventType.ApplyCosmeticRule;
+    data: ApplyCosmeticRuleEventData;
 };
 
 /**
  * {@link ReceiveResponseEvent} Event data.
  */
 export type ReceiveResponseEventData = {
-    tabId: number,
-    statusCode: number,
+    tabId: number;
+    statusCode: number;
 } & WithEventId;
 
 /**
  * Dispatched by WebRequestApi manifest v2 module on response in onHeadersReceived event handler.
  */
 export type ReceiveResponseEvent = {
-    type: FilteringEventType.ReceiveResponse,
-    data: ReceiveResponseEventData,
+    type: FilteringEventType.ReceiveResponse;
+    data: ReceiveResponseEventData;
 };
 
 /**
  * {@link CookieEvent} Event data.
  */
 export type CookieEventData = {
-    tabId: number,
-    cookieName: string,
-    cookieValue: string,
-    frameDomain: string,
-    isModifyingCookieRule: boolean,
-    requestThirdParty: boolean,
-    timestamp: number,
-    requestType: ContentType,
+    tabId: number;
+    cookieName: string;
+    cookieValue: string;
+    frameDomain: string;
+    isModifyingCookieRule: boolean;
+    requestThirdParty: boolean;
+    timestamp: number;
+    requestType: ContentType;
 } & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
 
 /**
@@ -273,14 +273,14 @@ export type CookieEvent = {
  * {@link RemoveHeaderEvent} Event data.
  */
 export type RemoveHeaderEventData = {
-    removeHeader: boolean,
-    headerName: string,
+    removeHeader: boolean;
+    headerName: string;
     tabId: number;
-    requestUrl: string,
+    requestUrl: string;
     frameUrl: string;
     frameDomain: string;
     requestType: ContentType;
-    timestamp: number,
+    timestamp: number;
 } & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
 
 /**
@@ -298,13 +298,13 @@ export type RemoveHeaderEvent = {
  * {@link RemoveParamEvent} Event data.
  */
 export type RemoveParamEventData = {
-    removeParam: boolean,
+    removeParam: boolean;
     tabId: number;
-    requestUrl: string,
+    requestUrl: string;
     frameUrl: string;
     frameDomain: string;
     requestType: ContentType;
-    timestamp: number,
+    timestamp: number;
 } & RuleInfo & AdditionalNetworkRuleInfo & WithEventId;
 
 /**
@@ -345,7 +345,7 @@ export type ContentFilteringStartEventData = {
  * Dispatched by ContentStream manifest v2 module on start of data reading while content filtering process.
  */
 export type ContentFilteringStartEvent = {
-    type: FilteringEventType.ContentFilteringStart
+    type: FilteringEventType.ContentFilteringStart;
     data: ContentFilteringStartEventData;
 };
 
@@ -360,7 +360,7 @@ export type ContentFilteringFinishEventData = {
  * Dispatched by ContentStream manifest v2 module on finish of data reading while content filtering process.
  */
 export type ContentFilteringFinishEvent = {
-    type: FilteringEventType.ContentFilteringFinish
+    type: FilteringEventType.ContentFilteringFinish;
     data: ContentFilteringFinishEventData;
 };
 
@@ -379,7 +379,7 @@ export type StealthActionEventData = {
  * Dispatched by manifest v2 StealthApi on stealth action apply in onBeforeSendHeaders event handler.
  */
 export type StealthActionEvent = {
-    type: FilteringEventType.StealthAction
+    type: FilteringEventType.StealthAction;
     data: StealthActionEventData;
 };
 
@@ -389,17 +389,17 @@ export type StealthActionEvent = {
 export type StealthAllowlistActionEventData = {
     tabId: number;
     rules: (RuleInfo & AdditionalNetworkRuleInfo)[];
-    requestUrl: string,
-    frameUrl: string,
-    requestType: ContentType,
-    timestamp: number,
+    requestUrl: string;
+    frameUrl: string;
+    requestType: ContentType;
+    timestamp: number;
 } & WithEventId;
 
 /**
  * Dispatched by manifest v2 StealthApi on allowlist stealth rule matching in onBeforeSendHeaders event handler.
  */
 export type StealthAllowlistActionEvent = {
-    type: FilteringEventType.StealthAllowlistAction
+    type: FilteringEventType.StealthAllowlistAction;
     data: StealthAllowlistActionEventData;
 };
 
@@ -407,25 +407,25 @@ export type StealthAllowlistActionEvent = {
  * {@link JsInjectEvent} Event data.
  */
 export type JsInjectEventData = {
-    tabId: number,
-    script: boolean,
-    requestUrl: string,
-    frameUrl: string,
-    frameDomain: string,
-    requestType: ContentType,
-    timestamp: number,
-    filterId: number,
-    ruleIndex: number,
-    cssRule: boolean,
-    scriptRule: boolean,
-    contentRule: boolean,
+    tabId: number;
+    script: boolean;
+    requestUrl: string;
+    frameUrl: string;
+    frameDomain: string;
+    requestType: ContentType;
+    timestamp: number;
+    filterId: number;
+    ruleIndex: number;
+    cssRule: boolean;
+    scriptRule: boolean;
+    contentRule: boolean;
 } & WithEventId;
 
 /**
  * Dispatched by manifest v2 WebRequest API injectJsScript method.
  */
 export type JsInjectEvent = {
-    type: FilteringEventType.JsInject
+    type: FilteringEventType.JsInject;
     data: JsInjectEventData;
 };
 
@@ -442,7 +442,7 @@ export type CspReportBlockedEventData = {
  * csp_report blocked in onBeforeRequest event handler.
  */
 export type CspReportBlockedEvent = {
-    type: FilteringEventType.CspReportBlocked
+    type: FilteringEventType.CspReportBlocked;
     data: CspReportBlockedEventData;
 };
 
@@ -459,7 +459,7 @@ export type DeclarativeRuleEventData = {
  * handler when matched declarative rule for request.
  */
 export type DeclarativeRuleEvent = {
-    type: FilteringEventType.MatchedDeclarativeRule
+    type: FilteringEventType.MatchedDeclarativeRule;
     data: DeclarativeRuleEventData;
 };
 
@@ -505,8 +505,8 @@ export type FilteringLogListener<T> = (event: T) => void | Promise<void>;
  * Data for mapping {@link FilteringEventType} with specified registered {@link FilteringLogListener}.
  */
 export type FilteringLogEventChannel = {
-    type: FilteringEventType,
-    listener: FilteringLogListener<FilteringLogEvent>,
+    type: FilteringEventType;
+    listener: FilteringLogListener<FilteringLogEvent>;
 };
 
 /**

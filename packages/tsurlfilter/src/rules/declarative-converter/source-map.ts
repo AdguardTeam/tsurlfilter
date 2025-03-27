@@ -3,8 +3,8 @@
  * the filter id of the rule.
  */
 export type SourceRuleIdxAndFilterId = {
-    sourceRuleIndex: number,
-    filterId: number,
+    sourceRuleIndex: number;
+    filterId: number;
 };
 
 /**

@@ -11,9 +11,9 @@ import { FilterScanner } from './filter-scanner';
  * rules with `$badfilter` separately.
  */
 export type ScannedFilter = {
-    id: number,
-    rules: IndexedNetworkRuleWithHash[],
-    badFilterRules: IndexedNetworkRuleWithHash[],
+    id: number;
+    rules: IndexedNetworkRuleWithHash[];
+    badFilterRules: IndexedNetworkRuleWithHash[];
 };
 
 /**
@@ -21,8 +21,8 @@ export type ScannedFilter = {
  * any errors that may occur during the scan.
  */
 type ScannedFiltersWithErrors = {
-    errors: Error[],
-    filters: ScannedFilter[],
+    errors: Error[];
+    filters: ScannedFilter[];
 };
 
 /**

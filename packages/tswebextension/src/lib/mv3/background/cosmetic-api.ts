@@ -19,12 +19,12 @@ type ScriptsAndScriptletsDataMv3 = {
     /**
      * Script texts from JS rules.
      */
-    scriptTexts: string[],
+    scriptTexts: string[];
 
     /**
      * List of scriptlet data objects.
      */
-    scriptletDataList: ScriptletData[],
+    scriptletDataList: ScriptletData[];
 };
 
 /**

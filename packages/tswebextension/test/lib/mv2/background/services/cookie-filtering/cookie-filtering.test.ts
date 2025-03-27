@@ -39,8 +39,8 @@ BrowserCookieApi.prototype.removeCookie = vi.fn().mockImplementation(() => true)
 BrowserCookieApi.prototype.modifyCookie = vi.fn().mockImplementation(() => true);
 
 type SimulatedHeader = {
-    name: string,
-    value: string,
+    name: string;
+    value: string;
 };
 
 const createTestHeaders = (headers: SimulatedHeader[]): SimulatedHeader[] => [

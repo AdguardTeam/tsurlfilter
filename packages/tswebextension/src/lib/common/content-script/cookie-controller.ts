@@ -17,8 +17,8 @@ export interface CookieRule {
     ruleIndex: number;
     isAllowlist: boolean;
     isImportant: boolean;
-    isDocumentLevel: boolean,
-    advancedModifier: string | null,
+    isDocumentLevel: boolean;
+    advancedModifier: string | null;
 }
 
 /**

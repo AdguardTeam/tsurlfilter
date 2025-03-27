@@ -13,10 +13,10 @@ export const enum SessionStorageKey {
 }
 
 export type SessionStorageSchema = {
-    [SessionStorageKey.IsAppStarted]: boolean,
-    [SessionStorageKey.Configuration]: ConfigurationMV3Context | undefined,
-    [SessionStorageKey.StartTimeMs]: number | undefined,
-    [SessionStorageKey.CosmeticsInjectedOnStartup]: boolean,
+    [SessionStorageKey.IsAppStarted]: boolean;
+    [SessionStorageKey.Configuration]: ConfigurationMV3Context | undefined;
+    [SessionStorageKey.StartTimeMs]: number | undefined;
+    [SessionStorageKey.CosmeticsInjectedOnStartup]: boolean;
 };
 
 /**

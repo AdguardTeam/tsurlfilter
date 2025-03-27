@@ -15,8 +15,8 @@ type RuleHashToRuleIdx = Map<RuleHash, SourceRuleIdxAndFilterId[]>;
  * filter ID and the rule index within this filter.
  */
 type HashWithSource = {
-    hash: RuleHash,
-    source: SourceRuleIdxAndFilterId,
+    hash: RuleHash;
+    source: SourceRuleIdxAndFilterId;
 };
 
 /**

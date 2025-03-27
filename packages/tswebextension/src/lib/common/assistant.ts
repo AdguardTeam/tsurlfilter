@@ -35,17 +35,17 @@ export type CommonAssistantDetails = {
     /**
      * Frame ID.
      */
-    frameId: number,
+    frameId: number;
 
     /**
      * Frame URL.
      */
-    url: string,
+    url: string;
 
     /**
      * Timestamp of the event.
      */
-    timeStamp: number,
+    timeStamp: number;
 };
 
 /**
