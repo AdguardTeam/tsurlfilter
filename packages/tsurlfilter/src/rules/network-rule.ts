@@ -272,12 +272,22 @@ export enum NetworkRuleGroupOptions {
     /**
      * Header compatible modifiers.
      *
-     * $header is compatible with the limited list of modifiers: $csp and $removeheader (on response headers).
+     * $header is compatible with the limited list of modifiers:
+     * - $important
+     * - $csp
+     * - $removeheader (on response headers)
+     * - $third-party
+     * - $match-case
+     * - $badfilter
+     * - $domain
+     * - all content type modifiers ($subdocument, $script, $stylesheet, etc).
      */
     HeaderCompatibleOptions = NetworkRuleOption.Header
         | NetworkRuleOption.Important
         | NetworkRuleOption.Csp
         | NetworkRuleOption.RemoveHeader
+        | NetworkRuleOption.ThirdParty
+        | NetworkRuleOption.MatchCase
         | NetworkRuleOption.Badfilter,
 }
 
@@ -1962,8 +1972,18 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * $header rules are not compatible with any other
-     * modifiers except for $important, $csp, $removeheader, $badfilter.
+     * Validates $header rule.
+     *
+     * $header is compatible with the limited list of modifiers:
+     * - $important
+     * - $csp
+     * - $removeheader (on response headers)
+     * - $third-party
+     * - $match-case
+     * - $badfilter
+     * - $domain
+     * - all content type modifiers ($subdocument, $script, $stylesheet, etc).
+     *
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateHeaderRule(): void {
