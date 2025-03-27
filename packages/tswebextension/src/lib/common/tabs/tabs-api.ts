@@ -150,11 +150,6 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
             return;
         }
 
-        // Skip updates for non-http requests.
-        if (changeInfo.url && !isHttpRequest(changeInfo.url)) {
-            return;
-        }
-
         // TODO: we can ignore some events (favicon url update etc.)
         const tabContext = this.context.get(tabId);
 

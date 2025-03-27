@@ -26,6 +26,12 @@ export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType &
      * The UUID of the document making the request.
      */
     documentId?: string;
+
+    /**
+     * The UUID of the parent document making the request.
+     */
+    parentDocumentId?: string;
+
     /**
      * The document lifecycle of the frame.
      *
