@@ -9,9 +9,9 @@ import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url
 import { tabsApi } from '../../api';
 import CookieUtils from '../../services/cookie-filtering/utils';
 import { type TabFrameRequestContextMV2 } from '../../tabs/tabs-api';
-import { isFirefox } from '../../utils';
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { DocumentLifecycle } from '../../../../common/interfaces';
+import { browserDetectorMV2 } from '../../utils/browser-detector';
 
 import { RequestEvent, type RequestData } from './request-event';
 
@@ -344,6 +344,8 @@ export class RequestEvents {
             responseHeaders,
             statusCode,
         } = details;
+
+        const isFirefox = browserDetectorMV2.isFirefox();
 
         /**
          * Firefox packs all cookies in a single set-cookie header concatenated with `\n`

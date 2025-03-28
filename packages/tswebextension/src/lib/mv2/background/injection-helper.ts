@@ -1,6 +1,6 @@
 import { nanoid } from '../../common/utils/nanoid';
 
-import { isFirefox } from './utils';
+import { browserDetectorMV2 } from './utils/browser-detector';
 
 /**
  * Taken from:
@@ -197,6 +197,8 @@ export const buildScriptText = (scriptText: string, startTimeMs: number | undefi
      * Issue: @see {@link https://bugs.chromium.org/p/project-zero/issues/detail?id=1225&desc=6}.
      */
     const variableName = `scriptExecuted${startTimeMs}`;
+
+    const isFirefox = browserDetectorMV2.isFirefox();
 
     /**
      * Executes scripts in a scope of the page, but the `window` fields are in

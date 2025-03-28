@@ -5,13 +5,19 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { FilterListPreprocessor, NETWORK_RULE_OPTIONS } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 
 import { type MessageHandler, type AppInterface } from '../../common/app';
-import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import {
+    ALLOWLIST_FILTER_ID,
+    BLOCKING_TRUSTED_FILTER_ID,
+    LF,
+    QUICK_FIXES_FILTER_ID,
+    USER_FILTER_ID,
+} from '../../common/constants';
 import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
@@ -30,6 +36,7 @@ import FiltersApi, { type LoadFilterContent, type UpdateStaticFiltersResult } fr
 import { MessagesApi } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
 import { RuleSetsLoaderApi } from './rule-sets-loader-api';
+import { documentBlockingService } from './services/document-blocking-service';
 import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
@@ -162,6 +169,8 @@ export class TsWebExtension implements AppInterface<
             // Compute and save matching result for tabs, opened before app initialization.
             await TabsCosmeticInjector.processOpenTabs();
 
+            documentBlockingService.configure(config);
+
             // Do it only once on first start, because path to assistantUrl can
             // not be changed during runtime.
             Assistant.setAssistantUrl(config.settings.assistantUrl);
@@ -276,10 +285,16 @@ export class TsWebExtension implements AppInterface<
         TsWebExtension.updateLogLevel(config.logLevel);
 
         // Exclude binary fields from logged config.
-        const binaryFields = ['userrules', 'sourceMap', 'rawFilterList', 'filterList', 'conversionMap'];
+        const binaryFields = [
+            'userrules',
+            'sourceMap',
+            'rawFilterList',
+            'filterList',
+            'conversionMap',
+        ];
         logger.debug('[tswebextension.configure]: start with ', stringifyObjectWithoutKeys(config, binaryFields));
 
-        const configuration = configurationMV3Validator.parse(config);
+        const configuration = configurationMV3Validator.parse(config); // error happens here
 
         const res: ConfigurationResult = {
             staticFiltersStatus: {
@@ -342,11 +357,24 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
+            const temporaryBadfilterRules = configuration.blockingTrustedRules
+                .map((rule) => {
+                    return `${rule},${NETWORK_RULE_OPTIONS.BADFILTER}`;
+                })
+                .join(LF);
+
+            const blockingPageTrustedFilter = new Filter(
+                BLOCKING_TRUSTED_FILTER_ID,
+                { getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(temporaryBadfilterRules)) },
+                true,
+            );
+
             // Convert quick fixes rules, allowlist, custom filters and user
             // rules into one rule set and apply it.
             res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
                 quickFixesFilter,
                 allowlistFilter,
+                blockingPageTrustedFilter,
                 userRulesFilter,
                 customFilters,
                 enabledStaticRuleSets,
@@ -386,6 +414,8 @@ export class TsWebExtension implements AppInterface<
 
         // Reload request events listeners.
         await WebRequestApi.flushMemoryCache();
+
+        documentBlockingService.configure(config);
 
         logger.debug('[tswebextension.configure]: end');
 

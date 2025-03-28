@@ -34,7 +34,8 @@ Table of content:
                 - [conversionMap](#conversionmap-1)
                 - [content](#content-2)
             - [allowlist](#allowlist)
-            - [trustedDomains](#trusteddomains)
+            - [trustedDomains (MV2)](#trusteddomains-mv2)
+            - [blockingTrustedRules (MV3)](#blockingtrustedrules-mv3)
             - [userrules (MV2)](#userrules-mv2)
                 - [content](#content-3)
                 - [sourceMap](#sourcemap-2)
@@ -353,11 +354,18 @@ type: `string[]`
 
 List of hostnames or domains of sites, which should be excluded from blocking or which should be included in blocking depending on the value of [allowlistInverted](#allowlistinverted) setting value.
 
-#### trustedDomains
+#### trustedDomains (MV2)
 
 type: `string[]`
 
 List of domain names of sites, which should be temporary excluded from document blocking.
+
+#### blockingTrustedRules (MV3)
+
+type: `string[]`
+
+List of blocking rules which should be temporarily badfiltered
+since user clicked "Proceed anyway" button on the blocking page.
 
 #### userrules (MV2)
 
