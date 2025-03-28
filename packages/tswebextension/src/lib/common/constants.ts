@@ -21,6 +21,12 @@ export const CUSTOM_FILTERS_START_ID = 1000;
 export const QUICK_FIXES_FILTER_ID = 24;
 
 /**
+ * Filter ID which is used for temporarily disabled rules (as trusted)
+ * for the blocking page triggered by rules.
+ */
+export const BLOCKING_TRUSTED_FILTER_ID = -10;
+
+/**
  * Tab ID for background page.
  */
 export const BACKGROUND_TAB_ID = -1;

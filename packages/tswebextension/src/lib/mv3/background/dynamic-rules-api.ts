@@ -70,11 +70,13 @@ export default class DynamicRulesApi {
      * Filters will combine into one in following order:
      * - quickFixesFilter - they are most important and should be applied first,
      * - allowlistRules,
+     * - blockingPageTrustedFilter - created on the blocking page by user,
      * - userRules,
      * - customFilters.
      *
      * @param quickFixesFilter Filter with hotfix rules.
      * @param allowlistRules Filter with allowlist rules.
+     * @param blockingPageTrustedFilter Filter with blocking page trusted domains rules (badfiltered rules).
      * @param userRules Filter with user rules.
      * @param customFilters List of custom filters.
      * @param enabledStaticRuleSets List of enabled static rule sets to apply
@@ -92,6 +94,7 @@ export default class DynamicRulesApi {
     public static async updateDynamicFiltering(
         quickFixesFilter: IFilter,
         allowlistRules: IFilter,
+        blockingPageTrustedFilter: IFilter,
         userRules: IFilter,
         customFilters: IFilter[],
         enabledStaticRuleSets: IRuleSet[],
@@ -100,6 +103,7 @@ export default class DynamicRulesApi {
         const filterList = [
             quickFixesFilter,
             allowlistRules,
+            blockingPageTrustedFilter,
             userRules,
             ...customFilters,
         ];
