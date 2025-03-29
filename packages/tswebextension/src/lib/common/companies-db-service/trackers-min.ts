@@ -1,5 +1,5 @@
 export const rawCompaniesDb = {
-	"timeUpdated": "2025-03-10T15:13:28.992Z",
+	"timeUpdated": "2025-03-24T10:05:04.840Z",
 	"categories": {
 		"0": "audio_video_player",
 		"1": "comments",
@@ -781,6 +781,7 @@ export const rawCompaniesDb = {
 		"audiencesquare.com": 4,
 		"ad.gt": 4,
 		"audigent.com": 4,
+		"hadronid.net": 4,
 		"auditude.com": 0,
 		"audtd.com": 4,
 		"cdn.augur.io": 6,
@@ -1236,6 +1237,7 @@ export const rawCompaniesDb = {
 		"static.clmbtech.com": 4,
 		"combotag.com": 4,
 		"pdk.theplatform.com": 0,
+		"theplatform.com": 0,
 		"comm100.cn": 2,
 		"comm100.com": 2,
 		"cdn-cs.com": 4,
