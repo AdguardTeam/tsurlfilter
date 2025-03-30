@@ -31,6 +31,12 @@ export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType &
      * TODO: Use this for store matchingResult.
      */
     documentId?: string;
+
+    /**
+     * The UUID of the parent document making the request.
+     */
+    parentDocumentId?: string;
+
     /**
      * The document lifecycle of the frame.
      *

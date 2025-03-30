@@ -209,6 +209,7 @@ import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs';
 import { isFirefox, isOpera } from './utils/browser-detector';
 import { type OnBeforeRequestDetailsType } from './request/events/request-events';
+import { FrameMV2 } from './tabs/frame';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
@@ -319,6 +320,7 @@ export class WebRequestApi {
         if (!context) {
             return undefined;
         }
+
         const {
             requestType,
             tabId,
@@ -333,6 +335,31 @@ export class WebRequestApi {
             method,
             requestFrameId,
         } = context;
+
+        const { parentFrameId } = details;
+
+        const skipPrecalculation = cosmeticFrameProcessor.shouldSkipRecalculation(
+            tabId,
+            frameId,
+            requestUrl,
+            timestamp,
+        );
+
+        if (!skipPrecalculation) {
+            /**
+             * Set in the beginning to let other events know that cosmetic result
+             * will be calculated in this event to avoid double calculation.
+             */
+            tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
+                tabId,
+                frameId,
+                parentFrameId,
+                url: requestUrl,
+                timeStamp: timestamp,
+                documentId: details.documentId,
+                parentDocumentId: details.parentDocumentId,
+            }));
+        }
 
         if (!isHttpOrWsRequest(requestUrl)) {
             return undefined;
@@ -390,8 +417,6 @@ export class WebRequestApi {
         requestContextStorage.update(requestId, { matchingResult });
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
-            const { parentFrameId } = details;
-
             cosmeticFrameProcessor.precalculateCosmetics({
                 tabId,
                 frameId,
@@ -751,11 +776,41 @@ export class WebRequestApi {
             documentId,
             documentLifecycle,
             parentFrameId,
-            // supported by Chrome 106+
-            // but not supported by Firefox so it is calculated based on tabId and frameId
-            // @ts-ignore
-            parentDocumentId,
         } = details;
+
+        // supported by Chrome 106+
+        // but not supported by Firefox so it is calculated based on tabId and frameId
+        // @ts-ignore
+        let { parentDocumentId } = details;
+
+        /**
+         * Use parentDocumentId if it is defined, otherwise:
+         * - if parent frame is a document-level frame, use undefined
+         * - else generate parentDocumentId based on tabId and parentFrameId.
+         */
+        if (!parentDocumentId) {
+            parentDocumentId = TabsApi.isDocumentLevelFrame(parentFrameId)
+                ? undefined
+                : TabsApi.generateId(tabId, parentFrameId);
+        }
+
+        if (cosmeticFrameProcessor.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {
+            return;
+        }
+
+        /**
+         * Set in the beginning to let other events know that cosmetic result
+         * will be calculated in this event to avoid double calculation.
+         */
+        tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
+            tabId,
+            frameId,
+            parentFrameId,
+            url,
+            timeStamp,
+            documentId,
+            parentDocumentId,
+        }));
 
         // TODO: Check, should we record this event for filtering log.
 
@@ -767,15 +822,7 @@ export class WebRequestApi {
             timeStamp,
             documentLifecycle,
             documentId,
-            /**
-             * Use parentDocumentId if it is defined, otherwise:
-             * - if parent frame is a document-level frame, use undefined
-             * - else generate parentDocumentId based on tabId and parentFrameId.
-             */
-            parentDocumentId: parentDocumentId
-                || (TabsApi.isDocumentLevelFrame(parentFrameId)
-                    ? undefined
-                    : TabsApi.generateId(tabId, parentFrameId)),
+            parentDocumentId,
         });
     }
 
