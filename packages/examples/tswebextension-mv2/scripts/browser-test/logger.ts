@@ -1,19 +1,19 @@
 import { colorizeDurationTime, colorizeStatusText, colorizeTitleText } from './text-color';
 
 export interface LogDetails {
-    name: string,
+    name: string;
     tests: {
-        name: string,
-        status: string,
-    }[],
-    status: string,
+        name: string;
+        status: string;
+    }[];
+    status: string;
     testCounts: {
-        passed: number,
-        failed: number,
-        skipped: number,
-        total: number
-    },
-    runtime: number
+        passed: number;
+        failed: number;
+        skipped: number;
+        total: number;
+    };
+    runtime: number;
 }
 
 export const logTestResult = (details: LogDetails) => {

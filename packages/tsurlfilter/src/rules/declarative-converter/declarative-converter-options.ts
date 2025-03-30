@@ -7,20 +7,20 @@ export interface DeclarativeConverterOptions {
      * Path to web accessible resources, relative to the extension root dir.
      * Should start with leading slash '/'.
      */
-    resourcesPath?: string,
+    resourcesPath?: string;
 
     /**
      * Maximum number of converted rules.
      */
-    maxNumberOfRules?: number,
+    maxNumberOfRules?: number;
 
     /**
      * Maximum number of converted unsafe dynamic rules. AG-33779.
      */
-    maxNumberOfUnsafeRules?: number,
+    maxNumberOfUnsafeRules?: number;
 
     /**
      * Maximum number of converted rules with regexps.
      */
-    maxNumberOfRegexpRules?: number,
+    maxNumberOfRegexpRules?: number;
 }

@@ -20,7 +20,7 @@ export type TabInfo = Tabs.Tab & {
     /**
      * Tab id.
      */
-    id: number,
+    id: number;
 };
 
 /**

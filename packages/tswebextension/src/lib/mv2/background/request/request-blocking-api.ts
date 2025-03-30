@@ -30,15 +30,15 @@ type RequestParams = Pick<
  * Params for {@link RequestBlockingApi.getBlockingResponse}.
  */
 export type GetBlockingResponseParams = RequestParams & {
-    rule: NetworkRule | null,
-    popupRule: NetworkRule | null,
+    rule: NetworkRule | null;
+    popupRule: NetworkRule | null;
 };
 
 /**
  * Params for {@link RequestBlockingApi.getResponseOnHeadersReceived}.
  */
 export type GetHeadersResponseParams = RequestParams & {
-    rule: NetworkRule | null,
+    rule: NetworkRule | null;
 };
 
 /**
