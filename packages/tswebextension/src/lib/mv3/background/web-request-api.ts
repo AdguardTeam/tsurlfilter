@@ -164,6 +164,7 @@ import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { StealthService } from './services/stealth-service';
 import { UserScriptsApi } from './user-scripts-api';
+import { documentBlockingService } from './services/document-blocking-service';
 
 /**
  * API for applying rules from background service by handling
@@ -494,6 +495,7 @@ export class WebRequestApi {
             tabId,
             requestId,
             url,
+            type,
             parentFrameId,
             error,
         } = details;
@@ -516,13 +518,17 @@ export class WebRequestApi {
 
         const {
             eventId,
+            requestUrl,
             referrerUrl,
             contentType,
+            matchingResult,
         } = context;
 
-        // TODO: we consider that only we block requests,
-        // so we do not care (for now) if the request is blocked by other browser extension.
-        // it may be handled by checking the matchingResult in the context.
+        // checking whether the matchingResult exists in the context guarantees
+        // that the request was blocked by our extension
+        if (!matchingResult) {
+            return;
+        }
 
         const companyCategoryName = companiesDbService.match(url);
 
@@ -549,6 +555,30 @@ export class WebRequestApi {
         });
 
         WebRequestApi.deleteRequestContext(details.requestId);
+
+        /**
+         * Top-level frame request type.
+         *
+         * @see {@link https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType#main_frame}
+         */
+        const MAIN_FRAME_TYPE = 'main_frame';
+        if (type !== MAIN_FRAME_TYPE) {
+            return;
+        }
+
+        const rule = matchingResult.getBasicResult();
+        if (!rule) {
+            return;
+        }
+
+        documentBlockingService.handleDocumentBlocking({
+            eventId,
+            requestUrl,
+            requestId,
+            referrerUrl,
+            rule,
+            tabId,
+        });
     }
 
     /**

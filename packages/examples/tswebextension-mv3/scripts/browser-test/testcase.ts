@@ -1,11 +1,11 @@
 import { Product } from './product';
 export interface Testcase {
-    id: number,
-    title: string,
-    link: string,
-    rulesUrl?: string,
-    readmeUrl?: string,
-    compatibility:  Product[],
+    id: number;
+    title: string;
+    link: string;
+    rulesUrl?: string;
+    readmeUrl?: string;
+    compatibility:  Product[];
 }
 
 export const filterCompatibleTestcases = (testcases: Testcase[], productType: Product) => {

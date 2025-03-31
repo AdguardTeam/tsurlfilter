@@ -10,6 +10,7 @@ const DIST_DIR = 'dist';
 const entryPoints = {
     'cli': 'src/cli.ts',
     'lib/index': 'src/lib/index.ts',
+    'utils/index': 'src/utils/index.ts',
 };
 
 const mainConfig = {

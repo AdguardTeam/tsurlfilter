@@ -29,7 +29,7 @@ import { DocumentApi } from './document-api';
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 
 type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'quickFixesRules' | 'verbose'> & {
-    filters: IFilter[],
+    filters: IFilter[];
 };
 
 /**

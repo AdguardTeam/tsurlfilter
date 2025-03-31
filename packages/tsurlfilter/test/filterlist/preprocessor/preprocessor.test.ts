@@ -59,7 +59,7 @@ describe('FilterListPreprocessor', () => {
             vi.restoreAllMocks();
         });
 
-        it.each<{ name: string, actual: string, expected: PreprocessedFilterList }>([
+        it.each<{ name: string; actual: string; expected: PreprocessedFilterList }>([
             {
                 name: 'empty filter list',
                 actual: '',
@@ -190,7 +190,7 @@ describe('FilterListPreprocessor', () => {
             vi.restoreAllMocks();
         });
 
-        it.each<{ name: string, actual: LightweightPreprocessedFilterList, expected: PreprocessedFilterList }>([
+        it.each<{ name: string; actual: LightweightPreprocessedFilterList; expected: PreprocessedFilterList }>([
             {
                 name: 'empty filter list',
                 actual: {
@@ -358,7 +358,7 @@ describe('FilterListPreprocessor', () => {
     });
 
     describe('getOriginalRules', () => {
-        it.each<{ name: string, actual: string, expected: string[] }>([
+        it.each<{ name: string; actual: string; expected: string[] }>([
             {
                 name: 'empty filter list',
                 actual: '',

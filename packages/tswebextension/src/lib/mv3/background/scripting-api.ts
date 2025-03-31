@@ -11,21 +11,21 @@ import { UserScriptsApi } from './user-scripts-api';
  * Parameters for applying CSS rules.
  */
 export type InsertCSSParams = {
-    tabId: number,
-    frameId: number,
-    cssText: string,
+    tabId: number;
+    frameId: number;
+    cssText: string;
 };
 
 type ExecuteTarget = {
     /**
      * The ID of the tab.
      */
-    tabId: number,
+    tabId: number;
 
     /**
      * The ID of the frame.
      */
-    frameId: number,
+    frameId: number;
 };
 
 /**
@@ -35,7 +35,7 @@ export type ExecuteScriptFuncParams = ExecuteTarget & {
     /**
      * The script function to be executed.
      */
-    scriptFunction: LocalScriptFunction,
+    scriptFunction: LocalScriptFunction;
 };
 
 /**
@@ -45,12 +45,12 @@ export type ExecuteScriptletParams = ExecuteTarget & {
     /**
      * The scriptlet data to be executed.
      */
-    scriptletData: ScriptletData,
+    scriptletData: ScriptletData;
 
     /**
      * The domain name of the frame.
      */
-    domainName: string | null,
+    domainName: string | null;
 };
 
 /**
@@ -61,7 +61,7 @@ export type ExecuteCombinedScriptParams = ExecuteTarget
     /**
      * Combined script text to be injected.
      */
-    scriptText?: string,
+    scriptText?: string;
 };
 
 /**

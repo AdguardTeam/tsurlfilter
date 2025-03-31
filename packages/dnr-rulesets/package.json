@@ -11,6 +11,20 @@
     "main": "dist/lib/index.js",
     "types": "dist/types/lib/index.d.ts",
     "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/types/lib/index.d.ts",
+            "import": "./dist/lib/index.js"
+        },
+        "./lib": {
+            "types": "./dist/types/lib/index.d.ts",
+            "import": "./dist/lib/index.js"
+        },
+        "./utils": {
+            "types": "./dist/types/utils/index.d.ts",
+            "import": "./dist/utils/index.js"
+        }
+    },
     "scripts": {
         "build": "pnpm run clear && pnpm run build:assets && pnpm build:lib",
         "build:assets": "tsx tasks/build.ts",

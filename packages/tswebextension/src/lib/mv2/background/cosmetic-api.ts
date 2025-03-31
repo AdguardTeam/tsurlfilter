@@ -18,7 +18,7 @@ type ScriptsAndScriptletsDataMv2 = {
     /**
      * JS and scriptlet rules **combined** script text.
      */
-    scriptText: string,
+    scriptText: string;
 };
 
 /**

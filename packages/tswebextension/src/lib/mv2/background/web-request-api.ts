@@ -207,16 +207,16 @@ import {
 import { SanitizeApi } from './sanitize-api';
 import { stealthApi } from './stealth-api';
 import { TabsApi } from './tabs';
-import { isFirefox, isOpera } from './utils/browser-detector';
 import { type OnBeforeRequestDetailsType } from './request/events/request-events';
+import { browserDetectorMV2 } from './utils/browser-detector';
 
 export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
 
 export type InjectCosmeticParams = {
-    frameId: number,
-    tabId: number,
-    timestamp: number,
-    url: string,
+    frameId: number;
+    tabId: number;
+    timestamp: number;
+    url: string;
 };
 
 type OnBeforeNavigateDetailsType = WebNavigation.OnBeforeNavigateDetailsType & {
@@ -232,7 +232,7 @@ type OnBeforeNavigateDetailsType = WebNavigation.OnBeforeNavigateDetailsType & {
      *
      * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle
      */
-    documentLifecycle?: DocumentLifecycle
+    documentLifecycle?: DocumentLifecycle;
 };
 
 /**
@@ -402,8 +402,10 @@ export class WebRequestApi {
             });
         }
 
-        // For a $replace rule, response will be undefined since we need to get
-        // the response in order to actually apply $replace rules to it.
+        /**
+         * For a $replace rule, response will be undefined since we need to get
+         * the response in order to actually apply $replace rules to it.
+         */
         const response = RequestBlockingApi.getBlockingResponse({
             rule: matchingResult.getBasicResult(),
             popupRule: matchingResult.getPopupRule(),
@@ -417,11 +419,12 @@ export class WebRequestApi {
         });
 
         if (!response) {
-            /*
-             Strip url by $removeparam rules
-             $removeparam rules are applied after URL blocking rules
-             https://github.com/AdguardTeam/CoreLibs/issues/1462
-            */
+            /**
+             * Strip url by $removeparam rules.
+             * $removeparam rules are applied after URL blocking rules.
+             *
+             * @see {@link https://github.com/AdguardTeam/CoreLibs/issues/1462}
+             */
             const purgedUrl = paramsService.getPurgedUrl(requestId);
 
             if (purgedUrl) {
@@ -662,6 +665,8 @@ export class WebRequestApi {
             timestamp,
             contentType,
         } = context;
+
+        const isFirefox = browserDetectorMV2.isFirefox();
 
         /**
          * Trying to inject cosmetics for sub frames in Firefox as soon as possible
@@ -965,6 +970,8 @@ export class WebRequestApi {
             tabId,
             url,
         } = details;
+
+        const isOpera = browserDetectorMV2.isOpera();
 
         if (isOpera && frameId === MAIN_FRAME_ID) {
             const tabContext = tabsApi.getTabContext(tabId);

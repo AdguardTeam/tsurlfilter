@@ -13,6 +13,7 @@
         ".eslintrc.cjs",
         "rollup.config.ts",
         "vitest.config.ts",
-        "tasks/**/*.ts"
+        "tasks/**/*.ts",
+        "types/vitest-custom.d.ts",
     ],
 }

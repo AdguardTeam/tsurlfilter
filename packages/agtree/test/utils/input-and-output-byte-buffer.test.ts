@@ -13,8 +13,8 @@ import { BINARY_SCHEMA_VERSION } from '../../src/utils/binary-schema-version';
 import { BinarySchemaMismatchError } from '../../src/errors/binary-schema-mismatch-error';
 
 type DataPoolItem =
-    | { type: 'Uint8' | 'Uint16' | 'Uint32' | 'Int32' | 'OptimizedUint', value: number }
-    | { type: 'String', value: string };
+    | { type: 'Uint8' | 'Uint16' | 'Uint32' | 'Int32' | 'OptimizedUint'; value: number }
+    | { type: 'String'; value: string };
 
 describe('ByteBuffer', () => {
     test('should write and read data correctly', async () => {

@@ -15,6 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Static getter `isUserScriptsApiSupported` to check if the current browser
   supports User Scripts API.
 
+### Fixed
+
+- Invalid HTML rule selectors are breaking site loading [AdguardBrowserExtension#2646].
+
+[AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
+
 ## [3.0.1] - 2025-03-06
 
 ### Changed

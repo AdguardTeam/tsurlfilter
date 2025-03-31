@@ -90,6 +90,12 @@ export const configurationMV3Validator = configurationValidator.extend({
      * List of rules added by user.
      */
     userrules: customFilterMV3Validator.omit({ filterId: true }),
+
+    /**
+     * List of blocking rules which should be temporarily badfiltered
+     * since user clicked "Proceed anyway" button on the blocking page.
+     */
+    blockingTrustedRules: zod.string().array(),
 });
 
 /**
@@ -104,5 +110,5 @@ export type ConfigurationMV3 = zod.infer<typeof configurationMV3Validator>;
  * It is used to reduce memory consumption when storing configuration data in memory.
  */
 export type ConfigurationMV3Context =
-    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'quickFixesRules'>
+    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'quickFixesRules' | 'blockingTrustedRules'>
     & { customFilters: number[] };

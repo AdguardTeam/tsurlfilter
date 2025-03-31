@@ -4,8 +4,8 @@ import { type Source } from './source-map';
 import { type LimitationError } from './errors/limitation-errors';
 
 export type ConvertedRules = {
-    sourceMapValues: Source[],
-    declarativeRules: DeclarativeRule[],
-    errors: (ConversionError | Error)[],
-    limitations?: LimitationError[],
+    sourceMapValues: Source[];
+    declarativeRules: DeclarativeRule[];
+    errors: (ConversionError | Error)[];
+    limitations?: LimitationError[];
 };

@@ -17,9 +17,9 @@ const EXTENSION_FILTERS_SERVER_URL_FORMAT = 'https://filters.adtidy.org/extensio
 const FILTER_DOWNLOAD_URL_FORMAT = `${EXTENSION_FILTERS_SERVER_URL_FORMAT}/filters/%filter.txt`;
 
 export type UrlType = {
-    id: number,
-    url: string,
-    file: string,
+    id: number;
+    url: string;
+    file: string;
 };
 
 const getUrlsOfFiltersResources = () => {
