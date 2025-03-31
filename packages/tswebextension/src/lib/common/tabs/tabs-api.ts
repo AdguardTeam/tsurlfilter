@@ -5,7 +5,7 @@ import { type DocumentApi } from '../../mv2/background/document-api';
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../constants';
 import { EventChannel } from '../utils/channels';
 import { logger } from '../utils/logger';
-import { getDomain, isHttpRequest } from '../utils/url';
+import { getDomain } from '../utils/url';
 
 import { type FrameCommon } from './frame';
 import { TabContextCommon } from './tab-context';
