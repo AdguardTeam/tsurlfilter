@@ -222,6 +222,11 @@ export const ADG_SCRIPTLET_MASK = '//scriptlet';
 export const UBO_SCRIPTLET_MASK = '+js';
 export const UBO_SCRIPTLET_MASK_LEGACY = 'script:inject';
 export const UBO_HTML_MASK = '^';
+export const UBO_MATCHES_PATH_OPERATOR = 'matches-path';
+export const ADG_PATH_MODIFIER = 'path';
+export const ADG_DOMAINS_MODIFIER = 'domain';
+export const ADG_APP_MODIFIER = 'app';
+export const ADG_URL_MODIFIER = 'url';
 
 // Modifiers are separated by ",". For example: "script,domain=example.com"
 export const MODIFIERS_SEPARATOR = ',';
