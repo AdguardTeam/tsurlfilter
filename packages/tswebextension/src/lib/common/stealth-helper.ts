@@ -31,7 +31,7 @@ export class StealthHelper {
     }
 
     /**
-     * Hides document referrer.
+     * Hides document referrer by returning the current document's origin.
      */
     public static hideDocumentReferrer(): void {
         const origDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, 'referrer');
@@ -39,12 +39,17 @@ export class StealthHelper {
             return;
         }
 
-        const returnEmptyReferrerFunc = (): string => '';
-        // Protect getter from native code check
-        returnEmptyReferrerFunc.toString = origDescriptor.get.toString.bind(origDescriptor.get);
+        const returnCurrentOriginFunc = (): string => {
+            // Return the origin dynamically each time it's accessed
+            return document.location.origin;
+        };
+
+        // Protect getter from native code check (important!)
+        // Use the original getter's toString for this protection.
+        returnCurrentOriginFunc.toString = origDescriptor.get.toString.bind(origDescriptor.get);
 
         Object.defineProperty(Document.prototype, 'referrer', {
-            get: returnEmptyReferrerFunc,
+            get: returnCurrentOriginFunc,
         });
     }
 }
