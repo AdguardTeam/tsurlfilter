@@ -9,7 +9,7 @@
     },
     "license": "GPL-3.0-only",
     "engines": {
-        "node": ">=18"
+        "node": ">=22"
     },
     "bugs": {
         "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
@@ -24,6 +24,7 @@
         "vitest": "^2.1.9"
     },
     "pnpm": {
+        "neverBuiltDependencies": [],
         "overrides": {
             "@adguard/agtree": "workspace:^"
         }

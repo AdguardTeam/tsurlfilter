@@ -16,7 +16,7 @@ npmjs • 1.x: &npmjs
   variables: &npmjs-variables
     publishArgs: --access public
   docker: &npmjs-docker
-    image: adguard/node-ssh:18.19--0
+    image: adguard/node-ssh:22.14--0
     volumes:
       ${system.PNPM_DIR}: ${bamboo.cachePnpm}
   triggers: []
@@ -56,7 +56,7 @@ npmjs • 3.x:
   <<: *npmjs
   docker:
     <<: *npmjs-docker
-    image: adguard/node-ssh:14.18--0
+    image: adguard/node-ssh:22.14--0
 
 npmjs • alpha:
   <<: *npmjs
@@ -65,7 +65,7 @@ npmjs • alpha:
     publishArgs: --tag alpha --access public
   docker:
     <<: *npmjs-docker
-    image: adguard/node-ssh:14.18--0
+    image: adguard/node-ssh:22.14--0
 
 npmjs • beta:
   <<: *npmjs
@@ -74,4 +74,4 @@ npmjs • beta:
     publishArgs: --tag beta --access public
   docker:
     <<: *npmjs-docker
-    image: adguard/node-ssh:14.18--0
+    image: adguard/node-ssh:22.14--0
