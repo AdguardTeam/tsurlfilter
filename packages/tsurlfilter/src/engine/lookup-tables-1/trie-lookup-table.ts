@@ -109,7 +109,7 @@ export class TrieLookupTable implements ILookupTable {
             request.urlLowercase,
             request.urlLowercase.length,
             this.buffer,
-            this.binaryTriePositionPtr,
+            this.binaryTriePosition,
         );
 
         const result: NetworkRule[] = [];

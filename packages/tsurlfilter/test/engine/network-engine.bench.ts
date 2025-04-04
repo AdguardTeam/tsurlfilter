@@ -79,10 +79,13 @@ describe('Matching', () => {
     const buffer = new ByteBuffer();
 
     const oldEngine = new NetworkEngineOld(ruleStorage);
-    const newEngine1 = new NetworkEngineNew1(ruleStorage, buffer, 0);
+    const newEngine1 = NetworkEngineNew1.create(ruleStorage, buffer);
     newEngine1.finalize();
 
-    buffer.byteOffset = 0;
+    expect(newEngine1.match(new Request('https://geo.frtyd.com', '', RequestType.XmlHttpRequest))).toEqual(oldEngine.match(new Request('https://geo.frtyd.com', '', RequestType.XmlHttpRequest)));
+    expect(newEngine1.match(new Request('https://hiqubonenete.tk', 'https://example.com', RequestType.XmlHttpRequest))).toEqual(oldEngine.match(new Request('https://hiqubonenete.tk', 'https://example.com', RequestType.XmlHttpRequest)));
+    expect(newEngine1.match(new Request('https://example.com/ads/real_1', 'https://example.com', RequestType.XmlHttpRequest))).toEqual(oldEngine.match(new Request('https://example.com/ads/real_1', 'https://example.com', RequestType.XmlHttpRequest)));
+    expect(newEngine1.match(new Request('https://yimg.com/dy/ads/dianominewwidget2.html', 'https://yahoo.com', RequestType.XmlHttpRequest))).toEqual(oldEngine.match(new Request('https://yimg.com/dy/ads/dianominewwidget2.html', 'https://yahoo.com', RequestType.XmlHttpRequest)));
 
     bench('Old engine', () => {
         // Hostname lookup
@@ -102,12 +105,5 @@ describe('Matching', () => {
         // Shortcut lookup
         newEngine1.match(new Request('https://example.com/ads/real_1', 'https://example.com', RequestType.XmlHttpRequest));
         newEngine1.match(new Request('https://yimg.com/dy/ads/dianominewwidget2.html', 'https://yahoo.com', RequestType.XmlHttpRequest));
-    }, {
-        setup: () => {
-            expect(newEngine1.match(new Request('https://geo.frtyd.com', '', RequestType.XmlHttpRequest))).toEqual(oldEngine.match(new Request('https://geo.frtyd.com', '', RequestType.XmlHttpRequest)));
-            expect(newEngine1.match(new Request('https://hiqubonenete.tk', 'https://example.com', RequestType.XmlHttpRequest))).toEqual(oldEngine.match(new Request('https://hiqubonenete.tk', 'https://example.com', RequestType.XmlHttpRequest)));
-            expect(newEngine1.match(new Request('https://example.com/ads/real_1', 'https://example.com', RequestType.XmlHttpRequest))).toEqual(oldEngine.match(new Request('https://example.com/ads/real_1', 'https://example.com', RequestType.XmlHttpRequest)));
-            expect(newEngine1.match(new Request('https://yimg.com/dy/ads/dianominewwidget2.html', 'https://yahoo.com', RequestType.XmlHttpRequest))).toEqual(oldEngine.match(new Request('https://yimg.com/dy/ads/dianominewwidget2.html', 'https://yahoo.com', RequestType.XmlHttpRequest)));
-        },
     });
 });
