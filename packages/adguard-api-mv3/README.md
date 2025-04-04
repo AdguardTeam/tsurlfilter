@@ -10,15 +10,14 @@ AdGuard API is a filtering library that provides the following features:
 
 ## Table of contents
 
-- [AdGuard API MV3](#adguard-api-mv3)
-  - [Table of contents](#table-of-contents)
+- [Table of contents](#table-of-contents)
     - [Installation](#installation)
     - [Required web accessible resources](#required-web-accessible-resources)
     - [Required declarativeNetRequest API assets](#required-declarativenetrequest-api-assets)
-  - [Configuration](#configuration)
-  - [Static methods](#static-methods)
+- [Configuration](#configuration)
+- [Static methods](#static-methods)
     - [`AdguardApi.create`](#adguardapicreate)
-  - [Methods](#methods)
+- [Methods](#methods)
     - [`adguardApi.getMessageHandler`](#adguardapigetmessagehandler)
     - [`adguardApi.start`](#adguardapistart)
     - [`adguardApi.stop`](#adguardapistop)
@@ -28,9 +27,9 @@ AdGuard API is a filtering library that provides the following features:
     - [`adguardApi.getRulesCount`](#adguardapigetrulescount)
     - [`adguardApi.onAssistantCreateRule`](#adguardapionassistantcreaterule)
     - [`adguardApi.onRequestBlocking`](#adguardapionrequestblocking)
-  - [Usage](#usage)
-  - [Minimum supported browser versions](#minimum-supported-browser-versions)
-  - [Development](#development)
+- [Usage](#usage)
+- [Minimum supported browser versions](#minimum-supported-browser-versions)
+- [Development](#development)
     - [Install dependencies](#install-dependencies)
     - [Build](#build)
     - [Lint](#lint)
@@ -39,33 +38,33 @@ AdGuard API is a filtering library that provides the following features:
 
 1. Install the `@adguard/api-mv3` module via `npm` or `yarn`
 
-  ```shell
-  npm install @adguard/api-mv3
-  ```
+    ```shell
+    npm install @adguard/api-mv3
+    ```
 
-  or
+    or
 
-  ```shell
-  yarn add @adguard/api-mv3
-  ```
+    ```shell
+    yarn add @adguard/api-mv3
+    ```
 
 1. Import the `AdguardApi` class to the background script
 
-  ```ts
-  import { AdguardApi } from "@adguard/api-mv3";
-  ```
+    ```ts
+    import { AdguardApi } from "@adguard/api-mv3";
+    ```
 
 1. Import `adguard-contents` at the top of your content script entry
 
-  ```ts
-  import '@adguard/api-mv3/content-script';
-  ```
+    ```ts
+    import '@adguard/api-mv3/content-script';
+    ```
 
 1. Import `adguard-assistant` at the top of your assistant script entry
 
-  ```ts
-  import '@adguard/api-mv3/assistant';
-  ```
+    ```ts
+    import '@adguard/api-mv3/assistant';
+    ```
 
 ### Required web accessible resources
 
@@ -129,6 +128,8 @@ type Configuration = {
 - `rules` (optional) - An array of custom filtering rules. Here is an
   [article][filter-rules] describing filtering rules syntax. These custom rules
   might be created by a user via AdGuard Assistant UI.
+
+[filter-rules]: https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters
 
 **Example:**
 
@@ -586,7 +587,6 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
 | Browser                 | Version |
 | ----------------------- | :-----: |
 | Chromium Based Browsers |   84    |
-
 
 ## Development
 

@@ -13,14 +13,13 @@ AdGuard API is a filtering library that provides the following features:
 
 ## Table of contents
 
-- [AdGuard API](#adguard-api)
-  - [Table of content](#table-of-contents)
+- [Table of content](#table-of-contents)
     - [Installation](#installation)
     - [Required web accessible resources](#required-web-accessible-resources)
-  - [Configuration](#configuration)
-  - [Static methods](#static-methods)
+- [Configuration](#configuration)
+- [Static methods](#static-methods)
     - [`AdguardApi.create`](#adguardapicreate)
-  - [Methods](#methods)
+- [Methods](#methods)
     - [`adguardApi.getMessageHandler`](#adguardapigetmessagehandler)
     - [`adguardApi.start`](#adguardapistart)
     - [`adguardApi.stop`](#adguardapistop)
@@ -31,12 +30,12 @@ AdGuard API is a filtering library that provides the following features:
     - [`adguardApi.getRulesCount`](#adguardapigetrulescount)
     - [`adguardApi.onAssistantCreateRule`](#adguardapionassistantcreaterule)
     - [`adguardApi.onRequestBlocking`](#adguardapionrequestblocking)
-  - [Usage](#usage)
-  - [Minimum supported browser versions](#minimum-supported-browser-versions)
+- [Usage](#usage)
+- [Minimum supported browser versions](#minimum-supported-browser-versions)
 
 ### Installation
 
-1. Install the `@adguard/api` module via `npm` or `yarn`
+1. Install the `@adguard/api` module via `npm` or `pnpm`
 
   ```shell
   npm install @adguard/api
@@ -45,7 +44,7 @@ AdGuard API is a filtering library that provides the following features:
   or
 
   ```shell
-  yarn add @adguard/api
+  pnpm add @adguard/api
   ```
 
 1. Import the `AdguardApi` class to the background script
