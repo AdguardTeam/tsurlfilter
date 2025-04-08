@@ -5,7 +5,7 @@ plan:
   key: TSURLFILTERTEST
   name: tsurlfilter - tests
 variables:
-  dockerContainer: adguard/node-ssh:18.19--0
+  dockerContainer: adguard/node-ssh:22.14--0
 
 stages:
   - Test:
