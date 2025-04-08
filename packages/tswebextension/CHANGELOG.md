@@ -13,10 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Invalid HTML rule selectors are breaking site loading [AdguardBrowserExtension#2646].
+- Invalid HTML rule selectors are breaking site loading
+  [AdguardBrowserExtension#2646], [AdguardBrowserExtension#2826].
 - ya.ru - `Hide Referrer from third parties` breaks the site [AdguardBrowserExtension#2839].
 
 [AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
+[AdguardBrowserExtension#2826]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2826
 [AdguardBrowserExtension#2839]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2839
 
 ## [3.0.1] - 2025-03-06
