@@ -17,7 +17,7 @@ cleanup() {
 # Set trap to execute the cleanup function on script exit
 trap cleanup EXIT
 
-(cd ../../.. && pnpm pack && mv adguard-css-tokenizer-*.tgz "$curr_path/$csstokenizer")
+(cd ../../.. && pnpm pack --out "$curr_path/$csstokenizer")
 
 # unzip to @adguard/tsurlfilter to node_modules
 csstokenizer_node_modules=$nm_path"/@adguard/css-tokenizer"
