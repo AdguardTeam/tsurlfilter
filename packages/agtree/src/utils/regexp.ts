@@ -89,6 +89,42 @@ export class RegExpUtils {
     }
 
     /**
+     * Checks whether a string is a negated RegExp pattern.
+     *
+     * @param pattern - Pattern to check
+     * @returns `true` if the string is a negated RegExp pattern, `false` otherwise
+     */
+    public static isNegatedRegexPattern(pattern: string): boolean {
+        if (pattern.startsWith(REGEX_MARKER) && pattern.endsWith(REGEX_MARKER)) {
+            const innerPattern = pattern.slice(REGEX_MARKER.length, pattern.length - REGEX_MARKER.length);
+            return innerPattern.startsWith(REGEX_NEGATION_PREFIX) && innerPattern.endsWith(REGEX_NEGATION_SUFFIX);
+        }
+
+        return pattern.startsWith(REGEX_NEGATION_PREFIX) && pattern.endsWith(REGEX_NEGATION_SUFFIX);
+    }
+
+    /**
+     * Removes negation from a RegExp pattern.
+     *
+     * @param pattern - RegExp pattern to remove negation from
+     * @returns RegExp pattern without negation
+     */
+    public static removeNegationFromRegexPattern(pattern: string): string {
+        let result = pattern.trim();
+        const slashes = RegExpUtils.isRegexPattern(result);
+
+        if (slashes) {
+            result = result.substring(REGEX_MARKER.length, result.length - REGEX_MARKER.length);
+        }
+
+        if (result.startsWith(REGEX_NEGATION_PREFIX) && result.endsWith(REGEX_NEGATION_SUFFIX)) {
+            result = result.substring(REGEX_NEGATION_PREFIX.length, result.length - REGEX_NEGATION_SUFFIX.length);
+        }
+
+        return slashes ? `${REGEX_MARKER}${result}${REGEX_MARKER}` : result;
+    }
+
+    /**
      * Negates a RegExp pattern. Technically, this method wraps the pattern in `^((?!` and `).)*$`.
      *
      * RegExp modifiers are not supported.
@@ -125,6 +161,26 @@ export class RegExpUtils {
         // Add the leading and trailing slashes back if they were there
         if (slashes) {
             result = `${REGEX_MARKER}${result}${REGEX_MARKER}`;
+        }
+
+        return result;
+    }
+
+    /**
+     * Ensures that a pattern is wrapped in slashes.
+     *
+     * @param pattern Pattern to ensure slashes for
+     * @returns Pattern with slashes
+     */
+    public static ensureSlashes(pattern: string): string {
+        let result = pattern;
+
+        if (!result.startsWith(REGEX_MARKER)) {
+            result = `${REGEX_MARKER}${result}`;
+        }
+
+        if (!result.endsWith(REGEX_MARKER)) {
+            result += REGEX_MARKER;
         }
 
         return result;

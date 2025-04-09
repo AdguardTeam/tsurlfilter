@@ -14,6 +14,8 @@ export {
     PREPROCESSOR_MARKER,
     SAFARI_CB_AFFINITY,
     UBO_SCRIPTLET_MASK,
+    COMMA,
+    PIPE,
 } from './constants';
 export { BINARY_SCHEMA_VERSION } from './binary-schema-version';
 export { AdblockSyntax } from './adblockers';

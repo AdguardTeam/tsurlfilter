@@ -4,7 +4,7 @@ import {
     it,
     vi,
 } from 'vitest';
-import { TextEncoder, TextDecoder } from 'text-encoding';
+import { TextEncoder, TextDecoder } from '@adguard/text-encoding';
 import { RequestType } from '@adguard/tsurlfilter';
 
 import { MockFilteringLog } from '../../../../common/mocks';
