@@ -162,4 +162,28 @@ export class ByteBuffer {
          */
         this.data = new DataView(this.memory.buffer);
     }
+
+    /**
+     * Adds the contents of another ByteBuffer into this one.
+     * It ensures enough capacity and copies each byte from the source buffer.
+     *
+     * @param buffer The ByteBuffer to copy from.
+     */
+    public addByteBuffer(buffer: ByteBuffer): void {
+        const sourceLength = buffer.byteOffset;
+
+        // Ensure capacity in current buffer
+        const requiredCapacity = this.byteOffset + sourceLength;
+        while (!this.hasCapacity(requiredCapacity - 1)) {
+            this.allocate();
+        }
+
+        // Copy each byte from the source buffer
+        for (let i = 0; i < sourceLength; i += 1) {
+            const byte = buffer.getUint8(i);
+            this.setUint8(this.byteOffset + i, byte);
+        }
+
+        this.byteOffset += sourceLength;
+    }
 }
