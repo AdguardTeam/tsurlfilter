@@ -30,10 +30,10 @@ export class PreProcessorCommentGenerator extends BaseGenerator {
         result += node.name.value;
 
         if (node.params) {
-            let allowSpaceBetweenParams = false;
+            let allowSpaceBetweenParams = true;
             // Space between cb is not allowed for "safari_cb_affinity" directive.
             if (node.name.value === SAFARI_CB_AFFINITY) {
-                allowSpaceBetweenParams = true;
+                allowSpaceBetweenParams = false;
             }
 
             // Space is not allowed after "safari_cb_affinity" directive, so we need to handle it separately.
