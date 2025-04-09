@@ -82,8 +82,8 @@ This repository uses pnpm workspaces and [Lerna][lerna] to manage multiple packa
 - Remove `node_modules` from all packages and root package: `pnpm clean`
 - Builds the packages in the current repo: `npx lerna run build`
 - Builds a specific package: `npx lerna run build --scope=<package-name>`
-  - For example, to build the `tswebextension` package: `npx lerna run build --scope=@adguard/tswebextension`.
-    This command also builds `@adguard/tsurlfilter` first as it is required for `@adguard/tswebextension`.
+    - For example, to build the `tswebextension` package: `npx lerna run build --scope=@adguard/tswebextension`.
+      This command also builds `@adguard/tsurlfilter` first as it is required for `@adguard/tswebextension`.
 
 > [!NOTE]
 > You can find Lerna commands in the following link: [Lerna Commands][lernacommands].
