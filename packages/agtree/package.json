@@ -66,7 +66,7 @@
         "!dist/build.txt"
     ],
     "engines": {
-        "node": ">=18"
+        "node": ">=22"
     },
     "scripts": {
         "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables-wiki && pnpm build-rollup && pnpm build-types",

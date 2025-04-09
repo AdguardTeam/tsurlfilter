@@ -4,6 +4,7 @@ deployment:
   name: CSS Tokenizer - deploy
   source-plan: AJL-CSSTOKENIZERBUILD
 release-naming: ${bamboo.inject.version}
+
 environments:
   - npmjs
   - npmjs • alpha

@@ -4,6 +4,7 @@ deployment:
   name: tswebextension - deploy
   source-plan: AJL-TSWEBEXTENSIONBUILD
 release-naming: ${bamboo.inject.version}
+
 environments:
   - npmjs • 2.x
   - npmjs • alpha

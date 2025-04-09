@@ -98,7 +98,7 @@ jobs:
       }}
     runs-on: ubuntu-latest
     steps:
-      - name: Send Slack notif
+      - name: Send Slack notification
         uses: 8398a7/action-slack@v3
         with:
           status: failure
