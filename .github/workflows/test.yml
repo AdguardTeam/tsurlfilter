@@ -2,8 +2,8 @@
 name: test
 
 env:
-  NODE_VERSION: 20
-  PNPM_VERSION: 8.15.1
+  NODE_VERSION: 22
+  PNPM_VERSION: 10.7.1
 
 on:
   push:
@@ -98,7 +98,7 @@ jobs:
       }}
     runs-on: ubuntu-latest
     steps:
-      - name: Send Slack notif
+      - name: Send Slack notification
         uses: 8398a7/action-slack@v3
         with:
           status: failure

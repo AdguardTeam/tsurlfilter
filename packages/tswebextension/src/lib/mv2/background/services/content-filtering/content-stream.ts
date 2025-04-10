@@ -1,4 +1,4 @@
-import TextEncoding from 'text-encoding';
+import TextEncoding from '@adguard/text-encoding';
 import { type WebRequest } from 'webextension-polyfill';
 import { RequestType } from '@adguard/tsurlfilter';
 
@@ -60,12 +60,12 @@ export class ContentStream {
     /**
      * Decoder instance.
      */
-    private decoder: TextDecoder | undefined;
+    private decoder: TextEncoding.TextDecoder | undefined;
 
     /**
      * Encoder instance.
      */
-    private encoder: TextEncoder | undefined;
+    private encoder: TextEncoding.TextEncoder | undefined;
 
     /**
      * Filtering log.

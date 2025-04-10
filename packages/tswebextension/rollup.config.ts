@@ -72,7 +72,7 @@ const tswebextensionConfig: RollupOptions = {
         /**
          * This option prevent of the following import:
          * ```
-         * import 'text-encoding';
+         * import '@adguard/text-encoding';
          * ```.
          */
         moduleSideEffects: false,
