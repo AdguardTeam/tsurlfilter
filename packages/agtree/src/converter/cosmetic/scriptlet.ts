@@ -14,6 +14,7 @@ import {
     transformAllScriptletArguments,
     transformNthScriptletArgument,
 } from '../../ast-utils/scriptlets';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode, cloneModifierListNode, cloneScriptletRuleNode } from '../../ast-utils/clone';
 import { GenericPlatform, scriptletsCompatibilityTable } from '../../compatibility-tables';
@@ -293,7 +294,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                 // Otherwise, try to find the corresponding uBO scriptlet name, or use the original one if not found
                 const uboScriptlet = scriptletsCompatibilityTable.getFirst(scriptletName, GenericPlatform.UboAny);
                 if (!uboScriptlet) {
-                    throw new Error(`Scriptlet "${scriptletName}" is not supported in uBlock Origin.`);
+                    throw new RuleConversionError(`Scriptlet "${scriptletName}" is not supported in uBlock Origin.`);
                 }
                 uboScriptletName = uboScriptlet.name;
             }
