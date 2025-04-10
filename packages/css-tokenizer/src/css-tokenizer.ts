@@ -34,6 +34,19 @@ import {
  * @param onToken Tokenizer callback which is called for each token found in source code
  * @param onError Error callback which is called when a parsing error is found (optional)
  * @param functionHandlers Custom function handlers (optional)
+ *
+ * @example
+ * ```typescript
+ * import { tokenize, type TokenType, type OnTokenCallback } from '@adguard/css-tokenizer';
+ * 
+ * const source = 'a { color: red }';
+ * const onToken: OnTokenCallback = (type: TokenType, start: number, end: number) => {
+ *     console.log({ type, start, end });
+ * };
+ * tokenize(source, onToken);
+ * ```
+ *
+ * @function
  */
 export const tokenize: TokenizerFunction = (
     source: string,

@@ -13,6 +13,18 @@ import { type TokenizerFunction } from '../common/types/function-prototypes';
  * @param tokenizer The tokenizer function to use. Defaults to `tokenizeExtended`.
  *
  * @returns `true` if any of the specified tokens are found in the raw string, otherwise `false`.
+ * 
+ * @example
+ * ```typescript
+ * import { hasToken, tokenize, type TokenType } from '@adguard/css-tokenizer';
+ * 
+ * const raw = 'a { color: red }';
+ * const tokens = new Set([TokenType.OpenCurlyBracket, TokenType.CloseCurlyBracket]);
+ * const result = hasToken(raw, tokens, tokenize);
+ * console.log(result); // true
+ * ```
+ *
+ * @function
  */
 export const hasToken = (
     raw: string,

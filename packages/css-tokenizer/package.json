@@ -35,6 +35,7 @@
   "scripts": {
     "build": "pnpm clean && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/types",
     "build-txt": "tsx scripts/build-txt.ts",
+    "build-typedoc": "tsx scripts/typedoc.ts",
     "clean": "rimraf dist",
     "increment": "pnpm version patch --no-git-tag-version",
     "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
@@ -69,6 +70,7 @@
     "rollup-plugin-dts": "^6.0.2",
     "rollup-plugin-node-externals": "^6.1.1",
     "tsx": "^4.19.3",
+    "typedoc": "^0.28.2",
     "typescript": "^5.1.6",
     "vitest": "^2.1.6"
   }
