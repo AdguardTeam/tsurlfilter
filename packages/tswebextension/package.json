@@ -1,168 +1,168 @@
 {
-  "name": "@adguard/tswebextension",
-  "version": "3.0.1",
-  "description": "This is a TypeScript library that implements AdGuard's extension API",
-  "type": "module",
-  "main": "dist/index.js",
-  "typings": "dist/types/src/lib/mv2/background/index.d.ts",
-  "sideEffects": [
-    "dist/assistant-inject.js",
-    "dist/content-script.js",
-    "dist/content-script.mv3.js",
-    "dist/gpc.mv3.js",
-    "dist/hide-document-referrer.mv3.js"
-  ],
-  "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "default": "./dist/index.js"
+    "name": "@adguard/tswebextension",
+    "version": "3.0.1",
+    "description": "This is a TypeScript library that implements AdGuard's extension API",
+    "type": "module",
+    "main": "dist/index.js",
+    "typings": "dist/types/src/lib/mv2/background/index.d.ts",
+    "sideEffects": [
+        "dist/assistant-inject.js",
+        "dist/content-script.js",
+        "dist/content-script.mv3.js",
+        "dist/gpc.mv3.js",
+        "dist/hide-document-referrer.mv3.js"
+    ],
+    "exports": {
+        ".": {
+            "types": "./dist/types/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./mv3": {
+            "types": "./dist/types/index.mv3.d.ts",
+            "default": "./dist/index.mv3.js"
+        },
+        "./mv3/utils": {
+            "types": "./dist/types/mv3-utils.d.ts",
+            "default": "./dist/mv3-utils.js"
+        },
+        "./mv3/gpc": {
+            "default": "./dist/gpc.mv3.js"
+        },
+        "./mv3/hide-document-referrer": {
+            "default": "./dist/hide-document-referrer.mv3.js"
+        },
+        "./mv3/content-script": {
+            "default": "./dist/content-script.mv3.js"
+        },
+        "./content-script": {
+            "types": "./dist/types/content-script.d.ts",
+            "default": "./dist/content-script.js"
+        },
+        "./content-script/css-hits-counter": {
+            "types": "./dist/types/css-hits-counter.d.ts",
+            "default": "./dist/css-hits-counter.js"
+        },
+        "./cli": {
+            "types": "./dist/types/cli.d.ts",
+            "default": "./dist/cli.js"
+        },
+        "./assistant-inject": {
+            "types": "./dist/types/assistant-inject.d.ts",
+            "default": "./dist/assistant-inject.js"
+        },
+        "./filters-storage": {
+            "types": "./dist/types/filters-storage.d.ts",
+            "default": "./dist/filters-storage.js"
+        }
     },
-    "./mv3": {
-      "types": "./dist/types/index.mv3.d.ts",
-      "default": "./dist/index.mv3.js"
+    "bin": {
+        "tswebextension": "dist/cli.js"
     },
-    "./mv3/utils": {
-      "types": "./dist/types/mv3-utils.d.ts",
-      "default": "./dist/mv3-utils.js"
+    "files": [
+        "dist"
+    ],
+    "author": "Adguard Software Ltd.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "directory": "packages/tswebextension"
     },
-    "./mv3/gpc": {
-      "default": "./dist/gpc.mv3.js"
+    "license": "GPL-3.0-only",
+    "engines": {
+        "node": ">=22"
     },
-    "./mv3/hide-document-referrer": {
-      "default": "./dist/hide-document-referrer.mv3.js"
+    "bugs": {
+        "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
     },
-    "./mv3/content-script": {
-      "default": "./dist/content-script.mv3.js"
+    "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension#readme",
+    "scripts": {
+        "lint": "pnpm lint:code && pnpm lint:tsc",
+        "lint:code": "eslint --cache .",
+        "lint:tsc": "tsc",
+        "check-types": "pnpm lint:tsc",
+        "prebuild": "rimraf dist",
+        "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
+        "postbuild": "tsx tasks/build-txt.ts",
+        "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
+        "update:companiesdb": "tsx tasks/update-companiesdb.ts",
+        "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc -w",
+        "test": "vitest run",
+        "test:mv2": "vitest run --project mv2",
+        "test:mv3": "vitest run --project mv3",
+        "test:common": "vitest run --project common",
+        "test:coverage": "vitest run --coverage",
+        "test:smoke": "pnpm run test:smoke:exports && (cd test/builders/rollup-ts && pnpm test)",
+        "test:smoke:exports": "./test/smoke/exports/test.sh",
+        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",
+        "report-coverage": "cat ./coverage/lcov.info | coveralls",
+        "precommit": "lint-staged",
+        "prepublishOnly": "pnpm build",
+        "increment": "pnpm version patch --no-git-tag-version"
     },
-    "./content-script": {
-      "types": "./dist/types/content-script.d.ts",
-      "default": "./dist/content-script.js"
+    "lint-staged": {
+        "{src,test}/**/*.ts": [
+            "eslint"
+        ]
     },
-    "./content-script/css-hits-counter": {
-      "types": "./dist/types/css-hits-counter.d.ts",
-      "default": "./dist/css-hits-counter.js"
+    "dependencies": {
+        "@adguard/agtree": "workspace:^",
+        "@adguard/assistant": "^4.3.70",
+        "@adguard/extended-css": "^2.1.1",
+        "@adguard/logger": "workspace:^",
+        "@adguard/scriptlets": "^2.1.6",
+        "@adguard/text-encoding": "^0.8.3",
+        "@adguard/tsurlfilter": "workspace:^",
+        "bowser": "2.11.0",
+        "chrome-types": "^0.1.342",
+        "commander": "11.0.0",
+        "fs-extra": "11.1.1",
+        "idb": "^8.0.1",
+        "lodash-es": "^4.17.21",
+        "lru-cache": "^11.0.2",
+        "nanoid": "^5.0.9",
+        "superjson": "^2.2.1",
+        "tldts": "^5.7.112",
+        "tslib": "2.5.3",
+        "webextension-polyfill": "0.12.0",
+        "zod": "3.21.4"
     },
-    "./cli": {
-      "types": "./dist/types/cli.d.ts",
-      "default": "./dist/cli.js"
-    },
-    "./assistant-inject": {
-      "types": "./dist/types/assistant-inject.d.ts",
-      "default": "./dist/assistant-inject.js"
-    },
-    "./filters-storage": {
-      "types": "./dist/types/filters-storage.d.ts",
-      "default": "./dist/filters-storage.js"
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^28.0.1",
+        "@rollup/plugin-json": "^6.1.0",
+        "@rollup/plugin-node-resolve": "^15.3.0",
+        "@rollup/plugin-swc": "^0.4.0",
+        "@rollup/plugin-typescript": "^12.1.1",
+        "@swc-node/register": "^1.10.9",
+        "@swc/core": "^1.10.1",
+        "@types/chrome": "^0.0.305",
+        "@types/fs-extra": "^11.0.1",
+        "@types/lodash-es": "^4.17.9",
+        "@types/node": "^20.14.2",
+        "@types/sinon-chrome": "2.2.11",
+        "@types/webextension-polyfill": "^0.12.1",
+        "@typescript-eslint/eslint-plugin": "5.59.11",
+        "@typescript-eslint/parser": "5.59.11",
+        "@vitest/coverage-v8": "2.1.6",
+        "@vitest/eslint-plugin": "^1.1.12",
+        "coveralls": "3.1.1",
+        "cross-env": "^7.0.3",
+        "eslint": "^8.57.1",
+        "eslint-config-airbnb-base": "15.0.0",
+        "eslint-config-airbnb-typescript": "17.0.0",
+        "eslint-plugin-import": "2.27.5",
+        "eslint-plugin-import-newlines": "1.4.0",
+        "eslint-plugin-jsdoc": "^46.8.2",
+        "fake-indexeddb": "^6.0.0",
+        "lint-staged": "13.2.2",
+        "rimraf": "5.0.1",
+        "rollup": "^4.28.0",
+        "rollup-plugin-cleanup": "^3.2.1",
+        "rollup-plugin-dts": "^6.0.2",
+        "rollup-plugin-node-externals": "^7.1.3",
+        "sinon-chrome": "^3.0.1",
+        "terser": "^5.21.0",
+        "tsx": "^4.19.2",
+        "typescript": "5.6.2",
+        "vitest": "^2.1.6"
     }
-  },
-  "bin": {
-    "tswebextension": "dist/cli.js"
-  },
-  "files": [
-    "dist"
-  ],
-  "author": "Adguard Software Ltd.",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
-    "directory": "packages/tswebextension"
-  },
-  "license": "GPL-3.0-only",
-  "engines": {
-    "node": ">=20"
-  },
-  "bugs": {
-    "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
-  },
-  "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension#readme",
-  "scripts": {
-    "lint": "pnpm lint:code && pnpm lint:tsc",
-    "lint:code": "eslint --cache .",
-    "lint:tsc": "tsc",
-    "check-types": "pnpm lint:tsc",
-    "prebuild": "rimraf dist",
-    "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
-    "postbuild": "tsx tasks/build-txt.ts",
-    "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-    "update:companiesdb": "tsx tasks/update-companiesdb.ts",
-    "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc -w",
-    "test": "vitest run",
-    "test:mv2": "vitest run --project mv2",
-    "test:mv3": "vitest run --project mv3",
-    "test:common": "vitest run --project common",
-    "test:coverage": "vitest run --coverage",
-    "test:smoke": "pnpm run test:smoke:exports && (cd test/builders/rollup-ts && pnpm test)",
-    "test:smoke:exports": "./test/smoke/exports/test.sh",
-    "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",
-    "report-coverage": "cat ./coverage/lcov.info | coveralls",
-    "precommit": "lint-staged",
-    "prepublishOnly": "pnpm build",
-    "increment": "pnpm version patch --no-git-tag-version"
-  },
-  "lint-staged": {
-    "{src,test}/**/*.ts": [
-      "eslint"
-    ]
-  },
-  "dependencies": {
-    "@adguard/agtree": "workspace:^",
-    "@adguard/assistant": "^4.3.70",
-    "@adguard/extended-css": "^2.1.1",
-    "@adguard/logger": "workspace:^",
-    "@adguard/scriptlets": "^2.1.6",
-    "@adguard/tsurlfilter": "workspace:^",
-    "bowser": "2.11.0",
-    "chrome-types": "^0.1.342",
-    "commander": "11.0.0",
-    "fs-extra": "11.1.1",
-    "idb": "^8.0.1",
-    "lodash-es": "^4.17.21",
-    "lru-cache": "^11.0.2",
-    "nanoid": "^5.0.9",
-    "superjson": "^2.2.1",
-    "text-encoding": "https://github.com/AdguardTeam/text-encoding/tarball/v0.8.0",
-    "tldts": "^5.7.112",
-    "tslib": "2.5.3",
-    "webextension-polyfill": "0.12.0",
-    "zod": "3.21.4"
-  },
-  "devDependencies": {
-    "@rollup/plugin-commonjs": "^28.0.1",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^15.3.0",
-    "@rollup/plugin-swc": "^0.4.0",
-    "@rollup/plugin-typescript": "^12.1.1",
-    "@swc-node/register": "^1.10.9",
-    "@swc/core": "^1.10.1",
-    "@types/chrome": "^0.0.305",
-    "@types/fs-extra": "^11.0.1",
-    "@types/lodash-es": "^4.17.9",
-    "@types/node": "^20.14.2",
-    "@types/sinon-chrome": "2.2.11",
-    "@types/webextension-polyfill": "^0.12.1",
-    "@typescript-eslint/eslint-plugin": "5.59.11",
-    "@typescript-eslint/parser": "5.59.11",
-    "@vitest/coverage-v8": "2.1.6",
-    "@vitest/eslint-plugin": "^1.1.12",
-    "coveralls": "3.1.1",
-    "cross-env": "^7.0.3",
-    "eslint": "^8.57.1",
-    "eslint-config-airbnb-base": "15.0.0",
-    "eslint-config-airbnb-typescript": "17.0.0",
-    "eslint-plugin-import": "2.27.5",
-    "eslint-plugin-import-newlines": "1.4.0",
-    "eslint-plugin-jsdoc": "^46.8.2",
-    "fake-indexeddb": "^6.0.0",
-    "lint-staged": "13.2.2",
-    "rimraf": "5.0.1",
-    "rollup": "^4.28.0",
-    "rollup-plugin-cleanup": "^3.2.1",
-    "rollup-plugin-dts": "^6.0.2",
-    "rollup-plugin-node-externals": "^7.1.3",
-    "sinon-chrome": "^3.0.1",
-    "terser": "^5.21.0",
-    "tsx": "^4.19.2",
-    "typescript": "5.6.2",
-    "vitest": "^2.1.6"
-  }
 }

@@ -5,6 +5,7 @@ import { AdblockSyntax } from '../../utils/adblockers';
 import {
     CLOSE_PARENTHESIS,
     COLON,
+    CSS_NOT_PSEUDO,
     EMPTY,
     OPEN_PARENTHESIS,
     SPACE,
@@ -51,6 +52,11 @@ export class CosmeticRuleGenerator extends BaseGenerator {
         // uBO rule modifiers
         if (node.syntax === AdblockSyntax.Ubo && node.modifiers) {
             node.modifiers.children.forEach((modifier) => {
+                if (modifier.exception) {
+                    result += COLON;
+                    result += CSS_NOT_PSEUDO;
+                    result += OPEN_PARENTHESIS;
+                }
                 result += COLON;
                 result += modifier.name.value;
                 if (modifier.value) {
@@ -58,10 +64,13 @@ export class CosmeticRuleGenerator extends BaseGenerator {
                     result += modifier.value.value;
                     result += CLOSE_PARENTHESIS;
                 }
+                if (modifier.exception) {
+                    result += CLOSE_PARENTHESIS;
+                }
             });
 
             // If there are at least one modifier, add a space
-            if (node.modifiers.children.length) {
+            if (node.modifiers.children.some((modifier) => modifier?.name.value)) {
                 result += SPACE;
             }
         }
