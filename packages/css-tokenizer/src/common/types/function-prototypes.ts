@@ -41,7 +41,7 @@ export type OnErrorCallback = (message: string, start: number, end: number) => v
  * Function handler
  *
  * @param context Reference to the tokenizer context instance
- * @param ...args Additional arguments (if any)
+ * @param args Additional arguments (if any)
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TokenizerContextFunction = (context: TokenizerContext, ...args: any[]) => void;

@@ -60,6 +60,19 @@ const EXT_CSS_PSEUDO_HANDLERS = new Map<number, TokenizerContextFunction>([
  * @note If you specify custom function handlers, they will be merged with the default function handlers. If you
  * duplicate a function handler, the custom one will be used instead of the default one, so you can override the default
  * function handlers this way, if you want to.
+ *
+ * @example
+ * ```typescript
+ * import { tokenizeExtended, type TokenType, type OnTokenCallback } from '@adguard/css-tokenizer';
+ * 
+ * const source = ':contains(b)';
+ * const onToken: OnTokenCallback = (type: TokenType, start: number, end: number) => {
+ *     console.log({ type, start, end });
+ * };
+ * tokenizeExtended(source, onToken);
+ * ```
+ *
+ * @function
  */
 export const tokenizeExtended: TokenizerFunction = (
     source: string,

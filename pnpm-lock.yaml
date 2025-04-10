@@ -626,6 +626,9 @@ importers:
       tsx:
         specifier: ^4.19.3
         version: 4.19.3
+      typedoc:
+        specifier: ^0.28.2
+        version: 0.28.2(typescript@5.8.3)
       typescript:
         specifier: ^5.1.6
         version: 5.8.3
@@ -9224,6 +9227,13 @@ packages:
     peerDependencies:
       typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x || 5.8.x
 
+  typedoc@0.28.2:
+    resolution: {integrity: sha512-9Giuv+eppFKnJ0oi+vxqLM817b/IrIsEMYgy3jj6zdvppAfDqV3d6DXL2vXUg2TnlL62V48th25Zf/tcQKAJdg==}
+    engines: {node: '>= 18', pnpm: '>= 10'}
+    hasBin: true
+    peerDependencies:
+      typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x || 5.8.x
+
   typescript-eslint@8.29.0:
     resolution: {integrity: sha512-ep9rVd9B4kQsZ7ZnWCVxUE/xDLUUUsRzE0poAeNu+4CkFErLfuvPt/qtm2EpnSyfvsR0S6QzDFSrPCFBwf64fg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -12414,32 +12424,32 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))':
+  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(vite@5.4.17(@types/node@18.19.86)(terser@5.39.0))':
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
       msw: 2.7.3(@types/node@18.19.86)(typescript@5.8.3)
-      vite: 5.4.17(@types/node@22.14.0)(terser@5.39.0)
+      vite: 5.4.17(@types/node@18.19.86)(terser@5.39.0)
 
-  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))':
+  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(vite@5.4.17(@types/node@20.17.30)(terser@5.39.0))':
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
       msw: 2.7.3(@types/node@20.17.30)(typescript@5.6.2)
-      vite: 5.4.17(@types/node@22.14.0)(terser@5.39.0)
+      vite: 5.4.17(@types/node@20.17.30)(terser@5.39.0)
 
-  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))':
+  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(vite@5.4.17(@types/node@20.17.30)(terser@5.39.0))':
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
       msw: 2.7.3(@types/node@20.17.30)(typescript@5.8.3)
-      vite: 5.4.17(@types/node@22.14.0)(terser@5.39.0)
+      vite: 5.4.17(@types/node@20.17.30)(terser@5.39.0)
 
   '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))':
     dependencies:
@@ -19738,6 +19748,15 @@ snapshots:
       typescript: 5.8.3
       yaml: 2.7.1
 
+  typedoc@0.28.2(typescript@5.8.3):
+    dependencies:
+      '@gerrit0/mini-shiki': 3.2.2
+      lunr: 2.3.9
+      markdown-it: 14.1.0
+      minimatch: 9.0.5
+      typescript: 5.8.3
+      yaml: 2.7.1
+
   typescript-eslint@8.29.0(eslint@9.24.0)(typescript@5.8.3):
     dependencies:
       '@typescript-eslint/eslint-plugin': 8.29.0(@typescript-eslint/parser@8.29.0(eslint@9.24.0)(typescript@5.8.3))(eslint@9.24.0)(typescript@5.8.3)
@@ -19965,7 +19984,7 @@ snapshots:
   vitest@2.1.9(@types/node@18.19.86)(jsdom@18.1.1)(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(terser@5.39.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))
+      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(vite@5.4.17(@types/node@18.19.86)(terser@5.39.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
@@ -20001,7 +20020,7 @@ snapshots:
   vitest@2.1.9(@types/node@20.17.30)(jsdom@18.1.1)(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(terser@5.39.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))
+      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(vite@5.4.17(@types/node@20.17.30)(terser@5.39.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
@@ -20037,7 +20056,7 @@ snapshots:
   vitest@2.1.9(@types/node@20.17.30)(jsdom@18.1.1)(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(terser@5.39.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))
+      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(vite@5.4.17(@types/node@20.17.30)(terser@5.39.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
