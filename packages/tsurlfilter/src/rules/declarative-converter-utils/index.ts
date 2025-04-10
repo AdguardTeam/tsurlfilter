@@ -1,3 +1,6 @@
+/**
+ * @module es/declarative-converter-utils
+ */
 export {
     RULESET_FILE_EXT,
     getRuleSetId,
