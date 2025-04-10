@@ -61,7 +61,7 @@ export type ExecuteCombinedScriptParams = ExecuteTarget
     /**
      * Combined script text to be injected.
      */
-    scriptText?: string;
+    scriptText: string;
 };
 
 /**

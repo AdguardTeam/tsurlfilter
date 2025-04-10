@@ -1,5 +1,6 @@
 import { logger } from '../../common/utils/logger';
 
+import { appContext } from './app-context';
 import { type ExecuteCombinedScriptParams } from './scripting-api';
 
 /**
@@ -51,6 +52,11 @@ export class UserScriptsApi {
         tabId,
         frameId,
     }: ExecuteCombinedScriptParams): Promise<void> {
+        const code = UserScriptsApi.wrapScriptCode(
+            String(appContext.startTimeMs),
+            String(scriptText),
+        );
+
         try {
             await chrome.userScripts.execute({
                 target: {
@@ -58,11 +64,43 @@ export class UserScriptsApi {
                     tabId,
                 },
                 injectImmediately: true,
-                js: [{ code: scriptText }],
+                js: [{ code }],
                 world: 'MAIN',
             });
         } catch (e) {
             logger.error(`Failed to execute user script to tabId#frameId (${tabId}#${frameId}) :`, e);
         }
+    }
+
+    /**
+     * Wraps the script code with a try-catch block and a check to avoid
+     * multiple executions of it.
+     *
+     * @param injectedKey Unique key to identify that the script
+     * has been injected to this namespace.
+     * @param code Script code.
+     *
+     * @returns Wrapped script code.
+     */
+    private static wrapScriptCode(injectedKey: string, code: string): string {
+        return `
+            (function () {
+                try {
+                    const flag = 'done';
+                    if (Window.prototype.toString["${injectedKey}"] === flag) {
+                        return;
+                    }
+                    ${code}
+                    Object.defineProperty(Window.prototype.toString, "${injectedKey}", {
+                        value: flag,
+                        enumerable: false,
+                        writable: false,
+                        configurable: false
+                    });
+                } catch (error) {
+                    console.error('Error executing AG js rule with uniqueId "${injectedKey}" due to: ' + error);
+                }
+            })()
+        `;
     }
 }
