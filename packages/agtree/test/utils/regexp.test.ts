@@ -119,4 +119,66 @@ describe('RegExpUtils', () => {
             expect(RegExpUtils.patternToRegexp(actual)).toBe(expected);
         });
     });
+    describe('isNegatedRegexPattern', () => {
+        test.each([
+            {
+                pattern: '/^((?!a).)*$/',
+                expected: true,
+            },
+            {
+                pattern: '/^((?!\\/page).)*$/',
+                expected: true,
+            },
+            {
+                pattern: '/ex[[ampl[[e.com///.*/banner/',
+                expected: false,
+            },
+        ])('should return $expected for $pattern', ({ pattern, expected }) => {
+            expect(RegExpUtils.isNegatedRegexPattern(pattern)).toBe(expected);
+        });
+    });
+    describe('ensureSlashes', () => {
+        test.each([
+            {
+                pattern: 'abc',
+                expected: '/abc/',
+            },
+            {
+                pattern: '  abc  ',
+                expected: '/  abc  /',
+            },
+            {
+                pattern: '/abc/',
+                expected: '/abc/',
+            },
+            {
+                pattern: '/abc',
+                expected: '/abc/',
+            },
+            {
+                pattern: 'abc/',
+                expected: '/abc/',
+            },
+        ])('ensureSlashes should return "$expected" for pattern "$pattern"', ({ pattern, expected }) => {
+            expect(RegExpUtils.ensureSlashes(pattern)).toBe(expected);
+        });
+    });
+    describe('removeNegationFromRegexPattern', () => {
+        test.each([
+            {
+                pattern: '/^((?!a).)*$/',
+                expected: '/a/',
+            },
+            {
+                pattern: '/^((?!\\/page).)*$/',
+                expected: String.raw`/\/page/`,
+            },
+            {
+                pattern: '/example.com/',
+                expected: '/example.com/',
+            },
+        ])('should return "$expected" for domain pattern "$pattern"', ({ pattern, expected }) => {
+            expect(RegExpUtils.removeNegationFromRegexPattern(pattern)).toBe(expected);
+        });
+    });
 });

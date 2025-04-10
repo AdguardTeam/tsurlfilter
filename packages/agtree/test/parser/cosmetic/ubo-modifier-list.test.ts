@@ -147,4 +147,25 @@ describe('CosmeticRuleParser', () => {
             expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
         });
     });
+
+    describe('CosmeticRuleParser.generate - valid usage of AdGuard negation modifier list', () => {
+        test.each<{ actual: string; expected: string }>([
+            {
+                actual: 'example.com##:not(:matches-path(/a/)) .foo',
+                expected: 'example.com##:not(:matches-path(/a/)) .foo',
+            },
+            {
+                actual: 'example.com##:not(:matches-path(/\\/page/)) .foo',
+                expected: 'example.com##:not(:matches-path(/\\/page/)) .foo',
+            },
+        ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
+            const ruleNode = CosmeticRuleParser.parse(actual, { parseUboSpecificRules: true });
+
+            if (ruleNode === null) {
+                throw new Error(`Failed to parse '${actual}' as cosmetic rule`);
+            }
+
+            expect(CosmeticRuleGenerator.generate(ruleNode)).toBe(expected);
+        });
+    });
 });
