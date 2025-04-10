@@ -1,4 +1,6 @@
-/* eslint-disable prefer-regex-literals */
+/**
+ * @module es/simple-regex
+ */
 import {
     findNextUnescapedIndex,
     isAlphaNumeric,

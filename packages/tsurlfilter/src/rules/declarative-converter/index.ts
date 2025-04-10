@@ -1,3 +1,6 @@
+/**
+ * @module es/declarative-converter
+ */
 export * from './filter-converter';
 export * from './rule-set';
 export * from './filter';

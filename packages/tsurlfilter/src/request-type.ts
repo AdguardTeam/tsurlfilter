@@ -2,6 +2,8 @@
  * RequestType is the request types enumeration.
  * Important: the enumeration is marked as const to avoid side effects when
  * importing it into an extension.
+ *
+ * @module es/request-type
  */
 export const RequestType = {
     /**

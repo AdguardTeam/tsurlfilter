@@ -100,6 +100,7 @@
         "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript --bundleConfigAsCjs && pnpm postbuild",
         "postbuild": "tsx tasks/build-txt.ts",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
+        "build-typedoc": "tsx tasks/typedoc.ts",
         "docs": "typedoc src --out docs",
         "docs:mv3": "tsx tasks/generate-examples",
         "test": "vitest run",
@@ -177,7 +178,7 @@
         "tldts-core": "^6.1.13",
         "tslib": "^2.8.0",
         "tsx": "^4.19.2",
-        "typedoc": "0.23.10",
+        "typedoc": "^0.28.2",
         "typescript": "^5.6.3",
         "vitest": "^2.1.6"
     }

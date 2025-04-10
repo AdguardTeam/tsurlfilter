@@ -1,3 +1,6 @@
+/**
+ * @module es/network-rule-options
+ */
 export const NETWORK_RULE_OPTIONS = {
     THIRD_PARTY: 'third-party',
     FIRST_PARTY: 'first-party',

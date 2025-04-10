@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+/**
+ * @module cli
+ */
 import { program } from 'commander';
 import { fileURLToPath } from 'url';
 import path from 'path';

@@ -1,3 +1,7 @@
+/**
+ * FIXME
+ * @module .
+ */
 export * from './configuration';
 export * from './engine/cosmetic-engine/cosmetic-engine';
 export * from './engine/cosmetic-engine/cosmetic-result';
