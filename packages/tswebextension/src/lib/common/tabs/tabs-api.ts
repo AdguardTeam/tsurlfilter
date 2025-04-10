@@ -135,6 +135,47 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     protected abstract handleTabCreate(tab: Tabs.Tab): T | null;
 
     /**
+     * Creates a new tab if it does not exist in the context,
+     * in case if tabs API does not fire corresponding events.
+     *
+     * This is needed for cases like right side of split screen in Edge:
+     * https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296.
+     *
+     * @param tabId Tab ID.
+     * @param url Tab URL.
+     */
+    public createTabIfNotExists(tabId: number, url: string): void {
+        if (this.context.has(tabId)) {
+            return;
+        }
+
+        // FIXME: Probably we need to remove logging
+        logger.debug(`Creating tab context for tabId: ${tabId}, url: ${url}`);
+
+        /**
+         * This method doesn't uses `tabs.get(tabId)` to retrieve full tab info,
+         * because it requires method to be async, and it is used in webRequest.onBeforeRequest
+         * and webNavigation.onBeforeNavigate events which needs to be sync and requires faster handling.
+         *
+         * FIXME: status and discarded are used in browser-extension.
+         */
+        const syntheticTab: Tabs.Tab = {
+            id: tabId,
+            url,
+            // FIXME: Add comment why it -1
+            index: -1,
+            highlighted: false,
+            active: false,
+            pinned: false,
+            // FIXME: Shouldn't be hardcoded - try alternatives
+            // There can be problems with blocking pages in incognito mode
+            incognito: false,
+        };
+
+        this.handleTabCreate(syntheticTab);
+    }
+
+    /**
      * Updates tab context data on tab update.
      *
      * If the tab context is not found, creates a new tab context.

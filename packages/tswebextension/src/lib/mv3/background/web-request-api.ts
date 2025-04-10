@@ -142,7 +142,7 @@ import { RequestType } from '@adguard/tsurlfilter';
 
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { companiesDbService } from '../../common/companies-db-service';
-import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
+import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS, NO_PARENT_FRAME_ID } from '../../common/constants';
 import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
@@ -255,6 +255,15 @@ export class WebRequestApi {
             thirdParty,
         } = context;
 
+        const isDocumentRequest = requestType === RequestType.Document;
+
+        /**
+         * FIXME: Add comment.
+         */
+        if (isDocumentRequest) {
+            tabsApi.createTabIfNotExists(tabId, requestUrl);
+        }
+
         if (!isHttpOrWsRequest(requestUrl)) {
             return;
         }
@@ -290,7 +299,7 @@ export class WebRequestApi {
          * we get the frame rule from tabsApi, assuming the frame rule is
          * already in the tab context.
          */
-        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+        if (isDocumentRequest || requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(frameUrl);
         } else {
             frameRule = tabsApi.getTabFrameRule(tabId);
@@ -311,7 +320,7 @@ export class WebRequestApi {
         // Save matching result to the request context.
         requestContextStorage.update(requestId, { matchingResult });
 
-        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+        if (isDocumentRequest || requestType === RequestType.SubDocument) {
             const { parentFrameId } = details;
 
             CosmeticFrameProcessor.precalculateCosmetics({
@@ -464,6 +473,13 @@ export class WebRequestApi {
             parentDocumentId,
             timeStamp,
         } = details;
+
+        /**
+         * FIXME: Add comment.
+         */
+        if (parentFrameId === NO_PARENT_FRAME_ID) {
+            tabsApi.createTabIfNotExists(tabId, url);
+        }
 
         CosmeticFrameProcessor.precalculateCosmetics({
             tabId,
