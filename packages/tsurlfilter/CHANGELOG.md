@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Fixed
+- Scriptlet rules are not displayed in the filtering log [AdguardBrowserExtension#3164].
+
 ### Added
 
 - Compatibility of `$header` modifier with `$match-case`
@@ -17,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `getText` and `getUsedOptionNames` methods from `NetworkRule` class.
 
 [AdguardBrowserExtension#2942]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2942
+[AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
 
 ## [3.2.1] - 2025-03-06
 

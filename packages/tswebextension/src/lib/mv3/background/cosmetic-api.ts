@@ -6,6 +6,7 @@ import { createFrameMatchQuery } from '../../common/utils/create-frame-match-que
 import { logger } from '../../common/utils/logger';
 import { getDomain } from '../../common/utils/url';
 import { tabsApi } from '../tabs/tabs-api';
+import { USER_FILTER_ID } from '../../common/constants';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
@@ -334,8 +335,21 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns True if the rule is a local script rule, otherwise false.
      */
     private static shouldSanitizeScriptRule(rule: CosmeticRule): boolean {
-        const ruleText = rule.getContent();
-        return localScriptRulesService.isLocalScript(ruleText);
+        // Scriptlets should not be excluded for remote filters
+        if (rule.isScriptlet) {
+            return true;
+        }
+
+        // User rules should not be excluded
+        const filterId = rule.getFilterListId();
+        if (filterId === USER_FILTER_ID) {
+            return true;
+        }
+
+        /**
+         * @see {@link LocalScriptRulesService} for details about script source
+         */
+        return localScriptRulesService.isLocalScript(rule.getContent());
     }
 
     /**
