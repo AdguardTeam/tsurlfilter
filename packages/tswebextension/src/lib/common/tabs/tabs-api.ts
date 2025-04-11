@@ -57,6 +57,27 @@ export type TabFrameRequestContextCommon = {
  * Tabs API common class.
  */
 export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextCommon<F>> {
+    /**
+     * Keys of the tab changed info.
+     *
+     * See {@link Tabs.OnUpdatedChangeInfoType}.
+     */
+    protected static readonly TAB_CHANGED_INFO_KEYS = [
+        'attention',
+        'audible',
+        'autoDiscardable',
+        'discarded',
+        'favIconUrl',
+        'hidden',
+        'isArticle',
+        'mutedInfo',
+        'pinned',
+        'sharingState',
+        'status',
+        'title',
+        'url',
+    ] as const;
+
     public context = new Map<number, T>();
 
     public onCreate = new EventChannel<T>();
@@ -128,51 +149,112 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * Creates a new tab context.
      *
      * @param tab Tab info.
+     *
+     * @returns Created tab context.
+     */
+    protected abstract createTabContext(tab: TabInfo): T;
+
+    /**
+     * Creates a new tab context on tab creation.
+     *
+     * @param tab Tab info.
      * @param tab.id Tab id.
      *
      * @returns Created tab context, or null if tab is not browser tab.
      */
-    protected abstract handleTabCreate(tab: Tabs.Tab): T | null;
+    protected handleTabCreate(tab: Tabs.Tab): T | null {
+        if (!TabContextCommon.isBrowserTab(tab)) {
+            return null;
+        }
+
+        /**
+         * If tab context already created at this point, it means that
+         * context has been created by `createTabContextIfNotExists` method.
+         * Instead of re-creating the context and firing `onCreate` event,
+         * we just update the existing tab info and fire `onUpdate` event.
+         */
+        let tabContext = this.context.get(tab.id);
+        if (tabContext) {
+            const changedInfo = this.getTabChangedInfo(tabContext, tab);
+            this.handleTabUpdate(tab.id, changedInfo, tab);
+            return tabContext;
+        }
+
+        tabContext = this.createTabContext(tab);
+        this.context.set(tab.id, tabContext);
+        this.onCreate.dispatch(tabContext);
+        return tabContext;
+    }
 
     /**
-     * Creates a new tab if it does not exist in the context,
-     * in case if tabs API does not fire corresponding events.
+     * Creates and adds a new tab context if it does not exist into the context map,
+     * in case if Tabs API does not fired `onCreated` event before point of call.
      *
-     * This is needed for cases like right side of split screen in Edge:
-     * https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296.
+     * This is needed for cases like:
+     * - Right-side of split screen in Edge does not fires any Tabs API events.
+     *   {@link https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296 | Edge Split Screen Issue}
+     * - When tab is duplicated `onCreated` event might be fired too late.
      *
      * @param tabId Tab ID.
      * @param url Tab URL.
+     *
+     * @todo Add removal logic for stale tab contexts, it potentially bloats memory
+     *       in case if Tabs API does not fires `onRemoved` event.
+     * @todo Currently Edge does not fires `onUpdated` and `onActivated` events
+     *       for right-side of split screen, when issue will be fixed we need to make
+     *       sure that tab context is updated and activate tabs switches correctly.
      */
-    public createTabIfNotExists(tabId: number, url: string): void {
+    public createTabContextIfNotExists(tabId: number, url: string): void {
+        // Do nothing if the tab context already exists.
         if (this.context.has(tabId)) {
             return;
         }
 
-        // FIXME: Probably we need to remove logging
-        logger.debug(`Creating tab context for tabId: ${tabId}, url: ${url}`);
-
         /**
          * This method doesn't uses `tabs.get(tabId)` to retrieve full tab info,
-         * because it requires method to be async, and it is used in webRequest.onBeforeRequest
-         * and webNavigation.onBeforeNavigate events which needs to be sync and requires faster handling.
-         *
-         * FIXME: status and discarded are used in browser-extension.
+         * because it requires method to be async, and it is used inside
+         * of `webRequest.onBeforeRequest` and `webNavigation.onBeforeNavigate` events
+         * which needs to be sync and requires immediate handling.
          */
         const syntheticTab: Tabs.Tab = {
             id: tabId,
             url,
-            // FIXME: Add comment why it -1
+            // If we are creating tab manually it means that `onCreated` event
+            // was not fired, so it's we don't know the tab index yet.
             index: -1,
+
+            // This properties required, so we default all of them to `false`.
             highlighted: false,
             active: false,
             pinned: false,
-            // FIXME: Shouldn't be hardcoded - try alternatives
-            // There can be problems with blocking pages in incognito mode
+            // FIXME: Shouldn't be hardcoded - there can be problems with blocking pages in incognito mode.
             incognito: false,
         };
 
         this.handleTabCreate(syntheticTab);
+    }
+
+    /**
+     * Returns tab changed info.
+     *
+     * @param tabContext Existing tab context.
+     * @param newTabInfo Tab info to be updated.
+     *
+     * @returns Tab changed info.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    protected getTabChangedInfo(tabContext: T, newTabInfo: Tabs.Tab): Tabs.OnUpdatedChangeInfoType {
+        const oldTabInfo = tabContext.info;
+        const changedInfo: Tabs.OnUpdatedChangeInfoType = {};
+
+        for (const key of TabsApiCommon.TAB_CHANGED_INFO_KEYS) {
+            if (oldTabInfo[key] !== newTabInfo[key]) {
+                // @ts-expect-error - Tab info keys always matches with changed info keys
+                changedInfo[key] = newTabInfo[key];
+            }
+        }
+
+        return changedInfo;
     }
 
     /**

@@ -258,10 +258,17 @@ export class WebRequestApi {
         const isDocumentRequest = requestType === RequestType.Document;
 
         /**
-         * FIXME: Add comment.
+         * In some cases `onBeforeRequest` might happen before Tabs API `onCreated`
+         * event is fired or even not fired at all
+         * (e.g. {@link https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296 | Edge Split Screen Issue}),
+         * in this cases we need to create tab context manually. This is needed
+         * to ensure that we have tab context to be able to inject cosmetics and scripts.
+         *
+         * We create tab context only for document requests,
+         * because other types of requests can't have tab context.
          */
         if (isDocumentRequest) {
-            tabsApi.createTabIfNotExists(tabId, requestUrl);
+            tabsApi.createTabContextIfNotExists(tabId, requestUrl);
         }
 
         if (!isHttpOrWsRequest(requestUrl)) {
@@ -475,10 +482,17 @@ export class WebRequestApi {
         } = details;
 
         /**
-         * FIXME: Add comment.
+         * In some cases `onBeforeNavigate` might happen before Tabs API `onCreated`
+         * event is fired or even not fired at all
+         * (e.g. {@link https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296 | Edge Split Screen Issue}),
+         * in this cases we need to create tab context manually. This is needed
+         * to ensure that we have tab context to be able to inject cosmetics and scripts.
+         *
+         * We create tab context only for document requests,
+         * because other types of requests can't have tab context.
          */
         if (parentFrameId === NO_PARENT_FRAME_ID) {
-            tabsApi.createTabIfNotExists(tabId, url);
+            tabsApi.createTabContextIfNotExists(tabId, url);
         }
 
         CosmeticFrameProcessor.precalculateCosmetics({
