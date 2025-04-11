@@ -188,21 +188,21 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
 
     /**
      * Creates and adds a new tab context if it does not exist into the context map,
-     * in case if Tabs API does not fired `onCreated` event before point of call.
+     * in case if Tabs API does not fire `onCreated` event before point of call.
      *
      * This is needed for cases like:
-     * - Right-side of split screen in Edge does not fires any Tabs API events.
+     * - The right side of split screen in Edge does not fire any Tabs API events.
      *   {@link https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296 | Edge Split Screen Issue}
-     * - When tab is duplicated `onCreated` event might be fired too late.
+     * - When a tab is duplicated, the `onCreated` event might be fired too late.
      *
      * @param tabId Tab ID.
      * @param url Tab URL.
      *
-     * @todo Add removal logic for stale tab contexts, it potentially bloats memory
-     *       in case if Tabs API does not fires `onRemoved` event.
-     * @todo Currently Edge does not fires `onUpdated` and `onActivated` events
-     *       for right-side of split screen, when issue will be fixed we need to make
-     *       sure that tab context is updated and activate tabs switches correctly.
+     * @todo Add removal logic for stale tab contexts. It potentially bloats memory
+     *       in case if Tabs API does not fire the `onRemoved` event.
+     * @todo Currently, Edge does not fire `onUpdated` and `onActivated` events
+     *       for the right side of split screen. When this issue is fixed, we need to make
+     *       sure that the tab context is updated and tabs are activated correctly.
      */
     public createTabContextIfNotExists(tabId: number, url: string): void {
         // Do nothing if the tab context already exists.
