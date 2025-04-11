@@ -15,9 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Invalid HTML rule selectors are breaking site loading [AdguardBrowserExtension#2646].
 - ya.ru - `Hide Referrer from third parties` breaks the site [AdguardBrowserExtension#2839].
+- The filtering in Edge's split screen doesn't work [AdguardBrowserExtension#2832].
 
 [AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
 [AdguardBrowserExtension#2839]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2839
+[AdguardBrowserExtension#2832]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2832
 
 ## [3.0.1] - 2025-03-06
 
