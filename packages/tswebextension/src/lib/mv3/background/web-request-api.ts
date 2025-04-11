@@ -149,6 +149,7 @@ import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import { TabsApiCommon } from '../../common/tabs/tabs-api';
 import { tabsApi } from '../tabs/tabs-api';
+import { FrameMV3 } from '../tabs/frame';
 
 import { CosmeticApi } from './cosmetic-api';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
@@ -239,8 +240,6 @@ export class WebRequestApi {
             return;
         }
 
-        // TODO: In getBlockingResponse we need extract requestType from context
-        // to save it for filtering log. Check, if we really need this in MV3.
         const {
             requestType,
             requestUrl,
@@ -269,6 +268,31 @@ export class WebRequestApi {
          */
         if (isDocumentRequest) {
             tabsApi.createTabContextIfNotExists(tabId, requestUrl);
+        }
+
+        const { parentFrameId } = details;
+
+        const skipPrecalculation = CosmeticFrameProcessor.shouldSkipRecalculation(
+            tabId,
+            frameId,
+            requestUrl,
+            timestamp,
+        );
+
+        if (!skipPrecalculation) {
+            /**
+             * Set in the beginning to let other events know that cosmetic result
+             * will be calculated in this event to avoid double calculation.
+             */
+            tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+                tabId,
+                frameId,
+                parentFrameId,
+                url: requestUrl,
+                timeStamp: timestamp,
+                documentId: details.documentId,
+                parentDocumentId: details.parentDocumentId,
+            }));
         }
 
         if (!isHttpOrWsRequest(requestUrl)) {
@@ -301,10 +325,11 @@ export class WebRequestApi {
         let frameRule;
 
         /**
-         * For Document and Subdocument requests, we match frame, because
-         * these requests are first (in page lifecycle), but for other requests
-         * we get the frame rule from tabsApi, assuming the frame rule is
-         * already in the tab context.
+         * For Document and SubDocument requests, we match frame, because
+         * these requests are happening first in page's lifecycle (before other).
+         *
+         * For other requests we get the frame rule from tabsApi, assuming
+         * the frame rule is already in the tab context.
          */
         if (isDocumentRequest || requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(frameUrl);
@@ -327,9 +352,9 @@ export class WebRequestApi {
         // Save matching result to the request context.
         requestContextStorage.update(requestId, { matchingResult });
 
-        if (isDocumentRequest || requestType === RequestType.SubDocument) {
-            const { parentFrameId } = details;
-
+        const isDocumentOrSubdocument = isDocumentRequest || requestType === RequestType.SubDocument;
+        if (isDocumentOrSubdocument && !skipPrecalculation) {
+            // Matching request
             CosmeticFrameProcessor.precalculateCosmetics({
                 tabId,
                 frameId,
@@ -495,6 +520,25 @@ export class WebRequestApi {
             tabsApi.createTabContextIfNotExists(tabId, url);
         }
 
+        if (CosmeticFrameProcessor.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {
+            return;
+        }
+
+        /**
+         * Set in the beginning to let other events know that cosmetic result
+         * will be calculated in this event to avoid double calculation.
+         */
+        tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+            tabId,
+            frameId,
+            parentFrameId,
+            url,
+            timeStamp,
+            documentId: details.documentId,
+            parentDocumentId: details.parentDocumentId,
+        }));
+
+        // Matching request
         CosmeticFrameProcessor.precalculateCosmetics({
             tabId,
             frameId,
