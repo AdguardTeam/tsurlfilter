@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix `fetchExtensionResourceText` util — enforce min byte range length when fetching resources
+- `fetchExtensionResourceText` util — enforce min byte range length when fetching resources
   [AdguardBrowserExtension#3128].
 
 [3.2.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.2.3
