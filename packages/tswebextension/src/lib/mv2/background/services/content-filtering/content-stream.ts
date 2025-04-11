@@ -5,6 +5,7 @@ import { RequestType } from '@adguard/tsurlfilter';
 import { type RequestContext } from '../../request';
 import { FilteringEventType, type FilteringLogInterface } from '../../../../common/filtering-log';
 import { logger } from '../../../../common/utils/logger';
+import { getErrorMessage } from '../../../../common/error';
 
 import { type ContentStringFilterInterface } from './content-string-filter';
 import {
@@ -71,6 +72,11 @@ export class ContentStream {
      * Filtering log.
      */
     private readonly filteringLog: FilteringLogInterface;
+
+    /**
+     * Buffer for raw response data chunks.
+     */
+    private rawChunks: ArrayBuffer[] = [];
 
     /**
      * Contains collection of accepted content types for stream filtering.
@@ -148,6 +154,10 @@ export class ContentStream {
     public disconnect(data: BufferSource): void {
         this.filter.write(data as ArrayBuffer);
         this.filter.disconnect();
+
+        // Clear buffers when explicitly disconnecting
+        this.rawChunks = [];
+        this.content = '';
     }
 
     /**
@@ -200,6 +210,9 @@ export class ContentStream {
      * @param event Stream filter event.
      */
     private onResponseData(event: WebRequest.StreamFilterEventData): void {
+        // Store raw data regardless of decoding outcome for potential fallback
+        this.rawChunks.push(event.data);
+
         if (!this.shouldProcessFiltering()) {
             this.disconnect(event.data);
             return;
@@ -238,12 +251,23 @@ export class ContentStream {
                     this.disconnect(event.data);
                 }
             } catch (e) {
-                logger.warn((e as Error).message);
-                // on error we disconnect the filter from the request
+                logger.debug(
+                    '[ContentStream] Error during charset detection/initial decode. Disconnecting.',
+                    getErrorMessage(e),
+                );
                 this.disconnect(event.data);
             }
         } else {
-            this.content += this.decoder!.decode(event.data, { stream: true });
+            try {
+                const decodedChunk = this.decoder!.decode(event.data, { stream: true });
+                this.content += decodedChunk;
+            } catch (decodingError) {
+                logger.debug(
+                    '[ContentStream] Error decoding subsequent chunk with charset. Disconnecting.',
+                    getErrorMessage(decodingError),
+                );
+                this.disconnect(event.data);
+            }
         }
     }
 
@@ -282,12 +306,39 @@ export class ContentStream {
             if (SUPPORTED_CHARSETS.indexOf(charset) < 0) {
                 // Charset is detected and it is not supported
                 // eslint-disable-next-line max-len
-                logger.warn(`Skipping request ${this.context.requestId} with Content-Type ${this.context.contentTypeHeader}`);
+                logger.debug(`Skipping request ${this.context.requestId} with Content-Type ${this.context.contentTypeHeader}`);
                 this.write(this.content);
                 return;
             }
             this.setCharset(charset);
         }
+
+        // Unicode replacement character (U+FFFD) that appears when the decoder encounters
+        // bytes that cannot be decoded using the current charset. Its presence indicates
+        // that either the charset was incorrectly determined or the original content
+        // contains invalid byte sequences for the specified encoding.
+        const REPLACEMENT_CHAR = '\uFFFD';
+
+        // This indicates the original byte stream was likely invalid for the determined charset.
+        // In this case, we write the raw chunks directly to the filter.
+        if (this.content.includes(REPLACEMENT_CHAR)) {
+            logger.debug(`[ContentStream] Writing raw chunks for request ${this.context.requestId}`);
+            // Write all buffered raw chunks directly
+            for (const chunk of this.rawChunks) {
+                this.filter.write(chunk);
+            }
+            this.filter.close();
+
+            // Clear buffers regardless of fallback success/failure before returning
+            this.rawChunks = [];
+            this.content = '';
+            return;
+        }
+
+        // --- If we reach here, decoding succeeded without replacement characters ---
+
+        // Clear raw chunks as they are no longer needed
+        this.rawChunks = [];
 
         this.content = this.contentStringFilter.applyRules(this.content);
 
