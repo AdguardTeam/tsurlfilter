@@ -6,7 +6,6 @@ import {
     afterEach,
     it,
     vi,
-    afterAll,
 } from 'vitest';
 import chrome from 'sinon-chrome';
 import { CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
@@ -23,67 +22,30 @@ import { extSessionStorage } from '../../../../src/lib/mv3/background/ext-sessio
 vi.mock('../../../../src/lib/mv3/background/engine-api');
 vi.mock('../../../../src/lib/mv3/background/app-context');
 
-const setupMocks = (userScriptsAvailable: boolean): void => {
-    // Mock to pass the check in the code that chrome.userScripts is available.
-    if (userScriptsAvailable) {
-        global.chrome = {
-            ...global.chrome,
-            userScripts: {
-                register: vi.fn(),
-                execute: vi.fn(),
-                update: vi.fn(),
-                configureWorld: vi.fn(),
-                getScripts: vi.fn(),
-                getWorldConfigurations: vi.fn(),
-                resetWorldConfiguration: vi.fn(),
-                unregister: vi.fn(),
-            },
-        };
-    }
-
-    vi.spyOn(CosmeticApi, 'applyCssByTabAndFrame');
-    vi.spyOn(CosmeticApi, 'logScriptRules');
-    vi.spyOn(ScriptingApi, 'insertCSS');
-    // TODO (Slava): add tests for executeScriptText. AG-39122
-
-    // These methods will be used if userScripts available.
-    vi.spyOn(CosmeticApi, 'applyJsFuncsAndScriptletsByTabAndFrame');
-    vi.spyOn(ScriptingApi, 'executeScriptsViaUserScripts');
-
-    // These methods will be used if userScripts are not available.
-    vi.spyOn(CosmeticApi, 'applyJsFuncsByTabAndFrame');
-    vi.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
-    vi.spyOn(ScriptingApi, 'executeScriptFunc');
-    vi.spyOn(ScriptingApi, 'executeScriptlet');
-};
-
 describe('TabsCosmeticInjector', () => {
     beforeAll(async () => {
         await extSessionStorage.init();
         appContext.startTimeMs = Date.now();
     });
 
-    afterAll(() => {
-        vi.restoreAllMocks();
+    beforeEach(() => {
+        vi.spyOn(CosmeticApi, 'applyCssByTabAndFrame');
+        vi.spyOn(CosmeticApi, 'applyJsFuncsByTabAndFrame');
+        vi.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
+        vi.spyOn(CosmeticApi, 'logScriptRules');
+        vi.spyOn(ScriptingApi, 'insertCSS');
+        // TODO (Slava): add tests for executeScriptText. AG-39122
+        vi.spyOn(ScriptingApi, 'executeScriptFunc');
+        vi.spyOn(ScriptingApi, 'executeScriptlet');
     });
 
-    describe.each([
-        ['without mocked userScripts', false],
-        ['with mocked userScripts', true],
-    ])('processOpenTabs method %s', (description, userScriptsAvailable) => {
-        beforeEach(() => {
-            setupMocks(userScriptsAvailable);
+    afterEach(() => {
+        vi.resetAllMocks();
+        vi.resetModules();
+    });
 
-            // To simulate clean run
-            appContext.cosmeticsInjectedOnStartup = false;
-        });
-
-        afterEach(() => {
-            vi.resetAllMocks();
-            vi.resetModules();
-        });
-
-        it(`should apply cosmetic rules for each tab ${description}`, async () => {
+    describe('processOpenTabs method', () => {
+        it('should apply cosmetic rules for each tab', async () => {
             const tabId = 1;
             const frameId = 0;
             const url = 'https://example.com';
@@ -115,15 +77,9 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
 
-            if (userScriptsAvailable) {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-                expect(CosmeticApi.applyJsFuncsByTabAndFrame).not.toBeCalled();
-                expect(CosmeticApi.applyScriptletsByTabAndFrame).not.toBeCalled();
-            } else {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame).not.toBeCalled();
-                expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-                expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-            }
+            expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+
+            expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
 
             const expectedLogParams = {
                 url,
@@ -135,7 +91,7 @@ describe('TabsCosmeticInjector', () => {
             expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 
-        it(`should not apply cosmetic rules for non-browser tabs ${description}`, async () => {
+        it('should not apply cosmetic rules for non-browser tabs', async () => {
             const tabId = -1;
 
             chrome.tabs.query.resolves([{ id: tabId }]);
@@ -145,12 +101,11 @@ describe('TabsCosmeticInjector', () => {
             expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
             expect(CosmeticApi.applyJsFuncsByTabAndFrame).not.toBeCalled();
             expect(CosmeticApi.applyScriptletsByTabAndFrame).not.toBeCalled();
-            expect(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame).not.toBeCalled();
 
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
 
-        it(`should not apply cosmetic rules for main frames with blank urls ${description}`, async () => {
+        it('should not apply cosmetic rules for main frames with blank urls', async () => {
             // setting manually since resetAllMocks does not work
             appContext.cosmeticsInjectedOnStartup = false;
             const tabId = 1;
@@ -163,17 +118,8 @@ describe('TabsCosmeticInjector', () => {
             await TabsCosmeticInjector.processOpenTabs();
 
             expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-
-            if (userScriptsAvailable) {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-                expect(CosmeticApi.applyJsFuncsByTabAndFrame).not.toBeCalled();
-                expect(CosmeticApi.applyScriptletsByTabAndFrame).not.toBeCalled();
-            } else {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame).not.toBeCalled();
-                expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-                expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-            }
-
+            expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
             expect(ScriptingApi.insertCSS).not.toBeCalled();
             expect(ScriptingApi.executeScriptFunc).not.toBeCalled();
             expect(ScriptingApi.executeScriptlet).not.toBeCalled();
