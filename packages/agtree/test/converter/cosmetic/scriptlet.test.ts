@@ -302,14 +302,12 @@ describe('Scriptlet conversion', () => {
                 ],
                 shouldConvert: false,
             },
-
-            // Scriptlet "log" is not supported in uBlock Origin.
-            // {
-            //     actual: String.raw`example.net,example.com#$#log Hello\ no\ quotes`,
-            //     expected: [
-            //         String.raw`example.net,example.com##+js(log, Hello no quotes)`,
-            //     ],
-            // },
+            {
+                actual: String.raw`example.net,example.com#$#set-cookie-reload Hello\ no\ quotes true`,
+                expected: [
+                    String.raw`example.net,example.com##+js(set-cookie-reload, Hello no quotes, true)`,
+                ],
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToUbo');
         });
