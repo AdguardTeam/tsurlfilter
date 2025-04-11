@@ -56,8 +56,7 @@ export type ExecuteScriptletParams = ExecuteTarget & {
 /**
  * Parameters for executing script function or scriptlet.
  */
-export type ExecuteCombinedScriptParams = ExecuteTarget
-& {
+export type ExecuteCombinedScriptParams = ExecuteTarget & {
     /**
      * Combined script text to be injected.
      */
