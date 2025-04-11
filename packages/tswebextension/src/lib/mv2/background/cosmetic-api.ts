@@ -94,6 +94,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameUrl Frame url.
      *
      * @returns Script text or empty string if no script rules are passed.
+     *
+     * @todo Move to common class when a way to use appContext in common
+     * class will be found.
      */
     public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string {
         const permittedRules = CosmeticApi.sanitizeScriptRules(rules);
@@ -104,17 +107,10 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const uniqueScriptStrings = new Set<string>();
 
-        let debug = false;
-        const { configuration } = appContext;
-        if (configuration) {
-            const { settings } = configuration;
-            if (settings) {
-                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
-                debug = settings.debugScriptlets;
-            }
-        }
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
+        const debug = appContext?.configuration?.settings?.debugScriptlets;
 
-        // FIXME (Slava, in another pr): check scriptlets logging in mv3;
+        // FIXME (AG-40747, Slava): check scriptlets logging in mv3;
         // few conditions should be followed:
         // 1) scriptlet rules should be logged when filtering log is opened
         // 2) only one domain should be logged for scriptlet rules with multiple domains,

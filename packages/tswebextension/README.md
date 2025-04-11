@@ -97,6 +97,7 @@ Table of content:
                 - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
                 - [getRawFilterList() (MV3 only)](#getrawfilterlist-mv3-only)
                 - [getPreprocessedFilterList() (MV3 only)](#getpreprocessedfilterlist-mv3-only)
+                - [isUserScriptsApiSupported](#isuserscriptsapisupported)
     - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
         - [events](#events)
             - [sendRequest](#sendrequest)
@@ -764,6 +765,13 @@ Throws error if rule sets path is not set.
 > [tsurlfilter documentation][tsurlfilter-preprocessed-filter-list].
 
 [tsurlfilter-preprocessed-filter-list]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#preprocessedfilterlist-interface
+
+##### isUserScriptsApiSupported
+
+type: `static get property`
+return type: `boolean`
+
+Indicates whether user scripts API is supported in the current browser. Returns `true` if the user scripts API is supported, `false` otherwise.
 
 ## Filtering Log API (MV2 only)
 
