@@ -15,7 +15,6 @@ import { appContext } from './app-context';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
 import { CosmeticApi } from './cosmetic-api';
-import { UserScriptsApi } from './user-scripts-api';
 
 /**
  * Cosmetic frame processor.
@@ -165,56 +164,38 @@ export class CosmeticFrameProcessor {
 
         tabsApi.setMainFrameRule(tabId, frameId, mainFrameRule);
 
-        const matchingResult = engineApi.matchRequest({
+        const result = engineApi.matchRequest({
             requestUrl: url,
             frameUrl: url,
             requestType: RequestType.Document,
             frameRule: mainFrameRule,
         });
 
-        if (!matchingResult) {
+        if (!result) {
             return;
         }
 
-        const cosmeticResult = engineApi.getCosmeticResult(url, matchingResult.getCosmeticOption());
+        const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
+
+        const {
+            scriptTexts,
+            scriptletDataList,
+        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
 
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
 
         const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
-        const partialFrameContext: Partial<FrameMV3> = { matchingResult, cosmeticResult };
-
-        /**
-         * If user scripts API is supported, we should store one combined script
-         * text, because it will be injected once and it is more efficient.
-         */
-        if (UserScriptsApi.isSupported) {
-            const scriptText = CosmeticApi.getScriptText(cosmeticResult.getScriptRules());
-
-            partialFrameContext.preparedCosmeticResult = {
-                cssText,
-                scriptText,
-            };
-        } else {
-            /**
-             * Otherwise, we should store separate script texts and scriptlet
-             * data, because they will be injected separately with different
-             * params.
-             */
-            const {
+        tabsApi.updateFrameContext(tabId, frameId, {
+            matchingResult: result,
+            cosmeticResult,
+            preparedCosmeticResult: {
                 scriptTexts,
                 scriptletDataList,
-            } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
-
-            partialFrameContext.preparedCosmeticResult = {
                 cssText,
-                scriptTexts,
-                scriptletDataList,
-            };
-        }
-
-        tabsApi.updateFrameContext(tabId, frameId, partialFrameContext);
+            },
+        });
     }
 
     /**

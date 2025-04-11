@@ -41,7 +41,6 @@ import { type LocalScriptFunctionData, localScriptRulesService } from './service
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
-import { UserScriptsApi } from './user-scripts-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
@@ -426,8 +425,6 @@ export class TsWebExtension implements AppInterface<
     /**
      * Sets prebuild local **script** rules.
      *
-     * Should not be used if userScripts API is available.
-     *
      * @param localScriptRules Object with pre-build JS rules. @see {@link LocalScriptRulesService}.
      */
     public static setLocalScriptRules(localScriptRules: LocalScriptFunctionData): void {
@@ -786,14 +783,5 @@ export class TsWebExtension implements AppInterface<
     // eslint-disable-next-line class-methods-use-this
     public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
         return engineApi.retrieveRuleNode(filterId, ruleIndex);
-    }
-
-    /**
-     * Indicates whether user scripts API is supported in the current browser.
-     *
-     * @returns `true` if user scripts API is supported, `false` otherwise.
-     */
-    public static get isUserScriptsApiSupported(): boolean {
-        return UserScriptsApi.isSupported;
     }
 }

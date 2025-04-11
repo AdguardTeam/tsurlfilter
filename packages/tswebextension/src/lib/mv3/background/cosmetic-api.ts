@@ -6,13 +6,11 @@ import { createFrameMatchQuery } from '../../common/utils/create-frame-match-que
 import { logger } from '../../common/utils/logger';
 import { getDomain } from '../../common/utils/url';
 import { tabsApi } from '../tabs/tabs-api';
-import { USER_FILTER_ID } from '../../common/constants';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { ScriptingApi } from './scripting-api';
 import { localScriptRulesService } from './services/local-script-rules-service';
-import { UserScriptsApi } from './user-scripts-api';
 
 /**
  * Data for JS and scriptlets rules for MV3.
@@ -69,7 +67,9 @@ export class CosmeticApi extends CosmeticApiCommon {
                 const scriptletData = rule.getScriptletData();
 
                 if (scriptletData) {
-                    scriptletDataList.push(scriptletData);
+                    scriptletDataList.push(
+                        scriptletData,
+                    );
                 }
             } else {
                 // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
@@ -86,45 +86,6 @@ export class CosmeticApi extends CosmeticApiCommon {
             scriptTexts: [...uniqueScriptTexts],
             scriptletDataList,
         };
-    }
-
-    /**
-     * Builds scripts from cosmetic rules.
-     *
-     * @param rules Cosmetic rules.
-     * @param frameUrl Frame url.
-     *
-     * @returns Script text or empty string if no script rules are passed.
-     *
-     * @todo Move to common class when a way to use appContext in common
-     * class will be found.
-     */
-    public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string {
-        const uniqueScriptStrings = new Set<string>();
-
-        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
-        const debug = appContext?.configuration?.settings?.debugScriptlets;
-
-        // FIXME (AG-40747, Slava): check scriptlets logging in mv3;
-        // few conditions should be followed:
-        // 1) scriptlet rules should be logged when filtering log is opened
-        // 2) only one domain should be logged for scriptlet rules with multiple domains,
-        //    e.g. `example1.com,example2.com,example3.com#%#//scriptlet('foo')` -> `example.com1#%#//scriptlet('foo')`
-        const scriptParams = {
-            debug,
-            frameUrl,
-        };
-
-        rules.forEach((rule) => {
-            const scriptStr = rule.getScript(scriptParams);
-            if (scriptStr) {
-                uniqueScriptStrings.add(scriptStr);
-            }
-        });
-
-        const scriptText = CosmeticApi.combineScripts(uniqueScriptStrings);
-
-        return CosmeticApi.wrapScriptText(scriptText);
     }
 
     /**
@@ -184,7 +145,11 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static async applyJsFuncsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        const scriptTexts = frameContext?.preparedCosmeticResult?.scriptTexts;
+        if (!frameContext) {
+            return;
+        }
+
+        const scriptTexts = frameContext.preparedCosmeticResult?.scriptTexts;
 
         if (!scriptTexts || scriptTexts.length === 0) {
             return;
@@ -292,42 +257,6 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Injects js functions and scriptlets to specified tab and frame.
-     *
-     * @param tabId Tab id.
-     * @param frameId Frame id.
-     */
-    public static async applyJsFuncsAndScriptletsByTabAndFrame(
-        tabId: number,
-        frameId: number,
-    ): Promise<void> {
-        const frameContext = tabsApi.getFrameContext(tabId, frameId);
-
-        if (!frameContext || !frameContext.preparedCosmeticResult) {
-            return;
-        }
-
-        const { scriptText } = frameContext.preparedCosmeticResult;
-
-        if (!scriptText) {
-            return;
-        }
-
-        try {
-            await ScriptingApi.executeScriptsViaUserScripts({
-                tabId,
-                frameId,
-                scriptText,
-            });
-        } catch (e) {
-            logger.debug(
-                '[applyJsFuncsAndScriptletsByTabAndFrame] error occurred during injection',
-                getErrorMessage(e),
-            );
-        }
-    }
-
-    /**
      * Predicate to filter out non-local script rules.
      *
      * @param rule Cosmetic rule.
@@ -335,21 +264,8 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns True if the rule is a local script rule, otherwise false.
      */
     private static shouldSanitizeScriptRule(rule: CosmeticRule): boolean {
-        // Scriptlets should not be excluded for remote filters
-        if (rule.isScriptlet) {
-            return true;
-        }
-
-        // User rules should not be excluded
-        const filterId = rule.getFilterListId();
-        if (filterId === USER_FILTER_ID) {
-            return true;
-        }
-
-        /**
-         * @see {@link LocalScriptRulesService} for details about script source
-         */
-        return localScriptRulesService.isLocalScript(rule.getContent());
+        const ruleText = rule.getContent();
+        return localScriptRulesService.isLocalScript(ruleText);
     }
 
     /**
@@ -363,14 +279,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param params Data for js rule logging.
      */
     public static logScriptRules(params: LogJsRulesParams): void {
-        const filterFn = UserScriptsApi.isSupported
-            // via userScripts API we can inject any script
-            ? (): boolean => true
-            : CosmeticApi.shouldSanitizeScriptRule;
-
         super.logScriptRules(
             params,
-            filterFn,
+            CosmeticApi.shouldSanitizeScriptRule,
         );
     }
 }
