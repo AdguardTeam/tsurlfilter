@@ -14,8 +14,7 @@ import { Buffer } from 'buffer';
 import { getByteRangeFor } from '../../src/utils/byte-range';
 import { fetchExtensionResourceText } from '../../src/utils/resource-fetch';
 
-const sampleJson = `
-{
+const sampleJson = `{
   "name": "AdGuard",
   "age": 15,
   "languages": ["English", "TypeScript"],
@@ -23,8 +22,7 @@ const sampleJson = `
     "key": "value",
     "number": 42
   }
-}
-`;
+}`;
 
 // Convert JSON to a Buffer
 const sampleJsonBuffer = Buffer.from(sampleJson, 'utf8');
@@ -37,7 +35,7 @@ const server = setupServer(
 
         // No "Range" header => send the entire JSON
         if (!rangeHeader) {
-            return HttpResponse.json(JSON.parse(sampleJsonBuffer.toString('utf8')));
+            return HttpResponse.text(sampleJsonBuffer.toString('utf8'));
         }
 
         // If "Range" header exists => parse it
@@ -50,12 +48,12 @@ const server = setupServer(
         const end = matches[2] ? parseInt(matches[2], 10) : totalLength - 1;
 
         // Validate the range
-        if (start >= totalLength || end >= totalLength || start > end) {
+        if (start >= totalLength || start > end) {
             return HttpResponse.text('Invalid range', { status: 416 });
         }
 
-        return HttpResponse.json(
-            JSON.parse(sampleJsonBuffer.subarray(start, end + 1).toString('utf8')),
+        return HttpResponse.text(
+            sampleJsonBuffer.subarray(start, end + 1).toString('utf8'),
             {
                 status: 206,
                 headers: {
