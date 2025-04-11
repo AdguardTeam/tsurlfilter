@@ -254,6 +254,8 @@ export class WebRequestApi {
             thirdParty,
         } = context;
 
+        const { parentFrameId } = details;
+
         const isDocumentRequest = requestType === RequestType.Document;
 
         /**
@@ -269,8 +271,6 @@ export class WebRequestApi {
         if (isDocumentRequest) {
             tabsApi.createTabContextIfNotExists(tabId, requestUrl);
         }
-
-        const { parentFrameId } = details;
 
         const skipPrecalculation = CosmeticFrameProcessor.shouldSkipRecalculation(
             tabId,
@@ -513,7 +513,7 @@ export class WebRequestApi {
          * in this cases we need to create tab context manually. This is needed
          * to ensure that we have tab context to be able to inject cosmetics and scripts.
          *
-         * We create tab context only for document requests,
+         * We create tab context only for document requests (outermost frame),
          * because other types of requests can't have tab context.
          */
         if (parentFrameId === NO_PARENT_FRAME_ID) {
