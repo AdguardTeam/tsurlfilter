@@ -233,9 +233,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameId Frame id.
      */
     public static async applyCssByTabAndFrame(tabId: number, frameId: number): Promise<void> {
-        const requestContext = tabsApi.getFrameContext(tabId, frameId);
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        const cssText = requestContext?.preparedCosmeticResult?.cssText;
+        const cssText = frameContext?.preparedCosmeticResult?.cssText;
         if (!cssText) {
             return;
         }
@@ -250,8 +250,8 @@ export class CosmeticApi extends CosmeticApiCommon {
             logger.debug(
                 '[applyCssByTabAndFrame] error occurred during injection',
                 getErrorMessage(e),
-                'with request context:',
-                requestContext,
+                'with frame context:',
+                frameContext,
             );
         }
     }
