@@ -376,9 +376,11 @@ export class CosmeticApiCommon {
             timestamp,
         } = params;
 
-        const scriptRules = cosmeticResult.getScriptRules().filter(predicate);
+        const filteredScriptRules = cosmeticResult
+            .getScriptRules()
+            .filter(predicate);
 
-        for (const scriptRule of scriptRules) {
+        for (const scriptRule of filteredScriptRules) {
             if (scriptRule.isGeneric()) {
                 continue;
             }
