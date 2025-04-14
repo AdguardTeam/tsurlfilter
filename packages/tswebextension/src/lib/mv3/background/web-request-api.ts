@@ -164,6 +164,7 @@ import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { StealthService } from './services/stealth-service';
+import { UserScriptsApi } from './user-scripts-api';
 import { documentBlockingService } from './services/document-blocking-service';
 
 /**
@@ -396,8 +397,12 @@ export class WebRequestApi {
             return;
         }
 
-        CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
-        CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
+        if (UserScriptsApi.isSupported) {
+            CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId);
+        } else {
+            CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
+            CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
+        }
     }
 
     /**
@@ -714,13 +719,20 @@ export class WebRequestApi {
             return;
         }
 
+        const tasks = [
+            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+        ];
+
+        if (UserScriptsApi.isSupported) {
+            tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
+        } else {
+            tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));
+            tasks.push(CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId));
+        }
+
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
-        Promise.all([
-            CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
-            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
-            CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
-        ]).catch((e) => logger.error(e));
+        Promise.all(tasks).catch((e) => logger.error(e));
     }
 
     /**
