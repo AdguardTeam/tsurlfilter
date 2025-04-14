@@ -149,6 +149,7 @@ import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import { TabsApiCommon } from '../../common/tabs/tabs-api';
 import { tabsApi } from '../tabs/tabs-api';
+import { FrameMV3 } from '../tabs/frame';
 
 import { CosmeticApi } from './cosmetic-api';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
@@ -163,6 +164,7 @@ import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { StealthService } from './services/stealth-service';
+import { UserScriptsApi } from './user-scripts-api';
 import { documentBlockingService } from './services/document-blocking-service';
 
 /**
@@ -239,8 +241,6 @@ export class WebRequestApi {
             return;
         }
 
-        // TODO: In getBlockingResponse we need extract requestType from context
-        // to save it for filtering log. Check, if we really need this in MV3.
         const {
             requestType,
             requestUrl,
@@ -254,6 +254,31 @@ export class WebRequestApi {
             timestamp,
             thirdParty,
         } = context;
+
+        const { parentFrameId } = details;
+
+        const skipPrecalculation = CosmeticFrameProcessor.shouldSkipRecalculation(
+            tabId,
+            frameId,
+            requestUrl,
+            timestamp,
+        );
+
+        if (!skipPrecalculation) {
+            /**
+             * Set in the beginning to let other events know that cosmetic result
+             * will be calculated in this event to avoid double calculation.
+             */
+            tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+                tabId,
+                frameId,
+                parentFrameId,
+                url: requestUrl,
+                timeStamp: timestamp,
+                documentId: details.documentId,
+                parentDocumentId: details.parentDocumentId,
+            }));
+        }
 
         if (!isHttpOrWsRequest(requestUrl)) {
             return;
@@ -285,10 +310,11 @@ export class WebRequestApi {
         let frameRule;
 
         /**
-         * For Document and Subdocument requests, we match frame, because
-         * these requests are first (in page lifecycle), but for other requests
-         * we get the frame rule from tabsApi, assuming the frame rule is
-         * already in the tab context.
+         * For Document and SubDocument requests, we match frame, because
+         * these requests are happening first in page's lifecycle (before other).
+         *
+         * For other requests we get the frame rule from tabsApi, assuming
+         * the frame rule is already in the tab context.
          */
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             frameRule = DocumentApi.matchFrame(frameUrl);
@@ -311,9 +337,9 @@ export class WebRequestApi {
         // Save matching result to the request context.
         requestContextStorage.update(requestId, { matchingResult });
 
-        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
-            const { parentFrameId } = details;
-
+        const isDocumentOrSubdocument = requestType === RequestType.Document || requestType === RequestType.SubDocument;
+        if (isDocumentOrSubdocument && !skipPrecalculation) {
+            // Matching request
             CosmeticFrameProcessor.precalculateCosmetics({
                 tabId,
                 frameId,
@@ -371,8 +397,12 @@ export class WebRequestApi {
             return;
         }
 
-        CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
-        CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
+        if (UserScriptsApi.isSupported) {
+            CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId);
+        } else {
+            CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
+            CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
+        }
     }
 
     /**
@@ -465,6 +495,25 @@ export class WebRequestApi {
             timeStamp,
         } = details;
 
+        if (CosmeticFrameProcessor.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {
+            return;
+        }
+
+        /**
+         * Set in the beginning to let other events know that cosmetic result
+         * will be calculated in this event to avoid double calculation.
+         */
+        tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+            tabId,
+            frameId,
+            parentFrameId,
+            url,
+            timeStamp,
+            documentId: details.documentId,
+            parentDocumentId: details.parentDocumentId,
+        }));
+
+        // Matching request
         CosmeticFrameProcessor.precalculateCosmetics({
             tabId,
             frameId,
@@ -670,13 +719,20 @@ export class WebRequestApi {
             return;
         }
 
+        const tasks = [
+            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+        ];
+
+        if (UserScriptsApi.isSupported) {
+            tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
+        } else {
+            tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));
+            tasks.push(CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId));
+        }
+
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
-        Promise.all([
-            CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
-            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
-            CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
-        ]).catch((e) => logger.error(e));
+        Promise.all(tasks).catch((e) => logger.error(e));
     }
 
     /**
