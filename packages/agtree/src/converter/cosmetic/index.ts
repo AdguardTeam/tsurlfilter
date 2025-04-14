@@ -141,7 +141,10 @@ export class CosmeticRuleConverter extends RuleConverterBase {
             return ScriptletRuleConverter.convertToUbo(rule);
         }
 
-        let convertedModifiers: ConversionResult<{ modifierList: ModifierList, domains?: DomainList }> | undefined;
+        let convertedModifiers: ConversionResult<{
+            modifierList: ModifierList;
+            domains?: DomainList;
+        }> | undefined;
 
         // Convert cosmetic rule modifiers, if any
         if (rule.modifiers) {

@@ -15,7 +15,7 @@ import { appContext } from './app-context';
 import { CosmeticApi } from './cosmetic-api';
 import { type EngineApi } from './engine-api';
 import { stealthApi } from './stealth-api';
-import { FrameMV2 } from './tabs/frame';
+import { type FrameMV2 } from './tabs/frame';
 import { type TabsApi } from './tabs/tabs-api';
 
 /**
@@ -56,7 +56,7 @@ export class CosmeticFrameProcessor {
      *
      * @returns True if recalculation should be skipped.
      */
-    private shouldSkipRecalculation(
+    public shouldSkipRecalculation(
         tabId: number,
         frameId: number,
         url: string,
@@ -277,32 +277,6 @@ export class CosmeticFrameProcessor {
      * @param props Precalculate cosmetic props.
      */
     public precalculateCosmetics(props: PrecalculateCosmeticProps): void {
-        const {
-            tabId,
-            frameId,
-            parentFrameId,
-            url,
-            timeStamp,
-            parentDocumentId,
-            documentId,
-        } = props;
-
-        if (this.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {
-            return;
-        }
-
-        // Set in the beginning to let other events know that cosmetic result
-        // will be calculated in this event to avoid double calculation.
-        this.tabsApi.setFrameContext(tabId, frameId, new FrameMV2({
-            tabId,
-            frameId,
-            parentFrameId,
-            url,
-            timeStamp,
-            documentId,
-            parentDocumentId,
-        }));
-
         this.handleFrame(props);
     }
 }
