@@ -26,14 +26,14 @@ describe('fetchExtensionResourceText', () => {
         const url = 'https://example.com/resource.txt';
         const mockResponseText = 'Sample content without byte range';
 
-        // Mock the fetch function
         global.fetch = vi.fn(() => Promise.resolve({
             text: () => Promise.resolve(mockResponseText),
+            arrayBuffer: () => Promise.resolve(new TextEncoder().encode(mockResponseText).buffer),
         } as Response)) as MockedFunction<typeof fetch>;
 
         const result = await fetchExtensionResourceText(url);
 
-        expect(global.fetch).toHaveBeenCalledWith(url, { headers: undefined });
+        expect(global.fetch).toHaveBeenCalledWith(url);
         expect(result).toBe(mockResponseText);
     });
 
@@ -42,13 +42,57 @@ describe('fetchExtensionResourceText', () => {
         const byteRange: ByteRange = { start: 10, end: 20 };
         const mockResponseText = 'Sample content with byte range';
 
-        // Mock the fetch function
         global.fetch = vi.fn(() => Promise.resolve({
             text: () => Promise.resolve(mockResponseText),
+            arrayBuffer: () => Promise.resolve(new TextEncoder().encode(mockResponseText).buffer.slice(10)),
         } as Response)) as MockedFunction<typeof fetch>;
 
         const expectedHeaders = {
-            Range: `bytes=${byteRange.start}-${byteRange.end}`,
+            Range: `bytes=${byteRange.start}-${byteRange.start + 4096}`,
+        };
+
+        const result = await fetchExtensionResourceText(url, byteRange);
+
+        expect(global.fetch).toHaveBeenCalledWith(url, { headers: expectedHeaders });
+        expect(result).toBe(
+            // @ts-expect-error
+            new TextDecoder().decode(new TextEncoder().encode(mockResponseText).buffer.slice(10, 21)),
+        );
+    });
+
+    it('should fetch with extended range if actual range is below minRangeLength', async () => {
+        const url = 'https://example.com/resource.txt';
+        const byteRange: ByteRange = { start: 0, end: 100 };
+        const minRangeLength = 4096;
+        const mockResponseText = 'x'.repeat(minRangeLength); // Simulate large response
+
+        global.fetch = vi.fn(() => Promise.resolve({
+            text: () => Promise.resolve(mockResponseText),
+            arrayBuffer: () => Promise.resolve(new TextEncoder().encode(mockResponseText).buffer),
+        } as Response)) as MockedFunction<typeof fetch>;
+
+        const expectedHeaders = {
+            Range: `bytes=0-${minRangeLength}`,
+        };
+
+        const result = await fetchExtensionResourceText(url, byteRange, minRangeLength);
+
+        expect(global.fetch).toHaveBeenCalledWith(url, { headers: expectedHeaders });
+        expect(result).toBe(mockResponseText.slice(0, 101)); // slice to original range end
+    });
+
+    it('should not extend range if original range exceeds minRangeLength', async () => {
+        const url = 'https://example.com/resource.txt';
+        const byteRange: ByteRange = { start: 0, end: 5000 }; // > 4096
+        const mockResponseText = 'Extended content';
+
+        global.fetch = vi.fn(() => Promise.resolve({
+            text: () => Promise.resolve(mockResponseText),
+            arrayBuffer: () => Promise.resolve(new TextEncoder().encode(mockResponseText).buffer),
+        } as Response)) as MockedFunction<typeof fetch>;
+
+        const expectedHeaders = {
+            Range: 'bytes=0-5000',
         };
 
         const result = await fetchExtensionResourceText(url, byteRange);
@@ -61,7 +105,6 @@ describe('fetchExtensionResourceText', () => {
         const url = 'https://example.com/resource.txt';
         const mockError = new Error('Network error');
 
-        // Mock the fetch function to throw an error
         global.fetch = vi.fn(() => Promise.reject(mockError)) as MockedFunction<typeof fetch>;
 
         await expect(fetchExtensionResourceText(url)).rejects.toThrow('Network error');
@@ -70,7 +113,6 @@ describe('fetchExtensionResourceText', () => {
     it('should handle non-OK HTTP responses', async () => {
         const url = 'https://example.com/resource.txt';
 
-        // Mock the fetch function to return a non-OK response
         global.fetch = vi.fn(() => Promise.resolve({
             ok: false,
             status: 404,
@@ -80,7 +122,7 @@ describe('fetchExtensionResourceText', () => {
 
         const result = await fetchExtensionResourceText(url);
 
-        expect(global.fetch).toHaveBeenCalledWith(url, { headers: undefined });
+        expect(global.fetch).toHaveBeenCalledWith(url);
         expect(result).toBe('');
     });
 
@@ -88,14 +130,14 @@ describe('fetchExtensionResourceText', () => {
         const url = 'https://example.com/resource.txt';
         const mockResponseText = 'Sample content';
 
-        // Mock the fetch function
         global.fetch = vi.fn(() => Promise.resolve({
             text: () => Promise.resolve(mockResponseText),
+            arrayBuffer: () => Promise.resolve(new TextEncoder().encode(mockResponseText).buffer),
         } as Response)) as MockedFunction<typeof fetch>;
 
         const result = await fetchExtensionResourceText(url, undefined);
 
-        expect(global.fetch).toHaveBeenCalledWith(url, { headers: undefined });
+        expect(global.fetch).toHaveBeenCalledWith(url);
         expect(result).toBe(mockResponseText);
     });
 });
