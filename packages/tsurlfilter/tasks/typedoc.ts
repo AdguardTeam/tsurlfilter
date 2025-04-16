@@ -28,6 +28,10 @@ async function main() {
         skipErrorChecking: 'true',
     }, [new TypeDocReader()]);
 
+    app.renderer.on('parseMarkdown', (context) => {
+        context.parsedText = context.originalText.replace(/(#+)\s*<a\s+(?:id|name)="[^"]*"\s*><\/a>\s*/gi, '$1 ');
+    }, 100);
+
     // Generate documentation
     const project = await app.convert();
 
