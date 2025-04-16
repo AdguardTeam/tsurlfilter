@@ -427,3 +427,44 @@ export const isAlpha = (codePoint: number): boolean => {
 export const isAlphaNumeric = (codePoint: number): boolean => {
     return isAlpha(codePoint) || isNumber(codePoint);
 };
+
+/**
+ * Converts a string to an array of UTF-16 code units (each in [0..65535]).
+ *
+ * @param str The string to convert.
+ *
+ * @returns An array of UTF-16 code units.
+ */
+export const stringToUtf16Array = (str: string): number[] => {
+    const codeUnits: number[] = [];
+
+    for (let i = 0; i < str.length; i += 1) {
+        codeUnits.push(str.charCodeAt(i));
+    }
+
+    return codeUnits;
+};
+
+/**
+ * Checks if the given UTF-16 code unit array exactly matches the given string.
+ *
+ * @param codeUnits The array of UTF-16 code units.
+ * @param str The string to compare.
+ *
+ * @returns True if the code units match the string, false otherwise.
+ */
+export const utf16ArrayEqualsString = (codeUnits: number[], str: string): boolean => {
+    const codeUnitsLength = codeUnits.length;
+
+    if (codeUnitsLength !== str.length) {
+        return false;
+    }
+
+    for (let i = 0; i < codeUnitsLength; i += 1) {
+        if (codeUnits[i] !== str.charCodeAt(i)) {
+            return false;
+        }
+    }
+
+    return true;
+};

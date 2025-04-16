@@ -125,6 +125,44 @@ export class ByteBuffer {
     }
 
     /**
+     * Adds uint16 to the buffer.
+     * If the buffer does not have enough capacity, new chunks will be allocated.
+     *
+     * @param byteOffset The byte offset of the value.
+     * @param value The uint16 value to set.
+     */
+    public addUint16(byteOffset: number, value: number): void {
+        if (!this.hasCapacity(byteOffset + 1 /** Uint16Array.BYTES_PER_ELEMENT - 1. */)) {
+            this.allocate();
+        }
+
+        this.data.setUint16(byteOffset, value);
+        this.byteOffset += 2; // Uint16Array.BYTES_PER_ELEMENT
+    }
+
+    /**
+     * Sets uint16 value to buffer. This method is used for overwriting value.
+     * NOTE: This method does not allocate memory.
+     *
+     * @param byteOffset The byte offset of the value.
+     * @param value The uint16 value to set.
+     */
+    public setUint16(byteOffset: number, value: number): void {
+        this.data.setUint16(byteOffset, value);
+    }
+
+    /**
+     * Gets uint16 value from buffer.
+     *
+     * @param byteOffset The byte offset of the value.
+     *
+     * @returns Uint16 value.
+     */
+    public getUint16(byteOffset: number): number {
+        return this.data.getUint16(byteOffset);
+    }
+
+    /**
      * Adds uint32 to the buffer.
      * If the buffer does not have enough capacity, new chunks will be allocated.
      *
