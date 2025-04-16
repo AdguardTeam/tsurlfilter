@@ -4,3 +4,18 @@ export const enum NetworkEngineByteOffsets {
     ShortcutsLookupTable = 8,
     SeqScanLookupTable = 12,
 }
+
+export const enum CosmeticEngineByteOffsets {
+    RulesCount = 0,
+    ElementHidingLookupTable = 1,
+    CssLookupTable = 5,
+    JsLookupTable = 9,
+    HtmlLookupTable = 13,
+}
+
+export const enum CosmeticLookupTableByteOffsets {
+    ByHostname = 0,
+    Allowlist = 4,
+    SeqScanRules = 8,
+    GenericRules = 12,
+}
