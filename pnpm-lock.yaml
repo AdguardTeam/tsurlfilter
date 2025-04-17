@@ -6,15 +6,69 @@ settings:
 
 catalogs:
   default:
+    '@types/chrome':
+      specifier: ^0.0.305
+      version: 0.0.305
     '@types/lodash-es':
       specifier: ^4.17.12
       version: 4.17.12
+    '@types/react':
+      specifier: ^17.0.80
+      version: 17.0.85
+    '@types/react-dom':
+      specifier: ^17.0.25
+      version: 17.0.26
+    chalk:
+      specifier: 4.1.2
+      version: 4.1.2
+    coveralls:
+      specifier: 3.1.1
+      version: 3.1.1
+    crypto-browserify:
+      specifier: ^3.12.0
+      version: 3.12.1
+    css-loader:
+      specifier: ^6.7.1
+      version: 6.11.0
+    eslint-webpack-plugin:
+      specifier: ^3.2.0
+      version: 3.2.0
+    html-webpack-plugin:
+      specifier: ^5.5.0
+      version: 5.6.3
+    lint-staged:
+      specifier: ^13.2.2
+      version: 13.2.2
     lodash-es:
       specifier: ^4.17.21
       version: 4.17.21
+    lru-cache:
+      specifier: ^11.0.2
+      version: 11.1.0
+    playwright:
+      specifier: ^1.52.0
+      version: 1.52.0
+    react:
+      specifier: ^17.0.2
+      version: 17.0.2
+    react-dom:
+      specifier: ^17.0.2
+      version: 17.0.2
+    rollup-plugin-cleanup:
+      specifier: ^3.2.1
+      version: 3.2.1
+    stream-browserify:
+      specifier: ^3.0.0
+      version: 3.0.0
+    style-loader:
+      specifier: ^3.3.1
+      version: 3.3.4
     tslib:
       specifier: ^2.8.1
       version: 2.8.1
+    vm-browserify:
+      specifier: ^1.1.2
+      version: 1.1.2
 
 overrides:
   '@adguard/agtree': workspace:^
@@ -430,8 +484,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       playwright:
-        specifier: ^1.41.2
-        version: 1.51.1
+        specifier: 'catalog:'
+        version: 1.52.0
       systeminformation:
         specifier: ^5.22.0
         version: 5.25.11
@@ -758,7 +812,7 @@ importers:
         specifier: ^6.0.2
         version: 6.0.3
       '@types/chrome':
-        specifier: ^0.0.305
+        specifier: 'catalog:'
         version: 0.0.305
       '@types/webextension-polyfill':
         specifier: ^0.10.7
@@ -779,7 +833,7 @@ importers:
         specifier: ^10.0.0
         version: 10.2.4(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       crypto-browserify:
-        specifier: ^3.12.0
+        specifier: 'catalog:'
         version: 3.12.1
       eslint:
         specifier: ^8.6.0
@@ -797,16 +851,16 @@ importers:
         specifier: ^39.3.24
         version: 39.9.1(eslint@8.57.1)
       eslint-webpack-plugin:
-        specifier: ^3.2.0
+        specifier: 'catalog:'
         version: 3.2.0(eslint@8.57.1)(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       html-webpack-plugin:
-        specifier: ^5.5.0
+        specifier: 'catalog:'
         version: 5.6.3(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       rimraf:
         specifier: ^5.0.5
         version: 5.0.10
       stream-browserify:
-        specifier: ^3.0.0
+        specifier: 'catalog:'
         version: 3.0.0
       swc-loader:
         specifier: ^0.2.3
@@ -815,7 +869,7 @@ importers:
         specifier: ^4.19.2
         version: 4.19.3
       vm-browserify:
-        specifier: ^1.1.2
+        specifier: 'catalog:'
         version: 1.1.2
       webpack:
         specifier: ^5.64.2
@@ -840,7 +894,7 @@ importers:
         specifier: ^6.0.2
         version: 6.0.3
       '@types/chrome':
-        specifier: ^0.0.305
+        specifier: 'catalog:'
         version: 0.0.305
       '@types/webextension-polyfill':
         specifier: ^0.12.0
@@ -861,7 +915,7 @@ importers:
         specifier: ^10.0.0
         version: 10.2.4(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       crypto-browserify:
-        specifier: ^3.12.0
+        specifier: 'catalog:'
         version: 3.12.1
       eslint:
         specifier: ^8.6.0
@@ -879,16 +933,16 @@ importers:
         specifier: ^39.3.24
         version: 39.9.1(eslint@8.57.1)
       eslint-webpack-plugin:
-        specifier: ^3.2.0
+        specifier: 'catalog:'
         version: 3.2.0(eslint@8.57.1)(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       html-webpack-plugin:
-        specifier: ^5.5.0
+        specifier: 'catalog:'
         version: 5.6.3(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       rimraf:
         specifier: ^5.0.5
         version: 5.0.10
       stream-browserify:
-        specifier: ^3.0.0
+        specifier: 'catalog:'
         version: 3.0.0
       swc-loader:
         specifier: ^0.2.3
@@ -897,7 +951,7 @@ importers:
         specifier: ^4.19.2
         version: 4.19.3
       vm-browserify:
-        specifier: ^1.1.2
+        specifier: 'catalog:'
         version: 1.1.2
       webpack:
         specifier: ^5.64.2
@@ -915,10 +969,10 @@ importers:
         specifier: ^2.2.9
         version: 2.4.6(react@17.0.2)
       react:
-        specifier: ^17.0.2
+        specifier: 'catalog:'
         version: 17.0.2
       react-dom:
-        specifier: ^17.0.2
+        specifier: 'catalog:'
         version: 17.0.2(react@17.0.2)
       webextension-polyfill:
         specifier: ^0.12.0
@@ -934,13 +988,13 @@ importers:
         specifier: ^1.3.76
         version: 1.11.18(@swc/helpers@0.5.15)
       '@types/chrome':
-        specifier: ^0.0.305
+        specifier: 'catalog:'
         version: 0.0.305
       '@types/react':
-        specifier: ^17.0.80
+        specifier: 'catalog:'
         version: 17.0.85
       '@types/react-dom':
-        specifier: ^17.0.25
+        specifier: 'catalog:'
         version: 17.0.26(@types/react@17.0.85)
       '@types/webextension-polyfill':
         specifier: ^0.12.0
@@ -955,7 +1009,7 @@ importers:
         specifier: ^0.24.0
         version: 0.24.0
       chalk:
-        specifier: 4.1.2
+        specifier: 'catalog:'
         version: 4.1.2
       clean-webpack-plugin:
         specifier: ^4.0.0
@@ -964,7 +1018,7 @@ importers:
         specifier: ^10.0.0
         version: 10.2.4(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       css-loader:
-        specifier: ^6.5.1
+        specifier: 'catalog:'
         version: 6.11.0(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       eslint:
         specifier: ^8.56.0
@@ -976,19 +1030,19 @@ importers:
         specifier: ^2.25.4
         version: 2.31.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)
       html-webpack-plugin:
-        specifier: ^5.5.0
+        specifier: 'catalog:'
         version: 5.6.3(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       jsdom:
         specifier: ^18.1.1
         version: 18.1.1
       playwright:
-        specifier: ^1.19.0-alpha-jan-19-2022
-        version: 1.51.1
+        specifier: 'catalog:'
+        version: 1.52.0
       rimraf:
         specifier: ^6.0.1
         version: 6.0.1
       style-loader:
-        specifier: ^3.3.1
+        specifier: 'catalog:'
         version: 3.3.4(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       swc-loader:
         specifier: ^0.2.3
@@ -1015,10 +1069,10 @@ importers:
         specifier: workspace:^
         version: link:../../tswebextension
       react:
-        specifier: ^17.0.2
+        specifier: 'catalog:'
         version: 17.0.2
       react-dom:
-        specifier: ^17.0.2
+        specifier: 'catalog:'
         version: 17.0.2(react@17.0.2)
       webextension-polyfill:
         specifier: ^0.12.0
@@ -1034,16 +1088,16 @@ importers:
         specifier: ^1.3.76
         version: 1.11.18(@swc/helpers@0.5.15)
       '@types/chrome':
-        specifier: ^0.0.305
+        specifier: 'catalog:'
         version: 0.0.305
       '@types/fs-extra':
         specifier: ^11.0.1
         version: 11.0.4
       '@types/react':
-        specifier: ^17.0.80
+        specifier: 'catalog:'
         version: 17.0.85
       '@types/react-dom':
-        specifier: ^17.0.25
+        specifier: 'catalog:'
         version: 17.0.26(@types/react@17.0.85)
       '@types/webextension-polyfill':
         specifier: ^0.12.0
@@ -1058,7 +1112,7 @@ importers:
         specifier: ^0.26.0
         version: 0.26.1
       chalk:
-        specifier: 4.1.2
+        specifier: 'catalog:'
         version: 4.1.2
       clean-webpack-plugin:
         specifier: ^4.0.0
@@ -1070,7 +1124,7 @@ importers:
         specifier: ^7.0.3
         version: 7.0.3
       css-loader:
-        specifier: ^6.7.1
+        specifier: 'catalog:'
         version: 6.11.0(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       eslint:
         specifier: 8.57.1
@@ -1088,16 +1142,16 @@ importers:
         specifier: ^10.1.0
         version: 10.1.0
       html-webpack-plugin:
-        specifier: ^5.5.0
+        specifier: 'catalog:'
         version: 5.6.3(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       playwright:
-        specifier: ^1.27.1
-        version: 1.51.1
+        specifier: 'catalog:'
+        version: 1.52.0
       rimraf:
         specifier: ^6.0.1
         version: 6.0.1
       style-loader:
-        specifier: ^3.3.1
+        specifier: 'catalog:'
         version: 3.3.4(webpack@5.98.0(@swc/core@1.11.18(@swc/helpers@0.5.15)))
       swc-loader:
         specifier: ^0.2.3
@@ -1196,7 +1250,7 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2
       lru-cache:
-        specifier: ^11.0.2
+        specifier: 'catalog:'
         version: 11.1.0
       punycode:
         specifier: 2.3.1
@@ -1236,7 +1290,7 @@ importers:
         specifier: 0.2.36
         version: 0.2.36(@swc/core@1.4.8(@swc/helpers@0.5.15))
       '@types/chrome':
-        specifier: ^0.0.305
+        specifier: 'catalog:'
         version: 0.0.305
       '@types/ip6addr':
         specifier: 0.2.3
@@ -1269,7 +1323,7 @@ importers:
         specifier: 2.1.6
         version: 2.1.6(vitest@2.1.9(@types/node@18.19.86)(jsdom@18.1.1)(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(terser@5.39.0))
       coveralls:
-        specifier: 3.1.1
+        specifier: 'catalog:'
         version: 3.1.1
       cross-env:
         specifier: ^7.0.3
@@ -1299,8 +1353,8 @@ importers:
         specifier: 46.8.2
         version: 46.8.2(eslint@8.57.1)
       lint-staged:
-        specifier: 13.0.3
-        version: 13.0.3(enquirer@2.3.6)
+        specifier: 'catalog:'
+        version: 13.2.2(enquirer@2.3.6)
       lodash-es:
         specifier: 'catalog:'
         version: 4.17.21
@@ -1314,7 +1368,7 @@ importers:
         specifier: ^4.24.3
         version: 4.39.0
       rollup-plugin-cleanup:
-        specifier: ^3.2.1
+        specifier: 'catalog:'
         version: 3.2.1(rollup@4.39.0)
       rollup-plugin-polyfill-node:
         specifier: ^0.13.0
@@ -1392,7 +1446,7 @@ importers:
         specifier: 'catalog:'
         version: 4.17.21
       lru-cache:
-        specifier: ^11.0.2
+        specifier: 'catalog:'
         version: 11.1.0
       nanoid:
         specifier: ^5.0.9
@@ -1435,7 +1489,7 @@ importers:
         specifier: ^1.10.1
         version: 1.11.18(@swc/helpers@0.5.15)
       '@types/chrome':
-        specifier: ^0.0.305
+        specifier: 'catalog:'
         version: 0.0.305
       '@types/fs-extra':
         specifier: ^11.0.1
@@ -1465,7 +1519,7 @@ importers:
         specifier: ^1.1.12
         version: 1.1.39(@typescript-eslint/utils@8.29.0(eslint@8.57.1)(typescript@5.6.2))(eslint@8.57.1)(typescript@5.6.2)(vitest@2.1.9(@types/node@20.17.30)(jsdom@18.1.1)(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(terser@5.39.0))
       coveralls:
-        specifier: 3.1.1
+        specifier: 'catalog:'
         version: 3.1.1
       cross-env:
         specifier: ^7.0.3
@@ -1492,7 +1546,7 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       lint-staged:
-        specifier: 13.2.2
+        specifier: 'catalog:'
         version: 13.2.2(enquirer@2.3.6)
       rimraf:
         specifier: 5.0.1
@@ -1501,7 +1555,7 @@ importers:
         specifier: ^4.28.0
         version: 4.39.0
       rollup-plugin-cleanup:
-        specifier: ^3.2.1
+        specifier: 'catalog:'
         version: 3.2.1(rollup@4.39.0)
       rollup-plugin-dts:
         specifier: ^6.0.2
@@ -5396,10 +5450,6 @@ packages:
     resolution: {integrity: sha512-ov6w/2LCiuyO4RLYGdpFGjkcs0wMTgGE8PrkTHikeUy5iJekXyPIKUjifk5CsE0pt7sMCrMZ3YNqoCj6idQOnQ==}
     engines: {node: '>=10'}
 
-  execa@6.1.0:
-    resolution: {integrity: sha512-QVWlX2e50heYJcCPG0iWtf8r0xjEYfz/OYLGDYH+IyjWezzPNxz63qNFOu0l4YftGWuizFVZHHs8PrLU5p2IDA==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
-
   execa@7.2.0:
     resolution: {integrity: sha512-UduyVP7TLB5IcAQl+OzLyLcS/l32W/GLg+AhHJ+ow40FOk2U3SAllPwR44v4vmdFwIWqpdwxxpQbF1n5ta9seA==}
     engines: {node: ^14.18.0 || ^16.14.0 || >=18.0.0}
@@ -6057,10 +6107,6 @@ packages:
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
     engines: {node: '>=10.17.0'}
-
-  human-signals@3.0.1:
-    resolution: {integrity: sha512-rQLskxnM/5OCldHo+wNXbpVgDn5A17CUoKX+7Sokwaknlq7CdSnphy0W39GU8dw59XiCXmFXDg4fRuckQRKewQ==}
-    engines: {node: '>=12.20.0'}
 
   human-signals@4.3.1:
     resolution: {integrity: sha512-nZXjEF2nbo7lIw3mgYjItAfgQXog3OjJogSbKa2CQIIvSGWcKgeJnQlNXip6NglNzYH45nSRiEVimMvYL8DDqQ==}
@@ -6797,10 +6843,6 @@ packages:
   lighthouse-logger@1.4.2:
     resolution: {integrity: sha512-gPWxznF6TKmUHrOQjlVo2UbaL2EJ71mb2CCeRs/2qBpi4L/g4LUVc9+3lKQ6DTUZwJswfM7ainGrLO1+fOqa2g==}
 
-  lilconfig@2.0.5:
-    resolution: {integrity: sha512-xaYmXZtTHPAw5m+xLN8ab9C+3a8YmV3asNSPOATITbtwrfbwaLJj8h66H1WMIpALCkqsIzK3h7oQ+PdX+LQ9Eg==}
-    engines: {node: '>=10'}
-
   lilconfig@2.1.0:
     resolution: {integrity: sha512-utWOt/GHzuUxnLKxB6dk81RoOeoNeHgbrXiuGk4yyF5qlRz+iIVWu56E2fqGHFrXz0QNUhLB/8nKqvRH66JKGQ==}
     engines: {node: '>=10'}
@@ -6818,24 +6860,10 @@ packages:
   linkify-it@5.0.0:
     resolution: {integrity: sha512-5aHCbzQRADcdP+ATqnDuhhJ/MRIqDkZX5pyjFHRRysS8vZ5AbqGEoFIb6pYHPZ+L/OC2Lc+xT8uHVVR5CAK/wQ==}
 
-  lint-staged@13.0.3:
-    resolution: {integrity: sha512-9hmrwSCFroTSYLjflGI8Uk+GWAwMB4OlpU4bMJEAT5d/llQwtYKoim4bLOyLCuWFAhWEupE0vkIFqtw/WIsPug==}
-    engines: {node: ^14.13.1 || >=16.0.0}
-    hasBin: true
-
   lint-staged@13.2.2:
     resolution: {integrity: sha512-71gSwXKy649VrSU09s10uAT0rWCcY3aewhMaHyl2N84oBk4Xs9HgxvUp3AYu+bNsK4NrOYYxvSgg7FyGJ+jGcA==}
     engines: {node: ^14.13.1 || >=16.0.0}
     hasBin: true
-
-  listr2@4.0.5:
-    resolution: {integrity: sha512-juGHV1doQdpNT3GSTs9IUN43QJb7KHdF9uqg7Vufs/tG9VTzpFphqF4pm/ICdAABGQxsyNn9CiYA3StkI6jpwA==}
-    engines: {node: '>=12'}
-    peerDependencies:
-      enquirer: '>= 2.3.0 < 3'
-    peerDependenciesMeta:
-      enquirer:
-        optional: true
 
   listr2@5.0.8:
     resolution: {integrity: sha512-mC73LitKHj9w6v30nLNGPetZIlfpUniNSsxxrbaPcWOjDb92SHPzJPi/t+v1YC/lxKz/AJ9egOjww0qUuFxBpA==}
@@ -7929,13 +7957,13 @@ packages:
   platform@1.3.6:
     resolution: {integrity: sha512-fnWVljUchTro6RiCFvCXBbNhJc2NijN7oIQxbwsyL0buWJPG85v81ehlHI9fXrJsMNgTofEoWIQeClKpgxFLrg==}
 
-  playwright-core@1.51.1:
-    resolution: {integrity: sha512-/crRMj8+j/Nq5s8QcvegseuyeZPxpQCZb6HNk3Sos3BlZyAknRjoyJPFWkpNn8v0+P3WiwqFF8P+zQo4eqiNuw==}
+  playwright-core@1.52.0:
+    resolution: {integrity: sha512-l2osTgLXSMeuLZOML9qYODUQoPPnUsKsb5/P6LJ2e6uPKXUdPK5WYhN4z03G+YNbWmGDY4YENauNu4ZKczreHg==}
     engines: {node: '>=18'}
     hasBin: true
 
-  playwright@1.51.1:
-    resolution: {integrity: sha512-kkx+MB2KQRkyxjYPc3a0wLZZoDczmppyGJIvQ43l+aZihkaVvmu/21kiyaHeHjiFxjxNNFnUncKmcGIyOojsaw==}
+  playwright@1.52.0:
+    resolution: {integrity: sha512-JAwMNMBlxJ2oD1kce4KPtMkDeKGHQstdpFPcPH3maElAXon/QZeTvtsfXmTMRyO9TslfoYOXkSsvao2nE1ilTw==}
     engines: {node: '>=18'}
     hasBin: true
 
@@ -15118,18 +15146,6 @@ snapshots:
       signal-exit: 3.0.7
       strip-final-newline: 2.0.0
 
-  execa@6.1.0:
-    dependencies:
-      cross-spawn: 7.0.6
-      get-stream: 6.0.1
-      human-signals: 3.0.1
-      is-stream: 3.0.0
-      merge-stream: 2.0.0
-      npm-run-path: 5.3.0
-      onetime: 6.0.0
-      signal-exit: 3.0.7
-      strip-final-newline: 3.0.0
-
   execa@7.2.0:
     dependencies:
       cross-spawn: 7.0.6
@@ -15939,8 +15955,6 @@ snapshots:
   human-signals@1.1.1: {}
 
   human-signals@2.1.0: {}
-
-  human-signals@3.0.1: {}
 
   human-signals@4.3.1: {}
 
@@ -16781,8 +16795,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  lilconfig@2.0.5: {}
-
   lilconfig@2.1.0: {}
 
   lines-and-columns@1.2.4: {}
@@ -16796,25 +16808,6 @@ snapshots:
   linkify-it@5.0.0:
     dependencies:
       uc.micro: 2.1.0
-
-  lint-staged@13.0.3(enquirer@2.3.6):
-    dependencies:
-      cli-truncate: 3.1.0
-      colorette: 2.0.20
-      commander: 9.4.1
-      debug: 4.4.0
-      execa: 6.1.0
-      lilconfig: 2.0.5
-      listr2: 4.0.5(enquirer@2.3.6)
-      micromatch: 4.0.8
-      normalize-path: 3.0.0
-      object-inspect: 1.13.4
-      pidtree: 0.6.0
-      string-argv: 0.3.2
-      yaml: 2.7.1
-    transitivePeerDependencies:
-      - enquirer
-      - supports-color
 
   lint-staged@13.2.2(enquirer@2.3.6):
     dependencies:
@@ -16834,19 +16827,6 @@ snapshots:
     transitivePeerDependencies:
       - enquirer
       - supports-color
-
-  listr2@4.0.5(enquirer@2.3.6):
-    dependencies:
-      cli-truncate: 2.1.0
-      colorette: 2.0.20
-      log-update: 4.0.0
-      p-map: 4.0.0
-      rfdc: 1.4.1
-      rxjs: 7.8.2
-      through: 2.3.8
-      wrap-ansi: 7.0.0
-    optionalDependencies:
-      enquirer: 2.3.6
 
   listr2@5.0.8(enquirer@2.3.6):
     dependencies:
@@ -18246,11 +18226,11 @@ snapshots:
 
   platform@1.3.6: {}
 
-  playwright-core@1.51.1: {}
+  playwright-core@1.52.0: {}
 
-  playwright@1.51.1:
+  playwright@1.52.0:
     dependencies:
-      playwright-core: 1.51.1
+      playwright-core: 1.52.0
     optionalDependencies:
       fsevents: 2.3.2
 

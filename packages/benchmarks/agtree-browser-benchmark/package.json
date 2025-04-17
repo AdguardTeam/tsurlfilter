@@ -24,7 +24,7 @@
     "node-fetch": "^3.3.2",
     "object-sizeof": "^2.6.4",
     "os-name": "^6.0.0",
-    "playwright": "^1.41.2",
+    "playwright": "catalog:",
     "systeminformation": "^5.22.0",
     "tsurlfilter-v1": "npm:@adguard/tsurlfilter@^1.0.80",
     "tsurlfilter-v2": "npm:@adguard/tsurlfilter@2.2.7"
