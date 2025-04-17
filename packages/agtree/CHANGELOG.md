@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ## Unreleased
 
+### Changed
+
+- Limit conversion of `ADG` scriptlets to `uBO` if no equivalents are available.
+
 ### Fixed
 
 - Removed a space in the list of parameters in the `safari_cb_affinity` directive.
