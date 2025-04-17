@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## Unreleased
+
+### Fixed
+
+- Removed a space in the list of parameters in the `safari_cb_affinity` directive.
+
 ## [3.1.0] - 2025-03-31
 
 ### Added
