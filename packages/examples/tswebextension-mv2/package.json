@@ -17,7 +17,7 @@
     },
     "dependencies": {
         "@adguard/tswebextension": "workspace:^",
-        "bowser": "^2.11.0",
+        "bowser": "catalog:",
         "formik": "^2.2.9",
         "react": "catalog:",
         "react-dom": "catalog:",
@@ -33,10 +33,10 @@
         "@types/webextension-polyfill": "^0.12.0",
         "@typescript-eslint/eslint-plugin": "^7.5.0",
         "@typescript-eslint/parser": "^7.5.0",
-        "axios": "^0.24.0",
+        "axios": "catalog:",
         "chalk": "catalog:",
-        "clean-webpack-plugin": "^4.0.0",
-        "copy-webpack-plugin": "^10.0.0",
+        "clean-webpack-plugin": "catalog:",
+        "copy-webpack-plugin": "catalog:",
         "css-loader": "catalog:",
         "eslint": "^8.56.0",
         "eslint-config-airbnb-typescript": "^18.0.0",
@@ -46,10 +46,10 @@
         "playwright": "catalog:",
         "rimraf": "^6.0.1",
         "style-loader": "catalog:",
-        "swc-loader": "^0.2.3",
+        "swc-loader": "catalog:",
         "tsx": "^4.19.2",
         "typescript": "^5.4.4",
         "web-ext": "^6.6.0",
-        "webpack": "^5.64.2"
+        "webpack": "catalog:"
     }
 }

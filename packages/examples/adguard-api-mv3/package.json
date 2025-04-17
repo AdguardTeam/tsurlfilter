@@ -16,14 +16,14 @@
     "devDependencies": {
         "@adguard/dnr-rulesets": "workspace:^",
         "@adguard/tswebextension": "workspace:^",
-        "@types/archiver": "^6.0.2",
+        "@types/archiver": "catalog:",
         "@types/chrome": "catalog:",
         "@types/webextension-polyfill": "^0.12.0",
         "@typescript-eslint/eslint-plugin": "^5.41.0",
         "@typescript-eslint/parser": "^5.41.0",
-        "archiver": "^7.0.1",
-        "clean-webpack-plugin": "^4.0.0",
-        "copy-webpack-plugin": "^10.0.0",
+        "archiver": "catalog:",
+        "clean-webpack-plugin": "catalog:",
+        "copy-webpack-plugin": "catalog:",
         "crypto-browserify": "catalog:",
         "eslint": "^8.6.0",
         "eslint-config-airbnb-base": "^15.0.0",
@@ -34,9 +34,9 @@
         "html-webpack-plugin": "catalog:",
         "rimraf": "^5.0.5",
         "stream-browserify": "catalog:",
-        "swc-loader": "^0.2.3",
+        "swc-loader": "catalog:",
         "tsx": "^4.19.2",
         "vm-browserify": "catalog:",
-        "webpack": "^5.64.2"
+        "webpack": "catalog:"
     }
 }
