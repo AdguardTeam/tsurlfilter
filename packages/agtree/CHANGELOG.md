@@ -8,15 +8,18 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## Unreleased
+## [3.1.1] - 2025-04-17
 
 ### Changed
 
+- Proper conversion of the cosmetic rule separators to uBlock Origin format.
 - Limit conversion of `ADG` scriptlets to `uBO` if no equivalents are available.
 
 ### Fixed
 
 - Removed a space in the list of parameters in the `safari_cb_affinity` directive.
+
+[3.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.1
 
 ## [3.1.0] - 2025-03-31
 

@@ -245,14 +245,21 @@ describe('Cosmetic rule modifiers conversion', () => {
             {
                 actual: '[$path=/^((?!\\/page).)*$/]example.com#@$#h1 { background-color: blue !important }',
                 expected: [
-                    String.raw`example.com#@$#:not(:matches-path(/\\/page/)) h1:style(background-color: blue !important)`,
+                    String.raw`example.com#@#:not(:matches-path(/\\/page/)) h1:style(background-color: blue !important)`,
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`[$path=/q]example.*#$?#body.page_qQuestionRoute div#page > div[class]:first-child > div[class]:first-child > section[class*=" "] > div[class] + div > div:not(:has(> div[id^="content-control-"])):not(:has(a[class])) { height: 0 !important; }`,
+                expected: [
+                    String.raw`example.*##:matches-path(/q) body.page_qQuestionRoute div#page > div[class]:first-child > div[class]:first-child > section[class*=" "] > div[class] + div > div:not(:has(> div[id^="content-control-"])):not(:has(a[class])):style(height: 0 !important;)`,
                 ],
                 shouldConvert: true,
             },
             {
                 actual: String.raw`[$path=/\/(sub1|sub2)\/page\.html/]example.org#$?#p:contains(/[\w\W]{30,}/) { background: #ff0033 !important; }`,
                 expected: [
-                    String.raw`example.org#$?#:matches-path(/\\/(sub1|sub2)\\/page\\.html/) p:contains(/[\w\W]{30,}/):style(background: #ff0033 !important;)`,
+                    String.raw`example.org##:matches-path(/\\/(sub1|sub2)\\/page\\.html/) p:contains(/[\w\W]{30,}/):style(background: #ff0033 !important;)`,
                 ],
                 shouldConvert: true,
             },
@@ -312,6 +319,20 @@ describe('Cosmetic rule modifiers conversion', () => {
                 actual: '[$domain=/example.(com\\|org)/|foo.com]#@#.banner',
                 expected: [
                     '/example.(com\\|org)/,foo.com#@#.banner',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`[$domain=/^example\.org$/]#$#body > * > * > * > *:not(div)[id][class] ~ *:not(div)[id][class] { background: #e6e7e9 !important; }`,
+                expected: [
+                    String.raw`/^example\.org$/##body > * > * > * > *:not(div)[id][class] ~ *:not(div)[id][class]:style(background: #e6e7e9 !important;)`,
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`[$domain=/^example\.org$/]#$?#body > * > * > * > *:not(div)[id][class] ~ *:not(div)[id][class] > *:not(div)[class] article:matches-css(height: /^(148(?:\.\d{1,3})?|149(?:\.\d{1,3})?|150(?:\.0{1,3})?)px$/) { remove: true; }`,
+                expected: [
+                    String.raw`/^example\.org$/##body > * > * > * > *:not(div)[id][class] ~ *:not(div)[id][class] > *:not(div)[class] article:matches-css(height: /^(148(?:\.\d{1,3})?|149(?:\.\d{1,3})?|150(?:\.0{1,3})?)px$/):remove()`,
                 ],
                 shouldConvert: true,
             },
