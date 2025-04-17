@@ -59,7 +59,7 @@
         "eslint-plugin-jsdoc": "^48.2.1",
         "rimraf": "^5.0.5",
         "rollup": "^4.13.0",
-        "tslib": "^2.6.2",
+        "tslib": "catalog:",
         "tsx": "^4.19.3",
         "typescript": "^5.4.2",
         "vitest": "^2.1.6"

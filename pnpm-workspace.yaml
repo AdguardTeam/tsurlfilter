@@ -3,3 +3,8 @@ packages:
   - "packages/examples/*"
   - "packages/benchmarks/*"
   - "packages/tsurlfilter/test/builders/*"
+
+catalog:
+  lodash-es: ^4.17.21
+  '@types/lodash-es': ^4.17.12
+  tslib: ^2.8.1
