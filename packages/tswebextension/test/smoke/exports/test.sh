@@ -27,8 +27,7 @@ cd "$SCRIPT_DIR"
 (
     cd "$ROOT_DIR"
     npx lerna run build --scope @adguard/tswebextension --include-dependencies
-    pnpm pack
-    mv adguard-tswebextension-*.tgz "$PACKAGE_TGZ"
+    pnpm pack --out "$PACKAGE_TGZ"
 )
 
 # Install dependencies for the smoke test environment

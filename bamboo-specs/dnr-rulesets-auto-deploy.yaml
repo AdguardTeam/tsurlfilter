@@ -14,7 +14,7 @@ environments:
 
 npmjs 1.X:
   docker: &docker
-    image: adguard/node-ssh:18.19--0
+    image: adguard/node-ssh:22.14--0
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   # run auto-deploy only after successful build on branch for 1.X

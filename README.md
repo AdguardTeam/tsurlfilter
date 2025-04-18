@@ -51,9 +51,9 @@ Detailed information on each package is available in the [`./packages`][packages
 
 Ensure that the following software is installed on your computer:
 
-- [Node.js][nodejs], we recommend using the latest LTS version via [nvm][nvm]
-- [pnpm][pnpm] for package management
-- [Git][git] for version control
+- [Node.js][nodejs]: v22 (you can install multiple versions using [nvm][nvm])
+- [pnpm][pnpm]: v10
+- [Git][git]
 
 > [!NOTE]
 > For development, our team uses macOS and Linux. It may be possible that some commands not work on Windows,
@@ -69,9 +69,6 @@ Ensure that the following software is installed on your computer:
 Install dependencies with pnpm: `pnpm install`.
 
 > [!NOTE]
-> pnpm currently doesn't support installing per package dev dependencies (see https://github.com/pnpm/pnpm/issues/6300).
-
-> [!NOTE]
 > If you want to use another linked packages in monorepo workspace, link it in root folder.
 
 This repository uses pnpm workspaces and [Lerna][lerna] to manage multiple packages in a single repository.
@@ -85,33 +82,30 @@ This repository uses pnpm workspaces and [Lerna][lerna] to manage multiple packa
 - Remove `node_modules` from all packages and root package: `pnpm clean`
 - Builds the packages in the current repo: `npx lerna run build`
 - Builds a specific package: `npx lerna run build --scope=<package-name>`
-  - For example, to build the `tswebextension` package: `npx lerna run build --scope=@adguard/tswebextension`.
-    This command also builds `@adguard/tsurlfilter` first as it is required for `@adguard/tswebextension`.
+    - For example, to build the `tswebextension` package: `npx lerna run build --scope=@adguard/tswebextension`.
+      This command also builds `@adguard/tsurlfilter` first as it is required for `@adguard/tswebextension`.
 
 > [!NOTE]
 > You can find Lerna commands in the following link: [Lerna Commands][lernacommands].
 
 [lernacommands]: https://lerna.js.org/docs/api-reference/commands
 
-### Linking packages from this monorepo to another projects
+### Linking packages from this monorepo to other projects
 
-`pnpm` has a nested structure for packages, which is not compatible with the classic `yarn`, because `yarn` using a flat
-structure, but you can force `pnpm` to use a flat structure too by setting the `--shamefully-hoist` flag.
+When linking packages from this monorepo to projects that don't use pnpm, you need to be careful about package hoisting.
+pnpm uses a nested node_modules structure by default, which may not be compatible with other package managers
+that use flat structures.
 
-For example, if you want to link the `tswebextension` package from this monorepo to the
-[browser extension project][browser-extension] which are using `yarn`, you can follow these steps:
+If you need to link packages to a non-pnpm environment, you can force pnpm to use a flat structure by using the
+`--shamefully-hoist` flag when installing dependencies:
 
-1. Install packages in this monorepo with `pnpm install --shamefully-hoist`.
-1. Go to the *tswebextension* package directory: `cd packages/tswebextension`, and run `yarn link`.
-1. Go to the *browser extension* project directory: `cd /path/to/browser-extension`,
-   and run `yarn link @adguard/tswebextension`.
-   This way, the browser extension project will use the linked package from this monorepo, instead of the published one
-   from the npm registry.
+```bash
+pnpm install --shamefully-hoist
+```
 
-If the other project are using `pnpm`, you can use [`pnpm link`][pnpm-link] to connect the packages locally.
+For projects using pnpm, you can use [`pnpm link`][pnpm-link] to connect the packages locally.
 For more details, please check the pnpm documentation.
 
-[browser-extension]: https://github.com/AdguardTeam/AdguardBrowserExtension
 [pnpm-link]: https://pnpm.io/cli/link
 
 ### Notice about `zod` package versions

@@ -5,7 +5,7 @@ plan:
   key: ADGUARDAPIMV3BUILD
   name: Adguard API MV3 - build
 variables:
-  dockerContainer: adguard/node-ssh:18.19--0
+  dockerContainer: adguard/node-ssh:22.14--0
 
 stages:
   - Build:
@@ -62,7 +62,7 @@ Build:
             pnpm run build
 
             cd ../../adguard-api-mv3
-            pnpm pack && mv adguard-api-mv3-*.tgz adguard-api-mv3.tgz
+            pnpm pack --out adguard-api-mv3.tgz
     - inject-variables:
         file: ./packages/adguard-api-mv3/dist/build.txt
         scope: RESULT

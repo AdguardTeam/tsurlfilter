@@ -5,7 +5,7 @@ plan:
   key: TSWEBEXTENSIONBUILD
   name: tswebextension - build
 variables:
-  dockerContainer: adguard/node-ssh:18.19--0
+  dockerContainer: adguard/node-ssh:22.14--0
 
 stages:
   - Build:
@@ -45,7 +45,7 @@ Build:
 
             cd packages/tswebextension
 
-            pnpm pack && mv adguard-tswebextension-*.tgz tswebextension.tgz
+            pnpm pack --out tswebextension.tgz
     - inject-variables:
         file: ./packages/tswebextension/dist/build.txt
         scope: RESULT

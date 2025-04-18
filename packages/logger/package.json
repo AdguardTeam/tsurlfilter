@@ -14,7 +14,7 @@
         "increment": "pnpm version patch --no-git-tag-version"
     },
     "engines": {
-        "node": ">=18.19.0"
+        "node": ">=22"
     },
     "main": "./dist/index.js",
     "module": "./dist/es/index.mjs",

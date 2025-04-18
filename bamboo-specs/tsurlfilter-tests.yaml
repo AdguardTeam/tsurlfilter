@@ -5,7 +5,8 @@ plan:
   key: TSURLFILTERTEST
   name: tsurlfilter - tests
 variables:
-  dockerContainer: adguard/node-ssh:18.19--0
+  dockerContainer: adguard/node-ssh:22.14--0
+  testTimeout: 180s
 
 stages:
   - Test:
@@ -27,59 +28,59 @@ Test:
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/setup-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/setup-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/agtree-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/agtree-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/css-tokenizer-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/css-tokenizer-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/examples-adguard-api-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/logger-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/tsurlfilter-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/tswebextension-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/benchmarks-css-tokenizer-benchmark-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-css-tokenizer-benchmark-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/benchmarks-agtree-benchmark-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-agtree-benchmark-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/benchmarks-agtree-browser-benchmark-tests.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-agtree-browser-benchmark-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh"
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:

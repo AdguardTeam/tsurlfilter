@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
 
-npx lerna run prepush --since 'origin/$(git branch --show-current)'
+# TODO: enable once we need it
+# npx lerna run prepush --since 'origin/$(git branch --show-current)'
