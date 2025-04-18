@@ -436,10 +436,11 @@ export const isAlphaNumeric = (codePoint: number): boolean => {
  * @returns An array of UTF-16 code units.
  */
 export const stringToUtf16Array = (str: string): number[] => {
-    const codeUnits: number[] = [];
+    const { length } = str;
+    const codeUnits: number[] = new Array(length);
 
-    for (let i = 0; i < str.length; i += 1) {
-        codeUnits.push(str.charCodeAt(i));
+    for (let i = 0; i < length; i += 1) {
+        codeUnits[i] = str.charCodeAt(i);
     }
 
     return codeUnits;
