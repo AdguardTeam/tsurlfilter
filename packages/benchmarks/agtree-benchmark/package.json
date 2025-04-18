@@ -13,18 +13,17 @@
   "dependencies": {
     "agtree-v1": "npm:@adguard/agtree@^1.1.7",
     "agtree-v2": "npm:@adguard/agtree@^2.3.0",
-    "benchmark": "^2.1.4",
-    "date-fns": "^2.30.0",
+    "benchmark": "catalog:",
+    "date-fns": "catalog:",
     "markdown-table": "catalog:",
-    "node-fetch": "^3.3.2",
-    "os-name": "^6.0.0",
+    "node-fetch": "catalog:",
+    "os-name": "catalog:",
     "tsurlfilter-v1": "npm:@adguard/tsurlfilter@^1.0.80",
     "tsurlfilter-v2": "npm:@adguard/tsurlfilter@2.2.7"
   },
   "devDependencies": {
-    "@types/benchmark": "^2.1.5",
+    "@types/benchmark": "catalog:",
     "@types/node": "catalog:",
-    "date-fns": "^3.3.1",
     "eslint": "catalog:",
     "eslint-config-airbnb-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",

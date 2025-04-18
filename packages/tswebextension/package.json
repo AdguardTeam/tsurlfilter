@@ -160,7 +160,7 @@
         "rollup-plugin-dts": "catalog:",
         "rollup-plugin-node-externals": "catalog:",
         "sinon-chrome": "^3.0.1",
-        "terser": "^5.21.0",
+        "terser": "catalog:",
         "tsx": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:"

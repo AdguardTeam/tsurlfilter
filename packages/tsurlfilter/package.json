@@ -159,7 +159,7 @@
         "@vitest/coverage-v8": "catalog:",
         "coveralls": "catalog:",
         "cross-env": "catalog:",
-        "esbuild": "^0.19.3",
+        "esbuild": "catalog:",
         "esbuild-register": "^3.5.0",
         "escape-string-regexp": "^5.0.0",
         "eslint": "catalog:",
