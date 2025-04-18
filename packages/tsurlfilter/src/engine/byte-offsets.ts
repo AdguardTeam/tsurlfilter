@@ -19,3 +19,9 @@ export const enum CosmeticLookupTableByteOffsets {
     SeqScanRules = 8,
     GenericRules = 12,
 }
+
+export const enum DnsEngineByteOffsets {
+    RulesCount = 0,
+    LookupTable = 4,
+    NetworkEngine = 8,
+}
