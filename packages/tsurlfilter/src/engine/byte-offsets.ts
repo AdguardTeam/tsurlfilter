@@ -25,3 +25,8 @@ export const enum DnsEngineByteOffsets {
     LookupTable = 4,
     NetworkEngine = 8,
 }
+
+export const enum EngineByteOffsets {
+    NetworkEngine = 0,
+    CosmeticEngine = 4,
+}
