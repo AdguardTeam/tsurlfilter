@@ -5,10 +5,10 @@ import { type RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { type IndexedStorageRule } from '../rules/rule';
 import { CosmeticRule } from '../rules/cosmetic-rule';
-import { Engine } from './engine-1';
+import { Engine } from './engine';
 import { type Builder } from './builder';
-import { NetworkEngineBuilder } from './network-engine-2-builder';
-import { CosmeticEngineBuilder } from './cosmetic-engine-1/cosmetic-engine-builder';
+import { NetworkEngineBuilder } from './network-engine-builder';
+import { CosmeticEngineBuilder } from './cosmetic-engine/cosmetic-engine-builder';
 import { ByteBuffer } from '../utils/byte-buffer';
 import { EngineByteOffsets } from './byte-offsets';
 

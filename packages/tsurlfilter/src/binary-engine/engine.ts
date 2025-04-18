@@ -1,7 +1,7 @@
 import { LRUCache } from 'lru-cache';
 import { type AnyRule } from '@adguard/agtree';
-import { CosmeticEngine } from './cosmetic-engine-1/cosmetic-engine';
-import { NetworkEngine } from './network-engine-2';
+import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
+import { NetworkEngine } from './network-engine';
 import { Request } from '../request';
 import { MatchingResult } from './matching-result';
 import { type NetworkRule } from '../rules/network-rule';

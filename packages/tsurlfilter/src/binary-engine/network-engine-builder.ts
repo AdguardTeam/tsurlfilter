@@ -1,11 +1,11 @@
 import { type RuleStorage } from '../filterlist/rule-storage';
 import { ByteBuffer } from '../utils/byte-buffer';
 import { type Builder } from './builder';
-import { NetworkEngine } from './network-engine-2';
-import { DomainsLookupTableBuilder } from './lookup-tables-2/domains-lookup-table-builder';
-import { TrieLookupTableBuilder } from './lookup-tables-2/trie-lookup-table-builder';
-import { HostnameLookupTableBuilder } from './lookup-tables-2/hostname-lookup-table-builder';
-import { SeqScanLookupTableBuilder } from './lookup-tables-2/seq-scan-lookup-table-builder';
+import { NetworkEngine } from './network-engine';
+import { DomainsLookupTableBuilder } from './lookup-tables/domains-lookup-table-builder';
+import { TrieLookupTableBuilder } from './lookup-tables/trie-lookup-table-builder';
+import { HostnameLookupTableBuilder } from './lookup-tables/hostname-lookup-table-builder';
+import { SeqScanLookupTableBuilder } from './lookup-tables/seq-scan-lookup-table-builder';
 import { type IndexedStorageRule } from '../rules/rule';
 import { NetworkEngineByteOffsets } from './byte-offsets';
 

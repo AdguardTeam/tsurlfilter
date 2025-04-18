@@ -1,6 +1,6 @@
 import { type RuleStorage } from '../filterlist/rule-storage';
 import { fastHash } from '../utils/string-utils';
-import { NetworkEngine } from './network-engine-2';
+import { NetworkEngine } from './network-engine';
 import { Request } from '../request';
 import { DnsResult } from './dns-result';
 import { RequestType } from '../request-type';

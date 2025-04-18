@@ -1,12 +1,12 @@
 import { type Request } from '../request';
-import { NetworkRule } from '../rules/network-rule';
+import { type NetworkRule } from '../rules/network-rule';
 import { MatchingResult } from './matching-result';
 import { type RuleStorage } from '../filterlist/rule-storage';
-import { type ILookupTable } from './lookup-tables-1/lookup-table';
-import { TrieLookupTable } from './lookup-tables-1/trie-lookup-table';
-import { DomainsLookupTable } from './lookup-tables-1/domains-lookup-table';
-import { HostnameLookupTable } from './lookup-tables-1/hostname-lookup-table';
-import { SeqScanLookupTable } from './lookup-tables-1/seq-scan-lookup-table';
+import { type ILookupTable } from './lookup-tables/lookup-table';
+import { TrieLookupTable } from './lookup-tables/trie-lookup-table';
+import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
+import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
+import { SeqScanLookupTable } from './lookup-tables/seq-scan-lookup-table';
 import { type ByteBuffer } from '../utils/byte-buffer';
 import { NetworkEngineByteOffsets } from './byte-offsets';
 
