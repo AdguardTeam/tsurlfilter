@@ -114,11 +114,6 @@ export class CosmeticApi extends CosmeticApiCommon {
             }
         }
 
-        // FIXME (Slava, in another pr): check scriptlets logging in mv3;
-        // few conditions should be followed:
-        // 1) scriptlet rules should be logged when filtering log is opened
-        // 2) only one domain should be logged for scriptlet rules with multiple domains,
-        //    e.g. `example1.com,example2.com,example3.com#%#//scriptlet('foo')` -> `example.com1#%#//scriptlet('foo')`
         const scriptParams = {
             debug,
             frameUrl,
