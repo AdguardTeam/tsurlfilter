@@ -9,7 +9,7 @@ import { ByteBuffer } from '../../utils/byte-buffer';
 import { type IndexedStorageRule } from '../../rules/rule';
 import { BinaryUint32ToUint32ListMap } from '../../utils/binary-uint32-to-uint32list-map';
 import { BinaryStringToUint32ListMap } from '../../utils/binary-string-to-uint32list-map';
-import { U32LinkedList } from '../../utils/u32-linked-list';
+import { BinaryU32LinkedList } from '../../utils/binary-u32-linked-list';
 import { CosmeticLookupTableByteOffsets } from '../byte-offsets';
 
 export class CosmeticLookupTableBuilder implements Builder<CosmeticLookupTable> {
@@ -163,16 +163,16 @@ export class CosmeticLookupTableBuilder implements Builder<CosmeticLookupTable> 
         buffer.setUint32(offset + CosmeticLookupTableByteOffsets.Allowlist, allowlistOffset);
 
         // seq scan rules
-        const seqScanRulesOffset = U32LinkedList.create(this.buffer);
+        const seqScanRulesOffset = BinaryU32LinkedList.create(this.buffer);
         for (const rule of this.seqScanRules) {
-            U32LinkedList.add(rule.getIndex(), this.buffer, seqScanRulesOffset);
+            BinaryU32LinkedList.add(rule.getIndex(), this.buffer, seqScanRulesOffset);
         }
         buffer.setUint32(offset + CosmeticLookupTableByteOffsets.SeqScanRules, seqScanRulesOffset);
 
         // generic rules
-        const genericRulesOffset = U32LinkedList.create(this.buffer);
+        const genericRulesOffset = BinaryU32LinkedList.create(this.buffer);
         for (const rule of this.genericRules) {
-            U32LinkedList.add(rule.getIndex(), this.buffer, genericRulesOffset);
+            BinaryU32LinkedList.add(rule.getIndex(), this.buffer, genericRulesOffset);
         }
         buffer.setUint32(offset + CosmeticLookupTableByteOffsets.GenericRules, genericRulesOffset);
 

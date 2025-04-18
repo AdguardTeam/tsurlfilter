@@ -3,7 +3,7 @@ import { NetworkRule } from '../../rules/network-rule';
 import { fastHash } from '../../utils/string-utils';
 import { SimpleRegex } from '../../rules/simple-regex';
 import { ByteBuffer } from '../../utils/byte-buffer';
-import { U32LinkedList } from '../../utils/u32-linked-list';
+import { BinaryU32LinkedList } from '../../utils/binary-u32-linked-list';
 import { type Builder } from '../builder';
 import { HostnameLookupTable } from './hostname-lookup-table';
 import { type IndexedStorageRule } from '../../rules/rule';
@@ -63,15 +63,15 @@ export class HostnameLookupTableBuilder implements Builder<HostnameLookupTable> 
         let storageIndexesPosition = this.hostnameLookupTable.get(hash);
 
         /**
-         * If the hash is not in the lookup table, create a new {@link U32LinkedList}.
+         * If the hash is not in the lookup table, create a new {@link BinaryU32LinkedList}.
          */
         if (storageIndexesPosition === undefined) {
-            storageIndexesPosition = U32LinkedList.create(this.buffer);
+            storageIndexesPosition = BinaryU32LinkedList.create(this.buffer);
             this.hostnameLookupTable.set(hash, storageIndexesPosition);
         }
 
         // Add the storage index to the related U32LinkedList
-        U32LinkedList.add(rule.index, this.buffer, storageIndexesPosition);
+        BinaryU32LinkedList.add(rule.index, this.buffer, storageIndexesPosition);
 
         this.rulesCount += 1;
         return true;

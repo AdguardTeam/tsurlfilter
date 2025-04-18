@@ -3,7 +3,7 @@ import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../../rules/network-rule';
 import { ByteBuffer } from '../../utils/byte-buffer';
-import { U32LinkedList } from '../../utils/u32-linked-list';
+import { BinaryU32LinkedList } from '../../utils/binary-u32-linked-list';
 import { BinaryUint32ToUint32Map } from '../../utils/binary-uint32-to-uint32-map';
 import { type Builder } from '../builder';
 import { DomainsLookupTable } from './domains-lookup-table';
@@ -50,15 +50,15 @@ export class DomainsLookupTableBuilder implements Builder<DomainsLookupTable> {
             let storageIndexesPosition = this.domainsLookupTable.get(hash);
 
             /**
-             * If the hash is not in the lookup table, create a new {@link U32LinkedList}.
+             * If the hash is not in the lookup table, create a new {@link BinaryU32LinkedList}.
              */
             if (storageIndexesPosition === undefined) {
-                storageIndexesPosition = U32LinkedList.create(this.buffer);
+                storageIndexesPosition = BinaryU32LinkedList.create(this.buffer);
                 this.domainsLookupTable.set(hash, storageIndexesPosition);
             }
 
             // Add the storage index to the related U32LinkedList
-            U32LinkedList.add(rule.index, this.buffer, storageIndexesPosition);
+            BinaryU32LinkedList.add(rule.index, this.buffer, storageIndexesPosition);
         });
 
         return true;

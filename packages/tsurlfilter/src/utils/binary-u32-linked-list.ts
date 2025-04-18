@@ -7,11 +7,11 @@ import type { ByteBuffer } from './byte-buffer';
  * creating or recreating additional index structures.
  * However, it has a low search speed of O(n).
  * We use this structure to dynamically write {@link RuleStorage} indexes.
- * After filling the ByteBuffer with data, we iterate through the {@link U32LinkedList}
+ * After filling the ByteBuffer with data, we iterate through the {@link BinaryU32LinkedList}
  * to build index structures like {@link BinaryMap} and {@link BinaryTrie}.
  * These structures allow for constant-time search of items in the collection.
  */
-export class U32LinkedList {
+export class BinaryU32LinkedList {
     /**
      * Reserved position for the 'undefined' value.
      */
@@ -28,11 +28,11 @@ export class U32LinkedList {
         const position = buffer.byteOffset;
 
         buffer.addUint32(position, value);
-        const lastNodePosition = U32LinkedList.getLastNodePosition(buffer, listPosition);
+        const lastNodePosition = BinaryU32LinkedList.getLastNodePosition(buffer, listPosition);
         buffer.addUint32(position + 4 /** Uint32Array.BYTES_PER_ELEMENT. */, lastNodePosition);
-        U32LinkedList.setLastNodePosition(buffer, listPosition, position);
-        const size = U32LinkedList.getSize(buffer, listPosition);
-        U32LinkedList.setSize(buffer, listPosition, size + 1);
+        BinaryU32LinkedList.setLastNodePosition(buffer, listPosition, position);
+        const size = BinaryU32LinkedList.getSize(buffer, listPosition);
+        BinaryU32LinkedList.setSize(buffer, listPosition, size + 1);
     }
 
     /**
@@ -58,10 +58,10 @@ export class U32LinkedList {
      * @param listPosition The list position in the buffer.
      */
     public static forEach(callback: (value: number) => void, buffer: ByteBuffer, listPosition: number): void {
-        let cursor = U32LinkedList.getLastNodePosition(buffer, listPosition);
+        let cursor = BinaryU32LinkedList.getLastNodePosition(buffer, listPosition);
 
-        while (cursor !== U32LinkedList.EMPTY_POSITION) {
-            const [nodeValue, nextNodePosition] = U32LinkedList.get(cursor, buffer);
+        while (cursor !== BinaryU32LinkedList.EMPTY_POSITION) {
+            const [nodeValue, nextNodePosition] = BinaryU32LinkedList.get(cursor, buffer);
             callback(nodeValue);
             cursor = nextNodePosition;
         }
@@ -78,10 +78,10 @@ export class U32LinkedList {
      * If no node satisfies the callback, returns -1.
      */
     public static find(callback: (value: number) => boolean, buffer: ByteBuffer, listPosition: number): number {
-        let cursor = U32LinkedList.getLastNodePosition(buffer, listPosition);
+        let cursor = BinaryU32LinkedList.getLastNodePosition(buffer, listPosition);
 
-        while (cursor !== U32LinkedList.EMPTY_POSITION) {
-            const [nodeValue, nextNodePosition] = U32LinkedList.get(cursor, buffer);
+        while (cursor !== BinaryU32LinkedList.EMPTY_POSITION) {
+            const [nodeValue, nextNodePosition] = BinaryU32LinkedList.get(cursor, buffer);
             if (callback(nodeValue)) {
                 return nodeValue;
             }
@@ -106,7 +106,7 @@ export class U32LinkedList {
         // Add last node position
         buffer.addUint32(
             byteOffset + 4 /** Uint32Array.BYTES_PER_ELEMENT. */,
-            U32LinkedList.EMPTY_POSITION,
+            BinaryU32LinkedList.EMPTY_POSITION,
         );
 
         return byteOffset;

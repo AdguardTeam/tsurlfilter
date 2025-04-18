@@ -3,7 +3,7 @@ import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
 import { type ILookupTable } from './lookup-table';
 import { type ByteBuffer } from '../../utils/byte-buffer';
-import { U32LinkedList } from '../../utils/u32-linked-list';
+import { BinaryU32LinkedList } from '../../utils/binary-u32-linked-list';
 import { BinaryTrie } from '../../utils/binary-trie';
 
 /**
@@ -81,7 +81,7 @@ export class TrieLookupTable implements ILookupTable {
 
         for (let i = 0; i < storageIndexesPositions.length; i += 1) {
             const storageIndexesPosition = storageIndexesPositions[i];
-            U32LinkedList.forEach((storageIdx) => {
+            BinaryU32LinkedList.forEach((storageIdx) => {
                 const rule = this.ruleStorage.retrieveNetworkRule(storageIdx);
                 if (rule && rule.match(request, false)) {
                     result.push(rule);

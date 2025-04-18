@@ -3,7 +3,7 @@ import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type ByteBuffer } from '../../utils/byte-buffer';
-import { U32LinkedList } from '../../utils/u32-linked-list';
+import { BinaryU32LinkedList } from '../../utils/binary-u32-linked-list';
 
 /**
  * Sequence scan lookup table of rules for which we could not find a shortcut
@@ -69,7 +69,7 @@ export class SeqScanLookupTable implements ILookupTable {
     matchAll(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];
 
-        U32LinkedList.forEach((storageIdx) => {
+        BinaryU32LinkedList.forEach((storageIdx) => {
             const rule = this.ruleStorage.retrieveNetworkRule(storageIdx);
 
             if (rule && rule.match(request)) {

@@ -1,7 +1,7 @@
 import { NetworkRule } from '../../rules/network-rule';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { ByteBuffer } from '../../utils/byte-buffer';
-import { U32LinkedList } from '../../utils/u32-linked-list';
+import { BinaryU32LinkedList } from '../../utils/binary-u32-linked-list';
 import { type Builder } from '../builder';
 import { SeqScanLookupTable } from './seq-scan-lookup-table';
 import { type IndexedStorageRule } from '../../rules/rule';
@@ -33,7 +33,7 @@ export class SeqScanLookupTableBuilder implements Builder<SeqScanLookupTable> {
         }
 
         // Check if storageIdx has already indexed
-        const position = U32LinkedList.find((storageIndex) => {
+        const position = BinaryU32LinkedList.find((storageIndex) => {
             return storageIndex === rule.index;
         }, this.buffer, 4);
 
@@ -41,7 +41,7 @@ export class SeqScanLookupTableBuilder implements Builder<SeqScanLookupTable> {
             return false;
         }
 
-        U32LinkedList.add(rule.index, this.buffer, 4);
+        BinaryU32LinkedList.add(rule.index, this.buffer, 4);
         this.rulesCount += 1;
         return true;
     }
@@ -60,7 +60,7 @@ export class SeqScanLookupTableBuilder implements Builder<SeqScanLookupTable> {
 
         const offset = buffer.byteOffset;
         buffer.addUint32(offset, this.rulesCount);
-        U32LinkedList.create(buffer);
+        BinaryU32LinkedList.create(buffer);
         this.built = true;
         return new SeqScanLookupTable(this.storage, buffer, offset);
     }

@@ -104,7 +104,7 @@ export class BinaryUint32ToUint32ListMap {
             }
 
             // Store the chain position in the lookup table
-            buffer.setUint32(
+            buffer.addUint32(
                 hash * 4 + (byteOffset + 4),
                 chainPosition,
             );

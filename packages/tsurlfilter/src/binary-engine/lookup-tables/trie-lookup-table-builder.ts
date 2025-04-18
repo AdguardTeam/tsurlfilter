@@ -3,7 +3,7 @@ import { NetworkRule } from '../../rules/network-rule';
 import { TrieNode } from '../../utils/trie';
 import { SimpleRegex } from '../../rules/simple-regex';
 import { ByteBuffer } from '../../utils/byte-buffer';
-import { U32LinkedList } from '../../utils/u32-linked-list';
+import { BinaryU32LinkedList } from '../../utils/binary-u32-linked-list';
 import { BinaryTrie } from '../../utils/binary-trie';
 import { type Builder } from '../builder';
 import { TrieLookupTable } from './trie-lookup-table';
@@ -48,11 +48,11 @@ export class TrieLookupTableBuilder implements Builder<TrieLookupTable> {
         let storageIndexesPosition = this.trie.search(shortcut);
 
         if (storageIndexesPosition === -1) {
-            storageIndexesPosition = U32LinkedList.create(this.buffer);
+            storageIndexesPosition = BinaryU32LinkedList.create(this.buffer);
             this.trie.add(shortcut, storageIndexesPosition);
         }
 
-        U32LinkedList.add(rule.index, this.buffer, storageIndexesPosition);
+        BinaryU32LinkedList.add(rule.index, this.buffer, storageIndexesPosition);
         this.rulesCount += 1;
         return true;
     }

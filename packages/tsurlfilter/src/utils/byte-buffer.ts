@@ -189,6 +189,12 @@ export class ByteBuffer {
         return index < this.data.byteLength;
     }
 
+    public ensureCapacity(index: number): void {
+        while (!this.hasCapacity(index)) {
+            this.allocate();
+        }
+    }
+
     /**
      * Allocates new chunk of 64 bytes.
      */

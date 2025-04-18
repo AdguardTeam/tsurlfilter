@@ -2,7 +2,7 @@ import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
 import { type ByteBuffer } from '../../utils/byte-buffer';
-import { U32LinkedList } from '../../utils/u32-linked-list';
+import { BinaryU32LinkedList } from '../../utils/binary-u32-linked-list';
 import { BinaryStringToUint32ListMap } from '../../utils/binary-string-to-uint32list-map';
 import { fastHash } from '../../utils/string-utils';
 import { BinaryUint32ToUint32ListMap } from '../../utils/binary-uint32-to-uint32list-map';
@@ -70,7 +70,7 @@ export class CosmeticLookupTable {
             }
         }
 
-        U32LinkedList.forEach((storageIdx) => {
+        BinaryU32LinkedList.forEach((storageIdx) => {
             const rule = this.storage.retrieveRule(storageIdx) as CosmeticRule;
             if (rule && !rule.isAllowlist() && rule.match(request)) {
                 result.push(rule);
@@ -180,7 +180,7 @@ export class CosmeticLookupTable {
 
     // FIXME: Improve performance
     public get genericRules(): CosmeticRule[] {
-        U32LinkedList.forEach((storageIdx) => {
+        BinaryU32LinkedList.forEach((storageIdx) => {
             const rule = this.storage.retrieveRule(storageIdx) as CosmeticRule;
             if (rule && !rule.isAllowlist() && rule.isGeneric()) {
                 this.genericRules.push(rule);
