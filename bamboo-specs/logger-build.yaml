@@ -5,7 +5,7 @@ plan:
   key: LOGGERBUILD
   name: logger - build
 variables:
-  dockerContainer: adguard/node-ssh:18.19--0
+  dockerContainer: adguard/node-ssh:22.14--0
 
 stages:
   - Build:
@@ -48,7 +48,7 @@ Build:
 
             # Pack the logger package into a tarball
             cd packages/logger/
-            pnpm pack && mv adguard-logger-*.tgz logger.tgz
+            pnpm pack --out logger.tgz
     - inject-variables:
         file: ./packages/logger/dist/build.txt
         scope: RESULT

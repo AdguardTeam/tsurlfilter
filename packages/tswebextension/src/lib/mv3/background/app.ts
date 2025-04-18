@@ -5,7 +5,7 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor, NETWORK_RULE_OPTIONS } from '@adguard/tsurlfilter';
+import { FilterListPreprocessor, NETWORK_RULE_OPTIONS, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
@@ -341,20 +341,34 @@ export class TsWebExtension implements AppInterface<
 
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
-                { getContent: () => Promise.resolve(configuration.userrules) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(configuration.userrules);
+                    },
+                },
                 true,
             );
 
             const allowlistFilter = new Filter(
                 ALLOWLIST_FILTER_ID,
                 // TODO: Generate AST directly for allowlist rules.
-                { getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(combinedAllowlistRules)) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(
+                            FilterListPreprocessor.preprocess(combinedAllowlistRules),
+                        );
+                    },
+                },
                 true,
             );
 
             const quickFixesFilter = new Filter(
                 QUICK_FIXES_FILTER_ID,
-                { getContent: () => Promise.resolve(configuration.quickFixesRules) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(configuration.quickFixesRules);
+                    },
+                },
                 true,
             );
 
@@ -366,7 +380,11 @@ export class TsWebExtension implements AppInterface<
 
             const blockingPageTrustedFilter = new Filter(
                 BLOCKING_TRUSTED_FILTER_ID,
-                { getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(temporaryBadfilterRules)) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(FilterListPreprocessor.preprocess(temporaryBadfilterRules));
+                    },
+                },
                 true,
             );
 

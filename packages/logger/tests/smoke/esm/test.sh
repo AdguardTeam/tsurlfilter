@@ -17,7 +17,7 @@ cleanup() {
 # Set trap to execute the cleanup function on script exit
 trap cleanup EXIT
 
-(cd ../../.. && pnpm pack && mv adguard-logger-*.tgz "$curr_path/$logger")
+(cd ../../.. && pnpm pack --out "$curr_path/$logger")
 
 # unzip to @adguard/tsurlfilter to node_modules
 logger_node_modules=$nm_path"/@adguard/logger"

@@ -8,6 +8,7 @@ import {
 import { RuleParser } from '../../../src/parser/rule-parser';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
 import { type ScriptletInjectionRule } from '../../../src/nodes';
+import { RuleConversionError } from '../../../src/errors/rule-conversion-error';
 
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {
@@ -286,14 +287,63 @@ describe('Scriptlet conversion', () => {
                 expected: ['example.com##+js(set-local-storage-item, mode, $remove$)'],
             },
 
+            // Should not convert already uBO scriptlet
             {
-                actual: String.raw`example.net,example.com#$#log Hello\ no\ quotes`,
+                actual: 'example.org##+js(google-ima)',
                 expected: [
-                    String.raw`example.net,example.com##+js(log, Hello no quotes)`,
+                    'example.org##+js(google-ima)',
+                ],
+                shouldConvert: false,
+            },
+            {
+                actual: 'example.org##+js(googletagservices_gpt)',
+                expected: [
+                    'example.org##+js(googletagservices_gpt)',
+                ],
+                shouldConvert: false,
+            },
+            {
+                actual: String.raw`example.net,example.com#$#set-cookie-reload Hello\ no\ quotes true`,
+                expected: [
+                    String.raw`example.net,example.com##+js(set-cookie-reload, Hello no quotes, true)`,
                 ],
             },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToUbo');
+        });
+    });
+
+    describe('should throw error on unsupported scriptlets in uBO', () => {
+        test.each([
+            {
+                actual: String.raw`example.com#%#//scriptlet('inject-css-in-shadow-dom', '.block { display: none; }')`,
+                expected: 'Scriptlet "inject-css-in-shadow-dom" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('prevent-element-src-loading', 'img', '&adslot=')`,
+                expected: 'Scriptlet "prevent-element-src-loading" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('remove-in-shadow-dom', 'div[class^="bannerContainer"]')`,
+                expected: 'Scriptlet "remove-in-shadow-dom" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('hide-in-shadow-dom', '.ampAds')`,
+                expected: 'Scriptlet "hide-in-shadow-dom" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('trusted-set-local-storage-item', 'popupShow', '1')`,
+                expected: 'Scriptlet "trusted-set-local-storage-item" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('trusted-set-cookie', 'showCookie', 'true')`,
+                expected: 'Scriptlet "trusted-set-cookie" is not supported in uBlock Origin.',
+            },
+        ])("should throw error on '$actual'", ({ actual, expected }) => {
+            // eslint-disable-next-line max-len
+            expect(() => ScriptletRuleConverter.convertToUbo(RuleParser.parse(actual) as ScriptletInjectionRule)).toThrowError(
+                new RuleConversionError(expected),
+            );
         });
     });
 

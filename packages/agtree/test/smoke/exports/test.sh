@@ -16,7 +16,7 @@ cleanup() {
 # Set trap to execute the cleanup function on script exit
 trap cleanup EXIT
 
-(cd ../../.. && pnpm pack && mv adguard-agtree-*.tgz "$curr_path/$agtree")
+(cd ../../.. && pnpm pack --out "$curr_path/$agtree")
 
 pnpm install
 
