@@ -18,7 +18,7 @@ import { fastHash, stringToUtf16Array, utf16ArrayEqualsString } from './string-u
  *    - chainLength (4 bytes)              (uint32)
  *    - keyPosition[] (chainLength * 4)    (uint32[] pointers to the key-data).
  */
-export class BinaryStringMultiMap {
+export class BinaryStringToUint32ListMap {
     /**
      * Reserved pointer for 'no chain'.
      */
@@ -48,7 +48,7 @@ export class BinaryStringMultiMap {
         const endOfLookup = cursor + (size * 4);
 
         while (cursor < endOfLookup) {
-            buffer.addUint32(cursor, BinaryStringMultiMap.EMPTY_POSITION);
+            buffer.addUint32(cursor, BinaryStringToUint32ListMap.EMPTY_POSITION);
             cursor += 4;
         }
 
@@ -146,7 +146,7 @@ export class BinaryStringMultiMap {
 
         // The chain pointer is at offset+4 + (bucketIndex * 4)
         const chainPosition = buffer.getUint32(offset + 4 + (bucketIndex * 4));
-        if (chainPosition === BinaryStringMultiMap.EMPTY_POSITION) {
+        if (chainPosition === BinaryStringToUint32ListMap.EMPTY_POSITION) {
             // No chain for this bucket => not found
             return undefined;
         }

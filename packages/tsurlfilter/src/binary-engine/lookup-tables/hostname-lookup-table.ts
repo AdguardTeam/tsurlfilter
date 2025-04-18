@@ -5,7 +5,7 @@ import { type NetworkRule } from '../../rules/network-rule';
 import { fastHash } from '../../utils/string-utils';
 import { type ByteBuffer } from '../../utils/byte-buffer';
 import { U32LinkedList } from '../../utils/u32-linked-list';
-import { BinaryMap } from '../../utils/binary-map';
+import { BinaryUint32ToUint32Map } from '../../utils/binary-uint32-to-uint32-map';
 
 /**
  * Hostname lookup table.
@@ -71,7 +71,7 @@ export class HostnameLookupTable implements ILookupTable {
         for (let i = 0; i < domains.length; i += 1) {
             const hash = fastHash(domains[i]);
             // Get the position of the storage indexes for the hash
-            const storageIndexesPosition = BinaryMap.get(hash, this.buffer, this.binaryMapPosition);
+            const storageIndexesPosition = BinaryUint32ToUint32Map.get(hash, this.buffer, this.binaryMapPosition);
             if (storageIndexesPosition !== undefined) {
                 // Iterate over the storage indexes and retrieve the rules
                 U32LinkedList.forEach((storageIdx) => {

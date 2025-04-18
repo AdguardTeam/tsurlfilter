@@ -1,10 +1,11 @@
 import type { ByteBuffer } from './byte-buffer';
 
 /**
- * The {@link BinaryMultiMap} is a read-only API for Map<uint32, uint32[]> representation in {@link ByteBuffer}.
+ * The {@link BinaryUint32ToUint32ListMap} is a read-only API for Map<uint32, uint32[]> representation in
+ * {@link ByteBuffer}.
  * The primary usage case is indexing IDs where a key can map to multiple values.
  */
-export class BinaryMultiMap {
+export class BinaryUint32ToUint32ListMap {
     /**
      * Reserved position for the 'undefined' chain position.
      */
@@ -48,7 +49,7 @@ export class BinaryMultiMap {
         const endOfLookup = size * 4 + cursor; // size * Uint32Array.BYTES_PER_ELEMENT
 
         while (cursor < endOfLookup) {
-            buffer.addUint32(cursor, BinaryMultiMap.EMPTY_POSITION);
+            buffer.addUint32(cursor, BinaryUint32ToUint32ListMap.EMPTY_POSITION);
             cursor += 4;
         }
 
@@ -113,11 +114,11 @@ export class BinaryMultiMap {
     }
 
     /**
-     * Gets the array of values from the {@link BinaryMultiMap} in the {@link buffer}.
+     * Gets the array of values from the {@link BinaryUint32ToUint32ListMap} in the {@link buffer}.
      *
      * @param input The hash key.
-     * @param buffer The {@link ByteBuffer} where the {@link BinaryMultiMap} is stored.
-     * @param offset The position of the {@link BinaryMultiMap} in the {@link buffer}.
+     * @param buffer The {@link ByteBuffer} where the {@link BinaryUint32ToUint32ListMap} is stored.
+     * @param offset The position of the {@link BinaryUint32ToUint32ListMap} in the {@link buffer}.
      *
      * @returns The matched values (as number[]) or undefined if the key is not found.
      */
@@ -131,7 +132,7 @@ export class BinaryMultiMap {
         // 3) Lookup the chain's position
         const chainPosition = buffer.getUint32(offset + 4 + (hash * 4));
 
-        if (chainPosition === BinaryMultiMap.EMPTY_POSITION) {
+        if (chainPosition === BinaryUint32ToUint32ListMap.EMPTY_POSITION) {
             // If there's no chain here, no values for that key
             return undefined;
         }

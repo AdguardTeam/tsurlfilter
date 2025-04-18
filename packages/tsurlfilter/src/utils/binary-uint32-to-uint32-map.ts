@@ -1,11 +1,11 @@
 import type { ByteBuffer } from './byte-buffer';
 
 /**
- * The {@link BinaryMap} is a read-only API for Map<uint32, uint32> representation in {@link ByteBuffer}.
+ * The {@link BinaryUint32ToUint32Map} is a read-only API for Map<uint32, uint32> representation in {@link ByteBuffer}.
  * The primary usage case is indexing the {@link RuleStorage} storage ids.
  * The value is passed as the position of the {@link U32LinkedList} with {@link RuleStorage} ids.
  */
-export class BinaryMap {
+export class BinaryUint32ToUint32Map {
     /**
      * Reserved position for the 'undefined' value.
      */
@@ -33,7 +33,7 @@ export class BinaryMap {
         const endOfLookup = size * Uint32Array.BYTES_PER_ELEMENT + cursor;
 
         while (cursor < endOfLookup) {
-            buffer.addUint32(cursor, BinaryMap.EMPTY_POSITION);
+            buffer.addUint32(cursor, BinaryUint32ToUint32Map.EMPTY_POSITION);
             cursor += 4; // Uint32Array.BYTES_PER_ELEMENT
         }
 
@@ -87,11 +87,11 @@ export class BinaryMap {
     }
 
     /**
-     * Gets the value from the {@link BinaryMap} in the {@link buffer}.
+     * Gets the value from the {@link BinaryUint32ToUint32Map} in the {@link buffer}.
      *
      * @param input The hash key.
-     * @param buffer The {@link ByteBuffer} where {@link BinaryMap} stored.
-     * @param offset The position of the {@link BinaryMap} in the {@link buffer}.
+     * @param buffer The {@link ByteBuffer} where {@link BinaryUint32ToUint32Map} stored.
+     * @param offset The position of the {@link BinaryUint32ToUint32Map} in the {@link buffer}.
      *
      * @returns The matched value or undefined if the key is not found.
      */
@@ -111,7 +111,7 @@ export class BinaryMap {
         );
 
         // If the chain position is empty, data is not found.
-        if (chainPosition === BinaryMap.EMPTY_POSITION) {
+        if (chainPosition === BinaryUint32ToUint32Map.EMPTY_POSITION) {
             return undefined;
         }
 

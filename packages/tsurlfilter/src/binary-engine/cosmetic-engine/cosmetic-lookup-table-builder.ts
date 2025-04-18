@@ -7,8 +7,8 @@ import { type Builder } from '../builder';
 import { CosmeticLookupTable } from './cosmetic-lookup-table';
 import { ByteBuffer } from '../../utils/byte-buffer';
 import { type IndexedStorageRule } from '../../rules/rule';
-import { BinaryMultiMap } from '../../utils/binary-multimap';
-import { BinaryStringMultiMap } from '../../utils/binary-string-multimap';
+import { BinaryUint32ToUint32ListMap } from '../../utils/binary-uint32-to-uint32list-map';
+import { BinaryStringToUint32ListMap } from '../../utils/binary-string-to-uint32list-map';
 import { U32LinkedList } from '../../utils/u32-linked-list';
 import { CosmeticLookupTableByteOffsets } from '../byte-offsets';
 
@@ -154,12 +154,12 @@ export class CosmeticLookupTableBuilder implements Builder<CosmeticLookupTable> 
 
         // by hostname
         const byHostnameOffset = buffer.byteOffset;
-        BinaryMultiMap.create(this.byHostname, this.buffer);
+        BinaryUint32ToUint32ListMap.create(this.byHostname, this.buffer);
         buffer.setUint32(offset + CosmeticLookupTableByteOffsets.ByHostname, byHostnameOffset);
 
         // allowlist
         const allowlistOffset = buffer.byteOffset;
-        BinaryStringMultiMap.create(this.allowlist, this.buffer);
+        BinaryStringToUint32ListMap.create(this.allowlist, this.buffer);
         buffer.setUint32(offset + CosmeticLookupTableByteOffsets.Allowlist, allowlistOffset);
 
         // seq scan rules

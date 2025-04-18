@@ -4,7 +4,7 @@ import { fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../../rules/network-rule';
 import { ByteBuffer } from '../../utils/byte-buffer';
 import { U32LinkedList } from '../../utils/u32-linked-list';
-import { BinaryMap } from '../../utils/binary-map';
+import { BinaryUint32ToUint32Map } from '../../utils/binary-uint32-to-uint32-map';
 import { type Builder } from '../builder';
 import { DomainsLookupTable } from './domains-lookup-table';
 import { type IndexedStorageRule } from '../../rules/rule';
@@ -69,7 +69,7 @@ export class DomainsLookupTableBuilder implements Builder<DomainsLookupTable> {
             throw new Error('Cannot build the lookup table after it has been built');
         }
 
-        const relativeBinaryMapPosition = BinaryMap.create(this.domainsLookupTable, this.buffer);
+        const relativeBinaryMapPosition = BinaryUint32ToUint32Map.create(this.domainsLookupTable, this.buffer);
         const offset = buffer.byteOffset;
         // write rule count
         buffer.addUint32(offset, this.domainsLookupTable.size);

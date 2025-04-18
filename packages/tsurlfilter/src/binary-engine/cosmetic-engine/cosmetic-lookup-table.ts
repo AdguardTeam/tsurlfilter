@@ -3,9 +3,9 @@ import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
 import { type ByteBuffer } from '../../utils/byte-buffer';
 import { U32LinkedList } from '../../utils/u32-linked-list';
-import { BinaryStringMultiMap } from '../../utils/binary-string-multimap';
+import { BinaryStringToUint32ListMap } from '../../utils/binary-string-to-uint32list-map';
 import { fastHash } from '../../utils/string-utils';
-import { BinaryMultiMap } from '../../utils/binary-multimap';
+import { BinaryUint32ToUint32ListMap } from '../../utils/binary-uint32-to-uint32list-map';
 import { CosmeticLookupTableByteOffsets } from '../byte-offsets';
 
 /**
@@ -55,7 +55,7 @@ export class CosmeticLookupTable {
         const { subdomains } = request;
         for (let i = 0; i < subdomains.length; i += 1) {
             const hash = fastHash(subdomains[i]);
-            const rulesIndexes = new Set(BinaryMultiMap.get(
+            const rulesIndexes = new Set(BinaryUint32ToUint32ListMap.get(
                 hash,
                 this.buffer,
                 this.offset + CosmeticLookupTableByteOffsets.ByHostname,
@@ -93,7 +93,7 @@ export class CosmeticLookupTable {
      */
     isScriptletAllowlisted = (content: string, request: Request): boolean => {
         // check for rules with that content
-        const allowlistScriptletRulesIndexes = BinaryStringMultiMap.get(
+        const allowlistScriptletRulesIndexes = BinaryStringToUint32ListMap.get(
             content,
             this.buffer,
             this.offset + CosmeticLookupTableByteOffsets.Allowlist,
@@ -159,7 +159,7 @@ export class CosmeticLookupTable {
             }
         }
 
-        const rulesIndexes = BinaryStringMultiMap.get(
+        const rulesIndexes = BinaryStringToUint32ListMap.get(
             rule.getContent(),
             this.buffer,
             this.offset + CosmeticLookupTableByteOffsets.Allowlist,
