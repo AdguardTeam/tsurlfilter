@@ -9,7 +9,7 @@ pnpm install
 curr_path="test/builders/rollup-ts"
 tsurlfilter="tsurlfilter.tgz"
 
-(cd ../../.. && pnpm pack && mv adguard-tsurlfilter-*.tgz "$curr_path/$tsurlfilter")
+(cd ../../.. && pnpm pack --out "$curr_path/$tsurlfilter")
 
 # unzip to @adguard/tsurlfilter to node_modules
 tsurlfilter_nm="node_modules/@adguard/tsurlfilter"

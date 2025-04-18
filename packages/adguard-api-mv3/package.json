@@ -1,65 +1,65 @@
 {
-  "name": "@adguard/api-mv3",
-  "version": "0.2.3",
-  "description": "This is a TypeScript library that implements AdGuard's extension API for MV3",
-  "main": "dist/adguard-api.js",
-  "files": [
-    "dist/**/*"
-  ],
-  "typings": "dist/types/background/index.d.ts",
-  "exports": {
-    ".": "./dist/adguard-api.js",
-    "./content-script": "./dist/adguard-content.js",
-    "./assistant": "./dist/adguard-assistant.js"
-  },
-  "typesVersions": {
-    "*": {
-      "content-script": [
-        "dist/types/content-script/index.d.ts"
-      ],
-      "assistant": [
-        "dist/types/content-script/assistant.d.ts"
-      ]
+    "name": "@adguard/api-mv3",
+    "version": "0.2.3",
+    "description": "This is a TypeScript library that implements AdGuard's extension API for MV3",
+    "main": "dist/adguard-api.js",
+    "files": [
+        "dist/**/*"
+    ],
+    "typings": "dist/types/background/index.d.ts",
+    "exports": {
+        ".": "./dist/adguard-api.js",
+        "./content-script": "./dist/adguard-content.js",
+        "./assistant": "./dist/adguard-assistant.js"
+    },
+    "typesVersions": {
+        "*": {
+            "content-script": [
+                "dist/types/content-script/index.d.ts"
+            ],
+            "assistant": [
+                "dist/types/content-script/assistant.d.ts"
+            ]
+        }
+    },
+    "scripts": {
+        "lint": "pnpm lint:eslint && pnpm check-types",
+        "e2e": "vitest run",
+        "build": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
+        "postbuild": "pnpm types && tsx tasks/build-txt",
+        "prepush": "pnpm build",
+        "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
+        "lint:eslint": "eslint --cache --ignore-path .gitignore .",
+        "check-types": "tsc",
+        "increment": "pnpm version patch --no-git-tag-version"
+    },
+    "author": "Adguard Software Ltd.",
+    "license": "GPL-3.0-only",
+    "dependencies": {
+        "@adguard/tswebextension": "workspace:^",
+        "zod": "3.22.4"
+    },
+    "devDependencies": {
+        "@rollup/plugin-commonjs": "^25.0.7",
+        "@rollup/plugin-json": "^6.0.1",
+        "@rollup/plugin-node-resolve": "^15.2.3",
+        "@rollup/plugin-swc": "^0.3.0",
+        "@swc/core": "^1.10.18",
+        "@types/node": "^22.13.4",
+        "@types/webextension-polyfill": "0.12.1",
+        "@typescript-eslint/eslint-plugin": "^6.13.1",
+        "@typescript-eslint/parser": "6.13.1",
+        "core-js": "^3.33.3",
+        "cross-env": "^7.0.3",
+        "eslint": "8.54.0",
+        "eslint-config-airbnb-base": "15.0.0",
+        "eslint-config-airbnb-typescript": "17.1.0",
+        "eslint-plugin-import": "^2.29.0",
+        "eslint-plugin-jsdoc": "^46.9.0",
+        "rollup": "^4.6.0",
+        "rollup-plugin-copy": "^3.5.0",
+        "tsx": "^4.19.3",
+        "typescript": "^5.3.2",
+        "vitest": "^2.1.6"
     }
-  },
-  "scripts": {
-    "lint": "pnpm lint:eslint && pnpm check-types",
-    "e2e": "vitest run",
-    "build": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
-    "postbuild": "pnpm types && tsx tasks/build-txt",
-    "prepush": "pnpm build",
-    "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-    "lint:eslint": "eslint --cache --ignore-path .gitignore .",
-    "check-types": "tsc",
-    "increment": "pnpm version patch --no-git-tag-version"
-  },
-  "author": "Adguard Software Ltd.",
-  "license": "GPL-3.0-only",
-  "dependencies": {
-    "@adguard/tswebextension": "workspace:^",
-    "zod": "3.22.4"
-  },
-  "devDependencies": {
-    "@rollup/plugin-commonjs": "^25.0.7",
-    "@rollup/plugin-json": "^6.0.1",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-swc": "^0.3.0",
-    "@swc/core": "^1.10.18",
-    "@types/node": "^22.13.4",
-    "@types/webextension-polyfill": "0.12.1",
-    "@typescript-eslint/eslint-plugin": "^6.13.1",
-    "@typescript-eslint/parser": "6.13.1",
-    "core-js": "^3.33.3",
-    "cross-env": "^7.0.3",
-    "eslint": "8.54.0",
-    "eslint-config-airbnb-base": "15.0.0",
-    "eslint-config-airbnb-typescript": "17.1.0",
-    "eslint-plugin-import": "^2.29.0",
-    "eslint-plugin-jsdoc": "^46.9.0",
-    "rollup": "^4.6.0",
-    "rollup-plugin-copy": "^3.5.0",
-    "tsx": "^4.19.3",
-    "typescript": "^5.3.2",
-    "vitest": "^2.1.6"
-  }
 }

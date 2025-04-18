@@ -1,31 +1,34 @@
 {
-  "name": "@adguard/extensions",
-  "version": "2.2.0",
-  "description": "This is a monorepo with packages developed by the extensions developers at AdGuard",
-  "author": "Adguard Software Ltd.",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/AdguardTeam/tsurlfilter.git"
-  },
-  "license": "GPL-3.0-only",
-  "engines": {
-    "node": ">=18"
-  },
-  "bugs": {
-    "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
-  },
-  "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
-  "scripts": {
-    "lint": "lerna run lint",
-    "clean": "lerna clean -y && rm -rf node_modules"
-  },
-  "devDependencies": {
-    "lerna": "8.1.8",
-    "vitest": "^2.1.9"
-  },
-  "pnpm": {
-    "overrides": {
-      "@adguard/agtree": "workspace:^"
+    "name": "@adguard/extensions",
+    "version": "2.2.0",
+    "description": "This is a monorepo with packages developed by the extensions developers at AdGuard",
+    "author": "Adguard Software Ltd.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git"
+    },
+    "license": "GPL-3.0-only",
+    "engines": {
+        "node": ">=22"
+    },
+    "bugs": {
+        "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
+    },
+    "homepage": "https://github.com/AdguardTeam/tsurlfilter#readme",
+    "scripts": {
+        "lint": "lerna run lint",
+        "clean": "node scripts/cleanup.mjs",
+        "prepare": "node .husky/install.mjs"
+    },
+    "devDependencies": {
+        "husky": "^9.1.7",
+        "lerna": "8.1.8",
+        "vitest": "^2.1.9"
+    },
+    "pnpm": {
+        "neverBuiltDependencies": [],
+        "overrides": {
+            "@adguard/agtree": "workspace:^"
+        }
     }
-  }
 }

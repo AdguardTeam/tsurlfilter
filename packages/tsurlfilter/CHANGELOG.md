@@ -18,6 +18,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [AdguardBrowserExtension#2942]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2942
 
+## [3.2.3] - 2025-04-15
+
+### Fixed
+
+- `fetchExtensionResourceText` util — enforce min byte range length when fetching resources
+  [AdguardBrowserExtension#3128].
+
+[3.2.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.2.3
+[AdguardBrowserExtension#3128]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3128
+
 ## [3.2.2] - 2025-03-31
 
 ### Changed
