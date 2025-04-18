@@ -99,7 +99,7 @@ export class CosmeticEngineBuilder implements Builder<CosmeticEngine> {
         buffer.addUint32(offset + CosmeticEngineByteOffsets.HtmlLookupTable, 0);
 
         // rules count
-        const rulesCountOffset = buffer.byteOffset;
+        const rulesCountOffset = buffer.byteOffset + CosmeticEngineByteOffsets.RulesCount;
         buffer.setUint32(rulesCountOffset, this.rulesCount);
 
         // element hiding lookup table

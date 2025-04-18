@@ -7,10 +7,10 @@ export const enum NetworkEngineByteOffsets {
 
 export const enum CosmeticEngineByteOffsets {
     RulesCount = 0,
-    ElementHidingLookupTable = 1,
-    CssLookupTable = 5,
-    JsLookupTable = 9,
-    HtmlLookupTable = 13,
+    ElementHidingLookupTable = 4,
+    CssLookupTable = 8,
+    JsLookupTable = 12,
+    HtmlLookupTable = 16,
 }
 
 export const enum CosmeticLookupTableByteOffsets {
