@@ -6,6 +6,5 @@ coverage
 dist
 node_modules
 
-# FIXME: Uncomment after tests
-## Release file for npm
-#*.tgz
+# Release file for npm
+*.tgz
