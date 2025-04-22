@@ -1,19 +1,47 @@
 /* eslint-disable max-len */
-import { describe, it, expect } from 'vitest';
+import {
+    describe,
+    it,
+    expect,
+    vi,
+    afterAll,
+    afterEach,
+} from 'vitest';
 import {
     NetworkRuleOption,
     Request,
     RequestType,
     HTTPMethod,
     StealthOptionName,
-    setLogger,
     NetworkRuleGroupOptions,
     type NetworkRule,
 } from '../../src';
 import { createNetworkRule } from '../helpers/rule-creator';
-import { LoggerMock } from '../mocks';
+
+vi.mock('@adguard/logger', () => ({
+    Logger: {
+        error: vi.fn(),
+        warn: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn(),
+        trace: vi.fn(),
+    },
+}));
+
+import { Logger } from '@adguard/logger';
 
 describe('NetworkRule constructor', () => {
+    const logger = new Logger(console);
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    afterAll(() => {
+        vi.resetAllMocks();
+    });
+
+
     describe('creation of rule with $stealth modifier', () => {
         it('creates $stealth rule without options', () => {
             const rule = createNetworkRule('@@||example.org^$stealth', -1);
@@ -33,29 +61,19 @@ describe('NetworkRule constructor', () => {
         });
 
         it('logs debug message on $stealth rule with duplicate options', () => {
-            const loggerMock = new LoggerMock();
-            setLogger(loggerMock);
-
             const msg = 'Duplicate $stealth modifier value "donottrack" in "donottrack|donottrack"';
             createNetworkRule('@@||example.org^$stealth=donottrack|donottrack', 0);
 
-            expect(loggerMock.debug).toHaveBeenCalledTimes(1);
-            expect(loggerMock.debug).toHaveBeenCalledWith(msg);
-
-            setLogger(console);
+            expect(logger.debug).toHaveBeenCalledTimes(1);
+            expect(logger.debug).toHaveBeenCalledWith(msg);
         });
 
         it('logs debug message on $stealth modifier with no supported values', () => {
-            const loggerMock = new LoggerMock();
-            setLogger(loggerMock);
-
             const msg = '$stealth modifier does not contain any options supported by browser extension: "webrtc|location"';
             createNetworkRule('@@||example.org^$stealth=webrtc|location', 0);
 
-            expect(loggerMock.debug).toHaveBeenCalledTimes(1);
-            expect(loggerMock.debug).toHaveBeenCalledWith(msg);
-
-            setLogger(console);
+            expect(logger.debug).toHaveBeenCalledTimes(1);
+            expect(logger.debug).toHaveBeenCalledWith(msg);
         });
 
         it('throws error on $stealth rule with inverted options', () => {

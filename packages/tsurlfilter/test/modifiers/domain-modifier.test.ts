@@ -1,10 +1,38 @@
-import { describe, it, expect } from 'vitest';
+import {
+    describe,
+    it,
+    expect,
+    vi,
+    afterEach,
+    afterAll,
+} from 'vitest';
 
 import { DomainModifier } from '../../src/modifiers/domain-modifier';
-import { setLogger } from '../../src';
-import { LoggerMock } from '../mocks';
+
+// Mock the logger module at the top level
+vi.mock('@adguard/logger', () => ({
+    Logger: {
+        error: vi.fn(),
+        warn: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn(),
+        trace: vi.fn(),
+    },
+}));
+
+import { Logger } from '@adguard/logger';
 
 describe('Domain modifier', () => {
+    const logger = new Logger(console);
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    afterAll(() => {
+        vi.resetAllMocks();
+    });
+
     describe('constructor and valid domains string', () => {
         const COMMA_SEPARATOR = ',';
         const domainsListCases = [
@@ -223,17 +251,12 @@ describe('Domain modifier', () => {
         });
 
         it('logs debug message on invalid regexp pattern', () => {
-            const loggerMock = new LoggerMock();
-            setLogger(loggerMock);
-
             const msg = 'Invalid regular expression as domain pattern: "/example[org/"';
 
             isDomainOrSubdomainOfAny('example.org', ['/example[org/']);
 
-            expect(loggerMock.error).toHaveBeenCalledTimes(1);
-            expect(loggerMock.error).toHaveBeenCalledWith(msg);
-
-            setLogger(console);
+            expect(logger.error).toHaveBeenCalledTimes(1);
+            expect(logger.error).toHaveBeenCalledWith(msg);
         });
     });
 

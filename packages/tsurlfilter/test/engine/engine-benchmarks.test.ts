@@ -7,6 +7,7 @@ import {
     afterAll,
     beforeEach,
     afterEach,
+    vi,
 } from 'vitest';
 import fs from 'fs';
 import zlib from 'zlib';
@@ -21,7 +22,6 @@ import {
     RuleStorage,
     DnsEngine,
     CosmeticEngine,
-    setLogger,
     FilterListPreprocessor,
 } from '../../src';
 
@@ -289,19 +289,17 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
 
 // TODO: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
 describe('Benchmarks', () => {
+    // FIXME: Check that mock works correctly
     beforeAll(() => {
-        /* eslint-disable @typescript-eslint/no-unused-vars */
-        setLogger({
-            error(message?: string): void {
+        vi.mock('@adguard/logger', () => ({
+            Logger: {
+                error: vi.fn(),
+                warn: vi.fn(),
+                info: vi.fn(),
+                debug: vi.fn(),
+                trace: vi.fn(),
             },
-            info(message?: string): void {
-            },
-            debug(message?: string): void {
-            },
-            warn(message?: string): void {
-            },
-        });
-        /* eslint-disable @typescript-eslint/no-unused-vars */
+        }));
     });
 
     beforeEach(() => {
@@ -313,7 +311,7 @@ describe('Benchmarks', () => {
     });
 
     afterAll(() => {
-        setLogger(console);
+        vi.restoreAllMocks();
     });
 
     const easyListPrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/easylist.txt', 'utf8'));

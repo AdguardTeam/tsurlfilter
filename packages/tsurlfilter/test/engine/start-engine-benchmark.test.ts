@@ -17,7 +17,6 @@ import {
     FilterListPreprocessor,
     NetworkEngine,
     RuleStorage,
-    setLogger,
 } from '../../src';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
@@ -69,18 +68,22 @@ describe('Start Engine Benchmark', () => {
     }
 
     beforeAll(() => {
-        setLogger({
-            error: vi.fn(),
-            info: vi.fn(),
-            debug: vi.fn(),
-            warn: vi.fn(),
-        });
+        // FIXME: Check that mock works correctly
+        vi.mock('@adguard/logger', () => ({
+            Logger: {
+                error: vi.fn(),
+                warn: vi.fn(),
+                info: vi.fn(),
+                debug: vi.fn(),
+                trace: vi.fn(),
+            },
+        }));
 
         result = {};
     });
 
     afterAll(() => {
-        setLogger(console);
+        vi.restoreAllMocks();
         console.log('Time:', new Date(Date.now()).toDateString());
         console.log('Env:');
         console.table({
