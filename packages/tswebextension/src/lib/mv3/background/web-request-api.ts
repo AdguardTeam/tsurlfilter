@@ -143,7 +143,6 @@ import { RequestType } from '@adguard/tsurlfilter';
 import { CommonAssistant, type CommonAssistantDetails } from '../../common/assistant';
 import { companiesDbService } from '../../common/companies-db-service';
 import { BACKGROUND_TAB_ID, FRAME_DELETION_TIMEOUT_MS } from '../../common/constants';
-import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
@@ -222,8 +221,7 @@ export class WebRequestApi {
         try {
             await browser.webRequest.handlerBehaviorChanged();
         } catch (e) {
-            const errorMessage = getErrorMessage(e);
-            throw new Error(`Cannot flush memory cache and call browser.handlerBehaviorChanged: ${errorMessage}`);
+            logger.error('[tsweb.WebRequestApi.flushMemoryCache]: Cannot flush memory cache and call browser.handlerBehaviorChanged: ', e);
         }
     }
 
@@ -391,9 +389,7 @@ export class WebRequestApi {
         }
 
         if (WebRequestApi.isAssistantFrame(tabId, details)) {
-            logger.debug(
-                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
-            );
+            logger.debug(`[tsweb.WebRequestApi.onResponseStarted]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`);
             return;
         }
 
@@ -650,8 +646,7 @@ export class WebRequestApi {
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.cosmeticResult) {
-                // eslint-disable-next-line max-len
-                logger.debug(`[RequestEvents.onCompleted]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                logger.debug(`[tsweb.WebRequestApi.onCompleted]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
                 return;
             }
 
@@ -713,9 +708,7 @@ export class WebRequestApi {
         tabsApi.updateFrameContext(tabId, frameId, { documentId });
 
         if (WebRequestApi.isAssistantFrame(tabId, details)) {
-            logger.debug(
-                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
-            );
+            logger.debug(`[tsweb.WebRequestApi.onCommitted]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`);
             return;
         }
 
@@ -732,7 +725,9 @@ export class WebRequestApi {
 
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
-        Promise.all(tasks).catch((e) => logger.error(e));
+        Promise.all(tasks).catch((e) => {
+            logger.error('[tsweb.WebRequestApi.onCommitted]: error on cosmetics injection: ', e);
+        });
     }
 
     /**

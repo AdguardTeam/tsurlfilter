@@ -81,7 +81,7 @@ class DeclarativeFilteringLog {
         const context = requestContextStorage.get(requestId);
 
         if (!context) {
-            logger.debug('[logMatchedRule]: cannot find request context for request id', requestId);
+            logger.error('[tsweb.DeclarativeFilteringLog.logMatchedRule]: cannot find request context for request id ', requestId);
             return;
         }
 
@@ -90,7 +90,7 @@ class DeclarativeFilteringLog {
         try {
             declarativeRuleInfo = await this.getRuleInfo(rulesetId, ruleId);
         } catch (e) {
-            logger.debug(e);
+            logger.error('[tsweb.DeclarativeFilteringLog.logMatchedRule]: cannot get rule info due to: ', e);
             return;
         }
 
@@ -136,7 +136,7 @@ class DeclarativeFilteringLog {
                 ? 'Cannot start recording declarative network rules due to: '
                 : 'Cannot stop recording declarative network rules due to: ';
 
-            logger.debug(message, e);
+            logger.error(`[tsweb.DeclarativeFilteringLog.toggleListener]: ${message}: `, e);
         }
     };
 

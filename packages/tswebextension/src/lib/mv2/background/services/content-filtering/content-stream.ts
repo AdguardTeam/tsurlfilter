@@ -238,7 +238,7 @@ export class ContentStream {
                     this.disconnect(event.data);
                 }
             } catch (e) {
-                logger.warn((e as Error).message);
+                logger.warn('[tsweb.ContentStream.onResponseData]: catched error: ', e);
                 // on error we disconnect the filter from the request
                 this.disconnect(event.data);
             }
@@ -251,8 +251,8 @@ export class ContentStream {
      * Handler for response error.
      */
     private onResponseError(): void {
-        if (this.filter.error && this.filter.error) {
-            logger.info(this.filter.error);
+        if (this.filter.error) {
+            logger.info('[tsweb.ContentStream.onResponseError]: catched error: ', this.filter.error);
         }
     }
 
@@ -281,8 +281,7 @@ export class ContentStream {
         if (charset) {
             if (SUPPORTED_CHARSETS.indexOf(charset) < 0) {
                 // Charset is detected and it is not supported
-                // eslint-disable-next-line max-len
-                logger.warn(`Skipping request ${this.context.requestId} with Content-Type ${this.context.contentTypeHeader}`);
+                logger.warn(`[tsweb.ContentStream.onResponseFinish]: skipping request ${this.context.requestId} with Content-Type ${this.context.contentTypeHeader}`);
                 this.write(this.content);
                 return;
             }

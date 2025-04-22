@@ -15,7 +15,6 @@ import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-util
 
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { FiltersStorage, type PreprocessedFilterListWithChecksum } from '../../common/storage/filters';
-import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 
 import { type ConfigurationMV3 } from './configuration';
@@ -181,7 +180,7 @@ export default class FiltersApi {
      * @returns Promise that resolves when the sync is finished.
      */
     public static async syncFiltersWithStorage(filterIds: number[], ruleSetsPath: string): Promise<void> {
-        logger.info('Syncing enabled filters with the extension storage');
+        logger.trace('[tsweb.FiltersApi.syncFiltersWithStorage]: syncing enabled filters with the extension storage');
 
         const filtersToSync: Record<number, PreprocessedFilterListWithChecksum> = {};
         const filtersInStorage = new Set(await FiltersStorage.getFilterIds());
@@ -208,7 +207,7 @@ export default class FiltersApi {
                     }
 
                     if (currentChecksum === undefined) {
-                        logger.error(`Failed to get checksum for filter with id ${filterId}`);
+                        logger.error(`[tsweb.FiltersApi.syncFiltersWithStorage]: failed to get checksum for filter with id ${filterId}`);
                         return;
                     }
 
@@ -224,7 +223,7 @@ export default class FiltersApi {
                         syncStatus.added.push(filterId);
                     }
                 } catch (error) {
-                    logger.error(`Failed to update filter with id ${filterId}. Error: ${getErrorMessage(error)}`);
+                    logger.error(`[tsweb.FiltersApi.syncFiltersWithStorage]: failed to update filter with id ${filterId}: `, error);
                 }
             }),
         );
@@ -238,10 +237,12 @@ export default class FiltersApi {
             await FiltersStorage.removeMultiple(filtersToRemove);
         }
 
-        logger.info(
-            // eslint-disable-next-line max-len
-            `Synced static rulesets with the extension storage. Added: ${FiltersApi.stringifyFilterIds(syncStatus.added)}. Updated: ${FiltersApi.stringifyFilterIds(syncStatus.updated)}. Removed: ${FiltersApi.stringifyFilterIds(filtersToRemove)}. Unchanged: ${FiltersApi.stringifyFilterIds(syncStatus.unchanged)}`,
-        );
+        const added = FiltersApi.stringifyFilterIds(syncStatus.added);
+        const updated = FiltersApi.stringifyFilterIds(syncStatus.updated);
+        const removed = FiltersApi.stringifyFilterIds(filtersToRemove);
+        const unchanged = FiltersApi.stringifyFilterIds(syncStatus.unchanged);
+
+        logger.trace(`[tsweb.FiltersApi.syncFiltersWithStorage]: synced static rulesets with the extension storage. Added: ${added}. Updated: ${updated}. Removed: ${removed}. Unchanged: ${unchanged}`);
     }
 
     /**

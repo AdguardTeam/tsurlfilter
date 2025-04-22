@@ -438,7 +438,7 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     ): void {
         const tabContext = this.getTabContext(tabId);
         if (!tabContext) {
-            logger.debug('At this point tab context should already exist');
+            logger.debug('[tsweb.TabsApiCommon.setFrameContext]: at this point tab context should already exist');
             return;
         }
         tabContext.setFrameContext(frameId, frameContext);
@@ -475,14 +475,14 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
         const tabContext = this.getTabContext(tabId);
 
         if (!tabContext) {
-            logger.debug('At this point tab context should already exist');
+            logger.debug('[tsweb.TabsApiCommon.updateFrameContext]: at this point tab context should already exist');
             return;
         }
 
         const frameContext = tabContext?.getFrameContext(frameId);
 
         if (!frameContext) {
-            logger.debug('At this point frame context should already exist');
+            logger.debug('[tsweb.TabsApiCommon.updateFrameContext]: at this point frame context should already exist');
             return;
         }
 

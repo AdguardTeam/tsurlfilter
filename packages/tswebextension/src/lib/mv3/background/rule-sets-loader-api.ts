@@ -14,7 +14,6 @@ import { getRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarativ
 import browser from 'webextension-polyfill';
 
 import { logger } from '../../common/utils/logger';
-import { getErrorMessage } from '../../common/error';
 
 const JSON_ARRAY_OPENING_BRACKET = '[';
 const JSON_ARRAY_CLOSING_BRACKET = ']';
@@ -138,7 +137,7 @@ export class RuleSetsLoaderApi {
                 this.isInitialized = true;
                 this.initializerPromise = undefined;
             } catch (error) {
-                logger.error('Failed to initialize RuleSetsLoaderApi. Got error:', getErrorMessage(error));
+                logger.error('[tsweb.RuleSetsLoaderApi.initialize]: failed to initialize. Got error: ', error);
                 throw error;
             }
         };

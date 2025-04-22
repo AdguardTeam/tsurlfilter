@@ -161,7 +161,7 @@ export class FiltersStorage {
 
             await tx.done;
         } catch (e) {
-            logger.error('Failed to set multiple filter data, got error:', e);
+            logger.error('[tsweb.FiltersStorage.setMultiple]: failed to set multiple filter data, got error: ', e);
             tx.abort();
             throw e;
         }
@@ -227,7 +227,7 @@ export class FiltersStorage {
                 checksum,
             };
         } catch (e) {
-            logger.error(`Failed to get filter data for filter id ${filterId}, got error:`, e);
+            logger.error(`[tsweb.FiltersStorage.get]: failed to get filter data for filter id ${filterId}, got error:`, e);
             throw e;
         }
     }
@@ -257,7 +257,7 @@ export class FiltersStorage {
             await Promise.all(keys.map((key) => tx.store.delete(key)));
             await tx.done;
         } catch (e) {
-            logger.error('Failed to remove multiple filter data, got error:', e);
+            logger.error('[tsweb.FiltersStorage.removeMultiple]: failed to remove multiple filter data, got error: ', e);
             tx.abort();
             throw e;
         }
@@ -362,7 +362,7 @@ export class FiltersStorage {
                 .filter((key) => key.startsWith(FiltersStorage.KEY_CHECKSUM))
                 .map((key) => parseInt(key.split(FiltersStorage.KEY_COMBINER)[1], 10));
         } catch (e) {
-            logger.error('Failed to get filter ids, got error:', e);
+            logger.error('[tsweb.FiltersStorage.getFilterIds]: failed to get filter ids, got error: ', e);
             throw e;
         }
     }

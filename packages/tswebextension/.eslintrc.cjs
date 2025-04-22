@@ -39,6 +39,10 @@ module.exports = {
             ignoreUrls: true,
             ignoreTrailingComments: false,
             ignoreComments: false,
+            /**
+             * Ignore calls to logger, e.g. logger.error(), because of the long string.
+             */
+            ignorePattern: 'logger\\.',
         }],
         'import/prefer-default-export': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',

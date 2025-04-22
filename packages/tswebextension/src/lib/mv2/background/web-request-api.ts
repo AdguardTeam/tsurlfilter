@@ -299,9 +299,7 @@ export class WebRequestApi {
         try {
             await browser.webRequest.handlerBehaviorChanged();
         } catch (e) {
-            // TODO: use getErrorMessage instead
-            const message = e instanceof Error ? e.message : String(e);
-            logger.error(message);
+            logger.error('[tsweb.WebRequestApi.flushMemoryCache]: Cannot flush memory cache and call browser.handlerBehaviorChanged: ', e);
         }
     }
 
@@ -704,8 +702,7 @@ export class WebRequestApi {
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.cosmeticResult) {
-                // eslint-disable-next-line max-len
-                logger.debug(`[RequestEvents.onCompleted]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                logger.debug(`[tsweb.WebRequestApi.onCompleted]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
                 return;
             }
 
@@ -758,9 +755,7 @@ export class WebRequestApi {
         } = details;
 
         if (WebRequestApi.isAssistantFrame(tabId, details)) {
-            logger.debug(
-                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
-            );
+            logger.trace(`[tsweb.WebRequestApi.injectCosmetic]: assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`);
             return;
         }
 
