@@ -973,7 +973,12 @@ describe('RuleParser', () => {
         expect(parseAndGenerate('!#safari_cb_affinity(content_blockers)')).toEqual(
             '!#safari_cb_affinity(content_blockers)',
         );
-
+        expect(parseAndGenerate('!#safari_cb_affinity(general,privacy)')).toEqual(
+            '!#safari_cb_affinity(general,privacy)',
+        );
+        expect(parseAndGenerate('!#safari_cb_affinity(general, privacy)')).toEqual(
+            '!#safari_cb_affinity(general,privacy)',
+        );
         // Metadata comments
         expect(parseAndGenerate('! Title: My List')).toEqual('! Title: My List');
         expect(parseAndGenerate('! Version: 2.0.150')).toEqual('! Version: 2.0.150');

@@ -5,7 +5,7 @@ plan:
   key: DNRRULESETSAUTOBUILD
   name: DNR Rulesets - auto build
 variables:
-  dockerContainer: adguard/node-ssh:18.19--0
+  dockerContainer: adguard/node-ssh:22.14--0
 
 stages:
   - Build:
@@ -132,7 +132,7 @@ branch-overrides:
                   cd packages/dnr-rulesets
 
                   # Create artifacts
-                  pnpm pack && mv adguard-dnr-rulesets-*.tgz dnr-rulesets.tgz
+                  pnpm pack --out dnr-rulesets.tgz
           - inject-variables:
               file: packages/dnr-rulesets/dist/build.txt
               scope: RESULT

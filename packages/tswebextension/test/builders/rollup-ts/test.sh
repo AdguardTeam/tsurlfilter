@@ -9,7 +9,7 @@ pnpm install
 curr_path="test/builders/rollup-ts"
 tswebextension="tswebextension.tgz"
 
-(cd ../../.. && pnpm pack && mv adguard-tswebextension-*.tgz "$curr_path/$tswebextension")
+(cd ../../.. && pnpm pack --out "$curr_path/$tswebextension")
 
 # unzip to @adguard/tswebextension to node_modules
 tswebextension_nm="node_modules/@adguard/tswebextension"

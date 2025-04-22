@@ -688,5 +688,95 @@ describe('Converter integration tests', () => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
+        describe('should convert ExtCss separator to uBo', () => {
+            test.each([
+                // change separator if selector contains an ExtCss element that
+                // does not supported natively by any browser
+                {
+                    actual: '#?#*:contains(foo)',
+                    expected: ['##*:contains(foo)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '#$?#*:contains(foo) { display: none; }',
+                    expected: ['##*:contains(foo):style(display: none;)'],
+                    shouldConvert: true,
+                },
+                // but does not change separator if ExtCss element may supported by some browsers
+                {
+                    actual: '##*:has(foo)',
+                    expected: ['##*:has(foo)'],
+                    shouldConvert: false,
+                },
+                {
+                    actual: '#$#*:has(foo) { display: none; }',
+                    expected: ['##*:has(foo):style(display: none;)'],
+                    shouldConvert: true,
+                },
+                // sometimes we need to force selecting by ExtCss engine, even if we do not have any ExtCss elements
+                {
+                    actual: '#?#.banner',
+                    expected: ['##.banner'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '#$#.banner { display: none; }',
+                    expected: ['##.banner:style(display: none;)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '#$?#.banner { remove: true; }',
+                    expected: ['##.banner:remove()'],
+                    shouldConvert: true,
+                },
+                // case without spaces in css pseudo property
+                {
+                    actual: '#$?#.banner {remove:true;}',
+                    expected: ['##.banner:remove()'],
+                    shouldConvert: true,
+                },
+                // should not convert simple html hiding rules
+                {
+                    actual: '##div[foo="yay{"]',
+                    expected: ['##div[foo="yay{"]'],
+                    shouldConvert: false,
+                },
+                {
+                    actual: '##div[foo="yay{"][href="yay}"]',
+                    expected: ['##div[foo="yay{"][href="yay}"]'],
+                    shouldConvert: false,
+                },
+                // should convert CSS injection rules properly
+                {
+                    actual: 'example.org#$#body[style^="position: fixed"] { position: static !important; }',
+                    expected: ['example.org##body[style^="position: fixed"]:style(position: static !important;)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.org#?#div:matches-css(before, content: /^Реклама/):matches-css(max-height:100px)',
+                    expected: [
+                        'example.org##div:matches-css(before, content: /^Реклама/):matches-css(max-height:100px)',
+                    ],
+                    shouldConvert: true,
+                },
+                // should convert exception rules properly
+                {
+                    actual: 'example.org#@$##siteNav { transform: none !important; }',
+                    expected: [
+                        'example.org#@##siteNav:style(transform: none !important;)',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.*#@?#div[data-asin]:has(> div.sg-col > span[class*="widget=loom-desktop"])',
+                    expected: [
+                        'example.*#@#div[data-asin]:has(> div.sg-col > span[class*="widget=loom-desktop"])',
+                    ],
+                    shouldConvert: true,
+                },
+            ])("should convert '$actual' to '$expected'", (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
+            });
+        });
     });
 });
