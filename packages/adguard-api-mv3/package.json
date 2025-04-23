@@ -31,7 +31,8 @@
         "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "lint:eslint": "eslint --cache --ignore-path .gitignore .",
         "check-types": "tsc",
-        "increment": "pnpm version patch --no-git-tag-version"
+        "increment": "pnpm version patch --no-git-tag-version",
+        "tgz": "pnpm pack --out adguard-api-mv3.tgz"
     },
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0-only",

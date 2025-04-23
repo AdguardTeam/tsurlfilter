@@ -97,7 +97,8 @@
         "report-coverage": "cat ./coverage/lcov.info | coveralls",
         "precommit": "lint-staged",
         "prepublishOnly": "pnpm build",
-        "increment": "pnpm version patch --no-git-tag-version"
+        "increment": "pnpm version patch --no-git-tag-version",
+        "tgz": "pnpm pack --out tswebextension.tgz"
     },
     "lint-staged": {
         "{src,test}/**/*.ts": [

@@ -24,7 +24,8 @@
         "lint:code": "eslint",
         "lint:types": "tsc",
         "increment": "pnpm version patch --no-git-tag-version",
-        "increment:auto-deploy": "tsx tasks/auto-deploy-increment"
+        "increment:auto-deploy": "tsx tasks/auto-deploy-increment",
+        "tgz": "pnpm pack --out dnr-rulesets.tgz"
     },
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0-only",
