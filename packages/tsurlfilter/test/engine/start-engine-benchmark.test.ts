@@ -43,7 +43,6 @@ const __dirname = new URL('.', import.meta.url).pathname;
 // │   dns engine   │ '180.94 ms' │
 // └────────────────┴─────────────┘
 describe('Start Engine Benchmark', () => {
-    // FIXME: Check that mock for logger works correctly
     const ROUNDS = 10;
 
     let result: Record<string, string>;

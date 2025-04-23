@@ -287,7 +287,6 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
     return totalMatches;
 }
 
-// FIXME: Check that mock for logger works correctly
 // TODO: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
 describe('Benchmarks', () => {
     beforeEach(() => {
