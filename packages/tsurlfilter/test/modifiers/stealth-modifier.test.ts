@@ -35,18 +35,20 @@ describe('Stealth modifier api', () => {
 
         let traceCalls = 0;
         modifier = new StealthModifier('donottrack|donottrack');
-        traceCalls++;
+        traceCalls += 1;
         expect(modifier.hasValues()).toBeTruthy();
         expect(loggerMocks.trace).toHaveBeenCalledTimes(traceCalls);
         expect(loggerMocks.trace).toHaveBeenCalledWith(
+            // eslint-disable-next-line max-len
             '[tsurl.StealthModifier.constructor] duplicate $stealth modifier value "donottrack" in "donottrack|donottrack"',
         );
 
         modifier = new StealthModifier('webrtc|java');
-        traceCalls++;
+        traceCalls += 1;
         expect(modifier.hasValues()).toBeFalsy();
         expect(loggerMocks.trace).toHaveBeenCalledTimes(traceCalls);
         expect(loggerMocks.trace).toHaveBeenCalledWith(
+            // eslint-disable-next-line max-len
             '[tsurl.StealthModifier.constructor] $stealth modifier does not contain any options supported by browser extension: "webrtc|java"',
         );
 
