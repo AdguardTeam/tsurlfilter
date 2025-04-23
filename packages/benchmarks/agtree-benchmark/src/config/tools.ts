@@ -7,6 +7,7 @@ import * as TsUrlFilterV1 from 'tsurlfilter-v1';
 import * as TsUrlFilterV2 from 'tsurlfilter-v2';
 import * as AGTreeV1 from 'agtree-v1';
 import * as AGTreeV2 from 'agtree-v2';
+import * as AGTreeV3 from 'agtree-v3';
 
 import { type ToolConfigs } from '../common/interfaces.js';
 import { RE_NL_SPLIT } from '../common/constants.js';
@@ -80,6 +81,14 @@ export const toolConfigs: ToolConfigs = {
             return convertedFilterListNode.children.length;
         },
     },
+    '@adguard/agtree v3 - parse and convert': {
+        url: 'https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree',
+        benchmark: (content: string) => {
+            const filterListNode = AGTreeV3.FilterListParser.parse(content, { isLocIncluded: false, tolerant: true });
+            const { result: convertedFilterListNode } = AGTreeV3.FilterListConverter.convertToAdg(filterListNode);
+            return convertedFilterListNode.children.length;
+        },
+    },
     '@adguard/agtree v1 - parser': {
         url: 'https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree',
         benchmark: (content: string) => {
@@ -91,6 +100,13 @@ export const toolConfigs: ToolConfigs = {
         url: 'https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree',
         benchmark: (content: string) => {
             const filterListNode = AGTreeV2.FilterListParser.parse(content, { isLocIncluded: false, tolerant: true });
+            return filterListNode.children.length;
+        },
+    },
+    '@adguard/agtree v3 - parser': {
+        url: 'https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/agtree',
+        benchmark: (content: string) => {
+            const filterListNode = AGTreeV3.FilterListParser.parse(content, { isLocIncluded: false, tolerant: true });
             return filterListNode.children.length;
         },
     },
