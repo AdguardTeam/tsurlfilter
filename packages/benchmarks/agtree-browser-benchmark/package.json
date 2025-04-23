@@ -14,6 +14,7 @@
     "@adguard/agtree": "workspace:^",
     "agtree-v1": "npm:@adguard/agtree@^1.1.7",
     "agtree-v2": "npm:@adguard/agtree@^2.3.0",
+    "agtree-v3": "npm:@adguard/agtree@^3.1.2",
     "benchmark": "^2.1.4",
     "consola": "^3.2.3",
     "console-table-printer": "^2.12.0",
