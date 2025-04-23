@@ -212,12 +212,39 @@ export class Logger {
      * @param error Error to print.
      *
      * @returns Error message.
-     *
-     * @private
      */
     private static errorToString(error: Error): string {
         const message = getErrorMessage(error);
         return `${message}\nStack trace:\n${error.stack}`;
+    }
+
+    /**
+     * Prints error message with stack trace.
+     * It prints the message with the stack trace in a collapsed group.
+     * This is useful for debugging purposes, as it allows to see the stack trace
+     * without cluttering the console with too many messages.
+     *
+     * @param formattedTime Formatted time.
+     * @param formattedArgs Formatted arguments.
+     */
+    private printWithStackTrace(
+        formattedTime: string,
+        formattedArgs: any[],
+    ): void {
+        // If grouping is not supported, print just expanded trace, but this
+        // leads to a lot of dirty logs in the console, since the stack trace
+        // will be printed for every message.
+        if (!this.writer.groupCollapsed || !this.writer.groupEnd) {
+            // Print expanded trace
+            this.writer.trace(formattedTime, ...formattedArgs);
+            return;
+        }
+
+        // Print collapsed trace to make logs more readable and access to stack
+        // trace by clicking on the group.
+        this.writer.groupCollapsed(formattedTime, ...formattedArgs);
+        this.writer.trace();
+        this.writer.groupEnd();
     }
 
     /**
@@ -226,8 +253,6 @@ export class Logger {
      * @param level Logger level.
      * @param method Logger method.
      * @param args Printed arguments.
-     *
-     * @private
      */
     private print(
         level: LogLevelNumeric,
@@ -261,29 +286,22 @@ export class Logger {
         const formattedTime = `${formatTime(new Date())}:`;
 
         /**
-         * Conditions in which trace can happen:
-         * 1. Method is not error (because console.error provides call stack trace)
-         * 2. Log level is equal or higher that `LogLevel.Trace`.
+         * If current log level is Debug or Trace, print all channels with stack
+         * trace via using writer.trace method to help identify the location of the
+         * log.
+         *
+         * Exception is Error method, because it is already contains build-in
+         * stack trace.
          */
         if (
-            method === LogMethod.Error
-            || this.currentLevelValue < levelMapStringToNum[LogLevel.Trace]
+            this.currentLevelValue >= levelMapStringToNum[LogLevel.Debug]
+            && method !== LogMethod.Error
         ) {
-            // Print with regular method
-            this.writer[method](formattedTime, ...formattedArgs);
+            this.printWithStackTrace(formattedTime, formattedArgs);
             return;
         }
 
-        if (!this.writer.groupCollapsed || !this.writer.groupEnd) {
-            // Print expanded trace
-            this.writer.trace(formattedTime, ...formattedArgs);
-            return;
-        }
-
-        // Print collapsed trace to make logs more readable and access to stack
-        // trace by clicking on the group.
-        this.writer.groupCollapsed(formattedTime, ...formattedArgs);
-        this.writer.trace();
-        this.writer.groupEnd();
+        // Otherwise just print with requested method of writer.
+        this.writer[method](formattedTime, ...formattedArgs);
     }
 }
