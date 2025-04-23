@@ -8,22 +8,9 @@ import {
 } from 'vitest';
 
 import { StealthModifier, StealthOptionName } from '../../src/modifiers/stealth-modifier';
-
-vi.mock('@adguard/logger', () => ({
-    Logger: {
-        error: vi.fn(),
-        warn: vi.fn(),
-        info: vi.fn(),
-        debug: vi.fn(),
-        trace: vi.fn(),
-    },
-}));
-
-import { Logger } from '@adguard/logger';
+import { loggerMocks } from '../setup';
 
 describe('Stealth modifier api', () => {
-    const logger = new Logger(console);
-
     afterEach(() => {
         vi.clearAllMocks();
     });
@@ -32,36 +19,45 @@ describe('Stealth modifier api', () => {
         vi.resetAllMocks();
     });
 
-    // FIXME: BROKEN TEST
-    // it('handles different constructor params', () => {
-    //     let modifier = new StealthModifier('xclientdata|referrer');
-    //     expect(modifier.hasStealthOption(StealthOptionName.XClientData)).toBeTruthy();
-    //     expect(modifier.hasStealthOption(StealthOptionName.HideReferrer)).toBeTruthy();
+    it('handles different constructor params', () => {
+        let modifier = new StealthModifier('xclientdata|referrer');
+        expect(modifier.hasStealthOption(StealthOptionName.XClientData)).toBeTruthy();
+        expect(modifier.hasStealthOption(StealthOptionName.HideReferrer)).toBeTruthy();
 
-    //     modifier = new StealthModifier('    ');
-    //     expect(modifier.hasValues()).toBeFalsy();
-    //     expect(logger.debug).toHaveBeenCalledTimes(0);
+        modifier = new StealthModifier('    ');
+        expect(modifier.hasValues()).toBeFalsy();
+        expect(loggerMocks.trace).toHaveBeenCalledTimes(0);
 
-    //     modifier = new StealthModifier('referrer|flash');
-    //     expect(modifier.hasValues()).toBeTruthy();
-    //     expect(modifier.hasStealthOption(StealthOptionName.HideReferrer)).toBeTruthy();
-    //     expect(logger.debug).toHaveBeenCalledTimes(0);
+        modifier = new StealthModifier('referrer|flash');
+        expect(modifier.hasValues()).toBeTruthy();
+        expect(modifier.hasStealthOption(StealthOptionName.HideReferrer)).toBeTruthy();
+        expect(loggerMocks.trace).toHaveBeenCalledTimes(0);
 
-    //     modifier = new StealthModifier('webrtc|java');
-    //     expect(modifier.hasValues()).toBeFalsy();
-    //     expect(logger.debug).toHaveBeenCalledTimes(1);
-    //     expect(logger.debug).toHaveBeenCalledWith(
-    //         '$stealth modifier does not contain any options supported by browser extension: "webrtc|java"',
-    //     );
+        let traceCalls = 0;
+        modifier = new StealthModifier('donottrack|donottrack');
+        traceCalls++;
+        expect(modifier.hasValues()).toBeTruthy();
+        expect(loggerMocks.trace).toHaveBeenCalledTimes(traceCalls);
+        expect(loggerMocks.trace).toHaveBeenCalledWith(
+            '[tsurl.StealthModifier.constructor] duplicate $stealth modifier value "donottrack" in "donottrack|donottrack"',
+        );
 
-    //     expect(() => {
-    //         new StealthModifier('xclientdata,referrer');
-    //     }).toThrowError('Invalid separator of stealth options used: "xclientdata,referrer"');
+        modifier = new StealthModifier('webrtc|java');
+        traceCalls++;
+        expect(modifier.hasValues()).toBeFalsy();
+        expect(loggerMocks.trace).toHaveBeenCalledTimes(traceCalls);
+        expect(loggerMocks.trace).toHaveBeenCalledWith(
+            '[tsurl.StealthModifier.constructor] $stealth modifier does not contain any options supported by browser extension: "webrtc|java"',
+        );
 
-    //     expect(() => {
-    //         new StealthModifier('not-a-valid-option');
-    //     }).toThrowError('Invalid $stealth option in modifier value: "not-a-valid-option"');
-    // });
+        expect(() => {
+            new StealthModifier('xclientdata,referrer');
+        }).toThrowError('Invalid separator of stealth options used: "xclientdata,referrer"');
+
+        expect(() => {
+            new StealthModifier('not-a-valid-option');
+        }).toThrowError('Invalid $stealth option in modifier value: "not-a-valid-option"');
+    });
 
     it('checks if given string is a valid stealth option', () => {
         // @ts-ignore

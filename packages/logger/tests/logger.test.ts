@@ -9,7 +9,6 @@ import {
 import { Logger, LogLevel } from '../src';
 import { type Writer } from '../src/Logger';
 
-// FIXME: TEsts
 describe('checking that ', () => {
     const writer: Writer = {
         error: vi.fn(),

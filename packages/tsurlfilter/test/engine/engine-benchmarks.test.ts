@@ -287,21 +287,9 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
     return totalMatches;
 }
 
+// FIXME: Check that mock for logger works correctly
 // TODO: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
 describe('Benchmarks', () => {
-    // FIXME: Check that mock works correctly
-    beforeAll(() => {
-        vi.mock('@adguard/logger', () => ({
-            Logger: {
-                error: vi.fn(),
-                warn: vi.fn(),
-                info: vi.fn(),
-                debug: vi.fn(),
-                trace: vi.fn(),
-            },
-        }));
-    });
-
     beforeEach(() => {
         console.log(`Benchmark: "${expect.getState().currentTestName}"`);
     });

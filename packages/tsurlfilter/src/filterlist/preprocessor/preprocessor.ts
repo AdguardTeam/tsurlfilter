@@ -6,7 +6,6 @@ import { RuleGenerator } from '@adguard/agtree/generator';
 import { RuleSerializer } from '@adguard/agtree/serializer';
 import { type FilterListConversionMap, type PreprocessedFilterList } from './schema';
 import { logger } from '../../utils/logger';
-import { getErrorMessage } from '../../common/error';
 import { type FilterListSourceMap } from '../source-map/schema';
 import { findNextLineBreakIndex } from '../../utils/string-utils';
 import { EMPTY_STRING, LF } from '../../common/constants';

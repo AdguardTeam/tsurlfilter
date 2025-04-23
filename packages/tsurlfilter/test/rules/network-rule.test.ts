@@ -18,21 +18,7 @@ import {
 } from '../../src';
 import { createNetworkRule } from '../helpers/rule-creator';
 
-vi.mock('@adguard/logger', () => ({
-    Logger: {
-        error: vi.fn(),
-        warn: vi.fn(),
-        info: vi.fn(),
-        debug: vi.fn(),
-        trace: vi.fn(),
-    },
-}));
-
-import { Logger } from '@adguard/logger';
-
 describe('NetworkRule constructor', () => {
-    const logger = new Logger(console);
-
     afterEach(() => {
         vi.clearAllMocks();
     });
@@ -40,7 +26,6 @@ describe('NetworkRule constructor', () => {
     afterAll(() => {
         vi.resetAllMocks();
     });
-
 
     describe('creation of rule with $stealth modifier', () => {
         it('creates $stealth rule without options', () => {
@@ -58,22 +43,6 @@ describe('NetworkRule constructor', () => {
             expect(stealthModifier?.hasValues()).toBeTruthy();
             expect(stealthModifier?.hasStealthOption(StealthOptionName.DoNotTrack)).toBeTruthy();
             expect(stealthModifier?.hasStealthOption(StealthOptionName.XClientData)).toBeTruthy();
-        });
-
-        it('logs debug message on $stealth rule with duplicate options', () => {
-            const msg = 'Duplicate $stealth modifier value "donottrack" in "donottrack|donottrack"';
-            createNetworkRule('@@||example.org^$stealth=donottrack|donottrack', 0);
-
-            expect(logger.debug).toHaveBeenCalledTimes(1);
-            expect(logger.debug).toHaveBeenCalledWith(msg);
-        });
-
-        it('logs debug message on $stealth modifier with no supported values', () => {
-            const msg = '$stealth modifier does not contain any options supported by browser extension: "webrtc|location"';
-            createNetworkRule('@@||example.org^$stealth=webrtc|location', 0);
-
-            expect(logger.debug).toHaveBeenCalledTimes(1);
-            expect(logger.debug).toHaveBeenCalledWith(msg);
         });
 
         it('throws error on $stealth rule with inverted options', () => {
