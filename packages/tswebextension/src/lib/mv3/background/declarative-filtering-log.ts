@@ -42,7 +42,7 @@ class DeclarativeFilteringLog {
      *
      * @throws Error when couldn't find ruleset or rule in ruleset.
      */
-    private getRuleInfo = async (ruleSetId: string, ruleId: number): Promise<DeclarativeRuleInfo> => {
+    private async getRuleInfo(ruleSetId: string, ruleId: number): Promise<DeclarativeRuleInfo> {
         const ruleSet = this.ruleSets.find((r) => r.getId() === ruleSetId);
         if (!ruleSet) {
             throw new Error(`Cannot find ruleset with id ${ruleSet}`);
@@ -60,7 +60,7 @@ class DeclarativeFilteringLog {
             sourceRules,
             declarativeRuleJson: JSON.stringify(declarativeRule),
         };
-    };
+    }
 
     /**
      * Fires an {@link FilteringEventType.MatchedDeclarativeRule} event with
@@ -72,7 +72,7 @@ class DeclarativeFilteringLog {
      *
      * @param record Request details {@link browser.declarativeNetRequest.MatchedRuleInfoDebug}.
      */
-    private logMatchedRule = async (record: chrome.declarativeNetRequest.MatchedRuleInfoDebug): Promise<void> => {
+    private async logMatchedRule(record: chrome.declarativeNetRequest.MatchedRuleInfoDebug): Promise<void> {
         const {
             request: { requestId },
             rule: { rulesetId, ruleId },
@@ -102,14 +102,14 @@ class DeclarativeFilteringLog {
                 declarativeRuleInfo,
             },
         });
-    };
+    }
 
     /**
      * Toggles the listener for declarativeNetRequest.onRuleMatchedDebug.
      *
      * @param needToAddListener If true, the listener will be added, otherwise removed.
      */
-    private toggleListener = (needToAddListener: boolean): void => {
+    private toggleListener(needToAddListener: boolean): void {
         // Wrapped in try-catch to prevent the extension from crashing if browser
         // will change the API in the future.
         try {
@@ -138,21 +138,21 @@ class DeclarativeFilteringLog {
 
             logger.error(`[tsweb.DeclarativeFilteringLog.toggleListener]: ${message}: `, e);
         }
-    };
+    }
 
     /**
      * Starts recording.
      */
-    public start = (): void => {
+    public start(): void {
         this.toggleListener(true);
-    };
+    }
 
     /**
      * Stops recording.
      */
-    public stop = (): void => {
+    public stop(): void {
         this.toggleListener(false);
-    };
+    }
 }
 
 export const declarativeFilteringLog = new DeclarativeFilteringLog();

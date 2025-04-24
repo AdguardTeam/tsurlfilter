@@ -86,7 +86,7 @@ export class RuleFactory {
             }
 
             if (silent) {
-                logger.debug(`[tsurl.RuleFactory.createRule] error: ${msg}`);
+                logger.debug(`[tsurl.RuleFactory.createRule]: error: ${msg}`);
             } else {
                 throw new Error(msg);
             }

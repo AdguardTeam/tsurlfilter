@@ -17,6 +17,7 @@ module.exports = {
         'import-newlines',
         '@typescript-eslint',
         '@vitest',
+        'require-logger-context',
     ],
     extends: [
         'airbnb-base',
@@ -147,42 +148,15 @@ module.exports = {
         'jsdoc/sort-tags': ['error', {
             linesBetween: 1,
             tagSequence: [
-                {
-                    tags: [
-                        'file',
-                    ],
-                },
-                {
-                    tags: [
-                        'template',
-                    ],
-                },
-                {
-                    tags: [
-                        'see',
-                    ],
-                },
-                {
-                    tags: [
-                        'param',
-                    ],
-                },
-                {
-                    tags: [
-                        'returns',
-                    ],
-                },
-                {
-                    tags: [
-                        'throws',
-                    ],
-                },
-                {
-                    tags: [
-                        'example',
-                    ],
-                },
+                { tags: [ 'file' ]},
+                { tags: [ 'template' ] },
+                { tags: [ 'see' ] },
+                { tags: [ 'param' ] },
+                { tags: [ 'returns' ] },
+                { tags: [ 'throws' ] },
+                { tags: [ 'example' ] },
             ],
         }],
+        'require-logger-context/require-logger-context': 'error',
     },
 };

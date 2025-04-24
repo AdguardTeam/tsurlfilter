@@ -308,7 +308,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 scriptText,
             });
         } catch (e) {
-            logger.info('[tsweb.CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame] error occurred during injection: ', e);
+            logger.info('[tsweb.CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame]: error occurred during injection: ', e);
         }
     }
 

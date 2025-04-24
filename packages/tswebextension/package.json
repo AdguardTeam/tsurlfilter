@@ -76,6 +76,7 @@
     },
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension#readme",
     "scripts": {
+        "prelint": "tsx tools/link-eslint-plugin.ts tools/eslint-rules/index.cjs node_modules/eslint-plugin-require-logger-context",
         "lint": "pnpm lint:code && pnpm lint:tsc",
         "lint:code": "eslint --cache .",
         "lint:tsc": "tsc",

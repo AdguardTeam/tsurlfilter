@@ -112,14 +112,14 @@ export class StealthModifier {
             const option = StealthOption[optionName];
 
             if (this.options & option) {
-                logger.trace(`[tsurl.StealthModifier.constructor] duplicate $stealth modifier value "${optionName}" in "${optionsStr}"`);
+                logger.trace(`[tsurl.StealthModifier.constructor]: duplicate $stealth modifier value "${optionName}" in "${optionsStr}"`);
             }
 
             this.options |= option;
         }
 
         if (this.options === StealthOption.NotSet) {
-            logger.trace(`[tsurl.StealthModifier.constructor] $stealth modifier does not contain any options supported by browser extension: "${optionsStr}"`);
+            logger.trace(`[tsurl.StealthModifier.constructor]: $stealth modifier does not contain any options supported by browser extension: "${optionsStr}"`);
         }
     }
 

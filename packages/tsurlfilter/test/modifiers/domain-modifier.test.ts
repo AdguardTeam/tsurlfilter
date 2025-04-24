@@ -238,7 +238,7 @@ describe('Domain modifier', () => {
 
         it('logs debug message on invalid regexp pattern', () => {
             // eslint-disable-next-line max-len
-            const msg = '[tsurl.DomainModifier.isDomainOrSubdomainOfAny] invalid regular expression as domain pattern: "/example[org/"';
+            const msg = '[tsurl.DomainModifier.isDomainOrSubdomainOfAny]: invalid regular expression as domain pattern: "/example[org/"';
 
             isDomainOrSubdomainOfAny('example.org', ['/example[org/']);
 

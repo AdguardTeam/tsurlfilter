@@ -147,7 +147,7 @@ export class FilterListPreprocessor {
             } catch (error: unknown) {
                 // Log issues to info channel to make them visible for
                 // filter maintainers. See AG-37460.
-                logger.info(`[tsurl.FilterListPreprocessor.preprocess] failed to process rule: '${ruleText}' due to:`, error);
+                logger.info(`[tsurl.FilterListPreprocessor.preprocess]: failed to process rule: '${ruleText}' due to:`, error);
 
                 // Add invalid rules as is to the converted filter list,
                 // but not to the output byte buffer / source map.
@@ -216,7 +216,7 @@ export class FilterListPreprocessor {
             } catch (error: unknown) {
                 // Log issues to info channel to make them visible for
                 // filter maintainers. See AG-37460.
-                logger.info(`[tsurl.FilterListPreprocessor.preprocessLightweight] failed to process rule: '${ruleText}' due to:`, error);
+                logger.info(`[tsurl.FilterListPreprocessor.preprocessLightweight]: failed to process rule: '${ruleText}' due to:`, error);
             }
 
             outputOffset += ruleText.length + lineBreakLength;
