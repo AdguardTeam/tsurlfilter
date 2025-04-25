@@ -1,6 +1,6 @@
 {
     "name": "@adguard/tswebextension",
-    "version": "3.0.2",
+    "version": "3.1.0",
     "description": "This is a TypeScript library that implements AdGuard's extension API",
     "type": "module",
     "main": "dist/index.js",
