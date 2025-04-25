@@ -11,7 +11,9 @@
  *
  * Applying {@link NetworkRule} from the background page:
  *
- * The cssText, scriptText, scriptletDataList for specified frame are calculated and stored in tab context storage,
+ * In case if {@link browser.tabs.onCreated} event is not fired before —
+ * we create a {@link TabContext} manually for document requests,
+ * and the cssText, scriptText, scriptletDataList for specified frame are calculated and stored in tab context storage,
  * at the time {@link RequestEvents.onBeforeRequest} or {@link WebNavigation.onBeforeNavigate} is processed.
  * In the most cases the onBeforeNavigate event is processed before onBeforeRequest.
  *
@@ -29,10 +31,12 @@
  * Web Request API Event Handling:
  *
  *                                       ┌─────────────────────────────┐
- * Matches {@link MatchingResult}        │                             │
- * for the request.                      │       onBeforeRequest       ◄─┐
- * If this is a frame request,           │                             │ │
- * also matches the                      └──────────────┬──────────────┘ │
+ * Create {@link TabContext}             │                             │
+ * if it's not created before,           │       onBeforeRequest       ◄─┐
+ * and matches {@link MatchingResult}    │                             │ │
+ * for the request.                      └──────────────┬──────────────┘ │
+ * If this is a frame request,                          │                │
+ * also matches the                                     │                │
  * {@link CosmeticResult}                               │                │
  *                                                      │                │
  *                                                      │                │
@@ -96,10 +100,12 @@
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- * Update main frame data with           │                             │
- * {@link updateMainFrameData}           │       onBeforeNavigate      │
- * and matches {@link CosmeticResult}.   │                             │
- *                                       └──────────────┬──────────────┘
+ * Create {@link TabContext}             │                             │
+ * if it's not created before,           │       onBeforeNavigate      │
+ * and update main frame data with       │                             │
+ * {@link updateMainFrameData}           └──────────────┬──────────────┘
+ * and matches {@link CosmeticResult}                   │
+ *                                                      │
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
  * Try injecting js and css              │                             │
@@ -257,27 +263,48 @@ export class WebRequestApi {
 
         const { parentFrameId } = details;
 
-        const skipPrecalculation = CosmeticFrameProcessor.shouldSkipRecalculation(
-            tabId,
-            frameId,
-            requestUrl,
-            timestamp,
-        );
+        const isDocumentRequest = requestType === RequestType.Document;
 
-        if (!skipPrecalculation) {
-            /**
-             * Set in the beginning to let other events know that cosmetic result
-             * will be calculated in this event to avoid double calculation.
-             */
-            tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+        /**
+         * In some cases `onBeforeRequest` might happen before Tabs API `onCreated`
+         * event is fired or even not fired at all
+         * (e.g. {@link https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296 | Edge Split Screen Issue}),
+         * in this cases we need to create tab context manually. This is needed
+         * to ensure that we have tab context to be able to inject cosmetics and scripts.
+         *
+         * We create tab context only for document requests,
+         * because other types of requests can't have tab context.
+         */
+        if (isDocumentRequest) {
+            tabsApi.createTabContextIfNotExists(tabId, requestUrl);
+        }
+
+        const isDocumentOrSubDocumentRequest = isDocumentRequest || requestType === RequestType.SubDocument;
+
+        let skipPrecalculation = true;
+        if (isDocumentOrSubDocumentRequest) {
+            skipPrecalculation = CosmeticFrameProcessor.shouldSkipRecalculation(
                 tabId,
                 frameId,
-                parentFrameId,
-                url: requestUrl,
-                timeStamp: timestamp,
-                documentId: details.documentId,
-                parentDocumentId: details.parentDocumentId,
-            }));
+                requestUrl,
+                timestamp,
+            );
+
+            if (!skipPrecalculation) {
+                /**
+                 * Set in the beginning to let other events know that cosmetic result
+                 * will be calculated in this event to avoid double calculation.
+                 */
+                tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+                    tabId,
+                    frameId,
+                    parentFrameId,
+                    url: requestUrl,
+                    timeStamp: timestamp,
+                    documentId: details.documentId,
+                    parentDocumentId: details.parentDocumentId,
+                }));
+            }
         }
 
         if (!isHttpOrWsRequest(requestUrl)) {
@@ -316,7 +343,7 @@ export class WebRequestApi {
          * For other requests we get the frame rule from tabsApi, assuming
          * the frame rule is already in the tab context.
          */
-        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+        if (isDocumentOrSubDocumentRequest) {
             frameRule = DocumentApi.matchFrame(frameUrl);
         } else {
             frameRule = tabsApi.getTabFrameRule(tabId);
@@ -336,9 +363,7 @@ export class WebRequestApi {
 
         // Save matching result to the request context.
         requestContextStorage.update(requestId, { matchingResult });
-
-        const isDocumentOrSubdocument = requestType === RequestType.Document || requestType === RequestType.SubDocument;
-        if (isDocumentOrSubdocument && !skipPrecalculation) {
+        if (isDocumentOrSubDocumentRequest && !skipPrecalculation) {
             // Matching request
             CosmeticFrameProcessor.precalculateCosmetics({
                 tabId,
@@ -494,6 +519,20 @@ export class WebRequestApi {
             parentDocumentId,
             timeStamp,
         } = details;
+
+        /**
+         * In some cases `onBeforeNavigate` might happen before Tabs API `onCreated`
+         * event is fired or even not fired at all
+         * (e.g. {@link https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296 | Edge Split Screen Issue}),
+         * in this cases we need to create tab context manually. This is needed
+         * to ensure that we have tab context to be able to inject cosmetics and scripts.
+         *
+         * We create tab context only for document requests (outermost frame),
+         * because other types of requests can't have tab context.
+         */
+        if (TabsApiCommon.isDocumentLevelFrame(parentFrameId)) {
+            tabsApi.createTabContextIfNotExists(tabId, url);
+        }
 
         if (CosmeticFrameProcessor.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {
             return;
