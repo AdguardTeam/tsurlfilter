@@ -21,6 +21,9 @@ describe('Scriptlets Compatibility Table', () => {
             scriptletsCompatibilityTable.exists('abort-current-inline-script', SpecificPlatform.AdgExtChrome),
         ).toBeTruthy();
         expect(
+            scriptletsCompatibilityTable.exists('abort-current-inline-script', SpecificPlatform.AdgOsCli),
+        ).toBeTruthy();
+        expect(
             scriptletsCompatibilityTable.exists('nonexistent', SpecificPlatform.AbpExtChrome),
         ).toBeFalsy();
 

@@ -11,6 +11,7 @@ import { GenericPlatform, SpecificPlatform } from '../platforms';
 export const SPECIFIC_PLATFORM_MAP: Map<string, SpecificPlatform> = new Map([
     ['adg_os_windows', SpecificPlatform.AdgOsWindows],
     ['adg_os_mac', SpecificPlatform.AdgOsMac],
+    ['adg_os_cli', SpecificPlatform.AdgOsCli],
     ['adg_os_android', SpecificPlatform.AdgOsAndroid],
 
     ['adg_ext_chrome', SpecificPlatform.AdgExtChrome],

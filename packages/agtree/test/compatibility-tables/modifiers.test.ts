@@ -20,6 +20,7 @@ describe('Modifiers Compatibility Table', () => {
 
     it('modifiersCompatibilityTable.exists', () => {
         expect(modifiersCompatibilityTable.exists('_', SpecificPlatform.AdgExtChrome)).toBeTruthy();
+        expect(modifiersCompatibilityTable.exists('_', SpecificPlatform.AdgOsCli)).toBeTruthy();
         expect(modifiersCompatibilityTable.exists('nonexistent', SpecificPlatform.AbpExtChrome)).toBeFalsy();
 
         expect(modifiersCompatibilityTable.exists('_', GenericPlatform.AdgExtAny)).toBeTruthy();

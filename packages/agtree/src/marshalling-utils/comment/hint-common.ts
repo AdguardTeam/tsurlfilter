@@ -53,4 +53,6 @@ export const FREQUENT_PLATFORMS_SERIALIZATION_MAP = new Map<string, number>([
     ['ext_safari', 8],
     ['ext_android_cb', 9],
     ['ext_ublock', 10],
+    ['ext_chromium_mv3', 11],
+    ['cli', 12],
 ]);

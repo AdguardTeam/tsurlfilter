@@ -13,26 +13,27 @@
 export const SpecificPlatform = {
     AdgOsWindows: 1,
     AdgOsMac: 1 << 1,
-    AdgOsAndroid: 1 << 2,
+    AdgOsCli: 1 << 2,
+    AdgOsAndroid: 1 << 3,
 
-    AdgExtChrome: 1 << 3,
-    AdgExtOpera: 1 << 4,
-    AdgExtEdge: 1 << 5,
-    AdgExtFirefox: 1 << 6,
+    AdgExtChrome: 1 << 4,
+    AdgExtOpera: 1 << 5,
+    AdgExtEdge: 1 << 6,
+    AdgExtFirefox: 1 << 7,
 
-    AdgCbAndroid: 1 << 7,
-    AdgCbIos: 1 << 8,
-    AdgCbSafari: 1 << 9,
+    AdgCbAndroid: 1 << 8,
+    AdgCbIos: 1 << 9,
+    AdgCbSafari: 1 << 10,
 
-    UboExtChrome: 1 << 10,
-    UboExtOpera: 1 << 11,
-    UboExtEdge: 1 << 12,
-    UboExtFirefox: 1 << 13,
+    UboExtChrome: 1 << 11,
+    UboExtOpera: 1 << 12,
+    UboExtEdge: 1 << 13,
+    UboExtFirefox: 1 << 14,
 
-    AbpExtChrome: 1 << 14,
-    AbpExtOpera: 1 << 15,
-    AbpExtEdge: 1 << 16,
-    AbpExtFirefox: 1 << 17,
+    AbpExtChrome: 1 << 15,
+    AbpExtOpera: 1 << 16,
+    AbpExtEdge: 1 << 17,
+    AbpExtFirefox: 1 << 18,
 } as const;
 
 // intentionally naming the variable the same as the type
@@ -41,6 +42,7 @@ export type SpecificPlatform = typeof SpecificPlatform[keyof typeof SpecificPlat
 
 const AdgOsAny = SpecificPlatform.AdgOsWindows
     | SpecificPlatform.AdgOsMac
+    | SpecificPlatform.AdgOsCli
     | SpecificPlatform.AdgOsAndroid;
 
 const AdgSafariAny = SpecificPlatform.AdgCbSafari | SpecificPlatform.AdgCbIos;

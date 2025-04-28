@@ -30,4 +30,8 @@ const modifierData = modifiersCompatibilityTable.getSingle('third-party', Specif
 
 ok(modifierData);
 
+const cliModifierData = modifiersCompatibilityTable.getSingle('third-party', SpecificPlatform.AdgOsCli);
+
+ok(cliModifierData);
+
 console.log('Smoke test passed in root-exports.ts');

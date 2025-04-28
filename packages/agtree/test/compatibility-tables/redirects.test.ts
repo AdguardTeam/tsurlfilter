@@ -20,6 +20,7 @@ describe('Redirects Compatibility Table', () => {
 
     it('redirectsCompatibilityTable.exists', () => {
         expect(redirectsCompatibilityTable.exists('noopjs', SpecificPlatform.AdgExtChrome)).toBeTruthy();
+        expect(redirectsCompatibilityTable.exists('noopjs', SpecificPlatform.AdgOsCli)).toBeTruthy();
         expect(redirectsCompatibilityTable.exists('nonexistent', SpecificPlatform.AbpExtChrome)).toBeFalsy();
 
         expect(redirectsCompatibilityTable.exists('noopjs', GenericPlatform.AdgExtAny)).toBeTruthy();

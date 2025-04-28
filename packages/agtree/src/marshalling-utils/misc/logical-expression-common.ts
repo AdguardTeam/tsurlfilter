@@ -94,5 +94,6 @@ export const KNOWN_VARIABLES_SERIALIZATION_MAP = new Map<string, number>([
     ['adguard_ext_edge', 21],
     ['adguard_ext_opera', 22],
     ['adguard_ext_android_cb', 23],
-    // TODO: Add 'adguard_ext_chromium_mv3' to the list
+    ['adguard_ext_chromium_mv3', 24],
+    ['adguard_app_cli', 25],
 ]);
