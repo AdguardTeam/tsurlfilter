@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [3.1.4] - 2025-04-30
+
+### Added
+
+- CommonJS bundle needed for `@adguard/aglint` CLI.
+
+[3.1.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.4
+
 ## [3.1.3] - 2025-04-29
 
 ### Added

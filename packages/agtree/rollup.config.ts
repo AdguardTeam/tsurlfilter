@@ -47,18 +47,23 @@ const banner = `/*
  * ${pkg.homepage}
  */`;
 
-// Common plugins for all types of builds
-export const commonPlugins = [
+/**
+ * Common plugins for all types of builds.
+ */
+const commonPlugins = [
     externals(),
     json({ preferConst: true }),
     resolve({ preferBuiltins: false }),
     commonjs({ sourceMap: false }),
     typescript({
         tsconfig: path.resolve(ROOT_DIR, 'tsconfig.build.json'),
+        // Explicitly set outDir to match Rollup's output directory
+        outDir: distDir,
     }),
+    compatibilityTablePlugin(),
 ];
 
-const main = {
+const allInputsEsm = {
     cache: false,
     input: [
         'src/index.ts',
@@ -79,13 +84,28 @@ const main = {
             banner,
         },
     ],
-    plugins: [
-        ...commonPlugins,
-        compatibilityTablePlugin(),
+    plugins: commonPlugins,
+};
+
+const mainInputCjs = {
+    cache: false,
+    input: [
+        'src/index.ts',
     ],
+    output: [
+        {
+            file: path.join(distDir, 'index.cjs.js'),
+            format: 'cjs',
+            sourcemap: false,
+            banner,
+        },
+    ],
+    plugins: commonPlugins,
 };
 
 // Export build configs for Rollup
 export default [
-    main,
+    allInputsEsm,
+    // cjs is needed for aglint which is used in filters repo in ci
+    mainInputCjs
 ];
