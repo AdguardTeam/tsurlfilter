@@ -107,5 +107,5 @@ const mainInputCjs = {
 export default [
     allInputsEsm,
     // cjs is needed for aglint which is used in filters repo in ci
-    mainInputCjs
+    mainInputCjs,
 ];

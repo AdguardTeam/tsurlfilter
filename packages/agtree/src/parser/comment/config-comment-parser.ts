@@ -3,8 +3,6 @@
  * @see {@link https://eslint.org/docs/latest/user-guide/configuring/rules#using-configuration-comments}
  */
 
-import JSON5 from 'json5';
-
 import { AdblockSyntax } from '../../utils/adblockers';
 import { AGLINT_COMMAND_PREFIX, AGLINT_CONFIG_COMMENT_MARKER, COMMA } from '../../utils/constants';
 import {
@@ -21,6 +19,34 @@ import { ParameterListParser } from '../misc/parameter-list-parser';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
 import { ValueParser } from '../misc/value-parser';
+
+/**
+ * Helper function to parse JSON with unquoted keys.
+ * Adds quotes to keys that are not already quoted.
+ *
+ * The main reason of adding this function is to avoid using JSON5
+ * which is not maintained and causes issues in aglint-cli.
+ *
+ * @param jsonString JSON string to parse.
+ *
+ * @returns Parsed JSON object.
+ *
+ * @throws If the JSON string cannot be parsed.
+ */
+function parseJsonWithUnquotedKeys(jsonString: string): Record<string, unknown> {
+    // Add quotes to unquoted keys
+    // This regex matches property names that are not already quoted
+    const quotedJsonString = jsonString.replace(
+        /(\s*)([\w$][\w\d$]*)(\s*:)/g,
+        '$1"$2"$3'
+    );
+
+    try {
+        return JSON.parse(`{${quotedJsonString}}`);
+    } catch (error) {
+        throw new Error(`Failed to parse JSON: ${error instanceof Error ? error.message : String(error)}`);
+    }
+}
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.
@@ -119,11 +145,9 @@ export class ConfigCommentParser extends BaseParser {
         if (command.value === AGLINT_COMMAND_PREFIX) {
             params = {
                 type: 'ConfigNode',
-                // It is necessary to use JSON5.parse instead of JSON.parse because JSON5 allows unquoted keys.
-                // But don't forget to add { } to the beginning and end of the string,
-                // otherwise JSON5 will not be able to parse it.
-                // TODO: Better solution? ESLint uses "levn" package for parsing these comments.
-                value: JSON5.parse(`{${raw.slice(paramsStart, paramsEnd)}}`),
+                // We need to parse JSON with potentially unquoted keys
+                // Using a custom helper function instead of JSON5
+                value: parseJsonWithUnquotedKeys(raw.slice(paramsStart, paramsEnd)),
             };
 
             if (options.isLocIncluded) {
