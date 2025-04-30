@@ -34,8 +34,7 @@
     "exports": {
         ".": {
             "types": "./dist/types/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs.js"
+            "import": "./dist/index.js"
         },
         "./parser": {
             "types": "./dist/types/parser/index.d.ts",
@@ -59,7 +58,13 @@
         },
         "./utils": {
             "types": "./dist/types/utils/index.d.ts",
-            "import": "./dist/utils/index.js"
+            "import": "./dist/utils/index.js",
+            "require": "./dist/utils/index.cjs.js"
+        },
+        "./utils-adblockers": {
+            "types": "./dist/types/utils/adblockers.d.ts",
+            "default": "./dist/utils/adblockers.cjs.js",
+            "require": "./dist/utils/adblockers.cjs.js"
         }
     },
     "files": [

@@ -55,12 +55,6 @@ const commonPlugins = [
     json({ preferConst: true }),
     resolve({ preferBuiltins: false }),
     commonjs({ sourceMap: false }),
-    typescript({
-        tsconfig: path.resolve(ROOT_DIR, 'tsconfig.build.json'),
-        // Explicitly set outDir to match Rollup's output directory
-        outDir: distDir,
-    }),
-    compatibilityTablePlugin(),
 ];
 
 const allInputsEsm = {
@@ -84,28 +78,43 @@ const allInputsEsm = {
             banner,
         },
     ],
-    plugins: commonPlugins,
+    plugins: [
+        ...commonPlugins,
+        typescript({
+            tsconfig: path.resolve(ROOT_DIR, 'tsconfig.build.json'),
+            // Explicitly set outDir to match Rollup's output directory
+            outDir: distDir,
+        }),
+        compatibilityTablePlugin(),
+    ],
 };
 
-const mainInputCjs = {
+const utilsAdblockersInputCjs = {
     cache: false,
     input: [
-        'src/index.ts',
+        'src/utils/adblockers.ts',
     ],
     output: [
         {
-            file: path.join(distDir, 'index.cjs.js'),
+            file: path.join(distDir, 'utils', 'adblockers.cjs.js'),
             format: 'cjs',
             sourcemap: false,
             banner,
         },
     ],
-    plugins: commonPlugins,
+    plugins: [
+        ...commonPlugins,
+        typescript({
+            tsconfig: path.resolve(ROOT_DIR, 'tsconfig.build.json'),
+            // Explicitly set outDir to match Rollup's output directory
+            outDir: path.join(distDir, 'utils'),
+        }),
+    ],
 };
 
 // Export build configs for Rollup
 export default [
     allInputsEsm,
     // cjs is needed for aglint which is used in filters repo in ci
-    mainInputCjs,
+    utilsAdblockersInputCjs,
 ];
