@@ -1,15 +1,10 @@
 import * as z from 'zod';
 
 import { serializeJson } from '../../utils/misc';
-import { type ByteRange, byteRangeValidator } from '../../utils/byte-range';
 import { isNonEmptyArray } from '../../utils/guards';
 import { getRuleSetId } from '../declarative-converter-utils';
 
 import { createMetadataRule, type MetadataRule } from './metadata-rule';
-
-/**
- * @typedef {import('./rule-set').RuleSetByteRangeCategory} RuleSetByteRangeCategory
- */
 
 /**
  * Metadata ruleset ID.
@@ -27,34 +22,9 @@ const checksumMapValidator = z.record(z.string());
 type ChecksumMap = z.infer<typeof checksumMapValidator>;
 
 /**
- * Byte range map validator.
- */
-const byteRangeMapValidator = z.record(byteRangeValidator);
-
-/**
- * Byte range map.
- */
-export type ByteRangeMap = z.infer<typeof byteRangeMapValidator>;
-
-/**
- * Byte range map collection validator.
- */
-const byteRangeMapCollectionValidator = z.record(byteRangeMapValidator);
-
-/**
- * Byte range map collection.
- */
-type ByteRangeMapCollection = z.infer<typeof byteRangeMapCollectionValidator>;
-
-/**
  * Metadata validator.
  */
 const metadataValidator = z.object({
-    /**
-     * Byte range maps collection for all rulesets.
-     */
-    byteRangeMapsCollection: byteRangeMapCollectionValidator,
-
     /**
      * Checksums for all rulesets.
      */
@@ -96,8 +66,6 @@ export class MetadataRuleSet {
     /**
      * Creates an instance of the MetadataRuleSet class.
      *
-     * @param byteRangeMapsCollection A map of byte range maps, where each key corresponds to a ruleset ID
-     * and each value is a map of byte ranges for that ruleset. Defaults to an empty object.
      * @param checksums A map of checksums, where each key corresponds to a rule set ID and each value is the checksum
      * for that ruleset. Defaults to an empty object.
      * @param additionalProperties A collection of additional properties, where keys are property names and values are
@@ -109,12 +77,11 @@ export class MetadataRuleSet {
      * inputs before passing them.
      */
     constructor(
-        byteRangeMapsCollection: ByteRangeMapCollection = {},
         checksums: ChecksumMap = {},
         additionalProperties: Record<string, unknown> | undefined = {},
     ) {
         this.metadataRule = createMetadataRule({
-            byteRangeMapsCollection,
+            byteRangeMapsCollection: {},
             checksums,
             additionalProperties: additionalProperties ?? {},
         });
@@ -132,16 +99,6 @@ export class MetadataRuleSet {
     }
 
     /**
-     * Sets byte range map for the specified rule set.
-     *
-     * @param ruleSetId Rule set id.
-     * @param byteRangeMap Byte range map.
-     */
-    public setByteRangeMap(ruleSetId: string, byteRangeMap: ByteRangeMap): void {
-        this.metadataRule.metadata.byteRangeMapsCollection[ruleSetId] = byteRangeMap;
-    }
-
-    /**
      * Sets checksum for the specified rule set.
      *
      * @param ruleSetId Rule set id.
@@ -149,44 +106,6 @@ export class MetadataRuleSet {
      */
     public setChecksum(ruleSetId: string, checksum: string): void {
         this.metadataRule.metadata.checksums[ruleSetId] = checksum;
-    }
-
-    /**
-     * Returns byte range map for the specified rule set.
-     *
-     * @param ruleSetId Rule set id.
-     *
-     * @returns Byte range map or undefined if not found.
-     */
-    public getByteRangeMap(ruleSetId: string): ByteRangeMap | undefined {
-        return this.metadataRule.metadata.byteRangeMapsCollection[ruleSetId];
-    }
-
-    /**
-     * Gets the byte range for the specified rule set and category.
-     *
-     * @param rulesetId Rule set id.
-     * @param category Byte range category, see {@link RuleSetByteRangeCategory}.
-     *
-     * @returns Byte range for the specified rule set and category.
-     *
-     * @throws Error if the byte range map for the specified rule set is not found
-     * or the byte range for the specified category is not found.
-     */
-    public getByteRange(rulesetId: string, category: string): ByteRange {
-        const byteRangeMap = this.getByteRangeMap(rulesetId);
-
-        if (!byteRangeMap) {
-            throw new Error(`Byte range map for rule set ${rulesetId} not found`);
-        }
-
-        const range = byteRangeMap[category];
-
-        if (!range) {
-            throw new Error(`Byte range for category ${category} not found in rule set ${rulesetId}`);
-        }
-
-        return range;
     }
 
     /**
@@ -206,7 +125,7 @@ export class MetadataRuleSet {
      * @returns Rule set ids.
      */
     public getRuleSetIds(): string[] {
-        return Object.keys(this.metadataRule.metadata.byteRangeMapsCollection);
+        return Object.keys(this.metadataRule.metadata.checksums);
     }
 
     /**
@@ -279,13 +198,12 @@ export class MetadataRuleSet {
 
         const {
             metadata: {
-                byteRangeMapsCollection,
                 checksums,
                 additionalProperties,
             },
         } = metadataRuleValidator.parse(parsed[0]);
 
-        const ruleSet = new MetadataRuleSet(byteRangeMapsCollection, checksums, additionalProperties);
+        const ruleSet = new MetadataRuleSet(checksums, additionalProperties);
 
         return ruleSet;
     }

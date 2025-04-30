@@ -1180,9 +1180,6 @@ importers:
       is-ip:
         specifier: 3.1.0
         version: 3.1.0
-      jsonpos:
-        specifier: ^4.1.2
-        version: 4.1.2
       lru-cache:
         specifier: ^11.0.2
         version: 11.1.0
@@ -1304,6 +1301,9 @@ importers:
       rollup-plugin-cleanup:
         specifier: ^3.2.1
         version: 3.2.1(rollup@4.39.0)
+      rollup-plugin-node-externals:
+        specifier: ^8.0.0
+        version: 8.0.0(rollup@4.39.0)
       rollup-plugin-polyfill-node:
         specifier: ^0.13.0
         version: 0.13.0(rollup@4.39.0)
@@ -6618,13 +6618,6 @@ packages:
   json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
 
-  json-cst@1.2.0:
-    resolution: {integrity: sha512-liC8jqILo2mZjKs/c/zDknohoLo2FocQH5ZGyPZzPNNHSC/LarVq42R4WA58lqPdH9ssP/JKArp6SZ6aP7vyhA==}
-    engines: {node: ^14.13.1 || >=16.0.0}
-
-  json-lexer@1.2.0:
-    resolution: {integrity: sha512-7otpx5UPFeSELoF8nkZPHCfywg86wOsJV0WNOaysuO7mfWj1QFp2vlqESRRCeJKBXr+tqDgHh4HgqUFKTLcifQ==}
-
   json-merge-patch@0.2.3:
     resolution: {integrity: sha512-mjd5eObNGOhWkKCztwVuF25KOzLj2T4TJaWXLBgCQPeoPRJrMxKNgjNBE8sPmXoWRT0WDlo4Itd/gTlFh29TFw==}
 
@@ -6687,10 +6680,6 @@ packages:
   jsonpointer@5.0.1:
     resolution: {integrity: sha512-p/nXbhSEcu3pZRdkW1OfJhpsVtW1gd4Wa1fnQc9YLiTfAjn0312eMKimbdIQzuZl9aa9xUGaRlP9T/CJE/ditQ==}
     engines: {node: '>=0.10.0'}
-
-  jsonpos@4.1.2:
-    resolution: {integrity: sha512-cn+7TiBMq9VUsHKp+8uZeSY0K2ZnjEwurSA8uJlBoOmMA7w67axpvfv+v77A/8iEXLkXMN06uvEzblGj51+VBQ==}
-    engines: {node: ^14.13.1 || >=16.0.0}
 
   jsonwebtoken@8.5.1:
     resolution: {integrity: sha512-XjwVfRS6jTMsqYs0EsuJ4LGxXV14zQybNd4L2r0UvbVnSF9Af8x7p5MzbJ90Ioz/9TI41/hTCvznF/loiSzn8w==}
@@ -8358,6 +8347,12 @@ packages:
     engines: {node: '>= 21 || ^20.6.0 || ^18.19.0'}
     peerDependencies:
       rollup: ^3.0.0 || ^4.0.0
+
+  rollup-plugin-node-externals@8.0.0:
+    resolution: {integrity: sha512-2HIOpWsWn5DqBoYl6iCAmB4kd5GoGbF68PR4xKR1YBPvywiqjtYvDEjHFodyqRL51iAMDITP074Zxs0OKs6F+g==}
+    engines: {node: '>= 21 || ^20.6.0 || ^18.19.0'}
+    peerDependencies:
+      rollup: ^4.0.0
 
   rollup-plugin-polyfill-node@0.13.0:
     resolution: {integrity: sha512-FYEvpCaD5jGtyBuBFcQImEGmTxDTPbiHjJdrYIp+mFIwgXiXabxvKUK7ZT9P31ozu2Tqm9llYQMRWsfvTMTAOw==}
@@ -12351,32 +12346,32 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 2.0.0
 
-  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))':
+  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(vite@5.4.17(@types/node@18.19.86)(terser@5.39.0))':
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
       msw: 2.7.3(@types/node@18.19.86)(typescript@5.8.3)
-      vite: 5.4.17(@types/node@22.14.0)(terser@5.39.0)
+      vite: 5.4.17(@types/node@18.19.86)(terser@5.39.0)
 
-  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))':
+  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(vite@5.4.17(@types/node@20.17.30)(terser@5.39.0))':
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
       msw: 2.7.3(@types/node@20.17.30)(typescript@5.6.2)
-      vite: 5.4.17(@types/node@22.14.0)(terser@5.39.0)
+      vite: 5.4.17(@types/node@20.17.30)(terser@5.39.0)
 
-  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))':
+  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(vite@5.4.17(@types/node@20.17.30)(terser@5.39.0))':
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
       msw: 2.7.3(@types/node@20.17.30)(typescript@5.8.3)
-      vite: 5.4.17(@types/node@22.14.0)(terser@5.39.0)
+      vite: 5.4.17(@types/node@20.17.30)(terser@5.39.0)
 
   '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))':
     dependencies:
@@ -16492,12 +16487,6 @@ snapshots:
 
   json-buffer@3.0.1: {}
 
-  json-cst@1.2.0:
-    dependencies:
-      json-lexer: 1.2.0
-
-  json-lexer@1.2.0: {}
-
   json-merge-patch@0.2.3:
     dependencies:
       deep-equal: 1.1.2
@@ -16545,10 +16534,6 @@ snapshots:
   jsonparse@1.3.1: {}
 
   jsonpointer@5.0.1: {}
-
-  jsonpos@4.1.2:
-    dependencies:
-      json-cst: 1.2.0
 
   jsonwebtoken@8.5.1:
     dependencies:
@@ -18718,6 +18703,10 @@ snapshots:
     dependencies:
       rollup: 4.39.0
 
+  rollup-plugin-node-externals@8.0.0(rollup@4.39.0):
+    dependencies:
+      rollup: 4.39.0
+
   rollup-plugin-polyfill-node@0.13.0(rollup@4.39.0):
     dependencies:
       '@rollup/plugin-inject': 5.0.5(rollup@4.39.0)
@@ -19893,7 +19882,7 @@ snapshots:
   vitest@2.1.9(@types/node@18.19.86)(jsdom@18.1.1)(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(terser@5.39.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))
+      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@18.19.86)(typescript@5.8.3))(vite@5.4.17(@types/node@18.19.86)(terser@5.39.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
@@ -19929,7 +19918,7 @@ snapshots:
   vitest@2.1.9(@types/node@20.17.30)(jsdom@18.1.1)(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(terser@5.39.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))
+      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.6.2))(vite@5.4.17(@types/node@20.17.30)(terser@5.39.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
@@ -19965,7 +19954,7 @@ snapshots:
   vitest@2.1.9(@types/node@20.17.30)(jsdom@18.1.1)(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(terser@5.39.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))
+      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(vite@5.4.17(@types/node@20.17.30)(terser@5.39.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
