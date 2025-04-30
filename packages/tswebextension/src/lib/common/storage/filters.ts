@@ -1,7 +1,7 @@
 import { type PreprocessedFilterList } from '@adguard/tsurlfilter';
-import { type IDBPDatabase, openDB } from 'idb';
 
 import { logger } from '../utils/logger';
+import { IdbSingleton } from '../idb-singleton';
 
 /**
  * Preprocessed filter list extended with checksum.
@@ -15,21 +15,9 @@ export type PreprocessedFilterListWithChecksum = PreprocessedFilterList & { chec
  */
 export class FiltersStorage {
     /**
-     * Database name.
-     */
-    private static readonly DB_NAME = 'tswebextensionIDB';
-
-    /**
      * Database store name.
      */
     private static readonly DB_STORE_NAME = 'filters';
-
-    /**
-     * Database version.
-     * If you need to change the database structure, you should increase this version,
-     * and it will result in the deletion of the old database when the extension starts next time.
-     */
-    private static readonly DB_VERSION = 1;
 
     /**
      * Key combiner.
@@ -62,67 +50,6 @@ export class FiltersStorage {
     private static readonly KEY_CHECKSUM = 'checksum';
 
     /**
-     * Opened IndexedDB database.
-     */
-    private static db: IDBPDatabase | null = null;
-
-    /**
-     * Promise to get IndexedDB database.
-     */
-    private static dbGetterPromise: Promise<IDBPDatabase> | null = null;
-
-    /**
-     * Helper method to check if the value is a number.
-     *
-     * @param value Value to check.
-     *
-     * @returns `true` if the value is a number, `false` otherwise.
-     */
-    private static isNumber(value: unknown): value is number {
-        return typeof value === 'number' && !Number.isNaN(value);
-    }
-
-    /**
-     * Returns opened database.
-     *
-     * @returns Promise, resolved with opened database.
-     */
-    private static async getOpenedDb(): Promise<IDBPDatabase> {
-        if (FiltersStorage.db) {
-            return FiltersStorage.db;
-        }
-
-        if (FiltersStorage.dbGetterPromise) {
-            return FiltersStorage.dbGetterPromise;
-        }
-
-        FiltersStorage.dbGetterPromise = (async (): Promise<IDBPDatabase> => {
-            FiltersStorage.db = await openDB(
-                FiltersStorage.DB_NAME,
-                FiltersStorage.DB_VERSION,
-                {
-                    upgrade(db, oldVersion, newVersion) {
-                        const hasStore = db.objectStoreNames.contains(FiltersStorage.DB_STORE_NAME);
-
-                        if (!hasStore) {
-                            db.createObjectStore(FiltersStorage.DB_STORE_NAME);
-                        } else if (FiltersStorage.isNumber(newVersion) && oldVersion < newVersion) {
-                            db.deleteObjectStore(FiltersStorage.DB_STORE_NAME);
-                            db.createObjectStore(FiltersStorage.DB_STORE_NAME);
-                        }
-                    },
-                },
-            );
-
-            FiltersStorage.dbGetterPromise = null;
-
-            return FiltersStorage.db;
-        })();
-
-        return FiltersStorage.dbGetterPromise;
-    }
-
-    /**
      * Returns key with prefix.
      * Key format: <prefix>_<filterId>, e.g. `filterList_1`.
      *
@@ -151,7 +78,7 @@ export class FiltersStorage {
             }
         }
 
-        const db = await FiltersStorage.getOpenedDb();
+        const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         const tx = db.transaction(FiltersStorage.DB_STORE_NAME, 'readwrite');
 
         try {
@@ -175,7 +102,7 @@ export class FiltersStorage {
      * @returns `true` if the filter list exists, `false` otherwise.
      */
     public static async has(filterId: number): Promise<boolean> {
-        const db = await FiltersStorage.getOpenedDb();
+        const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         const keys = await db.getAllKeys(FiltersStorage.DB_STORE_NAME);
         const searchedKey = FiltersStorage.getKey(FiltersStorage.KEY_CHECKSUM, filterId);
         return keys
@@ -250,7 +177,7 @@ export class FiltersStorage {
             ];
         }).flat();
 
-        const db = await FiltersStorage.getOpenedDb();
+        const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         const tx = db.transaction(FiltersStorage.DB_STORE_NAME, 'readwrite');
 
         try {
@@ -273,7 +200,7 @@ export class FiltersStorage {
     public static async getRawFilterList(
         filterId: number,
     ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_RAW_FILTER_LIST] | undefined> {
-        const db = await FiltersStorage.getOpenedDb();
+        const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         return db.get(
             FiltersStorage.DB_STORE_NAME,
             FiltersStorage.getKey(FiltersStorage.KEY_RAW_FILTER_LIST, filterId),
@@ -290,7 +217,7 @@ export class FiltersStorage {
     public static async getFilterList(
         filterId: number,
     ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_FILTER_LIST] | undefined> {
-        const db = await FiltersStorage.getOpenedDb();
+        const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         return db.get(
             FiltersStorage.DB_STORE_NAME,
             FiltersStorage.getKey(FiltersStorage.KEY_FILTER_LIST, filterId),
@@ -307,7 +234,7 @@ export class FiltersStorage {
     public static async getConversionMap(
         filterId: number,
     ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_CONVERSION_MAP] | undefined> {
-        const db = await FiltersStorage.getOpenedDb();
+        const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         return db.get(
             FiltersStorage.DB_STORE_NAME,
             FiltersStorage.getKey(FiltersStorage.KEY_CONVERSION_MAP, filterId),
@@ -324,7 +251,7 @@ export class FiltersStorage {
     public static async getSourceMap(
         filterId: number,
     ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_SOURCE_MAP] | undefined> {
-        const db = await FiltersStorage.getOpenedDb();
+        const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         return db.get(
             FiltersStorage.DB_STORE_NAME,
             FiltersStorage.getKey(FiltersStorage.KEY_SOURCE_MAP, filterId),
@@ -339,7 +266,7 @@ export class FiltersStorage {
      * @returns Promise, resolved with checksum or undefined if not found.
      */
     public static async getChecksum(filterId: number): Promise<string | undefined> {
-        const db = await FiltersStorage.getOpenedDb();
+        const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         return db.get(
             FiltersStorage.DB_STORE_NAME,
             FiltersStorage.getKey(FiltersStorage.KEY_CHECKSUM, filterId),
@@ -355,7 +282,7 @@ export class FiltersStorage {
      */
     public static async getFilterIds(): Promise<number[]> {
         try {
-            const db = await FiltersStorage.getOpenedDb();
+            const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
             const keys = await db.getAllKeys(FiltersStorage.DB_STORE_NAME);
             return keys
                 .map(String)

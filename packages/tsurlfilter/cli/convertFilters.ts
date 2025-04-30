@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-import path from 'path';
-import fs from 'fs';
+import path from 'node:path';
+import fs from 'node:fs';
 
 import {
     type ConversionResult,
@@ -9,7 +9,7 @@ import {
     Filter,
 } from '../src/rules/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
-import { FilterListPreprocessor } from '../src';
+import { FilterListPreprocessor } from '../src/filterlist/preprocessor';
 import { getIdFromFilterName } from '../src/utils/resource-names';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
@@ -194,12 +194,11 @@ export const convertFilters = async (
         ensureDirSync(ruleSetDir);
 
         // eslint-disable-next-line no-await-in-loop
-        const { result, byteRangeMap } = await ruleSet.serializeCompact(prettifyJson);
+        const result = await ruleSet.serializeCompact(prettifyJson);
         const ruleSetPath = getRuleSetPath(id, destRuleSetsPath);
         // eslint-disable-next-line no-await-in-loop
         await fs.promises.writeFile(ruleSetPath, result);
 
-        metadataRuleSet.setByteRangeMap(id, byteRangeMap);
         metadataRuleSet.setChecksum(id, generateMD5Hash(result));
 
         console.log('===============================================');

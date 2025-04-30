@@ -183,6 +183,17 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
+     * Synchronize rule set with IDB.
+     *
+     * @param ruleSetId Rule set identifier.
+     * @param ruleSetsPath Path to rule sets.
+     */
+    public static async syncRuleSetWithIdb(ruleSetId: number, ruleSetsPath: string): Promise<void> {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        await ruleSetsLoaderApi.syncRuleSetWithIdb(String(ruleSetId));
+    }
+
+    /**
      * Starts filtering along with launching the tab listener, which will record
      * tab urls to work correctly with domain blocking/allowing rules, for
      * example: cosmetic rules in iframes.
@@ -270,7 +281,11 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        await FiltersApi.syncFiltersWithStorage(config.staticFiltersIds, config.ruleSetsPath);
+        const loader = new RuleSetsLoaderApi(config.ruleSetsPath);
+
+        await Promise.all(
+            config.staticFiltersIds.map((staticFilterId) => loader.syncRuleSetWithIdb(String(staticFilterId))),
+        );
 
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
