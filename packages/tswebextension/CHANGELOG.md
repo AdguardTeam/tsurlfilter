@@ -22,12 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scriptlet rules are not displayed in the filtering log [AdguardBrowserExtension#3164].
 - ya.ru - `Hide Referrer from third parties` breaks the site [AdguardBrowserExtension#2839].
 - Filtering doesn't work in Edge's split screen [AdguardBrowserExtension#2832].
+- vk.com is broken by $replace rules [AdguardBrowserExtension#3122]
 
 [AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
 [AdguardBrowserExtension#2826]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2826
 [AdguardBrowserExtension#2839]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2839
 [AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
 [AdguardBrowserExtension#2832]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2832
+[AdguardBrowserExtension#3122]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3122
 
 ## [3.0.2] - 2025-04-15
 
