@@ -36,8 +36,6 @@ export type {
 
 export * from './app';
 
-export { PublicFiltersApi as FiltersApi } from './public-filters-api';
-
 export { tabsApi } from '../tabs/tabs-api';
 export { TabContext } from '../tabs/tab-context';
 export { USER_FILTER_ID, MAIN_FRAME_ID } from '../../common/constants';

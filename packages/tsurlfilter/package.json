@@ -1,6 +1,6 @@
 {
     "name": "@adguard/tsurlfilter",
-    "version": "3.3.0",
+    "version": "3.4.0",
     "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
     "main": "dist/es/index.js",
     "module": "dist/es/index.js",
@@ -130,7 +130,6 @@
         "commander": "9.4.1",
         "is-cidr": "4.0.2",
         "is-ip": "3.1.0",
-        "jsonpos": "^4.1.2",
         "lru-cache": "^11.0.2",
         "punycode": "2.3.1",
         "tldts": "^5.7.112",
@@ -174,6 +173,7 @@
         "rimraf": "5.0.1",
         "rollup": "^4.24.3",
         "rollup-plugin-cleanup": "^3.2.1",
+        "rollup-plugin-node-externals": "^8.0.0",
         "rollup-plugin-polyfill-node": "^0.13.0",
         "tldts-core": "^6.1.13",
         "tslib": "^2.8.0",

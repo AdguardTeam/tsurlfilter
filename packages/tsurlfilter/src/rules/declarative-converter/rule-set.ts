@@ -6,7 +6,6 @@ import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
 import { EMPTY_STRING } from '../../common/constants';
 import { serializeJson } from '../../utils/misc';
-import { getByteRangeFor } from '../../utils/byte-range';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
@@ -15,7 +14,6 @@ import { UnavailableRuleSetSourceError } from './errors/unavailable-sources-erro
 import { type ISourceMap, SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
 import { type IRulesHashMap } from './rules-hash-map';
 import { createMetadataRule } from './metadata-rule';
-import { type ByteRangeMap } from './metadata-ruleset';
 
 /**
  * The OriginalSource contains the text of the original rule and the filter
@@ -35,46 +33,6 @@ export type UpdateStaticRulesOptions = {
     rulesetId: string;
     disableRuleIds: number[];
 };
-
-/**
- * Possible categories for byte range.
- */
-export enum RuleSetByteRangeCategory {
-    /**
-     * Full byte range of the rule set file.
-     */
-    Full = 'full',
-
-    /**
-     * Byte range for the metadata rule, which is the first rule in the rule set.
-     */
-    MetadataRule = 'metadata_rule',
-
-    /**
-     * Byte range for the metadata of the rule set.
-     */
-    DeclarativeMetadata = 'declarative_metadata',
-
-    /**
-     * Byte range for the lazy metadata of the rule set.
-     */
-    DeclarativeLazyMetadata = 'declarative_lazy_metadata',
-
-    /**
-     * Byte range for the source map of the rule set.
-     */
-    DeclarativeSourceMap = 'declarative_source_map',
-
-    /**
-     * Byte range for the conversion map of the preprocessed filter list.
-     */
-    PreprocessedFilterListConversionMap = 'preprocessed_filter_list_conversion_map',
-
-    /**
-     * Byte range for the raw content of the preprocessed filter list.
-     */
-    PreprocessedFilterListRaw = 'preprocessed_filter_list_raw',
-}
 
 /**
  * Keeps converted declarative rules and source map for it.
@@ -174,11 +132,11 @@ export interface IRuleSet {
      *
      * @param prettyPrint Whether to pretty print the output. Default is `true`.
      *
-     * @returns An object with serialized rule set and byte range map.
+     * @returns Serialized rule set.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
-    serializeCompact(prettyPrint?: boolean): Promise<{ result: string; byteRangeMap: ByteRangeMap }>;
+    serializeCompact(prettyPrint?: boolean): Promise<string>;
 }
 
 /**
@@ -195,7 +153,7 @@ const serializedRuleSetLazyDataValidator = zod.strictObject({
     filterIds: zod.number().array(),
 });
 
-type SerializedRuleSetLazyData = zod.infer<typeof serializedRuleSetLazyDataValidator>;
+export type SerializedRuleSetLazyData = zod.infer<typeof serializedRuleSetLazyDataValidator>;
 
 const serializedRuleSetDataValidator = zod.strictObject({
     regexpRulesCount: zod.number(),
@@ -205,7 +163,7 @@ const serializedRuleSetDataValidator = zod.strictObject({
     badFilterRulesRaw: zod.string().array(),
 });
 
-type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
+export type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
 
 /**
  * A serialized rule set with primitive values separated into two parts: one is
@@ -696,7 +654,7 @@ export class RuleSet implements IRuleSet {
     }
 
     /** @inheritdoc */
-    public async serializeCompact(prettyPrint = true): Promise<{ result: string; byteRangeMap: ByteRangeMap }> {
+    public async serializeCompact(prettyPrint = true): Promise<string> {
         try {
             await this.loadContent();
         } catch (e) {
@@ -724,26 +682,6 @@ export class RuleSet implements IRuleSet {
 
         const result = serializeJson(declarativeRules, prettyPrint);
 
-        // Create byte range map
-        // Note: query syntax based on https://datatracker.ietf.org/doc/html/rfc6901
-        // `/0` is a pointer to the first element in the array
-        // When we serialize the rule set, we produce an array of rules and the metadata rule is always the first one
-        const byteRangeMap: ByteRangeMap = {
-            [RuleSetByteRangeCategory.MetadataRule]: getByteRangeFor(result, '/0'),
-
-            /* eslint-disable max-len */
-            [RuleSetByteRangeCategory.DeclarativeMetadata]: getByteRangeFor(result, '/0/metadata/metadata'),
-            [RuleSetByteRangeCategory.DeclarativeLazyMetadata]: getByteRangeFor(result, '/0/metadata/lazyMetadata'),
-            [RuleSetByteRangeCategory.DeclarativeSourceMap]: getByteRangeFor(result, '/0/metadata/lazyMetadata/sourceMapRaw'),
-
-            [RuleSetByteRangeCategory.PreprocessedFilterListConversionMap]: getByteRangeFor(result, '/0/metadata/conversionMap'),
-            [RuleSetByteRangeCategory.PreprocessedFilterListRaw]: getByteRangeFor(result, '/0/metadata/rawFilterList'),
-            /* eslint-enable max-len */
-
-            // Get byte range for the whole array of rules (i.e. the whole file)
-            [RuleSetByteRangeCategory.Full]: getByteRangeFor(result, '/'),
-        };
-
-        return { result, byteRangeMap };
+        return result;
     }
 }

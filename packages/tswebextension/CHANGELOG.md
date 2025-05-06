@@ -33,11 +33,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
 [AdguardBrowserExtension#3192]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3192
 
+## [3.1.0-alpha.0] - 2025-04-30
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.1.3`.
+- Updated [@adguard/tsurlfilter] to `v3.3.0-alpha.0`.
+- Instead of byte ranges, rulesets will be synchronized to IndexedDB internally.
+
+### Removed
+
+- `FiltersApi` export.
+
+[3.1.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0-alpha.0
+
 ## [3.0.2] - 2025-04-15
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v3.2.3`.
+- Updated [@adguard/tsurlfilter] to `v3.2.3`.
 
 ## [3.0.1] - 2025-03-06
 
@@ -158,7 +172,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.6] - 2024-11-19
 
-- Updated `@adguard/tsurlfilter` to `v3.0.7`.
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.0.7`.
 
 [2.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.6
 
@@ -166,8 +182,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/agtree` to `v2.1.3`.
-- Updated `@adguard/tsurlfilter` to `v3.0.6`.
+- Updated [@adguard/agtree] to `v2.1.3`.
+- Updated [@adguard/tsurlfilter] to `v3.0.6`.
 
 [2.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.5
 
