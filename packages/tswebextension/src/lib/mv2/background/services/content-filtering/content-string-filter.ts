@@ -69,8 +69,9 @@ export class ContentStringFilter implements ContentStringFilterInterface {
 
         if (this.replaceRules
             && this.replaceRules.length > 0
-            // response content is over 3MB, ignore it
-            && content.length <= 3 * 1024 * 1024
+            // response content is over 10MB, ignore it
+            // AG-41962
+            && content.length <= 10 * 1024 * 1024
         ) {
             content = this.applyReplaceRules(content);
         }
