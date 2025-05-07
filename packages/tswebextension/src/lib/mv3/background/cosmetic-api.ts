@@ -159,16 +159,11 @@ export class CosmeticApi extends CosmeticApiCommon {
             return data;
         }
 
-        console.log('tabContext main frame rule', tabContext.mainFrameRule);
-
+        // Do not collect hits stats if website is allowlisted
         const isDocumentAllowlisted = !!tabContext.mainFrameRule
             && tabContext.mainFrameRule.isFilteringDisabled();
 
-        console.log('isDocumentAllowlisted', isDocumentAllowlisted);
-
         data.areHitsStatsCollected = data.areHitsStatsCollected && !isDocumentAllowlisted;
-
-        console.log('data.areHitsStatsCollected', data.areHitsStatsCollected);
 
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
