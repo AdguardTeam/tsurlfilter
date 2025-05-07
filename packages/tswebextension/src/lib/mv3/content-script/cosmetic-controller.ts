@@ -77,6 +77,8 @@ export class CosmeticController {
             areHitsStatsCollected,
         } = cosmeticData;
 
+        console.log({ areHitsStatsCollected, href: window.location.href });
+
         if (!isAppStarted
             && this.tries <= CosmeticController.MAX_GET_COSMETIC_DATA_TRIES
         ) {

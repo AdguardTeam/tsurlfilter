@@ -136,8 +136,6 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
     ): ContentScriptCosmeticData {
-        const { isStorageInitialized } = appContext;
-
         const data: ContentScriptCosmeticData = {
             isAppStarted: false,
             areHitsStatsCollected: false,
@@ -145,7 +143,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         };
 
         // if storage is not initialized, then app is not ready yet.
-        if (!isStorageInitialized) {
+        if (!appContext.isStorageInitialized) {
             return data;
         }
 
@@ -160,6 +158,17 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (!tabContext?.info.url) {
             return data;
         }
+
+        console.log('tabContext main frame rule', tabContext.mainFrameRule);
+
+        const isDocumentAllowlisted = !!tabContext.mainFrameRule
+            && tabContext.mainFrameRule.isFilteringDisabled();
+
+        console.log('isDocumentAllowlisted', isDocumentAllowlisted);
+
+        data.areHitsStatsCollected = data.areHitsStatsCollected && !isDocumentAllowlisted;
+
+        console.log('data.areHitsStatsCollected', data.areHitsStatsCollected);
 
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 

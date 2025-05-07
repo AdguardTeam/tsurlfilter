@@ -89,6 +89,7 @@ export class MessagesApi {
         const { type } = message;
         switch (type) {
             case MessageType.GetCosmeticData: {
+                console.log('GetCosmeticData', message.payload, sender);
                 return this.handleGetCosmeticData(sender, message.payload);
             }
             case MessageType.AssistantCreateRule: {
