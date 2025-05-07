@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `utils` entry point with `getVersion` and `getVersionTimestampMs` functions.
 
+## [3.0.0-alpha.0] - 2025-04-30
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v3.3.0-alpha.0`.
+
+### Removed
+
+- Byte ranges from metadata ruleset.
+
+[3.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.0
+
 ## [2.0.0] - 2025-02-28
 
 ## Added

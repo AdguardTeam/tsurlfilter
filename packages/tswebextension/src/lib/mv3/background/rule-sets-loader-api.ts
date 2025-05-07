@@ -1,23 +1,22 @@
 import { RuleParser } from '@adguard/agtree';
-import { fetchExtensionResourceText } from '@adguard/tsurlfilter';
+import { fetchExtensionResourceText, FilterListPreprocessor } from '@adguard/tsurlfilter';
 import {
     type IFilter,
     type IRuleSet,
     RuleSet,
     IndexedNetworkRuleWithHash,
     RulesHashMap,
-    RuleSetByteRangeCategory,
     MetadataRuleSet,
     METADATA_RULESET_ID,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { getRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
+import { extractRuleSetId, getRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import browser from 'webextension-polyfill';
+import { type IDBPDatabase } from 'idb';
 
+import { IdbSingleton } from '../../common/idb-singleton';
+import { FiltersStorage } from '../../common/storage/filters';
 import { logger } from '../../common/utils/logger';
 import { getErrorMessage } from '../../common/error';
-
-const JSON_ARRAY_OPENING_BRACKET = '[';
-const JSON_ARRAY_CLOSING_BRACKET = ']';
 
 /**
  * RuleSetsLoaderApi is responsible for creating {@link IRuleSet} instances from provided rule set IDs and paths.
@@ -39,6 +38,36 @@ const JSON_ARRAY_CLOSING_BRACKET = ']';
  * ```
  */
 export class RuleSetsLoaderApi {
+    /**
+     * Database store name.
+     */
+    private static readonly DB_STORE_NAME = 'rulesets';
+
+    /**
+     * Combiner for key prefix and rule set id.
+     */
+    private static readonly KEY_COMBINER = '_';
+
+    /**
+     * Prefix for checksum key.
+     */
+    private static readonly KEY_PREFIX_CHECKSUM = 'checksum';
+
+    /**
+     * Prefix for metadata rule set key.
+     */
+    private static readonly KEY_PREFIX_RULESET_METADATA = 'metadata';
+
+    /**
+     * Prefix for lazy metadata rule set key.
+     */
+    private static readonly KEY_PREFIX_RULESET_LAZY_METADATA = 'lazyMetadata';
+
+    /**
+     * Prefix for declarative rules key.
+     */
+    private static readonly KEY_PREFIX_RULESET_DECLARATIVE_RULES = 'declarativeRules';
+
     /**
      * Cache of metadata rule sets.
      */
@@ -73,6 +102,16 @@ export class RuleSetsLoaderApi {
     private initializerPromise: Promise<void> | undefined;
 
     /**
+     * Cache of checksums of rule sets.
+     */
+    private static idbChecksumsCache = new Map<string, string | undefined>();
+
+    /**
+     * Race condition lock map per ruleSetId.
+     */
+    private syncLocks: Map<string, Promise<void>>;
+
+    /**
      * Creates new {@link RuleSetsLoaderApi}.
      *
      * @param ruleSetsPath Path to rule sets directory.
@@ -80,11 +119,57 @@ export class RuleSetsLoaderApi {
     constructor(ruleSetsPath: string) {
         this.ruleSetsPath = ruleSetsPath;
         this.isInitialized = false;
+        this.syncLocks = new Map();
 
         if (RuleSetsLoaderApi.ruleSetsCachePath !== ruleSetsPath) {
             RuleSetsLoaderApi.ruleSetsCachePath = ruleSetsPath;
             RuleSetsLoaderApi.ruleSetsCache = new Map();
         }
+    }
+
+    /**
+     * Returns key with prefix.
+     * Key format: <prefix>_<ruleSetId>, e.g. `metadata_123`.
+     *
+     * @param keyPrefix Key prefix.
+     * @param ruleSetId Rule set id.
+     *
+     * @returns Key with prefix.
+     */
+    private static getKey(keyPrefix: string, ruleSetId: number | string): string {
+        return `${keyPrefix}${RuleSetsLoaderApi.KEY_COMBINER}${ruleSetId}`;
+    }
+
+    /**
+     * Returns opened database.
+     *
+     * @param store Database store name.
+     *
+     * @returns Promise, resolved with opened database.
+     */
+    private static async getOpenedDb(store: string): Promise<IDBPDatabase> {
+        return IdbSingleton.getOpenedDb(store, () => {
+            RuleSetsLoaderApi.idbChecksumsCache.clear();
+        });
+    }
+
+    /**
+     * Gets the value from the IDB database.
+     *
+     * @param key The key to look up.
+     *
+     * @returns The value associated with the key, or undefined if the key is not found.
+     */
+    private static async getValueFromIdb(key: string): Promise<any | undefined> {
+        const db = await RuleSetsLoaderApi.getOpenedDb(RuleSetsLoaderApi.DB_STORE_NAME);
+        const tx = db.transaction(RuleSetsLoaderApi.DB_STORE_NAME, 'readonly');
+        const store = tx.objectStore(RuleSetsLoaderApi.DB_STORE_NAME);
+
+        const value = await store.get(key);
+
+        await tx.done;
+
+        return value;
     }
 
     /**
@@ -96,7 +181,7 @@ export class RuleSetsLoaderApi {
      *
      * @throws If the rule sets loader is not initialized or the checksum for the specified rule set is not found.
      */
-    public async getChecksum(ruleSetId: string | number): Promise<string | undefined> {
+    private async getChecksum(ruleSetId: string | number): Promise<string | undefined> {
         if (!this.isInitialized) {
             await this.initialize();
         }
@@ -149,115 +234,115 @@ export class RuleSetsLoaderApi {
     }
 
     /**
-     * Fetches the declarative rules without metadata rule from the rule set file.
+     * Synchronizes the rule set with the IDB database.
+     * This method ensures that the rule set is up-to-date in the IDB database.
+     * If the rule set is not found in the IDB database, it will be added.
+     * If the rule set is found but its checksum does not match, it will be updated.
      *
      * @param ruleSetId Rule set id.
-     *
-     * @returns Raw JSON string with declarative rules.
-     *
-     * @throws Error if the metadata rule is not found in the rule set file.
      */
-    private async getDeclarativeRulesWithoutMetadataRule(ruleSetId: string): Promise<string> {
-        if (!this.isInitialized) {
-            await this.initialize();
+    public async syncRuleSetWithIdb(ruleSetId: string): Promise<void> {
+        // Use a per-ruleSet lock to avoid parallel syncs
+        const existingLock = this.syncLocks.get(ruleSetId);
+        if (existingLock) {
+            await existingLock;
+            return;
         }
 
-        const ruleSetPath = getRuleSetPath(ruleSetId, this.ruleSetsPath);
+        const syncPromise = (async (): Promise<void> => {
+            try {
+                if (!this.isInitialized) {
+                    await this.initialize();
+                }
 
-        // The ruleset file contains rules stored in a JSON array with the following structure:
-        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
-        // The first element is always the metadata rule, which provides information about the ruleset.
-        // Our goal is to exclude this metadata rule and fetch only the actual rules,
-        // because metadata can be very large (even several MBs) and it is not a real rule, so we don't need it here.
+                const checksum = await this.getChecksum(ruleSetId);
+                if (!checksum) {
+                    return;
+                }
 
-        // First, we get the byte range of the metadata rule:
-        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
-        //   ^^^^^^^^^^^^^^^^^
-        // This helps us locate the metadata rule's start and end positions in the file.
+                let idbChecksum: string | undefined;
 
-        // Next, we fetch the byte range of the entire JSON array:
-        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
-        //  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        // This provides the start and end positions of the entire ruleset.
+                const cacheKey = `${this.ruleSetsPath}_${ruleSetId}`;
 
-        // Using these two ranges, we calculate the byte positions for the rules excluding the metadata:
-        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
-        //                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                if (RuleSetsLoaderApi.idbChecksumsCache.has(cacheKey)) {
+                    idbChecksum = RuleSetsLoaderApi.idbChecksumsCache.get(cacheKey);
+                } else {
+                    idbChecksum = await RuleSetsLoaderApi.getValueFromIdb(
+                        RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_CHECKSUM, ruleSetId),
+                    );
+                    RuleSetsLoaderApi.idbChecksumsCache.set(cacheKey, idbChecksum);
+                }
 
-        const metadataRuleset = RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath];
-        const metadataRange = metadataRuleset.getByteRange(ruleSetId, RuleSetByteRangeCategory.MetadataRule);
-        const fullRange = metadataRuleset.getByteRange(ruleSetId, RuleSetByteRangeCategory.Full);
+                if (idbChecksum === checksum) {
+                    return;
+                }
 
-        // After the metadata rule, there may be a comma or a closing bracket.
-        // During fetching, `metadataRange.end` points to the last character of the metadata rule:
-        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
-        //                   ^
-        //                   `metadataRange.end`
+                const ruleSetIdNumber = extractRuleSetId(ruleSetId);
+                if (!ruleSetIdNumber) {
+                    throw new Error(`Invalid rule set id: ${ruleSetId}`);
+                }
 
-        // By adding just +1, we still include the comma:
-        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
-        //                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        // Therefore, we add +2 to skip the comma too.
-        // This may include some whitespace characters (as you can see on the example),
-        // but they are ignored when parsing the JSON, so we don't need to worry about them.
+                // eslint-disable-next-line max-len
+                logger.info(`Syncing rule set with IDB: ${ruleSetId} (previous checksum: ${idbChecksum}, current checksum: ${checksum})`);
 
-        // Now, we fetch the rules excluding the metadata rule:
-        const textAfterMetadata = await fetchExtensionResourceText(
-            browser.runtime.getURL(ruleSetPath),
-            {
-                start: metadataRange.end + 2,
-                end: fullRange.end,
-            },
-        );
+                const ruleSetPath = getRuleSetPath(ruleSetId, this.ruleSetsPath);
+                const rawRuleSet = await fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath));
 
-        // Note: we do not need to trim the text because we do not include additional whitespace characters
-        // after our rulesets.
+                const parsedRuleSet = JSON.parse(rawRuleSet);
+                const { metadata } = parsedRuleSet[0];
 
-        // Since we skipped the metadata rule, we also lost the opening bracket of the JSON array:
-        // `[{ metadata_rule }, { rule1 }, { rule2 }, ..., { ruleN }]`
-        //                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                const db = await RuleSetsLoaderApi.getOpenedDb(RuleSetsLoaderApi.DB_STORE_NAME);
+                const tx = db.transaction(RuleSetsLoaderApi.DB_STORE_NAME, 'readwrite');
+                const store = tx.objectStore(RuleSetsLoaderApi.DB_STORE_NAME);
 
-        // To make the JSON valid again, we need to prepend the opening bracket before the fetched rules:
-        // `[ { rule1 }, { rule2 }, ..., { ruleN }]`
-        //   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        //         (we fetched this content)
-        let rawJson = `${JSON_ARRAY_OPENING_BRACKET}${textAfterMetadata}`;
+                const puts = [
+                    store.put(
+                        checksum,
+                        RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_CHECKSUM, ruleSetId),
+                    ),
+                    store.put(
+                        JSON.stringify(metadata.metadata),
+                        RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_METADATA, ruleSetId),
+                    ),
+                    store.put(
+                        JSON.stringify(metadata.lazyMetadata),
+                        RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_LAZY_METADATA, ruleSetId),
+                    ),
+                    store.put(
+                        JSON.stringify(parsedRuleSet.slice(1)),
+                        RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_DECLARATIVE_RULES, ruleSetId),
+                    ),
+                ];
 
-        // Edge case: If the ruleset contains only the metadata rule _and_ is minified, adding +2
-        // skips the closing bracket, not the comma:
-        // `[{ metadata_rule }]`
-        //                    ^
-        // This may never happens in practice, but we handle it just in case.
-        if (!rawJson.endsWith(JSON_ARRAY_CLOSING_BRACKET)) {
-            rawJson += JSON_ARRAY_CLOSING_BRACKET;
-        }
+                await Promise.all(puts);
 
-        return rawJson;
-    }
+                await tx.done;
 
-    /**
-     * Fetches the content of the specified category from the rule set file.
-     * This method helps us to fetch only the necessary parts of the rule set files
-     * instead of the whole files and makes possible to use less memory.
-     *
-     * @param rulesetId Rule set id.
-     * @param category Byte range category, see {@link RuleSetByteRangeCategory}.
-     *
-     * @returns Promise resolved file content as a string.
-     *
-     * @throws Error if the byte range map for the specified rule set is not found
-     * or the byte range for the specified category is not found.
-     */
-    public async getRawCategoryContent(rulesetId: string, category: RuleSetByteRangeCategory): Promise<string> {
-        if (!this.isInitialized) {
-            await this.initialize();
-        }
+                const { conversionMap, rawFilterList } = metadata;
 
-        const ruleSetPath = getRuleSetPath(rulesetId, this.ruleSetsPath);
-        const metadataRuleset = RuleSetsLoaderApi.metadataRulesetsCache[this.ruleSetsPath];
-        const range = metadataRuleset.getByteRange(rulesetId, category);
+                const preprocessedFilterList = FilterListPreprocessor.preprocessLightweight({
+                    rawFilterList,
+                    conversionMap,
+                });
 
-        return fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath), range);
+                await FiltersStorage.setMultiple({
+                    [ruleSetIdNumber]: {
+                        ...preprocessedFilterList,
+                        checksum,
+                    },
+                });
+
+                logger.info(`Synced rule set with IDB: ${ruleSetId}`);
+            } catch (err) {
+                logger.error(`Failed to sync rule set ${ruleSetId}:`, getErrorMessage(err));
+                throw err;
+            } finally {
+                this.syncLocks.delete(ruleSetId);
+            }
+        })();
+
+        this.syncLocks.set(ruleSetId, syncPromise);
+        await syncPromise;
     }
 
     /**
@@ -286,14 +371,19 @@ export class RuleSetsLoaderApi {
             await this.initialize();
         }
 
-        const rawData = await this.getRawCategoryContent(ruleSetId, RuleSetByteRangeCategory.DeclarativeMetadata);
+        await this.syncRuleSetWithIdb(ruleSetId);
 
-        const loadLazyData = async (): Promise<string> => this.getRawCategoryContent(
-            ruleSetId,
-            RuleSetByteRangeCategory.DeclarativeLazyMetadata,
+        const rawData = await RuleSetsLoaderApi.getValueFromIdb(
+            RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_METADATA, ruleSetId),
         );
 
-        const loadDeclarativeRules = (): Promise<string> => this.getDeclarativeRulesWithoutMetadataRule(ruleSetId);
+        const loadLazyData = async (): Promise<string> => RuleSetsLoaderApi.getValueFromIdb(
+            RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_LAZY_METADATA, ruleSetId),
+        );
+
+        const loadDeclarativeRules = (): Promise<string> => RuleSetsLoaderApi.getValueFromIdb(
+            RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_RULESET_DECLARATIVE_RULES, ruleSetId),
+        );
 
         const {
             data: {
