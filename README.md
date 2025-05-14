@@ -71,9 +71,21 @@ Install dependencies with pnpm: `pnpm install`.
 > [!NOTE]
 > If you want to use another linked packages in monorepo workspace, link it in root folder.
 
-This repository uses pnpm workspaces and [Lerna][lerna] to manage multiple packages in a single repository.
+This repository uses [pnpm workspaces] and [Lerna] to manage multiple packages in a single repository.
 
-[lerna]: https://lerna.js.org/
+[Lerna]: https://lerna.js.org/
+[pnpm workspaces]: https://pnpm.io/workspaces
+
+#### Catalogs
+
+This repository also uses [pnpm catalogs] to manage dependencies.
+It ensures that common dependencies have the same version for all packages,
+which reduces version conflicts and simplifies dependency maintenance.
+
+All common dependencies are listed in `pnpm-workspace.yaml`,
+so if any update is needed, you should update it there.
+
+[pnpm catalogs]: https://pnpm.io/catalogs
 
 ### Development Commands
 
@@ -114,8 +126,9 @@ Within this monorepo, `zod` is utilized for data validation. There are instances
 from one package for use in another.
 However, this can potentially lead to issues if the `zod` versions across these packages differ.
 For more context, refer to [this issue][zod-issue].
-To prevent this problem, it is required to maintain uniformity by using the same `zod` version across all packages
-in the monorepo.
+
+To prevent this problem, the same `zod` version **must** be used across all packages in the monorepo.
+That's why we use [pnpm catalogs](#catalogs).
 
 [zod-issue]: https://github.com/colinhacks/zod/issues/2663
 

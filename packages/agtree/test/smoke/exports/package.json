@@ -10,6 +10,6 @@
     "test": "./test.sh"
   },
   "devDependencies": {
-    "tsx": "^4.19.2"
+    "tsx": "catalog:"
   }
 }
