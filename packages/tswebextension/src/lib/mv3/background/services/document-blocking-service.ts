@@ -31,7 +31,7 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
     /**
      * List of rules which are temporarily considered trusted.
      */
-    private blockingTrustedRules: string[] = [];
+    private trustedDomains: string[] = [];
 
     /**
      * Creates instance of {@link DocumentBlockingService}.
@@ -56,10 +56,10 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
      * @param configuration App {@link Configuration}.
      */
     public configure(configuration: ConfigurationMV3): void {
-        const { settings, blockingTrustedRules } = configuration;
+        const { settings, trustedDomains } = configuration;
 
         this.documentBlockingPageUrl = settings?.documentBlockingPageUrl;
-        this.blockingTrustedRules = blockingTrustedRules;
+        this.trustedDomains = trustedDomains;
     }
 
     /**
@@ -70,7 +70,7 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
      * @returns True if rule is trusted, false otherwise.
      */
     protected isTrusted(ruleText: string): boolean {
-        return this.blockingTrustedRules.includes(ruleText);
+        return this.trustedDomains.includes(ruleText);
     }
 
     /**
