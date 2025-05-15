@@ -194,26 +194,27 @@ describe('DeclarativeConverter', () => {
             } = await converter.convertDynamicRuleSets([userRules], [ruleSet]);
 
             expect(declarativeRulesToCancel).toBeDefined();
+
+            // Sugar for ts linter.
             if (declarativeRulesToCancel === undefined) {
                 return;
             }
 
             expect(declarativeRulesToCancel).toHaveLength(1);
-            const { rulesetId, disableRuleIds } = declarativeRulesToCancel[0];
+            const { rulesetId } = declarativeRulesToCancel[0];
 
             expect(rulesetId).toBe(ruleSet.getId());
 
-            const content = await staticFilter.getContent();
-            const keys = Object.keys(content.sourceMap);
-            let id = Number(keys[1]) + 1;
+            const { disableRuleIds } = declarativeRulesToCancel[0];
 
-            expect(disableRuleIds[0]).toEqual(id);
+            expect(disableRuleIds).toHaveLength(2);
+
+            let id = disableRuleIds[0];
             let source = await ruleSet.getRulesById(id);
             expect(source[0].sourceRule).toEqual(ruleToCancel1);
 
-            id = Number(keys[3]) + 1;
-
-            expect(disableRuleIds[1]).toEqual(id);
+            // eslint-disable-next-line prefer-destructuring
+            id = disableRuleIds[1];
             source = await ruleSet.getRulesById(id);
             expect(source[0].sourceRule).toEqual(ruleToCancel2);
         });
@@ -260,37 +261,32 @@ describe('DeclarativeConverter', () => {
 
             expect(declarativeRulesToCancel).toHaveLength(2);
 
-            const [disableStatic1, disableStatic2] = declarativeRulesToCancel;
+            const [disableStaticFilter1, disableStaticFilter2] = declarativeRulesToCancel;
 
             // Check first static filter.
-            expect(disableStatic1.rulesetId).toBe(staticRuleSets[0].getId());
+            expect(disableStaticFilter1.rulesetId).toBe(staticRuleSets[0].getId());
 
-            expect(disableStatic1.disableRuleIds).toHaveLength(2);
+            let { disableRuleIds } = disableStaticFilter1;
+            expect(disableRuleIds).toHaveLength(2);
 
-            const content1 = await staticFilter1.getContent();
-            let keys = Object.keys(content1.sourceMap);
-            let id = Number(keys[1]) + 1;
-
-            expect(disableStatic1.disableRuleIds[0]).toEqual(id);
+            let id = disableRuleIds[0];
             let source = await staticRuleSets[0].getRulesById(id);
             expect(source[0].sourceRule).toEqual(ruleToCancel1);
 
-            id = Number(keys[3]) + 1;
-
-            expect(disableStatic1.disableRuleIds[1]).toEqual(id);
+            // eslint-disable-next-line prefer-destructuring
+            id = disableRuleIds[1];
             source = await staticRuleSets[0].getRulesById(id);
             expect(source[0].sourceRule).toEqual(ruleToCancel2);
 
             // Check second static filter.
-            expect(disableStatic2.rulesetId).toBe(staticRuleSets[1].getId());
+            expect(disableStaticFilter2.rulesetId).toBe(staticRuleSets[1].getId());
 
-            expect(disableStatic2.disableRuleIds).toHaveLength(1);
+            disableRuleIds = disableStaticFilter2.disableRuleIds;
+            expect(disableRuleIds).toHaveLength(1);
 
-            const content2 = await staticFilter2.getContent();
-            keys = Object.keys(content2.sourceMap);
-            id = Number(keys[2]) + 1;
-
-            expect(disableStatic2.disableRuleIds[0]).toEqual(id);
+            // eslint-disable-next-line prefer-destructuring
+            id = disableRuleIds[0];
+            expect(disableStaticFilter2.disableRuleIds[0]).toEqual(id);
             source = await staticRuleSets[1].getRulesById(id);
             expect(source[0].sourceRule).toEqual(ruleToCancel3);
         });
@@ -340,17 +336,16 @@ describe('DeclarativeConverter', () => {
         ]);
         const { ruleSet } = await converter.convertStaticRuleSet(filter);
 
-        const content = await filter.getContent();
-        const keys = Object.keys(content.sourceMap);
-        let id = Number(keys[0]) + 1;
+        const declarativeRules = await ruleSet.getDeclarativeRules();
 
-        let sources = await ruleSet.getRulesById(id);
+        // Since we combine removeparam rules into one.
+        expect(declarativeRules).toHaveLength(2);
+
+        let sources = await ruleSet.getRulesById(declarativeRules[0].id);
         let originalRules = sources.map(({ sourceRule }) => sourceRule);
         expect(originalRules).toEqual(expect.arrayContaining(rules));
 
-        id = Number(keys[3]) + 1;
-
-        sources = await ruleSet.getRulesById(id);
+        sources = await ruleSet.getRulesById(declarativeRules[1].id);
         originalRules = sources.map(({ sourceRule }) => sourceRule);
         expect(originalRules).toEqual(expect.arrayContaining([additionalRule]));
     });
@@ -1217,6 +1212,63 @@ describe('DeclarativeConverter', () => {
 
             expect(errors).toHaveLength(1);
             expect(declarativeRules).toHaveLength(0);
+        });
+
+        it('for two same rules inside one filter it generated unique ids', async () => {
+            const filter = createFilter([
+                '||example.com^',
+                '||example.com^',
+            ]);
+            const { ruleSet } = await converter.convertStaticRuleSet(filter);
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(2);
+            expect(declarativeRules[0].id).not.toEqual(declarativeRules[1].id);
+        });
+
+        it('for two same rules inside two filters it generated unique ids', async () => {
+            const filter1 = createFilter(['||example.com^']);
+            const filter2 = createFilter(['||example.com^']);
+
+            const { ruleSet } = await converter.convertDynamicRuleSets([filter1, filter2], []);
+
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(2);
+            expect(declarativeRules[0].id).not.toEqual(declarativeRules[1].id);
+        });
+
+        it('IDs of rules in the same filter stays the same if text of the rule is the same', async () => {
+            const rules = [
+                '||example.com^',
+                '||example.org^',
+                '||example.net^',
+            ];
+            const filter = createFilter(rules);
+            const { ruleSet } = await converter.convertStaticRuleSet(filter);
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(3);
+
+            // Save ids of the rules to check if they are the same.
+            const ids = declarativeRules.map((rule) => rule.id);
+
+            rules[1] = '||example.org^$important';
+            rules.push('||new.site^');
+            rules.unshift('||another.new.site^');
+
+            const filter2 = createFilter(rules);
+            const { ruleSet: ruleSet2 } = await converter.convertStaticRuleSet(filter2);
+            const declarativeRules2 = await ruleSet2.getDeclarativeRules();
+            expect(declarativeRules2).toHaveLength(5);
+            const newIds = declarativeRules2.map((rule) => rule.id);
+            // New rule
+            expect(ids.includes(newIds[0])).toBe(false);
+            // Rule without changes
+            expect(newIds[1]).toEqual(ids[0]);
+            // Rule with changes - id should be different
+            expect(ids.includes(newIds[2])).toBe(false);
+            // Rule without changes
+            expect(newIds[3]).toEqual(ids[2]);
+            // New rule
+            expect(ids.includes(newIds[4])).toBe(false);
         });
 
         // In old logic we used last rule id from previous filter to calculate

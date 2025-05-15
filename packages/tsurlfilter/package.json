@@ -1,6 +1,6 @@
 {
     "name": "@adguard/tsurlfilter",
-    "version": "3.3.0-alpha.0",
+    "version": "3.3.1",
     "description": "This is a TypeScript library that implements AdGuard's content blocking rules",
     "main": "dist/es/index.js",
     "module": "dist/es/index.js",
@@ -162,6 +162,7 @@
         "esbuild-register": "^3.5.0",
         "escape-string-regexp": "^5.0.0",
         "eslint": "8.57.1",
+        "eslint-config-airbnb-base": "^15.0.0",
         "eslint-config-airbnb-typescript": "17.0.0",
         "eslint-plugin-import": "2.27.5",
         "eslint-plugin-import-newlines": "1.4.0",
