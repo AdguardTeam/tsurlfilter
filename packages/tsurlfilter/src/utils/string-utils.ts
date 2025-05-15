@@ -170,12 +170,25 @@ export function fastHash(str: string): number {
         return 0;
     }
 
+    // A magic constant that gives good distribution.
     let hash = 5381;
 
     for (let i = 0; i < str.length; i += 1) {
         hash = hash * 33 ^ str.charCodeAt(i);
     }
     return hash >>> 0;
+}
+
+/**
+ * `djb2` hash algorithm with sign bit masked off to fit 31 bits.
+ *
+ * @param str String to get hash.
+ *
+ * @returns Hash from 0 to 2^31-1.
+ */
+export function fastHash31(str: string): number {
+    // Mask off sign bit to keep value in range [0, ..., 2^31‑1].
+    return fastHash(str) & 0x7fffffff;
 }
 
 /**

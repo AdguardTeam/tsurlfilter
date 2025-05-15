@@ -19,15 +19,15 @@ export class RegularRulesConverter extends DeclarativeRuleConverter {
      *
      * @param filterId Filter id.
      * @param rules List of indexed network rules with hash.
-     * @param offsetId Offset for the IDs of the converted rules.
+     * @param usedIds Set with already used IDs to exclude duplications in IDs.
      *
      * @returns Converted rules.
      */
     public convert(
         filterId: number,
         rules: IndexedNetworkRuleWithHash[],
-        offsetId: number,
+        usedIds: Set<number>,
     ): Promise<ConvertedRules> {
-        return this.convertRules(filterId, rules, offsetId);
+        return this.convertRules(filterId, rules, usedIds);
     }
 }
