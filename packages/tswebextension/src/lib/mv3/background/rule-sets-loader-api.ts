@@ -362,7 +362,9 @@ export class RuleSetsLoaderApi {
         ruleSetId: string,
         filterList: IFilter[],
     ): Promise<IRuleSet> {
-        const ruleSetCache = RuleSetsLoaderApi.ruleSetsCache.get(ruleSetId);
+        const filterListIds = filterList.map((f) => f.getId()).join('#');
+        const cacheKey = `${ruleSetId}#${filterListIds}`;
+        const ruleSetCache = RuleSetsLoaderApi.ruleSetsCache.get(cacheKey);
         if (ruleSetCache) {
             return ruleSetCache;
         }
@@ -421,7 +423,7 @@ export class RuleSetsLoaderApi {
             ruleSetHashMap,
         );
 
-        RuleSetsLoaderApi.ruleSetsCache.set(ruleSetId, ruleset);
+        RuleSetsLoaderApi.ruleSetsCache.set(cacheKey, ruleset);
 
         return ruleset;
     }
