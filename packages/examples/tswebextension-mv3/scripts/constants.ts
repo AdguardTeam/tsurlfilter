@@ -11,7 +11,7 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     staticFiltersIds: [1, 2, 3, 4, 9, 14],
     logLevel: LogLevel.Debug,
     customFilters: [],
-    blockingTrustedRules: [],
+    trustedDomains: [],
     allowlist: [],
     userrules: Object.assign(
         FilterListPreprocessor.createEmptyPreprocessedFilterList(),

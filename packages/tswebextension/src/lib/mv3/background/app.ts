@@ -387,7 +387,7 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
-            const temporaryBadfilterRules = configuration.blockingTrustedRules
+            const temporaryBadfilterRules = configuration.trustedDomains
                 .map((rule) => {
                     return `${rule},${NETWORK_RULE_OPTIONS.BADFILTER}`;
                 })
