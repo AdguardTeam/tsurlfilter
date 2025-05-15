@@ -330,9 +330,9 @@ export class RuleSet implements IRuleSet {
      *
      * @returns Promise with list of source rules.
      */
-    private findSourceRules(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]> {
+    private async findSourceRules(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]> {
         if (!this.sourceMap) {
-            return Promise.resolve([]);
+            return [];
         }
 
         const sourcePairs = this.sourceMap.getByDeclarativeRuleId(declarativeRuleId);
