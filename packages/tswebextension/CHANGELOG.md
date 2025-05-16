@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated [@adguard/tsurlfilter] to `v3.3.0-alpha.1`.
+- Updated [@adguard/tsurlfilter] to `v3.3.2`.
 
 ## [3.1.0-alpha.1] - 2025-05-15
 
