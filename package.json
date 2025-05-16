@@ -18,7 +18,8 @@
     "scripts": {
         "lint": "lerna run lint",
         "clean": "node scripts/cleanup.mjs",
-        "prepare": "node .husky/install.mjs"
+        "prepare": "node .husky/install.mjs",
+        "tgz": "lerna run build --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies && lerna run tgz --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies"
     },
     "devDependencies": {
         "husky": "^9.1.7",

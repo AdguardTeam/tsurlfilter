@@ -48,7 +48,7 @@ Build:
 
             cd packages/css-tokenizer
             # Pack
-            pnpm pack --out css-tokenizer.tgz
+            pnpm tgz
     - inject-variables:
         file: ./packages/css-tokenizer/dist/build.txt
         scope: RESULT

@@ -50,7 +50,7 @@ Build:
             npx lerna run build --scope adguard-api-example --include-dependencies
 
             cd packages/adguard-api
-            pnpm pack --out adguard-api.tgz
+            pnpm tgz
     - inject-variables:
         file: ./packages/adguard-api/dist/build.txt
         scope: RESULT
