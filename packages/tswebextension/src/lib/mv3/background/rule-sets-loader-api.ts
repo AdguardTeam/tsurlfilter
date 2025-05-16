@@ -74,6 +74,17 @@ export class RuleSetsLoaderApi {
     private static metadataRulesetsCache: Record<string, MetadataRuleSet> = {};
 
     /**
+     * Cache for already created rulesets. Needed to avoid multiple loading
+     * of the same ruleset.
+     */
+    private static ruleSetsCache: Map<string, IRuleSet>;
+
+    /**
+     * Path to rule sets cache directory to invalidate it when path changes.
+     */
+    private static ruleSetsCachePath: string;
+
+    /**
      * Path to rule sets directory.
      */
     private ruleSetsPath: string;
@@ -109,6 +120,11 @@ export class RuleSetsLoaderApi {
         this.ruleSetsPath = ruleSetsPath;
         this.isInitialized = false;
         this.syncLocks = new Map();
+
+        if (RuleSetsLoaderApi.ruleSetsCachePath !== ruleSetsPath) {
+            RuleSetsLoaderApi.ruleSetsCachePath = ruleSetsPath;
+            RuleSetsLoaderApi.ruleSetsCache = new Map();
+        }
     }
 
     /**
@@ -346,6 +362,11 @@ export class RuleSetsLoaderApi {
         ruleSetId: string,
         filterList: IFilter[],
     ): Promise<IRuleSet> {
+        const ruleSetCache = RuleSetsLoaderApi.ruleSetsCache.get(ruleSetId);
+        if (ruleSetCache) {
+            return ruleSetCache;
+        }
+
         if (!this.isInitialized) {
             await this.initialize();
         }
@@ -399,6 +420,8 @@ export class RuleSetsLoaderApi {
             badFilterRules,
             ruleSetHashMap,
         );
+
+        RuleSetsLoaderApi.ruleSetsCache.set(ruleSetId, ruleset);
 
         return ruleset;
     }
