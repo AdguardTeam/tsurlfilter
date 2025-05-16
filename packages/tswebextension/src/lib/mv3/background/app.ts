@@ -9,7 +9,6 @@ import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
-import { isEqual } from 'lodash-es';
 
 import { type MessageHandler, type AppInterface } from '../../common/app';
 import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
@@ -69,18 +68,6 @@ export class TsWebExtension implements AppInterface<
     ConfigurationResult
 > {
     /**
-     * Cache of rule sets.
-     */
-    private ruleSetsCache: Map<string, IRuleSet>;
-
-    /**
-     * List of enabled rule set IDs.
-     * If the list changes, the cache should be cleared,
-     * because rule sets are storing enabled IDs after their content is loaded.
-     */
-    private ruleSetsCacheEnabledIds: number[];
-
-    /**
      * Fires on filtering log event.
      */
     onFilteringLogEvent = defaultFilteringLog.onLogEvent;
@@ -138,8 +125,6 @@ export class TsWebExtension implements AppInterface<
      */
     constructor(webAccessibleResourcesPath?: string) {
         this.webAccessibleResourcesPath = webAccessibleResourcesPath;
-        this.ruleSetsCache = new Map();
-        this.ruleSetsCacheEnabledIds = [];
     }
 
     /**
@@ -336,7 +321,7 @@ export class TsWebExtension implements AppInterface<
             );
 
             // Create static rulesets.
-            const staticRuleSets = await this.loadStaticRuleSets(
+            const staticRuleSets = await TsWebExtension.loadStaticRuleSets(
                 configuration.ruleSetsPath,
                 staticFilters,
             );
@@ -663,7 +648,7 @@ export class TsWebExtension implements AppInterface<
      * @returns A list of static {@link IRuleSet}, or an empty list if an error
      * occurred during the rule scanning step.
      */
-    private async loadStaticRuleSets(
+    private static async loadStaticRuleSets(
         ruleSetsPath: ConfigurationMV3['ruleSetsPath'],
         staticFilters: IFilter[],
     ): Promise<IRuleSet[]> {
@@ -674,29 +659,14 @@ export class TsWebExtension implements AppInterface<
             throw new Error('Cannot find declarative_net_request in manifest');
         }
 
-        const enabledIds = staticFilters.map((f) => f.getId()).sort();
-
-        // Both arrays are guaranteed to be sorted at this point
-        if (!isEqual(this.ruleSetsCacheEnabledIds, enabledIds)) {
-            this.ruleSetsCache.clear();
-            this.ruleSetsCacheEnabledIds = enabledIds;
-        }
-
         // Note: we cannot create rulesets only for enabled filters because we
         // need to get all rulesets' counters for checking limits on the client.
         // Note: we skip metadata ruleset, because it is not a real ruleset.
         const manifestRuleSets = manifest.declarative_net_request.rule_resources
             .filter(({ id }) => id !== getRuleSetId(METADATA_RULESET_ID));
 
-        const staticRuleSetsTasks = manifestRuleSets.map(async ({ id }) => {
-            if (!this.ruleSetsCache.has(id)) {
-                return this.ruleSetsCache.get(id)!;
-            }
-
-            const ruleSet = await ruleSetsLoaderApi.createRuleSet(id, staticFilters);
-            this.ruleSetsCache.set(id, ruleSet);
-
-            return ruleSet;
+        const staticRuleSetsTasks = manifestRuleSets.map(({ id }) => {
+            return ruleSetsLoaderApi.createRuleSet(id, staticFilters);
         });
 
         try {
