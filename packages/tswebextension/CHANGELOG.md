@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated [@adguard/tsurlfilter] to `v3.3.2`.
 
+### Fixed
+
+- Improved rule set caching to avoid inconsistent behaviors.
+
 ## [3.1.0-alpha.1] - 2025-05-15
 
 ### Changed
