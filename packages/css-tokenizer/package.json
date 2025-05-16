@@ -43,7 +43,8 @@
     "lint:md": "markdownlint .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/cjs && pnpm test) && (cd test/smoke/typescript && pnpm test)"
+    "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/cjs && pnpm test) && (cd test/smoke/typescript && pnpm test)",
+    "tgz": "pnpm pack --out css-tokenizer.tgz"
   },
   "devDependencies": {
     "@rollup/plugin-alias": "catalog:",

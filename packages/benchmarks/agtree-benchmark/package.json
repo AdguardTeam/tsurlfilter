@@ -27,6 +27,7 @@
     "@types/benchmark": "catalog:",
     "@types/node": "catalog:",
     "eslint": "catalog:",
+    "eslint-config-airbnb-base": "catalog:",
     "eslint-config-airbnb-typescript": "catalog:",
     "eslint-plugin-import": "catalog:",
     "eslint-plugin-import-newlines": "catalog:",

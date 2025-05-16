@@ -209,7 +209,7 @@ Blocking by domain name
 ```json
 [
   {
-    "id": 5,
+    "id": 1164887431,
     "action": {
       "type": "block"
     },
@@ -232,7 +232,7 @@ Blocking exact address
 ```json
 [
   {
-    "id": 5,
+    "id": 235727752,
     "action": {
       "type": "block"
     },
@@ -255,7 +255,7 @@ Basic rule modifiers
 ```json
 [
   {
-    "id": 5,
+    "id": 1713517238,
     "action": {
       "type": "block"
     },
@@ -285,7 +285,7 @@ Unblocking an address
 ```json
 [
   {
-    "id": 5,
+    "id": 392632258,
     "action": {
       "type": "allow"
     },
@@ -308,7 +308,7 @@ Unblocking everything on a website
 ```json
 [
   {
-    "id": 5,
+    "id": 1371086540,
     "action": {
       "type": "allowAllRequests"
     },
@@ -356,7 +356,7 @@ example.org##.banner
 ```json
 [
   {
-    "id": 5,
+    "id": 784875753,
     "action": {
       "type": "block"
     },
@@ -400,7 +400,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 84369718,
     "action": {
       "type": "block"
     },
@@ -426,7 +426,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 1472686061,
     "action": {
       "type": "block"
     },
@@ -453,7 +453,7 @@ example 3
 ```json
 [
   {
-    "id": 5,
+    "id": 1028264072,
     "action": {
       "type": "block"
     },
@@ -479,7 +479,7 @@ example 4
 ```json
 [
   {
-    "id": 5,
+    "id": 1726519168,
     "action": {
       "type": "block"
     },
@@ -520,7 +520,7 @@ example 6
 ```json
 [
   {
-    "id": 5,
+    "id": 2005983163,
     "action": {
       "type": "block"
     },
@@ -548,7 +548,7 @@ example 7
 ```json
 [
   {
-    "id": 5,
+    "id": 1907909817,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -601,7 +601,7 @@ example 8
 ```json
 [
   {
-    "id": 5,
+    "id": 501213106,
     "action": {
       "type": "block"
     },
@@ -631,7 +631,7 @@ page$domain=example.org
 ```json
 [
   {
-    "id": 5,
+    "id": 333660819,
     "action": {
       "type": "block"
     },
@@ -657,7 +657,7 @@ page$domain=targetdomain.com
 ```json
 [
   {
-    "id": 5,
+    "id": 1796222577,
     "action": {
       "type": "block"
     },
@@ -683,7 +683,7 @@ example 11
 ```json
 [
   {
-    "id": 5,
+    "id": 174286971,
     "action": {
       "type": "block"
     },
@@ -709,7 +709,7 @@ example 12
 ```json
 [
   {
-    "id": 5,
+    "id": 2074667603,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -773,7 +773,7 @@ page$domain=targetdomain.com|~example.org
 ```json
 [
   {
-    "id": 5,
+    "id": 1227814031,
     "action": {
       "type": "block"
     },
@@ -869,7 +869,7 @@ blocking rule will block all requests despite of the exception rule
 ```json
 [
   {
-    "id": 5,
+    "id": 511809861,
     "action": {
       "type": "block"
     },
@@ -879,7 +879,7 @@ blocking rule will block all requests despite of the exception rule
     "priority": 1000001
   },
   {
-    "id": 45,
+    "id": 72917959,
     "action": {
       "type": "allow"
     },
@@ -906,7 +906,7 @@ so no requests will not be blocked
 ```json
 [
   {
-    "id": 5,
+    "id": 511809861,
     "action": {
       "type": "block"
     },
@@ -916,7 +916,7 @@ so no requests will not be blocked
     "priority": 1000001
   },
   {
-    "id": 45,
+    "id": 230819845,
     "action": {
       "type": "allow"
     },
@@ -945,7 +945,7 @@ the blocking rule will not be applied despite it has the `$important` modifier
 ```json
 [
   {
-    "id": 5,
+    "id": 511809861,
     "action": {
       "type": "block"
     },
@@ -955,7 +955,7 @@ the blocking rule will not be applied despite it has the `$important` modifier
     "priority": 1000001
   },
   {
-    "id": 45,
+    "id": 919249042,
     "action": {
       "type": "allowAllRequests"
     },
@@ -986,7 +986,7 @@ the blocking rule will not be applied despite it has the `$important` modifier
 ```json
 [
   {
-    "id": 5,
+    "id": 1110597017,
     "action": {
       "type": "block"
     },
@@ -1016,7 +1016,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 1114350918,
     "action": {
       "type": "block"
     },
@@ -1057,7 +1057,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 1258462993,
     "action": {
       "type": "block"
     },
@@ -1098,7 +1098,7 @@ example 3
 ```json
 [
   {
-    "id": 5,
+    "id": 2062111308,
     "action": {
       "type": "allow"
     },
@@ -1138,7 +1138,7 @@ example 4
 ```json
 [
   {
-    "id": 5,
+    "id": 1492162332,
     "action": {
       "type": "allow"
     },
@@ -1206,7 +1206,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 1436362672,
     "action": {
       "type": "block"
     },
@@ -1230,7 +1230,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 1913648592,
     "action": {
       "type": "block"
     },
@@ -1260,7 +1260,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 620704825,
     "action": {
       "type": "block"
     },
@@ -1301,7 +1301,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 204054023,
     "action": {
       "type": "block"
     },
@@ -1344,7 +1344,7 @@ example 3
 ```json
 [
   {
-    "id": 5,
+    "id": 894146649,
     "action": {
       "type": "block"
     },
@@ -1394,7 +1394,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 2006907332,
     "action": {
       "type": "block"
     },
@@ -1420,7 +1420,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 729333272,
     "action": {
       "type": "block"
     },
@@ -1447,7 +1447,7 @@ example 3
 ```json
 [
   {
-    "id": 5,
+    "id": 2054755245,
     "action": {
       "type": "block"
     },
@@ -1478,7 +1478,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 1493888951,
     "action": {
       "type": "allowAllRequests"
     },
@@ -1516,7 +1516,7 @@ example 3
 ```json
 [
   {
-    "id": 5,
+    "id": 1562061175,
     "action": {
       "type": "block"
     },
@@ -1542,7 +1542,7 @@ example 4
 ```json
 [
   {
-    "id": 5,
+    "id": 216615167,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -1571,7 +1571,7 @@ example 5
 ```json
 [
   {
-    "id": 5,
+    "id": 588584217,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -1619,7 +1619,7 @@ example 6
 ```json
 [
   {
-    "id": 5,
+    "id": 2006907332,
     "action": {
       "type": "block"
     },
@@ -1646,7 +1646,7 @@ example 6
 ```json
 [
   {
-    "id": 5,
+    "id": 991157915,
     "action": {
       "type": "block"
     },
@@ -1673,7 +1673,7 @@ example 6
 ```json
 [
   {
-    "id": 5,
+    "id": 1897769964,
     "action": {
       "type": "block"
     },
@@ -1700,7 +1700,7 @@ example 6
 ```json
 [
   {
-    "id": 5,
+    "id": 1733424982,
     "action": {
       "type": "block"
     },
@@ -1727,7 +1727,7 @@ example 6
 ```json
 [
   {
-    "id": 5,
+    "id": 450886864,
     "action": {
       "type": "block"
     },
@@ -1754,7 +1754,7 @@ example 6
 ```json
 [
   {
-    "id": 5,
+    "id": 2011662663,
     "action": {
       "type": "block"
     },
@@ -1782,7 +1782,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 542689075,
     "action": {
       "type": "block"
     },
@@ -1808,7 +1808,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 1411625229,
     "action": {
       "type": "block"
     },
@@ -1838,7 +1838,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 451535635,
     "action": {
       "type": "block"
     },
@@ -1865,7 +1865,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 11366835,
     "action": {
       "type": "block"
     },
@@ -1892,7 +1892,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 670909846,
     "action": {
       "type": "block"
     },
@@ -1947,7 +1947,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 2005282727,
     "action": {
       "type": "block"
     },
@@ -2149,7 +2149,7 @@ Not convertible to DNR in MV3, but in MV3 [tswebextension](https://github.com/Ad
 ```json
 [
   {
-    "id": 5,
+    "id": 1119946050,
     "action": {
       "type": "block"
     },
@@ -2211,7 +2211,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 1679924937,
     "action": {
       "type": "block"
     },
@@ -2300,7 +2300,7 @@ example 8
 ```json
 [
   {
-    "id": 5,
+    "id": 1019790748,
     "action": {
       "type": "block"
     },
@@ -2342,7 +2342,7 @@ example 10
 ```json
 [
   {
-    "id": 5,
+    "id": 1019790748,
     "action": {
       "type": "block"
     },
@@ -2392,7 +2392,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 1285736871,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -2551,7 +2551,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 1383463238,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -2619,7 +2619,7 @@ example 4
 ```json
 [
   {
-    "id": 5,
+    "id": 1615117704,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -2664,7 +2664,7 @@ example 5
 ```json
 [
   {
-    "id": 94,
+    "id": 1371086540,
     "action": {
       "type": "allowAllRequests"
     },
@@ -2677,7 +2677,7 @@ example 5
     "priority": 140101
   },
   {
-    "id": 5,
+    "id": 1615117704,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -2731,7 +2731,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 1329901298,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -2765,7 +2765,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 1263119637,
     "action": {
       "type": "allow"
     },
@@ -2792,7 +2792,7 @@ example 3
 ```json
 [
   {
-    "id": 5,
+    "id": 1255367548,
     "action": {
       "type": "allow"
     },
@@ -2819,7 +2819,7 @@ $domain=example.org|example.com,permissions=oversized-images=()\, sync-script=()
 ```json
 [
   {
-    "id": 5,
+    "id": 728168398,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -2857,7 +2857,7 @@ example 5
 ```json
 [
   {
-    "id": 5,
+    "id": 1329901298,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -2878,7 +2878,7 @@ example 5
     "priority": 1
   },
   {
-    "id": 61,
+    "id": 1371086540,
     "action": {
       "type": "allowAllRequests"
     },
@@ -2914,7 +2914,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 1977140553,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -2943,7 +2943,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 639704980,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -2996,7 +2996,7 @@ example 5
 ```json
 [
   {
-    "id": 5,
+    "id": 547549362,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3022,7 +3022,7 @@ example 6
 ```json
 [
   {
-    "id": 5,
+    "id": 921320818,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3048,7 +3048,7 @@ example 7
 ```json
 [
   {
-    "id": 5,
+    "id": 1904749937,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3074,7 +3074,7 @@ example 8
 ```json
 [
   {
-    "id": 5,
+    "id": 1481297074,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3100,7 +3100,7 @@ example 9
 ```json
 [
   {
-    "id": 5,
+    "id": 397468727,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3127,7 +3127,7 @@ example 10
 ```json
 [
   {
-    "id": 5,
+    "id": 1940385416,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3140,7 +3140,7 @@ example 10
     "priority": 1001
   },
   {
-    "id": 66,
+    "id": 1682308684,
     "action": {
       "type": "allow"
     },
@@ -3164,7 +3164,7 @@ example 11
 ```json
 [
   {
-    "id": 5,
+    "id": 909168493,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3177,7 +3177,7 @@ example 11
     "priority": 1001
   },
   {
-    "id": 65,
+    "id": 1816110182,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -3228,7 +3228,7 @@ Awaiting implementation: https://github.com/w3c/webextensions/issues/493.
 ```json
 [
   {
-    "id": 5,
+    "id": 1511559822,
     "action": {
       "type": "block"
     },
@@ -3307,7 +3307,7 @@ example 1
 ```json
 [
   {
-    "id": 5,
+    "id": 156699538,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -3350,7 +3350,7 @@ example 2
 ```json
 [
   {
-    "id": 5,
+    "id": 1145446713,
     "action": {
       "type": "modifyHeaders",
       "requestHeaders": [
@@ -3417,7 +3417,7 @@ example 5
 ```json
 [
   {
-    "id": 5,
+    "id": 1625113114,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -3460,7 +3460,7 @@ example 6
 ```json
 [
   {
-    "id": 5,
+    "id": 747526909,
     "action": {
       "type": "modifyHeaders",
       "requestHeaders": [
@@ -3503,7 +3503,7 @@ $removeheader=location,domain=example.com
 ```json
 [
   {
-    "id": 5,
+    "id": 1145064334,
     "action": {
       "type": "modifyHeaders",
       "responseHeaders": [
@@ -3565,7 +3565,7 @@ skip rules with a negation, or regexp or the rule is a allowlist
 ```json
 [
   {
-    "id": 5,
+    "id": 2131736874,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3609,7 +3609,7 @@ $removeparam=utm_source
 ```json
 [
   {
-    "id": 5,
+    "id": 1143364123,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3721,7 +3721,7 @@ $xmlhttprequest,removeparam=p1case2
 ```json
 [
   {
-    "id": 5,
+    "id": 2009110781,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3745,7 +3745,7 @@ $xmlhttprequest,removeparam=p1case2
     "priority": 101
   },
   {
-    "id": 215,
+    "id": 1784990990,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3839,7 +3839,7 @@ example 4
 ```json
 [
   {
-    "id": 84,
+    "id": 1961107654,
     "action": {
       "type": "block"
     },
@@ -3872,7 +3872,7 @@ example 1.
 ```json
 [
   {
-    "id": 5,
+    "id": 594281287,
     "action": {
       "type": "redirect",
       "redirect": {
@@ -3904,7 +3904,7 @@ example 1.
 ```json
 [
   {
-    "id": 5,
+    "id": 351327571,
     "action": {
       "type": "redirect",
       "redirect": {

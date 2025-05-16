@@ -11,11 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `utils` entry point with `getVersion` and `getVersionTimestampMs` functions.
 
+## [3.0.0-alpha.3] - 2025-05-15
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `3.3.1`.
+
+[3.0.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.3
+
 ## [3.0.0-alpha.0] - 2025-04-30
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v3.3.0-alpha.0`.
+- Updated `@adguard/tsurlfilter` to `3.3.0-alpha.0`.
 
 ### Removed
 
