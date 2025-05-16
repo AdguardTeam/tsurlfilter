@@ -74,11 +74,6 @@ export class RuleSetsLoaderApi {
     private static metadataRulesetsCache: Record<string, MetadataRuleSet> = {};
 
     /**
-     * Path to rule sets cache directory to invalidate it when path changes.
-     */
-    private static ruleSetsCachePath: string;
-
-    /**
      * Path to rule sets directory.
      */
     private ruleSetsPath: string;
@@ -114,10 +109,6 @@ export class RuleSetsLoaderApi {
         this.ruleSetsPath = ruleSetsPath;
         this.isInitialized = false;
         this.syncLocks = new Map();
-
-        if (RuleSetsLoaderApi.ruleSetsCachePath !== ruleSetsPath) {
-            RuleSetsLoaderApi.ruleSetsCachePath = ruleSetsPath;
-        }
     }
 
     /**
