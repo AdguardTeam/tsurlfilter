@@ -20,22 +20,20 @@ const PRERELEASE_DELIMITER = '-';
  * `3.0.0` → `3.0.1`
  */
 function incrementVersion(version: string): string {
-    // Check if it's a prerelease version (alpha/beta)
     const hasPrerelease = version.includes(PRERELEASE_DELIMITER);
 
     if (hasPrerelease) {
-        // It's a prerelease version like 3.0.0-alpha.4
+        // e.g. 3.0.0-alpha.4
         const [baseVersion, preReleasePart] = version.split(PRERELEASE_DELIMITER);
         const lastDotIndex = preReleasePart.lastIndexOf(VERSION_DELIMITER);
 
-        // Extract the prerelease type (alpha/beta) and number
         const preReleaseType = preReleasePart.substring(0, lastDotIndex);
         const preReleaseNumber = preReleasePart.substring(lastDotIndex + 1);
 
         const newPreReleaseNumber = parseInt(preReleaseNumber, 10) + 1;
         return `${baseVersion}${PRERELEASE_DELIMITER}${preReleaseType}${VERSION_DELIMITER}${newPreReleaseNumber}`;
     } else {
-        // It's a regular version like 3.0.0
+        // e.g. 3.0.0
         const versionParts = version.split(VERSION_DELIMITER);
         if (versionParts.length !== 3) {
             throw new Error(`Invalid version format: ${version}`);
