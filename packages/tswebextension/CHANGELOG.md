@@ -33,6 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
 [AdguardBrowserExtension#3192]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3192
 
+## [3.1.0-alpha.1] - 2025-05-15
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.3.1`.
+
+[3.1.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0-alpha.1
+
 ## [3.1.0-alpha.0] - 2025-04-30
 
 ### Changed

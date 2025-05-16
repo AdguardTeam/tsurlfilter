@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [AdguardBrowserExtension#2942]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2942
 
+## [3.3.1] - 2025-05-15
+
+### Changed
+
+- DNR converter now keep IDs of converted rules the same between launches
+  if text of the rule is the same.
+
+[3.3.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.3.1
+
 ## [3.3.0-alpha.0] - 2025-04-30
 
 ### Changed
