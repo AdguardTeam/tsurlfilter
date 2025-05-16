@@ -421,7 +421,14 @@ export class RuleSetsLoaderApi {
             ruleSetHashMap,
         );
 
-        RuleSetsLoaderApi.ruleSetsCache.set(ruleSetId, ruleset);
+        const loadedFiltersIds = filterList.map((f) => f.getId());
+        const ruleSetIdNumber = extractRuleSetId(ruleSetId);
+        if (loadedFiltersIds.length > 0
+            && ruleSetIdNumber !== null
+            && loadedFiltersIds.includes(ruleSetIdNumber)) {
+            // We save the rule set in the cache only if it's filter is loaded.
+            RuleSetsLoaderApi.ruleSetsCache.set(ruleSetId, ruleset);
+        }
 
         return ruleset;
     }
