@@ -83,7 +83,8 @@
         "lint:ts": "eslint . --cache --ext .ts",
         "precommit": "pnpm check-types && pnpm lint && pnpm test",
         "test": "vitest run",
-        "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)"
+        "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
+        "tgz": "pnpm pack --out agtree.tgz"
     },
     "dependencies": {
         "@adguard/css-tokenizer": "workspace:^",

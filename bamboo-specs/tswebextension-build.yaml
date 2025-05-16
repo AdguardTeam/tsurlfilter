@@ -45,7 +45,7 @@ Build:
 
             cd packages/tswebextension
 
-            pnpm pack --out tswebextension.tgz
+            pnpm tgz
     - inject-variables:
         file: ./packages/tswebextension/dist/build.txt
         scope: RESULT

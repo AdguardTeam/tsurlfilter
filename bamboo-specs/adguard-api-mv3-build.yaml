@@ -62,7 +62,7 @@ Build:
             pnpm run build
 
             cd ../../adguard-api-mv3
-            pnpm pack --out adguard-api-mv3.tgz
+            pnpm tgz
     - inject-variables:
         file: ./packages/adguard-api-mv3/dist/build.txt
         scope: RESULT
