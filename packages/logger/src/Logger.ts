@@ -9,19 +9,37 @@ export const enum LogLevelNumeric {
     Warn,
     Info,
     Debug,
-    Trace,
+    Verbose,
 }
 
 /**
  * String presentation of log levels, for convenient users usage.
  * Ordered in the same way as LogLevelNumeric.
+ *
+ * First three levels will be shown to users, and the last two are for developers.
  */
 export enum LogLevel {
+    /**
+     * For errors.
+     */
     Error = 'error',
+    /**
+     * For not critical errors.
+     */
     Warn = 'warn',
+    /**
+     * For important information.
+     * Use for general operational messages.
+     */
     Info = 'info',
+    /**
+     * For debugging purposes, e.g. Inside conditions, loops or some edge cases.
+     */
     Debug = 'debug',
-    Trace = 'trace',
+    /**
+     * For ultra-detailed, step-by-step traces (like stack traces or flow tracking).
+     */
+    Verbose = 'verbose',
 }
 
 /**
@@ -33,7 +51,7 @@ const levelMapNumToString = {
     [LogLevelNumeric.Warn]: LogLevel.Warn,
     [LogLevelNumeric.Info]: LogLevel.Info,
     [LogLevelNumeric.Debug]: LogLevel.Debug,
-    [LogLevelNumeric.Trace]: LogLevel.Trace,
+    [LogLevelNumeric.Verbose]: LogLevel.Verbose,
 };
 
 /**
@@ -179,7 +197,7 @@ export class Logger {
      * @param args Printed arguments.
      */
     public trace(...args: unknown[]): void {
-        this.print(LogLevelNumeric.Trace, LogMethod.Trace, args);
+        this.print(LogLevelNumeric.Verbose, LogMethod.Trace, args);
     }
 
     /**
@@ -259,10 +277,12 @@ export class Logger {
         method: LogMethod,
         args: any[],
     ): void {
-        // skip writing if the basic conditions are not met
+        // Skip writing if the basic conditions are not met.
         if (this.currentLevelValue < level) {
             return;
         }
+
+        // Do not print if no arguments are passed.
         if (!args || args.length === 0 || !args[0]) {
             return;
         }
@@ -286,7 +306,7 @@ export class Logger {
         const formattedTime = `${formatTime(new Date())}:`;
 
         /**
-         * If current log level is Debug or Trace, print all channels with stack
+         * If current log level is Debug or Verbose, print all channels with stack
          * trace via using writer.trace method to help identify the location of the
          * log.
          *

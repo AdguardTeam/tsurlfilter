@@ -185,10 +185,10 @@ describe('checking that ', () => {
             expect(writer.error).toHaveBeenCalledOnce();
         });
 
-        it('if level is trace - print with trace from all channels except error', () => {
+        it('if level is verbose - print with trace from all channels except error', () => {
             const logger = new Logger(writer);
             const message = 'some message';
-            logger.currentLevel = LogLevel.Trace;
+            logger.currentLevel = LogLevel.Verbose;
 
             logger.error(message);
             logger.warn(message);

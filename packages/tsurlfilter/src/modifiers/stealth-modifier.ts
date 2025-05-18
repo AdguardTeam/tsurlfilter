@@ -112,6 +112,7 @@ export class StealthModifier {
             const option = StealthOption[optionName];
 
             if (this.options & option) {
+                // TODO: Change log level to 'warn' after AG-42379
                 logger.trace(`[tsurl.StealthModifier.constructor]: duplicate $stealth modifier value "${optionName}" in "${optionsStr}"`);
             }
 
@@ -119,6 +120,7 @@ export class StealthModifier {
         }
 
         if (this.options === StealthOption.NotSet) {
+            // TODO: Change log level to 'warn' after AG-42379
             logger.trace(`[tsurl.StealthModifier.constructor]: $stealth modifier does not contain any options supported by browser extension: "${optionsStr}"`);
         }
     }

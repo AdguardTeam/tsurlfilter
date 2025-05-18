@@ -11,7 +11,6 @@ module.exports = {
         'import',
         'import-newlines',
         '@typescript-eslint',
-        'require-logger-context',
     ],
     extends: [
         'airbnb-base',
@@ -110,6 +109,5 @@ module.exports = {
                 { tags: [ 'example' ] },
             ],
         }],
-        'require-logger-context/require-logger-context': 'error',
     },
 };
