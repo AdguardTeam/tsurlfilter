@@ -24,6 +24,7 @@
     "devDependencies": {
         "husky": "catalog:",
         "lerna": "8.1.8",
+        "semver": "^7.7.2",
         "vitest": "catalog:"
     },
     "pnpm": {
