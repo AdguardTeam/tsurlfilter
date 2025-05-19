@@ -15,6 +15,7 @@ import {
 
 const DEFAULT_CONTEXT_MODULE_NAME = 'logger';
 const DEFAULT_LOGGER_VARIABLE_NAME = 'logger';
+const DEFAULT_FILE_NAME = 'unknown';
 
 /**
  * Helper to extract the file name from the context.
@@ -24,7 +25,7 @@ const DEFAULT_LOGGER_VARIABLE_NAME = 'logger';
  * @returns The file name.
  */
 function getFileName(context: Rule.RuleContext): string {
-    return (context.filename.match(/([^/\\]+)\.(ts|js|tsx|jsx)$/) || [])[1] || 'unknown';
+    return (context.filename.match(/([^/\\]+)\.(ts|js|tsx|jsx)$/) || [])[1] || DEFAULT_FILE_NAME;
 }
 
 /**
