@@ -72,7 +72,7 @@ const levelMapStringToNum: Record<string, LogLevelNumeric> = Object.entries(leve
  * Methods supported by console. Used to manage levels.
  * Ordered in the same way as LogLevelNumeric.
  */
-export const enum LogMethod {
+export enum LogMethod {
     Error = 'error',
     Warn = 'warn',
     Info = 'info',

@@ -4,11 +4,12 @@
  * e.g. "[ext.page-handler]:" or "[tsweb.WebRequestApi.onBeforeRequest]:".
  */
 import { requireLoggerContextRule } from './require-logger-context';
+import { name, version } from '../package.json';
 
 export default {
     meta: {
-        name: 'eslint-plugin-require-logger-context',
-        version: '1.0.0',
+        name,
+        version,
     },
     rules: { 'require-logger-context': requireLoggerContextRule },
 };

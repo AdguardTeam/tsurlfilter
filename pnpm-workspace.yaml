@@ -1,5 +1,6 @@
 packages:
   - "packages/*"
+  - "packages/logger/eslint-rules"
   - "packages/examples/*"
   - "packages/benchmarks/*"
   - "packages/tsurlfilter/test/builders/*"

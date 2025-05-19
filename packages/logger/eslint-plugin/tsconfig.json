@@ -7,15 +7,8 @@
     },
     "include": [
         "src",
-        "tests",
         "scripts",
         "rollup.config.ts",
         ".eslintrc.js",
-        "vitest.config.ts",
-        "eslint-rules"
-    ],
-    "exclude": [
-        "tests/smoke",
-        "eslint-plugin/"
     ]
 }

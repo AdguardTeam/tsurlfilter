@@ -38,7 +38,7 @@ module.exports = {
             ignoreUrls: true,
             ignoreTrailingComments: false,
             ignoreComments: false,
-            /**
+            /*
              * Ignore calls to logger, e.g. logger.error(), because of the long string.
              */
             ignorePattern: 'logger\\.',

@@ -1,4 +1,4 @@
-import type { Rule } from 'eslint';
+import type { TSESTree, TSESLint } from '@typescript-eslint/utils';
 
 /**
  * Traverses up the AST to find enclosing class, method, and function names.
@@ -8,7 +8,7 @@ import type { Rule } from 'eslint';
  * @returns An object containing the class, method, and function names (or null if not found).
  */
 export const getEnclosingNames = (
-    node: any,
+    node: TSESTree.Node & { parent?: TSESTree.Node }, // add parent property for traversal
 ): {
     className: string | null;
     methodName: string | null;
@@ -17,20 +17,29 @@ export const getEnclosingNames = (
     let className: string | null = null;
     let methodName: string | null = null;
     let functionName: string | null = null;
+
+    // @typescript-eslint/utils nodes use 'parent' only if
+    // parserOptions.createDefaultProgram is true and parser attaches parents.
+    // Fallback to 'any' for parent traversal, but type node as TSESTree.Node
+    // for all other usages.
     let { parent } = node;
     while (parent) {
-        if (!className && parent.type === 'ClassDeclaration' && parent.id) {
-            className = parent.id.name;
+        if (!className && parent.type === 'ClassDeclaration' && parent.id && parent.id.type === 'Identifier') {
+            const { name } = parent.id;
+            className = name;
         }
-        if (!methodName && parent.type === 'MethodDefinition' && parent.key) {
-            methodName = parent.key.name;
+        if (!methodName && parent.type === 'MethodDefinition' && parent.key && parent.key.type === 'Identifier') {
+            const { name } = parent.key;
+            methodName = name;
         }
         if (
             !functionName
             && (parent.type === 'FunctionDeclaration' || parent.type === 'FunctionExpression')
             && parent.id
+            && parent.id.type === 'Identifier'
         ) {
-            functionName = parent.id.name;
+            const { name } = parent.id;
+            functionName = name;
         }
         parent = parent.parent;
     }
@@ -108,18 +117,22 @@ export const startsWithTag = (arg: any, tag: string): boolean => {
  * @returns A fixer function that returns a Rule.Fix or null.
  */
 export const createFix = (
-    context: Rule.RuleContext,
-    node: any,
+    context: TSESLint.RuleContext<string, unknown[]>,
+    node: TSESTree.CallExpression,
     tag: string,
-): ((fixer: any) => Rule.Fix | null) => {
+): ((fixer: TSESLint.RuleFixer) => TSESLint.RuleFix | null) => {
     const { arguments: args } = node;
     const firstArg = args[0];
-    return (fixer: any): Rule.Fix | null => {
+    return (fixer: TSESLint.RuleFixer): TSESLint.RuleFix | null => {
         const sourceCode = context.getSourceCode();
+
+        // For simple strings
         if (firstArg && firstArg.type === 'Literal' && typeof firstArg.value === 'string') {
             const cleaned = firstArg.value.replace(/^\[[^\]]+\](?::)?\s*/, '');
             return fixer.replaceText(firstArg, `'${tag} ${cleaned}'`);
         }
+
+        // For template strings
         if (firstArg && firstArg.type === 'TemplateLiteral' && firstArg.quasis.length > 0) {
             const quasiRaw = firstArg.quasis[0].value.raw;
             const rest = quasiRaw.replace(/^\[[^\]]+\](?::)?\s*/, '');
@@ -136,6 +149,7 @@ export const createFix = (
             rebuilt += '`';
             return fixer.replaceText(firstArg, rebuilt);
         }
+
         if (!firstArg) {
             return fixer.insertTextAfter(node.callee, `('${tag} ')`);
         }

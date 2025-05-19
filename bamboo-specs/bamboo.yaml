@@ -59,6 +59,15 @@
 !include 'logger-permissions.yaml'
 
 ---
+!include 'eslint-plugin-logger-context-build.yaml'
+
+---
+!include 'eslint-plugin-logger-context-deploy.yaml'
+
+---
+!include 'eslint-plugin-logger-context-permissions.yaml'
+
+---
 !include 'adguard-api-mv3-build.yaml'
 
 ---
