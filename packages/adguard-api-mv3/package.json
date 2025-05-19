@@ -38,7 +38,7 @@
     "license": "GPL-3.0-only",
     "dependencies": {
         "@adguard/tswebextension": "workspace:^",
-        "zod": "3.22.4"
+        "zod": "3.24.4"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^25.0.7",

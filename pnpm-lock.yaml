@@ -36,8 +36,8 @@ importers:
         specifier: 0.10.0
         version: 0.10.0
       zod:
-        specifier: 3.21.4
-        version: 3.21.4
+        specifier: 3.24.4
+        version: 3.24.4
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^25.0.7
@@ -103,8 +103,8 @@ importers:
         specifier: workspace:^
         version: link:../tswebextension
       zod:
-        specifier: 3.22.4
-        version: 3.22.4
+        specifier: 3.24.4
+        version: 3.24.4
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^25.0.7
@@ -197,8 +197,8 @@ importers:
         specifier: ^5.1.1
         version: 5.1.2
       zod:
-        specifier: 3.21.4
-        version: 3.21.4
+        specifier: 3.24.4
+        version: 3.24.4
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^28.0.1
@@ -654,8 +654,8 @@ importers:
         specifier: ^11.2.0
         version: 11.3.0
       zod:
-        specifier: ^3.23.8
-        version: 3.24.2
+        specifier: 3.24.4
+        version: 3.24.4
     devDependencies:
       '@adguard/tsurlfilter':
         specifier: workspace:^
@@ -1202,11 +1202,11 @@ importers:
         specifier: ^5.7.112
         version: 5.7.112
       zod:
-        specifier: 3.21.4
-        version: 3.21.4
+        specifier: 3.24.4
+        version: 3.24.4
       zod-validation-error:
         specifier: ^3.4.0
-        version: 3.4.0(zod@3.21.4)
+        version: 3.4.0(zod@3.24.4)
     devDependencies:
       '@rollup/plugin-alias':
         specifier: ^5.1.1
@@ -1413,8 +1413,8 @@ importers:
         specifier: 0.12.0
         version: 0.12.0
       zod:
-        specifier: 3.21.4
-        version: 3.21.4
+        specifier: 3.24.4
+        version: 3.24.4
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^28.0.1
@@ -9773,11 +9773,8 @@ packages:
   zod@3.21.4:
     resolution: {integrity: sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==}
 
-  zod@3.22.4:
-    resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
-
-  zod@3.24.2:
-    resolution: {integrity: sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==}
+  zod@3.24.4:
+    resolution: {integrity: sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==}
 
 snapshots:
 
@@ -20499,14 +20496,12 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.7.0
 
-  zod-validation-error@3.4.0(zod@3.21.4):
+  zod-validation-error@3.4.0(zod@3.24.4):
     dependencies:
-      zod: 3.21.4
+      zod: 3.24.4
 
   zod@3.19.1: {}
 
   zod@3.21.4: {}
 
-  zod@3.22.4: {}
-
-  zod@3.24.2: {}
+  zod@3.24.4: {}
