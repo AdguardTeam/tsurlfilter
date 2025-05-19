@@ -7,7 +7,10 @@
 import type { Rule } from 'eslint';
 import { LogLevel } from '../src';
 import {
-    getEnclosingNames, buildTag, startsWithTag, createFix,
+    getEnclosingNames,
+    buildTag,
+    startsWithTag,
+    createFix,
 } from './helpers';
 
 const DEFAULT_CONTEXT_MODULE_NAME = 'logger';
@@ -21,7 +24,7 @@ const DEFAULT_LOGGER_VARIABLE_NAME = 'logger';
  * @returns The file name.
  */
 function getFileName(context: Rule.RuleContext): string {
-    return (context.getFilename().match(/([^/\\]+)\.(ts|js|tsx|jsx)$/) || [])[1] || 'unknown';
+    return (context.filename.match(/([^/\\]+)\.(ts|js|tsx|jsx)$/) || [])[1] || 'unknown';
 }
 
 /**

@@ -7,7 +7,6 @@ import type { Rule } from 'eslint';
  *
  * @returns An object containing the class, method, and function names (or null if not found).
  */
-
 export const getEnclosingNames = (
     node: any,
 ): {
@@ -52,7 +51,6 @@ export const getEnclosingNames = (
  *
  * @returns The tag string.
  */
-
 export const buildTag = (
     contextModuleName: string,
     fileName: string,
@@ -79,7 +77,6 @@ export const buildTag = (
  *
  * @returns True if the argument starts with the tag, otherwise false.
  */
-
 export const startsWithTag = (arg: any, tag: string): boolean => {
     if (!arg) {
         return false;
@@ -110,7 +107,6 @@ export const startsWithTag = (arg: any, tag: string): boolean => {
  *
  * @returns A fixer function that returns a Rule.Fix or null.
  */
-
 export const createFix = (
     context: Rule.RuleContext,
     node: any,
