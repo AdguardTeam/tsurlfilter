@@ -40,7 +40,7 @@
         "@adguard/filters-downloader": "^2.2.6",
         "@adguard/tswebextension": "workspace:^",
         "webextension-polyfill": "0.10.0",
-        "zod": "3.21.4"
+        "zod": "3.24.4"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^25.0.7",

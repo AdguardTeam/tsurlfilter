@@ -1,6 +1,6 @@
 {
     "name": "@adguard/tswebextension",
-    "version": "3.1.0-alpha.1",
+    "version": "3.1.0-alpha.2",
     "description": "This is a TypeScript library that implements AdGuard's extension API",
     "type": "module",
     "main": "dist/index.js",
@@ -125,7 +125,7 @@
         "tldts": "^5.7.112",
         "tslib": "2.5.3",
         "webextension-polyfill": "0.12.0",
-        "zod": "3.21.4"
+        "zod": "3.24.4"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "^28.0.1",
