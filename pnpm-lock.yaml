@@ -1160,7 +1160,7 @@ importers:
         specifier: ^2.1.6
         version: 2.1.9(@types/node@20.17.30)(jsdom@18.1.1)(msw@2.7.3(@types/node@20.17.30)(typescript@5.8.3))(terser@5.39.0)
 
-  packages/logger/eslint-rules:
+  packages/logger/eslint-plugin:
     dependencies:
       '@types/eslint':
         specifier: '8.56'
@@ -10281,7 +10281,7 @@ snapshots:
       espree: 9.6.1
       globals: 13.24.0
       ignore: 5.3.2
-      import-fresh: 3.3.0
+      import-fresh: 3.3.1
       js-yaml: 4.1.0
       minimatch: 3.1.2
       strip-json-comments: 3.1.1
@@ -12210,7 +12210,7 @@ snapshots:
 
   '@typescript-eslint/utils@5.59.11(eslint@8.57.1)(typescript@5.6.2)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.5.1(eslint@8.57.1)
+      '@eslint-community/eslint-utils': 4.7.0(eslint@8.57.1)
       '@types/json-schema': 7.0.15
       '@types/semver': 7.7.0
       '@typescript-eslint/scope-manager': 5.59.11
@@ -12225,7 +12225,7 @@ snapshots:
 
   '@typescript-eslint/utils@5.59.11(eslint@8.57.1)(typescript@5.8.3)':
     dependencies:
-      '@eslint-community/eslint-utils': 4.5.1(eslint@8.57.1)
+      '@eslint-community/eslint-utils': 4.7.0(eslint@8.57.1)
       '@types/json-schema': 7.0.15
       '@types/semver': 7.7.0
       '@typescript-eslint/scope-manager': 5.59.11
@@ -14895,7 +14895,7 @@ snapshots:
 
   eslint@8.57.1:
     dependencies:
-      '@eslint-community/eslint-utils': 4.5.1(eslint@8.57.1)
+      '@eslint-community/eslint-utils': 4.7.0(eslint@8.57.1)
       '@eslint-community/regexpp': 4.12.1
       '@eslint/eslintrc': 2.1.4
       '@eslint/js': 8.57.1

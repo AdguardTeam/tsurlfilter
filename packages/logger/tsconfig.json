@@ -12,7 +12,6 @@
         "rollup.config.ts",
         ".eslintrc.js",
         "vitest.config.ts",
-        "eslint-rules"
     ],
     "exclude": [
         "tests/smoke",
