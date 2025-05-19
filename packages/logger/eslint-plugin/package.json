@@ -20,7 +20,8 @@
         "prebuild": "rimraf dist",
         "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm build:types",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-        "lint": "eslint --cache --ignore-path .gitignore . && tsc"
+        "lint": "eslint --cache --ignore-path .gitignore . && tsc",
+        "tgz": "pnpm pack --out eslint-plugin-logger-context.tgz"
     },
     "keywords": [
         "eslint",
