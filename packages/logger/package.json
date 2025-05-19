@@ -11,7 +11,7 @@
         "lint:code": "eslint --cache --ignore-path .gitignore .",
         "lint:types": "tsc",
         "test:smoke": "(cd tests/smoke/esm && pnpm test) && (cd tests/smoke/cjs && pnpm test) && (cd tests/smoke/typescript && pnpm test)",
-        "increment": "pnpm version patch --no-git-tag-version",
+        "increment": "node ../../scripts/increment.mjs",
         "tgz": "pnpm pack --out logger.tgz"
     },
     "engines": {

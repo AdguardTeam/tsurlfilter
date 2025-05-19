@@ -12,5 +12,6 @@
         ".eslint.config.mjs",
         "rollup.config.ts",
         "vitest.config.ts",
+        "./tasks",
     ]
 }
