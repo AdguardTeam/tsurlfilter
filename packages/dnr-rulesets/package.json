@@ -23,7 +23,7 @@
         "lint": "pnpm lint:code && pnpm lint:types",
         "lint:code": "eslint",
         "lint:types": "tsc",
-        "increment": "pnpm version patch --no-git-tag-version",
+        "increment": "node ../../scripts/increment.mjs",
         "increment:auto-deploy": "tsx tasks/auto-deploy-increment",
         "tgz": "pnpm pack --out dnr-rulesets.tgz"
     },

@@ -36,7 +36,7 @@
     "build": "pnpm clean && pnpm build-txt && pnpm rollup --config rollup.config.ts --configPlugin @rollup/plugin-json --configPlugin @rollup/plugin-typescript && rimraf dist/types",
     "build-txt": "tsx scripts/build-txt.ts",
     "clean": "rimraf dist",
-    "increment": "pnpm version patch --no-git-tag-version",
+    "increment": "node ../../scripts/increment.mjs",
     "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
     "lint:code": "eslint . --cache --ext .ts",
     "lint:types": "tsc",

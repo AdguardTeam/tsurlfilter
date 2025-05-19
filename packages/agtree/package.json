@@ -77,7 +77,7 @@
         "check-types": "tsc",
         "clean": "rimraf dist",
         "coverage": "vitest run --coverage",
-        "increment": "pnpm version patch --no-git-tag-version",
+        "increment": "node ../../scripts/increment.mjs",
         "lint": "pnpm check-types && pnpm lint:ts && pnpm lint:md",
         "lint:md": "markdownlint .",
         "lint:ts": "eslint . --cache --ext .ts",
