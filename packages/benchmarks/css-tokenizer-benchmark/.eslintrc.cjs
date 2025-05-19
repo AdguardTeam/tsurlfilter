@@ -80,36 +80,13 @@ module.exports = {
         'jsdoc/sort-tags': ['error', {
             linesBetween: 1,
             tagSequence: [
-                {
-                    tags: [
-                        'file',
-                    ],
-                },
-                {
-                    tags: [
-                        'see',
-                    ],
-                },
-                {
-                    tags: [
-                        'param',
-                    ],
-                },
-                {
-                    tags: [
-                        'returns',
-                    ],
-                },
-                {
-                    tags: [
-                        'throws',
-                    ],
-                },
-                {
-                    tags: [
-                        'example',
-                    ],
-                },
+                { tags: ['file'] },
+                { tags: ['template'] },
+                { tags: ['see'] },
+                { tags: ['param'] },
+                { tags: ['returns'] },
+                { tags: ['throws'] },
+                { tags: ['example'] },
             ],
         }],
         'arrow-body-style': 'off',
