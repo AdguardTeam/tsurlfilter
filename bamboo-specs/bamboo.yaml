@@ -74,6 +74,9 @@
 !include 'dnr-rulesets-deploy.yaml'
 
 ---
+!include 'dnr-rulesets-increment.yaml'
+
+---
 !include 'dnr-rulesets-permissions.yaml'
 
 ---

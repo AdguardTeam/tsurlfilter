@@ -1,6 +1,6 @@
 {
     "name": "@adguard/dnr-rulesets",
-    "version": "3.0.0-alpha.6",
+    "version": "3.0.0-alpha.7",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
         "dist/**/*"
@@ -37,7 +37,7 @@
         "lint": "pnpm lint:code && pnpm lint:types",
         "lint:code": "eslint",
         "lint:types": "tsc",
-        "increment": "pnpm version patch --no-git-tag-version",
+        "increment": "node ../../scripts/increment.mjs",
         "increment:auto-deploy": "tsx tasks/auto-deploy-increment",
         "tgz": "pnpm pack --out dnr-rulesets.tgz"
     },
