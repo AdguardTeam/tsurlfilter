@@ -20,18 +20,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Invalid HTML rule selectors are breaking site loading
   [AdguardBrowserExtension#2646], [AdguardBrowserExtension#2826].
 - Scriptlet rules are not displayed in the filtering log [AdguardBrowserExtension#3164].
-- ya.ru - `Hide Referrer from third parties` breaks the site [AdguardBrowserExtension#2839].
+- Stealth mode's `Hide Referer from third parties` option may break some websites [AdguardBrowserExtension#2839].
+- Filtering doesn't work in Edge's split screen [AdguardBrowserExtension#2832].
+- `$replace` rules may break some websites [AdguardBrowserExtension#3122].
+- Increase file size limit to 10MB for `$replace` rules in Firefox [AdguardBrowserExtension#3192]
 
 [AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
 [AdguardBrowserExtension#2826]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2826
+[AdguardBrowserExtension#2832]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2832
 [AdguardBrowserExtension#2839]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2839
+[AdguardBrowserExtension#3122]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3122
 [AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
+[AdguardBrowserExtension#3192]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3192
+
+## [3.1.0-alpha.1] - 2025-05-15
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.3.1`.
+
+[3.1.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0-alpha.1
+
+## [3.1.0-alpha.0] - 2025-04-30
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.1.3`.
+- Updated [@adguard/tsurlfilter] to `v3.3.0-alpha.0`.
+- Instead of byte ranges, rulesets will be synchronized to IndexedDB internally.
+
+### Removed
+
+- `FiltersApi` export.
+
+[3.1.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0-alpha.0
 
 ## [3.0.2] - 2025-04-15
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v3.2.3`.
+- Updated [@adguard/tsurlfilter] to `v3.2.3`.
 
 ## [3.0.1] - 2025-03-06
 
@@ -152,7 +180,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.6] - 2024-11-19
 
-- Updated `@adguard/tsurlfilter` to `v3.0.7`.
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.0.7`.
 
 [2.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.6
 
@@ -160,8 +190,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/agtree` to `v2.1.3`.
-- Updated `@adguard/tsurlfilter` to `v3.0.6`.
+- Updated [@adguard/agtree] to `v2.1.3`.
+- Updated [@adguard/tsurlfilter] to `v3.0.6`.
 
 [2.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.5
 

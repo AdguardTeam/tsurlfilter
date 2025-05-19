@@ -1,8 +1,9 @@
 import { type AnyRule, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { getErrorMessage } from '../../common/error';
-import { fastHash } from '../../utils/string-utils';
+import { fastHash31, fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../network-rule';
 import { IndexedRule, type IRule } from '../rule';
 import { RuleFactory } from '../rule-factory';
@@ -10,13 +11,20 @@ import { RuleFactory } from '../rule-factory';
 import { NetworkRuleWithNode } from './network-rule-with-node';
 
 /**
- * Network rule with index and hash.
+ * Network rule with index and hashes for pattern and rule's text.
+ *
+ * This class is "wrapper" around simple IndexedRule for the needs of DNR converter:
+ * pattern hashes are needed to quickly compare two different network rules with the same,
+ * while rule's text hash is needed to keep ID of the rule in the filter the same
+ * between several runs. Thus is needed to be able to use "skip review" option in CWS.
  */
 export class IndexedNetworkRuleWithHash extends IndexedRule {
     /**
      * Rule's hash created with {@link fastHash}. Needed to quickly compare
      * two different network rules with the same pattern part for future
      * checking of $badfilter application from one of them to another.
+     *
+     * Hash is create only from "pattern" part of the rule.
      */
     public hash: number;
 
@@ -52,15 +60,34 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      *
      * @param networkRule Item of {@link NetworkRule}.
      *
-     * @returns Hash for patter part of the network rule.
+     * @returns Hash for pattern part of the network rule.
      */
-    public static createRuleHash(networkRule: NetworkRule): number {
+    public static createRulePatternHash(networkRule: NetworkRule): number {
         // TODO: Improve this part: maybe use trie-lookup-table and .getShortcut()?
         // or use agtree to collect pattern + all enabled network options without values
         const significantPart = networkRule.getPattern();
-        const hash = fastHash(significantPart);
 
-        return hash;
+        return fastHash(significantPart);
+    }
+
+    /**
+     * Gets hash for whole text of the network rule and return it. Needed
+     * to keep ID of the rule in the filter the same between several runs. Thus
+     * is needed to be able to use "skip review" option in CWS.
+     *
+     * @param salt Salt for hash, needed to make hash unique event if the rule
+     * is the same (e.g. for different filters). To keep check simple, we just
+     * use numbers.
+     *
+     * @returns Hash for pattern part of the network rule.
+     */
+    public getRuleTextHash(salt?: number): number {
+        const textOfNetworkRule = RuleGenerator.generate(this.rule.node);
+
+        // Append a null-char to not collide with legitimate rule text.
+        const trialText = salt === undefined ? textOfNetworkRule : `${textOfNetworkRule}\0${salt}`;
+
+        return fastHash31(trialText);
     }
 
     /**
@@ -68,7 +95,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      * was detected during the conversion - return it.
      *
      * @param filterId Filter id.
-     * @param lineIndex Rule's line index in that filter.
+     * @param index Rule's buffer index in that filter.
      * @param ruleConvertedToAGSyntax Rule which was converted to AG syntax.
      *
      * @throws Error when conversion failed.
@@ -77,7 +104,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      */
     private static createIndexedNetworkRuleWithHash(
         filterId: number,
-        lineIndex: number,
+        index: number,
         ruleConvertedToAGSyntax: AnyRule,
     ): IndexedNetworkRuleWithHash | null {
         // Create indexed network rule from AG rule. These rules will be used in
@@ -90,7 +117,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
             networkRule = RuleFactory.createRule(
                 ruleConvertedToAGSyntax,
                 filterId,
-                lineIndex,
+                index,
                 false, // convert only network rules
                 true, // ignore cosmetic rules
                 true, // ignore host rules
@@ -98,7 +125,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
             );
         } catch (e) {
             // eslint-disable-next-line max-len
-            throw new Error(`Cannot create IRule from filter "${filterId}" and byte offset "${lineIndex}": ${getErrorMessage(e)}`);
+            throw new Error(`Cannot create IRule from filter "${filterId}" and byte offset "${index}": ${getErrorMessage(e)}`);
         }
 
         /**
@@ -111,19 +138,24 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
 
         if (!(networkRule instanceof NetworkRule)) {
             // eslint-disable-next-line max-len
-            throw new Error(`Rule from filter "${filterId}" and line "${lineIndex}" is not network rule: ${networkRule}`);
+            throw new Error(`Rule from filter "${filterId}" and byte offset "${index}" is not network rule: ${networkRule}`);
         }
 
-        const hash = IndexedNetworkRuleWithHash.createRuleHash(networkRule);
+        const patternHash = IndexedNetworkRuleWithHash.createRulePatternHash(networkRule);
+
         const networkRuleWithNode = new NetworkRuleWithNode(networkRule, ruleConvertedToAGSyntax as NetworkRuleNode);
 
         // If rule is not empty - pack to IndexedNetworkRuleWithHash and add it
         // to the result array.
-        const indexedNetworkRuleWithHash = new IndexedNetworkRuleWithHash(networkRuleWithNode, lineIndex, hash);
+        const indexedNetworkRuleWithHash = new IndexedNetworkRuleWithHash(
+            networkRuleWithNode,
+            index,
+            patternHash,
+        );
 
         if (!indexedNetworkRuleWithHash) {
             // eslint-disable-next-line max-len
-            throw new Error(`Cannot create indexed network rule with hash from filter "${filterId}" and line "${lineIndex}"`);
+            throw new Error(`Cannot create indexed network rule with hash from filter "${filterId}" and byte offset "${index}"`);
         }
 
         return indexedNetworkRuleWithHash;
@@ -133,7 +165,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      * Creates {@link IndexedNetworkRuleWithHash} from rule node.
      *
      * @param filterId Filter's id from which rule was extracted.
-     * @param lineIndex Line index of rule in that filter.
+     * @param ruleIndex Buffer index of rule in that filter.
      * @param node Rule node.
      *
      * @throws Error when rule cannot be converted to AG syntax or when indexed
@@ -144,7 +176,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      */
     public static createFromNode(
         filterId: number,
-        lineIndex: number,
+        ruleIndex: number,
         node: AnyRule,
     ): IndexedNetworkRuleWithHash[] {
         // Converts a raw string rule to AG syntax (apply aliases, etc.)
@@ -171,7 +203,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
             try {
                 const networkIndexedRuleWithHash = IndexedNetworkRuleWithHash.createIndexedNetworkRuleWithHash(
                     filterId,
-                    lineIndex,
+                    ruleIndex,
                     ruleConvertedToAGSyntax,
                 );
 

@@ -48,7 +48,7 @@ Build:
 
             # Pack the logger package into a tarball
             cd packages/logger/
-            pnpm pack --out logger.tgz
+            pnpm tgz
     - inject-variables:
         file: ./packages/logger/dist/build.txt
         scope: RESULT

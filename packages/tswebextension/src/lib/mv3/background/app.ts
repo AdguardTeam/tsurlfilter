@@ -5,7 +5,7 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor, NETWORK_RULE_OPTIONS } from '@adguard/tsurlfilter';
+import { FilterListPreprocessor, NETWORK_RULE_OPTIONS, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
@@ -192,6 +192,17 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
+     * Synchronize rule set with IDB.
+     *
+     * @param ruleSetId Rule set identifier.
+     * @param ruleSetsPath Path to rule sets.
+     */
+    public static async syncRuleSetWithIdb(ruleSetId: number, ruleSetsPath: string): Promise<void> {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        await ruleSetsLoaderApi.syncRuleSetWithIdb(String(ruleSetId));
+    }
+
+    /**
      * Starts filtering along with launching the tab listener, which will record
      * tab urls to work correctly with domain blocking/allowing rules, for
      * example: cosmetic rules in iframes.
@@ -279,7 +290,11 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        await FiltersApi.syncFiltersWithStorage(config.staticFiltersIds, config.ruleSetsPath);
+        const loader = new RuleSetsLoaderApi(config.ruleSetsPath);
+
+        await Promise.all(
+            config.staticFiltersIds.map((staticFilterId) => loader.syncRuleSetWithIdb(String(staticFilterId))),
+        );
 
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
@@ -340,30 +355,50 @@ export class TsWebExtension implements AppInterface<
 
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
-                { getContent: () => Promise.resolve(configuration.userrules) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(configuration.userrules);
+                    },
+                },
                 true,
             );
 
             const allowlistFilter = new Filter(
                 ALLOWLIST_FILTER_ID,
                 // TODO: Generate AST directly for allowlist rules.
-                { getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(combinedAllowlistRules)) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(
+                            FilterListPreprocessor.preprocess(combinedAllowlistRules),
+                        );
+                    },
+                },
                 true,
             );
 
             const quickFixesFilter = new Filter(
                 QUICK_FIXES_FILTER_ID,
-                { getContent: () => Promise.resolve(configuration.quickFixesRules) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(configuration.quickFixesRules);
+                    },
+                },
                 true,
             );
 
-            const temporaryBadfilterRules = configuration.blockingTrustedRules
-                .map((rule) => `${rule},${NETWORK_RULE_OPTIONS.BADFILTER}`)
+            const temporaryBadfilterRules = configuration.trustedDomains
+                .map((rule) => {
+                    return `${rule},${NETWORK_RULE_OPTIONS.BADFILTER}`;
+                })
                 .join(LF);
 
             const blockingPageTrustedFilter = new Filter(
                 BLOCKING_TRUSTED_FILTER_ID,
-                { getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(temporaryBadfilterRules)) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(FilterListPreprocessor.preprocess(temporaryBadfilterRules));
+                    },
+                },
                 true,
             );
 

@@ -260,7 +260,7 @@ export abstract class DocumentBlockingServiceCommon {
 
         // Chrome does not allow to show extension pages in incognito mode
         if ((isChrome || isChromium)
-            && this.tabsApi.isIncognitoTab(tabId)) {
+            && this.tabsApi.canShowExtensionPageInTab(tabId)) {
             // Closing tab before opening a new one may lead to browser crash (Chromium)
             browser.tabs.create({ url: blockingUrl })
                 .then(() => {
