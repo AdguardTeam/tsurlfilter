@@ -333,7 +333,7 @@ export class RuleSetsLoaderApi {
 
                 logger.info(`Synced rule set with IDB: ${ruleSetId}`);
             } catch (err) {
-                logger.error(`Failed to sync rule set ${ruleSetId}:`, getErrorMessage(err));
+                logger.error(`Failed to sync rule set ${ruleSetId}:`, err);
                 throw err;
             } finally {
                 this.syncLocks.delete(ruleSetId);

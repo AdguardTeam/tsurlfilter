@@ -609,9 +609,9 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * @param tabId Tab ID to check.
      * @param url Tab URL to check.
      *
-     * @todo Remove this method when issue above will be fixed.
+     * @returns True if tab context is expected to exist, false otherwise.
      *
-     * @return True if tab context is expected to exist, false otherwise.
+     * @todo Remove this method when issue above will be fixed.
      */
     private static checkIfTabContextExpectedToExist(tabId: number, url?: string): boolean {
         // Early exit - if tab already does not hosts content,
