@@ -53,7 +53,8 @@ type MessageIds = 'missingContextTag';
  */
 function getFileName(context: RuleContext<MessageIds, Options>): string {
     return (FILE_EXTENSIONS.has(path.extname(context.filename)))
-        ? path.basename(context.filename)
+        // Only filename without extension
+        ? path.basename(context.filename).replace(path.extname(context.filename), '')
         : UNKNOWN_FILE_NAME;
 }
 
