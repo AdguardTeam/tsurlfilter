@@ -8,7 +8,7 @@ type RuleParts = {
     pattern?: string,
     domains?: string[],
     cosmeticContent?: string
-}
+};
 
 const NETWORK_RULE_SEPARATOR = '$';
 const NETWORK_RULE_MODIFIER_ASSIGN = '=';
@@ -33,7 +33,7 @@ const decodeOffset = (value: number): number => {
 
 const findCosmeticSeparator = (rule: string): number | null => {
     let i = rule.indexOf('#');
-    
+
     if (i !== -1) {
         if (rule[i + 1] === '#' && rule[i - 1] !== ' ') {
             // ##
@@ -108,7 +108,7 @@ const findCosmeticSeparator = (rule: string): number | null => {
     }
 
     return null;
-}
+};
 
 const isAdblockComment = (rule: string): boolean => {
     return rule.startsWith('!');
@@ -121,11 +121,11 @@ const isHostLikeComment = (rule: string): boolean => {
 const extractDomainsFromCosmeticPattern = (pattern: string): string[] => {
     if (pattern.startsWith('[')) {
         // Right part already trimmed
-        return pattern.slice(pattern.lastIndexOf(']') + 1).trimStart().split(',').map(d => d.trim());
+        return pattern.slice(pattern.lastIndexOf(']') + 1).trimStart().split(',').map((d) => d.trim());
     }
 
-    return pattern.split(',').map(d => d.trim());
-}
+    return pattern.split(',').map((d) => d.trim());
+};
 
 // TODO: Improve accuracy of regex detection
 const findNetworkRuleSeparator = (rule: string): number => {
@@ -148,7 +148,7 @@ const extractDomainsFromNetworkRule = (rule: string, separator: number): string[
     }
 
     let i = domainIndex + DOMAIN_MODIFIER_LENGTH;
-    
+
     while (i < rule.length && rule[i] === ' ') {
         i += 1;
     }
@@ -158,7 +158,7 @@ const extractDomainsFromNetworkRule = (rule: string, separator: number): string[
     }
 
     i += 1;
-    
+
     while (i < rule.length && rule[i] === ' ') {
         i += 1;
     }
@@ -170,10 +170,22 @@ const extractDomainsFromNetworkRule = (rule: string, separator: number): string[
         end = rule.length;
     }
 
-    return rule.slice(i, end).trim().split('|').map(d => d.trim());
+    return rule.slice(i, end).trim().split('|').map((d) => d.trim());
 };
 
+/**
+ * Tokenizes an adblock rule into main parts.
+ *
+ * @param rule The adblock rule to tokenize.
+ *
+ * @returns The rule parts or null if the rule is not a network or cosmetic rule.
+ */
 export function tokenize(rule: string): RuleParts | null {
+    // Ignore empty rules
+    if (rule.length === 0) {
+        return null;
+    }
+
     // Ignore comments
     if (isAdblockComment(rule)) {
         return null;
