@@ -15,6 +15,5 @@
     ],
     "exclude": [
         "tests/smoke",
-        "eslint-plugin/"
     ]
 }

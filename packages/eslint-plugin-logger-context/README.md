@@ -18,7 +18,7 @@ module.exports = {
     '@adguard/eslint-plugin-logger-context',
   ],
   rules: {
-    '@adguard/eslint-plugin-logger-context/require-logger-context': 'error'ю,
+    '@adguard/eslint-plugin-logger-context/require-logger-context': 'error',
   },
 };
 ```

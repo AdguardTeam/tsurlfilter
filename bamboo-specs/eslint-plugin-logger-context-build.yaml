@@ -47,10 +47,10 @@ Build:
             npx lerna run --scope @adguard/eslint-plugin-logger-context build
 
             # Pack the logger package into a tarball
-            cd packages/logger/eslint-plugin/
+            cd packages/eslint-plugin-logger-context/
             pnpm tgz
     - inject-variables:
-        file: ./packages/logger/eslint-plugin/dist/build.txt
+        file: ./packages/eslint-plugin-logger-context/dist/build.txt
         scope: RESULT
         namespace: inject
     - any-task:
@@ -78,7 +78,7 @@ Build:
             echo "Size after cleanup:" && du -h | tail -n 1
   artifacts:
     - name: eslint-plugin-logger-context
-      location: packages/logger/eslint-plugin/
+      location: packages/eslint-plugin-logger-context/
       pattern: eslint-plugin-logger-context.tgz
       shared: true
       required: true
