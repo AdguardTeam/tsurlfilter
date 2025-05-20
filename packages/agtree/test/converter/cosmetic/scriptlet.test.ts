@@ -254,6 +254,10 @@ describe('Scriptlet conversion', () => {
                 expected: ['example.com##+js(set-session-storage-item, acceptCookies, false)'],
             },
             {
+                actual: "example.com#%#//scriptlet('prevent-fab-3.2.0')",
+                expected: ['example.com##+js(nofab)'],
+            },
+            {
                 // emptyArr as set-constant parameter
                 actual: "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyArr')",
                 expected: ['example.org##+js(set-constant, adUnits, [])'],
@@ -286,7 +290,6 @@ describe('Scriptlet conversion', () => {
                 actual: "example.com#%#//scriptlet('set-local-storage-item', 'mode', '$remove$')",
                 expected: ['example.com##+js(set-local-storage-item, mode, $remove$)'],
             },
-
             // Should not convert already uBO scriptlet
             {
                 actual: 'example.org##+js(google-ima)',
@@ -308,7 +311,7 @@ describe('Scriptlet conversion', () => {
                     String.raw`example.net,example.com##+js(set-cookie-reload, Hello no quotes, true)`,
                 ],
             },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+        ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToUbo');
         });
     });
