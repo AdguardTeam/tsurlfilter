@@ -1680,6 +1680,9 @@ importers:
       '@adguard/assistant':
         specifier: 'catalog:'
         version: 4.3.70
+      '@adguard/eslint-plugin-logger-context':
+        specifier: /Volumes/dev/tsurlfilter/packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz
+        version: file:packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz
       '@adguard/extended-css':
         specifier: ^2.1.1
         version: 2.1.1
@@ -1873,6 +1876,10 @@ packages:
 
   '@adguard/ecss-tree@1.1.0':
     resolution: {integrity: sha512-Qs7cpUH5AexO9JAXxMPmh6CwdNEnP1qUBSpvHnGxPmHQDjBzpAn4qz8zsJILmX4Rc5Up0iqeYcYC7Pq5HBvoyQ==}
+
+  '@adguard/eslint-plugin-logger-context@file:packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz':
+    resolution: {integrity: sha512-OZ3ZVjssS5S65MVKLrUr6WzMaFE5Pwp9BGn5gxNlgsI5qGoLizq+5slwzY8T54H/YtG+M4TfLd2a1REXS0ADhg==, tarball: file:packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz}
+    version: 1.0.0
 
   '@adguard/extended-css@2.1.1':
     resolution: {integrity: sha512-TsHZ20oUWhbtrzQ4w70B96oHkGBIUZg2FdMfkq4StGfLmXQb+kI7fQb6BtXP2D0bvraIHMq6/mtKExglDJ9vsg==}
@@ -9545,6 +9552,8 @@ snapshots:
   '@adguard/ecss-tree@1.1.0':
     dependencies:
       css-tree: 2.3.1
+
+  '@adguard/eslint-plugin-logger-context@file:packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz': {}
 
   '@adguard/extended-css@2.1.1': {}
 

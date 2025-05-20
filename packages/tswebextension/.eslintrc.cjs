@@ -16,6 +16,7 @@ module.exports = {
         'import-newlines',
         '@typescript-eslint',
         '@vitest',
+        '@adguard/logger-context',
     ],
     extends: [
         'airbnb-base',
@@ -154,6 +155,9 @@ module.exports = {
                 { tags: ['throws'] },
                 { tags: ['example'] },
             ],
+        }],
+        '@adguard/logger-context/require-logger-context': ['error', {
+            contextModuleName: 'tsweb',
         }],
     },
 };

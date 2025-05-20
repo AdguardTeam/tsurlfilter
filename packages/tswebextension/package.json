@@ -108,6 +108,7 @@
     "dependencies": {
         "@adguard/agtree": "workspace:^",
         "@adguard/assistant": "catalog:",
+        "@adguard/eslint-plugin-logger-context": "/Volumes/dev/tsurlfilter/packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz",
         "@adguard/extended-css": "^2.1.1",
         "@adguard/logger": "workspace:^",
         "@adguard/scriptlets": "catalog:",

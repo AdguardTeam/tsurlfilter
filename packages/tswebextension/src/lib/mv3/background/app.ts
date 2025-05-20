@@ -145,7 +145,7 @@ export class TsWebExtension implements AppInterface<
      * {@link ConfigurationResult}.
      */
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        logger.trace('[tsweb.TsWebExtension.innerStart]: start');
+        logger.trace('start');
 
         if (!appContext.startTimeMs) {
             appContext.startTimeMs = Date.now();
@@ -726,7 +726,7 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             const filterListIds = staticFilters.map((f) => f.getId());
 
-            logger.error(`[tsweb.TsWebExtension.loadStaticRuleSets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
+            logger.error(`cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
 
             return [];
         }
