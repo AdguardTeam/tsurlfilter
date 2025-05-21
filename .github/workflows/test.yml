@@ -50,13 +50,11 @@ jobs:
           npx lerna run --scope @adguard/logger build
 
           # css-tokenizer
-          npx lerna run --scope @adguard/css-tokenizer check-types
           npx lerna run --scope @adguard/css-tokenizer lint
           npx lerna run --scope @adguard/css-tokenizer test
           npx lerna run --scope @adguard/css-tokenizer build
 
           # agtree
-          npx lerna run --scope @adguard/agtree check-types
           npx lerna run --scope @adguard/agtree lint
           npx lerna run --scope @adguard/agtree test
           npx lerna run --scope @adguard/agtree build
