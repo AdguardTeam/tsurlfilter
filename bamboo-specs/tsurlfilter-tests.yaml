@@ -26,12 +26,12 @@ variables:
 # - AGTree benchmarks which are non-relevant to TSUrlFilter and can be run in parallel.
 #
 # State 4:
-# - TSWebExtension and DNR-Rulesets test run.
+# - TSWebExtension and DNR-Rulesets test run;
+# - Update TSUrlFilter docs MV3.
 #
 # State 5:
-# - Examples APIs test run;
-# - Examples TSWebExtensions test run;
-# - Update TSUrlFilter docs MV3.
+# - Examples API and API MV3;
+# - Example TSWebExtensions for MV2 and MV3.
 #
 # Final state:
 # - Cleanup.
@@ -52,14 +52,12 @@ stages:
       final: false
       jobs:
         - TestAgTree
-        # add non-relevant to agtree job to run in parallel
         - TestBenchmarkCssTokenizer
   - State 3:
       manual: false
       final: false
       jobs:
         - TestTSUrlFilter
-        # add non-relevant to tsurlfilter job to run in parallel
         - TestBenchmarkAGTree
         - TestBenchmarkAGTreeBrowser
   - State 4:
@@ -68,6 +66,7 @@ stages:
       jobs:
         - TestTSWebExtension
         - TestDNRRulesets
+        - UpdateTSUrlFilterDocsMV3
   - State 5:
       manual: false
       final: false
@@ -76,7 +75,6 @@ stages:
         - TestExamplesApiMV3
         - TestExamplesTSWebExtension2
         - TestExamplesTSWebExtension3
-        - UpdateTSUrlFilterDocsMV3
   - Cleanup:
       manual: false
       final: true
