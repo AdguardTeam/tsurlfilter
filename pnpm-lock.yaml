@@ -1259,6 +1259,9 @@ importers:
       '@types/rollup-plugin-node-globals':
         specifier: 1.4.1
         version: 1.4.1
+      '@types/trusted-types':
+        specifier: ^2.0.7
+        version: 2.0.7
       '@typescript-eslint/eslint-plugin':
         specifier: 5.59.11
         version: 5.59.11(@typescript-eslint/parser@5.59.11(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
@@ -3263,6 +3266,9 @@ packages:
 
   '@types/tough-cookie@4.0.5':
     resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
+
+  '@types/trusted-types@2.0.7':
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
@@ -11609,6 +11615,8 @@ snapshots:
   '@types/statuses@2.0.5': {}
 
   '@types/tough-cookie@4.0.5': {}
+
+  '@types/trusted-types@2.0.7': {}
 
   '@types/unist@2.0.11': {}
 
