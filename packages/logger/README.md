@@ -59,7 +59,6 @@ const writer = {
 const logger = new Logger(writer);
 ```
 
-FIXME: Rewrite
 #### Verbose logging and trace output
 
 This mode is designed solely for development and debugging purposes, providing clickable call stack traces in the console for maximum insight into code execution.

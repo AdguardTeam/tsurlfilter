@@ -35,12 +35,12 @@
     "repository": {
         "type": "git",
         "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
-        "directory": "packages/logger/eslint-plugin-logger-context"
+        "directory": "packages/eslint-plugin-logger-context"
     },
     "bugs": {
         "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
     },
-    "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/logger/eslint-plugin-logger-context#readme",
+    "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/eslint-plugin-logger-context#readme",
     "devDependencies": {
         "@adguard/logger": "workspace:^",
         "@rollup/plugin-commonjs": "catalog:",

@@ -15,10 +15,15 @@ Add to your `.eslintrc.js`:
 ```js
 module.exports = {
   plugins: [
-    '@adguard/eslint-plugin-logger-context',
+    '@adguard/logger-context',
   ],
   rules: {
-    '@adguard/eslint-plugin-logger-context/require-logger-context': 'error',
+    '@adguard/logger-context/require-logger-context': ['error', {
+      // optional
+      contextModuleName: 'moduleName',
+      // optional
+      loggerVariableName: 'logger',
+    }],
   },
 };
 ```
