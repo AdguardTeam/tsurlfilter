@@ -10,8 +10,8 @@ catalogs:
       specifier: ^4.3.70
       version: 4.3.70
     '@adguard/scriptlets':
-      specifier: ^2.1.6
-      version: 2.1.7
+      specifier: ^2.2.1
+      version: 2.2.1
     '@rollup/plugin-alias':
       specifier: ^5.1.1
       version: 5.1.1
@@ -1432,7 +1432,7 @@ importers:
         version: 1.2.0
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.1.7
+        version: 2.2.1
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1625,7 +1625,7 @@ importers:
         version: link:../logger
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.1.7
+        version: 2.2.1
       '@adguard/text-encoding':
         specifier: ^0.8.3
         version: 0.8.3
@@ -1826,8 +1826,8 @@ packages:
   '@adguard/scriptlets@1.12.1':
     resolution: {integrity: sha512-luAGl8hHEjKZfTFqWG8PBsif2wAPWNi0uuT+xzyBTk+IllHDYOLPSwyMKh2ru7nKCQJEOgMVwNoIrPB4zuuX1w==}
 
-  '@adguard/scriptlets@2.1.7':
-    resolution: {integrity: sha512-ETU6hJ3EuR1efh0ktzZU2/+J70jXN2YX/LGU4ALLlQ5uhyf1g23PnZ1EzivlHGBzKxEHmYIPlK0w7uTKsHdeAg==}
+  '@adguard/scriptlets@2.2.1':
+    resolution: {integrity: sha512-OUIfzIgarkeQhMVv6wWK/mbRnkOpePIRFBlMxwFevcGnbry7sDdNti44M+ipyDXEi9G3C+YnIEXGEPmbKvBREw==}
 
   '@adguard/text-encoding@0.8.3':
     resolution: {integrity: sha512-LA0bsY+YYnQqItGaYMoVL0l55JDi/uwvUca53V6M6mvKNHtaYDTlf3yAeW2PafsTfWvoYH7gObGu8eCvPh69tg==}
@@ -3406,6 +3406,9 @@ packages:
 
   '@types/tough-cookie@4.0.5':
     resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
+
+  '@types/trusted-types@2.0.7':
+    resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
@@ -9501,9 +9504,10 @@ snapshots:
       '@babel/runtime': 7.27.0
       js-yaml: 3.14.1
 
-  '@adguard/scriptlets@2.1.7':
+  '@adguard/scriptlets@2.2.1':
     dependencies:
       '@adguard/agtree': link:packages/agtree
+      '@types/trusted-types': 2.0.7
       js-yaml: 3.14.1
 
   '@adguard/text-encoding@0.8.3': {}
@@ -11035,6 +11039,8 @@ snapshots:
   '@types/statuses@2.0.5': {}
 
   '@types/tough-cookie@4.0.5': {}
+
+  '@types/trusted-types@2.0.7': {}
 
   '@types/unist@2.0.11': {}
 
