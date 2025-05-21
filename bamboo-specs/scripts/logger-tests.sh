@@ -10,13 +10,16 @@ set -ex
 # Redirect stderr (2) to stdout (1) to capture all output in a single log
 exec 2>&1
 
-echo "@adguard/logger tests starting"
+# Define package name as a constant
+PACKAGE_NAME="@adguard/logger"
+
+echo "$PACKAGE_NAME tests starting"
 
 # import helper functions and some common variables
 . ./bamboo-specs/scripts/helpers.sh
 
-if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/logger"; then
-  echo "No changes in @adguard/logger, skipping tests"
+if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "$PACKAGE_NAME"; then
+  echo "No changes in $PACKAGE_NAME, skipping tests"
   exit 0;
 fi
 
@@ -24,30 +27,21 @@ fi
 pnpm install
 
 # Build the package
-npx lerna run build --scope @adguard/logger --include-dependencies
+npx lerna run build --scope $PACKAGE_NAME --include-dependencies
 
-# Run all tests in parallel
-echo "Running tests in parallel..."
+# Define an array of commands to run
+COMMANDS=(
+    "lint:code"
+    "lint:types"
+    "test"
+    "test:smoke"
+)
 
-# Lint code
-pnpm --filter @adguard/logger lint &
-LINT_PID=$!
-
-# Run tests
-pnpm --filter @adguard/logger test &
-TEST_PID=$!
-
-# Run smoke tests
-pnpm --filter @adguard/logger test:smoke &
-SMOKE_PID=$!
-
-# Wait for all processes to complete
-wait $LINT_PID $TEST_PID $SMOKE_PID
+run_commands_in_parallel "$PACKAGE_NAME" "${COMMANDS[@]}"
 
 # Check if any of the commands failed
 if [ $? -ne 0 ]; then
-  echo "One or more tests failed"
   exit 1
 fi
 
-echo "@adguard/logger tests completed"
+echo "$PACKAGE_NAME tests completed successfully"

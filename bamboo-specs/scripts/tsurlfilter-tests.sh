@@ -10,13 +10,16 @@ set -ex
 # Redirect stderr (2) to stdout (1) to capture all output in a single log
 exec 2>&1
 
-echo "@adguard/tsurlfilter tests starting"
+# Define package name as a constant
+PACKAGE_NAME="@adguard/tsurlfilter"
+
+echo "$PACKAGE_NAME tests starting"
 
 # import helper functions and some common variables
 . ./bamboo-specs/scripts/helpers.sh
 
-if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/tsurlfilter"; then
-  echo "No changes in @adguard/tsurlfilter, skipping tests"
+if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "$PACKAGE_NAME"; then
+  echo "No changes in $PACKAGE_NAME, skipping tests"
   exit 0;
 fi
 
@@ -24,26 +27,21 @@ fi
 pnpm install
 
 # Build dependencies, then the package itself
-npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
+# IMPORTANT: run build before tests because smoke tests requires tsurlfilter to have built dist dir
+npx lerna run build --scope $PACKAGE_NAME --include-dependencies
 
-# Run all tests in parallel
-echo "Running tests in parallel..."
+# Define an array of commands to run
+COMMANDS=(
+    "lint:code"
+    "lint:types"
+    "test:prod"
+)
 
-# Run linter
-pnpm --filter @adguard/tsurlfilter lint &
-LINT_PID=$!
-
-# IMPORTANT: run tests after the build because smoke tests requires tsurlfilter to have built dist dir
-pnpm --filter @adguard/tsurlfilter test:prod &
-TEST_PID=$!
-
-# Wait for all processes to complete
-wait $LINT_PID $TEST_PID
+run_commands_in_parallel "$PACKAGE_NAME" "${COMMANDS[@]}"
 
 # Check if any of the commands failed
 if [ $? -ne 0 ]; then
-  echo "One or more tests failed"
   exit 1
 fi
 
-echo "@adguard/tsurlfilter tests completed"
+echo "$PACKAGE_NAME tests completed successfully"

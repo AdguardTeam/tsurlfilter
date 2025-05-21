@@ -28,7 +28,9 @@ pnpm install
 
 # Define an array of commands to run
 COMMANDS=(
-    "lint"
+    "lint:code"
+    "lint:types"
+    "lint:md"
     "test"
 )
 

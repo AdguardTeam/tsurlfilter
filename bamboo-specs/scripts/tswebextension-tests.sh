@@ -10,13 +10,16 @@ set -ex
 # Redirect stderr (2) to stdout (1) to capture all output in a single log
 exec 2>&1
 
-echo "@adguard/tswebextension tests starting"
+# Define package name as a constant
+PACKAGE_NAME="@adguard/tswebextension"
+
+echo "$PACKAGE_NAME tests starting"
 
 # import helper functions and some common variables
 . ./bamboo-specs/scripts/helpers.sh
 
-if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/tswebextension"; then
-  echo "No changes in project @adguard/tswebextension, skipping tests"
+if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "$PACKAGE_NAME"; then
+  echo "No changes in $PACKAGE_NAME, skipping tests"
   exit 0;
 fi
 
@@ -24,26 +27,23 @@ fi
 pnpm install
 
 # build with dependencies, lerna is used for builds caching
+# IMPORTANT:
+# 1. run build before lint because linting requires types to be generated
+# 2. run build before tests because smoke tests requires tswebextension to have built dist dir
 npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
-# Run all tests in parallel
-echo "Running tests in parallel..."
+# Define an array of commands to run
+COMMANDS=(
+    "lint:code"
+    "lint:types"
+    "test:prod"
+)
 
-# IMPORTANT: run lint after the build because linting requires types to be generated
-pnpm --filter @adguard/tswebextension lint &
-LINT_PID=$!
-
-# IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
-pnpm --filter @adguard/tswebextension test:prod &
-TEST_PID=$!
-
-# Wait for all processes to complete
-wait $LINT_PID $TEST_PID
+run_commands_in_parallel "$PACKAGE_NAME" "${COMMANDS[@]}"
 
 # Check if any of the commands failed
 if [ $? -ne 0 ]; then
-  echo "One or more tests failed"
   exit 1
 fi
 
-echo "@adguard/tswebextension tests completed"
+echo "$PACKAGE_NAME tests completed successfully"
