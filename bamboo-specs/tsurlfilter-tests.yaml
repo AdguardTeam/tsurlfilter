@@ -68,6 +68,10 @@ Test:
     - script:
         interpreter: SHELL
         scripts:
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
+    - script:
+        interpreter: SHELL
+        scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-css-tokenizer-benchmark-tests.sh"
     - script:
         interpreter: SHELL
