@@ -8,34 +8,53 @@ variables:
   dockerContainer: adguard/node-ssh:22.14--0
   testTimeout: 180s
 
+# State 1:
 # Some packages are independent of each other
-# so we can run them in parallel at first stage, i.e. logger and css-tokenizer.
+# so we can run them in parallel, i.e. logger and css-tokenizer.
 #
 # Next stages are about single package tests since they depend on each other:
-# - AGTree
-# - TSUrlFilter
+# - AGTree;
+# - TSUrlFilter;
 # - TSWebExtension and DNR-Rulesets — can be run in parallel.
 #
-# After that, we have a stage for example packages, benchmarks, and docs update.
-# They can be run in parallel.
+# State 2:
+# - AGTree test run;
+# - CSS Tokenizer benchmarks which are non-relevant to AGTree and can be run in parallel.
 #
-# Finally, we have a stage for cleanup.
+# State 3:
+# - TSUrlFilter test run;
+# - AGTree benchmarks which are non-relevant to TSUrlFilter and can be run in parallel.
+#
+# State 4:
+# - TSWebExtension and DNR-Rulesets test run.
+#
+# State 5:
+# - Examples APIs test run;
+# - Examples TSWebExtensions test run;
+# - Update TSUrlFilter docs MV3.
+#
+# Final state:
+# - Cleanup.
+
+# Experiment:
+# Only jobs from State 1 use requires clean checkout.
+# Since later jobs rely on previous jobs, let's try this approach.
 
 stages:
-  - Independent packages:
+  - State 1:
       manual: false
       final: false
       jobs:
         - TestLogger
         - TestCssTokenizer
-  - AGTree, CSS Tokenizer benchmarks:
+  - State 2:
       manual: false
       final: false
       jobs:
         - TestAgTree
         # add non-relevant to agtree job to run in parallel
         - TestBenchmarkCssTokenizer
-  - TSUrlFilter, AGTree benchmarks:
+  - State 3:
       manual: false
       final: false
       jobs:
@@ -43,20 +62,20 @@ stages:
         # add non-relevant to tsurlfilter job to run in parallel
         - TestBenchmarkAGTree
         - TestBenchmarkAGTreeBrowser
-  - TSWebExtension, DNR-Rulesets, Update TSUrlFilter Docs MV3:
+  - State 4:
       manual: false
       final: false
       jobs:
         - TestTSWebExtension
         - TestDNRRulesets
-        # add non-relevant to tswebextension and dnr-rulesets job to run in parallel
-        - UpdateTSUrlFilterDocsMV3
-  - Example APIs, TSWebExtensions:
+  - State 5:
       manual: false
       final: false
       jobs:
         - TestExamplesApis
-        - TestExamplesTSWebExtensions
+        - TestExamplesTSWebExtension2
+        - TestExamplesTSWebExtension3
+        - UpdateTSUrlFilterDocsMV3
   - Cleanup:
       manual: false
       final: true
@@ -104,7 +123,7 @@ TestAgTree:
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: true
+        force-clean-build: false
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -117,7 +136,7 @@ TestTSUrlFilter:
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: true
+        force-clean-build: false
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -130,7 +149,7 @@ TestTSWebExtension:
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: true
+        force-clean-build: false
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -143,7 +162,7 @@ TestDNRRulesets:
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: true
+        force-clean-build: false
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -151,8 +170,8 @@ TestDNRRulesets:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
   requirements: *requirements
 
-TestExamplesTSWebExtensions:
-  key: TESTEXAMPLESTSWEBEXTENSIONS
+TestExamplesTSWebExtension2:
+  key: TESTEXAMPLESTSWEBEXTENSION2
   docker: *docker
   tasks:
     - checkout:
@@ -162,6 +181,15 @@ TestExamplesTSWebExtensions:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh"
+  requirements: *requirements
+
+TestExamplesTSWebExtension3:
+  key: TESTEXAMPLESTSWEBEXTENSION3
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
@@ -173,7 +201,7 @@ TestExamplesApis:
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: true
+        force-clean-build: false
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -201,7 +229,7 @@ TestBenchmarkCssTokenizer:
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: true
+        force-clean-build: false
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -214,7 +242,7 @@ TestBenchmarkAGTree:
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: true
+        force-clean-build: false
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -227,7 +255,7 @@ TestBenchmarkAGTreeBrowser:
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: true
+        force-clean-build: false
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -240,7 +268,7 @@ UpdateTSUrlFilterDocsMV3:
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: true
+        force-clean-build: false
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -258,7 +286,7 @@ Cleanup:
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: true
+        force-clean-build: false
     - script:
         interpreter: SHELL
         scripts:
