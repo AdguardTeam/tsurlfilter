@@ -40,6 +40,7 @@ pnpm install
 
 # Define an array of commands to run
 COMMANDS=(
+    "check-types"
     "lint"
     "test"
 )
