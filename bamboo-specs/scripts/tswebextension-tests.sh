@@ -26,10 +26,24 @@ pnpm install
 # build with dependencies, lerna is used for builds caching
 npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
+# Run all tests in parallel
+echo "Running tests in parallel..."
+
 # IMPORTANT: run lint after the build because linting requires types to be generated
-pnpm --filter @adguard/tswebextension lint
+pnpm --filter @adguard/tswebextension lint &
+LINT_PID=$!
 
 # IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
-pnpm --filter @adguard/tswebextension test:prod
+pnpm --filter @adguard/tswebextension test:prod &
+TEST_PID=$!
+
+# Wait for all processes to complete
+wait $LINT_PID $TEST_PID
+
+# Check if any of the commands failed
+if [ $? -ne 0 ]; then
+  echo "One or more tests failed"
+  exit 1
+fi
 
 echo "@adguard/tswebextension tests completed"

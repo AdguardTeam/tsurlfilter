@@ -26,13 +26,28 @@ pnpm install
 # Build the package
 npx lerna run build --scope @adguard/logger --include-dependencies
 
+# Run all tests in parallel
+echo "Running tests in parallel..."
+
 # Lint code
-pnpm --filter @adguard/logger lint
+pnpm --filter @adguard/logger lint &
+LINT_PID=$!
 
 # Run tests
-pnpm --filter @adguard/logger test
+pnpm --filter @adguard/logger test &
+TEST_PID=$!
 
 # Run smoke tests
-pnpm --filter @adguard/logger test:smoke
+pnpm --filter @adguard/logger test:smoke &
+SMOKE_PID=$!
+
+# Wait for all processes to complete
+wait $LINT_PID $TEST_PID $SMOKE_PID
+
+# Check if any of the commands failed
+if [ $? -ne 0 ]; then
+  echo "One or more tests failed"
+  exit 1
+fi
 
 echo "@adguard/logger tests completed"

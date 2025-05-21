@@ -26,9 +26,24 @@ pnpm install
 # Build dependencies, then the package itself
 npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
 
-pnpm --filter @adguard/tsurlfilter lint
+# Run all tests in parallel
+echo "Running tests in parallel..."
+
+# Run linter
+pnpm --filter @adguard/tsurlfilter lint &
+LINT_PID=$!
 
 # IMPORTANT: run tests after the build because smoke tests requires tsurlfilter to have built dist dir
-pnpm --filter @adguard/tsurlfilter test:prod
+pnpm --filter @adguard/tsurlfilter test:prod &
+TEST_PID=$!
+
+# Wait for all processes to complete
+wait $LINT_PID $TEST_PID
+
+# Check if any of the commands failed
+if [ $? -ne 0 ]; then
+  echo "One or more tests failed"
+  exit 1
+fi
 
 echo "@adguard/tsurlfilter tests completed"

@@ -21,12 +21,29 @@ if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@ad
 fi
 
 # Install dependencies
-pnpm --filter @adguard/dnr-rulesets install
+pnpm install
+
+# Build the package
+npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
+
+# Run all tests in parallel
+echo "Running tests in parallel..."
 
 # Run linter
-pnpm --filter @adguard/dnr-rulesets lint
+pnpm --filter @adguard/dnr-rulesets lint &
+LINT_PID=$!
 
 # Run tests
-pnpm --filter @adguard/dnr-rulesets test
+pnpm --filter @adguard/dnr-rulesets test &
+TEST_PID=$!
+
+# Wait for all processes to complete
+wait $LINT_PID $TEST_PID
+
+# Check if any of the commands failed
+if [ $? -ne 0 ]; then
+  echo "One or more tests failed"
+  exit 1
+fi
 
 echo "@adguard/dnr-rulesets tests completed"

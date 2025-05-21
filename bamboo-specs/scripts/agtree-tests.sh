@@ -26,16 +26,32 @@ pnpm install
 # Build dependencies before running tests
 npx lerna run build --scope @adguard/agtree --include-dependencies
 
+# Run all tests in parallel
+echo "Running tests in parallel..."
+
 # Check TypeScript types with TSC
-pnpm --filter @adguard/agtree check-types
+pnpm --filter @adguard/agtree check-types &
+TYPES_PID=$!
 
 # Check code with ESLint
-pnpm --filter @adguard/agtree lint
+pnpm --filter @adguard/agtree lint &
+LINT_PID=$!
 
 # Run tests with Vitest
-pnpm --filter @adguard/agtree test
+pnpm --filter @adguard/agtree test &
+TEST_PID=$!
 
 # Run smoke tests
-pnpm --filter @adguard/agtree test:smoke
+pnpm --filter @adguard/agtree test:smoke &
+SMOKE_PID=$!
+
+# Wait for all processes to complete
+wait $TYPES_PID $LINT_PID $TEST_PID $SMOKE_PID
+
+# Check if any of the commands failed
+if [ $? -ne 0 ]; then
+  echo "One or more tests failed"
+  exit 1
+fi
 
 echo "@adguard/agtree tests completed"

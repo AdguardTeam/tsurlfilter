@@ -23,13 +23,28 @@ fi
 # Install dependencies
 pnpm install
 
+# Run all tests in parallel
+echo "Running tests in parallel..."
+
 # Check TypeScript types with TSC
-pnpm --filter @adguard/css-tokenizer check-types
+pnpm --filter @adguard/css-tokenizer check-types &
+TYPES_PID=$!
 
 # ESLint & Markdownlint
-pnpm --filter @adguard/css-tokenizer lint
+pnpm --filter @adguard/css-tokenizer lint &
+LINT_PID=$!
 
 # Run tests with Vitest
-pnpm --filter @adguard/css-tokenizer test
+pnpm --filter @adguard/css-tokenizer test &
+TEST_PID=$!
+
+# Wait for all processes to complete
+wait $TYPES_PID $LINT_PID $TEST_PID
+
+# Check if any of the commands failed
+if [ $? -ne 0 ]; then
+  echo "One or more tests failed"
+  exit 1
+fi
 
 echo "@adguard/css-tokenizer tests completed"
