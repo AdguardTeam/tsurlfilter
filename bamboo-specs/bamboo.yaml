@@ -38,6 +38,9 @@
 !include 'agtree-deploy.yaml'
 
 ---
+!include 'agtree-increment.yaml'
+
+---
 !include 'agtree-permissions.yaml'
 
 ---
