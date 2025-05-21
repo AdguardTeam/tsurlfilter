@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Compatibility of `$header` modifier with `$match-case`
   and `$third-party` modifiers in MV2 [AdguardBrowserExtension#2942].
 
+### Changed
+
+- Updated [@adguard/agtree] to `v3.1.5`.
+- Updated [@adguard/scriptlets] to `v2.2.1`.
+
 ### Removed
 
 - `getText` and `getUsedOptionNames` methods from `NetworkRule` class.

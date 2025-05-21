@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Static getter `isUserScriptsApiSupported` to check if the current browser
   supports User Scripts API.
 
+## Changed
+
+- Updated [@adguard/agtree] to `v3.1.5`.
+- Updated [@adguard/scriptlets] to `v2.2.1`.
+<!-- FIXME: specify correct version later -->
+- Updated [@adguard/tsurlfilter] to `v3.x.y`.
+
 ### Fixed
 
 - Invalid HTML rule selectors are breaking site loading
@@ -1182,7 +1189,7 @@ its setting [AdguardBrowserExtension#2584].
 
 ## [0.1.1] - 2023-04-04
 
-## Changed
+### Changed
 
 - Improved injection algorithm for cosmetic rules (js and css).
   logic using the Finite State Machine to avoid double injections with
