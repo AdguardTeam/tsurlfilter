@@ -1181,8 +1181,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       '@adguard/scriptlets':
-        specifier: https://github.com/AdguardTeam/Scriptlets/raw/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz
-        version: https://raw.githubusercontent.com/AdguardTeam/Scriptlets/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz
+        specifier: ^2.2.1
+        version: 2.2.1
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1371,8 +1371,8 @@ importers:
         specifier: workspace:^
         version: link:../logger
       '@adguard/scriptlets':
-        specifier: https://github.com/AdguardTeam/Scriptlets/raw/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz
-        version: https://raw.githubusercontent.com/AdguardTeam/Scriptlets/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz
+        specifier: ^2.2.1
+        version: 2.2.1
       '@adguard/text-encoding':
         specifier: ^0.8.3
         version: 0.8.3
@@ -1569,9 +1569,8 @@ packages:
   '@adguard/scriptlets@1.12.1':
     resolution: {integrity: sha512-luAGl8hHEjKZfTFqWG8PBsif2wAPWNi0uuT+xzyBTk+IllHDYOLPSwyMKh2ru7nKCQJEOgMVwNoIrPB4zuuX1w==}
 
-  '@adguard/scriptlets@https://raw.githubusercontent.com/AdguardTeam/Scriptlets/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz':
-    resolution: {tarball: https://raw.githubusercontent.com/AdguardTeam/Scriptlets/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz}
-    version: 2.2.0
+  '@adguard/scriptlets@2.2.1':
+    resolution: {integrity: sha512-OUIfzIgarkeQhMVv6wWK/mbRnkOpePIRFBlMxwFevcGnbry7sDdNti44M+ipyDXEi9G3C+YnIEXGEPmbKvBREw==}
 
   '@adguard/text-encoding@0.8.3':
     resolution: {integrity: sha512-LA0bsY+YYnQqItGaYMoVL0l55JDi/uwvUca53V6M6mvKNHtaYDTlf3yAeW2PafsTfWvoYH7gObGu8eCvPh69tg==}
@@ -9837,7 +9836,7 @@ snapshots:
       '@babel/runtime': 7.27.0
       js-yaml: 3.14.1
 
-  '@adguard/scriptlets@https://raw.githubusercontent.com/AdguardTeam/Scriptlets/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz':
+  '@adguard/scriptlets@2.2.1':
     dependencies:
       '@adguard/agtree': link:packages/agtree
       '@types/trusted-types': 2.0.7
