@@ -12,7 +12,9 @@ variables:
 # so we can run them in parallel at first stage, i.e. logger and css-tokenizer.
 #
 # Next stages are about single package tests since they depend on each other:
-# AGTree -> TSUrlFilter -> TSWebExtension.
+# - AGTree
+# - TSUrlFilter
+# - TSWebExtension and DNR-Rulesets — can be run in parallel.
 #
 # After that, we have a stage for example packages, benchmarks, and docs update.
 # They can be run in parallel.
@@ -36,11 +38,12 @@ stages:
       final: false
       jobs:
         - TestTSUrlFilter
-  - TSWebExtension:
+  - TSWebExtension and DNR-Rulesets:
       manual: false
       final: false
       jobs:
         - TestTSWebExtension
+        - TestDNRRulesets
   - Examples, benchmarks, docs update:
       manual: false
       final: false
@@ -132,6 +135,19 @@ TestTSWebExtension:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh"
+  requirements: *requirements
+
+TestDNRRulesets:
+  key: TESTDNRRULESETS
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
   requirements: *requirements
 
 TestExamplesTSWebExtension2:
