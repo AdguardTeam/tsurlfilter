@@ -72,7 +72,8 @@ stages:
       manual: false
       final: false
       jobs:
-        - TestExamplesApis
+        - TestExamplesApi
+        - TestExamplesApiMV3
         - TestExamplesTSWebExtension2
         - TestExamplesTSWebExtension3
         - UpdateTSUrlFilterDocsMV3
@@ -196,27 +197,37 @@ TestExamplesTSWebExtension3:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh"
   requirements: *requirements
 
-TestExamplesApis:
-  key: TESTEXAMPLESAPIS
+TestExamplesApi:
+  key: TESTEXAMPLESAPI
   docker: *docker
   tasks:
     - checkout:
-        force-clean-build: false
+        force-clean-build: true
     - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
       pattern: extension.zip
       shared: false
       required: false
+  requirements: *requirements
+
+TestExamplesApiMV3:
+  key: TESTEXAMPLESAPI3
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
+  artifacts:
     - name: examples-adguard-api-mv3-extension.zip
       location: packages/examples/adguard-api-mv3/build
       pattern: extension.zip
