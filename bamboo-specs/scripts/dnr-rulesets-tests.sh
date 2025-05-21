@@ -10,8 +10,9 @@ set -ex
 # Redirect stderr (2) to stdout (1) to capture all output in a single log
 exec 2>&1
 
-# Define package name as a constant
+# Define package name and directory as constants
 PACKAGE_NAME="@adguard/dnr-rulesets"
+PACKAGE_DIR="./packages/dnr-rulesets"
 
 echo "$PACKAGE_NAME tests starting"
 
@@ -36,7 +37,7 @@ COMMANDS=(
     "test"
 )
 
-run_commands_in_parallel "$PACKAGE_NAME" "${COMMANDS[@]}"
+run_commands_in_parallel "$PACKAGE_DIR" "$PACKAGE_NAME" "${COMMANDS[@]}"
 
 # Check if any of the commands failed
 if [ $? -ne 0 ]; then

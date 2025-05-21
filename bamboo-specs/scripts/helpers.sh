@@ -22,43 +22,54 @@ is_project_affected() {
 
 # Function to verify if a package.json script exists before running it
 # Parameters:
-#   - package: The package name
+#   - package_dir: The package directory path
+#   - package_name: The package name
 #   - script: The script name to check
 verify_script_exists() {
-  local package=$1
-  local script=$2
+  local package_dir=$1
+  local package_name=$2
+  local script=$3
 
   # Check if the script exists in package.json
-  if ! pnpm --filter $package exec jq -e ".scripts.$script" package.json > /dev/null 2>&1; then
-    echo "Error: Script '$script' does not exist in package '$package'"
+  # Use direct path to package.json
+  if ! jq -e ".scripts.$script" "$package_dir/package.json" > /dev/null 2>&1; then
+    echo "Error: Script '$script' does not exist in package '$package_name' (directory: $package_dir)"
     exit 1
   fi
 }
 
 # Function to run multiple commands in parallel for a package
 # Parameters:
+#   - package_dir: The package directory path
 #   - package_name: The name of the package
 #   - commands: Array of commands to run
-# Usage example: run_commands_in_parallel "@adguard/css-tokenizer" "${COMMANDS[@]}"
+# Usage examples:
+#   run_commands_in_parallel "./packages/css-tokenizer" "@adguard/css-tokenizer" "lint:code lint:types test"
 run_commands_in_parallel() {
-  local package_name=$1
-  shift
-  local commands=($@)
+  local package_dir=$1
+  local package_name=$2
+  shift 2
+  local commands=("$@")
 
   echo "Running tests in parallel..."
+  echo "Package: $package_name"
+  if [ -n "$package_dir" ]; then
+    echo "Package directory: $package_dir"
+  fi
 
   # Array to store process IDs
   local pids=()
 
   # Verify all scripts exist before running them
   for cmd in "${commands[@]}"; do
-    verify_script_exists "$package_name" "$cmd"
+    verify_script_exists "$package_dir" "$package_name" "$cmd"
   done
 
   # Run all commands in parallel
   for cmd in "${commands[@]}"; do
     echo "Running $cmd..."
-    pnpm --filter "$package_name" $cmd &
+    # Run in the specified directory
+    (cd "$package_dir" && pnpm $cmd) &
     local pid=$!
     pids+=("$pid")
   done
