@@ -38,7 +38,7 @@ COMMANDS=(
     "test:smoke"
 )
 
-run_commands_in_parallel "$PACKAGE_NAME" "${COMMANDS[@]}" "$PACKAGE_DIR"
+run_commands_in_parallel "$PACKAGE_DIR" "$PACKAGE_NAME" "${COMMANDS[@]}"
 
 # Check if any of the commands failed
 if [ $? -ne 0 ]; then
