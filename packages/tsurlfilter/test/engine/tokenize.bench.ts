@@ -2,14 +2,16 @@
 // pnpm vitest bench tokenize
 import {
     bench,
-    describe, expect, vi
+    describe,
+    expect,
+    vi,
 } from 'vitest';
 
 import { readFileSync } from 'node:fs';
-import { setLogger } from '../../src/utils/logger';
 import { RuleParser } from '@adguard/agtree';
+import { setLogger } from '../../src/utils/logger';
 import { NetworkRule, RuleFactory } from '../../src';
-import { tokenize } from '../../src/engine/tokenize';
+import { tokenize } from '../../src/engine-1/tokenize';
 
 describe('Get main rule tokens', () => {
     setLogger({
@@ -27,16 +29,17 @@ describe('Get main rule tokens', () => {
     const domainsA = new Set();
     const domainsB = new Set();
 
-    rawRules.forEach(rule => {
+    rawRules.forEach((rule) => {
         const ruleDataA = RuleFactory.createRule(RuleParser.parse(rule), 0);
         if (ruleDataA instanceof NetworkRule) {
-            ruleDataA.getRestrictedDomains()?.forEach(domain => domainsA.add(domain));
-            ruleDataA.getPermittedDomains()?.forEach(domain => domainsA.add(domain));
+            ruleDataA.getRestrictedDomains()?.forEach((domain) => domainsA.add(domain));
+            ruleDataA.getPermittedDomains()?.forEach((domain) => domainsA.add(domain));
         }
 
         const ruleDataB = tokenize(rule);
         if (ruleDataB && ruleDataB.type === 0) {
-            ruleDataB.domains?.forEach(domain => {
+            ruleDataB.domains?.forEach((domain) => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                 domain.startsWith('~') ? domainsB.add(domain.slice(1)) : domainsB.add(domain);
             });
         }
@@ -45,13 +48,13 @@ describe('Get main rule tokens', () => {
     expect(domainsA).toEqual(domainsB);
 
     bench('parse with AGTree and create TSUrlFilter rule instance', () => {
-        rawRules.forEach(rule => {
+        rawRules.forEach((rule) => {
             RuleFactory.createRule(RuleParser.parse(rule), 0);
         });
     });
 
     bench('fast tokenize', () => {
-        rawRules.forEach(rule => {
+        rawRules.forEach((rule) => {
             tokenize(rule);
         });
     });

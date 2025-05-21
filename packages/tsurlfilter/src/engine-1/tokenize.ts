@@ -1,13 +1,21 @@
-const enum RuleType {
+export const enum RuleType {
     Network,
     Cosmetic,
 }
 
-type RuleParts = {
-    type: RuleType
+export const enum CosmeticRuleType {
+    ElementHidingRule,
+    CssInjectionRule,
+    JsInjectionRule,
+    HtmlFilteringRule,
+}
+
+export type RuleParts = {
+    type: RuleType,
     pattern?: string,
     domains?: string[],
-    cosmeticContent?: string
+    cosmeticContent?: string,
+    cosmeticSeparator?: number,
 };
 
 const NETWORK_RULE_SEPARATOR = '$';
@@ -16,20 +24,31 @@ const REGEX_MARKER = '/';
 const DOMAIN_MODIFIER = 'domain';
 const DOMAIN_MODIFIER_LENGTH = DOMAIN_MODIFIER.length;
 
-const COSMETIC_SEPARATOR_OFFSET_MASK = 0x1FFFFFFF;
-const COSMETIC_SEPARATOR_LEN_SHIFT = 29;
+const COSMETIC_SEPARATOR_OFFSET_MASK = (1 << 26) - 1; // 0x03FFFFFF (26 lowest bits)
 
-const encodeOffsetAndLength = (offset: number, length: number): number => {
-    return (offset & COSMETIC_SEPARATOR_OFFSET_MASK) | (length << COSMETIC_SEPARATOR_LEN_SHIFT);
+const COSMETIC_SEPARATOR_LEN_SHIFT = 26; // 3 bits
+const COSMETIC_SEPARATOR_TYPE_SHIFT = 29; // 2 bits
+const COSMETIC_SEPARATOR_ALLOW_SHIFT = 31; // 1 bit
+
+const encode = (
+    offset: number,
+    length: number,
+    type: CosmeticRuleType,
+    allow: boolean,
+): number => {
+    // if (length > 5) throw new RangeError('length > 5');
+    // if (type > 3) throw new RangeError('type > 3');
+
+    return (offset & COSMETIC_SEPARATOR_OFFSET_MASK)
+           | ((length & 0x7) << COSMETIC_SEPARATOR_LEN_SHIFT)
+           | ((type & 0x3) << COSMETIC_SEPARATOR_TYPE_SHIFT)
+           | ((allow ? 1 : 0) << COSMETIC_SEPARATOR_ALLOW_SHIFT);
 };
 
-const decodeLength = (value: number): number => {
-    return (value >> COSMETIC_SEPARATOR_LEN_SHIFT) & 0x7;
-};
-
-const decodeOffset = (value: number): number => {
-    return value & COSMETIC_SEPARATOR_OFFSET_MASK;
-};
+export const decodeOffset = (v: number) => v & COSMETIC_SEPARATOR_OFFSET_MASK;
+export const decodeLength = (v: number) => (v >>> COSMETIC_SEPARATOR_LEN_SHIFT) & 0x7;
+export const decodeType = (v: number) => (v >>> COSMETIC_SEPARATOR_TYPE_SHIFT) & 0x3;
+export const decodeIsAllowlist = (v: number) => ((v >>> COSMETIC_SEPARATOR_ALLOW_SHIFT) & 0x1) === 1;
 
 const findCosmeticSeparator = (rule: string): number | null => {
     let i = rule.indexOf('#');
@@ -37,28 +56,28 @@ const findCosmeticSeparator = (rule: string): number | null => {
     if (i !== -1) {
         if (rule[i + 1] === '#' && rule[i - 1] !== ' ') {
             // ##
-            return encodeOffsetAndLength(i, 2);
+            return encode(i, 2, CosmeticRuleType.ElementHidingRule, false);
         }
 
         if (rule[i + 1] === '?' && rule[i + 2] === '#') {
             // #?#
-            return encodeOffsetAndLength(i, 3);
+            return encode(i, 3, CosmeticRuleType.CssInjectionRule, false);
         }
 
         if (rule[i + 1] === '%' && rule[i + 2] === '#') {
             // #%#
-            return encodeOffsetAndLength(i, 3);
+            return encode(i, 3, CosmeticRuleType.JsInjectionRule, false);
         }
 
         if (rule[i + 1] === '$') {
             if (rule[i + 2] === '#') {
                 // #$#
-                return encodeOffsetAndLength(i, 3);
+                return encode(i, 3, CosmeticRuleType.CssInjectionRule, false);
             }
 
             if (rule[i + 2] === '?' && rule[i + 3] === '#') {
                 // #$?#
-                return encodeOffsetAndLength(i, 4);
+                return encode(i, 4, CosmeticRuleType.CssInjectionRule, false);
             }
         }
 
@@ -66,28 +85,28 @@ const findCosmeticSeparator = (rule: string): number | null => {
         if (rule[i + 1] === '@') {
             if (rule[i + 2] === '#' && rule[i - 1] !== ' ') {
                 // #@#
-                return encodeOffsetAndLength(i, 3);
+                return encode(i, 3, CosmeticRuleType.ElementHidingRule, true);
             }
 
             if (rule[i + 2] === '?' && rule[i + 3] === '#') {
                 // #@?#
-                return encodeOffsetAndLength(i, 4);
+                return encode(i, 4, CosmeticRuleType.ElementHidingRule, true);
             }
 
             if (rule[i + 2] === '%' && rule[i + 3] === '#') {
                 // #@%#
-                return encodeOffsetAndLength(i, 4);
+                return encode(i, 4, CosmeticRuleType.JsInjectionRule, true);
             }
 
             if (rule[i + 2] === '$') {
                 if (rule[i + 3] === '#') {
                     // #@$#
-                    return encodeOffsetAndLength(i, 4);
+                    return encode(i, 4, CosmeticRuleType.CssInjectionRule, true);
                 }
 
                 if (rule[i + 3] === '?' && rule[i + 4] === '#') {
                     // #@$?#
-                    return encodeOffsetAndLength(i, 5);
+                    return encode(i, 5, CosmeticRuleType.CssInjectionRule, true);
                 }
             }
         }
@@ -98,12 +117,12 @@ const findCosmeticSeparator = (rule: string): number | null => {
     if (i !== -1) {
         if (rule[i + 1] === '$') {
             // $$
-            return encodeOffsetAndLength(i, 2);
+            return encode(i, 2, CosmeticRuleType.HtmlFilteringRule, false);
         }
 
         if (rule[i + 1] === '@' && rule[i + 2] === '$') {
             // $@$
-            return encodeOffsetAndLength(i, 3);
+            return encode(i, 3, CosmeticRuleType.HtmlFilteringRule, true);
         }
     }
 
@@ -203,6 +222,7 @@ export function tokenize(rule: string): RuleParts | null {
             pattern,
             domains: extractDomainsFromCosmeticPattern(pattern),
             cosmeticContent: rule.slice(offset + length),
+            cosmeticSeparator,
         };
     }
 
