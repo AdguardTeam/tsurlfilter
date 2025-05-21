@@ -110,7 +110,7 @@
         "@adguard/assistant": "^4.3.70",
         "@adguard/extended-css": "^2.1.1",
         "@adguard/logger": "workspace:^",
-        "@adguard/scriptlets": "^2.2.0",
+        "@adguard/scriptlets": "https://github.com/AdguardTeam/Scriptlets/raw/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz",
         "@adguard/text-encoding": "^0.8.3",
         "@adguard/tsurlfilter": "workspace:^",
         "bowser": "2.11.0",

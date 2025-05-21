@@ -1181,8 +1181,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       '@adguard/scriptlets':
-        specifier: ^2.2.0
-        version: 2.2.0
+        specifier: https://github.com/AdguardTeam/Scriptlets/raw/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz
+        version: https://raw.githubusercontent.com/AdguardTeam/Scriptlets/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1259,9 +1259,6 @@ importers:
       '@types/rollup-plugin-node-globals':
         specifier: 1.4.1
         version: 1.4.1
-      '@types/trusted-types':
-        specifier: ^2.0.7
-        version: 2.0.7
       '@typescript-eslint/eslint-plugin':
         specifier: 5.59.11
         version: 5.59.11(@typescript-eslint/parser@5.59.11(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)
@@ -1374,8 +1371,8 @@ importers:
         specifier: workspace:^
         version: link:../logger
       '@adguard/scriptlets':
-        specifier: ^2.2.0
-        version: 2.2.0
+        specifier: https://github.com/AdguardTeam/Scriptlets/raw/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz
+        version: https://raw.githubusercontent.com/AdguardTeam/Scriptlets/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz
       '@adguard/text-encoding':
         specifier: ^0.8.3
         version: 0.8.3
@@ -1572,8 +1569,9 @@ packages:
   '@adguard/scriptlets@1.12.1':
     resolution: {integrity: sha512-luAGl8hHEjKZfTFqWG8PBsif2wAPWNi0uuT+xzyBTk+IllHDYOLPSwyMKh2ru7nKCQJEOgMVwNoIrPB4zuuX1w==}
 
-  '@adguard/scriptlets@2.2.0':
-    resolution: {integrity: sha512-9BkiB9DgcdCFSsaeOxu6fGNqbrWuL6mmGZkAPNlH+lfGbf/45JcbzzjxsfikrSLMJ3ZbovtmZxiO3l8n6BxfMg==}
+  '@adguard/scriptlets@https://raw.githubusercontent.com/AdguardTeam/Scriptlets/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz':
+    resolution: {tarball: https://raw.githubusercontent.com/AdguardTeam/Scriptlets/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz}
+    version: 2.2.0
 
   '@adguard/text-encoding@0.8.3':
     resolution: {integrity: sha512-LA0bsY+YYnQqItGaYMoVL0l55JDi/uwvUca53V6M6mvKNHtaYDTlf3yAeW2PafsTfWvoYH7gObGu8eCvPh69tg==}
@@ -9839,9 +9837,10 @@ snapshots:
       '@babel/runtime': 7.27.0
       js-yaml: 3.14.1
 
-  '@adguard/scriptlets@2.2.0':
+  '@adguard/scriptlets@https://raw.githubusercontent.com/AdguardTeam/Scriptlets/bcf71e07cb85b600f404ae243c790bd5360f9ddb/scriptlets.tgz':
     dependencies:
       '@adguard/agtree': link:packages/agtree
+      '@types/trusted-types': 2.0.7
       js-yaml: 3.14.1
 
   '@adguard/text-encoding@0.8.3': {}
