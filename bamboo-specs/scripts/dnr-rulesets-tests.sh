@@ -10,38 +10,23 @@ set -ex
 # Redirect stderr (2) to stdout (1) to capture all output in a single log
 exec 2>&1
 
-# Define package name and directory as constants
-PACKAGE_NAME="@adguard/dnr-rulesets"
-PACKAGE_DIR="./packages/dnr-rulesets"
-
-echo "$PACKAGE_NAME tests starting"
+echo "@adguard/dnr-rulesets tests starting"
 
 # import helper functions and some common variables
 . ./bamboo-specs/scripts/helpers.sh
 
-if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "$PACKAGE_NAME"; then
-  echo "No changes in $PACKAGE_NAME, skipping tests"
+if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@adguard/dnr-rulesets"; then
+  echo "No changes in @adguard/dnr-rulesets, skipping tests"
   exit 0;
 fi
 
 # Install dependencies
-pnpm install
+pnpm --filter @adguard/dnr-rulesets install
 
-# Build the package
-npx lerna run build --scope $PACKAGE_NAME --include-dependencies
+# Run linter
+pnpm --filter @adguard/dnr-rulesets lint
 
-# Define an array of commands to run
-COMMANDS=(
-    "lint:code"
-    "lint:types"
-    "test"
-)
-
-run_commands_in_parallel "$PACKAGE_DIR" "$PACKAGE_NAME" "${COMMANDS[@]}"
-
-# Check if any of the commands failed
-if [ $? -ne 0 ]; then
-  exit 1
-fi
+# Run tests
+pnpm --filter @adguard/dnr-rulesets test
 
 echo "@adguard/dnr-rulesets tests completed"
