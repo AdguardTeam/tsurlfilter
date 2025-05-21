@@ -23,17 +23,18 @@ is_project_affected() {
 # Function to verify if a package.json script exists before running it
 # Parameters:
 #   - package_dir: The package directory path
-#   - package_name: The package name
+#   - package: The package name
 #   - script: The script name to check
 verify_script_exists() {
   local package_dir=$1
-  local package_name=$2
+  local package=$2
   local script=$3
 
   # Check if the script exists in package.json
   # Use direct path to package.json
-  if ! jq -e ".scripts.$script" "$package_dir/package.json" > /dev/null 2>&1; then
-    echo "Error: Script '$script' does not exist in package '$package_name' (directory: $package_dir)"
+  # Note: We need to quote the script name for jq to handle colons properly
+  if ! jq -e ".scripts[\"$script\"]" "$package_dir/package.json" > /dev/null 2>&1; then
+    echo "Error: Script '$script' does not exist in package '$package' (directory: $package_dir)"
     exit 1
   fi
 }
