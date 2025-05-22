@@ -356,12 +356,18 @@ export class RuleSetsLoaderApi {
      *
      * @returns New {@link IRuleSet}.
      *
-     * @throws If initialization fails or the rule set with the provided ID is not found.
+     * @throws If initialization fails or the rule set with the provided ID is not found or invalid.
      */
     public async createRuleSet(
         ruleSetId: string,
         filterList: IFilter[],
     ): Promise<IRuleSet> {
+        const ruleSetIdNumber = extractRuleSetId(ruleSetId);
+
+        if (ruleSetIdNumber === null) {
+            throw new Error(`Invalid rule set id: ${ruleSetId}`);
+        }
+
         const ruleSetCache = RuleSetsLoaderApi.ruleSetsCache.get(ruleSetId);
         if (ruleSetCache) {
             return ruleSetCache;
@@ -421,7 +427,10 @@ export class RuleSetsLoaderApi {
             ruleSetHashMap,
         );
 
-        RuleSetsLoaderApi.ruleSetsCache.set(ruleSetId, ruleset);
+        if (filterList.some((f) => f.getId() === ruleSetIdNumber)) {
+            // We save the rule set in the cache only if its filter is loaded.
+            RuleSetsLoaderApi.ruleSetsCache.set(ruleSetId, ruleset);
+        }
 
         return ruleset;
     }
