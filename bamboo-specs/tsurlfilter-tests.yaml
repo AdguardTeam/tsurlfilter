@@ -9,7 +9,10 @@ variables:
   testTimeout: 180s
 
 # Some packages are independent of each other so we can run them in parallel (different jobs on same stage)
-# other packages depend on each other so they should be run one after another (different stages).
+# other packages depend on each other so they should be run one after another (different stages),
+# e.g. CSSTokenizer and Logger are totally independent,
+# but DNR-Ruleset depends on TSUrlFilter, so even if it does not depend on TSWebExtension,
+# they should run on different stages, this way bamboo cache is used ("[local cache]" in logs).
 #
 # Dependencies are described in the README.md file ("Dependency Tree" section).
 
@@ -31,8 +34,12 @@ variables:
 #
 # State 5:
 # - DNR-Rulesets test run;
-# - Example API and API MV3;
+#
+# State 6:
 # - Example TSWebExtensions for MV2 and MV3.
+#
+# State 7:
+# - Example APIs for MV2 and MV3.
 #
 # Final state:
 # - Cleanup.
@@ -40,44 +47,45 @@ variables:
 # Experiment:
 # Only jobs from State 1 use requires clean checkout.
 # Since later jobs rely on previous jobs, let's try this approach.
+# And default value for 'force-clean-build' is false.
 
 stages:
-  - State 1:
+  - State 1: &stage
       manual: false
       final: false
       jobs:
         - Test Logger
         - Test CSSTokenizer
   - State 2:
-      manual: false
-      final: false
+      <<: *stage
       jobs:
         - Test AGTree
         - Test Benchmark CSSTokenizer
   - State 3:
-      manual: false
-      final: false
+      <<: *stage
       jobs:
         - Test TSUrlFilter
         - Test Benchmark AGTree
         - Test Benchmark AGTree Browser
   - State 4:
-      manual: false
-      final: false
+      <<: *stage
       jobs:
         - Test TSWebExtension
         - Update TSUrlFilter Docs MV3
   - State 5:
-      manual: false
-      final: false
+      <<: *stage
       jobs:
         - Test DNR-Rulesets
-        - Test Example API
-        - Test Example API MV3
-        - Test Example TSWebExtension MV2
-        - Test Example TSWebExtension MV3
+  - State 6:
+      <<: *stage
+      jobs:
+        - Test Example TSWebExtensions - MV2 and MV3
+  - State 7:
+      <<: *stage
+      jobs:
+        - Test Example APIs - MV2 and MV3
   - Cleanup:
-      manual: false
+      <<: *stage
       final: true
       jobs:
         - Cleanup
@@ -131,8 +139,7 @@ Test AGTree:
   key: TESTAGTREE
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: false
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -144,8 +151,7 @@ Test TSUrlFilter:
   key: TESTTSURLFILTER
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: false
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -157,8 +163,7 @@ Test TSWebExtension:
   key: TESTTSWEBEXTENSION
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: false
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -170,8 +175,7 @@ Test DNR-Rulesets:
   key: TESTDNRRULESETS
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: false
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -179,64 +183,43 @@ Test DNR-Rulesets:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
   requirements: *requirements
 
-Test Example TSWebExtension MV2:
-  key: TESTEXAMPLETSWEBEXTENSION2
+Test Example TSWebExtensions - MV2 and MV3:
+  key: TESTEXAMPLETSWEBEXTENSIONS
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: true
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh"
-  requirements: *requirements
-
-Test Example TSWebExtension MV3:
-  key: TESTEXAMPLETSWEBEXTENSION3
-  docker: *docker
-  tasks:
-    - checkout:
-        force-clean-build: true
-    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh"
   requirements: *requirements
 
-Test Example API:
-  key: TESTEXAMPLEAPI
+Test Example APIs - MV2 and MV3:
+  key: TESTEXAMPLEAPIS
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: true
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           # try another timeout limit
-          - "./bamboo-specs/scripts/timeout-wrapper.sh 300s ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
       pattern: extension.zip
       shared: false
       required: false
-  requirements: *requirements
-
-Test Example API MV3:
-  key: TESTEXAMPLEAPI3
-  docker: *docker
-  tasks:
-    - checkout:
-        force-clean-build: true
-    - script: *setup-script
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh 300s ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
-  artifacts:
     - name: examples-adguard-api-mv3-extension.zip
       location: packages/examples/adguard-api-mv3/build
       pattern: extension.zip
@@ -248,8 +231,7 @@ Test Benchmark CSSTokenizer:
   key: TESTBENCHMARKCSSTOKENIZER
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: false
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -261,8 +243,7 @@ Test Benchmark AGTree:
   key: TESTBENCHMARKAGTREE
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: false
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -274,8 +255,7 @@ Test Benchmark AGTree Browser:
   key: TESTBENCHMARKAGTREEBROWSER
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: false
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -287,8 +267,7 @@ Update TSUrlFilter Docs MV3:
   key: UPDTSURLFILTERDOCSMV3
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: false
+    - checkout
     - script: *setup-script
     - script:
         interpreter: SHELL
@@ -305,8 +284,7 @@ Cleanup:
   key: CLEAN
   docker: *docker
   tasks:
-    - checkout:
-        force-clean-build: false
+    - checkout
     - script:
         interpreter: SHELL
         scripts:
