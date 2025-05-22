@@ -96,7 +96,16 @@ Test Logger:
     - script: &setup-script
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/setup-tests.sh"
+          - |-
+            set -ex
+
+            ls -alt
+
+            # Fix mixed logs
+            exec 2>&1
+
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
     - script:
         interpreter: SHELL
         scripts:
@@ -206,7 +215,8 @@ Test Example API:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
+          # try another timeout limit
+          - "./bamboo-specs/scripts/timeout-wrapper.sh 300s ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
@@ -225,7 +235,7 @@ Test Example API MV3:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
+          - "./bamboo-specs/scripts/timeout-wrapper.sh 300s ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
   artifacts:
     - name: examples-adguard-api-mv3-extension.zip
       location: packages/examples/adguard-api-mv3/build
