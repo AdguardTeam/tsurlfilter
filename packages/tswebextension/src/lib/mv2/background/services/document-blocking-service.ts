@@ -93,7 +93,7 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
             requestUrl,
         } = data;
 
-        // if rule is trusted, no blocking
+        // if request url is trusted, no redirect to blocking page
         if (this.isTrusted(requestUrl)) {
             return undefined;
         }

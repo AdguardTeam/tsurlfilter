@@ -94,7 +94,15 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
 
         const ruleText = this.getRuleText(rule);
 
-        // if rule is trusted, no blocking
+        /**
+         * If rule is trusted, no redirect to blocking page.
+         *
+         * IMPORTANT: MV3 implementation is different from MV2
+         * because declarative blocking rules are applied by browser.
+         * So to undo the blocking, we are saving a rule as trusted
+         * when user clicks "Proceed anyway" button on the blocking page,
+         * and applying it (dynamically) with $badfilter modifier after it.
+         */
         if (this.isTrusted(ruleText)) {
             return;
         }
