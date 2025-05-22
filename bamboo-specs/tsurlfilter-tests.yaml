@@ -8,14 +8,14 @@ variables:
   dockerContainer: adguard/node-ssh:22.14--0
   testTimeout: 180s
 
-# State 1:
-# Some packages are independent of each other
-# so we can run them in parallel, i.e. logger and css-tokenizer.
+# Some packages are independent of each other so we can run them in parallel (different jobs on same stage)
+# other packages depend on each other so they should be run one after another (different stages).
 #
-# Next stages are about single package tests since they depend on each other:
-# - AGTree;
-# - TSUrlFilter;
-# - TSWebExtension and DNR-Rulesets — can be run in parallel.
+# Dependencies are described in the README.md file ("Dependency Tree" section).
+
+# State 1:
+# - Logger test run;
+# - CSS Tokenizer test run.
 #
 # State 2:
 # - AGTree test run;
@@ -26,11 +26,12 @@ variables:
 # - AGTree benchmarks which are non-relevant to TSUrlFilter and can be run in parallel.
 #
 # State 4:
-# - TSWebExtension and DNR-Rulesets test run;
-# - Update TSUrlFilter docs MV3.
+# - TSWebExtension test run;
+# - DNR-Rulesets test run;
+# - Update TSUrlFilter Docs MV3.
 #
 # State 5:
-# - Examples API and API MV3;
+# - Example API and API MV3;
 # - Example TSWebExtensions for MV2 and MV3.
 #
 # Final state:
@@ -45,36 +46,36 @@ stages:
       manual: false
       final: false
       jobs:
-        - TestLogger
-        - TestCssTokenizer
+        - Test Logger
+        - Test CSSTokenizer
   - State 2:
       manual: false
       final: false
       jobs:
-        - TestAgTree
-        - TestBenchmarkCssTokenizer
+        - Test AGTree
+        - Test Benchmark CSSTokenizer
   - State 3:
       manual: false
       final: false
       jobs:
-        - TestTSUrlFilter
-        - TestBenchmarkAGTree
-        - TestBenchmarkAGTreeBrowser
+        - Test TSUrlFilter
+        - Test Benchmark AGTree
+        - Test Benchmark AGTree Browser
   - State 4:
       manual: false
       final: false
       jobs:
-        - TestTSWebExtension
-        - TestDNRRulesets
-        - UpdateTSUrlFilterDocsMV3
+        - Test TSWebExtension
+        - Test DNR-Rulesets
+        - Update TSUrlFilter Docs MV3
   - State 5:
       manual: false
       final: false
       jobs:
-        - TestExamplesApi
-        - TestExamplesApiMV3
-        - TestExamplesTSWebExtension2
-        - TestExamplesTSWebExtension3
+        - Test Example API
+        - Test Example API MV3
+        - Test Example TSWebExtension MV2
+        - Test Example TSWebExtension MV3
   - Cleanup:
       manual: false
       final: true
@@ -83,7 +84,7 @@ stages:
 
 # NOTE: Each script is separate because, otherwise, Bamboo does not fail in the case of an error.
 
-TestLogger:
+Test Logger:
   key: TESTLOGGER
   docker: &docker
     image: "${bamboo.dockerContainer}"
@@ -104,7 +105,7 @@ TestLogger:
     - adg-docker: 'true'
     - extension: 'true'
 
-TestCssTokenizer:
+Test CSS Tokenizer:
   key: TESTCSSTOKENIZER
   docker: *docker
   tasks:
@@ -117,7 +118,7 @@ TestCssTokenizer:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/css-tokenizer-tests.sh"
   requirements: *requirements
 
-TestAgTree:
+Test AGTree:
   key: TESTAGTREE
   docker: *docker
   tasks:
@@ -130,7 +131,7 @@ TestAgTree:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/agtree-tests.sh"
   requirements: *requirements
 
-TestTSUrlFilter:
+Test TSUrlFilter:
   key: TESTTSURLFILTER
   docker: *docker
   tasks:
@@ -143,7 +144,7 @@ TestTSUrlFilter:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh"
   requirements: *requirements
 
-TestTSWebExtension:
+Test TSWebExtension:
   key: TESTTSWEBEXTENSION
   docker: *docker
   tasks:
@@ -156,7 +157,7 @@ TestTSWebExtension:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh"
   requirements: *requirements
 
-TestDNRRulesets:
+Test DNR-Rulesets:
   key: TESTDNRRULESETS
   docker: *docker
   tasks:
@@ -169,8 +170,8 @@ TestDNRRulesets:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
   requirements: *requirements
 
-TestExamplesTSWebExtension2:
-  key: TESTEXAMPLESTSWEBEXTENSION2
+Test Example TSWebExtension MV2:
+  key: TESTEXAMPLETSWEBEXTENSION2
   docker: *docker
   tasks:
     - checkout:
@@ -182,8 +183,8 @@ TestExamplesTSWebExtension2:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh"
   requirements: *requirements
 
-TestExamplesTSWebExtension3:
-  key: TESTEXAMPLESTSWEBEXTENSION3
+Test Example TSWebExtension MV3:
+  key: TESTEXAMPLETSWEBEXTENSION3
   docker: *docker
   tasks:
     - checkout:
@@ -195,8 +196,8 @@ TestExamplesTSWebExtension3:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh"
   requirements: *requirements
 
-TestExamplesApi:
-  key: TESTEXAMPLESAPI
+Test Example API:
+  key: TESTEXAMPLEAPI
   docker: *docker
   tasks:
     - checkout:
@@ -214,8 +215,8 @@ TestExamplesApi:
       required: false
   requirements: *requirements
 
-TestExamplesApiMV3:
-  key: TESTEXAMPLESAPI3
+Test Example API MV3:
+  key: TESTEXAMPLEAPI3
   docker: *docker
   tasks:
     - checkout:
@@ -233,7 +234,7 @@ TestExamplesApiMV3:
       required: false
   requirements: *requirements
 
-TestBenchmarkCssTokenizer:
+Test Benchmark CSSTokenizer:
   key: TESTBENCHMARKCSSTOKENIZER
   docker: *docker
   tasks:
@@ -246,7 +247,7 @@ TestBenchmarkCssTokenizer:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-css-tokenizer-benchmark-tests.sh"
   requirements: *requirements
 
-TestBenchmarkAGTree:
+Test Benchmark AGTree:
   key: TESTBENCHMARKAGTREE
   docker: *docker
   tasks:
@@ -259,7 +260,7 @@ TestBenchmarkAGTree:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-agtree-benchmark-tests.sh"
   requirements: *requirements
 
-TestBenchmarkAGTreeBrowser:
+Test Benchmark AGTree Browser:
   key: TESTBENCHMARKAGTREEBROWSER
   docker: *docker
   tasks:
@@ -272,7 +273,7 @@ TestBenchmarkAGTreeBrowser:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-agtree-browser-benchmark-tests.sh"
   requirements: *requirements
 
-UpdateTSUrlFilterDocsMV3:
+Update TSUrlFilter Docs MV3:
   key: UPDTSURLFILTERDOCSMV3
   docker: *docker
   tasks:
