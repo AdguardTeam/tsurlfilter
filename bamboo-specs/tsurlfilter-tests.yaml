@@ -34,12 +34,8 @@ variables:
 #
 # State 5:
 # - DNR-Rulesets test run;
-#
-# State 6:
+# - Example API and API MV3;
 # - Example TSWebExtensions for MV2 and MV3.
-#
-# State 7:
-# - Example APIs for MV2 and MV3.
 #
 # Final state:
 # - Cleanup.
@@ -76,14 +72,10 @@ stages:
       <<: *stage
       jobs:
         - Test DNR-Rulesets
-  - State 6:
-      <<: *stage
-      jobs:
-        - Test Example TSWebExtensions - MV2 and MV3
-  - State 7:
-      <<: *stage
-      jobs:
-        - Test Example APIs - MV2 and MV3
+        - Test Example API
+        - Test Example API MV3
+        - Test Example TSWebExtension MV2
+        - Test Example TSWebExtension MV3
   - Cleanup:
       <<: *stage
       final: true
@@ -183,8 +175,8 @@ Test DNR-Rulesets:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
   requirements: *requirements
 
-Test Example TSWebExtensions - MV2 and MV3:
-  key: TESTEXAMPLETSWEBEXTENSIONS
+Test Example TSWebExtension MV2:
+  key: TESTEXAMPLETSWEBEXTENSION2
   docker: *docker
   tasks:
     - checkout
@@ -193,14 +185,22 @@ Test Example TSWebExtensions - MV2 and MV3:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh"
+  requirements: *requirements
+
+Test Example TSWebExtension MV3:
+  key: TESTEXAMPLETSWEBEXTENSION3
+  docker: *docker
+  tasks:
+    - checkout
+    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh"
   requirements: *requirements
 
-Test Example APIs - MV2 and MV3:
-  key: TESTEXAMPLEAPIS
+Test Example API:
+  key: TESTEXAMPLEAPI
   docker: *docker
   tasks:
     - checkout
@@ -209,17 +209,26 @@ Test Example APIs - MV2 and MV3:
         interpreter: SHELL
         scripts:
           # try another timeout limit
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
+          - "./bamboo-specs/scripts/timeout-wrapper.sh 300s ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
       pattern: extension.zip
       shared: false
       required: false
+  requirements: *requirements
+
+Test Example API MV3:
+  key: TESTEXAMPLEAPI3
+  docker: *docker
+  tasks:
+    - checkout
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/timeout-wrapper.sh 300s ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
+  artifacts:
     - name: examples-adguard-api-mv3-extension.zip
       location: packages/examples/adguard-api-mv3/build
       pattern: extension.zip
