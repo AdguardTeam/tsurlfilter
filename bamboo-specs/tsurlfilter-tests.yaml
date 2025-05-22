@@ -21,21 +21,24 @@ variables:
 # - CSS Tokenizer test run.
 #
 # State 2:
-# - AGTree test run;
-# - CSS Tokenizer benchmarks which are non-relevant to AGTree and can be run in parallel.
+# - AGTree test run.
 #
 # State 3:
 # - TSUrlFilter test run;
-# - AGTree benchmarks which are non-relevant to TSUrlFilter and can be run in parallel.
 #
 # State 4:
-# - TSWebExtension test run;
-# - Update TSUrlFilter Docs MV3.
+# - TSWebExtension test run.
 #
 # State 5:
 # - DNR-Rulesets test run;
-# - Example API and API MV3;
-# - Example TSWebExtensions for MV2 and MV3.
+#
+# Stage 6:
+# - Example APIs and TSWebExtensions for MV2 and MV3.
+#
+# Stage 7:
+# - CSS Tokenizer benchmarks;
+# - AGTree benchmarks;
+# - Update TSUrlFilter Docs MV3.
 #
 # Final state:
 # - Cleanup.
@@ -56,26 +59,29 @@ stages:
       <<: *stage
       jobs:
         - Test AGTree
-        - Test Benchmark CSSTokenizer
   - State 3:
       <<: *stage
       jobs:
         - Test TSUrlFilter
-        - Test Benchmark AGTree
-        - Test Benchmark AGTree Browser
   - State 4:
       <<: *stage
       jobs:
         - Test TSWebExtension
-        - Update TSUrlFilter Docs MV3
   - State 5:
       <<: *stage
       jobs:
         - Test DNR-Rulesets
-        - Test Example API
-        - Test Example API MV3
-        - Test Example TSWebExtension MV2
-        - Test Example TSWebExtension MV3
+  - State 6:
+      <<: *stage
+      jobs:
+        - Test Examples - APIs and TSWebExtensions
+  - State 7:
+      <<: *stage
+      jobs:
+        - Test Benchmark CSSTokenizer
+        - Test Benchmark AGTree
+        - Test Benchmark AGTree Browser
+        - Update TSUrlFilter Docs MV3
   - Cleanup:
       <<: *stage
       final: true
@@ -175,8 +181,8 @@ Test DNR-Rulesets:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
   requirements: *requirements
 
-Test Example TSWebExtension MV2:
-  key: TESTEXAMPLETSWEBEXTENSION2
+Test Examples - APIs and TSWebExtensions:
+  key: TESTEXAMPLES
   docker: *docker
   tasks:
     - checkout
@@ -185,50 +191,24 @@ Test Example TSWebExtension MV2:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv2-tests.sh"
-  requirements: *requirements
-
-Test Example TSWebExtension MV3:
-  key: TESTEXAMPLETSWEBEXTENSION3
-  docker: *docker
-  tasks:
-    - checkout
-    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-tswebextension-mv3-tests.sh"
-  requirements: *requirements
-
-Test Example API:
-  key: TESTEXAMPLEAPI
-  docker: *docker
-  tasks:
-    - checkout
-    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
-          # try another timeout limit
-          - "./bamboo-specs/scripts/timeout-wrapper.sh 300s ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
       pattern: extension.zip
       shared: false
       required: false
-  requirements: *requirements
-
-Test Example API MV3:
-  key: TESTEXAMPLEAPI3
-  docker: *docker
-  tasks:
-    - checkout
-    - script: *setup-script
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh 300s ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
-  artifacts:
     - name: examples-adguard-api-mv3-extension.zip
       location: packages/examples/adguard-api-mv3/build
       pattern: extension.zip
