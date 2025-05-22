@@ -27,10 +27,10 @@ variables:
 #
 # State 4:
 # - TSWebExtension test run;
-# - DNR-Rulesets test run;
 # - Update TSUrlFilter Docs MV3.
 #
 # State 5:
+# - DNR-Rulesets test run;
 # - Example API and API MV3;
 # - Example TSWebExtensions for MV2 and MV3.
 #
@@ -66,12 +66,12 @@ stages:
       final: false
       jobs:
         - Test TSWebExtension
-        - Test DNR-Rulesets
         - Update TSUrlFilter Docs MV3
   - State 5:
       manual: false
       final: false
       jobs:
+        - Test DNR-Rulesets
         - Test Example API
         - Test Example API MV3
         - Test Example TSWebExtension MV2
