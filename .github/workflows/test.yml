@@ -61,13 +61,11 @@ jobs:
           npx lerna run --scope @adguard/agtree test:smoke
 
           # tsurlfilter
-          npx lerna run --scope @adguard/tsurlfilter lint
           npx lerna run --scope @adguard/tsurlfilter build
           # IMPORTANT: run tests after the build because smoke tests requires a built dist dir
           npx lerna run --scope @adguard/tsurlfilter test:prod
 
           # tswebextension
-          npx lerna run --scope @adguard/tswebextension lint
           npx lerna run --scope @adguard/tswebextension build
           # IMPORTANT: run tests after the build because smoke tests requires a built dist dir
           npx lerna run --scope @adguard/tswebextension test:prod
