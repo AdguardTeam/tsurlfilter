@@ -10,7 +10,10 @@ import path from 'path';
 const output = execSync('pnpm ls -r --depth=-1 --json').toString();
 const packages = JSON.parse(output);
 
-const dirsToRemove = ['node_modules'];
+const dirsToRemove = [
+    'node_modules',
+    '.rollup.cache',
+];
 
 for (const pkg of packages) {
     for (const dir of dirsToRemove) {
