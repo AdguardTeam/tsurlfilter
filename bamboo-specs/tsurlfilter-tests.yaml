@@ -8,6 +8,18 @@ variables:
   dockerContainer: adguard/node-ssh:22.14--0
   testTimeout: 180s
 
+definitions:
+  artifacts:
+    # Define common artifacts for caching
+    nx-cache:
+      location: .nx/cache
+      pattern: "**/*"
+      shared: true
+    node-modules-cache:
+      location: node_modules
+      pattern: "**/*"
+      shared: true
+
 # Some packages are independent of each other so we can run them in parallel (different jobs on same stage)
 # other packages depend on each other so they should be run one after another (different stages),
 # e.g. CSSTokenizer and Logger are totally independent,
@@ -116,6 +128,13 @@ Test Logger:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh"
+  artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
+    - name: logger-dist
+      location: packages/logger/dist
+      pattern: "**/*"
+      shared: true
   requirements: &requirements
     - adg-docker: 'true'
     - extension: 'true'
@@ -131,6 +150,13 @@ Test CSSTokenizer:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/css-tokenizer-tests.sh"
+  artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
+    - name: css-tokenizer-dist
+      location: packages/css-tokenizer/dist
+      pattern: "**/*"
+      shared: true
   requirements: *requirements
 
 Test AGTree:
@@ -143,6 +169,13 @@ Test AGTree:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/agtree-tests.sh"
+  artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
+    - name: agtree-dist
+      location: packages/agtree/dist
+      pattern: "**/*"
+      shared: true
   requirements: *requirements
 
 Test TSUrlFilter:
@@ -155,6 +188,15 @@ Test TSUrlFilter:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh"
+  artifact-subscriptions:
+    - artifact: agtree-dist
+  artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
+    - name: tsurlfilter-dist
+      location: packages/tsurlfilter/dist
+      pattern: "**/*"
+      shared: true
   requirements: *requirements
 
 Test TSWebExtension:
@@ -167,6 +209,16 @@ Test TSWebExtension:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh"
+  artifact-subscriptions:
+    - artifact: tsurlfilter-dist
+    - artifact: agtree-dist
+  artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
+    - name: tswebextension-dist
+      location: packages/tswebextension/dist
+      pattern: "**/*"
+      shared: true
   requirements: *requirements
 
 Test DNR-Rulesets:
@@ -179,6 +231,16 @@ Test DNR-Rulesets:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
+  artifact-subscriptions:
+    - artifact: tsurlfilter-dist
+    - artifact: logger-dist
+  artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
+    - name: dnr-rulesets-dist
+      location: packages/dnr-rulesets/dist
+      pattern: "**/*"
+      shared: true
   requirements: *requirements
 
 Test Examples - APIs and TSWebExtensions:
@@ -203,7 +265,13 @@ Test Examples - APIs and TSWebExtensions:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
+  artifact-subscriptions:
+    - artifact: tswebextension-dist
+    - artifact: tsurlfilter-dist
+    - artifact: dnr-rulesets-dist
   artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
       pattern: extension.zip
@@ -226,6 +294,11 @@ Test Benchmark CSSTokenizer:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-css-tokenizer-benchmark-tests.sh"
+  artifact-subscriptions:
+    - artifact: css-tokenizer-dist
+  artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
   requirements: *requirements
 
 Test Benchmark AGTree:
@@ -238,6 +311,11 @@ Test Benchmark AGTree:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-agtree-benchmark-tests.sh"
+  artifact-subscriptions:
+    - artifact: agtree-dist
+  artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
   requirements: *requirements
 
 Test Benchmark AGTree Browser:
@@ -250,6 +328,11 @@ Test Benchmark AGTree Browser:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-agtree-browser-benchmark-tests.sh"
+  artifact-subscriptions:
+    - artifact: agtree-dist
+  artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
   requirements: *requirements
 
 Update TSUrlFilter Docs MV3:
@@ -267,6 +350,11 @@ Update TSUrlFilter Docs MV3:
         configuration:
           commitMessage: 'skipci: Automatic update tsurlfilter MV3 docs'
           selectedRepository: defaultRepository
+  artifact-subscriptions:
+    - artifact: tsurlfilter-dist
+  artifacts:
+    - artifact: nx-cache
+    - artifact: node-modules-cache
   requirements: *requirements
 
 Cleanup:
