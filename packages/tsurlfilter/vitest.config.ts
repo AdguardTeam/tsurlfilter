@@ -5,6 +5,7 @@ export default defineConfig({
         watch: false,
         exclude: [
             '.rollup.cache/**',
+            'node_modules/**',
         ],
     },
 });
