@@ -1,15 +1,8 @@
-import {
-    type AnyRule,
-    CosmeticRuleType,
-    NetworkRuleType,
-    RuleCategory,
-} from '@adguard/agtree';
 
-import { IndexedRule, type IRule } from '../../rules/rule';
-import { RuleFactory } from '../../rules/rule-factory';
-import { type IReader } from '../reader/reader';
+import { IndexedRule } from '../../rules/rule';
 import { ScannerType } from './scanner-type';
-import { NetworkRule } from '../../rules/network-rule';
+import { ILineReader } from '../reader/line-reader';
+import { CosmeticRuleType, decodeType, RuleParts, RuleType, tokenize } from '../tokenize';
 
 /**
  * Represents the RuleScanner configuration.
@@ -77,12 +70,12 @@ export class RuleScanner {
     /**
      * Underlying reader object.
      */
-    private readonly reader: IReader;
+    private readonly reader: ILineReader;
 
     /**
      * Current rule.
      */
-    private currentRule: IRule | null = null;
+    private currentRule: RuleParts | null = null;
 
     /**
      * Index of the beginning of the current rule (basically, a line number).
@@ -97,7 +90,7 @@ export class RuleScanner {
      * @param configuration Scanner configuration object.
      */
     constructor(
-        reader: IReader,
+        reader: ILineReader,
         listId: number,
         configuration: RuleScannerConfiguration,
     ) {
@@ -122,26 +115,18 @@ export class RuleScanner {
      */
     public scan(): boolean {
         let lineIndex = this.reader.getCurrentPos();
-        let line = this.readNext();
+        let line = this.readNextLine();
 
-        while (line) {
-            if (!this.isIgnored(line)) {
-                const rule = RuleFactory.createRule(
-                    line,
-                    this.listId,
-                    lineIndex,
-                    this.ignoreNetwork,
-                    this.ignoreCosmetic,
-                    this.ignoreHost,
-                );
-
-                this.currentRule = rule;
+        while (line !== null) {
+            const ruleParts = tokenize(line);
+            if (ruleParts && !this.isIgnored(ruleParts)) {
+                this.currentRule = ruleParts;
                 this.currentRuleIndex = lineIndex;
                 return true;
             }
 
             lineIndex = this.reader.getCurrentPos();
-            line = this.readNext();
+            line = this.reader.readLine();
         }
 
         return false;
@@ -153,7 +138,7 @@ export class RuleScanner {
      */
     public getRule(): IndexedRule | null {
         if (this.currentRule) {
-            return new IndexedRule(this.currentRule, this.currentRuleIndex);
+            return new IndexedRule(this.currentRule, this.currentRuleIndex, this.listId);
         }
 
         return null;
@@ -180,10 +165,16 @@ export class RuleScanner {
     /**
      * Reads the next line and returns it.
      *
-     * @returns - Next line string or null.
+     * @return - Next line string or null.
      */
-    private readNext(): AnyRule | null {
-        return this.reader.readNext();
+    private readNextLine(): string | null {
+        const line = this.reader.readLine();
+
+        if (line != null) {
+            return line.trim();
+        }
+
+        return null;
     }
 
     /**
@@ -193,12 +184,12 @@ export class RuleScanner {
      *
      * @returns - True if the rule should be ignored.
      */
-    private isIgnored(rule: AnyRule): boolean {
+    private isIgnored(rule: RuleParts): boolean {
         if (!this.ignoreCosmetic && !this.ignoreJS && !this.ignoreUnsafe) {
             return false;
         }
 
-        if (rule.category === RuleCategory.Cosmetic) {
+        if (rule.type === RuleType.Cosmetic) {
             if (this.ignoreCosmetic) {
                 return true;
             }
@@ -208,24 +199,22 @@ export class RuleScanner {
             // for "trusted" scriptlets).
             if (
                 this.ignoreJS
-                && (
-                    rule.type === CosmeticRuleType.JsInjectionRule
-                    || rule.type === CosmeticRuleType.ScriptletInjectionRule
-                )
+                && decodeType(rule.cosmeticSeparator!) === CosmeticRuleType.JsInjectionRule
             ) {
                 return true;
             }
         }
 
-        if (this.ignoreUnsafe) {
-            if (rule.category === RuleCategory.Network && rule.type === NetworkRuleType.NetworkRule) {
-                if (
-                    rule.modifiers?.children?.some((modifier) => NetworkRule.ADVANCED_OPTIONS.has(modifier.name.value))
-                ) {
-                    return true;
-                }
-            }
-        }
+        // FIXME
+        // if (this.ignoreUnsafe) {
+        //     if (rule.category === RuleCategory.Network && rule.type === NetworkRuleType.NetworkRule) {
+        //         if (
+        //             rule.modifiers?.children?.some((modifier) => NetworkRule.ADVANCED_OPTIONS.has(modifier.name.value))
+        //         ) {
+        //             return true;
+        //         }
+        //     }
+        // }
 
         return false;
     }

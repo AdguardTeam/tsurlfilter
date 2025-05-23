@@ -1,4 +1,4 @@
-import { type AnyRule } from '@adguard/agtree';
+import { RuleParser, type AnyRule } from '@adguard/agtree';
 import { type IRuleList } from './rule-list';
 import { RuleStorageScanner } from './scanner/rule-storage-scanner';
 import { type IRule } from '../rules/rule';
@@ -67,21 +67,21 @@ export class RuleStorage {
     }
 
     /**
-     * Retrieves a rule node by its filter list identifier and rule index.
+     * Retrieves a rule text by its filter list identifier and rule index.
      *
      * If there's no rule by that index or the rule structure is invalid, it will return null.
      *
      * @param filterId Filter list identifier.
      * @param ruleIndex Rule index.
      *
-     * @returns Rule node or `null`.
+     * @returns Rule text or `null`.
      */
-    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
+    public retrieveRuleText(filterId: number, ruleIndex: number): string | null {
         if (!this.listsMap.has(filterId)) {
             return null;
         }
 
-        return this.listsMap.get(filterId)!.retrieveRuleNode(ruleIndex);
+        return this.listsMap.get(filterId)!.retrieveRuleText(ruleIndex);
     }
 
     /**
@@ -122,15 +122,15 @@ export class RuleStorage {
             return null;
         }
 
-        const ruleNode = list.retrieveRuleNode(ruleId);
+        const ruleText = list.retrieveRuleText(ruleId);
 
-        if (!ruleNode) {
+        if (!ruleText) {
             logger.warn(`Failed to retrieve rule ${ruleId}, should not happen in normal operation`);
 
             return null;
         }
 
-        const result = RuleFactory.createRule(ruleNode, listId, ruleId, false, false, ignoreHost);
+        const result = RuleFactory.createRule(RuleParser.parse(ruleText), listId, ruleId, false, false, ignoreHost);
 
         if (result) {
             this.cache.set(storageIdx, result);

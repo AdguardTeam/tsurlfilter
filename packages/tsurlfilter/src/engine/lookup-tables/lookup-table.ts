@@ -1,5 +1,6 @@
 import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
+import { type RuleParts } from '../../filterlist/tokenize';
 
 /**
  * Lookup table interface.
@@ -23,7 +24,7 @@ export interface ILookupTable {
      *
      * @returns True if the rule was added.
      */
-    addRule(rule: NetworkRule, storageIdx: number): boolean;
+    addRule(rule: RuleParts, storageIdx: number): boolean;
 
     /**
      * @returns Total rules count.

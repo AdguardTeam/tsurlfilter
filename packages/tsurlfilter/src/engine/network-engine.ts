@@ -1,5 +1,5 @@
 import { type Request } from '../request';
-import { NetworkRule } from '../rules/network-rule';
+import { type NetworkRule } from '../rules/network-rule';
 import { MatchingResult } from './matching-result';
 import { type RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
@@ -8,6 +8,7 @@ import { TrieLookupTable } from './lookup-tables/trie-lookup-table';
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
 import { SeqScanLookupTable } from './lookup-tables/seq-scan-lookup-table';
+import { type RuleParts, tokenize } from '../filterlist/tokenize';
 
 /**
  * NetworkEngine is the engine that supports quick search over network rules.
@@ -52,10 +53,11 @@ export class NetworkEngine {
     constructor(storage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = storage;
         this.rulesCount = 0;
+
         this.domainsLookupTable = new DomainsLookupTable(storage);
         this.hostnameLookupTable = new HostnameLookupTable(storage);
         this.shortcutsLookupTable = new TrieLookupTable(storage);
-        this.seqScanLookupTable = new SeqScanLookupTable();
+        this.seqScanLookupTable = new SeqScanLookupTable(storage);
 
         if (skipStorageScan) {
             return;
@@ -65,9 +67,11 @@ export class NetworkEngine {
 
         while (scanner.scan()) {
             const indexedRule = scanner.getRule();
-            if (indexedRule
-                && indexedRule.rule instanceof NetworkRule) {
-                this.addRule(indexedRule.rule, indexedRule.index);
+            if (indexedRule) {
+                const ruleParts = indexedRule.rule;
+                if (ruleParts) {
+                    this.addRule(ruleParts, indexedRule.index);
+                }
             }
         }
     }
@@ -115,7 +119,7 @@ export class NetworkEngine {
      * @param rule Rule to add.
      * @param storageIdx Storage index of the rule.
      */
-    public addRule(rule: NetworkRule, storageIdx: number): void {
+    public addRule(rule: RuleParts, storageIdx: number): void {
         if (!this.hostnameLookupTable.addRule(rule, storageIdx)) {
             if (!this.shortcutsLookupTable.addRule(rule, storageIdx)) {
                 if (!this.domainsLookupTable.addRule(rule, storageIdx)) {

@@ -4,6 +4,7 @@ import { type Request } from '../../request';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
 import { type NetworkRule } from '../../rules/network-rule';
+import { type RuleParts } from '../../filterlist/tokenize';
 
 /**
  * Domain lookup table. Key is the domain name hash.
@@ -42,17 +43,16 @@ export class DomainsLookupTable implements ILookupTable {
      *
      * @returns True if the rule was added.
      */
-    addRule(rule: NetworkRule, storageIdx: number): boolean {
-        const permittedDomains = rule.getPermittedDomains();
-        if (!permittedDomains || permittedDomains.length === 0) {
+    addRule(rule: RuleParts, storageIdx: number): boolean {
+        if (!rule.domains) {
             return false;
         }
 
-        if (permittedDomains.some(DomainModifier.isWildcardOrRegexDomain)) {
+        if (rule.domains.some(DomainModifier.isWildcardOrRegexDomain)) {
             return false;
         }
 
-        permittedDomains.forEach((domain) => {
+        rule.domains.forEach((domain) => {
             const hash = fastHash(domain);
 
             // Add the rule to the lookup table
@@ -100,11 +100,19 @@ export class DomainsLookupTable implements ILookupTable {
             const hash = fastHash(domains[i]);
             const rulesIndexes = this.domainsLookupTable.get(hash);
             if (rulesIndexes) {
-                for (let j = 0; j < rulesIndexes.length; j += 1) {
-                    const rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
-                    if (rule && rule.match(request)) {
-                        result.push(rule);
-                    }
+                let rule: NetworkRule | null = null;
+
+                try {
+                    rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[i]);
+                } catch (e) {
+                    // Fast tokenizing possibly allowed invalid rules
+                    // Remove the rule index from the lookup table but keep the same array reference
+                    rulesIndexes.splice(i, 1);
+                    i -= 1;
+                }
+
+                if (rule && rule.match(request)) {
+                    result.push(rule);
                 }
             }
         }

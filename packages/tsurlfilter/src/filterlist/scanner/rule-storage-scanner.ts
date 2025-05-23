@@ -111,9 +111,9 @@ export class RuleStorageScanner {
             return null;
         }
 
-        const offset = this.getListOffset(rule.rule.getFilterListId())!;
+        const offset = this.getListOffset(rule.listId);
         const index = offset + rule.index;
-        return new IndexedStorageRule(rule.rule, index);
+        return new IndexedStorageRule(rule.rule, index, rule.listId)
     }
 
     /**

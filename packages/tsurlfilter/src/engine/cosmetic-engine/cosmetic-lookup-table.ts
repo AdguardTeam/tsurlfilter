@@ -1,13 +1,17 @@
 import { parse } from 'tldts';
+import { ADG_SCRIPTLET_MASK } from '@adguard/agtree';
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
-
-/**
- * @typedef {import('./cosmetic-engine').CosmeticEngine} CosmeticEngine
- */
+import {
+    CosmeticRuleType,
+    decodeIsAllowlist,
+    decodeType,
+    RuleType,
+    type RuleParts,
+} from '../../filterlist/tokenize';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
@@ -78,34 +82,43 @@ export class CosmeticLookupTable {
      * @param rule Rule to add.
      * @param storageIdx Index of the rule in the storage.
      */
-    addRule(rule: CosmeticRule, storageIdx: number): void {
-        if (rule.isAllowlist()) {
-            if (rule.isScriptlet) {
-                // Store scriptlet rules by name to enable the possibility of allowlisting them.
-                // See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
-                if (rule.scriptletParams.name !== undefined
-                    && rule.scriptletParams.args.length === 0) {
-                    this.addAllowlistRule(rule.scriptletParams.name, storageIdx);
+    addRule(rule: RuleParts, storageIdx: number): void {
+        if (rule.type !== RuleType.Cosmetic) {
+            return;
+        }
+
+        if (decodeIsAllowlist(rule.cosmeticSeparator!)) {
+            if (decodeType(rule.cosmeticSeparator!) === CosmeticRuleType.JsInjectionRule) {
+                if (rule.cosmeticContent!.startsWith(ADG_SCRIPTLET_MASK) && rule.cosmeticContent!.endsWith(')')) {
+                    // get scriptlet name
+                    const params = rule.cosmeticContent!.slice(ADG_SCRIPTLET_MASK.length, -1).split(',');
+
+                    // Store scriptlet rules by name to enable the possibility of allowlisting them.
+                    // See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
+                    if (params[0] !== undefined
+                        && params.length === 1) {
+                        this.addAllowlistRule(params[0], storageIdx);
+                    }
                 }
                 // Use normalized scriptlet content for better matching.
                 // For example, //scriptlet('log', 'arg') can be matched by //scriptlet("log", "arg").
-                this.addAllowlistRule(rule.scriptletParams.toString(), storageIdx);
+                this.addAllowlistRule(rule.cosmeticContent!, storageIdx);
             } else {
                 // Store all other rules by their content.
-                this.addAllowlistRule(rule.getContent(), storageIdx);
+                this.addAllowlistRule(rule.cosmeticContent!, storageIdx);
             }
             return;
         }
 
-        if (rule.isGeneric()) {
-            this.genericRules.push(rule);
+        if (!rule.domains || !rule.domains.length) {
+            this.genericRules.push(this.ruleStorage.retrieveRule(storageIdx) as CosmeticRule);
             return;
         }
 
-        const permittedDomains = rule.getPermittedDomains();
+        const permittedDomains = rule.domains;
         if (permittedDomains) {
             if (permittedDomains.some(DomainModifier.isWildcardOrRegexDomain)) {
-                this.seqScanRules.push(rule);
+                this.seqScanRules.push(this.ruleStorage.retrieveRule(storageIdx) as CosmeticRule);
                 return;
             }
             for (const domain of permittedDomains) {

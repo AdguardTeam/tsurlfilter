@@ -1,14 +1,13 @@
 /* eslint-disable max-len */
-// pnpm vitest bench network-lookup
+// pnpm vitest bench cosmetic-lookup
 import { bench, describe, vi } from 'vitest';
+import * as TsUrlFilterOld from 'tsurlfilter-old';
 
 import { readFileSync } from 'node:fs';
-import { RuleParser } from '@adguard/agtree';
 import { setLogger } from '../../src/utils/logger';
-import { CosmeticRule, RuleFactory, RuleStorage } from '../../src';
-import { tokenize } from '../../src/engine-1/tokenize';
-import { CosmeticEngine as OldCosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
-import { CosmeticEngine as NewCosmeticEngine } from '../../src/engine-1/cosmetic-engine/cosmetic-engine';
+import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
+import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { StringRuleList } from '../../src/filterlist/string-rule-list';
 
 describe('Build cosmetics engine', () => {
     setLogger({
@@ -18,24 +17,25 @@ describe('Build cosmetics engine', () => {
         warn: vi.fn(),
     });
 
+    TsUrlFilterOld.setLogger({
+        error: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn(),
+        warn: vi.fn(),
+    });
+
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
-    const rawRules = rawFilter.split(/\r?\n/);
-    const networkRules = rawRules.filter((rule) => {
-        const ruleData = RuleFactory.createRule(RuleParser.parse(rule), 0);
-        return ruleData instanceof CosmeticRule;
+    const preprocessed = TsUrlFilterOld.FilterListPreprocessor.preprocess(rawFilter);
+    
+    bench('old cosmetic engine', () => {
+        const list = new TsUrlFilterOld.BufferRuleList(2, preprocessed.filterList, false, false, false, preprocessed.sourceMap);
+        const storage = new TsUrlFilterOld.RuleStorage([list]);
+        new TsUrlFilterOld.CosmeticEngine(storage, false);
     });
 
-    bench('adding rules to old cosmetic engine (agtree parse -> rule instance)', () => {
-        const engine = new OldCosmeticEngine(new RuleStorage([]), true);
-        networkRules.forEach((rule) => {
-            engine.addRule(RuleFactory.createRule(RuleParser.parse(rule), 0) as CosmeticRule, 0);
-        });
-    });
-
-    bench('adding rules to new cosmetic engine (tokenize without creating rule instance)', () => {
-        const engine = new NewCosmeticEngine(new RuleStorage([]), true);
-        networkRules.forEach((rule) => {
-            engine.addRule(tokenize(rule)!, 0);
-        });
+    bench('new cosmetic engine', () => {
+        const list = new StringRuleList(2, rawFilter, false, false, false);
+        const storage = new RuleStorage([list]);
+        new CosmeticEngine(storage, false);
     });
 });

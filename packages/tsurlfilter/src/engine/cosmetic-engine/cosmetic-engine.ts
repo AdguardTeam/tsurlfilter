@@ -1,13 +1,16 @@
-import { CosmeticRuleType } from '@adguard/agtree';
-
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { CosmeticLookupTable } from './cosmetic-lookup-table';
-import { CosmeticRule } from '../../rules/cosmetic-rule';
 import { CosmeticResult } from './cosmetic-result';
 import { type CosmeticContentResult } from './cosmetic-content-result';
 import { CosmeticOption } from '../cosmetic-option';
 import { ScannerType } from '../../filterlist/scanner/scanner-type';
 import { type Request } from '../../request';
+import {
+    decodeType,
+    type RuleParts,
+    RuleType,
+    CosmeticRuleType
+} from '../../filterlist/tokenize';
 
 /**
  * @typedef {import('../engine').Engine} Engine
@@ -72,9 +75,11 @@ export class CosmeticEngine {
 
         while (scanner.scan()) {
             const indexedRule = scanner.getRule();
-            if (indexedRule
-                && indexedRule.rule instanceof CosmeticRule) {
-                this.addRule(indexedRule.rule, indexedRule.index);
+            if (indexedRule) {
+                const ruleParts = indexedRule.rule;
+                if (ruleParts) {
+                    this.addRule(ruleParts, indexedRule.index);
+                }
             }
         }
     }
@@ -85,18 +90,18 @@ export class CosmeticEngine {
      * @param rule Rule to add.
      * @param storageIdx Index of the rule in the storage.
      */
-    public addRule(rule: CosmeticRule, storageIdx: number): void {
-        switch (rule.getType()) {
+    public addRule(rule: RuleParts, storageIdx: number): void {
+        if (rule.type !== RuleType.Cosmetic) {
+            return;
+        }
+
+        switch (decodeType(rule.cosmeticSeparator!)) {
             case CosmeticRuleType.ElementHidingRule: {
                 this.elementHidingLookupTable.addRule(rule, storageIdx);
                 break;
             }
             case CosmeticRuleType.CssInjectionRule: {
                 this.cssLookupTable.addRule(rule, storageIdx);
-                break;
-            }
-            case CosmeticRuleType.ScriptletInjectionRule: {
-                this.jsLookupTable.addRule(rule, storageIdx);
                 break;
             }
             case CosmeticRuleType.JsInjectionRule: {

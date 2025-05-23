@@ -4,6 +4,7 @@ import { type NetworkRule } from '../../rules/network-rule';
 import { TrieNode } from '../../utils/trie';
 import { type ILookupTable } from './lookup-table';
 import { SimpleRegex } from '../../rules/simple-regex';
+import { type RuleParts } from '../../filterlist/tokenize';
 
 /**
  * Look up table with underlying prefix tree.
@@ -56,8 +57,14 @@ export class TrieLookupTable implements ILookupTable {
      *
      * @returns True if the rule was added.
      */
-    public addRule(rule: NetworkRule, storageIdx: number): boolean {
-        const shortcut = rule.getShortcut();
+    public addRule(rule: RuleParts, storageIdx: number): boolean {
+        const { pattern } = rule;
+
+        if (!pattern) {
+            return false;
+        }
+
+        const shortcut = SimpleRegex.extractShortcut(pattern);
 
         if (!shortcut || TrieLookupTable.isAnyURLShortcut(shortcut)
             || shortcut.length < SimpleRegex.MIN_SHORTCUT_LENGTH) {
@@ -94,8 +101,17 @@ export class TrieLookupTable implements ILookupTable {
         const result: NetworkRule[] = [];
 
         for (let j = 0; j < rulesIndexes.length; j += 1) {
-            const idx = rulesIndexes[j];
-            const rule = this.ruleStorage.retrieveNetworkRule(idx);
+            let rule: NetworkRule | null = null;
+
+            try {
+                rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
+            } catch (e) {
+                // Fast tokenizing possibly allowed invalid rules
+                // Remove the rule index from the lookup table but keep the same array reference
+                rulesIndexes.splice(j, 1);
+                j -= 1;
+            }
+
             if (rule && rule.match(request, false)) {
                 result.push(rule);
             }

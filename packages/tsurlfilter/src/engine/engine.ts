@@ -1,19 +1,41 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-promise-executor-return */
 import { LRUCache } from 'lru-cache';
-import { type AnyRule } from '@adguard/agtree';
+
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { NetworkEngine } from './network-engine';
 import { Request } from '../request';
 import { MatchingResult } from './matching-result';
 import { NetworkRule } from '../rules/network-rule';
-import { type RuleStorage } from '../filterlist/rule-storage';
+import { RuleStorage } from '../filterlist/rule-storage';
 import { type CosmeticResult } from './cosmetic-engine/cosmetic-result';
 import { type CosmeticOption } from './cosmetic-option';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { type IndexedStorageRule } from '../rules/rule';
 import { CosmeticRule } from '../rules/cosmetic-rule';
 import { RequestType } from '../request-type';
+import { StringRuleList } from '../filterlist/string-rule-list';
+import { RuleType } from '../filterlist/tokenize';
+
+interface FilterList {
+    id: number;
+
+    text: string;
+
+    ignoreCosmetic?: boolean;
+
+    ignoreNetwork?: boolean;
+
+    ignoreUnsafe?: boolean;
+}
+
+export interface EngineOptions {
+    filters: FilterList[];
+
+    skipInitialScan?: boolean;
+
+    requestCacheSize?: number;
+}
 
 /**
  * Engine represents the filtering engine with all the loaded rules.
@@ -24,7 +46,7 @@ export class Engine {
      * Used as both source rules and others limit.
      * The value is based on benchmark runs.
      */
-    private static REQUEST_CACHE_SIZE = 500;
+    private static DEFAULT_REQUEST_CACHE_SIZE = 500;
 
     /**
      * Basic filtering rules engine.
@@ -50,16 +72,25 @@ export class Engine {
      * Creates an instance of an Engine
      * Parses the filtering rules and creates a filtering engine of them.
      *
-     * @param ruleStorage Storage.
-     * @param skipStorageScan Create an instance without storage scanning.
+     * @param options Engine options.
      *
-     * @throws
+     * @throws Error if options are invalid.
      */
-    constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
-        this.ruleStorage = ruleStorage;
-        this.networkEngine = new NetworkEngine(ruleStorage, skipStorageScan);
-        this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);
-        this.resultCache = new LRUCache({ max: Engine.REQUEST_CACHE_SIZE });
+    constructor(options: EngineOptions) {
+        const lists = options.filters.map(
+            (f) => new StringRuleList(
+                f.id,
+                f.text,
+                f.ignoreCosmetic ?? false,
+                f.ignoreNetwork ?? false,
+                f.ignoreUnsafe ?? false,
+            ),
+        );
+
+        this.ruleStorage = new RuleStorage(lists);
+        this.networkEngine = new NetworkEngine(this.ruleStorage, options.skipInitialScan ?? false);
+        this.cosmeticEngine = new CosmeticEngine(this.ruleStorage, options.skipInitialScan ?? false);
+        this.resultCache = new LRUCache({ max: options.requestCacheSize ?? Engine.DEFAULT_REQUEST_CACHE_SIZE });
     }
 
     /**
@@ -177,7 +208,7 @@ export class Engine {
      *
      * @returns The total number of rules.
      */
-    getRulesCount(): number {
+    public getRulesCount(): number {
         return this.networkEngine.rulesCount + this.cosmeticEngine.rulesCount;
     }
 
@@ -188,25 +219,35 @@ export class Engine {
      */
     private addRule(indexedRule: IndexedStorageRule | null): void {
         if (indexedRule) {
-            if (indexedRule.rule instanceof NetworkRule) {
-                this.networkEngine.addRule(indexedRule.rule, indexedRule.index);
-            } else if (indexedRule.rule instanceof CosmeticRule) {
-                this.cosmeticEngine.addRule(indexedRule.rule, indexedRule.index);
+            const ruleParts = indexedRule.rule;
+
+            if (ruleParts.type === RuleType.Network) {
+                this.networkEngine.addRule(ruleParts, indexedRule.index);
+            } else if (ruleParts.type === RuleType.Cosmetic) {
+                this.cosmeticEngine.addRule(ruleParts, indexedRule.index);
             }
         }
     }
-
-    /**
-     * Retrieves a rule node by its filter list identifier and rule index.
-     *
-     * If there's no rule by that index or the rule structure is invalid, it will return null.
-     *
-     * @param filterId Filter list identifier.
-     * @param ruleIndex Rule index.
-     *
-     * @returns Rule node or `null`.
-     */
-    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        return this.ruleStorage.retrieveRuleNode(filterId, ruleIndex);
-    }
 }
+
+// console.time('Engine initialization');
+// const engine = new Engine({
+//     filters: [{
+//         id: 1,
+//         text: [
+//             '||example.org^',
+//             '||example.com^',
+//             '||example.net^',
+//         ].join('\n'),
+//     }],
+// });
+
+// engine.loadRules();
+
+// console.timeEnd('Engine initialization');
+
+// console.log(engine.getRulesCount());
+
+// const request = new Request('https://example.org', 'https://example.org', RequestType.Document);
+// const result = engine.matchRequest(request);
+// console.log(result);

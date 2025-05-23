@@ -4,6 +4,7 @@ import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
 import { fastHash } from '../../utils/string-utils';
 import { SimpleRegex } from '../../rules/simple-regex';
+import { type RuleParts } from '../../filterlist/tokenize';
 
 /**
  * Hostname lookup table.
@@ -43,8 +44,13 @@ export class HostnameLookupTable implements ILookupTable {
      *
      * @returns True if the rule was added.
      */
-    addRule(rule: NetworkRule, storageIdx: number): boolean {
-        const pattern = rule.getPattern();
+    addRule(rule: RuleParts, storageIdx: number): boolean {
+        const { pattern } = rule;
+
+        if (!pattern) {
+            return false;
+        }
+
         let hostname = '';
 
         // Pattern: '||example.org^'
@@ -100,7 +106,17 @@ export class HostnameLookupTable implements ILookupTable {
             const rulesIndexes = this.hostnameLookupTable.get(hash);
             if (rulesIndexes) {
                 for (let j = 0; j < rulesIndexes.length; j += 1) {
-                    const rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
+                    let rule: NetworkRule | null = null;
+
+                    try {
+                        rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
+                    } catch (e) {
+                        // Fast tokenizing possibly allowed invalid rules
+                        // Remove the rule index from the lookup table but keep the same array reference
+                        rulesIndexes.splice(j, 1);
+                        j -= 1;
+                    }
+
                     if (rule && rule.match(request)) {
                         result.push(rule);
                     }
