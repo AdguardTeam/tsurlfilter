@@ -7,6 +7,9 @@ export default defineConfig({
             './test/setup/custom-matchers/index.ts',
         ],
         watch: false,
+        exclude: [
+            '.rollup.cache/**',
+        ],
         coverage: {
             include: [
                 'src/**/*.ts',
