@@ -5,7 +5,6 @@
         "module": "ESNext",
         "lib": ["esnext", "dom"],
         "strict": true,
-        "incremental": true,
         "noUncheckedIndexedAccess": true,
         "allowJs": true,
         "experimentalDecorators": true,

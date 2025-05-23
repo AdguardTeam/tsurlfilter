@@ -10,13 +10,6 @@ node_modules
 # Cache file for ESLint.
 .eslintcache
 
-# Cache file for TypeScript.
-tsconfig.tsbuildinfo
-tsconfig.build.tsbuildinfo
-
-# Cache file for Rollup.
-.rollup.cache
-
 # IDEA files
 .idea
 
