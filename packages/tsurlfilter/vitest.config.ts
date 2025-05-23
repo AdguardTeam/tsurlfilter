@@ -5,7 +5,7 @@ export default defineConfig({
         watch: false,
         coverage: {
             exclude: [
-                '.rollup.cache',
+                '.rollup.cache/**',
             ],
         },
     },
