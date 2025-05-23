@@ -11,6 +11,7 @@
         "allowJs": true,
         "resolveJsonModule": true,
         "esModuleInterop": true, // This will set allowSyntheticDefaultImports to true
+        "incremental": true,
         "skipLibCheck": true,
         "typeRoots": [
             "./types",
