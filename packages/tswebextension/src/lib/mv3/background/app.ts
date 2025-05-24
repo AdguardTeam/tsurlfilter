@@ -5,19 +5,13 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor, NETWORK_RULE_OPTIONS, type PreprocessedFilterList } from '@adguard/tsurlfilter';
+import { FilterListPreprocessor, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 
 import { type MessageHandler, type AppInterface } from '../../common/app';
-import {
-    ALLOWLIST_FILTER_ID,
-    BLOCKING_TRUSTED_FILTER_ID,
-    LF,
-    QUICK_FIXES_FILTER_ID,
-    USER_FILTER_ID,
-} from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
@@ -364,6 +358,11 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
+            /**
+             * NOTE: Trusted domains (which are needed for blocking pages
+             * and the list is being generated temporarily when user clicks "Proceed anyway"),
+             * are applied along with allowlist rules.
+             */
             const allowlistFilter = new Filter(
                 ALLOWLIST_FILTER_ID,
                 // TODO: Generate AST directly for allowlist rules.
@@ -387,28 +386,11 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
-            const temporaryBadfilterRules = configuration.trustedDomains
-                .map((rule) => {
-                    return `${rule},${NETWORK_RULE_OPTIONS.BADFILTER}`;
-                })
-                .join(LF);
-
-            const blockingPageTrustedFilter = new Filter(
-                BLOCKING_TRUSTED_FILTER_ID,
-                {
-                    getContent: (): Promise<PreprocessedFilterList> => {
-                        return Promise.resolve(FilterListPreprocessor.preprocess(temporaryBadfilterRules));
-                    },
-                },
-                true,
-            );
-
             // Convert quick fixes rules, allowlist, custom filters and user
             // rules into one rule set and apply it.
             res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
                 quickFixesFilter,
                 allowlistFilter,
-                blockingPageTrustedFilter,
                 userRulesFilter,
                 customFilters,
                 enabledStaticRuleSets,

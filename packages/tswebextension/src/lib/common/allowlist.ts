@@ -11,7 +11,7 @@ import { type Configuration } from './configuration';
 /**
  * Configuration for the allowlist.
  */
-export type AllowlistConfiguration = Pick<Configuration, 'allowlist' | 'settings'>;
+export type AllowlistConfiguration = Pick<Configuration, 'allowlist' | 'settings' | 'trustedDomains'>;
 
 /**
  * The allowlist is used to exclude certain websites from filtering.

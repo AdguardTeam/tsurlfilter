@@ -7,12 +7,7 @@ import {
 import browser from 'webextension-polyfill';
 
 import DynamicRulesApi from '../../../../src/lib/mv3/background/dynamic-rules-api';
-import {
-    ALLOWLIST_FILTER_ID,
-    BLOCKING_TRUSTED_FILTER_ID,
-    QUICK_FIXES_FILTER_ID,
-    USER_FILTER_ID,
-} from '../../../../src/lib/common/constants';
+import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../../../src/lib/common/constants';
 import { createFilter } from '../helpers';
 
 describe('DynamicRulesApi', () => {
@@ -39,7 +34,6 @@ describe('DynamicRulesApi', () => {
             let conversionResult = await DynamicRulesApi.updateDynamicFiltering(
                 createFilter([quickFixesRule], QUICK_FIXES_FILTER_ID),
                 createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
-                createFilter([], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter([userRule], USER_FILTER_ID),
                 [createFilter([customRule], 1000)],
                 [],
@@ -56,7 +50,6 @@ describe('DynamicRulesApi', () => {
             conversionResult = await DynamicRulesApi.updateDynamicFiltering(
                 createFilter([quickFixesRule], QUICK_FIXES_FILTER_ID),
                 createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
-                createFilter([], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter([userRule], USER_FILTER_ID),
                 [createFilter([customRule], 1000)],
                 [],
@@ -76,7 +69,6 @@ describe('DynamicRulesApi', () => {
             conversionResult = await DynamicRulesApi.updateDynamicFiltering(
                 createFilter([quickFixesRule], QUICK_FIXES_FILTER_ID),
                 createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
-                createFilter([], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter([userRule], USER_FILTER_ID),
                 [createFilter([customRule], 1000)],
                 [],
@@ -97,7 +89,6 @@ describe('DynamicRulesApi', () => {
             conversionResult = await DynamicRulesApi.updateDynamicFiltering(
                 createFilter([quickFixesRule], QUICK_FIXES_FILTER_ID),
                 createFilter([allowlistRule], ALLOWLIST_FILTER_ID),
-                createFilter([], BLOCKING_TRUSTED_FILTER_ID),
                 createFilter([userRule], USER_FILTER_ID),
                 [createFilter([customRule], 1000)],
                 [],

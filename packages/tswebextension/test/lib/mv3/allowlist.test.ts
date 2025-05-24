@@ -77,4 +77,16 @@ describe('Allowlist Api', () => {
             expect(combinedRule).toStrictEqual(expected);
         });
     });
+
+    it('check trusted domains', () => {
+        const config = getConfigurationMv3Fixture();
+
+        config.trustedDomains = ['example.org'];
+
+        allowlist.configure(config);
+        const combinedRule = allowlist.combineAllowListRulesForDNR();
+
+        // 'example.com' comes from config.
+        expect(combinedRule).toStrictEqual('@@$document,to=example.com|example.org');
+    });
 });
