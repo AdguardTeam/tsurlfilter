@@ -15,17 +15,12 @@ export class AllowlistApi extends CommonAllowlist {
      * @param configuration App configuration.
      */
     public configure(configuration: AllowlistConfiguration): void {
-        const domainsToAllow = [
-            ...configuration.allowlist,
-            ...configuration.trustedDomains,
-        ];
-
         /**
          * For MV3 we add "*." for each domain to make matching algorithm
          * same as in DNR engine: requestDomains and excludedRequestDomains in
          * DNR will match all subdomains of the domain by default.
          */
-        const domainWithSubDomainsMask = domainsToAllow.reduce<string[]>((acc, domain) => {
+        const domainWithSubDomainsMask = configuration.allowlist.reduce<string[]>((acc, domain) => {
             acc.push(domain);
 
             if (!domain.startsWith('*.')) {
