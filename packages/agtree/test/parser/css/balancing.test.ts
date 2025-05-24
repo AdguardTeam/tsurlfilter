@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { TokenType } from '@adguard/css-tokenizer';
 
-import { tokenizeBalanced, tokenizeFnBalanced } from '../../../src/parser/css/balancing';
+import { tokenizeBalanced, tokenizeFnBalanced } from '../../../src/parser/css/balancing.js';
 
 /**
  * Type of token data.

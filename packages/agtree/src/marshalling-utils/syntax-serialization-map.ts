@@ -1,5 +1,5 @@
 import { AdblockSyntax } from '../utils/adblockers';
-import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
+import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version.js';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,

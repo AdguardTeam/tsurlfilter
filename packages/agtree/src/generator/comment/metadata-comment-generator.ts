@@ -1,7 +1,7 @@
-import type { MetadataCommentRule } from '../../nodes';
-import { COLON, EMPTY, SPACE } from '../../utils/constants';
-import { ValueGenerator } from '../misc/value-generator';
-import { BaseGenerator } from '../base-generator';
+import type { MetadataCommentRule } from '../../nodes/index.js';
+import { COLON, EMPTY, SPACE } from '../../utils/constants.js';
+import { ValueGenerator } from '../misc/value-generator.js';
+import { BaseGenerator } from '../base-generator.js';
 
 /**
  * Metadata comment generator.

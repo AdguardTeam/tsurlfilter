@@ -6,16 +6,16 @@ import {
     type HostRule,
     type EmptyRule,
     type InvalidRule,
-} from '../nodes';
-import { BaseDeserializer } from './base-deserializer';
-import { CommentRuleDeserializer } from './comment/comment-rule-deserializer';
-import { CosmeticRuleDeserializer } from './cosmetic/cosmetic-rule-deserializer';
-import { HostRuleDeserializer } from './network/host-rule-deserializer';
-import { NetworkRuleDeserializer } from './network/network-rule-deserializer';
-import { EmptyRuleDeserializer } from './empty-rule-deserializer';
-import { InvalidRuleDeserializer } from './invalid-rule-deserializer';
-import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
+} from '../nodes/index.js';
+import { BaseDeserializer } from './base-deserializer.js';
+import { CommentRuleDeserializer } from './comment/comment-rule-deserializer.js';
+import { CosmeticRuleDeserializer } from './cosmetic/cosmetic-rule-deserializer.js';
+import { HostRuleDeserializer } from './network/host-rule-deserializer.js';
+import { NetworkRuleDeserializer } from './network/network-rule-deserializer.js';
+import { EmptyRuleDeserializer } from './empty-rule-deserializer.js';
+import { InvalidRuleDeserializer } from './invalid-rule-deserializer.js';
+import { type InputByteBuffer } from '../utils/input-byte-buffer.js';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `RuleDeserializer` is responsible for deserializing the rules.

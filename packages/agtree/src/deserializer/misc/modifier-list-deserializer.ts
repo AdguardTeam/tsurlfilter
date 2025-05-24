@@ -1,11 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
-import { type Modifier, type ModifierList } from '../../nodes';
-import { BaseDeserializer } from '../base-deserializer';
-import { ModifierDeserializer } from './modifier-deserializer';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ModifierListNodeMarshallingMap } from '../../marshalling-utils/misc/modifier-list-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { NULL } from '../../utils/constants.js';
+import { type Modifier, type ModifierList } from '../../nodes/index.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { ModifierDeserializer } from './modifier-deserializer.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { ModifierListNodeMarshallingMap } from '../../marshalling-utils/misc/modifier-list-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `ModifierListDeserializer` is responsible for deserializing modifier lists. Please note that the name is not

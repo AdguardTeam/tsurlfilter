@@ -1,5 +1,5 @@
 import { OperatorValue } from '../../nodes';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version.js';
 
 /**
  * Property map for binary serialization.

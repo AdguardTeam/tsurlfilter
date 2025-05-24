@@ -2,8 +2,8 @@
 /**
  * @file Base generator class.
  */
-import { NotImplementedError } from '../errors/not-implemented-error';
-import { type Node } from '../nodes';
+import { NotImplementedError } from '../errors/not-implemented-error.js';
+import { type Node } from '../nodes/index.js';
 
 /**
  * Base class for generators. Each generator should extend this class.

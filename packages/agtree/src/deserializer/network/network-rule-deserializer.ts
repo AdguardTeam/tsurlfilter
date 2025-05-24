@@ -1,20 +1,20 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
+import { NULL } from '../../utils/constants.js';
 import {
     type NetworkRule,
     type ModifierList,
     NetworkRuleType,
     RuleCategory,
     type Value,
-} from '../../nodes';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { BaseDeserializer } from '../base-deserializer';
-import { ModifierListDeserializer } from '../misc/modifier-list-deserializer';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { NetworkRuleMarshallingMap } from '../../marshalling-utils/network/network-rule-common';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
-import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
+} from '../../nodes/index.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { ModifierListDeserializer } from '../misc/modifier-list-deserializer.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { NetworkRuleMarshallingMap } from '../../marshalling-utils/network/network-rule-common.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
+import { getSyntaxDeserializationMap } from '../syntax-deserialization-map.js';
 
 /**
  * `NetworkRuleDeserializer` is responsible for deserializing network rules.

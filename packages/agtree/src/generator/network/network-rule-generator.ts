@@ -1,7 +1,7 @@
-import type { NetworkRule } from '../../nodes';
-import { EMPTY, NETWORK_RULE_EXCEPTION_MARKER, NETWORK_RULE_SEPARATOR } from '../../utils/constants';
-import { BaseGenerator } from '../base-generator';
-import { ModifierListGenerator } from '../misc/modifier-list-generator';
+import type { NetworkRule } from '../../nodes/index.js';
+import { EMPTY, NETWORK_RULE_EXCEPTION_MARKER, NETWORK_RULE_SEPARATOR } from '../../utils/constants.js';
+import { BaseGenerator } from '../base-generator.js';
+import { ModifierListGenerator } from '../misc/modifier-list-generator.js';
 
 /**
  * Generator for network rule nodes.

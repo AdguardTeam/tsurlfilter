@@ -1,12 +1,12 @@
-import { type AnyRule, RuleCategory, NetworkRuleType } from '../nodes';
-import { type OutputByteBuffer } from '../utils/output-byte-buffer';
-import { BaseSerializer } from './base-serializer';
-import { CommentRuleSerializer } from './comment/comment-rule-serializer';
-import { CosmeticRuleSerializer } from './cosmetic/cosmetic-rule-serializer';
-import { HostRuleSerializer } from './network/host-rule-serializer';
-import { NetworkRuleSerializer } from './network/network-rule-serializer';
-import { EmptyRuleSerializer } from './empty-rule-serializer';
-import { InvalidRuleSerializer } from './invalid-rule-serializer';
+import { type AnyRule, RuleCategory, NetworkRuleType } from '../nodes/index.js';
+import { type OutputByteBuffer } from '../utils/output-byte-buffer.js';
+import { BaseSerializer } from './base-serializer.js';
+import { CommentRuleSerializer } from './comment/comment-rule-serializer.js';
+import { CosmeticRuleSerializer } from './cosmetic/cosmetic-rule-serializer.js';
+import { HostRuleSerializer } from './network/host-rule-serializer.js';
+import { NetworkRuleSerializer } from './network/network-rule-serializer.js';
+import { EmptyRuleSerializer } from './empty-rule-serializer.js';
+import { InvalidRuleSerializer } from './invalid-rule-serializer.js';
 
 /**
  * `RuleSerializer` is responsible for serializing the rules.

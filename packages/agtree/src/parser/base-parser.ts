@@ -1,9 +1,9 @@
 /**
  * @file Base parser class.
  */
-import { NotImplementedError } from '../errors/not-implemented-error';
-import { type Node } from '../nodes';
-import { type ParserOptions } from './options';
+import { NotImplementedError } from '../errors/not-implemented-error.js';
+import { type Node } from '../nodes/index.js';
+import { type ParserOptions } from './options.js';
 
 /**
  * Base class for parsers. Each parser should extend this class.

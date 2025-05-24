@@ -2,15 +2,15 @@
  * @file Compatibility tables for redirects.
  */
 
-import { CompatibilityTableBase } from './base';
-import { type RedirectDataSchema } from './schemas';
-import { redirectsCompatibilityTableData } from './compatibility-table-data';
-import { type CompatibilityTable } from './types';
-import { deepFreeze } from '../utils/deep-freeze';
-import { COLON } from '../utils/constants';
-import { type GenericPlatform, type SpecificPlatform } from './platforms';
-import { getResourceTypeModifier } from './utils/resource-type-helpers';
-import { isNull, isString, isUndefined } from '../utils/type-guards';
+import { CompatibilityTableBase } from './base.js';
+import { type RedirectDataSchema } from './schemas/index.js';
+import { redirectsCompatibilityTableData } from './compatibility-table-data.js';
+import { type CompatibilityTable } from './types.js';
+import { deepFreeze } from '../utils/deep-freeze.js';
+import { COLON } from '../utils/constants.js';
+import { type GenericPlatform, type SpecificPlatform } from './platforms.js';
+import { getResourceTypeModifier } from './utils/resource-type-helpers.js';
+import { isNull, isString, isUndefined } from '../utils/type-guards.js';
 
 /**
  * Prefix for resource redirection names.

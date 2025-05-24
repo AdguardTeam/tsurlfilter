@@ -1,5 +1,5 @@
-import { type ListItem, type ListItemNodeType } from '../../nodes';
-import { EMPTY, NEGATION_MARKER } from '../../utils/constants';
+import { type ListItem, type ListItemNodeType } from '../../nodes/index.js';
+import { EMPTY, NEGATION_MARKER } from '../../utils/constants.js';
 
 /**
  * Utility class for generating string representations of list items.

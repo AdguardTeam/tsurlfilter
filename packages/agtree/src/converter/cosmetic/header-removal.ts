@@ -5,16 +5,16 @@
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { CosmeticRuleType, RuleCategory, type AnyRule } from '../../nodes';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
-import { EMPTY, UBO_HTML_MASK } from '../../utils/constants';
-import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_START } from '../../utils/regexp';
-import { createNetworkRuleNode } from '../../ast-utils/network-rules';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
-import { CssTokenStream } from '../../parser/css/css-token-stream';
+import { RuleConversionError } from '../../errors/rule-conversion-error.js';
+import { CosmeticRuleType, RuleCategory, type AnyRule } from '../../nodes/index.js';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base.js';
+import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers.js';
+import { EMPTY, UBO_HTML_MASK } from '../../utils/constants.js';
+import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_START } from '../../utils/regexp.js';
+import { createNetworkRuleNode } from '../../ast-utils/network-rules.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result.js';
+import { CssTokenStream } from '../../parser/css/css-token-stream.js';
 
 const UBO_RESPONSEHEADER_FN = 'responseheader';
 const ADG_REMOVEHEADER_MODIFIER = 'removeheader';

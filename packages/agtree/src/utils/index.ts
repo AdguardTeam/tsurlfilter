@@ -16,12 +16,12 @@ export {
     UBO_SCRIPTLET_MASK,
     COMMA,
     PIPE,
-} from './constants';
-export { BINARY_SCHEMA_VERSION } from './binary-schema-version';
-export { AdblockSyntax } from './adblockers';
-export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './cosmetic-rule-separator';
-export { DomainUtils } from './domain';
-export { type VariableTable, LogicalExpressionUtils } from './logical-expression';
+} from './constants.js';
+export { BINARY_SCHEMA_VERSION } from './binary-schema-version.js';
+export { AdblockSyntax } from './adblockers.js';
+export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './cosmetic-rule-separator.js';
+export { DomainUtils } from './domain.js';
+export { type VariableTable, LogicalExpressionUtils } from './logical-expression.js';
 export {
     ADBLOCK_URL_START,
     ADBLOCK_URL_START_REGEX,
@@ -31,15 +31,15 @@ export {
     ADBLOCK_WILDCARD_REGEX,
     SPECIAL_REGEX_SYMBOLS,
     RegExpUtils,
-} from './regexp';
+} from './regexp.js';
 export {
     QuoteType,
     QuoteUtils,
-} from './quotes';
-export { type Position, PositionProvider } from './position-provider';
-export { OutputByteBuffer } from './output-byte-buffer';
-export { InputByteBuffer } from './input-byte-buffer';
-export { ByteBuffer } from './byte-buffer';
-export { encodeIntoPolyfill, type TextEncoderPolyfillResult } from './text-encoder-polyfill';
-export { decodeTextPolyfill } from './text-decoder-polyfill';
-export { RuleCategorizer } from './categorizer';
+} from './quotes.js';
+export { type Position, PositionProvider } from './position-provider.js';
+export { OutputByteBuffer } from './output-byte-buffer.js';
+export { InputByteBuffer } from './input-byte-buffer.js';
+export { ByteBuffer } from './byte-buffer.js';
+export { encodeIntoPolyfill, type TextEncoderPolyfillResult } from './text-encoder-polyfill.js';
+export { decodeTextPolyfill } from './text-decoder-polyfill.js';
+export { RuleCategorizer } from './categorizer.js';

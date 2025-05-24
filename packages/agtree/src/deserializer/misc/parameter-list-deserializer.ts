@@ -1,11 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { type ParameterList, type Value } from '../../nodes';
-import { NULL } from '../../utils/constants';
-import { ValueDeserializer } from './value-deserializer';
-import { BaseDeserializer } from '../base-deserializer';
-import { ParameterListNodeMarshallingMap } from '../../marshalling-utils/misc/parameter-list-common';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { type ParameterList, type Value } from '../../nodes/index.js';
+import { NULL } from '../../utils/constants.js';
+import { ValueDeserializer } from './value-deserializer.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { ParameterListNodeMarshallingMap } from '../../marshalling-utils/misc/parameter-list-common.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Deserializes binary data into parameter list nodes.

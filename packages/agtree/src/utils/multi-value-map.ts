@@ -1,4 +1,4 @@
-import { isUndefined } from './type-guards';
+import { isUndefined } from './type-guards.js';
 
 /**
  * A very simple map extension that allows to store multiple values for the same key

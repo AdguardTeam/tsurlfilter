@@ -1,11 +1,11 @@
-import { type CssInjectionRuleBody } from '../../nodes';
-import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { ValueSerializer } from '../misc/value-serializer';
-import { isUndefined } from '../../utils/type-guards';
-import { NULL } from '../../utils/constants';
-import { BaseSerializer } from '../base-serializer';
-import { CssInjectionRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/css-injection-body-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { type CssInjectionRuleBody } from '../../nodes/index.js';
+import type { OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { ValueSerializer } from '../misc/value-serializer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { NULL } from '../../utils/constants.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { CssInjectionRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/css-injection-body-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Serializer for CSS injection rule body nodes.

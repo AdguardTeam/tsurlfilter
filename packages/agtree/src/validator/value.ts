@@ -5,14 +5,14 @@ import {
     type MethodList,
     type StealthOptionList,
     type AnyListItem,
-} from '../nodes';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
-import { AppListParser } from '../parser/misc/app-list-parser';
-import { DomainListParser } from '../parser/misc/domain-list-parser';
-import { MethodListParser } from '../parser/misc/method-list-parser';
-import { StealthOptionListParser } from '../parser/misc/stealth-option-list-parser';
-import { DomainUtils } from '../utils/domain';
-import { QuoteType, QuoteUtils } from '../utils/quotes';
+} from '../nodes/index.js';
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error.js';
+import { AppListParser } from '../parser/misc/app-list-parser.js';
+import { DomainListParser } from '../parser/misc/domain-list-parser.js';
+import { MethodListParser } from '../parser/misc/method-list-parser.js';
+import { StealthOptionListParser } from '../parser/misc/stealth-option-list-parser.js';
+import { DomainUtils } from '../utils/domain.js';
+import { QuoteType, QuoteUtils } from '../utils/quotes.js';
 import {
     BACKSLASH,
     CLOSE_PARENTHESIS,
@@ -24,8 +24,8 @@ import {
     SEMICOLON,
     SPACE,
     WILDCARD,
-} from '../utils/constants';
-import { type ValidationResult, getInvalidValidationResult, getValueRequiredValidationResult } from './helpers';
+} from '../utils/constants.js';
+import { type ValidationResult, getInvalidValidationResult, getValueRequiredValidationResult } from './helpers.js';
 import {
     ALLOWED_CSP_DIRECTIVES,
     ALLOWED_METHODS,
@@ -37,9 +37,9 @@ import {
     REFERRER_POLICY_DIRECTIVES,
     SOURCE_DATA_ERROR_PREFIX,
     VALIDATION_ERROR_PREFIX,
-} from './constants';
-import { defaultParserOptions } from '../parser/options';
-import { isString } from '../utils/type-guards';
+} from './constants.js';
+import { defaultParserOptions } from '../parser/options.js';
+import { isString } from '../utils/type-guards.js';
 
 /**
  * Represents the possible list parsers.

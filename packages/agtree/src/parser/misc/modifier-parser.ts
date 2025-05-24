@@ -1,10 +1,10 @@
-import { MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { type Modifier, type Value } from '../../nodes';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { ValueParser } from './value-parser';
+import { MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants.js';
+import { StringUtils } from '../../utils/string.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { type Modifier, type Value } from '../../nodes/index.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { ValueParser } from './value-parser.js';
 
 /**
  * `ModifierParser` is responsible for parsing modifiers.

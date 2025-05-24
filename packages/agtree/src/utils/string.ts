@@ -18,7 +18,7 @@ import {
     SMALL_LETTER_Z,
     SPACE,
     TAB,
-} from './constants';
+} from './constants.js';
 
 export const SINGLE_QUOTE_MARKER = "'";
 export const DOUBLE_QUOTE_MARKER = '"';

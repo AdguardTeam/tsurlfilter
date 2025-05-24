@@ -1,11 +1,11 @@
-import { NULL, UINT8_MAX } from '../../utils/constants';
-import { type AgentCommentRule } from '../../nodes';
-import { AgentSerializer } from './agent-serializer';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseSerializer } from '../base-serializer';
-import { AgentCommentMarshallingMap } from '../../marshalling-utils/comment/agent-comment-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { NULL, UINT8_MAX } from '../../utils/constants.js';
+import { type AgentCommentRule } from '../../nodes/index.js';
+import { AgentSerializer } from './agent-serializer.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { AgentCommentMarshallingMap } from '../../marshalling-utils/comment/agent-comment-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `AgentCommentSerializer` is responsible for serializing an Adblock agent comments.

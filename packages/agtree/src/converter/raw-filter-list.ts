@@ -4,12 +4,12 @@
  * Technically, this is a wrapper around `FilterListConverter` that works with nodes instead of strings.
  */
 
-import { createConversionResult, type ConversionResult } from './base-interfaces/conversion-result';
-import { BaseConverter } from './base-interfaces/base-converter';
-import { FilterListParser } from '../parser/filterlist-parser';
-import { FilterListConverter } from './filter-list';
-import { defaultParserOptions } from '../parser/options';
-import { FilterListGenerator } from '../generator/filterlist-generator';
+import { createConversionResult, type ConversionResult } from './base-interfaces/conversion-result.js';
+import { BaseConverter } from './base-interfaces/base-converter.js';
+import { FilterListParser } from '../parser/filterlist-parser.js';
+import { FilterListConverter } from './filter-list.js';
+import { defaultParserOptions } from '../parser/options.js';
+import { FilterListGenerator } from '../generator/filterlist-generator.js';
 
 /**
  * Adblock filter list converter class.

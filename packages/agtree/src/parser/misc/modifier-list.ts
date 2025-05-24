@@ -1,10 +1,10 @@
 /* eslint-disable no-param-reassign */
-import { MODIFIERS_SEPARATOR } from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
-import { type ModifierList } from '../../nodes';
-import { BaseParser } from '../base-parser';
-import { defaultParserOptions } from '../options';
-import { ModifierParser } from './modifier-parser';
+import { MODIFIERS_SEPARATOR } from '../../utils/constants.js';
+import { StringUtils } from '../../utils/string.js';
+import { type ModifierList } from '../../nodes/index.js';
+import { BaseParser } from '../base-parser.js';
+import { defaultParserOptions } from '../options.js';
+import { ModifierParser } from './modifier-parser.js';
 
 /**
  * `ModifierListParser` is responsible for parsing modifier lists. Please note that the name is not

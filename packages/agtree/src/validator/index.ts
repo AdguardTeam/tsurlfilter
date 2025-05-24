@@ -2,20 +2,20 @@
  * @file Validator for modifiers.
  */
 
-import { type Modifier } from '../nodes';
-import { AdblockSyntax } from '../utils/adblockers';
-import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
-import { BLOCKER_PREFIX, SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
+import { type Modifier } from '../nodes/index.js';
+import { AdblockSyntax } from '../utils/adblockers.js';
+import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants.js';
+import { BLOCKER_PREFIX, SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants.js';
 import {
     type ValidationResult,
     getInvalidValidationResult,
     getValueRequiredValidationResult,
     isValidNoopModifier,
-} from './helpers';
-import { validateValue } from './value';
-import { clone } from '../utils/clone';
-import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
-import { GenericPlatform } from '../compatibility-tables/platforms';
+} from './helpers.js';
+import { validateValue } from './value.js';
+import { clone } from '../utils/clone.js';
+import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers.js';
+import { GenericPlatform } from '../compatibility-tables/platforms.js';
 
 const convertSyntaxToGenericPlatform = (syntax: AdblockSyntax): GenericPlatform => {
     switch (syntax) {

@@ -2,12 +2,12 @@
  * @file Adblock filter list converter
  */
 
-import { RuleConverter } from './rule';
-import { type AnyRule, type FilterList } from '../nodes';
-import { clone } from '../utils/clone';
-import { MultiValueMap } from '../utils/multi-value-map';
-import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result';
-import { BaseConverter } from './base-interfaces/base-converter';
+import { RuleConverter } from './rule.js';
+import { type AnyRule, type FilterList } from '../nodes/index.js';
+import { clone } from '../utils/clone.js';
+import { MultiValueMap } from '../utils/multi-value-map.js';
+import { type ConversionResult, createConversionResult } from './base-interfaces/conversion-result.js';
+import { BaseConverter } from './base-interfaces/base-converter.js';
 
 /**
  * Adblock filter list converter class

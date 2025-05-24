@@ -1,13 +1,13 @@
 /* eslint-disable no-param-reassign */
-import { AgentCommentParser } from './agent-comment-parser';
-import { type AnyCommentRule } from '../../nodes';
-import { ConfigCommentParser } from './config-comment-parser';
-import { HintCommentParser } from './hint-comment-parser';
-import { MetadataCommentParser } from './metadata-comment-parser';
-import { PreProcessorCommentParser } from './preprocessor-parser';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { SimpleCommentParser } from './simple-comment-parser';
+import { AgentCommentParser } from './agent-comment-parser.js';
+import { type AnyCommentRule } from '../../nodes/index.js';
+import { ConfigCommentParser } from './config-comment-parser.js';
+import { HintCommentParser } from './hint-comment-parser.js';
+import { MetadataCommentParser } from './metadata-comment-parser.js';
+import { PreProcessorCommentParser } from './preprocessor-parser.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { SimpleCommentParser } from './simple-comment-parser.js';
 
 /**
  * `CommentParser` is responsible for parsing any comment-like adblock rules.

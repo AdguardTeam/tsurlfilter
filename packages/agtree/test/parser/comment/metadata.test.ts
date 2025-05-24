@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'vitest';
 
-import { MetadataCommentParser } from '../../../src/parser/comment/metadata-comment-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { MetadataCommentGenerator } from '../../../src/generator/comment/metadata-comment-generator';
-import { MetadataCommentSerializer } from '../../../src/serializer/comment/metadata-comment-serializer';
-import { MetadataCommentDeserializer } from '../../../src/deserializer/comment/metadata-comment-deserializer';
+import { MetadataCommentParser } from '../../../src/parser/comment/metadata-comment-parser.js';
+import { EMPTY, SPACE } from '../../../src/utils/constants.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { MetadataCommentGenerator } from '../../../src/generator/comment/metadata-comment-generator.js';
+import { MetadataCommentSerializer } from '../../../src/serializer/comment/metadata-comment-serializer.js';
+import { MetadataCommentDeserializer } from '../../../src/deserializer/comment/metadata-comment-deserializer.js';
 
 describe('MetadataCommentRuleParser', () => {
     test('parse', () => {

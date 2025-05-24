@@ -1,7 +1,7 @@
-import { type CosmeticRuleType } from '../nodes';
-import { CosmeticRuleParser } from '../parser/cosmetic/cosmetic-rule-parser';
-import { isNull } from './type-guards';
-import { defaultParserOptions } from '../parser/options';
+import { type CosmeticRuleType } from '../nodes/index.js';
+import { CosmeticRuleParser } from '../parser/cosmetic/cosmetic-rule-parser.js';
+import { isNull } from './type-guards.js';
+import { defaultParserOptions } from '../parser/options.js';
 
 /**
  * Utility functions for categorizing rules.

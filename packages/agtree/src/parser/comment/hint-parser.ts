@@ -11,14 +11,14 @@ import {
     OPEN_PARENTHESIS,
     SPACE,
     UNDERSCORE,
-} from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
-import { type Hint } from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../misc/parameter-list-parser';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { ValueParser } from '../misc/value-parser';
+} from '../../utils/constants.js';
+import { StringUtils } from '../../utils/string.js';
+import { type Hint } from '../../nodes/index.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { ParameterListParser } from '../misc/parameter-list-parser.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { ValueParser } from '../misc/value-parser.js';
 
 /**
  * `HintParser` is responsible for parsing AdGuard hints.

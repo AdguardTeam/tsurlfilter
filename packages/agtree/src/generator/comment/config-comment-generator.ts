@@ -1,7 +1,7 @@
-import { BaseGenerator } from '../base-generator';
-import type { ConfigCommentRule } from '../../nodes';
-import { COMMA, EMPTY, SPACE } from '../../utils/constants';
-import { ParameterListGenerator } from '../misc/parameter-list-generator';
+import { BaseGenerator } from '../base-generator.js';
+import type { ConfigCommentRule } from '../../nodes/index.js';
+import { COMMA, EMPTY, SPACE } from '../../utils/constants.js';
+import { ParameterListGenerator } from '../misc/parameter-list-generator.js';
 
 /**
  * Converts inline configuration comment nodes to their string format.

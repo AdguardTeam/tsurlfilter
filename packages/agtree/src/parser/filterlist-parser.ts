@@ -1,9 +1,9 @@
-import { type AnyRule, type FilterList, type NewLine } from '../nodes';
-import { RuleParser } from './rule-parser';
-import { CR, LF } from '../utils/constants';
-import { StringUtils } from '../utils/string';
-import { defaultParserOptions } from './options';
-import { BaseParser } from './base-parser';
+import { type AnyRule, type FilterList, type NewLine } from '../nodes/index.js';
+import { RuleParser } from './rule-parser.js';
+import { CR, LF } from '../utils/constants.js';
+import { StringUtils } from '../utils/string.js';
+import { defaultParserOptions } from './options.js';
+import { BaseParser } from './base-parser.js';
 
 /**
  * `FilterListParser` is responsible for parsing a whole adblock filter list (list of rules).

@@ -2,7 +2,7 @@
  * @file Simple storage implementation for testing.
  */
 
-import { type Storage } from '../../src/utils/storage-interface';
+import { type Storage } from '../../src/utils/storage-interface.js';
 
 /**
  * Represents a very simple storage implementation.

@@ -1,10 +1,10 @@
-import { type ScriptletInjectionRuleBody } from '../../../nodes';
-import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
-import { ScriptletBodySerializer } from './scriptlet-body-serializer';
-import { BaseSerializer } from '../../base-serializer';
+import { type ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { type OutputByteBuffer } from '../../../utils/output-byte-buffer.js';
+import { ScriptletBodySerializer } from './scriptlet-body-serializer.js';
+import { BaseSerializer } from '../../base-serializer.js';
 import {
     FREQUENT_UBO_SCRIPTLET_ARGS_SERIALIZATION_MAP,
-} from '../../../marshalling-utils/cosmetic/body/ubo-scriptlet-injection-body-common';
+} from '../../../marshalling-utils/cosmetic/body/ubo-scriptlet-injection-body-common.js';
 
 /**
  * `UboScriptletInjectionBodySerializer` is responsible for serializing the body of a uBlock-style scriptlet rule.

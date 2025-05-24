@@ -8,10 +8,10 @@
 /* eslint-disable jsdoc/require-returns-check */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { NotImplementedError } from '../../errors/not-implemented-error';
-import { type Node } from '../../nodes';
-import { type NodeConversionResult } from './conversion-result';
-import { BaseConverter } from './base-converter';
+import { NotImplementedError } from '../../errors/not-implemented-error.js';
+import { type Node } from '../../nodes/index.js';
+import { type NodeConversionResult } from './conversion-result.js';
+import { BaseConverter } from './base-converter.js';
 
 /**
  * Basic class for rule converters

@@ -1,11 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { BaseDeserializer } from '../base-deserializer';
-import { type Value, type HostnameList } from '../../nodes';
-import { NULL } from '../../utils/constants';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { HostnameListNodeMarshallingMap } from '../../marshalling-utils/misc/hostname-list-common';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { type Value, type HostnameList } from '../../nodes/index.js';
+import { NULL } from '../../utils/constants.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { HostnameListNodeMarshallingMap } from '../../marshalling-utils/misc/hostname-list-common.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Deserializes hostname list nodes from binary format.

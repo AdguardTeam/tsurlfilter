@@ -1,7 +1,7 @@
-import type { ParameterList } from '../../nodes';
-import { COMMA, EMPTY, SPACE } from '../../utils/constants';
-import { BaseGenerator } from '../base-generator';
-import { ValueGenerator } from './value-generator';
+import type { ParameterList } from '../../nodes/index.js';
+import { COMMA, EMPTY, SPACE } from '../../utils/constants.js';
+import { BaseGenerator } from '../base-generator.js';
+import { ValueGenerator } from './value-generator.js';
 
 /**
  * Generator for parameter list nodes.

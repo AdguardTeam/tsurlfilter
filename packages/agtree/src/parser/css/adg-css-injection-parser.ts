@@ -4,12 +4,12 @@
 
 import { TokenType } from '@adguard/css-tokenizer';
 
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { CSS_MEDIA_MARKER, EMPTY } from '../../utils/constants';
-import { type Value, type CssInjectionRuleBody } from '../../nodes';
-import { CssTokenStream } from './css-token-stream';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { CSS_MEDIA_MARKER, EMPTY } from '../../utils/constants.js';
+import { type Value, type CssInjectionRuleBody } from '../../nodes/index.js';
+import { CssTokenStream } from './css-token-stream.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
 
 export const REMOVE_PROPERTY = 'remove';
 export const REMOVE_VALUE = 'true';

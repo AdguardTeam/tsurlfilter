@@ -5,20 +5,20 @@ import {
     type ExpressionVariableNode,
     type ExpressionOperatorNode,
     type OperatorValue,
-} from '../../nodes';
+} from '../../nodes/index.js';
 import {
     KNOWN_VARIABLES_SERIALIZATION_MAP,
     LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP,
     OperatorNodeBinaryPropMarshallingMap,
     ParenthesisNodeBinaryPropMarshallingMap,
     VariableNodeBinaryPropMarshallingMap,
-} from '../../marshalling-utils/misc/logical-expression-common';
-import { NodeType } from '../../serializer/misc/logical-expression-serializer';
-import { NULL } from '../../utils/constants';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseDeserializer } from '../base-deserializer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../marshalling-utils/misc/logical-expression-common.js';
+import { NodeType } from '../../serializer/misc/logical-expression-serializer.js';
+import { NULL } from '../../utils/constants.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 let logicalExpressionOperatorMarshallingMapReverse: Map<number, OperatorValue>;
 

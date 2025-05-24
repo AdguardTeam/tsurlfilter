@@ -1,4 +1,4 @@
-import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version';
+import { BINARY_SCHEMA_VERSION } from '../utils/binary-schema-version.js';
 
 /**
  * Property map for binary serialization. This helps to reduce the size of the serialized data,

@@ -7,8 +7,8 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import 'vitest';
 
-import { type ToBeConvertedProperly } from '../test/setup/custom-matchers/check-conversion';
-import { type ToBeSerializedAndDeserializedProperly } from '../test/setup/custom-matchers/check-serialization';
+import { type ToBeConvertedProperly } from '../test/setup/custom-matchers/check-conversion.js';
+import { type ToBeSerializedAndDeserializedProperly } from '../test/setup/custom-matchers/check-serialization.js';
 
 // Note: first argument is passed to `expect`, so we need to remove it
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

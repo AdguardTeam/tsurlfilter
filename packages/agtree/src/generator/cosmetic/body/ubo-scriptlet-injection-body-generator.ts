@@ -1,12 +1,12 @@
-import { BaseGenerator } from '../../base-generator';
-import type { ScriptletInjectionRuleBody } from '../../../nodes';
+import { BaseGenerator } from '../../base-generator.js';
+import type { ScriptletInjectionRuleBody } from '../../../nodes/index.js';
 import {
     CLOSE_PARENTHESIS,
     EMPTY,
     OPEN_PARENTHESIS,
     UBO_SCRIPTLET_MASK,
-} from '../../../utils/constants';
-import { ParameterListGenerator } from '../../misc/parameter-list-generator';
+} from '../../../utils/constants.js';
+import { ParameterListGenerator } from '../../misc/parameter-list-generator.js';
 
 /**
  * uBlock scriptlet injection body generator.

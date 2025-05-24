@@ -1,12 +1,12 @@
-import type { ScriptletInjectionRuleBody } from '../../../nodes';
+import type { ScriptletInjectionRuleBody } from '../../../nodes/index.js';
 import {
     ADG_SCRIPTLET_MASK,
     CLOSE_PARENTHESIS,
     EMPTY,
     OPEN_PARENTHESIS,
-} from '../../../utils/constants';
-import { ParameterListGenerator } from '../../misc/parameter-list-generator';
-import { BaseGenerator } from '../../base-generator';
+} from '../../../utils/constants.js';
+import { ParameterListGenerator } from '../../misc/parameter-list-generator.js';
+import { BaseGenerator } from '../../base-generator.js';
 
 /**
  * AdGuard scriptlet injection body generator.

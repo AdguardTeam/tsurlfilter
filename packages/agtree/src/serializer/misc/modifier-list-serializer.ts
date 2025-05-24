@@ -1,11 +1,11 @@
-import { NULL, UINT16_MAX } from '../../utils/constants';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { type ModifierList } from '../../nodes';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseSerializer } from '../base-serializer';
-import { ModifierSerializer } from './modifier-serializer';
-import { ModifierListNodeMarshallingMap } from '../../marshalling-utils/misc/modifier-list-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { NULL, UINT16_MAX } from '../../utils/constants.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { type ModifierList } from '../../nodes/index.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { ModifierSerializer } from './modifier-serializer.js';
+import { ModifierListNodeMarshallingMap } from '../../marshalling-utils/misc/modifier-list-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `ModifierListSerializer` is responsible for serializing modifier lists. Please note that the name is not

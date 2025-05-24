@@ -2,18 +2,18 @@
  * @file Metadata comments
  */
 
-import { StringUtils } from '../../utils/string';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { COLON } from '../../utils/constants';
+import { StringUtils } from '../../utils/string.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { COLON } from '../../utils/constants.js';
 import {
     CommentMarker,
     CommentRuleType,
     type MetadataCommentRule,
     RuleCategory,
-} from '../../nodes';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { ValueParser } from '../misc/value-parser';
+} from '../../nodes/index.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { ValueParser } from '../misc/value-parser.js';
 
 /**
  * Set of known metadata headers. This helps to quickly identify and validate

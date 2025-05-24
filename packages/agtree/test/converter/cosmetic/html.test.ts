@@ -7,9 +7,9 @@ import {
 import { sprintf } from 'sprintf-js';
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 
-import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html';
-import { type HtmlFilteringRule } from '../../../src/nodes';
-import { RuleParser } from '../../../src/parser/rule-parser';
+import { ERROR_MESSAGES, HtmlRuleConverter } from '../../../src/converter/cosmetic/html.js';
+import { type HtmlFilteringRule } from '../../../src/nodes/index.js';
+import { RuleParser } from '../../../src/parser/rule-parser.js';
 
 describe('HtmlRuleConverter', () => {
     describe('convertToAdg', () => {

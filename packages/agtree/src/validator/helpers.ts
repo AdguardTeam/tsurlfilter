@@ -1,5 +1,5 @@
-import { UNDERSCORE } from '../utils/constants';
-import { VALIDATION_ERROR_PREFIX } from './constants';
+import { UNDERSCORE } from '../utils/constants.js';
+import { VALIDATION_ERROR_PREFIX } from './constants.js';
 
 /**
  * Result of modifier validation:

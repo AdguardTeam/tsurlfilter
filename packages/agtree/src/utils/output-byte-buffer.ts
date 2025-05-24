@@ -3,11 +3,11 @@
 /**
  * @file Output byte buffer for writing binary data.
  */
-import { BINARY_SCHEMA_VERSION } from './binary-schema-version';
-import { ByteBuffer } from './byte-buffer';
-import { isChromium } from './is-chromium';
-import { type Storage } from './storage-interface';
-import { encodeIntoPolyfill } from './text-encoder-polyfill';
+import { BINARY_SCHEMA_VERSION } from './binary-schema-version.js';
+import { ByteBuffer } from './byte-buffer.js';
+import { isChromium } from './is-chromium.js';
+import { type Storage } from './storage-interface.js';
+import { encodeIntoPolyfill } from './text-encoder-polyfill.js';
 
 /**
  * Output byte buffer for writing binary data.

@@ -2,9 +2,9 @@
  * @file Utility functions for working with modifier nodes
  */
 
-import { type Modifier, type ModifierList } from '../nodes';
-import { isUndefined } from '../utils/type-guards';
-import { clone } from '../utils/clone';
+import { type Modifier, type ModifierList } from '../nodes/index.js';
+import { isUndefined } from '../utils/type-guards.js';
+import { clone } from '../utils/clone.js';
 
 /**
  * Creates a modifier node

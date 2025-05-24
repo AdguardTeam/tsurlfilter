@@ -1,4 +1,4 @@
-import type { PreProcessorCommentRule } from '../../nodes';
+import type { PreProcessorCommentRule } from '../../nodes/index.js';
 import {
     CLOSE_PARENTHESIS,
     COMMA,
@@ -7,11 +7,11 @@ import {
     PREPROCESSOR_MARKER,
     SAFARI_CB_AFFINITY,
     SPACE,
-} from '../../utils/constants';
-import { BaseGenerator } from '../base-generator';
-import { ValueGenerator } from '../misc/value-generator';
-import { ParameterListGenerator } from '../misc/parameter-list-generator';
-import { LogicalExpressionGenerator } from '../misc/logical-expression-generator';
+} from '../../utils/constants.js';
+import { BaseGenerator } from '../base-generator.js';
+import { ValueGenerator } from '../misc/value-generator.js';
+import { ParameterListGenerator } from '../misc/parameter-list-generator.js';
+import { LogicalExpressionGenerator } from '../misc/logical-expression-generator.js';
 
 /**
  * Pre-processor comment generator.

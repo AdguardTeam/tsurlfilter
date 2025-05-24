@@ -1,13 +1,13 @@
-import { NULL } from '../../utils/constants';
-import { type HostRule } from '../../nodes';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { ValueSerializer } from '../misc/value-serializer';
-import { isUndefined } from '../../utils/type-guards';
-import { HostnameListSerializer } from './hostname-list-serializer';
-import { BaseSerializer } from '../base-serializer';
-import { HostRuleMarshallingMap } from '../../marshalling-utils/misc/host-rule-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
-import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
+import { NULL } from '../../utils/constants.js';
+import { type HostRule } from '../../nodes/index.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { ValueSerializer } from '../misc/value-serializer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { HostnameListSerializer } from './hostname-list-serializer.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { HostRuleMarshallingMap } from '../../marshalling-utils/misc/host-rule-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
+import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map.js';
 
 /**
  * `HostRuleSerializer` is responsible for serializing hosts-like rules.

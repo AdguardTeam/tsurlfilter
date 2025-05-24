@@ -1,11 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { BaseDeserializer } from './base-deserializer';
-import { type InvalidRuleError, RuleCategory, type InvalidRule } from '../nodes';
-import { NULL } from '../utils/constants';
-import { InvalidRuleErrorNodeDeserializer } from './invalid-rule-error-node-deserializer';
-import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { InvalidRuleMarshallingMap } from '../marshalling-utils/invalid-rule-common';
-import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
+import { BaseDeserializer } from './base-deserializer.js';
+import { type InvalidRuleError, RuleCategory, type InvalidRule } from '../nodes/index.js';
+import { NULL } from '../utils/constants.js';
+import { InvalidRuleErrorNodeDeserializer } from './invalid-rule-error-node-deserializer.js';
+import { type InputByteBuffer } from '../utils/input-byte-buffer.js';
+import { InvalidRuleMarshallingMap } from '../marshalling-utils/invalid-rule-common.js';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Deserializer for invalid rule nodes.

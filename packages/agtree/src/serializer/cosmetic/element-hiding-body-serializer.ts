@@ -1,11 +1,11 @@
-import { BaseSerializer } from '../base-serializer';
-import { type ElementHidingRuleBody } from '../../nodes';
-import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { ValueSerializer } from '../misc/value-serializer';
-import { isUndefined } from '../../utils/type-guards';
-import { NULL } from '../../utils/constants';
-import { ElementHidingRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/element-hiding-body-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { BaseSerializer } from '../base-serializer.js';
+import { type ElementHidingRuleBody } from '../../nodes/index.js';
+import type { OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { ValueSerializer } from '../misc/value-serializer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { NULL } from '../../utils/constants.js';
+import { ElementHidingRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/element-hiding-body-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Serializer for element hiding rule body nodes.

@@ -3,12 +3,12 @@
  * @file Provides common compatibility table methods.
  */
 
-import { type BaseCompatibilityDataSchema } from './schemas';
-import { GenericPlatform, type SpecificPlatform } from './platforms';
-import { isUndefined } from '../utils/type-guards';
-import { type CompatibilityTable, type CompatibilityTableRow } from './types';
-import { isGenericPlatform, getSpecificPlatformName } from './utils/platform-helpers';
-import { AdblockSyntax } from '../utils/adblockers';
+import { type BaseCompatibilityDataSchema } from './schemas/index.js';
+import { GenericPlatform, type SpecificPlatform } from './platforms.js';
+import { isUndefined } from '../utils/type-guards.js';
+import { type CompatibilityTable, type CompatibilityTableRow } from './types.js';
+import { isGenericPlatform, getSpecificPlatformName } from './utils/platform-helpers.js';
+import { AdblockSyntax } from '../utils/adblockers.js';
 
 /**
  * Lists all supported entity records by a product.

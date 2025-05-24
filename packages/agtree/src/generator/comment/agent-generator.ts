@@ -1,7 +1,7 @@
-import { BaseGenerator } from '../base-generator';
-import type { Agent } from '../../nodes';
-import { EMPTY, SPACE } from '../../utils/constants';
-import { isUndefined } from '../../utils/type-guards';
+import { BaseGenerator } from '../base-generator.js';
+import type { Agent } from '../../nodes/index.js';
+import { EMPTY, SPACE } from '../../utils/constants.js';
+import { isUndefined } from '../../utils/type-guards.js';
 
 /**
  * Generator for adblock agent nodes.

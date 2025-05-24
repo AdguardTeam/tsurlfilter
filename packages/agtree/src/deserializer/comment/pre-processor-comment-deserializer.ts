@@ -1,25 +1,25 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
+import { NULL } from '../../utils/constants.js';
 import type {
     AnyExpressionNode,
     ParameterList,
     PreProcessorCommentRule,
     Value,
-} from '../../nodes';
-import { CommentRuleType, RuleCategory } from '../../nodes';
-import { BaseDeserializer } from '../base-deserializer';
+} from '../../nodes/index.js';
+import { CommentRuleType, RuleCategory } from '../../nodes/index.js';
+import { BaseDeserializer } from '../base-deserializer.js';
 import {
     FREQUENT_DIRECTIVES_SERIALIZATION_MAP,
     FREQUENT_PARAMS_SERIALIZATION_MAP,
     PreProcessorRuleMarshallingMap,
-} from '../../marshalling-utils/comment/pre-processor-comment-common';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { LogicalExpressionDeserializer } from '../misc/logical-expression-deserializer';
-import { ParameterListDeserializer } from '../misc/parameter-list-deserializer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
-import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
+} from '../../marshalling-utils/comment/pre-processor-comment-common.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { LogicalExpressionDeserializer } from '../misc/logical-expression-deserializer.js';
+import { ParameterListDeserializer } from '../misc/parameter-list-deserializer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
+import { getSyntaxDeserializationMap } from '../syntax-deserialization-map.js';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

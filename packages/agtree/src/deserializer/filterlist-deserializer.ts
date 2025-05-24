@@ -1,11 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { type AnyRule, type FilterList } from '../nodes';
-import { NULL } from '../utils/constants';
-import { BaseDeserializer } from './base-deserializer';
-import { RuleDeserializer } from './rule-deserializer';
-import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { FilterListNodeMarshallingMap } from '../marshalling-utils/filter-list-common';
-import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
+import { type AnyRule, type FilterList } from '../nodes/index.js';
+import { NULL } from '../utils/constants.js';
+import { BaseDeserializer } from './base-deserializer.js';
+import { RuleDeserializer } from './rule-deserializer.js';
+import { type InputByteBuffer } from '../utils/input-byte-buffer.js';
+import { FilterListNodeMarshallingMap } from '../marshalling-utils/filter-list-common.js';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Deserializer for filter lists.

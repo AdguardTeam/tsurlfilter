@@ -12,8 +12,8 @@ import {
 } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { END_OF_INPUT, ERROR_MESSAGES } from './constants.js';
 
 /**
  * Utility type to get the last element from a tuple, handling optional last elements correctly.

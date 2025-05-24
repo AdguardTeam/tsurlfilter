@@ -7,10 +7,10 @@ import {
     type NetworkRule,
     NetworkRuleType,
     type AnyNetworkRule,
-} from '../../nodes';
-import { NetworkRuleModifierListConverter } from '../misc/network-rule-modifier';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+} from '../../nodes/index.js';
+import { NetworkRuleModifierListConverter } from '../misc/network-rule-modifier.js';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base.js';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result.js';
 
 /**
  * Network rule converter class (also known as "basic rule converter")

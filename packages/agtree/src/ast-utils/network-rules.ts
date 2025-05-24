@@ -2,15 +2,15 @@
  * @file Utility functions for working with network rule nodes
  */
 
-import { isUndefined } from '../utils/type-guards';
+import { isUndefined } from '../utils/type-guards.js';
 import {
     type ModifierList,
     type NetworkRule,
     RuleCategory,
     NetworkRuleType,
-} from '../nodes';
-import { AdblockSyntax } from '../utils/adblockers';
-import { clone } from '../utils/clone';
+} from '../nodes/index.js';
+import { AdblockSyntax } from '../utils/adblockers.js';
+import { clone } from '../utils/clone.js';
 
 /**
  * Creates a network rule node

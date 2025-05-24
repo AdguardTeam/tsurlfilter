@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'vitest';
 
-import { ConfigCommentParser } from '../../../src/parser/comment/config-comment-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { ConfigCommentGenerator } from '../../../src/generator/comment/config-comment-generator';
-import { ConfigCommentSerializer } from '../../../src/serializer/comment/config-comment-serializer';
-import { ConfigCommentDeserializer } from '../../../src/deserializer/comment/config-comment-deserializer';
+import { ConfigCommentParser } from '../../../src/parser/comment/config-comment-parser.js';
+import { EMPTY, SPACE } from '../../../src/utils/constants.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { ConfigCommentGenerator } from '../../../src/generator/comment/config-comment-generator.js';
+import { ConfigCommentSerializer } from '../../../src/serializer/comment/config-comment-serializer.js';
+import { ConfigCommentDeserializer } from '../../../src/deserializer/comment/config-comment-deserializer.js';
 
 describe('ConfigCommentParser', () => {
     test('isConfigComment', () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-import { modifiersCompatibilityTable } from '../../src/compatibility-tables/modifiers';
-import { GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
+import { modifiersCompatibilityTable } from '../../src/compatibility-tables/modifiers.js';
+import { GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms.js';
 
 const baseThirdPartyData = {
     name: 'third-party',

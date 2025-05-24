@@ -4,19 +4,19 @@ import {
     HINT_MARKER,
     HINT_MARKER_LEN,
     OPEN_PARENTHESIS,
-} from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
+} from '../../utils/constants.js';
+import { StringUtils } from '../../utils/string.js';
 import {
     CommentRuleType,
     type Hint,
     type HintCommentRule,
     RuleCategory,
-} from '../../nodes';
-import { HintParser } from './hint-parser';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
+} from '../../nodes/index.js';
+import { HintParser } from './hint-parser.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
 
 /**
  * `HintRuleParser` is responsible for parsing AdGuard hint rules.

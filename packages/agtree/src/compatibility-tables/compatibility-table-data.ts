@@ -13,7 +13,7 @@ import { readFileSync, readdirSync } from 'fs';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import XRegExp from 'xregexp';
 
-import { type CompatibilityTable, type CompatibilityTableRow } from './types';
+import { type CompatibilityTable, type CompatibilityTableRow } from './types.js';
 import {
     type BaseCompatibilityDataSchema,
     baseFileSchema,
@@ -24,9 +24,9 @@ import {
     type RedirectDataSchema,
     type ScriptletDataSchema,
     KNOWN_VALIDATORS,
-} from './schemas';
-import { deepFreeze } from '../utils/deep-freeze';
-import { EMPTY } from '../utils/constants';
+} from './schemas/index.js';
+import { deepFreeze } from '../utils/deep-freeze.js';
+import { EMPTY } from '../utils/constants.js';
 
 const localDirname = path.dirname(new URL(import.meta.url).pathname);
 

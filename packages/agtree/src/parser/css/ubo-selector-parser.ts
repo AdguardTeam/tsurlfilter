@@ -5,25 +5,25 @@
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
 import {
     CLOSE_PARENTHESIS,
     COLON,
     CSS_NOT_PSEUDO,
     EMPTY,
     OPEN_PARENTHESIS,
-} from '../../utils/constants';
+} from '../../utils/constants.js';
 import {
     type ModifierList,
     type Value,
     type Modifier,
     type UboSelector,
-} from '../../nodes';
-import { tokenizeFnBalanced } from './balancing';
-import { type TokenData } from './css-token-stream';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { UboPseudoName } from '../../common/ubo-selector-common';
+} from '../../nodes/index.js';
+import { tokenizeFnBalanced } from './balancing.js';
+import { type TokenData } from './css-token-stream.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { UboPseudoName } from '../../common/ubo-selector-common.js';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.

@@ -3,19 +3,19 @@ import {
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
     type ExpressionOperatorNode,
-} from '../../nodes';
-import { NULL } from '../../utils/constants';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseSerializer } from '../base-serializer';
+} from '../../nodes/index.js';
+import { NULL } from '../../utils/constants.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseSerializer } from '../base-serializer.js';
 import {
     KNOWN_VARIABLES_SERIALIZATION_MAP,
     LOGICAL_EXPRESSION_OPERATOR_SERIALISATION_MAP,
     OperatorNodeBinaryPropMarshallingMap,
     ParenthesisNodeBinaryPropMarshallingMap,
     VariableNodeBinaryPropMarshallingMap,
-} from '../../marshalling-utils/misc/logical-expression-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../marshalling-utils/misc/logical-expression-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Possible node types in the logical expression.

@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'vitest';
 
-import { ModifierListParser } from '../../../src/parser/misc/modifier-list';
-import { type ModifierList } from '../../../src/nodes';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { ModifierListGenerator } from '../../../src/generator/misc/modifier-list-generator';
-import { ModifierListSerializer } from '../../../src/serializer/misc/modifier-list-serializer';
-import { ModifierListDeserializer } from '../../../src/deserializer/misc/modifier-list-deserializer';
+import { ModifierListParser } from '../../../src/parser/misc/modifier-list.js';
+import { type ModifierList } from '../../../src/nodes/index.js';
+import { EMPTY, SPACE } from '../../../src/utils/constants.js';
+import { ModifierListGenerator } from '../../../src/generator/misc/modifier-list-generator.js';
+import { ModifierListSerializer } from '../../../src/serializer/misc/modifier-list-serializer.js';
+import { ModifierListDeserializer } from '../../../src/deserializer/misc/modifier-list-deserializer.js';
 
 describe('ModifierListParser', () => {
     test('parse', () => {

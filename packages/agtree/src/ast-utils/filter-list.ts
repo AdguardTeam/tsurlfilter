@@ -2,8 +2,8 @@
  * @file Utility functions for working with filter list nodes
  */
 
-import { type AnyRule, type FilterList } from '../nodes';
-import { clone } from '../utils/clone';
+import { type AnyRule, type FilterList } from '../nodes/index.js';
+import { clone } from '../utils/clone.js';
 
 /**
  * Creates a filter list node

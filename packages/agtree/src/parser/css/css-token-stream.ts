@@ -5,16 +5,16 @@
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { tokenizeBalanced } from './balancing';
-import { EMPTY } from '../../utils/constants';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { END_OF_INPUT, ERROR_MESSAGES } from './constants';
+import { tokenizeBalanced } from './balancing.js';
+import { EMPTY } from '../../utils/constants.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { END_OF_INPUT, ERROR_MESSAGES } from './constants.js';
 import {
     ABP_EXT_CSS_PREFIX,
     EXT_CSS_PSEUDO_CLASSES,
     EXT_CSS_PSEUDO_CLASSES_STRICT,
     LEGACY_EXT_CSS_ATTRIBUTE_PREFIX,
-} from '../../converter/data/css';
+} from '../../converter/data/css.js';
 
 /**
  * Interface for CSS token data.

@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, RuleCategory, type CssInjectionRule } from '../../../src/nodes';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils.js';
+import { CosmeticRuleType, RuleCategory, type CssInjectionRule } from '../../../src/nodes/index.js';
+import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser.js';
+import { AdblockSyntax } from '../../../src/utils/adblockers.js';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser.js';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic/index.js';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid uBlock CSS injection rules', () => {

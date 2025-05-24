@@ -7,16 +7,16 @@ import zod from 'zod';
 import { expect } from 'vitest';
 import { type AsyncExpectationResult } from '@vitest/expect';
 
-import { getErrorMessage } from '../../../src/utils/error';
-import { type Node } from '../../../src/nodes';
-import { type BaseParser } from '../../../src/parser/base-parser';
-import { OutputByteBuffer } from '../../../src/utils/output-byte-buffer';
-import { SimpleStorage } from '../../helpers/simple-storage';
-import { InputByteBuffer } from '../../../src/utils/input-byte-buffer';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { type BaseGenerator } from '../../../src/generator/base-generator';
-import { type BaseSerializer } from '../../../src/serializer/base-serializer';
-import { type BaseDeserializer } from '../../../src/deserializer/base-deserializer';
+import { getErrorMessage } from '../../../src/utils/error.js';
+import { type Node } from '../../../src/nodes/index.js';
+import { type BaseParser } from '../../../src/parser/base-parser.js';
+import { OutputByteBuffer } from '../../../src/utils/output-byte-buffer.js';
+import { SimpleStorage } from '../../helpers/simple-storage.js';
+import { InputByteBuffer } from '../../../src/utils/input-byte-buffer.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { type BaseGenerator } from '../../../src/generator/base-generator.js';
+import { type BaseSerializer } from '../../../src/serializer/base-serializer.js';
+import { type BaseDeserializer } from '../../../src/deserializer/base-deserializer.js';
 
 // We have 2 possible parameters here:
 //  1. simply a string - in this case, the original and expected rules are the same

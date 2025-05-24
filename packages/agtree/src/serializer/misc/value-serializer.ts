@@ -1,10 +1,10 @@
-import { type Value } from '../../nodes';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { NULL } from '../../utils/constants';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseSerializer } from '../base-serializer';
-import { ValueNodeMarshallingMap } from '../../marshalling-utils/misc/value-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { type Value } from '../../nodes/index.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { NULL } from '../../utils/constants.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { ValueNodeMarshallingMap } from '../../marshalling-utils/misc/value-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Value serializer.

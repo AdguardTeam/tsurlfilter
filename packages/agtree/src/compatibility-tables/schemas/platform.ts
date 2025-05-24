@@ -5,8 +5,8 @@
 
 import zod from 'zod';
 
-import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP } from '../utils/platform-helpers';
-import { isUndefined } from '../../utils/type-guards';
+import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP } from '../utils/platform-helpers.js';
+import { isUndefined } from '../../utils/type-guards.js';
 
 /**
  * Platform separator, e.g. 'adg_os_any|adg_safari_any' means any AdGuard OS platform and

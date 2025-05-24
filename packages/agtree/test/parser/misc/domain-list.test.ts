@@ -1,17 +1,17 @@
 import { describe, test, expect } from 'vitest';
 
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser.js';
 import {
     type DomainList,
     type DomainListSeparator,
     ListNodeType,
     ListItemNodeType,
 } from '../../../src/nodes';
-import { COMMA, EMPTY } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { DomainListGenerator } from '../../../src/generator/misc/domain-list-generator';
-import { DomainListSerializer } from '../../../src/serializer/misc/domain-list-serializer';
-import { DomainListDeserializer } from '../../../src/deserializer/misc/domain-list-deserializer';
+import { COMMA, EMPTY } from '../../../src/utils/constants.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { DomainListGenerator } from '../../../src/generator/misc/domain-list-generator.js';
+import { DomainListSerializer } from '../../../src/serializer/misc/domain-list-serializer.js';
+import { DomainListDeserializer } from '../../../src/deserializer/misc/domain-list-deserializer.js';
 
 describe('DomainListParser', () => {
     // invalid inputs are tested in `list-helpers.test.ts`

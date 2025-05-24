@@ -1,10 +1,10 @@
-import { BaseSerializer } from './base-serializer';
-import { type EmptyRule } from '../nodes';
-import type { OutputByteBuffer } from '../utils/output-byte-buffer';
-import { isUndefined } from '../utils/type-guards';
-import { NULL } from '../utils/constants';
-import { EmptyRuleMarshallingMap } from '../marshalling-utils/empty-rule-common';
-import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
+import { BaseSerializer } from './base-serializer.js';
+import { type EmptyRule } from '../nodes/index.js';
+import type { OutputByteBuffer } from '../utils/output-byte-buffer.js';
+import { isUndefined } from '../utils/type-guards.js';
+import { NULL } from '../utils/constants.js';
+import { EmptyRuleMarshallingMap } from '../marshalling-utils/empty-rule-common.js';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Serializer for empty rule nodes.

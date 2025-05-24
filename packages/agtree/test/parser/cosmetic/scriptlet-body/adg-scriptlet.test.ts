@@ -6,21 +6,21 @@ import {
 } from 'vitest';
 import { sprintf } from 'sprintf-js';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
+import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils.js';
+import { type ScriptletInjectionRuleBody } from '../../../../src/nodes/index.js';
 import {
     AdgScriptletInjectionBodyParser,
-} from '../../../../src/parser/cosmetic/body/adg-scriptlet-injection-body-parser';
-import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
+} from '../../../../src/parser/cosmetic/body/adg-scriptlet-injection-body-parser.js';
+import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error.js';
 import {
     AdgScriptletInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/body/adg-scriptlet-injection-body-generator';
+} from '../../../../src/generator/cosmetic/body/adg-scriptlet-injection-body-generator.js';
 import {
     AdgScriptletInjectionBodySerializer,
-} from '../../../../src/serializer/cosmetic/body/adg-scriptlet-injection-body-serializer';
+} from '../../../../src/serializer/cosmetic/body/adg-scriptlet-injection-body-serializer.js';
 import {
     AdgScriptletInjectionBodyDeserializer,
-} from '../../../../src/deserializer/cosmetic/scriptlet-body/adg-scriptlet-injection-body-deserializer';
+} from '../../../../src/deserializer/cosmetic/scriptlet-body/adg-scriptlet-injection-body-deserializer.js';
 
 describe('AdgScriptletInjectionBodyParser', () => {
     describe('AdgScriptletInjectionBodyParser.parse - valid cases', () => {

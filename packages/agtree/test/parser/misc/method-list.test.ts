@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'vitest';
 
-import { MethodListParser } from '../../../src/parser/misc/method-list-parser';
-import { ListNodeType, ListItemNodeType } from '../../../src/nodes';
-import { EMPTY } from '../../../src/utils/constants';
+import { MethodListParser } from '../../../src/parser/misc/method-list-parser.js';
+import { ListNodeType, ListItemNodeType } from '../../../src/nodes/index.js';
+import { EMPTY } from '../../../src/utils/constants.js';
 
 describe('MethodListParser', () => {
     // invalid inputs are tested in `list-helpers.test.ts`

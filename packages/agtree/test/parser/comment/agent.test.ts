@@ -1,12 +1,12 @@
 import { describe, test, expect } from 'vitest';
 
-import { AgentCommentParser } from '../../../src/parser/comment/agent-comment-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { AgentCommentGenerator } from '../../../src/generator/comment/agent-comment-generator';
-import { AgentCommentSerializer } from '../../../src/serializer/comment/agent-comment-serializer';
-import { AgentCommentDeserializer } from '../../../src/deserializer/comment/agent-comment-deserializer';
+import { AgentCommentParser } from '../../../src/parser/comment/agent-comment-parser.js';
+import { AdblockSyntax } from '../../../src/utils/adblockers.js';
+import { EMPTY, SPACE } from '../../../src/utils/constants.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { AgentCommentGenerator } from '../../../src/generator/comment/agent-comment-generator.js';
+import { AgentCommentSerializer } from '../../../src/serializer/comment/agent-comment-serializer.js';
+import { AgentCommentDeserializer } from '../../../src/deserializer/comment/agent-comment-deserializer.js';
 
 describe('AgentCommentParser', () => {
     test('isAgent', () => {

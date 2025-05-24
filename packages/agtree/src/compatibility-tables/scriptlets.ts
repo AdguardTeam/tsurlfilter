@@ -2,10 +2,10 @@
  * @file Compatibility tables for scriptlets.
  */
 
-import { CompatibilityTableBase } from './base';
-import { type ScriptletDataSchema } from './schemas';
-import { scriptletsCompatibilityTableData } from './compatibility-table-data';
-import { deepFreeze } from '../utils/deep-freeze';
+import { CompatibilityTableBase } from './base.js';
+import { type ScriptletDataSchema } from './schemas/index.js';
+import { scriptletsCompatibilityTableData } from './compatibility-table-data.js';
+import { deepFreeze } from '../utils/deep-freeze.js';
 
 /**
  * Compatibility table for scriptlets.

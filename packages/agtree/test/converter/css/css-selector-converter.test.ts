@@ -6,7 +6,7 @@
  */
 import { describe, test, expect } from 'vitest';
 
-import { CssSelectorConverter } from '../../../src/converter/css';
+import { CssSelectorConverter } from '../../../src/converter/css/index.js';
 
 describe('CssSelectorConverter', () => {
     describe('convertToAdg', () => {

@@ -1,9 +1,9 @@
 /**
  * @file Base deserializer class.
  */
-import { NotImplementedError } from '../errors/not-implemented-error';
-import { type Node } from '../nodes';
-import { type InputByteBuffer } from '../utils/input-byte-buffer';
+import { NotImplementedError } from '../errors/not-implemented-error.js';
+import { type Node } from '../nodes/index.js';
+import { type InputByteBuffer } from '../utils/input-byte-buffer.js';
 
 /**
  * Base class for deserializers. Each deserializer should extend this class.

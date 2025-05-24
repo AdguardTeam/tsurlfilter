@@ -7,9 +7,9 @@ import {
 import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
-import { END_OF_INPUT, ERROR_MESSAGES } from '../../../src/parser/css/constants';
-import { CssTokenStream } from '../../../src/parser/css/css-token-stream';
-import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
+import { END_OF_INPUT, ERROR_MESSAGES } from '../../../src/parser/css/constants.js';
+import { CssTokenStream } from '../../../src/parser/css/css-token-stream.js';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error.js';
 
 describe('CssTokenStream', () => {
     test('length', () => {

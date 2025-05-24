@@ -2,7 +2,7 @@
  * @file Position provider class.
  */
 
-import { CR, FF, LF } from './constants';
+import { CR, FF, LF } from './constants.js';
 
 /**
  * Represents a position in the source code.

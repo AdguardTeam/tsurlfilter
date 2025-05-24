@@ -7,13 +7,13 @@ import * as z from 'zod';
 import { expect } from 'vitest';
 import { type SyncExpectationResult } from '@vitest/expect';
 
-import { type BaseConverter } from '../../../src/converter/base-interfaces/base-converter';
-import { RuleParser } from '../../../src/parser/rule-parser';
-import { everyRefsAreDifferent } from '../../helpers/refs';
-import { getErrorMessage } from '../../../src/utils/error';
-import { type AnyRule } from '../../../src/nodes';
-import { type NodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result';
-import { RuleGenerator } from '../../../src/generator';
+import { type BaseConverter } from '../../../src/converter/base-interfaces/base-converter.js';
+import { RuleParser } from '../../../src/parser/rule-parser.js';
+import { everyRefsAreDifferent } from '../../helpers/refs.js';
+import { getErrorMessage } from '../../../src/utils/error.js';
+import { type AnyRule } from '../../../src/nodes/index.js';
+import { type NodeConversionResult } from '../../../src/converter/base-interfaces/conversion-result.js';
+import { RuleGenerator } from '../../../src/generator/index.js';
 
 /**
  * Schema for the received parameter from expect()

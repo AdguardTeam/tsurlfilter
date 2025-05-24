@@ -2,21 +2,21 @@
  * @file Cosmetic rule modifier converter from uBO to ADG
  */
 
-import { type Modifier, type ModifierList } from '../../../nodes';
-import { RuleConversionError } from '../../../errors/rule-conversion-error';
-import { createModifierNode } from '../../../ast-utils/modifiers';
-import { RegExpUtils } from '../../../utils/regexp';
+import { type Modifier, type ModifierList } from '../../../nodes/index.js';
+import { RuleConversionError } from '../../../errors/rule-conversion-error.js';
+import { createModifierNode } from '../../../ast-utils/modifiers.js';
+import { RegExpUtils } from '../../../utils/regexp.js';
 import {
     CLOSE_SQUARE_BRACKET,
     COMMA,
     ESCAPE_CHARACTER,
     OPEN_SQUARE_BRACKET,
     REGEX_MARKER,
-} from '../../../utils/constants';
-import { StringUtils } from '../../../utils/string';
-import { MultiValueMap } from '../../../utils/multi-value-map';
-import { clone } from '../../../utils/clone';
-import { type ConversionResult, createConversionResult } from '../../base-interfaces/conversion-result';
+} from '../../../utils/constants.js';
+import { StringUtils } from '../../../utils/string.js';
+import { MultiValueMap } from '../../../utils/multi-value-map.js';
+import { clone } from '../../../utils/clone.js';
+import { type ConversionResult, createConversionResult } from '../../base-interfaces/conversion-result.js';
 
 const UBO_MATCHES_PATH_OPERATOR = 'matches-path';
 const ADG_PATH_MODIFIER = 'path';

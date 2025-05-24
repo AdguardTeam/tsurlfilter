@@ -2,8 +2,8 @@
  * @file Cosmetic rule separator finder and categorizer
  */
 
-import { CosmeticRuleSeparator } from '../nodes';
-import { AT_SIGN, SPACE } from './constants';
+import { CosmeticRuleSeparator } from '../nodes/index.js';
+import { AT_SIGN, SPACE } from './constants.js';
 
 export interface CosmeticRuleSeparatorFinderResult {
     /**

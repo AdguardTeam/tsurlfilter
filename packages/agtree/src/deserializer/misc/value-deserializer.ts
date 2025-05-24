@@ -1,10 +1,10 @@
 /* eslint-disable no-param-reassign */
-import { type Value } from '../../nodes';
-import { EMPTY, NULL } from '../../utils/constants';
-import { BaseDeserializer } from '../base-deserializer';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ValueNodeMarshallingMap } from '../../marshalling-utils/misc/value-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { type Value } from '../../nodes/index.js';
+import { EMPTY, NULL } from '../../utils/constants.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { ValueNodeMarshallingMap } from '../../marshalling-utils/misc/value-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Value deserializer.

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
-import { scriptletsCompatibilityTable } from '../../src/compatibility-tables/scriptlets';
-import { GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms';
+import { scriptletsCompatibilityTable } from '../../src/compatibility-tables/scriptlets.js';
+import { GenericPlatform, SpecificPlatform } from '../../src/compatibility-tables/platforms.js';
 
 const baseAbortCurrentInlineScriptData = {
     name: 'abort-current-inline-script',

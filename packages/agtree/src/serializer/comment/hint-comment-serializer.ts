@@ -1,13 +1,13 @@
-import { NULL } from '../../utils/constants';
-import { type HintCommentRule } from '../../nodes';
-import { HintSerializer } from './hint-serializer';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseSerializer } from '../base-serializer';
-import { HintCommentMarshallingMap } from '../../marshalling-utils/comment/hint-comment-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
-import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
+import { NULL } from '../../utils/constants.js';
+import { type HintCommentRule } from '../../nodes/index.js';
+import { HintSerializer } from './hint-serializer.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { HintCommentMarshallingMap } from '../../marshalling-utils/comment/hint-comment-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
+import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map.js';
 
 /**
  * `HintCommentSerializer` is responsible for serializing AdGuard hint rules.

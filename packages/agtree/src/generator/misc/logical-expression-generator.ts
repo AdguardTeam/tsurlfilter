@@ -1,6 +1,6 @@
-import { BaseGenerator } from '../base-generator';
-import { type AnyExpressionNode, OperatorValue } from '../../nodes';
-import { NodeType } from '../../parser/misc/logical-expression-parser';
+import { BaseGenerator } from '../base-generator.js';
+import { type AnyExpressionNode, OperatorValue } from '../../nodes/index.js';
+import { NodeType } from '../../parser/misc/logical-expression-parser.js';
 
 /**
  * Generator for logical expression nodes.

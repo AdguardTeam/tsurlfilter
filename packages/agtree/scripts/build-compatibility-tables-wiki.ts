@@ -13,9 +13,9 @@ import { type BaseCompatibilityDataSchema } from '../src/compatibility-tables/sc
 import { modifiersCompatibilityTable } from '../src/compatibility-tables/modifiers';
 import { scriptletsCompatibilityTable } from '../src/compatibility-tables/scriptlets';
 import { type ProductRecords, type RowByProduct, type CompatibilityTableBase } from '../src/compatibility-tables/base';
-import { EMPTY, NEWLINE } from '../src/utils/constants';
-import { AdblockSyntax } from '../src/utils/adblockers';
-import { GenericPlatform, SpecificPlatform } from '../src';
+import { EMPTY, NEWLINE } from '../src/utils/constants.js';
+import { AdblockSyntax } from '../src/utils/adblockers.js';
+import { GenericPlatform, SpecificPlatform } from '../src/index.js';
 
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
 const __dirname = path.dirname(new URL(import.meta.url).pathname);

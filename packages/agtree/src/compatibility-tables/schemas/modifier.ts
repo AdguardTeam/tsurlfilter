@@ -4,15 +4,15 @@
 
 import zod from 'zod';
 
-import { zodToCamelCase } from '../utils/zod-camelcase';
+import { zodToCamelCase } from '../utils/zod-camelcase.js';
 import {
     baseCompatibilityDataSchema,
     baseRefineLogic,
     booleanSchema,
     nonEmptyStringSchema,
-} from './base';
-import { getErrorMessage } from '../../utils/error';
-import { EMPTY } from '../../utils/constants';
+} from './base.js';
+import { getErrorMessage } from '../../utils/error.js';
+import { EMPTY } from '../../utils/constants.js';
 
 /**
  * Known validators that don't need to be validated as regex.

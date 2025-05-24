@@ -1,7 +1,7 @@
-import { BaseGenerator } from '../base-generator';
-import type { ModifierList } from '../../nodes';
-import { MODIFIERS_SEPARATOR } from '../../utils/constants';
-import { ModifierGenerator } from './modifier-generator';
+import { BaseGenerator } from '../base-generator.js';
+import type { ModifierList } from '../../nodes/index.js';
+import { MODIFIERS_SEPARATOR } from '../../utils/constants.js';
+import { ModifierGenerator } from './modifier-generator.js';
 
 /**
  * Generator for modifier list nodes.

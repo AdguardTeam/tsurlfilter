@@ -1,4 +1,4 @@
-import type { CssInjectionRuleBody } from '../../nodes';
+import type { CssInjectionRuleBody } from '../../nodes/index.js';
 import {
     CLOSE_CURLY_BRACKET,
     COLON,
@@ -7,9 +7,9 @@ import {
     OPEN_CURLY_BRACKET,
     SEMICOLON,
     SPACE,
-} from '../../utils/constants';
-import { BaseGenerator } from '../base-generator';
-import { REMOVE_PROPERTY, REMOVE_VALUE } from '../../parser/css/adg-css-injection-parser';
+} from '../../utils/constants.js';
+import { BaseGenerator } from '../base-generator.js';
+import { REMOVE_PROPERTY, REMOVE_VALUE } from '../../parser/css/adg-css-injection-parser.js';
 
 /**
  * AdGuard CSS injection generator.

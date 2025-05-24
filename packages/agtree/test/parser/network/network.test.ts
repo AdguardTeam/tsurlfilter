@@ -1,12 +1,12 @@
 import { describe, test, expect } from 'vitest';
 
-import { NetworkRuleParser } from '../../../src/parser/network/network-rule-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/nodes';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { NetworkRuleGenerator } from '../../../src/generator/network';
-import { NetworkRuleSerializer } from '../../../src/serializer/network/network-rule-serializer';
-import { NetworkRuleDeserializer } from '../../../src/deserializer/network/network-rule-deserializer';
+import { NetworkRuleParser } from '../../../src/parser/network/network-rule-parser.js';
+import { AdblockSyntax } from '../../../src/utils/adblockers.js';
+import { type NetworkRule, RuleCategory, NetworkRuleType } from '../../../src/nodes/index.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { NetworkRuleGenerator } from '../../../src/generator/network/index.js';
+import { NetworkRuleSerializer } from '../../../src/serializer/network/network-rule-serializer.js';
+import { NetworkRuleDeserializer } from '../../../src/deserializer/network/network-rule-deserializer.js';
 
 describe('NetworkRuleParser', () => {
     test('parse', () => {

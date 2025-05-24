@@ -10,14 +10,14 @@ import {
     CosmeticRuleType,
     type HtmlFilteringRule,
     RuleCategory,
-} from '../../nodes';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { RegExpUtils } from '../../utils/regexp';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
-import { cloneDomainListNode } from '../../ast-utils/clone';
-import { CssTokenStream } from '../../parser/css/css-token-stream';
+} from '../../nodes/index.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { RuleConversionError } from '../../errors/rule-conversion-error.js';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base.js';
+import { RegExpUtils } from '../../utils/regexp.js';
+import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result.js';
+import { cloneDomainListNode } from '../../ast-utils/clone.js';
+import { CssTokenStream } from '../../parser/css/css-token-stream.js';
 import {
     CLOSE_SQUARE_BRACKET,
     CSS_PSEUDO_CLOSE,
@@ -29,9 +29,9 @@ import {
     OPEN_SQUARE_BRACKET,
     SPACE,
     UBO_HTML_MASK,
-} from '../../utils/constants';
-import { DOUBLE_QUOTE_MARKER, StringUtils } from '../../utils/string';
-import { QuoteUtils } from '../../utils';
+} from '../../utils/constants.js';
+import { DOUBLE_QUOTE_MARKER, StringUtils } from '../../utils/string.js';
+import { QuoteUtils } from '../../utils/index.js';
 
 /**
  * From the AdGuard docs:

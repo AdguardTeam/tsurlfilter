@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'vitest';
 
-import { HintCommentParser } from '../../../src/parser/comment/hint-comment-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { HintCommentGenerator } from '../../../src/generator/comment/hint-comment-generator';
-import { HintCommentSerializer } from '../../../src/serializer/comment/hint-comment-serializer';
-import { HintCommentDeserializer } from '../../../src/deserializer/comment/hint-comment-deserializer';
+import { HintCommentParser } from '../../../src/parser/comment/hint-comment-parser.js';
+import { EMPTY, SPACE } from '../../../src/utils/constants.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { HintCommentGenerator } from '../../../src/generator/comment/hint-comment-generator.js';
+import { HintCommentSerializer } from '../../../src/serializer/comment/hint-comment-serializer.js';
+import { HintCommentDeserializer } from '../../../src/deserializer/comment/hint-comment-deserializer.js';
 
 describe('HintCommentParser', () => {
     test('isHintRule', () => {

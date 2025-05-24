@@ -5,20 +5,20 @@ import {
     vi,
 } from 'vitest';
 
-import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error';
+import { AdblockSyntaxError } from '../../src/errors/adblock-syntax-error.js';
 import {
     type AnyRule,
     CommentRuleType,
     CosmeticRuleType,
     RuleCategory,
-} from '../../src/nodes';
-import { type ParserOptions } from '../../src/parser/options';
-import { RuleParser } from '../../src/parser/rule-parser';
-import { AdblockSyntax } from '../../src/utils/adblockers';
-import { defaultParserOptions } from '../../src/parser/options';
-import { RuleGenerator } from '../../src/generator';
-import { RuleSerializer } from '../../src/serializer/rule-serializer';
-import { RuleDeserializer } from '../../src/deserializer/rule-deserializer';
+} from '../../src/nodes/index.js';
+import { type ParserOptions } from '../../src/parser/options.js';
+import { RuleParser } from '../../src/parser/rule-parser.js';
+import { AdblockSyntax } from '../../src/utils/adblockers.js';
+import { defaultParserOptions } from '../../src/parser/options.js';
+import { RuleGenerator } from '../../src/generator/index.js';
+import { RuleSerializer } from '../../src/serializer/rule-serializer.js';
+import { RuleDeserializer } from '../../src/deserializer/rule-deserializer.js';
 
 describe('RuleParser', () => {
     test('parse', () => {

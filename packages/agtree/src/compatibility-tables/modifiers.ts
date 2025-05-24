@@ -2,12 +2,12 @@
  * @file Compatibility tables for modifiers.
  */
 
-import { CompatibilityTableBase } from './base';
-import { type ModifierDataSchema } from './schemas';
-import { modifiersCompatibilityTableData } from './compatibility-table-data';
-import { EMPTY, UNDERSCORE } from '../utils/constants';
-import { type CompatibilityTable } from './types';
-import { deepFreeze } from '../utils/deep-freeze';
+import { CompatibilityTableBase } from './base.js';
+import { type ModifierDataSchema } from './schemas/index.js';
+import { modifiersCompatibilityTableData } from './compatibility-table-data.js';
+import { EMPTY, UNDERSCORE } from '../utils/constants.js';
+import { type CompatibilityTable } from './types.js';
+import { deepFreeze } from '../utils/deep-freeze.js';
 
 /**
  * Transforms the name of the modifier to a normalized form.

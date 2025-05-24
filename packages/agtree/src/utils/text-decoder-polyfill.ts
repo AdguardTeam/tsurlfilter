@@ -4,7 +4,7 @@
  * @file Optimized utility for decoding strings from byte sequences.
  */
 
-import { EMPTY } from './constants';
+import { EMPTY } from './constants.js';
 
 const REPLACEMENT_CHAR = String.fromCodePoint(0xFFFD);
 

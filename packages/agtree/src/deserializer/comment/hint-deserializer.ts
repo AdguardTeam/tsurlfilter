@@ -1,16 +1,16 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
-import { type ParameterList, type Value, type Hint } from '../../nodes';
-import { BaseDeserializer } from '../base-deserializer';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { NULL } from '../../utils/constants.js';
+import { type ParameterList, type Value, type Hint } from '../../nodes/index.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
 import {
     FREQUENT_HINTS_SERIALIZATION_MAP,
     FREQUENT_PLATFORMS_SERIALIZATION_MAP,
     HintNodeMarshallingMap,
-} from '../../marshalling-utils/comment/hint-common';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { ParameterListDeserializer } from '../misc/parameter-list-deserializer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../marshalling-utils/comment/hint-common.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { ParameterListDeserializer } from '../misc/parameter-list-deserializer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

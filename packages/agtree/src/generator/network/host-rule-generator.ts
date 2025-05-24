@@ -1,6 +1,6 @@
-import type { HostRule } from '../../nodes';
-import { EMPTY, HASHMARK, SPACE } from '../../utils/constants';
-import { BaseGenerator } from '../base-generator';
+import type { HostRule } from '../../nodes/index.js';
+import { EMPTY, HASHMARK, SPACE } from '../../utils/constants.js';
+import { BaseGenerator } from '../base-generator.js';
 
 /**
  * Generator for host rule nodes.

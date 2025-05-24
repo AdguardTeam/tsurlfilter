@@ -4,9 +4,9 @@
 
 import zod from 'zod';
 
-import { zodToCamelCase } from '../utils/zod-camelcase';
-import { baseCompatibilityDataSchema, baseRefineLogic, booleanSchema } from './base';
-import { resourceTypeSchema } from './resource-type';
+import { zodToCamelCase } from '../utils/zod-camelcase.js';
+import { baseCompatibilityDataSchema, baseRefineLogic, booleanSchema } from './base.js';
+import { resourceTypeSchema } from './resource-type.js';
 
 /**
  * Zod schema for redirect data.

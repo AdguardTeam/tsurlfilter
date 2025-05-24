@@ -1,9 +1,9 @@
 /**
  * @file Base serializer class.
  */
-import { NotImplementedError } from '../errors/not-implemented-error';
-import { type OutputByteBuffer } from '../utils/output-byte-buffer';
-import { type Node } from '../nodes';
+import { NotImplementedError } from '../errors/not-implemented-error.js';
+import { type OutputByteBuffer } from '../utils/output-byte-buffer.js';
+import { type Node } from '../nodes/index.js';
 
 /**
  * Base class for serializers. Each serializer should extend this class.
