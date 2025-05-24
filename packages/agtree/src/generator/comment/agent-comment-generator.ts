@@ -4,7 +4,7 @@ import {
     OPEN_SQUARE_BRACKET,
     SEMICOLON,
     SPACE,
-} from '../../utils/constants';
+} from '../../utils/constants.js';
 import { BaseGenerator } from '../base-generator.js';
 import { AgentGenerator } from './agent-generator.js';
 

@@ -7,7 +7,7 @@ import {
     EMPTY,
     OPEN_PARENTHESIS,
     SPACE,
-} from '../../utils/constants';
+} from '../../utils/constants.js';
 import { type UboSelector } from '../../nodes/index.js';
 
 /**

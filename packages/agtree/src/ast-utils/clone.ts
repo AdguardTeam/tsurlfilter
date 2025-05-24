@@ -8,8 +8,8 @@ import {
     type DomainList,
     type Modifier,
     type ModifierList,
-} from '../nodes';
-import { isNull } from '../utils/type-guards';
+} from '../nodes/index.js';
+import { isNull } from '../utils/type-guards.js';
 
 /**
  * Clones a scriptlet rule node.

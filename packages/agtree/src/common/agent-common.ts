@@ -1,4 +1,4 @@
-import { AdblockSyntax } from '../utils/adblockers';
+import { AdblockSyntax } from '../utils/adblockers.js';
 
 /**
  * Possible AdGuard agent markers.

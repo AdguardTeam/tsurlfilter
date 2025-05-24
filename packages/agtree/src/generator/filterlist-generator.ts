@@ -5,7 +5,7 @@ import {
     CRLF,
     EMPTY,
     LF,
-} from '../utils/constants';
+} from '../utils/constants.js';
 import { RuleGenerator } from './rule-generator.js';
 import { BaseGenerator } from './base-generator.js';
 

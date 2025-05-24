@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
+import { NULL } from '../../utils/constants.js';
 import {
     type Agent,
     type AgentCommentRule,

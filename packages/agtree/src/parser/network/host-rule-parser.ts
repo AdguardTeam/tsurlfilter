@@ -2,7 +2,7 @@
 import { getHostname, getDomain } from 'tldts';
 import isIp from 'is-ip';
 
-import { StringUtils } from '../../utils/string';
+import { StringUtils } from '../../utils/string.js';
 import {
     type HostRule,
     NetworkRuleType,

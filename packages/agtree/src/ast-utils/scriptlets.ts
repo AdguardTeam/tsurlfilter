@@ -2,10 +2,10 @@
  * @file Utility functions for working with scriptlet nodes
  */
 
-import { type ParameterList } from '../nodes';
-import { EMPTY } from '../utils/constants';
-import { type QuoteType, QuoteUtils } from '../utils/quotes';
-import { isNull, isUndefined } from '../utils/type-guards';
+import { type ParameterList } from '../nodes/index.js';
+import { EMPTY } from '../utils/constants.js';
+import { type QuoteType, QuoteUtils } from '../utils/quotes.js';
+import { isNull, isUndefined } from '../utils/type-guards.js';
 
 /**
  * Function to transform a parameter of the scriptlet node.

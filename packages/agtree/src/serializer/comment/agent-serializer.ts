@@ -8,8 +8,8 @@ import { BaseSerializer } from '../base-serializer.js';
 import {
     AgentNodeMarshallingMap,
     FREQUENT_AGENTS_DESERIALIZATION_MAP,
-} from '../../marshalling-utils/comment/agent-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../marshalling-utils/comment/agent-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,

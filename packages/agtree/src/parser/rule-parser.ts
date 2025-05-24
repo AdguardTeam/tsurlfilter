@@ -11,7 +11,7 @@ import {
     type InvalidRuleError,
     type NetworkRule,
     type HostRule,
-} from '../nodes';
+} from '../nodes/index.js';
 import { AdblockSyntaxError } from '../errors/adblock-syntax-error.js';
 import { defaultParserOptions } from './options.js';
 import { BaseParser } from './base-parser.js';

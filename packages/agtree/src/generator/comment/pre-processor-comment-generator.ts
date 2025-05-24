@@ -7,7 +7,7 @@ import {
     PREPROCESSOR_MARKER,
     SAFARI_CB_AFFINITY,
     SPACE,
-} from '../../utils/constants';
+} from '../../utils/constants.js';
 import { BaseGenerator } from '../base-generator.js';
 import { ValueGenerator } from '../misc/value-generator.js';
 import { ParameterListGenerator } from '../misc/parameter-list-generator.js';

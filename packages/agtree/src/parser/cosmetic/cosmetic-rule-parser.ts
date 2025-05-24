@@ -15,7 +15,7 @@ import {
     UBO_HTML_MASK,
     UBO_SCRIPTLET_MASK,
     UBO_SCRIPTLET_MASK_LEGACY,
-} from '../../utils/constants';
+} from '../../utils/constants.js';
 import {
     type AnyCosmeticRule,
     type CosmeticRuleSeparator,
@@ -32,18 +32,18 @@ import {
     type JsInjectionRule,
     type HtmlFilteringRule,
     type UboSelector,
-} from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { StringUtils } from '../../utils/string';
-import { CommentParser } from '../comment/comment-parser';
-import { defaultParserOptions } from '../options';
-import { UboSelectorParser } from '../css/ubo-selector-parser';
-import { AdgCssInjectionParser } from '../css/adg-css-injection-parser';
-import { AbpSnippetInjectionBodyParser } from './body/abp-snippet-injection-body-parser';
-import { UboScriptletInjectionBodyParser } from './body/ubo-scriptlet-injection-body-parser';
-import { AdgScriptletInjectionBodyParser } from './body/adg-scriptlet-injection-body-parser';
-import { BaseParser } from '../base-parser';
-import { UboPseudoName } from '../../common/ubo-selector-common';
+} from '../../nodes/index.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { StringUtils } from '../../utils/string.js';
+import { CommentParser } from '../comment/comment-parser.js';
+import { defaultParserOptions } from '../options.js';
+import { UboSelectorParser } from '../css/ubo-selector-parser.js';
+import { AdgCssInjectionParser } from '../css/adg-css-injection-parser.js';
+import { AbpSnippetInjectionBodyParser } from './body/abp-snippet-injection-body-parser.js';
+import { UboScriptletInjectionBodyParser } from './body/ubo-scriptlet-injection-body-parser.js';
+import { AdgScriptletInjectionBodyParser } from './body/adg-scriptlet-injection-body-parser.js';
+import { BaseParser } from '../base-parser.js';
+import { UboPseudoName } from '../../common/ubo-selector-common.js';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.
