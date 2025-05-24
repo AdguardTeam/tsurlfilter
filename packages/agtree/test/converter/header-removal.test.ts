@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'vitest';
 
-import { HeaderRemovalRuleConverter } from '../../src/converter/cosmetic/header-removal';
-import { RuleConversionError } from '../../src/errors/rule-conversion-error';
-import { RuleParser } from '../../src/parser/rule-parser';
+import { HeaderRemovalRuleConverter } from '../../src/converter/cosmetic/header-removal.js';
+import { RuleConversionError } from '../../src/errors/rule-conversion-error.js';
+import { RuleParser } from '../../src/parser/rule-parser.js';
 
 describe('HeaderRemovalRuleConverter', () => {
     describe('uBO to ADG', () => {

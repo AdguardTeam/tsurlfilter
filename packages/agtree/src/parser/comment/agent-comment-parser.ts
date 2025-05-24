@@ -1,13 +1,13 @@
-import { CLOSE_SQUARE_BRACKET, OPEN_SQUARE_BRACKET, SEMICOLON } from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
-import { type AgentCommentRule, CommentRuleType, RuleCategory } from '../../nodes';
-import { AgentParser } from './agent-parser';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
-import { BaseParser } from '../base-parser';
-import { defaultParserOptions } from '../options';
-import { isNull } from '../../utils/type-guards';
+import { CLOSE_SQUARE_BRACKET, OPEN_SQUARE_BRACKET, SEMICOLON } from '../../utils/constants.js';
+import { StringUtils } from '../../utils/string.js';
+import { type AgentCommentRule, CommentRuleType, RuleCategory } from '../../nodes/index.js';
+import { AgentParser } from './agent-parser.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator.js';
+import { BaseParser } from '../base-parser.js';
+import { defaultParserOptions } from '../options.js';
+import { isNull } from '../../utils/type-guards.js';
 
 /**
  * `AgentParser` is responsible for parsing an Adblock agent rules.

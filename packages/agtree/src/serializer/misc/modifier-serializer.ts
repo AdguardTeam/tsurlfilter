@@ -1,15 +1,15 @@
-import { NULL } from '../../utils/constants';
-import { type Modifier } from '../../nodes';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { ValueSerializer } from './value-serializer';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseSerializer } from '../base-serializer';
+import { NULL } from '../../utils/constants.js';
+import { type Modifier } from '../../nodes/index.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { ValueSerializer } from './value-serializer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseSerializer } from '../base-serializer.js';
 import {
     FREQUENT_MODIFIERS_SERIALIZATION_MAP,
     FREQUENT_REDIRECT_MODIFIERS_SERIALIZATION_MAP,
     ModifierNodeMarshallingMap,
-} from '../../marshalling-utils/misc/modifier-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../marshalling-utils/misc/modifier-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `ModifierSerializer` is responsible for serializing modifiers.

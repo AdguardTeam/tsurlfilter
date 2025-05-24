@@ -1,2 +1,2 @@
-export { RuleDeserializer } from './rule-deserializer';
-export { getSyntaxDeserializationMap } from './syntax-deserialization-map';
+export { RuleDeserializer } from './rule-deserializer.js';
+export { getSyntaxDeserializationMap } from './syntax-deserialization-map.js';

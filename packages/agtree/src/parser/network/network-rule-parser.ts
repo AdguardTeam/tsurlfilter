@@ -1,23 +1,23 @@
-import { AdblockSyntax } from '../../utils/adblockers';
-import { StringUtils } from '../../utils/string';
-import { ModifierListParser } from '../misc/modifier-list';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { StringUtils } from '../../utils/string.js';
+import { ModifierListParser } from '../misc/modifier-list.js';
 import {
     ESCAPE_CHARACTER,
     NETWORK_RULE_EXCEPTION_MARKER,
     NETWORK_RULE_EXCEPTION_MARKER_LEN,
     NETWORK_RULE_SEPARATOR,
     REGEX_MARKER,
-} from '../../utils/constants';
+} from '../../utils/constants.js';
 import {
     type ModifierList,
     type NetworkRule,
     RuleCategory,
     NetworkRuleType,
-} from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { ValueParser } from '../misc/value-parser';
+} from '../../nodes/index.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { ValueParser } from '../misc/value-parser.js';
 
 /**
  * `NetworkRuleParser` is responsible for parsing network rules.

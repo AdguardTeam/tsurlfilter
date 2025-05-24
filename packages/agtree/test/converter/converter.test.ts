@@ -7,9 +7,9 @@
  */
 import { describe, test, expect } from 'vitest';
 
-import { RuleConversionError } from '../../src/errors/rule-conversion-error';
-import { RuleConverter } from '../../src/converter/rule';
-import { RuleParser } from '../../src/parser/rule-parser';
+import { RuleConversionError } from '../../src/errors/rule-conversion-error.js';
+import { RuleConverter } from '../../src/converter/rule.js';
+import { RuleParser } from '../../src/parser/rule-parser.js';
 
 describe('Converter integration tests', () => {
     describe('should convert rules to ADG', () => {

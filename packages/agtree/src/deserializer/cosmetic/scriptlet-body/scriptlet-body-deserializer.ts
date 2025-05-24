@@ -1,13 +1,13 @@
 /* eslint-disable no-param-reassign */
-import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
-import { NULL } from '../../../utils/constants';
-import { ParameterListDeserializer } from '../../misc/parameter-list-deserializer';
-import { BaseDeserializer } from '../../base-deserializer';
-import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
+import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { NULL } from '../../../utils/constants.js';
+import { ParameterListDeserializer } from '../../misc/parameter-list-deserializer.js';
+import { BaseDeserializer } from '../../base-deserializer.js';
+import { type InputByteBuffer } from '../../../utils/input-byte-buffer.js';
 import {
     AbpSnippetBodyMarshallingMap,
-} from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common';
-import { BinaryTypeMarshallingMap } from '../../../marshalling-utils/misc/binary-type-common';
+} from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common.js';
+import { BinaryTypeMarshallingMap } from '../../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Deserializes binary data into scriptlet body nodes.

@@ -1,20 +1,20 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
+import { NULL } from '../../utils/constants.js';
 import {
     type MetadataCommentRule,
     CommentRuleType,
     RuleCategory,
     type Value,
-} from '../../nodes';
-import { BaseDeserializer } from '../base-deserializer';
+} from '../../nodes/index.js';
+import { BaseDeserializer } from '../base-deserializer.js';
 import {
     FREQUENT_HEADERS_DESERIALIZATION_MAP,
     MetadataCommentMarshallingMap,
-} from '../../marshalling-utils/comment/metadata-comment-common';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../marshalling-utils/comment/metadata-comment-common.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `MetadataCommentDeserializer` is responsible for deserializing metadata comments.

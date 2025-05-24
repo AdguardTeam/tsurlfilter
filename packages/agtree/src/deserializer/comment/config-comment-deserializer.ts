@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
+import { NULL } from '../../utils/constants.js';
 import {
     type ConfigCommentRule,
     type ConfigNode,
@@ -7,18 +7,18 @@ import {
     RuleCategory,
     type ParameterList,
     type Value,
-} from '../../nodes';
-import { BaseDeserializer } from '../base-deserializer';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+} from '../../nodes/index.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
 import {
     ConfigCommentRuleMarshallingMap,
     ConfigNodeMarshallingMap,
     FREQUENT_COMMANDS_SERIALIZATION_MAP,
-} from '../../marshalling-utils/comment/config-comment-common';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { ParameterListDeserializer } from '../misc/parameter-list-deserializer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../marshalling-utils/comment/config-comment-common.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { ParameterListDeserializer } from '../misc/parameter-list-deserializer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

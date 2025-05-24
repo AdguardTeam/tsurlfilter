@@ -1,4 +1,4 @@
-import { AgentCommentDeserializer } from './agent-comment-deserializer';
+import { AgentCommentDeserializer } from './agent-comment-deserializer.js';
 import {
     type AgentCommentRule,
     type AnyCommentRule,
@@ -7,15 +7,15 @@ import {
     type HintCommentRule,
     type MetadataCommentRule,
     type PreProcessorCommentRule,
-} from '../../nodes';
-import { ConfigCommentDeserializer } from './config-comment-deserializer';
-import { HintCommentDeserializer } from './hint-comment-deserializer';
-import { MetadataCommentDeserializer } from './metadata-comment-deserializer';
-import { PreProcessorCommentDeserializer } from './pre-processor-comment-deserializer';
-import { SimpleCommentDeserializer } from './simple-comment-deserializer';
-import { BaseDeserializer } from '../base-deserializer';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../nodes/index.js';
+import { ConfigCommentDeserializer } from './config-comment-deserializer.js';
+import { HintCommentDeserializer } from './hint-comment-deserializer.js';
+import { MetadataCommentDeserializer } from './metadata-comment-deserializer.js';
+import { PreProcessorCommentDeserializer } from './pre-processor-comment-deserializer.js';
+import { SimpleCommentDeserializer } from './simple-comment-deserializer.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `CommentRuleDeserializer` is responsible for deserializing any comment-like adblock rules.

@@ -1,12 +1,12 @@
 import { describe, test, expect } from 'vitest';
 
-import { SimpleCommentParser } from '../../../src/parser/comment/simple-comment-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { isNull } from '../../../src/utils/type-guards';
-import { SimpleCommentGenerator } from '../../../src/generator/comment/simple-comment-generator';
-import { SimpleCommentSerializer } from '../../../src/serializer/comment/simple-comment-serializer';
-import { SimpleCommentDeserializer } from '../../../src/deserializer/comment/simple-comment-deserializer';
+import { SimpleCommentParser } from '../../../src/parser/comment/simple-comment-parser.js';
+import { EMPTY, SPACE } from '../../../src/utils/constants.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { isNull } from '../../../src/utils/type-guards.js';
+import { SimpleCommentGenerator } from '../../../src/generator/comment/simple-comment-generator.js';
+import { SimpleCommentSerializer } from '../../../src/serializer/comment/simple-comment-serializer.js';
+import { SimpleCommentDeserializer } from '../../../src/deserializer/comment/simple-comment-deserializer.js';
 
 describe('SimpleCommentParser', () => {
     describe('isSimpleComment', () => {

@@ -1,10 +1,10 @@
 import { describe, test, expect } from 'vitest';
 
-import { type AnyExpressionNode } from '../../../src/nodes';
-import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression-parser';
-import { LogicalExpressionGenerator } from '../../../src/generator/misc/logical-expression-generator';
-import { LogicalExpressionSerializer } from '../../../src/serializer/misc/logical-expression-serializer';
-import { LogicalExpressionDeserializer } from '../../../src/deserializer/misc/logical-expression-deserializer';
+import { type AnyExpressionNode } from '../../../src/nodes/index.js';
+import { LogicalExpressionParser } from '../../../src/parser/misc/logical-expression-parser.js';
+import { LogicalExpressionGenerator } from '../../../src/generator/misc/logical-expression-generator.js';
+import { LogicalExpressionSerializer } from '../../../src/serializer/misc/logical-expression-serializer.js';
+import { LogicalExpressionDeserializer } from '../../../src/deserializer/misc/logical-expression-deserializer.js';
 
 describe('LogicalExpressionParser', () => {
     // TODO: Refactor to test.each

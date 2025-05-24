@@ -1,7 +1,7 @@
-import { isNull } from '../../utils/type-guards';
-import { modifiersCompatibilityTable } from '../modifiers';
-import { type GenericPlatform, type SpecificPlatform } from '../platforms';
-import { ResourceType } from '../schemas/resource-type';
+import { isNull } from '../../utils/type-guards.js';
+import { modifiersCompatibilityTable } from '../modifiers.js';
+import { type GenericPlatform, type SpecificPlatform } from '../platforms.js';
+import { ResourceType } from '../schemas/resource-type.js';
 
 /**
  * Map of resource types to their corresponding adblock modifier names.

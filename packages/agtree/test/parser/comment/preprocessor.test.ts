@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'vitest';
 
-import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { PreProcessorCommentGenerator } from '../../../src/generator/comment/pre-processor-comment-generator';
-import { PreProcessorCommentSerializer } from '../../../src/serializer/comment/pre-processor-comment-serializer';
-import { PreProcessorCommentDeserializer } from '../../../src/deserializer/comment/pre-processor-comment-deserializer';
+import { PreProcessorCommentParser } from '../../../src/parser/comment/preprocessor-parser.js';
+import { EMPTY, SPACE } from '../../../src/utils/constants.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { PreProcessorCommentGenerator } from '../../../src/generator/comment/pre-processor-comment-generator.js';
+import { PreProcessorCommentSerializer } from '../../../src/serializer/comment/pre-processor-comment-serializer.js';
+import { PreProcessorCommentDeserializer } from '../../../src/deserializer/comment/pre-processor-comment-deserializer.js';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {

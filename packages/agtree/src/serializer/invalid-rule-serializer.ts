@@ -1,11 +1,11 @@
-import { BaseSerializer } from './base-serializer';
-import { type InvalidRule } from '../nodes';
-import type { OutputByteBuffer } from '../utils/output-byte-buffer';
-import { isUndefined } from '../utils/type-guards';
-import { NULL } from '../utils/constants';
-import { InvalidRuleErrorNodeSerializer } from './invalid-rule-error-node-serializer';
-import { InvalidRuleMarshallingMap } from '../marshalling-utils/invalid-rule-common';
-import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
+import { BaseSerializer } from './base-serializer.js';
+import { type InvalidRule } from '../nodes/index.js';
+import type { OutputByteBuffer } from '../utils/output-byte-buffer.js';
+import { isUndefined } from '../utils/type-guards.js';
+import { NULL } from '../utils/constants.js';
+import { InvalidRuleErrorNodeSerializer } from './invalid-rule-error-node-serializer.js';
+import { InvalidRuleMarshallingMap } from '../marshalling-utils/invalid-rule-common.js';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Serializer for invalid rule nodes.

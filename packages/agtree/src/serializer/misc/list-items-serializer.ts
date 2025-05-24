@@ -1,6 +1,6 @@
-import { type ListItem, type ListItemNodeType } from '../../nodes';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { ListItemSerializer } from './list-item-serializer';
+import { type ListItem, type ListItemNodeType } from '../../nodes/index.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { ListItemSerializer } from './list-item-serializer.js';
 
 /**
  * Serializer for list items.

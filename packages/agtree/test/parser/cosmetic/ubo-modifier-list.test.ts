@@ -6,22 +6,22 @@ import {
 } from 'vitest';
 import { sprintf } from 'sprintf-js';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/nodes';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils.js';
+import { CosmeticRuleType, type ElementHidingRule, RuleCategory } from '../../../src/nodes/index.js';
+import { AdblockSyntax } from '../../../src/utils/adblockers.js';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser.js';
 import {
     CosmeticRuleParser,
     ERROR_MESSAGES as COSMETIC_ERROR_MESSAGES,
-} from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
+} from '../../../src/parser/cosmetic/cosmetic-rule-parser.js';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error.js';
 import {
     ERROR_MESSAGES as UBO_SELECTOR_ERROR_MESSAGES,
     formatPseudoName,
-} from '../../../src/parser/css/ubo-selector-parser';
-import { CSS_NOT_PSEUDO } from '../../../src/utils/constants';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
-import { UboPseudoName } from '../../../src/common/ubo-selector-common';
+} from '../../../src/parser/css/ubo-selector-parser.js';
+import { CSS_NOT_PSEUDO } from '../../../src/utils/constants.js';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic/index.js';
+import { UboPseudoName } from '../../../src/common/ubo-selector-common.js';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid usage of uBlock modifier list', () => {

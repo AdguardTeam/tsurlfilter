@@ -5,21 +5,21 @@ import {
     vi,
 } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils';
-import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
-import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/body/abp-snippet-injection-body-parser';
-import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
-import { EMPTY, SPACE } from '../../../../src/utils/constants';
+import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils.js';
+import { type ScriptletInjectionRuleBody } from '../../../../src/nodes/index.js';
+import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/body/abp-snippet-injection-body-parser.js';
+import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error.js';
+import { EMPTY, SPACE } from '../../../../src/utils/constants.js';
 import {
     AbpSnippetInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/body/abp-snippet-injection-body-generator';
+} from '../../../../src/generator/cosmetic/body/abp-snippet-injection-body-generator.js';
 import {
     AbpSnippetInjectionBodySerializer,
-} from '../../../../src/serializer/cosmetic/body/abp-snippet-injection-body-serializer';
+} from '../../../../src/serializer/cosmetic/body/abp-snippet-injection-body-serializer.js';
 import {
     AbpSnippetInjectionBodyDeserializer,
-} from '../../../../src/deserializer/cosmetic/scriptlet-body/abp-snippet-injection-body-deserializer';
-import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common';
+} from '../../../../src/deserializer/cosmetic/scriptlet-body/abp-snippet-injection-body-deserializer.js';
+import { AbpSnippetInjectionBodyCommon } from '../../../../src/common/abp-snippet-injection-body-common.js';
 
 describe('AbpSnippetInjectionBodyParser', () => {
     describe('AbpSnippetInjectionBodyParser.parse - valid cases', () => {

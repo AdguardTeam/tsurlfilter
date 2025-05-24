@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import { sprintf } from 'sprintf-js';
 
-import { AdblockSyntax } from '../../utils/adblockers';
+import { AdblockSyntax } from '../../utils/adblockers.js';
 import {
     CLOSE_PARENTHESIS,
     COLON,
@@ -9,11 +9,11 @@ import {
     EMPTY,
     OPEN_PARENTHESIS,
     SPACE,
-} from '../../utils/constants';
-import { type AnyCosmeticRule } from '../../nodes';
-import { BaseGenerator } from '../base-generator';
-import { CosmeticRulePatternGenerator } from './cosmetic-rule-pattern-generator';
-import { CosmeticRuleBodyGenerator } from './cosmetic-rule-body-generator';
+} from '../../utils/constants.js';
+import { type AnyCosmeticRule } from '../../nodes/index.js';
+import { BaseGenerator } from '../base-generator.js';
+import { CosmeticRulePatternGenerator } from './cosmetic-rule-pattern-generator.js';
+import { CosmeticRuleBodyGenerator } from './cosmetic-rule-body-generator.js';
 
 /**
  * Possible error messages for uBO selectors. Formatted with {@link sprintf}.

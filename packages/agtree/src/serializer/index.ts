@@ -1,1 +1,1 @@
-export { RuleSerializer } from './rule-serializer';
+export { RuleSerializer } from './rule-serializer.js';

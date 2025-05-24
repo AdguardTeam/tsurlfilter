@@ -1,20 +1,20 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
+import { NULL } from '../../utils/constants.js';
 import {
     type HostRule,
     type HostnameList,
     NetworkRuleType,
     RuleCategory,
     type Value,
-} from '../../nodes';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { HostnameListDeserializer } from './hostname-list-deserializer';
-import { BaseDeserializer } from '../base-deserializer';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { HostRuleMarshallingMap } from '../../marshalling-utils/misc/host-rule-common';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
-import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
+} from '../../nodes/index.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { HostnameListDeserializer } from './hostname-list-deserializer.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { HostRuleMarshallingMap } from '../../marshalling-utils/misc/host-rule-common.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
+import { getSyntaxDeserializationMap } from '../syntax-deserialization-map.js';
 
 /**
  * `HostRuleDeserializer` is responsible for deserializing hosts-like rules.

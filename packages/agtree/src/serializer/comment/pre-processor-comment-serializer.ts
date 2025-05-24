@@ -1,18 +1,18 @@
-import { NULL } from '../../utils/constants';
-import type { PreProcessorCommentRule } from '../../nodes';
-import { LogicalExpressionSerializer } from '../misc/logical-expression-serializer';
-import { ParameterListSerializer } from '../misc/parameter-list-serializer';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { ValueSerializer } from '../misc/value-serializer';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseSerializer } from '../base-serializer';
+import { NULL } from '../../utils/constants.js';
+import type { PreProcessorCommentRule } from '../../nodes/index.js';
+import { LogicalExpressionSerializer } from '../misc/logical-expression-serializer.js';
+import { ParameterListSerializer } from '../misc/parameter-list-serializer.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { ValueSerializer } from '../misc/value-serializer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseSerializer } from '../base-serializer.js';
 import {
     FREQUENT_DIRECTIVES_SERIALIZATION_MAP,
     FREQUENT_PARAMS_SERIALIZATION_MAP,
     PreProcessorRuleMarshallingMap,
-} from '../../marshalling-utils/comment/pre-processor-comment-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
-import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
+} from '../../marshalling-utils/comment/pre-processor-comment-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
+import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map.js';
 
 /**
  * `PreProcessorSerializer` is responsible for serializing preprocessor rules.

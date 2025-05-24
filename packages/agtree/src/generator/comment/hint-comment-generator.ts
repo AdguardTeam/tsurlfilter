@@ -1,7 +1,7 @@
-import { BaseGenerator } from '../base-generator';
-import type { HintCommentRule } from '../../nodes';
-import { HINT_MARKER, SPACE } from '../../utils/constants';
-import { HintGenerator } from './hint-generator';
+import { BaseGenerator } from '../base-generator.js';
+import type { HintCommentRule } from '../../nodes/index.js';
+import { HINT_MARKER, SPACE } from '../../utils/constants.js';
+import { HintGenerator } from './hint-generator.js';
 
 /**
  * Hint comment generator.

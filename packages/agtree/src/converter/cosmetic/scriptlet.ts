@@ -2,23 +2,23 @@
  * @file Scriptlet injection rule converter
  */
 
-import { CosmeticRuleSeparator, type ParameterList, type ScriptletInjectionRule } from '../../nodes';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { QuoteType, QuoteUtils } from '../../utils/quotes';
-import { EMPTY, SPACE } from '../../utils/constants';
+import { CosmeticRuleSeparator, type ParameterList, type ScriptletInjectionRule } from '../../nodes/index.js';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { QuoteType, QuoteUtils } from '../../utils/quotes.js';
+import { EMPTY, SPACE } from '../../utils/constants.js';
 import {
     getScriptletName,
     setScriptletName,
     setScriptletQuoteType,
     transformAllScriptletArguments,
     transformNthScriptletArgument,
-} from '../../ast-utils/scriptlets';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
-import { cloneDomainListNode, cloneModifierListNode, cloneScriptletRuleNode } from '../../ast-utils/clone';
-import { GenericPlatform, scriptletsCompatibilityTable } from '../../compatibility-tables';
-import { isNull, isUndefined } from '../../utils/type-guards';
+} from '../../ast-utils/scriptlets.js';
+import { RuleConversionError } from '../../errors/rule-conversion-error.js';
+import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result.js';
+import { cloneDomainListNode, cloneModifierListNode, cloneScriptletRuleNode } from '../../ast-utils/clone.js';
+import { GenericPlatform, scriptletsCompatibilityTable } from '../../compatibility-tables/index.js';
+import { isNull, isUndefined } from '../../utils/type-guards.js';
 
 const ABP_SCRIPTLET_PREFIX = 'abp-';
 const UBO_SCRIPTLET_PREFIX = 'ubo-';

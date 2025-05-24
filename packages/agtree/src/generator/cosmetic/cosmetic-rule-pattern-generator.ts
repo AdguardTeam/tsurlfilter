@@ -1,14 +1,14 @@
-import type { AnyCosmeticRule } from '../../nodes';
+import type { AnyCosmeticRule } from '../../nodes/index.js';
 import {
     CLOSE_SQUARE_BRACKET,
     DOLLAR_SIGN,
     EMPTY,
     OPEN_SQUARE_BRACKET,
-} from '../../utils/constants';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { BaseGenerator } from '../base-generator';
-import { ModifierListGenerator } from '../misc/modifier-list-generator';
-import { DomainListGenerator } from '../misc/domain-list-generator';
+} from '../../utils/constants.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { BaseGenerator } from '../base-generator.js';
+import { ModifierListGenerator } from '../misc/modifier-list-generator.js';
+import { DomainListGenerator } from '../misc/domain-list-generator.js';
 
 /**
  * Cosmetic rule pattern generator.

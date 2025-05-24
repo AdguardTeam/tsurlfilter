@@ -1,11 +1,11 @@
-import { type ParameterList } from '../../nodes';
-import { NULL } from '../../utils/constants';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { ValueSerializer } from './value-serializer';
-import { isNull, isUndefined } from '../../utils/type-guards';
-import { BaseSerializer } from '../base-serializer';
-import { ParameterListNodeMarshallingMap } from '../../marshalling-utils/misc/parameter-list-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { type ParameterList } from '../../nodes/index.js';
+import { NULL } from '../../utils/constants.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { ValueSerializer } from './value-serializer.js';
+import { isNull, isUndefined } from '../../utils/type-guards.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { ParameterListNodeMarshallingMap } from '../../marshalling-utils/misc/parameter-list-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Serializer for parameter list nodes.

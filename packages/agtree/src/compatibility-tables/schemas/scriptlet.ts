@@ -4,13 +4,13 @@
 
 import zod from 'zod';
 
-import { zodToCamelCase } from '../utils/zod-camelcase';
+import { zodToCamelCase } from '../utils/zod-camelcase.js';
 import {
     baseCompatibilityDataSchema,
     baseRefineLogic,
     booleanSchema,
     nonEmptyStringSchema,
-} from './base';
+} from './base.js';
 
 /**
  * Zod schema for scriptlet parameter data.

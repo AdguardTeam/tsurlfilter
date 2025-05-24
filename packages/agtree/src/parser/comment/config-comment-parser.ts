@@ -5,8 +5,8 @@
 
 import JSON5 from 'json5';
 
-import { AdblockSyntax } from '../../utils/adblockers';
-import { AGLINT_COMMAND_PREFIX, AGLINT_CONFIG_COMMENT_MARKER, COMMA } from '../../utils/constants';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { AGLINT_COMMAND_PREFIX, AGLINT_CONFIG_COMMENT_MARKER, COMMA } from '../../utils/constants.js';
 import {
     CommentMarker,
     CommentRuleType,
@@ -15,12 +15,12 @@ import {
     RuleCategory,
     type Value,
     type ConfigNode,
-} from '../../nodes';
-import { StringUtils } from '../../utils/string';
-import { ParameterListParser } from '../misc/parameter-list-parser';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { ValueParser } from '../misc/value-parser';
+} from '../../nodes/index.js';
+import { StringUtils } from '../../utils/string.js';
+import { ParameterListParser } from '../misc/parameter-list-parser.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { ValueParser } from '../misc/value-parser.js';
 
 /**
  * `ConfigCommentParser` is responsible for parsing inline AGLint configuration rules.

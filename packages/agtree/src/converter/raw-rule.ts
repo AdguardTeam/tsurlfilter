@@ -4,11 +4,11 @@
  * Technically, this is a wrapper around `RuleConverter` that works with nodes instead of strings.
  */
 
-import { createConversionResult, type ConversionResult } from './base-interfaces/conversion-result';
-import { RuleParser } from '../parser/rule-parser';
-import { RuleConverter } from './rule';
-import { BaseConverter } from './base-interfaces/base-converter';
-import { RuleGenerator } from '../generator';
+import { createConversionResult, type ConversionResult } from './base-interfaces/conversion-result.js';
+import { RuleParser } from '../parser/rule-parser.js';
+import { RuleConverter } from './rule.js';
+import { BaseConverter } from './base-interfaces/base-converter.js';
+import { RuleGenerator } from '../generator/index.js';
 
 /**
  * Adblock filtering rule converter class.

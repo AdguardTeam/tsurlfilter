@@ -1,15 +1,15 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
-import { type Value, type Agent } from '../../nodes';
-import { BaseDeserializer } from '../base-deserializer';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+import { NULL } from '../../utils/constants.js';
+import { type Value, type Agent } from '../../nodes/index.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
 import {
     AgentNodeMarshallingMap,
     FREQUENT_AGENTS_DESERIALIZATION_MAP,
-} from '../../marshalling-utils/comment/agent-common';
-import { getAdblockSyntax } from '../../common/agent-common';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../marshalling-utils/comment/agent-common.js';
+import { getAdblockSyntax } from '../../common/agent-common.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `AgentDeserializer` is responsible for deserializing single adblock agent elements.

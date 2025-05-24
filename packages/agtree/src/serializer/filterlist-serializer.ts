@@ -1,11 +1,11 @@
-import { type FilterList } from '../nodes';
-import { NULL } from '../utils/constants';
-import { type OutputByteBuffer } from '../utils/output-byte-buffer';
-import { isUndefined } from '../utils/type-guards';
-import { BaseSerializer } from './base-serializer';
-import { RuleSerializer } from './rule-serializer';
-import { FilterListNodeMarshallingMap } from '../marshalling-utils/filter-list-common';
-import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
+import { type FilterList } from '../nodes/index.js';
+import { NULL } from '../utils/constants.js';
+import { type OutputByteBuffer } from '../utils/output-byte-buffer.js';
+import { isUndefined } from '../utils/type-guards.js';
+import { BaseSerializer } from './base-serializer.js';
+import { RuleSerializer } from './rule-serializer.js';
+import { FilterListNodeMarshallingMap } from '../marshalling-utils/filter-list-common.js';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Serializes filter list nodes to binary format.

@@ -1,6 +1,6 @@
-import type { DomainList } from '../../nodes';
-import { BaseGenerator } from '../base-generator';
-import { ListItemsGenerator } from './list-items-generator';
+import type { DomainList } from '../../nodes/index.js';
+import { BaseGenerator } from '../base-generator.js';
+import { ListItemsGenerator } from './list-items-generator.js';
 
 /**
  * Domain list generator.

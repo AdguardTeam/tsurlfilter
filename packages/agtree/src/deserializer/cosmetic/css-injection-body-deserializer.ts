@@ -1,11 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { type Value, type CssInjectionRuleBody } from '../../nodes';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { NULL } from '../../utils/constants';
-import { BaseDeserializer } from '../base-deserializer';
-import { CssInjectionRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/css-injection-body-common';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { type Value, type CssInjectionRuleBody } from '../../nodes/index.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { NULL } from '../../utils/constants.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { CssInjectionRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/css-injection-body-common.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Deserializes CSS injection rule body nodes from binary format.

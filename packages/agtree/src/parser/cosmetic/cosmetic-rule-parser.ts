@@ -1,10 +1,10 @@
 import { sprintf } from 'sprintf-js';
 import { hasToken, TokenType } from '@adguard/css-tokenizer';
 
-import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { DomainListParser } from '../misc/domain-list-parser';
-import { ModifierListParser } from '../misc/modifier-list';
+import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { DomainListParser } from '../misc/domain-list-parser.js';
+import { ModifierListParser } from '../misc/modifier-list.js';
 import {
     ADG_SCRIPTLET_MASK,
     CSS_BLOCK_OPEN,

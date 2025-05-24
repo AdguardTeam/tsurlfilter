@@ -2,14 +2,14 @@
  * @file uBlock scriptlet injection body parser
  */
 
-import { SEMICOLON, SPACE } from '../../../utils/constants';
-import { StringUtils } from '../../../utils/string';
-import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../../misc/parameter-list-parser';
-import { type ScriptletInjectionRuleBody } from '../../../nodes';
-import { defaultParserOptions } from '../../options';
-import { BaseParser } from '../../base-parser';
-import { AbpSnippetInjectionBodyCommon } from '../../../common/abp-snippet-injection-body-common';
+import { SEMICOLON, SPACE } from '../../../utils/constants.js';
+import { StringUtils } from '../../../utils/string.js';
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error.js';
+import { ParameterListParser } from '../../misc/parameter-list-parser.js';
+import { type ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { defaultParserOptions } from '../../options.js';
+import { BaseParser } from '../../base-parser.js';
+import { AbpSnippetInjectionBodyCommon } from '../../../common/abp-snippet-injection-body-common.js';
 
 /**
  * `AbpSnippetInjectionBodyParser` is responsible for parsing the body of an Adblock Plus-style snippet rule.

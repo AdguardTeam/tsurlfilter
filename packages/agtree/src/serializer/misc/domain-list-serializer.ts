@@ -1,12 +1,12 @@
-import { COMMA, PIPE, NULL } from '../../utils/constants';
-import { type DomainList } from '../../nodes';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-import { BaseSerializer } from '../base-serializer';
-import { ListItemsSerializer } from './list-items-serializer';
-import { DomainListMarshallingMap } from '../../marshalling-utils/misc/domain-list-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { COMMA, PIPE, NULL } from '../../utils/constants.js';
+import { type DomainList } from '../../nodes/index.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { ListItemsSerializer } from './list-items-serializer.js';
+import { DomainListMarshallingMap } from '../../marshalling-utils/misc/domain-list-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Value map for binary serialization. This helps to reduce the size of the serialized data,

@@ -3,7 +3,7 @@
  * @file Provides platform mapping and helper functions.
  */
 
-import { GenericPlatform, SpecificPlatform } from '../platforms';
+import { GenericPlatform, SpecificPlatform } from '../platforms.js';
 
 /**
  * Map of specific platforms string names to their corresponding enum values.

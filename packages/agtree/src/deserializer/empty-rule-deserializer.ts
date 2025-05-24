@@ -1,11 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { BaseDeserializer } from './base-deserializer';
-import { RuleCategory, type EmptyRule } from '../nodes';
-import { NULL } from '../utils/constants';
-import { type InputByteBuffer } from '../utils/input-byte-buffer';
-import { EmptyRuleMarshallingMap } from '../marshalling-utils/empty-rule-common';
-import { AdblockSyntax } from '../utils/adblockers';
-import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common';
+import { BaseDeserializer } from './base-deserializer.js';
+import { RuleCategory, type EmptyRule } from '../nodes/index.js';
+import { NULL } from '../utils/constants.js';
+import { type InputByteBuffer } from '../utils/input-byte-buffer.js';
+import { EmptyRuleMarshallingMap } from '../marshalling-utils/empty-rule-common.js';
+import { AdblockSyntax } from '../utils/adblockers.js';
+import { BinaryTypeMarshallingMap } from '../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Deserializer for empty rule nodes.

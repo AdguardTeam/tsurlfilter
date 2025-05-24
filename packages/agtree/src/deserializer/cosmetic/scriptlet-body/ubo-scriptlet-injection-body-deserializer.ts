@@ -1,10 +1,10 @@
-import { type ScriptletInjectionRuleBody } from '../../../nodes';
-import { BaseDeserializer } from '../../base-deserializer';
-import { ScriptletBodyDeserializer } from './scriptlet-body-deserializer';
+import { type ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { BaseDeserializer } from '../../base-deserializer.js';
+import { ScriptletBodyDeserializer } from './scriptlet-body-deserializer.js';
 import {
     FREQUENT_UBO_SCRIPTLET_ARGS_SERIALIZATION_MAP,
-} from '../../../marshalling-utils/cosmetic/body/ubo-scriptlet-injection-body-common';
-import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
+} from '../../../marshalling-utils/cosmetic/body/ubo-scriptlet-injection-body-common.js';
+import { type InputByteBuffer } from '../../../utils/input-byte-buffer.js';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

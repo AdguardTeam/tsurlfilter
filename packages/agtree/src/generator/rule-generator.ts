@@ -1,9 +1,9 @@
-import { BaseGenerator } from './base-generator';
-import { type AnyRule, NetworkRuleType, RuleCategory } from '../nodes';
-import { EMPTY } from '../utils/constants';
-import { CommentRuleGenerator } from './comment';
-import { CosmeticRuleGenerator } from './cosmetic';
-import { HostRuleGenerator, NetworkRuleGenerator } from './network';
+import { BaseGenerator } from './base-generator.js';
+import { type AnyRule, NetworkRuleType, RuleCategory } from '../nodes/index.js';
+import { EMPTY } from '../utils/constants.js';
+import { CommentRuleGenerator } from './comment/index.js';
+import { CosmeticRuleGenerator } from './cosmetic/index.js';
+import { HostRuleGenerator, NetworkRuleGenerator } from './network/index.js';
 
 /**
  * RuleGenerator is responsible for converting adblock rule ASTs to their string representation.

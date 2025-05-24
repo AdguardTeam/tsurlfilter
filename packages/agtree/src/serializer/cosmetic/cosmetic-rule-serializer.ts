@@ -1,23 +1,23 @@
-import { AdblockSyntax } from '../../utils/adblockers';
-import { DomainListSerializer } from '../misc/domain-list-serializer';
-import { NULL } from '../../utils/constants';
-import { type AnyCosmeticRule, CosmeticRuleType } from '../../nodes';
-import { AbpSnippetInjectionBodySerializer } from './body/abp-snippet-injection-body-serializer';
-import { UboScriptletInjectionBodySerializer } from './body/ubo-scriptlet-injection-body-serializer';
-import { AdgScriptletInjectionBodySerializer } from './body/adg-scriptlet-injection-body-serializer';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { ValueSerializer } from '../misc/value-serializer';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseSerializer } from '../base-serializer';
-import { ElementHidingBodySerializer } from './element-hiding-body-serializer';
-import { CssInjectionBodySerializer } from './css-injection-body-serializer';
-import { ModifierListSerializer } from '../misc/modifier-list-serializer';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { DomainListSerializer } from '../misc/domain-list-serializer.js';
+import { NULL } from '../../utils/constants.js';
+import { type AnyCosmeticRule, CosmeticRuleType } from '../../nodes/index.js';
+import { AbpSnippetInjectionBodySerializer } from './body/abp-snippet-injection-body-serializer.js';
+import { UboScriptletInjectionBodySerializer } from './body/ubo-scriptlet-injection-body-serializer.js';
+import { AdgScriptletInjectionBodySerializer } from './body/adg-scriptlet-injection-body-serializer.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { ValueSerializer } from '../misc/value-serializer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { ElementHidingBodySerializer } from './element-hiding-body-serializer.js';
+import { CssInjectionBodySerializer } from './css-injection-body-serializer.js';
+import { ModifierListSerializer } from '../misc/modifier-list-serializer.js';
 import {
     CosmeticRuleMarshallingMap,
     COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP,
-} from '../../marshalling-utils/cosmetic/cosmetic-rule-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
-import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
+} from '../../marshalling-utils/cosmetic/cosmetic-rule-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
+import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map.js';
 
 /**
  * `CosmeticRuleSerializer` is responsible for serializing cosmetic rules into a binary format.

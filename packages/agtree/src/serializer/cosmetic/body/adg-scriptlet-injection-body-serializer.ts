@@ -1,10 +1,10 @@
-import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
-import { type ScriptletInjectionRuleBody } from '../../../nodes';
-import { BaseSerializer } from '../../base-serializer';
-import { ScriptletBodySerializer } from './scriptlet-body-serializer';
+import { type OutputByteBuffer } from '../../../utils/output-byte-buffer.js';
+import { type ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { BaseSerializer } from '../../base-serializer.js';
+import { ScriptletBodySerializer } from './scriptlet-body-serializer.js';
 import {
     FREQUENT_ADG_SCRIPTLET_ARGS_SERIALIZATION_MAP,
-} from '../../../marshalling-utils/cosmetic/body/adg-scriptlet-injection-body-common';
+} from '../../../marshalling-utils/cosmetic/body/adg-scriptlet-injection-body-common.js';
 
 /**
  * `AdgScriptletInjectionBodySerializer` is responsible for serializing the body of an AdGuard-style scriptlet rule.

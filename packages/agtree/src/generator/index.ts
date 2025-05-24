@@ -1,4 +1,4 @@
-export { RuleGenerator } from './rule-generator';
-export { CosmeticRuleGenerator } from './cosmetic/cosmetic-rule-generator';
-export { CosmeticRuleBodyGenerator } from './cosmetic/cosmetic-rule-body-generator';
-export { FilterListGenerator } from './filterlist-generator';
+export { RuleGenerator } from './rule-generator.js';
+export { CosmeticRuleGenerator } from './cosmetic/cosmetic-rule-generator.js';
+export { CosmeticRuleBodyGenerator } from './cosmetic/cosmetic-rule-body-generator.js';
+export { FilterListGenerator } from './filterlist-generator.js';

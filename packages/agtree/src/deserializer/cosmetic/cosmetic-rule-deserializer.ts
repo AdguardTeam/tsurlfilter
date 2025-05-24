@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
-import { AdblockSyntax } from '../../utils/adblockers';
-import { DomainListDeserializer } from '../misc/domain-list-deserializer';
-import { NULL } from '../../utils/constants';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { DomainListDeserializer } from '../misc/domain-list-deserializer.js';
+import { NULL } from '../../utils/constants.js';
 import {
     type AnyCosmeticRule,
     CosmeticRuleType,
@@ -12,23 +12,23 @@ import {
     type ScriptletInjectionRuleBody,
     type DomainList,
     type ModifierList,
-} from '../../nodes';
-import { AbpSnippetInjectionBodyDeserializer } from './scriptlet-body/abp-snippet-injection-body-deserializer';
-import { UboScriptletInjectionBodyDeserializer } from './scriptlet-body/ubo-scriptlet-injection-body-deserializer';
-import { AdgScriptletInjectionBodyDeserializer } from './scriptlet-body/adg-scriptlet-injection-body-deserializer';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseDeserializer } from '../base-deserializer';
-import { ElementHidingBodyDeserializer } from './element-hiding-body-deserializer';
-import { CssInjectionBodyDeserializer } from './css-injection-body-deserializer';
-import { ModifierListDeserializer } from '../misc/modifier-list-deserializer';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
+} from '../../nodes/index.js';
+import { AbpSnippetInjectionBodyDeserializer } from './scriptlet-body/abp-snippet-injection-body-deserializer.js';
+import { UboScriptletInjectionBodyDeserializer } from './scriptlet-body/ubo-scriptlet-injection-body-deserializer.js';
+import { AdgScriptletInjectionBodyDeserializer } from './scriptlet-body/adg-scriptlet-injection-body-deserializer.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { ElementHidingBodyDeserializer } from './element-hiding-body-deserializer.js';
+import { CssInjectionBodyDeserializer } from './css-injection-body-deserializer.js';
+import { ModifierListDeserializer } from '../misc/modifier-list-deserializer.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
 import {
     CosmeticRuleMarshallingMap,
     COSMETIC_RULE_SEPARATOR_SERIALIZATION_MAP,
-} from '../../marshalling-utils/cosmetic/cosmetic-rule-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
-import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
+} from '../../marshalling-utils/cosmetic/cosmetic-rule-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
+import { getSyntaxDeserializationMap } from '../syntax-deserialization-map.js';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

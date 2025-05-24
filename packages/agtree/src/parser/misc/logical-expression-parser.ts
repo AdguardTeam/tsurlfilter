@@ -1,10 +1,10 @@
-import { StringUtils } from '../../utils/string';
+import { StringUtils } from '../../utils/string.js';
 import {
     type AnyExpressionNode,
     type ExpressionParenthesisNode,
     type ExpressionVariableNode,
     OperatorValue,
-} from '../../nodes';
+} from '../../nodes/index.js';
 import {
     AMPERSAND,
     CLOSE_PARENTHESIS,
@@ -12,10 +12,10 @@ import {
     OPEN_PARENTHESIS,
     PIPE,
     UNDERSCORE,
-} from '../../utils/constants';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
+} from '../../utils/constants.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
 
 /**
  * Possible token types in the logical expression.

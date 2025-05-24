@@ -1,8 +1,8 @@
-import { type ListItem, ListItemNodeType } from '../../nodes';
-import { defaultParserOptions } from '../options';
-import { COMMA, NEGATION_MARKER } from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
+import { type ListItem, ListItemNodeType } from '../../nodes/index.js';
+import { defaultParserOptions } from '../options.js';
+import { COMMA, NEGATION_MARKER } from '../../utils/constants.js';
+import { StringUtils } from '../../utils/string.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
 
 /**
  * Prefixes for error messages which are used for parsing of value lists.

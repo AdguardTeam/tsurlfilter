@@ -1,7 +1,7 @@
-import { BaseGenerator } from '../base-generator';
-import type { CommentRule } from '../../nodes';
-import { EMPTY } from '../../utils/constants';
-import { ValueGenerator } from '../misc/value-generator';
+import { BaseGenerator } from '../base-generator.js';
+import type { CommentRule } from '../../nodes/index.js';
+import { EMPTY } from '../../utils/constants.js';
+import { ValueGenerator } from '../misc/value-generator.js';
 
 /**
  * Simple comment generator.

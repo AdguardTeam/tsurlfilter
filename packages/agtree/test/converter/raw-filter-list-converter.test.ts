@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 
-import { NEWLINE } from '../../src/utils/constants';
-import { RawFilterListConverter } from '../../src/converter/raw-filter-list';
+import { NEWLINE } from '../../src/utils/constants.js';
+import { RawFilterListConverter } from '../../src/converter/raw-filter-list.js';
 
 describe('RawFilterListConverter', () => {
     test('convertToAdg should leave non-affected filter lists as is', () => {

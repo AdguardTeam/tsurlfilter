@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 
-import { everyRefsAreDifferent } from './refs';
+import { everyRefsAreDifferent } from './refs.js';
 
 describe('Reference utils', () => {
     test('everyRefsAreDifferent', () => {

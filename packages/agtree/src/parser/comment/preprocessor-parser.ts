@@ -5,7 +5,7 @@
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#pre-parsing-directives}
  */
 
-import { AdblockSyntax } from '../../utils/adblockers';
+import { AdblockSyntax } from '../../utils/adblockers.js';
 import {
     CLOSE_PARENTHESIS,
     COMMA,
@@ -17,16 +17,16 @@ import {
     PREPROCESSOR_MARKER_LEN,
     PREPROCESSOR_SEPARATOR,
     SAFARI_CB_AFFINITY,
-} from '../../utils/constants';
-import { StringUtils } from '../../utils/string';
-import type { AnyExpressionNode, PreProcessorCommentRule, Value } from '../../nodes';
-import { CommentRuleType, RuleCategory } from '../../nodes';
-import { LogicalExpressionParser } from '../misc/logical-expression-parser';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { ParameterListParser } from '../misc/parameter-list-parser';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { ValueParser } from '../misc/value-parser';
+} from '../../utils/constants.js';
+import { StringUtils } from '../../utils/string.js';
+import type { AnyExpressionNode, PreProcessorCommentRule, Value } from '../../nodes/index.js';
+import { CommentRuleType, RuleCategory } from '../../nodes/index.js';
+import { LogicalExpressionParser } from '../misc/logical-expression-parser.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { ParameterListParser } from '../misc/parameter-list-parser.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { ValueParser } from '../misc/value-parser.js';
 
 /**
  * `PreProcessorParser` is responsible for parsing preprocessor rules.

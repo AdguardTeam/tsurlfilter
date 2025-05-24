@@ -1,11 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { BaseDeserializer } from '../base-deserializer';
-import { type Value, type ElementHidingRuleBody } from '../../nodes';
-import { NULL } from '../../utils/constants';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ElementHidingRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/element-hiding-body-common';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { type Value, type ElementHidingRuleBody } from '../../nodes/index.js';
+import { NULL } from '../../utils/constants.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { ElementHidingRuleMarshallingMap } from '../../marshalling-utils/cosmetic/body/element-hiding-body-common.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Deserializes element hiding rule body nodes from binary data.

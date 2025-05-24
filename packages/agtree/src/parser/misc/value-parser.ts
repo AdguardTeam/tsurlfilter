@@ -1,6 +1,6 @@
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { type Value } from '../../nodes';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { type Value } from '../../nodes/index.js';
 
 /**
  * Value parser.

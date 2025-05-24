@@ -1,1 +1,1 @@
-export { CosmeticRuleGenerator } from './cosmetic-rule-generator';
+export { CosmeticRuleGenerator } from './cosmetic-rule-generator.js';

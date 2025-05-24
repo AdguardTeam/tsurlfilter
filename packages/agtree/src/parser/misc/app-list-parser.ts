@@ -1,9 +1,9 @@
-import { PIPE as APP_LIST_SEPARATOR } from '../../utils/constants';
-import { type AppList, ListNodeType, ListItemNodeType } from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { ListItemsParser } from './list-items-parser';
+import { PIPE as APP_LIST_SEPARATOR } from '../../utils/constants.js';
+import { type AppList, ListNodeType, ListItemNodeType } from '../../nodes/index.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { ListItemsParser } from './list-items-parser.js';
 
 /**
  * `AppListParser` is responsible for parsing an app list.

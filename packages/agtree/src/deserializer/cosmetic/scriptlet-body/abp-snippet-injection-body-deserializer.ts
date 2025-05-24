@@ -1,7 +1,7 @@
-import { type ScriptletInjectionRuleBody } from '../../../nodes';
-import { BaseDeserializer } from '../../base-deserializer';
-import { ScriptletBodyDeserializer } from './scriptlet-body-deserializer';
-import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
+import { type ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { BaseDeserializer } from '../../base-deserializer.js';
+import { ScriptletBodyDeserializer } from './scriptlet-body-deserializer.js';
+import { type InputByteBuffer } from '../../../utils/input-byte-buffer.js';
 import {
     FREQUENT_ABP_SNIPPET_ARGS_SERIALIZATION_MAP,
 } from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common';

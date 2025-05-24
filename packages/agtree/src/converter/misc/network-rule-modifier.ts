@@ -2,17 +2,17 @@
  * @file Network rule modifier list converter.
  */
 
-import { type Modifier, type ModifierList } from '../../nodes';
-import { SEMICOLON, SPACE } from '../../utils/constants';
-import { createModifierNode } from '../../ast-utils/modifiers';
-import { BaseConverter } from '../base-interfaces/base-converter';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { MultiValueMap } from '../../utils/multi-value-map';
-import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result';
-import { cloneModifierListNode } from '../../ast-utils/clone';
-import { GenericPlatform, modifiersCompatibilityTable, redirectsCompatibilityTable } from '../../compatibility-tables';
-import { isValidResourceType } from '../../compatibility-tables/utils/resource-type-helpers';
-import { isUndefined } from '../../utils/type-guards';
+import { type Modifier, type ModifierList } from '../../nodes/index.js';
+import { SEMICOLON, SPACE } from '../../utils/constants.js';
+import { createModifierNode } from '../../ast-utils/modifiers.js';
+import { BaseConverter } from '../base-interfaces/base-converter.js';
+import { RuleConversionError } from '../../errors/rule-conversion-error.js';
+import { MultiValueMap } from '../../utils/multi-value-map.js';
+import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result.js';
+import { cloneModifierListNode } from '../../ast-utils/clone.js';
+import { GenericPlatform, modifiersCompatibilityTable, redirectsCompatibilityTable } from '../../compatibility-tables/index.js';
+import { isValidResourceType } from '../../compatibility-tables/utils/resource-type-helpers.js';
+import { isUndefined } from '../../utils/type-guards.js';
 
 /**
  * Modifier conversion interface.

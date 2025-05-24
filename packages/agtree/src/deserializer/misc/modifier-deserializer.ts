@@ -1,15 +1,15 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
-import { type Value, type Modifier } from '../../nodes';
-import { ValueDeserializer } from './value-deserializer';
-import { BaseDeserializer } from '../base-deserializer';
+import { NULL } from '../../utils/constants.js';
+import { type Value, type Modifier } from '../../nodes/index.js';
+import { ValueDeserializer } from './value-deserializer.js';
+import { BaseDeserializer } from '../base-deserializer.js';
 import {
     FREQUENT_MODIFIERS_SERIALIZATION_MAP,
     FREQUENT_REDIRECT_MODIFIERS_SERIALIZATION_MAP,
     ModifierNodeMarshallingMap,
-} from '../../marshalling-utils/misc/modifier-common';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../marshalling-utils/misc/modifier-common.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

@@ -1,13 +1,13 @@
-import { NULL } from '../../utils/constants';
-import { type NetworkRule } from '../../nodes';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-import { ValueSerializer } from '../misc/value-serializer';
-import { BaseSerializer } from '../base-serializer';
-import { ModifierListSerializer } from '../misc/modifier-list-serializer';
-import { NetworkRuleMarshallingMap } from '../../marshalling-utils/network/network-rule-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
-import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map';
+import { NULL } from '../../utils/constants.js';
+import { type NetworkRule } from '../../nodes/index.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { ValueSerializer } from '../misc/value-serializer.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { ModifierListSerializer } from '../misc/modifier-list-serializer.js';
+import { NetworkRuleMarshallingMap } from '../../marshalling-utils/network/network-rule-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
+import { getSyntaxSerializationMap } from '../../marshalling-utils/syntax-serialization-map.js';
 
 /**
  * `NetworkRuleSerializer` is responsible for serializing network rules.

@@ -1,16 +1,16 @@
-import { NULL } from '../../utils/constants';
-import { type Hint } from '../../nodes';
-import { ParameterListSerializer } from '../misc/parameter-list-serializer';
-import { ValueSerializer } from '../misc/value-serializer';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-import { BaseSerializer } from '../base-serializer';
+import { NULL } from '../../utils/constants.js';
+import { type Hint } from '../../nodes/index.js';
+import { ParameterListSerializer } from '../misc/parameter-list-serializer.js';
+import { ValueSerializer } from '../misc/value-serializer.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BaseSerializer } from '../base-serializer.js';
 import {
     FREQUENT_HINTS_SERIALIZATION_MAP,
     FREQUENT_PLATFORMS_SERIALIZATION_MAP,
     HintNodeMarshallingMap,
-} from '../../marshalling-utils/comment/hint-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../marshalling-utils/comment/hint-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `HintSerializer` is responsible for serializing AdGuard hints.

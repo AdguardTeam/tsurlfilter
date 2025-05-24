@@ -1,5 +1,5 @@
-import { BaseGenerator } from '../base-generator';
-import { UboPseudoName } from '../../common/ubo-selector-common';
+import { BaseGenerator } from '../base-generator.js';
+import { UboPseudoName } from '../../common/ubo-selector-common.js';
 import {
     CLOSE_PARENTHESIS,
     COLON,
@@ -8,7 +8,7 @@ import {
     OPEN_PARENTHESIS,
     SPACE,
 } from '../../utils/constants';
-import { type UboSelector } from '../../nodes';
+import { type UboSelector } from '../../nodes/index.js';
 
 /**
  * UBO selector generator.

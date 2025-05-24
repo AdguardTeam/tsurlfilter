@@ -1,10 +1,10 @@
-import { NULL } from '../../utils/constants';
-import { type Agent } from '../../nodes';
-import { ValueSerializer } from '../misc/value-serializer';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version';
-import { BaseSerializer } from '../base-serializer';
+import { NULL } from '../../utils/constants.js';
+import { type Agent } from '../../nodes/index.js';
+import { ValueSerializer } from '../misc/value-serializer.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { BINARY_SCHEMA_VERSION } from '../../utils/binary-schema-version.js';
+import { BaseSerializer } from '../base-serializer.js';
 import {
     AgentNodeMarshallingMap,
     FREQUENT_AGENTS_DESERIALIZATION_MAP,

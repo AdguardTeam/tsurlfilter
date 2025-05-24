@@ -8,9 +8,9 @@ import {
     type DomainList,
     type Modifier,
     type ModifierList,
-} from '../../../nodes';
-import { createModifierNode } from '../../../ast-utils/modifiers';
-import { RegExpUtils } from '../../../utils/regexp';
+} from '../../../nodes/index.js';
+import { createModifierNode } from '../../../ast-utils/modifiers.js';
+import { RegExpUtils } from '../../../utils/regexp.js';
 import {
     CLOSE_SQUARE_BRACKET,
     COMMA_DOMAIN_LIST_SEPARATOR,
@@ -22,12 +22,12 @@ import {
     UBO_MATCHES_PATH_OPERATOR,
     ADG_PATH_MODIFIER,
     PIPE_MODIFIER_SEPARATOR,
-} from '../../../utils/constants';
-import { StringUtils } from '../../../utils/string';
-import { MultiValueMap } from '../../../utils/multi-value-map';
-import { clone } from '../../../utils/clone';
-import { type ConversionResult, createConversionResult } from '../../base-interfaces/conversion-result';
-import { DomainListParser } from '../../../parser';
+} from '../../../utils/constants.js';
+import { StringUtils } from '../../../utils/string.js';
+import { MultiValueMap } from '../../../utils/multi-value-map.js';
+import { clone } from '../../../utils/clone.js';
+import { type ConversionResult, createConversionResult } from '../../base-interfaces/conversion-result.js';
+import { DomainListParser } from '../../../parser/index.js';
 
 /**
  * Regular expression pattern for matching the main page

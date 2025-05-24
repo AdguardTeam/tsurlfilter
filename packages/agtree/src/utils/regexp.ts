@@ -20,7 +20,7 @@ import {
     QUESTION_MARK,
     REGEX_MARKER,
     SLASH,
-} from './constants';
+} from './constants.js';
 
 // Special RegExp constants
 export const REGEX_START = CARET; // '^'

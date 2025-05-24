@@ -10,13 +10,13 @@ import {
     SPACE,
     UBO_SCRIPTLET_MASK,
     UBO_SCRIPTLET_MASK_LEGACY,
-} from '../../../utils/constants';
-import { StringUtils } from '../../../utils/string';
-import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { type ScriptletInjectionRuleBody } from '../../../nodes';
-import { defaultParserOptions } from '../../options';
-import { BaseParser } from '../../base-parser';
-import { UboParameterListParser } from '../../misc/ubo-parameter-list-parser';
+} from '../../../utils/constants.js';
+import { StringUtils } from '../../../utils/string.js';
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error.js';
+import { type ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { defaultParserOptions } from '../../options.js';
+import { BaseParser } from '../../base-parser.js';
+import { UboParameterListParser } from '../../misc/ubo-parameter-list-parser.js';
 
 /**
  * `UboScriptletInjectionBodyParser` is responsible for parsing the body of a uBlock-style scriptlet rule.

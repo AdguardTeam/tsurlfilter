@@ -2,7 +2,7 @@
  * @file Conversion result interface and helper functions
  */
 
-import { type Node } from '../../nodes';
+import { type Node } from '../../nodes/index.js';
 
 /**
  * Common conversion result interface

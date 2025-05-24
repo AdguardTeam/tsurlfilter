@@ -1,4 +1,4 @@
-import { AdblockSyntax } from '../utils/adblockers';
+import { AdblockSyntax } from '../utils/adblockers.js';
 import {
     CAPITAL_LETTERS,
     CLOSE_PARENTHESIS,
@@ -6,7 +6,7 @@ import {
     OPEN_PARENTHESIS,
     SMALL_LETTERS,
     UNDERSCORE,
-} from '../utils/constants';
+} from '../utils/constants.js';
 
 /**
  * Prefixes for different adblockers to describe the platform-specific modifiers data

@@ -1,10 +1,10 @@
-import { type ScriptletInjectionRuleBody } from '../../../nodes';
-import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
-import { BaseSerializer } from '../../base-serializer';
-import { ScriptletBodySerializer } from './scriptlet-body-serializer';
+import { type ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { type OutputByteBuffer } from '../../../utils/output-byte-buffer.js';
+import { BaseSerializer } from '../../base-serializer.js';
+import { ScriptletBodySerializer } from './scriptlet-body-serializer.js';
 import {
     FREQUENT_ABP_SNIPPET_ARGS_SERIALIZATION_MAP,
-} from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common';
+} from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common.js';
 
 /**
  * `AbpSnippetInjectionBodySerializer` is responsible for serializing the body of an Adblock Plus-style snippet rule.

@@ -1,13 +1,13 @@
-import { type ScriptletInjectionRuleBody } from '../../../nodes';
-import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
-import { NULL, UINT8_MAX } from '../../../utils/constants';
-import { ParameterListSerializer } from '../../misc/parameter-list-serializer';
-import { isUndefined } from '../../../utils/type-guards';
-import { BaseSerializer } from '../../base-serializer';
+import { type ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { type OutputByteBuffer } from '../../../utils/output-byte-buffer.js';
+import { NULL, UINT8_MAX } from '../../../utils/constants.js';
+import { ParameterListSerializer } from '../../misc/parameter-list-serializer.js';
+import { isUndefined } from '../../../utils/type-guards.js';
+import { BaseSerializer } from '../../base-serializer.js';
 import {
     AbpSnippetBodyMarshallingMap,
-} from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common';
-import { BinaryTypeMarshallingMap } from '../../../marshalling-utils/misc/binary-type-common';
+} from '../../../marshalling-utils/cosmetic/body/abp-snippet-injection-body-common.js';
+import { BinaryTypeMarshallingMap } from '../../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Serializer for scriptlet injection rule body nodes.

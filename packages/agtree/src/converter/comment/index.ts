@@ -2,11 +2,11 @@
  * @file Comment rule converter
  */
 
-import { type AnyCommentRule, CommentMarker, CommentRuleType } from '../../nodes';
-import { SPACE } from '../../utils/constants';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { clone } from '../../utils/clone';
-import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result';
+import { type AnyCommentRule, CommentMarker, CommentRuleType } from '../../nodes/index.js';
+import { SPACE } from '../../utils/constants.js';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base.js';
+import { clone } from '../../utils/clone.js';
+import { createNodeConversionResult, type NodeConversionResult } from '../base-interfaces/conversion-result.js';
 
 /**
  * Comment rule converter class

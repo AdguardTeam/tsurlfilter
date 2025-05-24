@@ -7,19 +7,19 @@ import {
 import { sprintf } from 'sprintf-js';
 import { getFormattedTokenName, TokenType } from '@adguard/css-tokenizer';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils.js';
 import {
     CosmeticRuleType,
     RuleCategory,
     type CssInjectionRule,
     type ElementHidingRule,
-} from '../../../src/nodes';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-generator';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
-import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { ERROR_MESSAGES as CSS_TOKEN_STREAM_ERROR_MESSAGES, END_OF_INPUT } from '../../../src/parser/css/constants';
+} from '../../../src/nodes/index.js';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-generator.js';
+import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser.js';
+import { AdblockSyntax } from '../../../src/utils/adblockers.js';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser.js';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error.js';
+import { ERROR_MESSAGES as CSS_TOKEN_STREAM_ERROR_MESSAGES, END_OF_INPUT } from '../../../src/parser/css/constants.js';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid AdblockPlus CSS injection rules', () => {

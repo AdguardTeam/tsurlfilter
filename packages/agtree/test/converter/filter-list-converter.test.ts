@@ -1,9 +1,9 @@
 import { describe, test, expect } from 'vitest';
 
-import { FilterListParser } from '../../src/parser/filterlist-parser';
-import { NEWLINE } from '../../src/utils/constants';
-import { FilterListConverter } from '../../src/converter/filter-list';
-import { FilterListGenerator } from '../../src/generator/filterlist-generator';
+import { FilterListParser } from '../../src/parser/filterlist-parser.js';
+import { NEWLINE } from '../../src/utils/constants.js';
+import { FilterListConverter } from '../../src/converter/filter-list.js';
+import { FilterListGenerator } from '../../src/generator/filterlist-generator.js';
 
 describe('FilterListConverter', () => {
     test('convertToAdg should leave non-affected filter lists as is', () => {

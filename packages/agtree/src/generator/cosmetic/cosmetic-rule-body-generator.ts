@@ -1,18 +1,18 @@
-import { BaseGenerator } from '../base-generator';
-import { type AnyCosmeticRule, CosmeticRuleType } from '../../nodes';
+import { BaseGenerator } from '../base-generator.js';
+import { type AnyCosmeticRule, CosmeticRuleType } from '../../nodes/index.js';
 import {
     CLOSE_PARENTHESIS,
     COLON,
     EMPTY,
     OPEN_PARENTHESIS,
     SPACE,
-} from '../../utils/constants';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { AdgScriptletInjectionBodyGenerator } from './body/adg-scriptlet-injection-body-generator';
-import { AdgCssInjectionGenerator } from '../css/adg-css-injection-generator';
-import { AbpSnippetInjectionBodyGenerator } from './body/abp-snippet-injection-body-generator';
-import { UboScriptletInjectionBodyGenerator } from './body/ubo-scriptlet-injection-body-generator';
-import { UboPseudoName } from '../../common/ubo-selector-common';
+} from '../../utils/constants.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { AdgScriptletInjectionBodyGenerator } from './body/adg-scriptlet-injection-body-generator.js';
+import { AdgCssInjectionGenerator } from '../css/adg-css-injection-generator.js';
+import { AbpSnippetInjectionBodyGenerator } from './body/abp-snippet-injection-body-generator.js';
+import { UboScriptletInjectionBodyGenerator } from './body/ubo-scriptlet-injection-body-generator.js';
+import { UboPseudoName } from '../../common/ubo-selector-common.js';
 
 /**
  * Cosmetic rule body generator.

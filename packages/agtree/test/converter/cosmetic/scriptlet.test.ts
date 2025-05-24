@@ -5,10 +5,10 @@ import {
     it,
 } from 'vitest';
 
-import { RuleParser } from '../../../src/parser/rule-parser';
-import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
-import { type ScriptletInjectionRule } from '../../../src/nodes';
-import { RuleConversionError } from '../../../src/errors/rule-conversion-error';
+import { RuleParser } from '../../../src/parser/rule-parser.js';
+import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet.js';
+import { type ScriptletInjectionRule } from '../../../src/nodes/index.js';
+import { RuleConversionError } from '../../../src/errors/rule-conversion-error.js';
 
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {

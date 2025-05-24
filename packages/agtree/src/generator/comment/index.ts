@@ -1,1 +1,1 @@
-export { CommentRuleGenerator } from './comment-rule-generator';
+export { CommentRuleGenerator } from './comment-rule-generator.js';

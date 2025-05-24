@@ -1,9 +1,9 @@
-import { COMMA, PIPE } from '../../utils/constants';
-import { type DomainList, ListNodeType, ListItemNodeType } from '../../nodes';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { ListItemsParser } from './list-items-parser';
+import { COMMA, PIPE } from '../../utils/constants.js';
+import { type DomainList, ListNodeType, ListItemNodeType } from '../../nodes/index.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { ListItemsParser } from './list-items-parser.js';
 
 /**
  * `DomainListParser` is responsible for parsing a domain list.

@@ -1,11 +1,11 @@
-import { StringUtils } from '../../utils/string';
-import { COMMA, ESCAPE_CHARACTER } from '../../utils/constants';
-import { defaultParserOptions } from '../options';
-import { ValueParser } from './value-parser';
-import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
-import { QUOTE_SET } from '../../utils/quotes';
-import { ParameterListParser } from './parameter-list-parser';
-import { type ParameterList } from '../../nodes';
+import { StringUtils } from '../../utils/string.js';
+import { COMMA, ESCAPE_CHARACTER } from '../../utils/constants.js';
+import { defaultParserOptions } from '../options.js';
+import { ValueParser } from './value-parser.js';
+import { AdblockSyntaxError } from '../../errors/adblock-syntax-error.js';
+import { QUOTE_SET } from '../../utils/quotes.js';
+import { ParameterListParser } from './parameter-list-parser.js';
+import { type ParameterList } from '../../nodes/index.js';
 
 /**
  * Parser for uBO-specific parameter lists.

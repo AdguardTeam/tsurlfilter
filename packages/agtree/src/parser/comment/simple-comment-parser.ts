@@ -1,15 +1,15 @@
-import { AdblockSyntax } from '../../utils/adblockers';
-import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator';
-import { StringUtils } from '../../utils/string';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { CosmeticRuleSeparatorUtils } from '../../utils/cosmetic-rule-separator.js';
+import { StringUtils } from '../../utils/string.js';
 import {
     CommentMarker,
     type CommentRule,
     CommentRuleType,
     RuleCategory,
-} from '../../nodes';
-import { BaseParser } from '../base-parser';
-import { ValueParser } from '../misc/value-parser';
-import { defaultParserOptions } from '../options';
+} from '../../nodes/index.js';
+import { BaseParser } from '../base-parser.js';
+import { ValueParser } from '../misc/value-parser.js';
+import { defaultParserOptions } from '../options.js';
 
 /**
  * `SimpleCommentParser` is responsible for parsing simple comments.

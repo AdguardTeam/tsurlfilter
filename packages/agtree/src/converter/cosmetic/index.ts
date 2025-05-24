@@ -10,24 +10,24 @@ import {
     type DomainList,
     type ModifierList,
     RuleCategory,
-} from '../../nodes';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { HtmlRuleConverter } from './html';
-import { ScriptletRuleConverter } from './scriptlet';
-import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { AdgCosmeticRuleModifierConverter } from './rule-modifiers/adg';
-import { CssInjectionRuleConverter } from './css';
-import { ElementHidingRuleConverter } from './element-hiding';
-import { HeaderRemovalRuleConverter } from './header-removal';
+} from '../../nodes/index.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { HtmlRuleConverter } from './html.js';
+import { ScriptletRuleConverter } from './scriptlet.js';
+import { RuleConversionError } from '../../errors/rule-conversion-error.js';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base.js';
+import { AdgCosmeticRuleModifierConverter } from './rule-modifiers/adg.js';
+import { CssInjectionRuleConverter } from './css.js';
+import { ElementHidingRuleConverter } from './element-hiding.js';
+import { HeaderRemovalRuleConverter } from './header-removal.js';
 import {
     type NodeConversionResult,
     createNodeConversionResult,
     type ConversionResult,
-} from '../base-interfaces/conversion-result';
-import { UboCosmeticRuleModifierConverter } from './rule-modifiers/ubo';
-import { clone } from '../../utils/clone';
-import { COMMA } from '../../utils';
+} from '../base-interfaces/conversion-result.js';
+import { UboCosmeticRuleModifierConverter } from './rule-modifiers/ubo.js';
+import { clone } from '../../utils/clone.js';
+import { COMMA } from '../../utils/index.js';
 
 /**
  * Cosmetic rule converter class (also known as "non-basic rule converter")

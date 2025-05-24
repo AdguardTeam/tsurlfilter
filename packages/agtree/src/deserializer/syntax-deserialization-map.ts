@@ -1,5 +1,5 @@
-import { type AdblockSyntax } from '../utils/adblockers';
-import { getSyntaxSerializationMap } from '../marshalling-utils/syntax-serialization-map';
+import { type AdblockSyntax } from '../utils/adblockers.js';
+import { getSyntaxSerializationMap } from '../marshalling-utils/syntax-serialization-map.js';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

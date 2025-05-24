@@ -1,12 +1,12 @@
-import { AgentCommentSerializer } from './agent-comment-serializer';
-import { type AnyCommentRule, CommentRuleType } from '../../nodes';
-import { ConfigCommentSerializer } from './config-comment-serializer';
-import { HintCommentSerializer } from './hint-comment-serializer';
-import { MetadataCommentSerializer } from './metadata-comment-serializer';
-import { PreProcessorCommentSerializer } from './pre-processor-comment-serializer';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { SimpleCommentSerializer } from './simple-comment-serializer';
-import { BaseSerializer } from '../base-serializer';
+import { AgentCommentSerializer } from './agent-comment-serializer.js';
+import { type AnyCommentRule, CommentRuleType } from '../../nodes/index.js';
+import { ConfigCommentSerializer } from './config-comment-serializer.js';
+import { HintCommentSerializer } from './hint-comment-serializer.js';
+import { MetadataCommentSerializer } from './metadata-comment-serializer.js';
+import { PreProcessorCommentSerializer } from './pre-processor-comment-serializer.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { SimpleCommentSerializer } from './simple-comment-serializer.js';
+import { BaseSerializer } from '../base-serializer.js';
 
 /**
  * `CommentRuleSerializer` is responsible for serializing any comment-like adblock rules.

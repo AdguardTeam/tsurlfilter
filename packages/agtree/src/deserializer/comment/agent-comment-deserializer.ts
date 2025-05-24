@@ -5,13 +5,13 @@ import {
     type AgentCommentRule,
     CommentRuleType,
     RuleCategory,
-} from '../../nodes';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { BaseDeserializer } from '../base-deserializer';
-import { AgentCommentMarshallingMap } from '../../marshalling-utils/comment/agent-comment-common';
-import { AgentDeserializer } from './agent-deserializer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../nodes/index.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { AgentCommentMarshallingMap } from '../../marshalling-utils/comment/agent-comment-common.js';
+import { AgentDeserializer } from './agent-deserializer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `AgentCommentDeserializer` is responsible for deserializing an Adblock agent comments.

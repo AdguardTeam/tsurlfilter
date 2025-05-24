@@ -1,11 +1,11 @@
-import { BaseSerializer } from '../base-serializer';
-import { type HostnameList } from '../../nodes';
-import type { OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-import { NULL, UINT16_MAX } from '../../utils/constants';
-import { ValueSerializer } from '../misc/value-serializer';
-import { HostnameListNodeMarshallingMap } from '../../marshalling-utils/misc/hostname-list-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { BaseSerializer } from '../base-serializer.js';
+import { type HostnameList } from '../../nodes/index.js';
+import type { OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { NULL, UINT16_MAX } from '../../utils/constants.js';
+import { ValueSerializer } from '../misc/value-serializer.js';
+import { HostnameListNodeMarshallingMap } from '../../marshalling-utils/misc/hostname-list-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Serializer for hostname list nodes.

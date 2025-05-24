@@ -10,7 +10,7 @@ import {
     ESCAPE_CHARACTER,
     SINGLE_QUOTE,
     SPACE,
-} from './constants';
+} from './constants.js';
 
 /**
  * Set of all possible quote characters supported by the library

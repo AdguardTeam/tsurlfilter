@@ -13,14 +13,14 @@ import {
     OPEN_PARENTHESIS,
     SINGLE_QUOTE,
     SPACE,
-} from '../../../utils/constants';
-import { StringUtils } from '../../../utils/string';
-import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
-import { defaultParserOptions } from '../../options';
-import { BaseParser } from '../../base-parser';
-import { ValueParser } from '../../misc/value-parser';
-import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes';
-import { isNull } from '../../../utils/type-guards';
+} from '../../../utils/constants.js';
+import { StringUtils } from '../../../utils/string.js';
+import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error.js';
+import { defaultParserOptions } from '../../options.js';
+import { BaseParser } from '../../base-parser.js';
+import { ValueParser } from '../../misc/value-parser.js';
+import { type ParameterList, type ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { isNull } from '../../../utils/type-guards.js';
 
 type SingleOrDoubleQuote = typeof SINGLE_QUOTE | typeof DOUBLE_QUOTE;
 

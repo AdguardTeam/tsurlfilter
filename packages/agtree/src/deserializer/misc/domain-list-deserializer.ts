@@ -1,11 +1,11 @@
 /* eslint-disable no-param-reassign */
-import { COMMA, NULL } from '../../utils/constants';
-import { type DomainList, type DomainListSeparator, ListNodeType } from '../../nodes';
-import { BaseDeserializer } from '../base-deserializer';
-import { DomainListMarshallingMap, SEPARATOR_SERIALIZATION_MAP } from '../../marshalling-utils/misc/domain-list-common';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ListItemsDeserializer } from './list-items-deserializer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { COMMA, NULL } from '../../utils/constants.js';
+import { type DomainList, type DomainListSeparator, ListNodeType } from '../../nodes/index.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { DomainListMarshallingMap, SEPARATOR_SERIALIZATION_MAP } from '../../marshalling-utils/misc/domain-list-common.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { ListItemsDeserializer } from './list-items-deserializer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * Value map for binary deserialization. This helps to reduce the size of the serialized data,

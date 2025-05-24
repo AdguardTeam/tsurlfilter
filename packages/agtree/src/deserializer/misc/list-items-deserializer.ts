@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
-import { type ListItem, type ListItemNodeType } from '../../nodes';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ListItemDeserializer } from './list-item-deserializer';
+import { type ListItem, type ListItemNodeType } from '../../nodes/index.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { ListItemDeserializer } from './list-item-deserializer.js';
 
 /**
  * Deserializes lists of items from binary format.

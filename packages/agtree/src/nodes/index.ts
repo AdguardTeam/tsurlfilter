@@ -1,5 +1,5 @@
-import { type AdblockSyntax } from '../utils/adblockers';
-import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '../utils/constants';
+import { type AdblockSyntax } from '../utils/adblockers.js';
+import { type COMMA_DOMAIN_LIST_SEPARATOR, type PIPE_MODIFIER_SEPARATOR } from '../utils/constants.js';
 
 export const OperatorValue = {
     Not: '!',

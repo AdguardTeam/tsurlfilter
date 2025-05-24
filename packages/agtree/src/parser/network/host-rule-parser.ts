@@ -8,11 +8,11 @@ import {
     NetworkRuleType,
     RuleCategory,
     type Value,
-} from '../../nodes';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { ValueParser } from '../misc/value-parser';
+} from '../../nodes/index.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { ValueParser } from '../misc/value-parser.js';
 
 /**
  * `HostRuleParser` is responsible for parsing hosts-like rules.

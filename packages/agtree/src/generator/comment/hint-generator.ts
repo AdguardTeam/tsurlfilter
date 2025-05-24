@@ -1,12 +1,12 @@
-import type { Hint } from '../../nodes';
+import type { Hint } from '../../nodes/index.js';
 import {
     CLOSE_PARENTHESIS,
     COMMA,
     EMPTY,
     OPEN_PARENTHESIS,
-} from '../../utils/constants';
-import { BaseGenerator } from '../base-generator';
-import { ParameterListGenerator } from '../misc/parameter-list-generator';
+} from '../../utils/constants.js';
+import { BaseGenerator } from '../base-generator.js';
+import { ParameterListGenerator } from '../misc/parameter-list-generator.js';
 
 /**
  * Hint generator.

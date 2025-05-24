@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'vitest';
 
-import { CommentParser } from '../../../src/parser/comment/comment-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { CommentRuleGenerator } from '../../../src/generator/comment';
-import { CommentRuleSerializer } from '../../../src/serializer/comment/comment-rule-serializer';
-import { CommentRuleDeserializer } from '../../../src/deserializer/comment/comment-rule-deserializer';
+import { CommentParser } from '../../../src/parser/comment/comment-parser.js';
+import { EMPTY, SPACE } from '../../../src/utils/constants.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { CommentRuleGenerator } from '../../../src/generator/comment/index.js';
+import { CommentRuleSerializer } from '../../../src/serializer/comment/comment-rule-serializer.js';
+import { CommentRuleDeserializer } from '../../../src/deserializer/comment/comment-rule-deserializer.js';
 
 describe('CommentRuleParser', () => {
     test('isCommentRule', () => {

@@ -1,9 +1,9 @@
-import { StringUtils } from '../../utils/string';
-import { type ParameterList } from '../../nodes';
-import { COMMA } from '../../utils/constants';
-import { defaultParserOptions } from '../options';
-import { BaseParser } from '../base-parser';
-import { ValueParser } from './value-parser';
+import { StringUtils } from '../../utils/string.js';
+import { type ParameterList } from '../../nodes/index.js';
+import { COMMA } from '../../utils/constants.js';
+import { defaultParserOptions } from '../options.js';
+import { BaseParser } from '../base-parser.js';
+import { ValueParser } from './value-parser.js';
 
 /**
  * Parser for parameter lists.

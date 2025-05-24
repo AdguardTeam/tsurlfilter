@@ -1,10 +1,10 @@
 /* eslint-disable no-param-reassign */
-import { BaseDeserializer } from '../base-deserializer';
-import { type ListItem, ListItemNodeType } from '../../nodes'; // Removed duplicate type declaration
-import { NULL } from '../../utils/constants';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { ListItemMarshallingMap } from '../../marshalling-utils/misc/list-item-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { type ListItem, ListItemNodeType } from '../../nodes/index.js'; // Removed duplicate type declaration
+import { NULL } from '../../utils/constants.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { ListItemMarshallingMap } from '../../marshalling-utils/misc/list-item-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `ListItemDeserializer` is responsible for deserializing list item nodes from binary format.

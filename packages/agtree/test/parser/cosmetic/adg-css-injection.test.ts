@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'vitest';
 
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { CosmeticRuleType, RuleCategory, type CssInjectionRule } from '../../../src/nodes';
-import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
-import { AdblockSyntax } from '../../../src/utils/adblockers';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils.js';
+import { CosmeticRuleType, RuleCategory, type CssInjectionRule } from '../../../src/nodes/index.js';
+import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser.js';
+import { DomainListParser } from '../../../src/parser/misc/domain-list-parser.js';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic/index.js';
+import { AdblockSyntax } from '../../../src/utils/adblockers.js';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid AdGuard CSS injection rules', () => {

@@ -1,18 +1,18 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
+import { NULL } from '../../utils/constants.js';
 import {
     type HintCommentRule,
     CommentRuleType,
     type Hint,
     RuleCategory,
-} from '../../nodes';
-import { HintDeserializer } from './hint-deserializer';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { BaseDeserializer } from '../base-deserializer';
-import { HintCommentMarshallingMap } from '../../marshalling-utils/comment/hint-comment-common';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
-import { getSyntaxDeserializationMap } from '../syntax-deserialization-map';
+} from '../../nodes/index.js';
+import { HintDeserializer } from './hint-deserializer.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { HintCommentMarshallingMap } from '../../marshalling-utils/comment/hint-comment-common.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
+import { getSyntaxDeserializationMap } from '../syntax-deserialization-map.js';
 
 /**
  * `HintCommentDeserializer` is responsible for deserializing AdGuard hint rules.

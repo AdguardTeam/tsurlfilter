@@ -1,5 +1,5 @@
-import type { Value } from '../../nodes';
-import { BaseGenerator } from '../base-generator';
+import type { Value } from '../../nodes/index.js';
+import { BaseGenerator } from '../base-generator.js';
 
 /**
  * Generator for value nodes.

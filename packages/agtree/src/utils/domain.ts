@@ -4,7 +4,7 @@
 
 import { parse } from 'tldts';
 
-import { DOT, WILDCARD } from './constants';
+import { DOT, WILDCARD } from './constants.js';
 
 /**
  * Marker for a wildcard top-level domain — `.*`.

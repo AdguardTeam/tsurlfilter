@@ -1,11 +1,11 @@
-import { NULL } from '../../utils/constants';
-import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
-import { isUndefined } from '../../utils/type-guards';
-import { type CommentRule } from '../../nodes';
-import { ValueSerializer } from '../misc/value-serializer';
-import { BaseSerializer } from '../base-serializer';
-import { SimpleCommentMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+import { NULL } from '../../utils/constants.js';
+import { type OutputByteBuffer } from '../../utils/output-byte-buffer.js';
+import { isUndefined } from '../../utils/type-guards.js';
+import { type CommentRule } from '../../nodes/index.js';
+import { ValueSerializer } from '../misc/value-serializer.js';
+import { BaseSerializer } from '../base-serializer.js';
+import { SimpleCommentMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `SimpleCommentSerializer` is responsible for serializing simple comments.

@@ -1,13 +1,13 @@
 /* eslint-disable no-param-reassign */
-import { type FilterList } from '../nodes';
+import { type FilterList } from '../nodes/index.js';
 import {
     CR,
     CRLF,
     EMPTY,
     LF,
 } from '../utils/constants';
-import { RuleGenerator } from './rule-generator';
-import { BaseGenerator } from './base-generator';
+import { RuleGenerator } from './rule-generator.js';
+import { BaseGenerator } from './base-generator.js';
 
 /**
  * Generates a serialized filter list.

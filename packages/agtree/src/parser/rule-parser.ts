@@ -1,8 +1,8 @@
 /* eslint-disable no-param-reassign */
-import { AdblockSyntax } from '../utils/adblockers';
-import { CommentParser } from './comment/comment-parser';
-import { CosmeticRuleParser } from './cosmetic/cosmetic-rule-parser';
-import { NetworkRuleParser } from './network/network-rule-parser';
+import { AdblockSyntax } from '../utils/adblockers.js';
+import { CommentParser } from './comment/comment-parser.js';
+import { CosmeticRuleParser } from './cosmetic/cosmetic-rule-parser.js';
+import { NetworkRuleParser } from './network/network-rule-parser.js';
 import {
     type AnyRule,
     type InvalidRule,
@@ -12,10 +12,10 @@ import {
     type NetworkRule,
     type HostRule,
 } from '../nodes';
-import { AdblockSyntaxError } from '../errors/adblock-syntax-error';
-import { defaultParserOptions } from './options';
-import { BaseParser } from './base-parser';
-import { HostRuleParser } from './network/host-rule-parser';
+import { AdblockSyntaxError } from '../errors/adblock-syntax-error.js';
+import { defaultParserOptions } from './options.js';
+import { BaseParser } from './base-parser.js';
+import { HostRuleParser } from './network/host-rule-parser.js';
 
 /**
  * `RuleParser` is responsible for parsing the rules.

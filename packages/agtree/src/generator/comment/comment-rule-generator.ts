@@ -1,12 +1,12 @@
 /* eslint-disable no-param-reassign */
-import { type AnyCommentRule, CommentRuleType } from '../../nodes';
-import { BaseGenerator } from '../base-generator';
-import { AgentCommentGenerator } from './agent-comment-generator';
-import { HintCommentGenerator } from './hint-comment-generator';
-import { PreProcessorCommentGenerator } from './pre-processor-comment-generator';
-import { MetadataCommentGenerator } from './metadata-comment-generator';
-import { ConfigCommentGenerator } from './config-comment-generator';
-import { SimpleCommentGenerator } from './simple-comment-generator';
+import { type AnyCommentRule, CommentRuleType } from '../../nodes/index.js';
+import { BaseGenerator } from '../base-generator.js';
+import { AgentCommentGenerator } from './agent-comment-generator.js';
+import { HintCommentGenerator } from './hint-comment-generator.js';
+import { PreProcessorCommentGenerator } from './pre-processor-comment-generator.js';
+import { MetadataCommentGenerator } from './metadata-comment-generator.js';
+import { ConfigCommentGenerator } from './config-comment-generator.js';
+import { SimpleCommentGenerator } from './simple-comment-generator.js';
 
 /**
  * `CommentRuleGenerator` is responsible for generating any comment-like adblock rules.

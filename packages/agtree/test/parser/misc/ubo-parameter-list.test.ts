@@ -5,12 +5,12 @@ import {
     vi,
 } from 'vitest';
 
-import { COMMA } from '../../../src/utils/constants';
-import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
-import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { UboParameterListParser } from '../../../src/parser/misc/ubo-parameter-list-parser';
-import { defaultParserOptions } from '../../../src/parser/options';
-import { type ParameterList } from '../../../src/nodes';
+import { COMMA } from '../../../src/utils/constants.js';
+import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils.js';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error.js';
+import { UboParameterListParser } from '../../../src/parser/misc/ubo-parameter-list-parser.js';
+import { defaultParserOptions } from '../../../src/parser/options.js';
+import { type ParameterList } from '../../../src/nodes/index.js';
 
 describe('UboParameterListParser', () => {
     // valid cases are tested in `../cosmetic/body/ubo-scriptlet.test.ts`

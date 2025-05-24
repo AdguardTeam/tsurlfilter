@@ -2,13 +2,13 @@
  * @file Element hiding rule converter
  */
 
-import { CosmeticRuleSeparator, type ElementHidingRule } from '../../nodes';
-import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
-import { CssSelectorConverter } from '../css';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { clone } from '../../utils/clone';
-import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
-import { CssTokenStream } from '../../parser/css/css-token-stream';
+import { CosmeticRuleSeparator, type ElementHidingRule } from '../../nodes/index.js';
+import { RuleConverterBase } from '../base-interfaces/rule-converter-base.js';
+import { CssSelectorConverter } from '../css/index.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { clone } from '../../utils/clone.js';
+import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result.js';
+import { CssTokenStream } from '../../parser/css/css-token-stream.js';
 
 /**
  * Element hiding rule converter class

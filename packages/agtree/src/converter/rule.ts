@@ -6,13 +6,13 @@
  * the corresponding "sub-converter".
  */
 
-import { type AnyRule, RuleCategory, NetworkRuleType } from '../nodes';
-import { CommentRuleConverter } from './comment';
-import { CosmeticRuleConverter } from './cosmetic';
-import { NetworkRuleConverter } from './network';
-import { RuleConversionError } from '../errors/rule-conversion-error';
-import { RuleConverterBase } from './base-interfaces/rule-converter-base';
-import { createConversionResult, type NodeConversionResult } from './base-interfaces/conversion-result';
+import { type AnyRule, RuleCategory, NetworkRuleType } from '../nodes/index.js';
+import { CommentRuleConverter } from './comment/index.js';
+import { CosmeticRuleConverter } from './cosmetic/index.js';
+import { NetworkRuleConverter } from './network/index.js';
+import { RuleConversionError } from '../errors/rule-conversion-error.js';
+import { RuleConverterBase } from './base-interfaces/rule-converter-base.js';
+import { createConversionResult, type NodeConversionResult } from './base-interfaces/conversion-result.js';
 
 /**
  * Adblock filtering rule converter class

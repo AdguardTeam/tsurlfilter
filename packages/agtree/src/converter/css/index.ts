@@ -8,11 +8,11 @@ import {
     EMPTY,
     EQUALS,
     OPEN_PARENTHESIS,
-} from '../../utils/constants';
-import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css';
-import { BaseConverter } from '../base-interfaces/base-converter';
-import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
-import { CssTokenStream } from '../../parser/css/css-token-stream';
+} from '../../utils/constants.js';
+import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css.js';
+import { BaseConverter } from '../base-interfaces/base-converter.js';
+import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result.js';
+import { CssTokenStream } from '../../parser/css/css-token-stream.js';
 
 export const ERROR_MESSAGES = {
     // eslint-disable-next-line max-len

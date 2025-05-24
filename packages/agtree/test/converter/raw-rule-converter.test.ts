@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 
-import { RawRuleConverter } from '../../src/converter/raw-rule';
+import { RawRuleConverter } from '../../src/converter/raw-rule.js';
 
 describe('Raw rule converter wrapper should work correctly', () => {
     describe('should convert rules to ADG', () => {

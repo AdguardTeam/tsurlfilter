@@ -6,14 +6,14 @@ import {
     vi,
 } from 'vitest';
 
-import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
-import { EMPTY, SPACE } from '../../../src/utils/constants';
-import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error';
-import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
-import { CosmeticRulePatternGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-pattern-generator';
-import { CosmeticRuleBodyGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-body-generator';
-import { CosmeticRuleSerializer } from '../../../src/serializer/cosmetic/cosmetic-rule-serializer';
-import { CosmeticRuleDeserializer } from '../../../src/deserializer/cosmetic/cosmetic-rule-deserializer';
+import { CosmeticRuleParser, ERROR_MESSAGES } from '../../../src/parser/cosmetic/cosmetic-rule-parser.js';
+import { EMPTY, SPACE } from '../../../src/utils/constants.js';
+import { AdblockSyntaxError } from '../../../src/errors/adblock-syntax-error.js';
+import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic/index.js';
+import { CosmeticRulePatternGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-pattern-generator.js';
+import { CosmeticRuleBodyGenerator } from '../../../src/generator/cosmetic/cosmetic-rule-body-generator.js';
+import { CosmeticRuleSerializer } from '../../../src/serializer/cosmetic/cosmetic-rule-serializer.js';
+import { CosmeticRuleDeserializer } from '../../../src/deserializer/cosmetic/cosmetic-rule-deserializer.js';
 
 describe('CosmeticRuleParser - general tests', () => {
     describe('CosmeticRuleParser.isCosmetic', () => {

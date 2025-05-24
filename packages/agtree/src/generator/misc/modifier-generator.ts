@@ -1,6 +1,6 @@
-import type { Modifier } from '../../nodes';
-import { EMPTY, MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants';
-import { BaseGenerator } from '../base-generator';
+import type { Modifier } from '../../nodes/index.js';
+import { EMPTY, MODIFIER_ASSIGN_OPERATOR, NEGATION_MARKER } from '../../utils/constants.js';
+import { BaseGenerator } from '../base-generator.js';
 
 /**
  * Generator for modifier nodes.

@@ -1,8 +1,8 @@
-import type { ScriptletInjectionRuleBody } from '../../../nodes';
-import { SEMICOLON, SPACE } from '../../../utils/constants';
-import { BaseGenerator } from '../../base-generator';
-import { ParameterListGenerator } from '../../misc/parameter-list-generator';
-import { AbpSnippetInjectionBodyCommon } from '../../../common/abp-snippet-injection-body-common';
+import type { ScriptletInjectionRuleBody } from '../../../nodes/index.js';
+import { SEMICOLON, SPACE } from '../../../utils/constants.js';
+import { BaseGenerator } from '../../base-generator.js';
+import { ParameterListGenerator } from '../../misc/parameter-list-generator.js';
+import { AbpSnippetInjectionBodyCommon } from '../../../common/abp-snippet-injection-body-common.js';
 
 /**
  * Adblock Plus snippet injection body generator.

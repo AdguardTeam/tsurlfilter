@@ -1,17 +1,17 @@
 /* eslint-disable no-param-reassign */
-import { NULL } from '../../utils/constants';
+import { NULL } from '../../utils/constants.js';
 import {
     CommentRuleType,
     RuleCategory,
     type Value,
     type CommentRule,
-} from '../../nodes';
-import { BaseDeserializer } from '../base-deserializer';
-import { type InputByteBuffer } from '../../utils/input-byte-buffer';
-import { AdblockSyntax } from '../../utils/adblockers';
-import { SimpleCommentMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common';
-import { ValueDeserializer } from '../misc/value-deserializer';
-import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common';
+} from '../../nodes/index.js';
+import { BaseDeserializer } from '../base-deserializer.js';
+import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
+import { AdblockSyntax } from '../../utils/adblockers.js';
+import { SimpleCommentMarshallingMap } from '../../marshalling-utils/comment/simple-comment-common.js';
+import { ValueDeserializer } from '../misc/value-deserializer.js';
+import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';
 
 /**
  * `SimpleCommentDeserializer` is responsible for deserializing simple comments.

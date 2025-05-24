@@ -4,13 +4,13 @@
 /**
  * @file Input byte buffer for reading binary data.
  */
-import { ByteBuffer } from './byte-buffer';
-import { isArrayOfUint8Arrays } from './type-guards';
-import { type Storage } from './storage-interface';
-import { isChromium } from './is-chromium';
-import { decodeTextPolyfill } from './text-decoder-polyfill';
-import { BINARY_SCHEMA_VERSION } from './binary-schema-version';
-import { BinarySchemaMismatchError } from '../errors/binary-schema-mismatch-error';
+import { ByteBuffer } from './byte-buffer.js';
+import { isArrayOfUint8Arrays } from './type-guards.js';
+import { type Storage } from './storage-interface.js';
+import { isChromium } from './is-chromium.js';
+import { decodeTextPolyfill } from './text-decoder-polyfill.js';
+import { BINARY_SCHEMA_VERSION } from './binary-schema-version.js';
+import { BinarySchemaMismatchError } from '../errors/binary-schema-mismatch-error.js';
 
 /**
  * Input byte buffer for reading binary data.

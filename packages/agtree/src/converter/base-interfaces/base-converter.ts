@@ -8,8 +8,8 @@
 /* eslint-disable jsdoc/require-returns-check */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { NotImplementedError } from '../../errors/not-implemented-error';
-import { type ConversionResult } from './conversion-result';
+import { NotImplementedError } from '../../errors/not-implemented-error.js';
+import { type ConversionResult } from './conversion-result.js';
 
 /**
  * Basic class for rule converters
