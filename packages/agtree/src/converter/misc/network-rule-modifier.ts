@@ -10,7 +10,11 @@ import { RuleConversionError } from '../../errors/rule-conversion-error.js';
 import { MultiValueMap } from '../../utils/multi-value-map.js';
 import { createConversionResult, type ConversionResult } from '../base-interfaces/conversion-result.js';
 import { cloneModifierListNode } from '../../ast-utils/clone.js';
-import { GenericPlatform, modifiersCompatibilityTable, redirectsCompatibilityTable } from '../../compatibility-tables/index.js';
+import {
+    GenericPlatform,
+    modifiersCompatibilityTable,
+    redirectsCompatibilityTable,
+} from '../../compatibility-tables/index.js';
 import { isValidResourceType } from '../../compatibility-tables/utils/resource-type-helpers.js';
 import { isUndefined } from '../../utils/type-guards.js';
 

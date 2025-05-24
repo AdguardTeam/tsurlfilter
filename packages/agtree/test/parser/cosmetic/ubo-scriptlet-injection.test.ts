@@ -2,7 +2,9 @@ import { describe, test, expect } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils.js';
 import { CosmeticRuleType, RuleCategory, type ScriptletInjectionRule } from '../../../src/nodes/index.js';
-import { UboScriptletInjectionBodyParser } from '../../../src/parser/cosmetic/body/ubo-scriptlet-injection-body-parser.js';
+import {
+    UboScriptletInjectionBodyParser,
+} from '../../../src/parser/cosmetic/body/ubo-scriptlet-injection-body-parser.js';
 import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser.js';
 import { AdblockSyntax } from '../../../src/utils/adblockers.js';
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser.js';

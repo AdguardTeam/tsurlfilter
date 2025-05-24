@@ -2,7 +2,10 @@
 import { COMMA, NULL } from '../../utils/constants.js';
 import { type DomainList, type DomainListSeparator, ListNodeType } from '../../nodes/index.js';
 import { BaseDeserializer } from '../base-deserializer.js';
-import { DomainListMarshallingMap, SEPARATOR_SERIALIZATION_MAP } from '../../marshalling-utils/misc/domain-list-common.js';
+import {
+    DomainListMarshallingMap,
+    SEPARATOR_SERIALIZATION_MAP,
+} from '../../marshalling-utils/misc/domain-list-common.js';
 import { type InputByteBuffer } from '../../utils/input-byte-buffer.js';
 import { ListItemsDeserializer } from './list-items-deserializer.js';
 import { BinaryTypeMarshallingMap } from '../../marshalling-utils/misc/binary-type-common.js';

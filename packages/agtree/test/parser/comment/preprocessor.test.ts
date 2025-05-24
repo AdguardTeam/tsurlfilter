@@ -5,7 +5,9 @@ import { EMPTY, SPACE } from '../../../src/utils/constants.js';
 import { defaultParserOptions } from '../../../src/parser/options.js';
 import { PreProcessorCommentGenerator } from '../../../src/generator/comment/pre-processor-comment-generator.js';
 import { PreProcessorCommentSerializer } from '../../../src/serializer/comment/pre-processor-comment-serializer.js';
-import { PreProcessorCommentDeserializer } from '../../../src/deserializer/comment/pre-processor-comment-deserializer.js';
+import {
+    PreProcessorCommentDeserializer,
+} from '../../../src/deserializer/comment/pre-processor-comment-deserializer.js';
 
 describe('PreProcessorParser', () => {
     test('isPreProcessorRule', () => {

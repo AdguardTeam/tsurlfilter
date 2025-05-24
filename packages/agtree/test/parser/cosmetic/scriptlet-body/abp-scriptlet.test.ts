@@ -7,7 +7,9 @@ import {
 
 import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-utils.js';
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes/index.js';
-import { AbpSnippetInjectionBodyParser } from '../../../../src/parser/cosmetic/body/abp-snippet-injection-body-parser.js';
+import {
+    AbpSnippetInjectionBodyParser,
+} from '../../../../src/parser/cosmetic/body/abp-snippet-injection-body-parser.js';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error.js';
 import { EMPTY, SPACE } from '../../../../src/utils/constants.js';
 import {
