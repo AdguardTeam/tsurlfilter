@@ -5,7 +5,7 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor, NETWORK_RULE_OPTIONS, type PreprocessedFilterList } from '@adguard/tsurlfilter';
+import { FilterListPreprocessor, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
@@ -387,9 +387,11 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
-            const temporaryBadfilterRules = configuration.trustedDomains
-                .map((rule) => {
-                    return `${rule},${NETWORK_RULE_OPTIONS.BADFILTER}`;
+            const trustedDomainsExceptionRules = configuration.trustedDomains
+                .map((domain) => {
+                    // domain -> `@@||<domain>^$document`
+                    // FIXME: try to use some helper
+                    return `@@||${domain}^$document`;
                 })
                 .join(LF);
 
@@ -397,7 +399,7 @@ export class TsWebExtension implements AppInterface<
                 BLOCKING_TRUSTED_FILTER_ID,
                 {
                     getContent: (): Promise<PreprocessedFilterList> => {
-                        return Promise.resolve(FilterListPreprocessor.preprocess(temporaryBadfilterRules));
+                        return Promise.resolve(FilterListPreprocessor.preprocess(trustedDomainsExceptionRules));
                     },
                 },
                 true,
