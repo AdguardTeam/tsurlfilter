@@ -389,9 +389,8 @@ export class TsWebExtension implements AppInterface<
 
             const trustedDomainsExceptionRules = configuration.trustedDomains
                 .map((domain) => {
-                    // domain -> `@@||<domain>^$document`
-                    // FIXME: try to use some helper
-                    return `@@||${domain}^$document`;
+                    // TODO: maybe use some helper
+                    return `@@$document,to=${domain}`;
                 })
                 .join(LF);
 
