@@ -112,7 +112,6 @@
         "report-coverage": "cat ./coverage/lcov.info | coveralls",
         "precommit": "lint-staged",
         "prepublishOnly": "pnpm build",
-        "increment": "node ../../scripts/increment.mjs",
         "tgz": "pnpm pack --out tsurlfilter.tgz"
     },
     "lint-staged": {
