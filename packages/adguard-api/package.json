@@ -30,7 +30,6 @@
         "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "lint:eslint": "eslint --cache --ignore-path .gitignore .",
         "check-types": "tsc",
-        "increment": "node ../../scripts/increment.mjs",
         "tgz": "pnpm pack --out adguard-api.tgz"
     },
     "author": "Adguard Software Ltd.",
