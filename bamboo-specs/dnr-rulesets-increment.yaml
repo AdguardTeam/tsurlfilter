@@ -46,6 +46,10 @@ Increment:
 
             ls -alt
 
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
+            pnpm install
+
             # Increment @adguard/dnr-rulesets
             pnpm run increment dnr-rulesets
     - any-task:
