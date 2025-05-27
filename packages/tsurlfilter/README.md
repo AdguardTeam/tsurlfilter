@@ -652,7 +652,7 @@ npx lerna run --scope=@adguard/tsurlfilter:<script>
 
 - `lint`: Run ESLint and TSC
 - `lint:code`: Run ESLint
-- `lint:tsc`: Run TSC
+- `lint:types`: Run TSC
 - `start` Start build in watch mode
 - `build`: Build the project
 - `build:types`: Generate types

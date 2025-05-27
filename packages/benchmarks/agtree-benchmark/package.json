@@ -5,9 +5,9 @@
   "description": "This benchmark serves as a tool for evaluating the performance of adblock rule parsers, converters",
   "scripts": {
     "start": "tsx src/index.ts",
-    "lint": "pnpm lint:types && pnpm lint:ts && pnpm lint:md",
+    "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
     "lint:md": "markdownlint .",
-    "lint:ts": "eslint . --cache --ext .ts",
+    "lint:code": "eslint . --cache --ext .ts",
     "lint:types": "tsc"
   },
   "type": "module",

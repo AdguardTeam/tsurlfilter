@@ -26,10 +26,11 @@ pnpm install
 # build with dependencies, lerna is used for builds caching
 npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
-# IMPORTANT: run lint after the build because linting requires types to be generated
-pnpm --filter @adguard/tswebextension lint
-
-# IMPORTANT: run tests after the build because smoke tests requires tswebextension to have built dist dir
+# IMPORTANT:
+# test:prod includes linting, smoke testing and no-cache unit testing
+# so it should run after the build because
+# - linting requires types to be generated
+# - smoke tests require tswebextension to have a built dist directory
 pnpm --filter @adguard/tswebextension test:prod
 
 echo "@adguard/tswebextension tests completed"
