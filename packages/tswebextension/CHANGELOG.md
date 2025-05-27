@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.1.0-alpha.3] - 2025-05-22
 
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.0`.
+- Updated [@adguard/tsurlfilter] to `v3.3.3`.
+
 ### Fixed
 
 - Improved rule set caching to avoid inconsistent behaviors.

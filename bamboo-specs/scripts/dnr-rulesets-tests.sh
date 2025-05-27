@@ -21,7 +21,10 @@ if [ "$branch" != "master" ] && ! is_root_affected && ! is_project_affected "@ad
 fi
 
 # Install dependencies
-pnpm --filter @adguard/dnr-rulesets install
+pnpm install
+
+# Build dependencies before running tests
+npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
 
 # Run linter
 pnpm --filter @adguard/dnr-rulesets lint
