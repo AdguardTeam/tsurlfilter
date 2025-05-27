@@ -84,6 +84,8 @@ This repository uses pnpm workspaces and [Lerna][lerna] to manage multiple packa
 - Builds a specific package: `npx lerna run build --scope=<package-name>`
     - For example, to build the `tswebextension` package: `npx lerna run build --scope=@adguard/tswebextension`.
       This command also builds `@adguard/tsurlfilter` first as it is required for `@adguard/tswebextension`.
+- Increment a specific package: `pnpm run increment <package-name>`.
+  This command increments the patch or prerelease version.
 
 > [!NOTE]
 > You can find Lerna commands in the following link: [Lerna Commands][lernacommands].
