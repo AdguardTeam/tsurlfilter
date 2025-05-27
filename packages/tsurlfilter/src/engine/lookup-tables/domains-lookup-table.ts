@@ -5,6 +5,7 @@ import { DomainModifier } from '../../modifiers/domain-modifier';
 import { fastHash } from '../../utils/string-utils';
 import { type NetworkRule } from '../../rules/network-rule';
 import { type RuleParts } from '../../filterlist/tokenize';
+import { CachedFastHash } from '../cached-fast-hash';
 
 /**
  * Domain lookup table. Key is the domain name hash.
@@ -53,7 +54,7 @@ export class DomainsLookupTable implements ILookupTable {
         }
 
         rule.domains.forEach((domain) => {
-            const hash = fastHash(domain);
+            const hash = CachedFastHash.get(domain);
 
             // Add the rule to the lookup table
             let rulesIndexes = this.domainsLookupTable.get(hash);
@@ -97,7 +98,7 @@ export class DomainsLookupTable implements ILookupTable {
         }
 
         for (let i = 0; i < domains.length; i += 1) {
-            const hash = fastHash(domains[i]);
+            const hash = CachedFastHash.get(domains[i]);
             const rulesIndexes = this.domainsLookupTable.get(hash);
             if (rulesIndexes) {
                 let rule: NetworkRule | null = null;

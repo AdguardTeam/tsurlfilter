@@ -22,7 +22,7 @@ describe('Build engine', () => {
         warn: vi.fn(),
     });
 
-    const rawFilter = readFileSync('test/resources/filter.txt', 'utf-8');
+    const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
 
     const preprocessed = TsUrlFilterOld.FilterListPreprocessor.preprocess(rawFilter);
     let list: TsUrlFilterOld.BufferRuleList;

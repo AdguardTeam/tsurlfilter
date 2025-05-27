@@ -12,6 +12,7 @@ import {
     RuleType,
     type RuleParts,
 } from '../../filterlist/tokenize';
+import { CachedFastHash } from '../cached-fast-hash';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
@@ -126,7 +127,7 @@ export class CosmeticLookupTable {
                 // tldResult.domain equals to eTLD domain,
                 // e.g. sub.example.uk.org would result in example.uk.org
                 const parsedDomain = tldResult.domain || domain;
-                const key = fastHash(parsedDomain);
+                const key = CachedFastHash.get(parsedDomain);
                 const rules = this.byHostname.get(key) || [] as number[];
                 rules.push(storageIdx);
                 this.byHostname.set(key, rules);
@@ -147,7 +148,7 @@ export class CosmeticLookupTable {
         // Iterate over all sub-domains
         for (let i = 0; i < subdomains.length; i += 1) {
             const subdomain = subdomains[i];
-            let rulesIndexes = this.byHostname.get(fastHash(subdomain));
+            let rulesIndexes = this.byHostname.get(CachedFastHash.get(subdomain));
             if (rulesIndexes) {
                 // Filtering out duplicates
                 rulesIndexes = rulesIndexes.filter((v, index) => rulesIndexes!.indexOf(v) === index);

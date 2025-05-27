@@ -5,6 +5,7 @@ import { type NetworkRule } from '../../rules/network-rule';
 import { fastHash } from '../../utils/string-utils';
 import { SimpleRegex } from '../../rules/simple-regex';
 import { type RuleParts } from '../../filterlist/tokenize';
+import { CachedFastHash } from '../cached-fast-hash';
 
 /**
  * Hostname lookup table.
@@ -71,7 +72,7 @@ export class HostnameLookupTable implements ILookupTable {
             return false;
         }
 
-        const hash = fastHash(hostname);
+        const hash = CachedFastHash.get(hostname);
         let rulesIndexes = this.hostnameLookupTable.get(hash);
         if (!rulesIndexes) {
             rulesIndexes = new Array<number>();
