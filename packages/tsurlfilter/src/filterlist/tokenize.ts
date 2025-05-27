@@ -202,8 +202,8 @@ const extractDomainsFromNetworkRule = (rule: string, separator: number): string[
  * @returns The rule parts or null if the rule is not a network or cosmetic rule.
  */
 export function tokenize(rule: string): RuleParts | null {
-    // Ignore empty rules
-    if (rule.length === 0) {
+    // Drop rules that are too short or empty
+    if (rule.length < 4) {
         return null;
     }
 
