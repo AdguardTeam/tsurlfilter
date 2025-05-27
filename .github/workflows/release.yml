@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'adguard-api-v*'
+      - 'adguard-api-mv3-v*'
       - 'agtree-v*'
       - 'css-tokenizer-v*'
       - 'logger-v*'
@@ -35,6 +36,7 @@ jobs:
 
             const nameMap = {
               'adguard-api': 'AdGuard API',
+              'adguard-api-mv3': 'AdGuard API MV3',
               'agtree': 'AGTree',
               'css-tokenizer': 'CSS Tokenizer',
               'logger': 'Logger',
