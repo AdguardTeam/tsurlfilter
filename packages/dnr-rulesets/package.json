@@ -17,11 +17,11 @@
         "build:docs": "tsx tasks/update-readme.ts",
         "build:lib": "rollup --config rollup.config.ts --configPlugin typescript",
         "validate:assets": "tsx tasks/validate.ts",
-        "clear": "rimraf ./dist",
+        "clear": "rimraf ./dist && rimraf ./rollup.cache",
         "test": "vitest run",
         "test:coverage": "vitest run --coverage",
         "lint": "pnpm lint:code && pnpm lint:types",
-        "lint:code": "eslint",
+        "lint:code": "eslint --cache .",
         "lint:types": "tsc",
         "increment:auto-deploy": "tsx tasks/auto-deploy-increment",
         "tgz": "pnpm pack --out dnr-rulesets.tgz"

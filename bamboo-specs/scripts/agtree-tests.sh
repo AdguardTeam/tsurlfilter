@@ -26,10 +26,7 @@ pnpm install
 # Build dependencies before running tests
 npx lerna run build --scope @adguard/agtree --include-dependencies
 
-# Check TypeScript types with TSC
-pnpm --filter @adguard/agtree check-types
-
-# Check code with ESLint
+# Check code and types
 pnpm --filter @adguard/agtree lint
 
 # Run tests with Vitest

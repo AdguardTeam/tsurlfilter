@@ -18,6 +18,7 @@ The following packages are available in this repository:
 
 | Package Name                                   | Description                                                                          |
 |------------------------------------------------|--------------------------------------------------------------------------------------|
+| [`logger`][loggerreadme]                       | Logging library for AdGuard extensions.                                              |
 | [`css-tokenizer`][csstokenizerreadme]          | A fast, spec-compliant CSS tokenizer for standard and Extended CSS.                  |
 | [`agtree`][agtreereadme]                       | Universal adblock filter list parser which produces a detailed AST.                  |
 | [`tsurlfilter`][tsurlfilterreadme]             | A library that enforces AdGuard's blocking rules logic.                              |
@@ -36,6 +37,7 @@ Detailed information on each package is available in the [`./packages`][packages
 [adguardapimv3readme]: /packages/adguard-api-mv3/README.md
 [dnrrulesetsreadme]: /packages/dnr-rulesets/README.md
 [agtreereadme]: /packages/agtree/README.md
+[loggerreadme]: /packages/logger/README.md
 [csstokenizerreadme]: /packages/css-tokenizer/README.md
 [manifestv2]: /packages/examples/manifest-v2
 [manifestv3]: /packages/examples/manifest-v3
@@ -151,14 +153,112 @@ To do this, create a `tsurlfilter.code-workspace` file in the monorepo root dire
 ```json
 {
     "folders": [
+        { "path": "packages/logger" },
+        { "path": "packages/css-tokenizer" },
+        { "path": "packages/agtree" },
         { "path": "packages/tsurlfilter" },
         { "path": "packages/tswebextension" },
-        { "path": "packages/agtree" },
-        { "path": "packages/css-tokenizer" },
+        { "path": "packages/dnr-rulesets" },
         { "path": "packages/adguard-api" },
+        { "path": "packages/adguard-api-mv3" },
         { "path": "packages/examples/adguard-api" },
+        { "path": "packages/examples/adguard-api-mv3" },
         { "path": "packages/examples/tswebextension-mv2" },
         { "path": "packages/examples/tswebextension-mv3" }
     ]
 }
 ```
+
+### Dependencies and dependent packages
+
+In this monorepo, packages can depend on each other using workspace references instead of specific versions.
+This is indicated by `workspace:^` in the `package.json` dependencies section.
+When a package depends on another package in the workspace,
+changes to the dependency may require updates to the dependent package's changelog.
+
+#### Independent Packages
+
+These packages do not depend on other monorepo packages:
+
+- `@adguard/css-tokenizer`
+- `@adguard/logger`
+
+#### Dependency Tree
+
+Below is the dependency relationship between packages:
+
+- `@adguard/agtree` depends on:
+    - `@adguard/css-tokenizer`
+
+- `@adguard/tsurlfilter` depends on:
+    - `@adguard/agtree`
+    - `@adguard/css-tokenizer`
+
+- `@adguard/tswebextension` depends on:
+    - `@adguard/agtree`
+    - `@adguard/logger`
+    - `@adguard/tsurlfilter`
+
+- `@adguard/dnr-rulesets` depends on:
+    - `@adguard/logger`
+    - `@adguard/tsurlfilter` as devDependency
+
+- `@adguard/api` depends on:
+    - `@adguard/tswebextension`
+
+- `@adguard/api-mv3` depends on:
+    - `@adguard/tswebextension`
+
+When making changes to a package, consider updating the changelogs of all dependent packages that might be affected by your changes. For example, if you make changes to `@adguard/agtree`, you should also update the changelog of `@adguard/tsurlfilter` and `@adguard/tswebextension`.
+
+To summarize the dependency tree, here is a scheme of the dependency tree:
+
+```text
+┌───────────────┐ ┌───────────────┐
+│ css-tokenizer │ │    logger     │
+└──┬────────────┘ └────────────┬──┘
+   │   ┌────────────────┐      │
+   ├──►│     agtree     ├───┐  │
+   │   └────────────────┘   │  │
+   │   ┌────────────────┐   │  │
+   └──►│                │   │  │
+       │  tsurlfilter   │◄──┤  │
+   ┌───┤                │   │  │
+   │   └────────────────┘   │  │
+   │   ┌────────────────┐   │  │
+   │   │                │◄──┘  │
+   ├──►│ tswebextension │◄─────┤
+   │   │                ├───┐  │
+   │   └────────────────┘   │  │
+   │   ┌────────────────┐   │  │
+   └──►│  dnr-rulesets  │◄──┼──┘
+       └────────────────┘   │
+       ┌────────────────┐   │
+       │      api       │◄──┤
+       └────────────────┘   │
+       ┌────────────────┐   │
+       │    api-mv3     │◄──┘
+       └────────────────┘
+```
+
+##### Examples packages
+
+There are also some example packages which are needed for development and testing.
+
+- `packages/examples/adguard-api` depends on:
+    - `@adguard/api`
+    - `@adguard/tswebextension` as devDependency
+
+- `packages/examples/adguard-api-mv3` depends on:
+    - `@adguard/api-mv3`
+    - `@adguard/dnr-rulesets` as devDependency
+    - `@adguard/tswebextension` as devDependency
+
+- `packages/examples/tswebextension-mv2` depends on:
+    - `@adguard/tswebextension`
+    - `@adguard/tsurlfilter` as devDependency
+
+- `packages/examples/tswebextension-mv3` depends on:
+    - `@adguard/logger`
+    - `@adguard/tswebextension`
+    - `@adguard/tsurlfilter` as devDependency

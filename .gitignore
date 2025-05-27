@@ -10,6 +10,9 @@ node_modules
 # Cache file for ESLint.
 .eslintcache
 
+# Rollup cache
+.rollup.cache
+
 # IDEA files
 .idea
 
