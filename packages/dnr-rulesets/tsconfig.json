@@ -13,5 +13,6 @@
         "rollup.config.ts",
         "vitest.config.ts",
         "./tasks",
+        "common"
     ]
 }

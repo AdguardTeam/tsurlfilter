@@ -1,38 +1,61 @@
+import { fileURLToPath } from 'node:url';
+
+import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
 import swc from '@rollup/plugin-swc';
-import { omit } from 'lodash-es';
+import copy from 'rollup-plugin-copy';
 import { dts } from 'rollup-plugin-dts';
 import nodeExternals from 'rollup-plugin-node-externals';
 
 const DIST_DIR = 'dist';
 
-const entryPoints = {
-    'cli': 'src/cli.ts',
-    'lib/index': 'src/lib/index.ts',
-};
+const re2WasmUrl = await import.meta.resolve('@adguard/re2-wasm/build/wasm/re2.wasm');
+const re2WasmPath = fileURLToPath(re2WasmUrl);
 
 const mainConfig = {
-    input: entryPoints,
-    output: [
-        {
-            dir: DIST_DIR,
-            format: 'esm',
-            exports: 'named',
-            preserveModules: true,
-            preserveModulesRoot: 'src',
-        },
-    ],
+    input: 'src/lib/index.ts',
+    output: [{
+        dir: DIST_DIR,
+        format: 'esm',
+        exports: 'named',
+        preserveModules: true,
+        preserveModulesRoot: 'src',
+    }],
     plugins: [
         resolve({ extensions: ['.ts', '.js'] }),
         json(),
         swc(),
         nodeExternals(),
+        commonjs(),
+    ],
+};
+
+const cliConfig = {
+    input: 'src/cli.ts',
+    output: [{
+        file: `${DIST_DIR}/cli.cjs`,
+        format: 'cjs',
+        exports: 'named',
+        banner: '#!/usr/bin/env node',
+    }],
+    plugins: [
+        resolve({ extensions: ['.ts', '.js'] }),
+        json(),
+        swc(),
+        nodeExternals({
+            // Bundle re2-wasm and its dependencies to include WASM files
+            exclude: ['@adguard/re2-wasm'],
+        }),
+        commonjs(),
+        // We need to copy the re2.wasm file to the dist directory, because re2
+        // package will try to load this file with hardcoded name in the runtime.
+        copy({ targets: [{ src: re2WasmPath, dest: DIST_DIR }] }),
     ],
 };
 
 const typesConfig = {
-    input: omit(entryPoints, 'cli'),
+    input: 'src/lib/index.ts',
     output: {
         dir: `${DIST_DIR}/types`,
         format: 'esm',
@@ -47,5 +70,6 @@ const typesConfig = {
 
 export default [
     mainConfig,
+    cliConfig,
     typesConfig,
 ];

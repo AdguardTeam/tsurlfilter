@@ -1,7 +1,7 @@
 import fs from 'fs';
 
-import { QUICK_FIXES_FILTER_ID, README_PATH } from './constants';
-import { getMetadata, type Metadata } from './metadata';
+import { QUICK_FIXES_FILTER_ID, README_PATH } from '../common/constants';
+import { getMetadata, type Metadata } from '../common/metadata';
 
 /**
  * Creates actual rulesets list and update existed README.md.

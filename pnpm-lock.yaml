@@ -660,12 +660,18 @@ importers:
         specifier: 3.24.4
         version: 3.24.4
     devDependencies:
+      '@adguard/re2-wasm':
+        specifier: 1.2.0
+        version: 1.2.0
       '@adguard/tsurlfilter':
         specifier: workspace:^
         version: link:../tsurlfilter
       '@eslint/js':
         specifier: ^9.8.0
         version: 9.24.0
+      '@rollup/plugin-commonjs':
+        specifier: ^28.0.3
+        version: 28.0.3(rollup@4.39.0)
       '@rollup/plugin-json':
         specifier: ^6.1.0
         version: 6.1.0(rollup@4.39.0)
@@ -675,6 +681,9 @@ importers:
       '@rollup/plugin-swc':
         specifier: ^0.4.0
         version: 0.4.0(@swc/core@1.11.18(@swc/helpers@0.5.15))(rollup@4.39.0)
+      '@rollup/plugin-typescript':
+        specifier: ^12.1.2
+        version: 12.1.2(rollup@4.39.0)(tslib@2.8.1)(typescript@5.8.3)
       '@stylistic/eslint-plugin':
         specifier: ^2.6.1
         version: 2.13.0(eslint@9.24.0)(typescript@5.8.3)
@@ -687,9 +696,6 @@ importers:
       '@types/fs-extra':
         specifier: ^11.0.4
         version: 11.0.4
-      '@types/lodash-es':
-        specifier: ^4.17.12
-        version: 4.17.12
       '@types/node':
         specifier: ^20.14.2
         version: 20.17.30
@@ -708,15 +714,15 @@ importers:
       eslint-plugin-simple-import-sort:
         specifier: ^12.1.1
         version: 12.1.1(eslint@9.24.0)
-      lodash-es:
-        specifier: ^4.17.21
-        version: 4.17.21
       rimraf:
         specifier: ^5.0.7
         version: 5.0.10
       rollup:
         specifier: ^4.27.4
         version: 4.39.0
+      rollup-plugin-copy:
+        specifier: ^3.5.0
+        version: 3.5.0
       rollup-plugin-dts:
         specifier: ^6.0.2
         version: 6.2.1(rollup@4.39.0)(typescript@5.8.3)

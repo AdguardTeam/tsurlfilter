@@ -99,13 +99,57 @@ npm install --save-dev @adguard/dnr-rulesets
 }
 ```
 
-`patch-manifest` command also provide two options:
+Available commands:
+
+#### `load` command
+
+Downloads and saves DNR rulesets to the specified directory.
+```bash
+dnr-rulesets load <path-to-output>
+```
+
+#### `manifest` command
+
+Patches the extension manifest to include DNR rulesets.
+```bash
+dnr-rulesets manifest <path-to-manifest> <path-to-output> [options]
+```
+
+Options for `manifest` command:
 
 - `-f, --force-update` - force update rulesets with existing id (default: false)
-- `-i, --ids <ids...>` - filters ids to append (default: [])
+- `-i, --ids <ids...>` - filters ids to append, others will be ignored (default: [] - append all)
 - `-e, --enable <ids...>` - enable filters by default (default: [])
 - `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
 - `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
+
+**Note about array options**: For options that accept multiple values (`ids` and `enable`), use please following syntax:
+
+```bash
+--ids=1,2
+```
+
+#### `watch` command
+
+Watches for changes in the filter files and rebuilds DNR rulesets.
+```bash
+dnr-rulesets watch <path-to-manifest> <path-to-filters> <path-to-resources> <destination-path-to-rulesets> [options]
+```
+
+Options for `watch` command:
+
+- `-f, --force-update` - force update rulesets with existing id (default: false)
+- `-i, --ids <ids...>` - filters ids to append, others will be ignored (default: [] - append all)
+- `-e, --enable <ids...>` - enable filters by default (default: [])
+- `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
+- `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
+- `-d, --download` - download filters on first start before watch (default: false)
+
+**Note about array options**: For options that accept multiple values (`ids` and `enable`), use please following syntax:
+
+```bash
+--ids=1,2
+```
 
 1. Run the script to load DNR rulesets as part of your build flow.
 
@@ -577,7 +621,7 @@ Blocks ads and trackers on various Macedonian websites.
 Downloads original rules, converts it to DNR rule sets via [TSUrlFilter declarative-converter](../tsurlfilter/README.md#declarativeconverter) and generates extension manifest with predefined rules resources.
 
 ```bash
-pnpm run build:assets
+pnpm build:assets
 ```
 
 ### `build:lib`
@@ -585,15 +629,15 @@ pnpm run build:assets
 Builds SDK to load DNR rule sets to the specified directory.
 
 ```bash
-pnpm run build:lib
+pnpm build:lib
 ```
 
 ### `build:cli`
 
-Builds CLI utility to load DNR rule sets to the specified directory.
+Builds CLI utility to load DNR rule sets to the specified directory, inject rulesets to the manifest object and can be used for local development for DNR rulesets.
 
 ```bash
-pnpm run build:cli
+pnpm build:cli
 ```
 
 ### `build:docs`
@@ -601,7 +645,7 @@ pnpm run build:cli
 Generates [Included filter lists](#included-filter-lists) section.
 
 ```bash
-pnpm run build:docs
+pnpm build:docs
 ```
 
 ### `build`
@@ -609,5 +653,12 @@ pnpm run build:docs
 Clears `dist` folder and runs `build:assets`, `build:cli` and `build:lib` scripts.
 
 ```bash
-pnpm run build
+pnpm build
+```
+
+### `watch`
+Watches for changes in the `dist/filters` folder and rebuilds DNR rulesets.
+
+```bash
+pnpm watch
 ```
