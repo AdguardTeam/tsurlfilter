@@ -18,7 +18,7 @@ import { createFilter } from '../helpers';
 describe('DynamicRulesApi', () => {
     describe('updateDynamicFiltering', () => {
         // eslint-disable-next-line max-len
-        it('prioritizes  rules in next order: quick fixes -> allowlist -> trusted domains exceptions -> userrules -> custom filters', async () => {
+        it('prioritizes rules in next order: quick fixes -> allowlist -> trusted domains exceptions -> userrules -> custom filters', async () => {
             // Manually create the mock structure for browser.declarativeNetRequest
             const mockDeclarativeNetRequest = {
                 getDynamicRules: vi.fn().mockResolvedValue([]),
