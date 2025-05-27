@@ -91,10 +91,9 @@
     },
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#readme",
     "scripts": {
-        "lint": "pnpm lint:code && pnpm lint:tsc",
+        "lint": "pnpm lint:code && pnpm lint:types",
         "lint:code": "eslint --cache --ignore-path .gitignore .",
-        "lint:tsc": "tsc",
-        "check-types": "pnpm lint:tsc",
+        "lint:types": "tsc",
         "start": "rollup -c rollup.config.ts -w",
         "prebuild": "rimraf dist && pnpm build:types",
         "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript --bundleConfigAsCjs && pnpm postbuild",
@@ -112,7 +111,6 @@
         "report-coverage": "cat ./coverage/lcov.info | coveralls",
         "precommit": "lint-staged",
         "prepublishOnly": "pnpm build",
-        "increment": "node ../../scripts/increment.mjs",
         "tgz": "pnpm pack --out tsurlfilter.tgz"
     },
     "lint-staged": {

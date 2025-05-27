@@ -23,10 +23,7 @@ fi
 # Install dependencies
 pnpm install
 
-# Check TypeScript types with TSC
-pnpm --filter @adguard/css-tokenizer check-types
-
-# ESLint & Markdownlint
+# Check code, types, markdown
 pnpm --filter @adguard/css-tokenizer lint
 
 # Run tests with Vitest
