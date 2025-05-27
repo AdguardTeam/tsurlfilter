@@ -17,10 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Changed
 
+<!-- FIXME: update dependencies to the latest versions -->
 - Updated [@adguard/agtree] to `v3.1.5`.
 - Updated [@adguard/scriptlets] to `v2.2.1`.
-<!-- FIXME: specify correct version later -->
-- Updated [@adguard/tsurlfilter] to `v3.x.y`.
+- Updated [@adguard/tsurlfilter] to `v3.x.x`.
 
 ### Fixed
 
@@ -39,6 +39,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3122]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3122
 [AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
 [AdguardBrowserExtension#3192]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3192
+
+## [3.1.0-alpha.3] - 2025-05-22
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.0`.
+- Updated [@adguard/tsurlfilter] to `v3.3.3`.
+
+### Fixed
+
+- Improved rule set caching to avoid inconsistent behaviors.
+- Improved rule set update in declarative filtering log to avoid unexpected behaviors during configuration changes.
+
+[3.1.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0-alpha.3
 
 ## [3.1.0-alpha.2] - 2025-05-19
 

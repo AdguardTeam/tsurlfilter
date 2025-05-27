@@ -331,9 +331,9 @@ export class RuleSet implements IRuleSet {
      *
      * @returns Promise with list of source rules.
      */
-    private findSourceRules(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]> {
+    private async findSourceRules(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]> {
         if (!this.sourceMap) {
-            return Promise.resolve([]);
+            return [];
         }
 
         const sourcePairs = this.sourceMap.getByDeclarativeRuleId(declarativeRuleId);
@@ -381,6 +381,7 @@ export class RuleSet implements IRuleSet {
 
             this.sourceMap = await loadSourceMap();
             this.declarativeRules = await loadDeclarativeRules();
+            // TODO: Find a better method to load filters (AG-42364)
             const filtersList = await loadFilterList();
             filtersList.forEach((filter) => {
                 this.filterList.set(filter.getId(), filter);

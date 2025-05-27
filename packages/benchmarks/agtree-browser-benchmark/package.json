@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/benchmark.ts",
-    "lint": "pnpm lint:types && pnpm lint:ts && pnpm lint:md",
+    "lint": "pnpm lint:code && pnpm lint:types && pnpm lint:md",
     "lint:md": "markdownlint .",
-    "lint:ts": "eslint . --cache --ext .ts",
+    "lint:code": "eslint . --cache --ext .ts",
     "lint:types": "tsc"
   },
   "dependencies": {

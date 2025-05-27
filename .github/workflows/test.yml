@@ -50,26 +50,22 @@ jobs:
           npx lerna run --scope @adguard/logger build
 
           # css-tokenizer
-          npx lerna run --scope @adguard/css-tokenizer check-types
           npx lerna run --scope @adguard/css-tokenizer lint
           npx lerna run --scope @adguard/css-tokenizer test
           npx lerna run --scope @adguard/css-tokenizer build
 
           # agtree
-          npx lerna run --scope @adguard/agtree check-types
           npx lerna run --scope @adguard/agtree lint
           npx lerna run --scope @adguard/agtree test
           npx lerna run --scope @adguard/agtree build
           npx lerna run --scope @adguard/agtree test:smoke
 
           # tsurlfilter
-          npx lerna run --scope @adguard/tsurlfilter lint
           npx lerna run --scope @adguard/tsurlfilter build
           # IMPORTANT: run tests after the build because smoke tests requires a built dist dir
           npx lerna run --scope @adguard/tsurlfilter test:prod
 
           # tswebextension
-          npx lerna run --scope @adguard/tswebextension lint
           npx lerna run --scope @adguard/tswebextension build
           # IMPORTANT: run tests after the build because smoke tests requires a built dist dir
           npx lerna run --scope @adguard/tswebextension test:prod

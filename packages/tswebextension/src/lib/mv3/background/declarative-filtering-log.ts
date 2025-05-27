@@ -2,6 +2,7 @@ import { type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { type DeclarativeRuleInfo, defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
+import { Mutex } from '../utils/mutex';
 
 import { requestContextStorage } from './request';
 
@@ -14,12 +15,17 @@ class DeclarativeFilteringLog {
     /**
      * Stores list of rule sets.
      */
-    ruleSets: IRuleSet[] = [];
+    private ruleSets: IRuleSet[] = [];
 
     /**
      * Is there an active listener for declarativeNetRequest.onRuleMatchedDebug or not.
      */
     #isListening = false;
+
+    /**
+     * Mutex for managing concurrent access to rule set updates.
+     */
+    private readonly mutex: Mutex = new Mutex();
 
     /**
      * Returns is there an active listener for declarativeNetRequest.onRuleMatchedDebug or not.
@@ -28,6 +34,39 @@ class DeclarativeFilteringLog {
      */
     public get isListening(): boolean {
         return this.#isListening;
+    }
+
+    /**
+     * Acquires the mutex lock within the specified timeout.
+     * Used to prevent getting rule info during rule set updates.
+     *
+     * @param timeoutMs The maximum time to wait (in milliseconds) to acquire the lock.
+     *
+     * @throws {TimeoutError} If the lock is not acquired within the specified time.
+     */
+    public async startUpdate(timeoutMs = 30000): Promise<void> {
+        await this.mutex.lock(timeoutMs);
+    }
+
+    /**
+     * Releases the mutex and sets the new rule sets.
+     * Used to prevent getting rule info during rule set updates.
+     * Also, you can specify whether to enable declarative logging after update.
+     *
+     * @param ruleSets List of {@link IRuleSet}.
+     * @param enableLog Should we enable declarative logging after update.
+     *
+     * @throws Error if no update is in progress.
+     */
+    public finishUpdate(ruleSets: IRuleSet[], enableLog: boolean): void {
+        this.ruleSets = ruleSets;
+        this.mutex.unlock();
+
+        if (enableLog) {
+            this.start();
+        } else {
+            this.stop();
+        }
     }
 
     /**
@@ -43,6 +82,10 @@ class DeclarativeFilteringLog {
      * @throws Error when couldn't find ruleset or rule in ruleset.
      */
     private getRuleInfo = async (ruleSetId: string, ruleId: number): Promise<DeclarativeRuleInfo> => {
+        if (this.mutex.isLocked()) {
+            await this.mutex.waitUntilUnlocked();
+        }
+
         const ruleSet = this.ruleSets.find((r) => r.getId() === ruleSetId);
         if (!ruleSet) {
             throw new Error(`Cannot find ruleset with id ${ruleSet}`);

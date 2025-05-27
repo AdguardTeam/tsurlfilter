@@ -20,6 +20,9 @@ import { cloneDomainListNode } from '../../ast-utils/clone';
 import { CssTokenStream } from '../../parser/css/css-token-stream';
 import {
     CLOSE_SQUARE_BRACKET,
+    CSS_PSEUDO_CLOSE,
+    CSS_PSEUDO_MARKER,
+    CSS_PSEUDO_OPEN,
     EMPTY,
     EQUALS,
     ESCAPE_CHARACTER,
@@ -28,6 +31,7 @@ import {
     UBO_HTML_MASK,
 } from '../../utils/constants';
 import { DOUBLE_QUOTE_MARKER, StringUtils } from '../../utils/string';
+import { QuoteUtils } from '../../utils';
 
 /**
  * From the AdGuard docs:
@@ -48,6 +52,20 @@ const PseudoClasses = {
     HasText: 'has-text',
     MinTextLength: 'min-text-length',
 } as const;
+
+/**
+ * Constructs a pseudo-class string with a specified value for use in CSS selectors.
+ *
+ * @param pseudo - The pseudo-class name.
+ * @param value - The value of the pseudo-class.
+ * @returns pseudo-class string, including pseudo-class name, value and delimiters.
+ */
+const addPseudoClassWithValue = <K extends keyof typeof PseudoClasses>(
+    pseudo: typeof PseudoClasses[K],
+    value: string | number,
+): string => {
+    return `${CSS_PSEUDO_MARKER}${pseudo}${CSS_PSEUDO_OPEN}${value}${CSS_PSEUDO_CLOSE}`;
+};
 
 const AttributeSelectors = {
     MaxLength: 'max-length',
@@ -79,6 +97,7 @@ export const ERROR_MESSAGES = {
     ATTRIBUTE_SELECTOR_REQUIRES_VALUE: "Attribute selector '%s' requires a value",
     INVALID_ATTRIBUTE_SELECTOR_OPERATOR: "Unsupported attribute selector operator '%s'",
     VALUE_SHOULD_BE_SPECIFIED: 'Value should be specified if operator is specified',
+    VALUE_SHOULD_BE_POSITIVE: 'Value should be positive',
     OPERATOR_SHOULD_BE_SPECIFIED: 'Operator should be specified if value is specified',
     UNEXPECTED_TOKEN_WITH_VALUE: "Unexpected token '%s' with value '%s'",
     FLAGS_NOT_SUPPORTED: 'Flags are not supported for attribute selectors',
@@ -114,6 +133,34 @@ function escapeDoubleQuotes(selector: string): string {
     }
 
     return buffer.join(EMPTY);
+}
+
+/**
+ * Safely parses length values from attribute selectors, like `"262144"` from `[max-length="262144"]`
+ *
+ * @param value The string value to parse
+ * @param attrName The attribute name for error messages
+ * @returns Parsed number
+ * @throws A {@link RuleConversionError} if parsing fails
+ */
+function parseLengthValue(value: string, attrName: string): number {
+    const cleanValue = QuoteUtils.removeQuotes(value);
+
+    const parsed = Number(cleanValue);
+
+    if (Number.isNaN(parsed)) {
+        throw new RuleConversionError(
+            sprintf(ERROR_MESSAGES.VALUE_FOR_ATTR_SHOULD_BE_INT, attrName, value),
+        );
+    }
+
+    if (parsed < 0) {
+        throw new RuleConversionError(
+            sprintf(ERROR_MESSAGES.VALUE_SHOULD_BE_POSITIVE, attrName, value),
+        );
+    }
+
+    return parsed;
 }
 
 /**
@@ -491,6 +538,176 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     value: unescapeDoubleQuotes(selector),
                 },
             })),
+            true,
+        );
+    }
+
+    /**
+     * Converts a HTML rule to uBlock Origin syntax, if possible.
+     *
+     * @note AdGuard rules are often more specific than uBlock Origin rules, so some information
+     * may be lost in conversion. AdGuard's `[max-length]` and `[tag-content]` attributes will be converted to
+     * uBlock's `:min-text-length()` and `:has-text()` pseudo-classes when possible.
+     *
+     * @param rule Rule node to convert
+     * @returns An object which follows the {@link NodeConversionResult} interface. Its `result` property contains
+     * the array of converted rule nodes, and its `isConverted` flag indicates whether the original rule was converted.
+     * If the rule was not converted, the result array will contain the original node with the same object reference
+     * @throws Error if the rule is invalid or cannot be converted
+     */
+    public static convertToUbo(rule: HtmlFilteringRule): NodeConversionResult<HtmlFilteringRule> {
+        // Ignore uBlock Origin rules
+        if (rule.syntax === AdblockSyntax.Ubo) {
+            return createNodeConversionResult([rule], false);
+        }
+
+        if (rule.syntax === AdblockSyntax.Abp) {
+            throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
+        }
+
+        const source = escapeDoubleQuotes(rule.body.value);
+        const stream = new CssTokenStream(source);
+
+        const convertedSelector: string[] = [];
+        let minTextLength: number | undefined;
+
+        // Skip leading whitespace
+        stream.skipWhitespace();
+
+        while (!stream.isEof()) {
+            const token = stream.getOrFail();
+
+            if (token.type === TokenType.Ident) {
+                convertedSelector.push(source.slice(token.start, token.end));
+                stream.advance();
+            } else if (token.type === TokenType.OpenSquareBracket) {
+                // Attribute selectors
+                const { start } = token;
+                let tempToken;
+
+                // Advance opening square bracket
+                stream.advance();
+
+                // Skip optional whitespace
+                stream.skipWhitespace();
+
+                // Parse attribute name
+                tempToken = stream.getOrFail();
+
+                if (tempToken.type !== TokenType.Ident) {
+                    throw new RuleConversionError(
+                        sprintf(
+                            ERROR_MESSAGES.INVALID_ATTRIBUTE_NAME,
+                            getFormattedTokenName(tempToken.type),
+                            source.slice(tempToken.start, tempToken.end),
+                        ),
+                    );
+                }
+
+                const attr = source.slice(tempToken.start, tempToken.end);
+                stream.advance();
+
+                // Skip optional whitespace
+                stream.skipWhitespace();
+
+                // Check if this is a standalone attribute (like [disabled])
+                tempToken = stream.getOrFail();
+                if (tempToken.type === TokenType.CloseSquareBracket) {
+                    const { end } = tempToken;
+                    stream.advance();
+                    convertedSelector.push(source.slice(start, end));
+                    continue;
+                }
+
+                // Expect equals operator
+                stream.expect(TokenType.Delim, { value: EQUALS });
+                stream.advance();
+
+                // Skip optional whitespace
+                stream.skipWhitespace();
+
+                // Parse attribute value
+                tempToken = stream.getOrFail();
+                if (tempToken.type !== TokenType.Ident && tempToken.type !== TokenType.String) {
+                    throw new RuleConversionError(
+                        sprintf(
+                            ERROR_MESSAGES.INVALID_ATTRIBUTE_VALUE,
+                            getFormattedTokenName(tempToken.type),
+                            source.slice(tempToken.start, tempToken.end),
+                        ),
+                    );
+                }
+
+                const value = source.slice(tempToken.start, tempToken.end);
+                stream.advance();
+
+                // Skip optional whitespace
+                stream.skipWhitespace();
+
+                // Check for closing bracket
+                tempToken = stream.getOrFail();
+
+                if (tempToken.type !== TokenType.CloseSquareBracket) {
+                    throw new RuleConversionError(sprintf(ERROR_MESSAGES.FLAGS_NOT_SUPPORTED));
+                }
+                const { end } = stream.getOrFail();
+                stream.advance();
+
+                // Handle special attributes with improved number parsing
+                if (attr === AttributeSelectors.MinLength || attr === AttributeSelectors.MaxLength) {
+                    const parsedValue = parseLengthValue(value, attr);
+                    if (attr === AttributeSelectors.MinLength) {
+                        minTextLength = parsedValue;
+                    }
+                } else if (attr === AttributeSelectors.TagContent) {
+                    const unescapedValue = unescapeDoubleQuotes(value);
+                    const valueWithoutQuotes = QuoteUtils.removeQuotes(unescapedValue);
+                    convertedSelector.push(addPseudoClassWithValue(PseudoClasses.HasText, valueWithoutQuotes));
+                } else {
+                    convertedSelector.push(source.slice(start, end));
+                }
+            } else if (token.type === TokenType.Whitespace) {
+                stream.advance();
+            } else {
+                throw new RuleConversionError(
+                    sprintf(
+                        ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
+                        getFormattedTokenName(token.type),
+                        source.slice(token.start, token.end),
+                    ),
+                );
+            }
+        }
+
+        // Handle min length conversions
+        if (minTextLength !== undefined) {
+            convertedSelector.push(addPseudoClassWithValue(PseudoClasses.MinTextLength, minTextLength));
+        }
+
+        // Combine all selectors
+        const uboSelector = `${convertedSelector.join(EMPTY)}`;
+
+        return createNodeConversionResult(
+            [{
+                category: RuleCategory.Cosmetic,
+                type: CosmeticRuleType.HtmlFilteringRule,
+                syntax: AdblockSyntax.Ubo,
+
+                exception: rule.exception,
+                domains: cloneDomainListNode(rule.domains),
+
+                separator: {
+                    type: 'Value',
+                    value: rule.exception
+                        ? `${CosmeticRuleSeparator.ElementHidingException}${UBO_HTML_MASK}`
+                        : `${CosmeticRuleSeparator.ElementHiding}${UBO_HTML_MASK}`,
+                },
+
+                body: {
+                    type: 'Value',
+                    value: unescapeDoubleQuotes(uboSelector),
+                },
+            }],
             true,
         );
     }

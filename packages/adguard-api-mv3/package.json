@@ -1,6 +1,6 @@
 {
     "name": "@adguard/api-mv3",
-    "version": "0.2.3",
+    "version": "0.3.0",
     "description": "This is a TypeScript library that implements AdGuard's extension API for MV3",
     "main": "dist/adguard-api.js",
     "files": [
@@ -23,15 +23,14 @@
         }
     },
     "scripts": {
-        "lint": "pnpm lint:eslint && pnpm check-types",
         "e2e": "vitest run",
         "build": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
         "postbuild": "pnpm types && tsx tasks/build-txt",
         "prepush": "pnpm build",
         "types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
-        "lint:eslint": "eslint --cache --ignore-path .gitignore .",
-        "check-types": "tsc",
-        "increment": "node ../../scripts/increment.mjs",
+        "lint": "pnpm lint:code && pnpm lint:types",
+        "lint:code": "eslint --cache --ignore-path .gitignore .",
+        "lint:types": "tsc",
         "tgz": "pnpm pack --out adguard-api-mv3.tgz"
     },
     "author": "Adguard Software Ltd.",

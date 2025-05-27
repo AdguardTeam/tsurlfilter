@@ -8,43 +8,181 @@ variables:
   dockerContainer: adguard/node-ssh:22.14--0
   testTimeout: 180s
 
+# Some packages are independent of each other so we can run them in parallel (different jobs on same stage)
+# other packages depend on each other so they should be run one after another (different stages),
+# e.g. CSSTokenizer and Logger are totally independent,
+# but DNR-Ruleset depends on TSUrlFilter, so even if it does not depend on TSWebExtension,
+# they should run on different stages, this way bamboo cache is used ("[local cache]" in logs).
+#
+# Dependencies are described in the README.md file ("Dependency Tree" section).
+
+# Stage 1:
+# - Logger test run;
+# - CSS Tokenizer test run.
+#
+# Stage 2:
+# - AGTree test run.
+#
+# Stage 3:
+# - TSUrlFilter test run;
+#
+# Stage 4:
+# - TSWebExtension test run.
+#
+# Stage 5:
+# - DNR-Rulesets test run;
+#
+# Stage 6:
+# - Example APIs and TSWebExtensions for MV2 and MV3.
+#
+# Stage 7:
+# - Update TSUrlFilter Docs MV3.
+#
+# Final state:
+# - Cleanup.
+
+# Experiment:
+# Only jobs from Stage 1 use requires clean checkout.
+# Since later jobs rely on previous jobs, let's try this approach.
+# And default value for 'force-clean-build' is false.
+
 stages:
-  - Test:
+  - Stage 1: &stage
       manual: false
       final: false
       jobs:
-        - Test
+        - Test Logger
+        - Test CSSTokenizer
+  - Stage 2:
+      <<: *stage
+      jobs:
+        - Test AGTree
+  - Stage 3:
+      <<: *stage
+      jobs:
+        - Test TSUrlFilter
+  - Stage 4:
+      <<: *stage
+      jobs:
+        - Test TSWebExtension
+  - Stage 5:
+      <<: *stage
+      jobs:
+        - Test DNR-Rulesets
+  - Stage 6:
+      <<: *stage
+      jobs:
+        - Test Examples - APIs and TSWebExtensions
+  - Stage 7:
+      <<: *stage
+      jobs:
+        - Update TSUrlFilter Docs MV3
+  - Cleanup:
+      <<: *stage
+      final: true
+      jobs:
+        - Cleanup
 
-Test:
-  key: TEST
-  docker:
+# NOTE: Each script is separate because, otherwise, Bamboo does not fail in the case of an error.
+
+Test Logger:
+  key: TESTLOGGER
+  docker: &docker
     image: "${bamboo.dockerContainer}"
     volumes:
        ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
-        force-clean-build: 'true'
-    # Each script is separate because, otherwise, Bamboo does not fail in the case of an error.
+        force-clean-build: true
+    - script: &setup-script
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -ex
+
+            ls -alt
+
+            # Fix mixed logs
+            exec 2>&1
+
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/setup-tests.sh"
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/agtree-tests.sh"
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh"
+  requirements: &requirements
+    - adg-docker: 'true'
+    - extension: 'true'
+
+Test CSSTokenizer:
+  key: TESTCSSTOKENIZER
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/css-tokenizer-tests.sh"
+  requirements: *requirements
+
+Test AGTree:
+  key: TESTAGTREE
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/agtree-tests.sh"
+  requirements: *requirements
+
+Test TSUrlFilter:
+  key: TESTTSURLFILTER
+  docker: *docker
+  tasks:
+    - checkout
+    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh"
+  requirements: *requirements
+
+Test TSWebExtension:
+  key: TESTTSWEBEXTENSION
+  docker: *docker
+  tasks:
+    - checkout
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh"
+  requirements: *requirements
+
+Test DNR-Rulesets:
+  key: TESTDNRRULESETS
+  docker: *docker
+  tasks:
+    - checkout
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
+  requirements: *requirements
+
+Test Examples - APIs and TSWebExtensions:
+  key: TESTEXAMPLES
+  docker: *docker
+  tasks:
+    - checkout
+    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
@@ -56,36 +194,11 @@ Test:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh"
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh"
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh"
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-css-tokenizer-benchmark-tests.sh"
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-agtree-benchmark-tests.sh"
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/benchmarks-agtree-browser-benchmark-tests.sh"
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh"
-    - any-task:
-        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
-        configuration:
-          commitMessage: 'skipci: Automatic update tsurlfilter MV3 docs'
-          selectedRepository: defaultRepository
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
@@ -97,7 +210,30 @@ Test:
       pattern: extension.zip
       shared: false
       required: false
-  final-tasks:
+  requirements: *requirements
+
+Update TSUrlFilter Docs MV3:
+  key: UPDTSURLFILTERDOCSMV3
+  docker: *docker
+  tasks:
+    - checkout
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh"
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          commitMessage: 'skipci: Automatic update tsurlfilter MV3 docs'
+          selectedRepository: defaultRepository
+  requirements: *requirements
+
+Cleanup:
+  key: CLEAN
+  docker: *docker
+  tasks:
+    - checkout
     - script:
         interpreter: SHELL
         scripts:
@@ -126,16 +262,14 @@ Test:
             fi
 
             echo "Size after cleanup:" && du -h | tail -n 1
-  requirements:
-    - adg-docker: 'true'
-    - extension: 'true'
+  requirements: *requirements
 
 branches:
   create: for-pull-request
   delete:
     after-deleted-days: '1'
     after-inactive-days: '5'
-  link-to-jira: 'true'
+  link-to-jira: true
 
 notifications:
   - events:
