@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.1-alpha.0] - 2025-05-28
 
 ### Added
+
 - New `watch` command to watch for changes in the filters
   and automatically rebuild DNR.
 

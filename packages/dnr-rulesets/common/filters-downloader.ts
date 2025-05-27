@@ -1,9 +1,10 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { METADATA_RULESET_ID, MetadataRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 import { getRuleSetPath } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import axios from 'axios';
-import fs from 'fs';
 import { ensureDir } from 'fs-extra';
-import path from 'path';
 
 import {
     DEST_RULESETS_DIR,
@@ -15,7 +16,7 @@ import {
 import {
     getI18nMetadata,
     getMetadata,
-    Metadata,
+    type Metadata,
 } from './metadata';
 
 /**
@@ -60,9 +61,11 @@ const downloadFilter = async (filter: FilterDTO, filtersDir: string) => {
 
     const response = await axios.get<string>(filter.url, { responseType: 'text' });
 
-    await fs.promises.writeFile(path.join(filtersDir, filter.file), response.data);
+    const pathToSave = path.join(filtersDir, filter.file);
 
-    console.info(`Download ${filter.url} done, saved to ${path.join(filtersDir, filter.file)}`);
+    await fs.promises.writeFile(pathToSave, response.data);
+
+    console.info(`Download ${filter.url} done, saved to ${pathToSave}`);
 };
 
 /**

@@ -30,6 +30,7 @@
     "license": "GPL-3.0-only",
     "dependencies": {
         "@adguard/logger": "workspace:^",
+        "chokidar": "^4.0.3",
         "commander": "^12.1.0",
         "fast-glob": "^3.3.2",
         "fs-extra": "^11.2.0",

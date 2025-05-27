@@ -3,10 +3,12 @@
  * @file Watch task for track changes in the filters directory and rebuild DNR rulesets
  */
 
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { convertFilters } from '@adguard/tsurlfilter/cli';
-import fs from 'fs';
+import { ChokidarOptions, type FSWatcher, watch } from 'chokidar';
 import { exists } from 'fs-extra';
-import path from 'path';
 
 import { FILTERS_METADATA_I18N_FILE_NAME } from '../../../common/constants';
 import { startDownload, writeMetadataFilesToMetadataRuleset } from '../../../common/filters-downloader';
@@ -51,6 +53,11 @@ export type WatchOptions = PatchManifestOptions & {
  */
 export class Watcher {
     /**
+     * Mutex to prevent multiple rebuilds at the same time.
+     */
+    private mutex: boolean = false;
+
+    /**
      * Rebuilds DNR rulesets from the filtersPath and writes metadata
      * to the destinationRulesetsPath.
      *
@@ -63,7 +70,7 @@ export class Watcher {
     private rebuildDnrRulesets = async (
         { filtersPath, resourcesPath, destinationRulesetsPath }: WatchPaths,
         metadata: Metadata,
-    ) => {
+    ): Promise<void> => {
         console.log('Rebuilding DNR rulesets...');
 
         await convertFilters(
@@ -91,7 +98,8 @@ export class Watcher {
     private readMetadata = async (manifestPath: string): Promise<Metadata> => {
         const manifestFilePath = path.join(manifestPath, FILTERS_METADATA_I18N_FILE_NAME);
 
-        if (!exists(manifestFilePath)) {
+        const isExists = await exists(manifestFilePath);
+        if (!isExists) {
             throw new Error(`Metadata file not found: ${manifestFilePath}`);
         }
 
@@ -113,7 +121,7 @@ export class Watcher {
     private filtersChangesListener = async (
         paths: WatchPaths,
         options?: Partial<WatchOptions>,
-    ) => {
+    ): Promise<void> => {
         const { manifestPath, filtersPath } = paths;
 
         // Read manifest on each call to capture all possible changes.
@@ -138,7 +146,7 @@ export class Watcher {
     public watch = async (
         paths: WatchPaths,
         options?: Partial<WatchOptions>,
-    ) => {
+    ): Promise<void> => {
         const { filtersPath } = paths;
 
         if (options?.download) {
@@ -147,41 +155,63 @@ export class Watcher {
         }
 
         // eslint-disable-next-line prefer-const
-        let watcher: fs.FSWatcher;
+        let watcher: FSWatcher | undefined;
 
         // Stop watching when the process is terminated
-        process.on('SIGINT', () => {
+        process.on('SIGINT', async () => {
             console.log('Stopping watch...');
-            watcher.close();
+            if (watcher) {
+                await watcher.close();
+            }
             process.exit(0);
         });
 
         // Stop watching when the process is terminated
-        process.on('SIGTERM', () => {
+        process.on('SIGTERM', async () => {
             console.log('Stopping watch...');
-            watcher.close();
+            if (watcher) {
+                await watcher.close();
+            }
             process.exit(0);
         });
 
         console.log(`Watching for changes in ${filtersPath}...`);
-        console.log('Press Ctrl+C to stop watching.');
+        console.log('Press Ctrl+C (or Cmd+C) to stop watching.');
 
-        const listener = (_: unknown, filename: string | null) => {
-            // Skip changes not in the *.txt files to prevent infinite loop
-            if (!filename?.endsWith('.txt')) {
+        const listener = async (path: string) => {
+            console.log('Change detected in path:', path);
+
+            if (this.mutex) {
+                console.warn('Change ignored due to ongoing processing.');
+                // If mutex is true, it means that we are already processing a change.
+                // So we skip this change to prevent infinite loop.
                 return;
             }
 
-            this.filtersChangesListener(
-                paths,
-                options,
-            );
+            this.mutex = true;
+
+            try {
+                await this.filtersChangesListener(
+                    paths,
+                    options,
+                );
+            } catch (error) {
+                console.error('Error processing filter changes:', error);
+            } finally {
+                // Reset mutex after processing the change, even if there was an error
+                this.mutex = false;
+            }
+        };
+
+        const watcherOptions: ChokidarOptions = {
+            // Watch only .txt files
+            ignored: (path, stats) => !!stats?.isFile() && !path.endsWith('.txt'),
+            ignoreInitial: true,
         };
 
         // Watch for changes in the filters directory and rebuild DNR rulesets
-        watcher = fs.watch(filtersPath,
-            { recursive: true },
-            listener,
-        );
+        watcher = watch(filtersPath, watcherOptions)
+            .on('add', listener)
+            .on('change', listener);
     };
 }
