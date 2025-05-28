@@ -12,7 +12,7 @@ stages:
       manual: false
       final: false
       jobs:
-        - Test:prod with no cache
+        - Test prod with no cache
   - Build:
       <<: *stage
       jobs:
