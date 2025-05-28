@@ -8,83 +8,42 @@ variables:
   dockerContainer: adguard/node-ssh:22.14--0
 
 stages:
-  - Test before build: &stage
+  - Build:
       manual: false
       final: false
       jobs:
-        - Test prod with no cache
-  - Build:
-      <<: *stage
-      jobs:
         - Build
-  - Cleanup:
-      <<: *stage
-      final: true
-      jobs:
-        - Cleanup
-
-Test prod with no cache:
-  key: TESTPROD
-  other:
-    clean-working-dir: true
-  docker: &docker
-    image: "${bamboo.dockerContainer}"
-    volumes:
-       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
-  tasks:
-    - checkout:
-        force-clean-build: true
-    - script: &setup-script
-        interpreter: SHELL
-        scripts:
-          - |-
-            set -ex
-
-            ls -alt
-
-            # Fix mixed logs
-            exec 2>&1
-
-            # Set cache directory
-            pnpm config set store-dir ${bamboo.cachePnpm}
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            pnpm install
-
-            # Build dependencies, then the package itself
-            npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
-
-            # IMPORTANT:
-            # The 'test:prod' command includes 'no-cache' flag
-            # so it should be run before the build,
-            # since 'no-cache' flag disables cache usage in the monorepo specs.
-            pnpm --filter @adguard/tsurlfilter test:prod
-  requirements: &requirements
-    - adg-docker: 'true'
-    - extension: 'true'
 
 Build:
   key: BUILD
   other:
     clean-working-dir: true
-  docker: *docker
+  docker:
+    image: "${bamboo.dockerContainer}"
+    volumes:
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
-        force-clean-build: true
-    - script: *setup-script
+        force-clean-build: 'true'
     - script:
         interpreter: SHELL
         scripts:
           - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            pnpm config set store-dir ${bamboo.cachePnpm}
             pnpm install
 
             # Build dependencies, then the package itself
             pnpm --filter "@adguard/tsurlfilter..." --depth=-1 build
 
             cd packages/tsurlfilter
-
             pnpm tgz
     - inject-variables:
         file: ./packages/tsurlfilter/dist/build.txt
@@ -95,48 +54,40 @@ Build:
         configuration:
           selectedRepository: defaultRepository
           tagName: tsurlfilter-v${bamboo.inject.version}
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -x
+            set -e
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -la
+
+            echo "Size before cleanup:" && du -h | tail -n 1
+
+            pnpm clean
+
+            echo "Size after cleanup:" && du -h | tail -n 1
   artifacts:
     - name: tsurlfilter.tgz
       location: packages/tsurlfilter/
       pattern: tsurlfilter.tgz
       shared: true
       required: true
-  requirements: *requirements
-
-Cleanup:
-  key: CLEAN
-  docker: *docker
-  tasks:
-    - checkout
-    - script: *setup-script
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            echo "Size before cleanup:" && du -h | tail -n 1
-
-            du -h . | sort -hr | head -n 30
-
-            # Check if node_modules directory exists
-            if [ -d "node_modules" ]; then
-              # to run clean commands in the packages
-              pnpm -r clean
-
-              # to remove node_modules
-              pnpm clean
-            else
-              echo "node_modules directory does not exist, skipping pnpm clean"
-            fi
-
-            echo "Size after cleanup:" && du -h | tail -n 1
-  requirements: *requirements
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
 
 triggers: []
 
 branches:
   create: manually
   delete: never
-  link-to-jira: true
+  link-to-jira: 'true'
 
 notifications:
   - events:
