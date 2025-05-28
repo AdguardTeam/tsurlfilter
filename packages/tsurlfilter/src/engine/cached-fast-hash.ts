@@ -1,5 +1,5 @@
-import { LRUCache } from "lru-cache";
-import { fastHash } from "../utils/string-utils";
+import { LRUCache } from 'lru-cache';
+import { fastHash } from '../utils/string-utils';
 
 export class CachedFastHash {
     private static readonly cache = new LRUCache<string, number>({
@@ -8,9 +8,13 @@ export class CachedFastHash {
 
     /**
      * Returns the cached result of fastHash(hostname), or computes and stores it if missing.
+     *
+     * @param hostname Hostname to hash.
+     *
+     * @returns Cached hash value.
      */
     static get(hostname: string): number {
-        let cached = this.cache.get(hostname);
+        const cached = this.cache.get(hostname);
         if (cached !== undefined) {
             return cached;
         }

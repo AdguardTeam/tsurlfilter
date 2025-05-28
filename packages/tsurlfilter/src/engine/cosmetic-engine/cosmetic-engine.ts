@@ -9,12 +9,8 @@ import {
     decodeType,
     type RuleParts,
     RuleType,
-    CosmeticRuleType
+    CosmeticRuleType,
 } from '../../filterlist/tokenize';
-
-/**
- * @typedef {import('../engine').Engine} Engine
- */
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly

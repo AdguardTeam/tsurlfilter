@@ -1,8 +1,7 @@
 import { parse } from 'tldts';
-import { ADG_SCRIPTLET_MASK } from '@adguard/agtree';
+import { ADG_SCRIPTLET_MASK, QuoteUtils } from '@adguard/agtree';
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { DomainModifier } from '../../modifiers/domain-modifier';
-import { fastHash } from '../../utils/string-utils';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
 import {
@@ -90,14 +89,14 @@ export class CosmeticLookupTable {
 
         if (decodeIsAllowlist(rule.cosmeticSeparator!)) {
             if (decodeType(rule.cosmeticSeparator!) === CosmeticRuleType.JsInjectionRule) {
-                if (rule.cosmeticContent!.startsWith(ADG_SCRIPTLET_MASK) && rule.cosmeticContent!.endsWith(')')) {
+                if (rule.cosmeticContent!.startsWith(`${ADG_SCRIPTLET_MASK}(`) && rule.cosmeticContent!.endsWith(')')) {
                     // get scriptlet name
-                    const params = rule.cosmeticContent!.slice(ADG_SCRIPTLET_MASK.length, -1).split(',');
+                    const params = rule.cosmeticContent!.slice(ADG_SCRIPTLET_MASK.length + 1, -1).split(',')
+                        .map((p) => QuoteUtils.removeQuotes(p.trim()));
 
                     // Store scriptlet rules by name to enable the possibility of allowlisting them.
                     // See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
-                    if (params[0] !== undefined
-                        && params.length === 1) {
+                    if (params[0] !== undefined && params[0] !== '' && params.length === 1) {
                         this.addAllowlistRule(params[0], storageIdx);
                     }
                 }

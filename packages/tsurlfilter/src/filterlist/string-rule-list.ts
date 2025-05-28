@@ -35,14 +35,13 @@ export class StringRuleList implements IRuleList {
     private readonly ignoreUnsafe: boolean;
 
     /**
-     * Constructor
+     * Constructor.
      *
-     * @param listId
-     * @param ruleText
-     * @param ignoreCosmetic (Optional) default false
-     * @param ignoreJS (Optional) default false
-     * @param ignoreUnsafe (Optional) default false
-     * @param sourceMap - (Optional) Source map for the filter list
+     * @param listId Rule list identifier.
+     * @param ruleText String with filtering rules (one per line).
+     * @param ignoreCosmetic (Optional) default false.
+     * @param ignoreJS (Optional) default false.
+     * @param ignoreUnsafe (Optional) default false.
      */
     constructor(
         listId: number,
@@ -63,7 +62,7 @@ export class StringRuleList implements IRuleList {
     }
 
     /**
-     * Close does nothing as here's nothing to close in the StringRuleList
+     * Close does nothing as here's nothing to close in the StringRuleList.
      */
     // eslint-disable-next-line class-methods-use-this
     public close(): void {
@@ -71,15 +70,18 @@ export class StringRuleList implements IRuleList {
     }
 
     /**
-     * @return the rule list identifier
+     * @returns The rule list identifier.
      */
     getId(): number {
         return this.id;
     }
 
     /**
-     * Creates a new rules scanner that reads the list contents
-     * @return scanner object
+     * Creates a new rules scanner that reads the list contents.
+     *
+     * @param scannerType
+     *
+     * @returns Scanner object.
      */
     newScanner(scannerType: ScannerType): RuleScanner {
         const reader = new StringLineReader(this.rulesText);
@@ -93,10 +95,11 @@ export class StringRuleList implements IRuleList {
 
     /**
      * Finds rule text by its index.
-     * If there's no rule by that index or rule is invalid, it will return null
+     * If there's no rule by that index or rule is invalid, it will return null.
      *
-     * @param ruleIdx
-     * @return rule text or null
+     * @param ruleIdx Rule index.
+     *
+     * @returns Rule text or null.
      */
     retrieveRuleText(ruleIdx: number): string | null {
         if (ruleIdx < 0 || ruleIdx >= this.rulesText.length) {

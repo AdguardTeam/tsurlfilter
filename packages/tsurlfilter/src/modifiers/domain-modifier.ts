@@ -244,7 +244,8 @@ export class DomainModifier {
      * @returns True if domain ends with wildcard.
      */
     public static isWildcardDomain(domain: string): boolean {
-        return domain.endsWith('.*');
+        // FIXME: we have a test with `*` domain, double check
+        return domain === '*' || domain.endsWith('.*');
     }
 
     /**

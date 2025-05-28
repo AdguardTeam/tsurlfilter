@@ -53,9 +53,11 @@ export const decodeType = (v: number) => (v >>> COSMETIC_SEPARATOR_TYPE_SHIFT) &
 export const decodeIsAllowlist = (v: number) => ((v >>> COSMETIC_SEPARATOR_ALLOW_SHIFT) & 0x1) === 1;
 
 const findCosmeticSeparator = (rule: string): number | null => {
-    let i = rule.indexOf('#');
+    let i = -1;
 
-    if (i !== -1) {
+    // Check all '#' based patterns
+    // eslint-disable-next-line no-cond-assign
+    while ((i = rule.indexOf('#', i + 1)) !== -1) {
         if (rule[i + 1] === '#' && rule[i - 1] !== ' ') {
             // ##
             return encode(i, 2, CosmeticRuleType.ElementHidingRule, false);
@@ -76,14 +78,12 @@ const findCosmeticSeparator = (rule: string): number | null => {
                 // #$#
                 return encode(i, 3, CosmeticRuleType.CssInjectionRule, false);
             }
-
             if (rule[i + 2] === '?' && rule[i + 3] === '#') {
                 // #$?#
                 return encode(i, 4, CosmeticRuleType.CssInjectionRule, false);
             }
         }
 
-        // Exceptions
         if (rule[i + 1] === '@') {
             if (rule[i + 2] === '#' && rule[i - 1] !== ' ') {
                 // #@#
@@ -114,9 +114,10 @@ const findCosmeticSeparator = (rule: string): number | null => {
         }
     }
 
-    i = rule.indexOf('$');
-
-    if (i !== -1) {
+    // Check all '$' based patterns
+    i = -1;
+    // eslint-disable-next-line no-cond-assign
+    while ((i = rule.indexOf('$', i + 1)) !== -1) {
         if (rule[i + 1] === '$') {
             // $$
             return encode(i, 2, CosmeticRuleType.HtmlFilteringRule, false);
@@ -140,6 +141,10 @@ const isHostLikeComment = (rule: string): boolean => {
 };
 
 const extractDomainsFromCosmeticPattern = (pattern: string): string[] => {
+    if (pattern === '') {
+        return [];
+    }
+
     if (pattern.startsWith('[')) {
         // Right part already trimmed
         return pattern.slice(pattern.lastIndexOf(']') + 1).trimStart().split(',').map((d) => d.trim());
