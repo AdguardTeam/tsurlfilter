@@ -95,6 +95,7 @@ const getValidatorData = async (destDir: string): Promise<RulesetIdsAndMetadataK
  * Retrieves old validator data.
  *
  * @returns Old rulesets data for validation.
+ *
  * @throws Error if old rulesets data cannot be retrieved.
  */
 const getOldValidatorData = async (): Promise<RulesetIdsAndMetadataKeys> => {
@@ -157,6 +158,7 @@ const validateRulesets = async (newData: RulesetIdsAndMetadataKeys): Promise<voi
             messageParts.push(`Removed metadata keys: ${removedMetadataKeys.join(', ')}`);
         }
 
+        // eslint-disable-next-line max-len
         messageParts.push(`Consider bumping package version, updating changelog and ${OLD_VALIDATOR_DATA_FILE_NAME} for the next build`);
 
         throw new Error(messageParts.join('\n'));

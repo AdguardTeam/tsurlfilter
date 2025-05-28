@@ -3,11 +3,7 @@ import { Logger } from '@adguard/logger';
 import { program } from 'commander';
 
 import { version } from '../package.json';
-import {
-    AssetsLoader,
-    ManifestPatcher,
-    type PatchManifestOptions,
-} from './lib';
+import { AssetsLoader, ManifestPatcher, type PatchManifestOptions } from './lib';
 
 program
     .name('dnr-rulesets CLI')

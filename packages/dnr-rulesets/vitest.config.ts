@@ -1,5 +1,5 @@
 /**
- * @file vitest configuration file
+ * @file Vitest configuration file.
  */
 import { defineConfig } from 'vitest/config';
 
