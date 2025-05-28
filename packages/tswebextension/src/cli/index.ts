@@ -28,7 +28,6 @@ async function main(): Promise<void> {
     await program.parseAsync(process.argv);
 }
 
-// FIXME: Describe in changelogs
 const scriptFileName = path.basename(fileURLToPath(import.meta.url));
 const processFileName = path.basename(process.argv[1]);
 
