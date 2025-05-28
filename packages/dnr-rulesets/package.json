@@ -1,6 +1,6 @@
 {
     "name": "@adguard/dnr-rulesets",
-    "version": "3.0.0-alpha.11",
+    "version": "3.0.0-alpha.12",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
         "dist/**/*"
@@ -19,6 +19,7 @@
         "validate:assets": "tsx tasks/validate.ts",
         "clear": "rimraf ./dist && rimraf ./rollup.cache",
         "test": "vitest run",
+        "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
         "test:coverage": "vitest run --coverage",
         "lint": "pnpm lint:code && pnpm lint:types",
         "lint:code": "eslint --cache .",
@@ -57,6 +58,8 @@
         "rollup": "^4.27.4",
         "rollup-plugin-dts": "^6.0.2",
         "rollup-plugin-node-externals": "^7.1.3",
+        "ts-morph": "^26.0.0",
+        "tsd": "^0.32.0",
         "tsx": "^4.19.2",
         "typescript": "^5.7.2",
         "typescript-eslint": "^8.0.1",

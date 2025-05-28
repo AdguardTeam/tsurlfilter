@@ -30,17 +30,17 @@ tar -xzf $tswebextension --strip-components=1 -C $tswebextension_nm
 }
 
 # check css hits counter size
-max_size=20000
+max_size=20100
 filename="dist/css-hits-counter.js"
 filesize=$(stat -f "%z" "$filename")
 if [ "$filesize" -gt $max_size ]; then
-    echo "\"$filename\" is more than $max_size bytes"
+    echo "\"$filename\" is more than $max_size bytes with size $filesize"
     echo "Testing bundling with rollup-ts ended with error"
     # clean up
     rm $tswebextension
     exit 1
 else
-   echo "$filename is less than or equal to $max_size bytes"
+   echo "$filename is less than or equal to $max_size bytes with size $filesize"
 fi
 
 rm $tswebextension

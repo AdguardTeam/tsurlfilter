@@ -1,4 +1,5 @@
 module.exports = {
+    root: true,
     parser: '@typescript-eslint/parser',
     parserOptions: {
         sourceType: 'module',
@@ -9,4 +10,5 @@ module.exports = {
         'no-console': 'off',
         'import/no-extraneous-dependencies': 'off',
     },
+    ignorePatterns: ['dist/'],
 };
