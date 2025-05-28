@@ -1,5 +1,6 @@
 import { type AllowlistConfiguration, Allowlist as CommonAllowlist } from '../../common/allowlist';
 import { getUpperLevelDomain } from '../../common/utils/url';
+import { getAllowlistRule } from '../utils/get-allowlist-rule';
 
 /**
  * The allowlist is used to exclude certain websites from filtering.
@@ -53,10 +54,10 @@ export class AllowlistApi extends CommonAllowlist {
      * @example
      * ```
      * // configuration = { allowlist: 'example.com, example.org', enabled: true, inverted: false }
-     * combineAllowListRules() -> '@@$document,to=example.com|example.org'
+     * combineAllowListRulesForDNR() -> '@@$document,to=example.com|example.org'
      *
      * // configuration = { allowlist: 'example.com, example.org', enabled: true, inverted: true }
-     * combineAllowListRules() -> '@@$document,to=~example.com|~example.org'
+     * combineAllowListRulesForDNR() -> '@@$document,to=~example.com|~example.org'
      * ```
      */
     public combineAllowListRulesForDNR(): string {
@@ -73,9 +74,7 @@ export class AllowlistApi extends CommonAllowlist {
             return this.inverted ? `~${d}` : d;
         });
 
-        const concatenatedUniqueDomains = Array.from(new Set(allDomains)).join('|');
-
-        return allDomains.length > 0 ? `@@$document,to=${concatenatedUniqueDomains}` : '';
+        return getAllowlistRule(allDomains);
     }
 }
 

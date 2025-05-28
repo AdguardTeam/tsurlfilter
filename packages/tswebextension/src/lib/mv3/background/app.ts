@@ -14,7 +14,6 @@ import { type MessageHandler, type AppInterface } from '../../common/app';
 import {
     ALLOWLIST_FILTER_ID,
     BLOCKING_TRUSTED_FILTER_ID,
-    LF,
     QUICK_FIXES_FILTER_ID,
     USER_FILTER_ID,
 } from '../../common/constants';
@@ -24,6 +23,7 @@ import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
+import { getAllowlistRule } from '../utils/get-allowlist-rule';
 
 import { allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
@@ -355,7 +355,7 @@ export class TsWebExtension implements AppInterface<
             // Update allowlist settings.
             allowlistApi.configure(configuration);
             // Combine all allowlist rules into one network rule.
-            const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
+            const combinedAllowlistRule = allowlistApi.combineAllowListRulesForDNR();
 
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
@@ -373,7 +373,7 @@ export class TsWebExtension implements AppInterface<
                 {
                     getContent: (): Promise<PreprocessedFilterList> => {
                         return Promise.resolve(
-                            FilterListPreprocessor.preprocess(combinedAllowlistRules),
+                            FilterListPreprocessor.preprocess(combinedAllowlistRule),
                         );
                     },
                 },
@@ -390,18 +390,13 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
-            const trustedDomainsExceptionRules = configuration.trustedDomains
-                .map((domain) => {
-                    // TODO: maybe use some helper
-                    return `@@$document,to=${domain}`;
-                })
-                .join(LF);
+            const trustedDomainsExceptionRule = getAllowlistRule(configuration.trustedDomains);
 
             const blockingPageTrustedFilter = new Filter(
                 BLOCKING_TRUSTED_FILTER_ID,
                 {
                     getContent: (): Promise<PreprocessedFilterList> => {
-                        return Promise.resolve(FilterListPreprocessor.preprocess(trustedDomainsExceptionRules));
+                        return Promise.resolve(FilterListPreprocessor.preprocess(trustedDomainsExceptionRule));
                     },
                 },
                 true,
