@@ -36,7 +36,8 @@ variables:
 # - Example APIs and TSWebExtensions for MV2 and MV3.
 #
 # Stage 7:
-# - Update TSUrlFilter Docs MV3.
+# - Smoke tests for TSUrlFilter and TSWebExtension — moved to a separate stage before the final one
+#   since they build dist/ directory and it breaks the cache for the following stages.
 #
 # Final state:
 # - Cleanup.
@@ -76,7 +77,7 @@ stages:
   - Stage 7:
       <<: *stage
       jobs:
-        - Update TSUrlFilter Docs MV3
+        - Smoke tests for TSUrlFilter and TSWebExtension
   - Cleanup:
       <<: *stage
       final: true
@@ -212,8 +213,8 @@ Test Examples - APIs and TSWebExtensions:
       required: false
   requirements: *requirements
 
-Update TSUrlFilter Docs MV3:
-  key: UPDTSURLFILTERDOCSMV3
+Smoke tests for TSUrlFilter and TSWebExtension:
+  key: SMOKE
   docker: *docker
   tasks:
     - checkout
@@ -221,12 +222,15 @@ Update TSUrlFilter Docs MV3:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh"
-    - any-task:
-        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
-        configuration:
-          commitMessage: 'skipci: Automatic update tsurlfilter MV3 docs'
-          selectedRepository: defaultRepository
+          - |-
+            # the package has to be built on previous stage so no build command here
+            pnpm --filter @adguard/tswebextension test:smoke
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            # the package has to be built on previous stage so no build command here
+            pnpm --filter @adguard/tsurlfilter test:smoke
   requirements: *requirements
 
 Cleanup:

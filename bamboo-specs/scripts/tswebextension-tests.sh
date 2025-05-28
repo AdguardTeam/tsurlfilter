@@ -32,7 +32,6 @@ npx lerna run build --scope @adguard/tswebextension --include-dependencies
 # - smoke tests require tswebextension to have a built dist directory
 pnpm --filter @adguard/tswebextension lint
 pnpm --filter @adguard/tswebextension test
-pnpm --filter @adguard/tswebextension test:smoke
 
 # IMPORTANT 2:
 # The 'test:prod' command includes 'no-cache' flag

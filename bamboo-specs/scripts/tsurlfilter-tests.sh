@@ -32,7 +32,6 @@ npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
 # - smoke tests require tsurlfilter to have a built dist directory
 pnpm --filter @adguard/tsurlfilter lint
 pnpm --filter @adguard/tsurlfilter test
-pnpm --filter @adguard/tsurlfilter test:smoke
 
 # IMPORTANT 2:
 # The 'test:prod' command includes 'no-cache' flag
