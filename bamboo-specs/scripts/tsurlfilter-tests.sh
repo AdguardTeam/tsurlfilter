@@ -26,11 +26,18 @@ pnpm install
 # Build dependencies, then the package itself
 npx lerna run build --scope @adguard/tsurlfilter --include-dependencies
 
-# IMPORTANT:
-# test:prod includes linting, smoke testing and no-cache unit testing
+# IMPORTANT 1:
 # so it should run after the build because
 # - linting requires types to be generated
 # - smoke tests require tsurlfilter to have a built dist directory
-pnpm --filter @adguard/tsurlfilter test:prod
+pnpm --filter @adguard/tsurlfilter lint
+pnpm --filter @adguard/tsurlfilter test
+pnpm --filter @adguard/tsurlfilter test:smoke
+
+# IMPORTANT 2:
+# The 'test:prod' command includes 'no-cache' flag
+# which disables cache usage for the following stages in the monorepo tests specs.
+# That's why 3 separate commands are used instead of one 'test:prod' command
+# which is moved now to the tsurlfilter build specs and called before the build of the package.
 
 echo "@adguard/tsurlfilter tests completed"

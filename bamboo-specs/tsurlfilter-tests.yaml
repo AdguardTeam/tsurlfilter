@@ -3,7 +3,7 @@ version: 2
 plan:
   project-key: AJL
   key: TSURLFILTERTEST
-  name: tsurlfilter - tests
+  name: tsurlfilter - MONOREPO tests
 variables:
   dockerContainer: adguard/node-ssh:22.14--0
   testTimeout: 180s
@@ -234,18 +234,11 @@ Cleanup:
   docker: *docker
   tasks:
     - checkout
+    - script: *setup-script
     - script:
         interpreter: SHELL
         scripts:
           - |-
-            set -x
-            set -e
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -la
-
             echo "Size before cleanup:" && du -h | tail -n 1
 
             du -h . | sort -hr | head -n 30
