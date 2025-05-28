@@ -1,3 +1,11 @@
+import {
+    describe,
+    expect,
+    it,
+    test,
+    vitest,
+} from 'vitest';
+
 import { generatePatchVersion, generateTimestampFromVersion } from '../../src/utils/version-utils';
 
 describe('Utils tests', () => {
@@ -23,7 +31,7 @@ describe('Utils tests', () => {
     describe('generateTimestampFromVersion', () => {
         it('generateTimestampFromVersion - patch version is not generated previously', () => {
             const testTimestamp = 12345;
-            jest.spyOn(Date, 'now').mockReturnValue(testTimestamp);
+            vitest.spyOn(Date, 'now').mockReturnValue(testTimestamp);
 
             expect(generateTimestampFromVersion('2.1.0')).toBe(testTimestamp);
         });
