@@ -105,7 +105,7 @@
         "test:light": "vitest run --exclude \"**/*benchmark*.test.ts\"",
         "test:watch": "vitest run --watch",
         "test:coverage": "vitest run --coverage",
-        "test:smoke": "cd test/builders/rollup-ts && pnpm test",
+        "test:smoke": "cd test/builders/rollup-ts && pnpm test && pnpm cleanup",
         "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",
         "test:debug": "vitest run --inspect --no-file-parallelism --watch",
         "report-coverage": "cat ./coverage/lcov.info | coveralls",

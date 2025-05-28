@@ -90,7 +90,7 @@
         "test:mv3": "vitest run --project mv3",
         "test:common": "vitest run --project common",
         "test:coverage": "vitest run --coverage",
-        "test:smoke": "pnpm run test:smoke:exports && (cd test/builders/rollup-ts && pnpm test)",
+        "test:smoke": "pnpm run test:smoke:exports && (cd test/builders/rollup-ts && pnpm test && pnpm cleanup)",
         "test:smoke:exports": "./test/smoke/exports/test.sh",
         "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",
         "report-coverage": "cat ./coverage/lcov.info | coveralls",

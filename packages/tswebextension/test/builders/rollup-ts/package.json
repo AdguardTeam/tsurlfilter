@@ -5,7 +5,8 @@
     "license": "GPL-3.0-only",
     "scripts": {
         "build": "rollup -c",
-        "test": "./test.sh"
+        "test": "./test.sh",
+        "cleanup": "rm -rf dist"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "catalog:",
