@@ -14,6 +14,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Support for converting HTML rules to uBlock syntax in the `RuleConverter`.
 
+### Fixed
+
+- Types for `NodeNext` module resolution.
+
 [3.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.1
 
 ## [3.2.0] - 2025-05-22

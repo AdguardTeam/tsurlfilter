@@ -23,6 +23,7 @@ tar -xzf $tsurlfilter --strip-components=1 -C $tsurlfilter_nm
     # try
     # bundle with rollup
     pnpm build &&
+    pnpm tsd &&
     echo "Test successfully built."
 } || {
     # catch
