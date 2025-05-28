@@ -59,7 +59,7 @@ Test prod with no cache:
             # IMPORTANT:
             # The 'test:prod' command includes 'no-cache' flag
             # so it should be run before the build,
-            # since 'no-cache' flag disables cache usage in the monorepo specs.
+            # since 'no-cache' flag disables cache usage in the monorepo specs
             pnpm --filter @adguard/tswebextension test:prod
   requirements: &requirements
     - adg-docker: 'true'
