@@ -20,6 +20,8 @@ stages:
   - Cleanup:
       <<: *stage
       final: true
+      jobs:
+        - Cleanup
 
 Test prod with no cache:
   key: TESTPROD
