@@ -311,6 +311,26 @@ describe('Scriptlet conversion', () => {
                     String.raw`example.net,example.com##+js(set-cookie-reload, Hello no quotes, true)`,
                 ],
             },
+            {
+                actual: "[$domain=/^example\\d+\\.xyz/]#%#//scriptlet('set-constant', 'foo', 'bar')",
+                expected: [
+                    '/^example\\d+\\.xyz/##+js(set-constant, foo, bar)',
+                ],
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: "[$domain=example.com|example.org]#%#//scriptlet('set-constant', 'form')",
+                expected: [
+                    'example.com,example.org##+js(set-constant, form)',
+                ],
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: String.raw`[$domain=/^example\.org$/|somesite.org|somesite2.*]#%#//scriptlet('set-constant', 'form')`,
+                expected: [
+                    String.raw`/^example\.org$/,somesite.org,somesite2.*##+js(set-constant, form)`,
+                ],
+            },
         ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToUbo');
         });
@@ -341,6 +361,34 @@ describe('Scriptlet conversion', () => {
             {
                 actual: String.raw`example.com#%#//scriptlet('trusted-set-cookie', 'showCookie', 'true')`,
                 expected: 'Scriptlet "trusted-set-cookie" is not supported in uBlock Origin.',
+            },
+            {
+                actual: "[$path=/baz]example.com#%#//scriptlet('set-constant', 'foo', 'bar')",
+                expected: 'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
+            },
+            {
+                actual: String.raw`[$path=/m]example.com#%#//scriptlet('trusted-click-element', 'form')`,
+                expected: 'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: "[$domain=example.com|~test.example.com,path=/page.html]#%#//scriptlet('trusted-click-element', 'form')",
+                expected: 'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
+            },
+            // non-valid domain syntax
+            {
+                // eslint-disable-next-line max-len
+                actual: "[$domain=example.com| |example.org]#%#//scriptlet('set-constant', 'form')",
+                expected: 'Empty value specified in the list',
+            },
+            {
+                actual: "[$domain=|example.com|example.org]#%#//scriptlet('set-constant', 'form')",
+                expected: 'Value list cannot start with a separator',
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: "[$domain=domain=exam[le.org|example.com|example,org|example or,]#%#//scriptlet('set-constant', 'form')",
+                expected: 'Modifier name cannot be empty',
             },
         ])("should throw error on '$actual'", ({ actual, expected }) => {
             // eslint-disable-next-line max-len
