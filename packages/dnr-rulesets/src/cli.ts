@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { Logger } from '@adguard/logger';
 import { program } from 'commander';
 
@@ -7,7 +9,7 @@ import {
     ManifestPatcher,
     type PatchManifestOptions,
 } from './lib';
-import { Watcher } from './lib/manifest/watch';
+import { Watcher, WatchOptions } from './lib/manifest/watch';
 
 /**
  * Helper function to process array options that might be:
@@ -38,6 +40,26 @@ const processArrayOption = (option: unknown): string[] => {
     return option ? [String(option)] : [];
 };
 
+const DEFAULT_PATH_TO_FILTERS = './filters';
+const DEFAULT_OUTPUT_PATH_FOR_RULESETS = './filters/declarative';
+
+/**
+ * Extended type for correct type checking of WatchOptions in CLI.
+ */
+type WatchOptionsCli = WatchOptions & {
+    /**
+     * Path to filters directory.
+     * This is used to download filters and metadata file from the server.
+     */
+    pathToFilters: string;
+
+    /**
+     * Path to resources directory.
+     * This is used to save built DNR rulesets.
+     */
+    outputPathForRulesets: string;
+};
+
 program
     .name('dnr-rulesets CLI')
     .version(version);
@@ -63,9 +85,9 @@ program
     .description('Patch MV3 manifest file')
     .argument('[path-to-manifest]', 'manifest src path')
     .argument('[path-to-filters]', 'filters src path')
-    .option('-f, --force-update', 'force update rulesets with existing id', false)
-    .option('-i, --ids <ids...>', 'filters ids to append, others will be ignored', [])
-    .option('-e, --enable <ids...>', 'enable filters by default', [])
+    .option('-f, --force-update', 'force update rulesets with existing id, otherwise it will throw error if ruleset is already in the manifest', false)
+    .option('-i, --ids <ids...>', 'filters ids to process, others will be ignored, by default will process all filters matched via `--filters-match`', [])
+    .option('-e, --enable <ids...>', 'enable filters by default in manifest.json (they will be enabled after enabling/reloading extension)', [])
     .option('-r, --ruleset-prefix <prefix>', 'prefix for filters ids', 'ruleset_')
     .option('-m, --filters-match <match>', 'filters files match glob pattern', 'filter_+([0-9]).txt')
     .action((
@@ -87,25 +109,24 @@ program
 program
     .command('watch')
     .description('Watch for changes in the filters directory and rebuild DNR rulesets')
-    .argument('[path-to-manifest]', 'manifest src path')
-    .argument('[path-to-filters]', 'filters src path and i18n metadata file')
-    .argument('[path-to-resources]', 'folder with resources to build $redirect rules. Note: this folder can be copied via `@adguard/tswebextension war` command')
-    .argument('[destination-path-to-rulesets]', 'destination path to rulesets')
-    .option('-f, --force-update', 'force update rulesets with existing id', false)
-    .option('-i, --ids <ids...>', 'filters ids to append, others will be ignored', [])
-    .option('-e, --enable <ids...>', 'enable filters by default', [])
+    .argument('[path-to-manifest]', 'path to the manifest.json')
+    .argument('[path-to-resources]', 'folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)')
+    .option('-p, --path-to-filters', 'path to filters and i18n metadata file (default: `./filters` relative to manifest folder)', '')
+    .option('-o, --output-path-for-rulesets', 'output path for rulesets (default: `./filters/declarative` relative to manifest folder)', '')
+    .option('-f, --force-update', 'force update rulesets with existing id, otherwise it will throw error if ruleset is already in the manifest', true)
+    .option('-i, --ids <ids...>', 'filters ids to process, others will be ignored, by default will process all filters matched via `--filters-match`', [])
+    .option('-e, --enable <ids...>', 'enable filters by default in manifest.json (they will be enabled after enabling/reloading extension)', [])
     .option('-r, --ruleset-prefix <prefix>', 'prefix for filters ids', 'ruleset_')
     .option('-m, --filters-match <match>', 'filters files match glob pattern', 'filter_+([0-9]).txt')
-    .option('-d, --download', 'download filters on first start before watch', false)
+    .option('-l, --load', 'download filters on first start before watch', false)
+    .option('-d, --debug', 'enable extended logging during conversion or not', false)
     .action((
         manifestPath: string,
-        filtersPath: string,
         resourcesPath: string,
-        destinationRulesetsPath: string,
-        options?: Partial<PatchManifestOptions>,
+        options?: Partial<WatchOptionsCli>,
     ) => {
-        if (!manifestPath || !filtersPath || !resourcesPath || !destinationRulesetsPath) {
-            throw new Error(`Please provide all required arguments: manifestPath (provided: ${manifestPath}), filtersPath (provided: ${filtersPath}), resourcesPath (provided: ${resourcesPath}), destinationRulesetsPath (provided: ${destinationRulesetsPath})`);
+        if (!manifestPath || !resourcesPath) {
+            throw new Error(`Please provide all required arguments: manifestPath (provided: ${manifestPath}), resourcesPath (provided: ${resourcesPath})`);
         }
 
         // Process options to handle both space and comma-separated arrays
@@ -117,9 +138,9 @@ program
 
         const paths = {
             manifestPath,
-            filtersPath,
+            filtersPath: options?.pathToFilters || path.resolve(path.dirname(manifestPath), DEFAULT_PATH_TO_FILTERS),
             resourcesPath,
-            destinationRulesetsPath,
+            destinationRulesetsPath: options?.outputPathForRulesets || path.resolve(path.dirname(manifestPath), DEFAULT_OUTPUT_PATH_FOR_RULESETS),
         };
 
         const watcher = new Watcher();

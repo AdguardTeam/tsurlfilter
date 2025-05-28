@@ -51,18 +51,18 @@ interface ConvertFiltersOptions {
 
 /**
  * Converts filters with textual rules from the provided path to declarative
- * rule sets and saves them with counters, source map and list of source filter
+ * rulesets and saves them with counters, source map and list of source filter
  * identifiers on the specified path.
  *
  * @param filtersDir Path fo source filters.
  * @param resourcesDir Path to web accessible resources.
- * @param destRuleSetsDir Destination path for declarative rule sets.
+ * @param destRulesetsDir Destination path for declarative rulesets.
  * @param options Options for convert filters {@link ConvertFiltersOptions}.
  */
 export const convertFilters = async (
     filtersDir: string,
     resourcesDir: string,
-    destRuleSetsDir: string,
+    destRulesetsDir: string,
     options: ConvertFiltersOptions = {},
 ): Promise<void> => {
     const {
@@ -72,21 +72,24 @@ export const convertFilters = async (
 
     const filtersPath = path.resolve(process.cwd(), filtersDir);
     const resourcesPath = path.resolve(process.cwd(), resourcesDir);
-    const destRuleSetsPath = path.resolve(process.cwd(), destRuleSetsDir);
+    const destRulesetsPath = path.resolve(process.cwd(), destRulesetsDir);
 
     ensureDirSync(filtersPath);
-    ensureDirSync(destRuleSetsPath);
+    ensureDirSync(destRulesetsPath);
 
     const filtersPaths = new Map<number, string>();
 
-    const files = fs.readdirSync(filtersPath);
+    console.info(`Scanning ${filtersPath} for filters...`);
+
+    const files = await fs.promises.readdir(filtersPath);
     const filters = files
         .map((filePath: string) => {
-            console.info(`Parsing ${filePath}...`);
+            console.info(`Extracting filter id from file '${path.join(filtersPath, filePath)}'...`);
+
             const index = getIdFromFilterName(filePath);
 
             if (!index) {
-                console.info(`${filePath} skipped`);
+                console.info(`Path '${path.join(filtersPath, filePath)}' skipped`);
                 return null;
             }
 
@@ -98,7 +101,7 @@ export const convertFilters = async (
                 { encoding: 'utf-8' },
             );
 
-            console.info(`Preparing filter #${filterId} to convert`);
+            console.info(`Added filter #${filterId} to convert`);
 
             return new Filter(
                 filterId,
@@ -109,7 +112,7 @@ export const convertFilters = async (
         })
         .filter((filter): filter is Filter => filter !== null);
 
-    const convertedRuleSets: IRuleSet[] = [];
+    const convertedRulesets: IRuleSet[] = [];
     let errors: ConversionResult['errors'] = [];
     let limitations: ConversionResult['limitations'] = [];
 
@@ -123,6 +126,8 @@ export const convertFilters = async (
         compatibility: CompatibilityTypes.Extension,
     });
 
+    console.info(`Starting conversion filters: ${filters.map((f) => f.getId()).join(', ')}`);
+
     for (let i = 0; i < filters.length; i += 1) {
         const filter = filters[i];
 
@@ -132,7 +137,7 @@ export const convertFilters = async (
             { resourcesPath },
         );
 
-        convertedRuleSets.push(converted.ruleSet);
+        convertedRulesets.push(converted.ruleSet);
         errors = errors.concat(converted.errors);
         limitations = limitations.concat(converted.limitations);
 
@@ -160,11 +165,12 @@ export const convertFilters = async (
         }
     }
 
+    console.log('\n');
     console.log('======================================');
     console.log('Common info');
     console.log('======================================');
 
-    console.log(`Converted rule sets: ${convertedRuleSets.length}`);
+    console.log(`Converted rulesets: ${convertedRulesets.length}`);
 
     console.log(`Errors: ${errors.length}`);
 
@@ -186,33 +192,33 @@ export const convertFilters = async (
 
     const metadataRuleSet = new MetadataRuleSet();
 
-    for (let i = 0; i < convertedRuleSets.length; i += 1) {
-        const ruleSet = convertedRuleSets[i];
+    for (let i = 0; i < convertedRulesets.length; i += 1) {
+        const ruleSet = convertedRulesets[i];
         const id = ruleSet.getId();
 
-        const ruleSetDir = path.join(destRuleSetsPath, getRuleSetId(id));
+        const ruleSetDir = path.join(destRulesetsPath, getRuleSetId(id));
         ensureDirSync(ruleSetDir);
 
         // eslint-disable-next-line no-await-in-loop
         const result = await ruleSet.serializeCompact(prettifyJson);
-        const ruleSetPath = getRuleSetPath(id, destRuleSetsPath);
+        const ruleSetPath = getRuleSetPath(id, destRulesetsPath);
         // eslint-disable-next-line no-await-in-loop
         await fs.promises.writeFile(ruleSetPath, result);
 
         metadataRuleSet.setChecksum(id, generateMD5Hash(result));
 
         console.log('===============================================');
-        console.info(`Rule set with id ${id} and all rule set info`);
+        console.info(`Ruleset with id ${id} and all ruleset info`);
         console.info('(counters, source map, filter list) was saved');
         console.info(`to ${ruleSetPath}`);
         console.log('===============================================');
     }
 
     const metadataRulesetId = metadataRuleSet.getId();
-    const metadataRulesetDir = path.join(destRuleSetsPath, getRuleSetId(metadataRulesetId));
+    const metadataRulesetDir = path.join(destRulesetsPath, getRuleSetId(metadataRulesetId));
     ensureDirSync(metadataRulesetDir);
 
-    const metadataRuleSetPath = getRuleSetPath(metadataRulesetId, destRuleSetsPath);
+    const metadataRuleSetPath = getRuleSetPath(metadataRulesetId, destRulesetsPath);
     await fs.promises.writeFile(
         metadataRuleSetPath,
         metadataRuleSet.serialize(prettifyJson),

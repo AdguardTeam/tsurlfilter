@@ -41,7 +41,12 @@ export type WatchOptions = PatchManifestOptions & {
     /**
      * Whether to download filters from the server on start watching or not.
      */
-    download?: boolean;
+    load?: boolean;
+
+    /**
+     * Whether to enable extended logging during conversion or not.
+     */
+    debug?: boolean;
 };
 
 /**
@@ -66,10 +71,12 @@ export class Watcher {
      * @param paths.resourcesPath Path to resources directory.
      * @param paths.destinationRulesetsPath Path to destination rulesets directory.
      * @param metadata Metadata to write to the ruleset.
+     * @param debug Whether to enable debug logging or not.
      */
     private rebuildDnrRulesets = async (
         { filtersPath, resourcesPath, destinationRulesetsPath }: WatchPaths,
         metadata: Metadata,
+        debug: boolean = false,
     ): Promise<void> => {
         console.log('Rebuilding DNR rulesets...');
 
@@ -78,7 +85,7 @@ export class Watcher {
             resourcesPath,
             destinationRulesetsPath,
             {
-                debug: true,
+                debug,
                 prettifyJson: false,
             },
         );
@@ -127,7 +134,7 @@ export class Watcher {
         // Read manifest on each call to capture all possible changes.
         const metadata = await this.readMetadata(filtersPath);
 
-        await this.rebuildDnrRulesets(paths, metadata);
+        await this.rebuildDnrRulesets(paths, metadata, options?.debug);
 
         const patcher = new ManifestPatcher();
         patcher.patch(manifestPath, filtersPath, options);
@@ -149,7 +156,7 @@ export class Watcher {
     ): Promise<void> => {
         const { filtersPath } = paths;
 
-        if (options?.download) {
+        if (options?.load) {
             console.log(`Downloading filters from the server ${filtersPath}...`);
             await startDownload(filtersPath);
         }

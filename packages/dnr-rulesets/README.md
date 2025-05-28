@@ -94,7 +94,7 @@ npm install --save-dev @adguard/dnr-rulesets
 {
     "scripts": {
         "load-dnr-rulesets": "dnr-rulesets load <path-to-output>",
-        "patch-manifest": "dnr-rulesets manifest <path-to-manifest> <path-to-output>"
+        "patch-manifest": "dnr-rulesets manifest <path-to-manifest> <path-to-filters>"
     }
 }
 ```
@@ -112,7 +112,7 @@ dnr-rulesets load <path-to-output>
 
 Patches the extension manifest to include DNR rulesets.
 ```bash
-dnr-rulesets manifest <path-to-manifest> <path-to-output> [options]
+dnr-rulesets manifest <path-to-manifest> <path-to-filters> [options]
 ```
 
 Options for `manifest` command:
@@ -133,17 +133,24 @@ Options for `manifest` command:
 
 Watches for changes in the filter files and rebuilds DNR rulesets.
 ```bash
-dnr-rulesets watch <path-to-manifest> <path-to-filters> <path-to-resources> <destination-path-to-rulesets> [options]
+dnr-rulesets watch <path-to-manifest> <path-to-resources> [options]
 ```
+
+Arguments:
+- `<path-to-manifest>` - path to the manifest.json file
+- `<path-to-resources>` - folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)
 
 Options for `watch` command:
 
-- `-f, --force-update` - force update rulesets with existing id (default: false)
-- `-i, --ids <ids...>` - filters ids to append, others will be ignored (default: [] - append all)
-- `-e, --enable <ids...>` - enable filters by default (default: [])
+- `-p, --path-to-filters` - path to filters and i18n metadata file (default: `./filters` relative to manifest folder)
+- `-o, --output-path-for-rulesets` - output path for rulesets (default: `./filters/declarative` relative to manifest folder)
+- `-f, --force-update` - force update rulesets with existing id (default: true)
+- `-i, --ids <ids...>` - filters ids to process, others will be ignored (default: [] - process all filters matched via `--filters-match`)
+- `-e, --enable <ids...>` - enable filters by default in manifest.json (default: [])
 - `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
 - `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
-- `-d, --download` - download filters on first start before watch (default: false)
+- `-l, --load` - download filters on first start before watch (default: false)
+- `-d, --debug` - enable extended logging during conversion (default: false)
 
 **Note about array options**: For options that accept multiple values (`ids` and `enable`), use please following syntax:
 
