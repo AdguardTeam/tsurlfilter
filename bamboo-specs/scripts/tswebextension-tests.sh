@@ -26,11 +26,18 @@ pnpm install
 # build with dependencies, lerna is used for builds caching
 npx lerna run build --scope @adguard/tswebextension --include-dependencies
 
-# IMPORTANT:
-# test:prod includes linting, smoke testing and no-cache unit testing
+# IMPORTANT 1:
 # so it should run after the build because
 # - linting requires types to be generated
 # - smoke tests require tswebextension to have a built dist directory
-pnpm --filter @adguard/tswebextension test:prod
+pnpm --filter @adguard/tswebextension lint
+pnpm --filter @adguard/tswebextension test
+pnpm --filter @adguard/tswebextension test:smoke
+
+# IMPORTANT 2:
+# The 'test:prod' command includes 'no-cache' flag
+# which disables cache usage for the following stages in the monorepo tests specs.
+# That's why 3 separate commands are used instead of one 'test:prod' command
+# which is moved now to the tswebextension build specs and called before the build of the package.
 
 echo "@adguard/tswebextension tests completed"
