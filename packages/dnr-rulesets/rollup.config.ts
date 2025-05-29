@@ -34,8 +34,8 @@ const mainConfig = {
 const cliConfig = {
     input: 'src/cli.ts',
     output: [{
-        file: `${DIST_DIR}/cli.cjs`,
-        format: 'cjs',
+        file: `${DIST_DIR}/cli.js`,
+        format: 'esm',
         exports: 'named',
         banner: '#!/usr/bin/env node',
     }],
