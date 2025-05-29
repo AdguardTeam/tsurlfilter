@@ -27,7 +27,6 @@ const mainConfig = {
         json(),
         swc(),
         nodeExternals(),
-        commonjs(),
     ],
 };
 
