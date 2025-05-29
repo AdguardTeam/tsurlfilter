@@ -40,6 +40,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
 [AdguardBrowserExtension#3192]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3192
 
+## [3.1.0] - 2025-05-28
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.1`.
+- Updated [@adguard/tsurlfilter] to `v3.3.4`.
+
+### Fixed
+
+- Types for `NodeNext` module resolution.
+
+[3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0
+
 ## [3.1.0-alpha.3] - 2025-05-22
 
 ### Changed

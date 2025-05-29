@@ -82,7 +82,7 @@
         "prebuild": "rimraf dist",
         "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
         "postbuild": "tsx tasks/build-txt.ts",
-        "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
+        "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types && tsx tasks/transform-dts.ts",
         "update:companiesdb": "tsx tasks/update-companiesdb.ts",
         "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc -w",
         "test": "vitest run",
@@ -160,6 +160,8 @@
         "rollup-plugin-node-externals": "catalog:",
         "sinon-chrome": "^3.0.1",
         "terser": "catalog:",
+        "ts-morph": "catalog:",
+        "tsd": "catalog:",
         "tsx": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:"

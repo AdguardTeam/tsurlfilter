@@ -13,5 +13,11 @@
         "rollup.config.ts",
         "vitest.config.ts",
         "./tasks",
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "test/smoke/esm",
+        "test/smoke/exports"
     ]
 }

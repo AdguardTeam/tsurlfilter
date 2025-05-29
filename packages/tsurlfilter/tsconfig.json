@@ -16,4 +16,7 @@
         "tasks/**/*.ts",
         "types/vitest-custom.d.ts",
     ],
+    "exclude": [
+        "test/builders/rollup-ts/**/*.ts",
+    ]
 }

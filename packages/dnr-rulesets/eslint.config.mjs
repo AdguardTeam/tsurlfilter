@@ -125,6 +125,12 @@ export default [
         },
     },
     {
-        ignores: ['node_modules/', 'dist/', 'coverage/'],
+        ignores: [
+            'node_modules/',
+            'dist/',
+            'coverage/',
+            'test/smoke/esm',
+            'test/smoke/exports',
+        ],
     },
 ];
