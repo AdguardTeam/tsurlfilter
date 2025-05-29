@@ -6,7 +6,7 @@
         "dist/**/*"
     ],
     "bin": {
-        "dnr-rulesets": "dist/cli.cjs"
+        "dnr-rulesets": "dist/cli.js"
     },
     "main": "dist/lib/index.js",
     "types": "dist/types/lib/index.d.ts",
