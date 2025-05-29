@@ -1,11 +1,7 @@
-import {
-    BufferRuleList,
-    FilterListPreprocessor,
-    NetworkRule,
-    RuleStorage,
-} from '../../../src';
 import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 import { type ILookupTable } from '../../../src/engine/lookup-tables/lookup-table';
+import { StringRuleList } from '../../../src/filterlist/string-rule-list';
+import { RuleStorage } from '../../../src/filterlist/rule-storage';
 
 /**
  * Creates rule storage from the given rules.
@@ -15,8 +11,7 @@ import { type ILookupTable } from '../../../src/engine/lookup-tables/lookup-tabl
  * @returns Created rule storage.
  */
 export function createRuleStorage(rules: string[]): RuleStorage {
-    const preprocessed = FilterListPreprocessor.preprocess(rules.join('\n'));
-    const list = new BufferRuleList(1, preprocessed.filterList, false);
+    const list = new StringRuleList(1, rules.join('\n'), false, false, false);
     return new RuleStorage([list]);
 }
 
@@ -31,8 +26,7 @@ export function fillLookupTable(table: ILookupTable, ruleStorage: RuleStorage): 
 
     while (scanner.scan()) {
         const indexedRule = scanner.getRule();
-        if (indexedRule
-            && indexedRule.rule instanceof NetworkRule) {
+        if (indexedRule) {
             table.addRule(indexedRule.rule, indexedRule.index);
         }
     }

@@ -1,32 +1,32 @@
 import { describe, it, expect } from 'vitest';
 
-import { RequestType } from '../../../src';
 import { Request } from '../../../src/request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { DomainsLookupTable } from '../../../src/engine/lookup-tables/domains-lookup-table';
-import { createNetworkRule } from '../../helpers/rule-creator';
+import { RequestType } from '../../../src/request-type';
+import { tokenize } from '../../../src/filterlist/tokenize';
 
 describe('Domains Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
         const ruleStorage = createRuleStorage([]);
         const table = new DomainsLookupTable(ruleStorage);
 
-        expect(table.addRule(createNetworkRule('path', 0), 0)).toBeFalsy();
+        expect(table.addRule(tokenize('path')!, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('||example.org^', 0), 0)).toBeFalsy();
+        expect(table.addRule(tokenize('||example.org^')!, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('path$domain=~example.com', 0), 0)).toBeFalsy();
+        expect(table.addRule(tokenize('path$domain=~example.com')!, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('path$domain=example.*', 0), 0)).toBeFalsy();
+        expect(table.addRule(tokenize('path$domain=example.*')!, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('example.com$domain=/example/', 0), 0)).toBeFalsy();
+        expect(table.addRule(tokenize('example.com$domain=/example/')!, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('path$domain=example.com', 0), 0)).toBeTruthy();
+        expect(table.addRule(tokenize('path$domain=example.com')!, 0)).toBeTruthy();
         expect(table.getRulesCount()).toBe(1);
     });
 
