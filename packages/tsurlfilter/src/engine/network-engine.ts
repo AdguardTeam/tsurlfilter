@@ -8,7 +8,7 @@ import { TrieLookupTable } from './lookup-tables/trie-lookup-table';
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
 import { SeqScanLookupTable } from './lookup-tables/seq-scan-lookup-table';
-import { type RuleParts, tokenize } from '../filterlist/tokenize';
+import { type RuleParts } from '../filterlist/tokenize';
 
 /**
  * NetworkEngine is the engine that supports quick search over network rules.

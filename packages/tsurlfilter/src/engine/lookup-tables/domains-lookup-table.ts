@@ -2,7 +2,6 @@ import { type ILookupTable } from './lookup-table';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
 import { DomainModifier } from '../../modifiers/domain-modifier';
-import { fastHash } from '../../utils/string-utils';
 import { type NetworkRule } from '../../rules/network-rule';
 import { type RuleParts } from '../../filterlist/tokenize';
 import { CachedFastHash } from '../cached-fast-hash';
