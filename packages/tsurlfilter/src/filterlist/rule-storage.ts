@@ -1,4 +1,4 @@
-import { RuleParser, type AnyRule } from '@adguard/agtree';
+import { RuleParser } from '@adguard/agtree';
 import { type IRuleList } from './rule-list';
 import { RuleStorageScanner } from './scanner/rule-storage-scanner';
 import { type IRule } from '../rules/rule';
@@ -137,6 +137,17 @@ export class RuleStorage {
         }
 
         return result;
+    }
+
+    /**
+     * Retrieves the filter list identifier from the storage index.
+     *
+     * @param storageIdx Storage index of the rule.
+     *
+     * @returns The filter list identifier.
+     */
+    getFilterListId(storageIdx: number): number {
+        return this.scanner.getIds(storageIdx)[0];
     }
 
     /**
