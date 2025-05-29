@@ -11,9 +11,9 @@ import { FilterScanner } from './filter-scanner';
  * rules with `$badfilter` separately.
  */
 export type ScannedFilter = {
-    id: number,
-    rules: IndexedNetworkRuleWithHash[],
-    badFilterRules: IndexedNetworkRuleWithHash[],
+    id: number;
+    rules: IndexedNetworkRuleWithHash[];
+    badFilterRules: IndexedNetworkRuleWithHash[];
 };
 
 /**
@@ -21,8 +21,8 @@ export type ScannedFilter = {
  * any errors that may occur during the scan.
  */
 type ScannedFiltersWithErrors = {
-    errors: Error[],
-    filters: ScannedFilter[],
+    errors: Error[];
+    filters: ScannedFilter[];
 };
 
 /**
@@ -62,7 +62,7 @@ export class NetworkRulesScanner {
             res.errors = res.errors.concat(errors);
 
             const badFilterRules = rules.filter(({ rule }) => {
-                return rule.isOptionEnabled(NetworkRuleOption.Badfilter);
+                return rule.rule.isOptionEnabled(NetworkRuleOption.Badfilter);
             });
 
             return {

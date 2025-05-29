@@ -50,4 +50,5 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
             selfDestructFirstPartyCookiesTime: 3600,
         },
     },
+    trustedDomains: [],
 });

@@ -11,7 +11,9 @@
  *
  * Applying {@link NetworkRule} from the background page:
  *
- * The cssText, scriptText, scriptletDataList for specified frame are calculated and stored in tab context storage,
+ * In case if {@link browser.tabs.onCreated} event is not fired before —
+ * we create a {@link TabContext} manually for document requests,
+ * and the cssText, scriptText, scriptletDataList for specified frame are calculated and stored in tab context storage,
  * at the time {@link RequestEvents.onBeforeRequest} or {@link WebNavigation.onBeforeNavigate} is processed.
  * In the most cases the onBeforeNavigate event is processed before onBeforeRequest.
  *
@@ -29,10 +31,12 @@
  * Web Request API Event Handling:
  *
  *                                       ┌─────────────────────────────┐
- * Matches {@link MatchingResult}        │                             │
- * for the request.                      │       onBeforeRequest       ◄─┐
- * If this is a frame request,           │                             │ │
- * also matches the                      └──────────────┬──────────────┘ │
+ * Create {@link TabContext}             │                             │
+ * if it's not created before,           │       onBeforeRequest       ◄─┐
+ * and matches {@link MatchingResult}    │                             │ │
+ * for the request.                      └──────────────┬──────────────┘ │
+ * If this is a frame request,                          │                │
+ * also matches the                                     │                │
  * {@link CosmeticResult}                               │                │
  *                                                      │                │
  *                                                      │                │
@@ -96,10 +100,12 @@
  *                                       └──────────────┬──────────────┘
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
- * Update main frame data with           │                             │
- * {@link updateMainFrameData}           │       onBeforeNavigate      │
- * and matches {@link CosmeticResult}.   │                             │
- *                                       └──────────────┬──────────────┘
+ * Create {@link TabContext}             │                             │
+ * if it's not created before,           │       onBeforeNavigate      │
+ * and update main frame data with       │                             │
+ * {@link updateMainFrameData}           └──────────────┬──────────────┘
+ * and matches {@link CosmeticResult}                   │
+ *                                                      │
  *                                                      │
  *                                       ┌──────────────▼──────────────┐
  * Try injecting js and css              │                             │
@@ -149,6 +155,7 @@ import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl, isHttpOrWsRequest } from '../../common/utils/url';
 import { TabsApiCommon } from '../../common/tabs/tabs-api';
 import { tabsApi } from '../tabs/tabs-api';
+import { FrameMV3 } from '../tabs/frame';
 
 import { CosmeticApi } from './cosmetic-api';
 import { CosmeticFrameProcessor } from './cosmetic-frame-processor';
@@ -163,6 +170,8 @@ import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { StealthService } from './services/stealth-service';
+import { UserScriptsApi } from './user-scripts-api';
+import { documentBlockingService } from './services/document-blocking-service';
 
 /**
  * API for applying rules from background service by handling
@@ -238,8 +247,6 @@ export class WebRequestApi {
             return;
         }
 
-        // TODO: In getBlockingResponse we need extract requestType from context
-        // to save it for filtering log. Check, if we really need this in MV3.
         const {
             requestType,
             requestUrl,
@@ -253,6 +260,52 @@ export class WebRequestApi {
             timestamp,
             thirdParty,
         } = context;
+
+        const { parentFrameId } = details;
+
+        const isDocumentRequest = requestType === RequestType.Document;
+
+        /**
+         * In some cases `onBeforeRequest` might happen before Tabs API `onCreated`
+         * event is fired or even not fired at all
+         * (e.g. {@link https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296 | Edge Split Screen Issue}),
+         * in this cases we need to create tab context manually. This is needed
+         * to ensure that we have tab context to be able to inject cosmetics and scripts.
+         *
+         * We create tab context only for document requests,
+         * because other types of requests can't have tab context.
+         */
+        if (isDocumentRequest) {
+            tabsApi.createTabContextIfNotExists(tabId, requestUrl);
+        }
+
+        const isDocumentOrSubDocumentRequest = isDocumentRequest || requestType === RequestType.SubDocument;
+
+        let skipPrecalculation = true;
+        if (isDocumentOrSubDocumentRequest) {
+            skipPrecalculation = CosmeticFrameProcessor.shouldSkipRecalculation(
+                tabId,
+                frameId,
+                requestUrl,
+                timestamp,
+            );
+
+            if (!skipPrecalculation) {
+                /**
+                 * Set in the beginning to let other events know that cosmetic result
+                 * will be calculated in this event to avoid double calculation.
+                 */
+                tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+                    tabId,
+                    frameId,
+                    parentFrameId,
+                    url: requestUrl,
+                    timeStamp: timestamp,
+                    documentId: details.documentId,
+                    parentDocumentId: details.parentDocumentId,
+                }));
+            }
+        }
 
         if (!isHttpOrWsRequest(requestUrl)) {
             return;
@@ -284,12 +337,13 @@ export class WebRequestApi {
         let frameRule;
 
         /**
-         * For Document and Subdocument requests, we match frame, because
-         * these requests are first (in page lifecycle), but for other requests
-         * we get the frame rule from tabsApi, assuming the frame rule is
-         * already in the tab context.
+         * For Document and SubDocument requests, we match frame, because
+         * these requests are happening first in page's lifecycle (before other).
+         *
+         * For other requests we get the frame rule from tabsApi, assuming
+         * the frame rule is already in the tab context.
          */
-        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
+        if (isDocumentOrSubDocumentRequest) {
             frameRule = DocumentApi.matchFrame(frameUrl);
         } else {
             frameRule = tabsApi.getTabFrameRule(tabId);
@@ -309,10 +363,8 @@ export class WebRequestApi {
 
         // Save matching result to the request context.
         requestContextStorage.update(requestId, { matchingResult });
-
-        if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
-            const { parentFrameId } = details;
-
+        if (isDocumentOrSubDocumentRequest && !skipPrecalculation) {
+            // Matching request
             CosmeticFrameProcessor.precalculateCosmetics({
                 tabId,
                 frameId,
@@ -370,8 +422,12 @@ export class WebRequestApi {
             return;
         }
 
-        CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
-        CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
+        if (UserScriptsApi.isSupported) {
+            CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId);
+        } else {
+            CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
+            CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
+        }
     }
 
     /**
@@ -464,6 +520,39 @@ export class WebRequestApi {
             timeStamp,
         } = details;
 
+        /**
+         * In some cases `onBeforeNavigate` might happen before Tabs API `onCreated`
+         * event is fired or even not fired at all
+         * (e.g. {@link https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296 | Edge Split Screen Issue}),
+         * in this cases we need to create tab context manually. This is needed
+         * to ensure that we have tab context to be able to inject cosmetics and scripts.
+         *
+         * We create tab context only for document requests (outermost frame),
+         * because other types of requests can't have tab context.
+         */
+        if (TabsApiCommon.isDocumentLevelFrame(parentFrameId)) {
+            tabsApi.createTabContextIfNotExists(tabId, url);
+        }
+
+        if (CosmeticFrameProcessor.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {
+            return;
+        }
+
+        /**
+         * Set in the beginning to let other events know that cosmetic result
+         * will be calculated in this event to avoid double calculation.
+         */
+        tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
+            tabId,
+            frameId,
+            parentFrameId,
+            url,
+            timeStamp,
+            documentId: details.documentId,
+            parentDocumentId: details.parentDocumentId,
+        }));
+
+        // Matching request
         CosmeticFrameProcessor.precalculateCosmetics({
             tabId,
             frameId,
@@ -489,6 +578,7 @@ export class WebRequestApi {
             tabId,
             requestId,
             url,
+            type,
             parentFrameId,
             error,
         } = details;
@@ -511,13 +601,17 @@ export class WebRequestApi {
 
         const {
             eventId,
+            requestUrl,
             referrerUrl,
             contentType,
+            matchingResult,
         } = context;
 
-        // TODO: we consider that only we block requests,
-        // so we do not care (for now) if the request is blocked by other browser extension.
-        // it may be handled by checking the matchingResult in the context.
+        // checking whether the matchingResult exists in the context guarantees
+        // that the request was blocked by our extension
+        if (!matchingResult) {
+            return;
+        }
 
         const companyCategoryName = companiesDbService.match(url);
 
@@ -544,6 +638,30 @@ export class WebRequestApi {
         });
 
         WebRequestApi.deleteRequestContext(details.requestId);
+
+        /**
+         * Top-level frame request type.
+         *
+         * @see {@link https://developer.mozilla.org/docs/Mozilla/Add-ons/WebExtensions/API/webRequest/ResourceType#main_frame}
+         */
+        const MAIN_FRAME_TYPE = 'main_frame';
+        if (type !== MAIN_FRAME_TYPE) {
+            return;
+        }
+
+        const rule = matchingResult.getBasicResult();
+        if (!rule) {
+            return;
+        }
+
+        documentBlockingService.handleDocumentBlocking({
+            eventId,
+            requestUrl,
+            requestId,
+            referrerUrl,
+            rule,
+            tabId,
+        });
     }
 
     /**
@@ -640,13 +758,20 @@ export class WebRequestApi {
             return;
         }
 
+        const tasks = [
+            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+        ];
+
+        if (UserScriptsApi.isSupported) {
+            tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
+        } else {
+            tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));
+            tasks.push(CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId));
+        }
+
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
-        Promise.all([
-            CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
-            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
-            CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
-        ]).catch((e) => logger.error(e));
+        Promise.all(tasks).catch((e) => logger.error(e));
     }
 
     /**

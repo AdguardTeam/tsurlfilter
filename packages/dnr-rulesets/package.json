@@ -1,6 +1,6 @@
 {
     "name": "@adguard/dnr-rulesets",
-    "version": "3.0.1-alpha.0",
+    "version": "3.0.0-alpha.12",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
         "dist/**/*"
@@ -11,6 +11,20 @@
     "main": "dist/lib/index.js",
     "types": "dist/types/lib/index.d.ts",
     "type": "module",
+    "exports": {
+        ".": {
+            "types": "./dist/types/lib/index.d.ts",
+            "import": "./dist/lib/index.js"
+        },
+        "./lib": {
+            "types": "./dist/types/lib/index.d.ts",
+            "import": "./dist/lib/index.js"
+        },
+        "./utils": {
+            "types": "./dist/types/utils/index.d.ts",
+            "import": "./dist/utils/index.js"
+        }
+    },
     "scripts": {
         "build": "pnpm run clear && pnpm run build:assets && pnpm build:lib",
         "build:assets": "tsx tasks/build.ts",
@@ -32,40 +46,40 @@
     "dependencies": {
         "@adguard/logger": "workspace:^",
         "chokidar": "^4.0.3",
-        "commander": "^12.1.0",
+        "commander": "catalog:",
         "fast-glob": "^3.3.2",
-        "fs-extra": "^11.2.0",
-        "zod": "3.24.4"
+        "fs-extra": "catalog:",
+        "zod": "catalog:"
     },
     "devDependencies": {
         "@adguard/re2-wasm": "1.2.0",
         "@adguard/tsurlfilter": "workspace:^",
         "@eslint/js": "^9.8.0",
-        "@rollup/plugin-commonjs": "^28.0.3",
-        "@rollup/plugin-json": "^6.1.0",
-        "@rollup/plugin-node-resolve": "^15.3.0",
-        "@rollup/plugin-swc": "^0.4.0",
-        "@rollup/plugin-typescript": "^12.1.2",
+        "@rollup/plugin-commonjs": "catalog:",
+        "@rollup/plugin-json": "catalog:",
+        "@rollup/plugin-node-resolve": "catalog:",
+        "@rollup/plugin-swc": "catalog:",
         "@stylistic/eslint-plugin": "^2.6.1",
-        "@swc-node/register": "^1.6.6",
-        "@swc/core": "^1.7.23",
-        "@types/fs-extra": "^11.0.4",
-        "@types/node": "^20.14.2",
-        "@vitest/coverage-v8": "2.1.6",
-        "axios": "^1.7.2",
-        "eslint": "^9.8.0",
-        "eslint-plugin-jsdoc": "^48.11.0",
-        "eslint-plugin-simple-import-sort": "^12.1.1",
-        "rimraf": "^5.0.7",
-        "rollup": "^4.27.4",
+        "@swc-node/register": "catalog:",
+        "@swc/core": "catalog:",
+        "@types/fs-extra": "catalog:",
+        "@types/node": "catalog:",
+        "@vitest/coverage-v8": "catalog:",
+        "axios": "catalog:",
+        "eslint": "catalog:eslint9",
         "rollup-plugin-copy": "^3.5.0",
-        "rollup-plugin-dts": "^6.0.2",
-        "rollup-plugin-node-externals": "^7.1.3",
-        "ts-morph": "^26.0.0",
-        "tsd": "^0.32.0",
-        "tsx": "^4.19.2",
-        "typescript": "^5.7.2",
+        "eslint-plugin-jsdoc": "catalog:",
+        "eslint-plugin-simple-import-sort": "^12.1.1",
+        "eslint-plugin-import-newlines": "catalog:",
+        "rimraf": "catalog:",
+        "rollup": "catalog:",
+        "rollup-plugin-dts": "catalog:",
+        "rollup-plugin-node-externals": "catalog:",
+        "ts-morph": "catalog:",
+        "tsd": "catalog:",
+        "tsx": "catalog:",
+        "typescript": "catalog:",
         "typescript-eslint": "^8.0.1",
-        "vitest": "^2.1.6"
+        "vitest": "catalog:"
     }
 }

@@ -2,6 +2,7 @@
  * @file Benchmarking script
  */
 
+import { fileURLToPath } from 'node:url';
 import path from 'path';
 
 import { resourceConfigs } from './config/resources';
@@ -37,6 +38,9 @@ const main = async () => {
         // Store the results
         results.push(result);
     }
+
+    // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
     // Write all results to a markdown file
     await writeMdTable(results, path.join(__dirname, RESULTS_MD_FILE));

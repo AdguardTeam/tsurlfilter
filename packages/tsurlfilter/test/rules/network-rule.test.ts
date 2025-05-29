@@ -76,7 +76,7 @@ describe('NetworkRule constructor', () => {
     it('works when it creates simple rules properly', () => {
         const rule = createNetworkRule('||example.org^', 0);
         expect(rule.getFilterListId()).toEqual(0);
-        expect(rule.getText()).toEqual('||example.org^');
+        expect(rule.getPattern()).toEqual('||example.org^');
         expect(rule.isAllowlist()).toEqual(false);
         expect(rule.getShortcut()).toEqual('example.org');
         expect(rule.isRegexRule()).toEqual(false);
@@ -88,7 +88,10 @@ describe('NetworkRule constructor', () => {
     it('works when it creates rule with $all', () => {
         const rule = createNetworkRule('||example.org^$all', 0);
         expect(rule.getFilterListId()).toEqual(0);
-        expect(rule.getText()).toEqual('||example.org^$all');
+        expect(rule.getPattern()).toEqual('||example.org^');
+        expect(rule.getPermittedRequestTypes()).toEqual(
+            Object.values(RequestType).reduce((acc, val) => acc | val, 0 as number),
+        );
         expect(rule.isAllowlist()).toEqual(false);
         expect(rule.getShortcut()).toEqual('example.org');
         expect(rule.isRegexRule()).toEqual(false);
@@ -211,6 +214,26 @@ describe('NetworkRule constructor', () => {
 
         expect(() => {
             createNetworkRule('||baddomain.com^$header=h1,removeheader=param', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            createNetworkRule('||baddomain.com^$header=h1,script', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            createNetworkRule('||baddomain.com^$header=h1,document', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            createNetworkRule('||baddomain.com^$header=h1,third-party', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            createNetworkRule('||baddomain.com^$header=h1,match-case', 0);
+        }).not.toThrow();
+
+        expect(() => {
+            createNetworkRule('||baddomain.com^$header=h1,domain=example.org', 0);
         }).not.toThrow();
 
         expect(() => {
@@ -403,20 +426,6 @@ describe('NetworkRule constructor', () => {
         // https://github.com/AdguardTeam/tsurlfilter/issues/72
     });
 
-    it('checks header modifier compatibility', () => {
-        let correct;
-
-        correct = createNetworkRule('||example.com^$header=set-cookie:foo', 0);
-        expect(correct).toBeTruthy();
-
-        // TODO(leleka.s) header modifier supports only limited set of modifiers
-        // correct = createNetworkRule('://www.*.com/*.css|$script,third-party,header=link:/ads.re/>;rel=preconnect/', 0);
-        // expect(correct).toBeTruthy();
-
-        correct = createNetworkRule('@@||example.com^$header=set-cookie', 0);
-        expect(correct).toBeTruthy();
-    });
-
     it('checks to modifier compatibility', () => {
         expect(() => {
             createNetworkRule('/ads$to=good.org,denyallow=good.com', 0);
@@ -432,7 +441,8 @@ describe('NetworkRule constructor', () => {
     it('works when it handles wide rules with $domain properly', () => {
         const rule = createNetworkRule('$domain=ya.ru', 0);
         expect(rule.getFilterListId()).toEqual(0);
-        expect(rule.getText()).toEqual('$domain=ya.ru');
+        expect(rule.getPattern()).toEqual('');
+        expect(rule.getPermittedDomains()).toEqual(['ya.ru']);
     });
 
     it('checks $all modifier compatibility', () => {
@@ -443,7 +453,10 @@ describe('NetworkRule constructor', () => {
     it('works when it handles $all modifier', () => {
         const rule = createNetworkRule('||example.com^$all', 0);
         expect(rule.getFilterListId()).toEqual(0);
-        expect(rule.getText()).toEqual('||example.com^$all');
+
+        expect(rule.getPermittedRequestTypes()).toEqual(
+            Object.values(RequestType).reduce((acc, val) => acc | val, 0 as number),
+        );
     });
 
     /**
@@ -1444,8 +1457,8 @@ describe('NetworkRule.isHigherPriority', () => {
     }
 
     type PriorityTestCase = {
-        key: string,
-        cases: [string, string, boolean][],
+        key: string;
+        cases: [string, string, boolean][];
     };
 
     const priorityCases: PriorityTestCase[] = [
@@ -1592,35 +1605,6 @@ describe('NetworkRule.isFilteringDisabled', () => {
 
     it.each(cases)('should return $expected for rule $rule', ({ rule, expected }) => {
         expect((createNetworkRule(rule, 0)).isFilteringDisabled()).toBe(expected);
-    });
-});
-
-describe('NetworkRule.getUsedOptionNames', () => {
-    it.each([
-        // No options
-        {
-            rule: '||example.org^',
-            expected: [],
-        },
-        // 1 option
-        {
-            rule: '||example.org^$important',
-            expected: ['important'],
-        },
-        // Multiple options
-        {
-            rule: '||example.org^$important,script,important',
-            expected: ['important', 'script'],
-        },
-        // Options with values
-        {
-            rule: '||example.org^$important,script,important,domain=example.com',
-            expected: ['important', 'script', 'domain'],
-        },
-    ])('should return $expected for rule $rule', ({ rule, expected }) => {
-        expect(
-            Array.from((createNetworkRule(rule, 0)).getUsedOptionNames()),
-        ).toEqual(expected);
     });
 });
 

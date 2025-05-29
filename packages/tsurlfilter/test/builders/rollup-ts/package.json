@@ -9,8 +9,8 @@
         "test": "./test.sh"
     },
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^25.0.4",
-        "@rollup/plugin-node-resolve": "^15.0.1",
-        "rollup": "^3.10.0"
+        "@rollup/plugin-commonjs": "catalog:",
+        "@rollup/plugin-node-resolve": "catalog:",
+        "rollup": "catalog:"
     }
 }

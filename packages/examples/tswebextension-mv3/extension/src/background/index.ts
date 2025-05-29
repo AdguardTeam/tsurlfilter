@@ -32,22 +32,22 @@ const defaultUxConfig = {
     isStarted: true,
 };
 interface IMessage {
-    type: Message,
+    type: Message;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data?: any,
+    data?: any;
 }
 
 interface IMessageInner {
-    type: MessageType,
-    handlerName: typeof MESSAGE_HANDLER_NAME,
+    type: MessageType;
+    handlerName: typeof MESSAGE_HANDLER_NAME;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    payload?: any,
+    payload?: any;
 }
 
 export type ConfigResponse = {
-    status: boolean,
-    filters: number[],
-    rules: string,
+    status: boolean;
+    filters: number[];
+    rules: string;
 };
 
 let config: Configuration;

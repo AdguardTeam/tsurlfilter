@@ -3,7 +3,7 @@ import zod from 'zod';
 /**
  * Creates manifest schema.
  *
- * @returns Manifest runtime validation schema
+ * @returns Manifest runtime validation schema.
  */
 function createManifestSchema() {
     return zod.object({
@@ -32,24 +32,26 @@ export interface ManifestParserInterface {
      * Parse manifest data from string.
      *
      * @param input Stringified manifest data.
+     *
      * @returns Parsed manifest object.
+     *
+     * @throws {zod.ZodError} If input data is invalid.
      */
     parse(input: string): Manifest;
 };
 
 /**
+ * Api for parsing manifest.
+ *
  * @see {@link ManifestParserInterface}
  */
 export class ManifestParser implements ManifestParserInterface {
     /**
-     * Manifest runtime validation schema
+     * Manifest runtime validation schema.
      */
     private schema = createManifestSchema();
 
-    /**
-     * @inheritdoc
-     * @throws {zod.ZodError} If input data is invalid.
-     */
+    /** @inheritdoc */
     public parse(input: string): Manifest {
         const json = JSON.parse(input);
         return this.schema.parse(json);

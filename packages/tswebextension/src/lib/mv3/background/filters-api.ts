@@ -9,7 +9,7 @@ import { FiltersStorage } from '../../common/storage/filters';
 import { type ConfigurationMV3 } from './configuration';
 
 export type UpdateStaticFiltersResult = {
-    errors: FailedEnableRuleSetsError[],
+    errors: FailedEnableRuleSetsError[];
 };
 
 const loadFilterContentValidator = zod.function()
@@ -112,7 +112,7 @@ export default class FiltersApi {
 
             const filter = new Filter(
                 filterId,
-                { getContent: () => loadFilterContent(filterId) },
+                { getContent: (): Promise<PreprocessedFilterList> => loadFilterContent(filterId) },
                 /**
                  * Static filters are trusted.
                  */

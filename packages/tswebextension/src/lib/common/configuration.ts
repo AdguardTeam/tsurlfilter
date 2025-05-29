@@ -141,7 +141,7 @@ export const settingsConfigValidator = zod.object({
     filteringEnabled: zod.boolean(),
 
     /**
-     * Redirect url for $document rules.
+     * Redirect url for blocking rules with `$document` modifier.
      */
     documentBlockingPageUrl: zod.string().optional(),
 
@@ -200,6 +200,15 @@ export const configurationValidator = zod.object({
 
     settings: settingsConfigValidator,
 
+    /**
+     * For MV2:
+     * List of domain names of sites, which should be temporary excluded from document blocking.
+     *
+     * For MV3:
+     * List of blocking rules which should be temporarily badfiltered
+     * since user clicked "Proceed anyway" button on the blocking page.
+     */
+    trustedDomains: zod.string().array(),
 }).strict();
 
 /**

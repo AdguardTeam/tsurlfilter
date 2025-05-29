@@ -5,13 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.3.5] - 2025-05-29
+## Unreleased <!-- release/browser-extension-v5.2 -->
+
+### Added
+
+- Compatibility of `$header` modifier with `$match-case`
+  and `$third-party` modifiers in MV2 [AdguardBrowserExtension#2942].
+
+### Changed
+
+<!-- FIXME: update dependencies to the latest versions -->
+- Updated [@adguard/agtree] to `v3.1.5`.
+- Updated [@adguard/scriptlets] to `v2.2.1`.
+
+### Removed
+
+- `getText` and `getUsedOptionNames` methods from `NetworkRule` class.
 
 ### Fixed
 
 - CLI was not worked since to ESM builds.
 
-[3.3.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.3.5
+[AdguardBrowserExtension#2942]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2942
 
 ## [3.3.4] - 2025-05-28
 

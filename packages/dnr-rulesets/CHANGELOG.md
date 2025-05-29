@@ -5,14 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.1-alpha.0] - 2025-05-29
+## Unreleased <!-- release/browser-extension-v5.2 -->
 
 ### Added
 
+- `utils` entry point with `getVersion` and `getVersionTimestampMs` functions.
 - New `watch` command to watch for changes in the filters
   and automatically rebuild DNR.
-
-[3.0.1-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.1-alpha.0
 
 ## [3.0.0-alpha.12] - 2025-05-28
 
@@ -42,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v3.3.1`.
+- Updated `@adguard/tsurlfilter` to `3.3.1`.
 
 [3.0.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.3
 
@@ -50,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v3.3.0-alpha.0`.
+- Updated `@adguard/tsurlfilter` to `3.3.0-alpha.0`.
 
 ### Removed
 

@@ -272,12 +272,22 @@ export enum NetworkRuleGroupOptions {
     /**
      * Header compatible modifiers.
      *
-     * $header is compatible with the limited list of modifiers: $csp and $removeheader (on response headers).
+     * $header is compatible with the limited list of modifiers:
+     * - $important
+     * - $csp
+     * - $removeheader (on response headers)
+     * - $third-party
+     * - $match-case
+     * - $badfilter
+     * - $domain
+     * - all content type modifiers ($subdocument, $script, $stylesheet, etc).
      */
     HeaderCompatibleOptions = NetworkRuleOption.Header
         | NetworkRuleOption.Important
         | NetworkRuleOption.Csp
         | NetworkRuleOption.RemoveHeader
+        | NetworkRuleOption.ThirdParty
+        | NetworkRuleOption.MatchCase
         | NetworkRuleOption.Badfilter,
 }
 
@@ -356,11 +366,6 @@ export class NetworkRule implements IRule {
      * Rule Stealth modifier.
      */
     private stealthModifier: StealthModifier | null = null;
-
-    /**
-     * Options used by the rule, regardless of whether they are enabled or disabled.
-     */
-    private usedOptionNames: Set<string> = new Set();
 
     /**
      * Rule priority, which is needed when the engine has to choose between
@@ -484,7 +489,7 @@ export class NetworkRule implements IRule {
     /**
      * Rule options that can be negated.
      */
-    public static readonly NEGATABLE_OPTIONS = new Set([
+    public static readonly NEGATABLE_OPTIONS: ReadonlySet<string> = new Set([
         // General options
         NetworkRule.OPTIONS.FIRST_PARTY,
         NetworkRule.OPTIONS.THIRD_PARTY,
@@ -513,7 +518,7 @@ export class NetworkRule implements IRule {
     /**
      * Advanced option modifier names.
      */
-    public static readonly ADVANCED_OPTIONS = new Set([
+    public static readonly ADVANCED_OPTIONS: ReadonlySet<string> = new Set([
         NetworkRule.OPTIONS.CSP,
         NetworkRule.OPTIONS.REPLACE,
         NetworkRule.OPTIONS.COOKIE,
@@ -527,19 +532,6 @@ export class NetworkRule implements IRule {
         NetworkRule.OPTIONS.DNSTYPE,
         NetworkRule.OPTIONS.CTAG,
     ]);
-
-    // TODO: Remove .getText() completely
-    private ruleText: string;
-
-    // TODO: Remove .getText() completely
-    /**
-     * Returns the rule text.
-     *
-     * @returns The rule text.
-     */
-    getText(): string {
-        return this.ruleText;
-    }
 
     /**
      * Returns the rule index.
@@ -557,16 +549,6 @@ export class NetworkRule implements IRule {
      */
     getFilterListId(): number {
         return this.filterListId;
-    }
-
-    /**
-     * Returns all options that are used in the rule, regardless of whether they are
-     * enabled or disabled.
-     *
-     * @returns Set of option names.
-     */
-    getUsedOptionNames(): Set<string> {
-        return this.usedOptionNames;
     }
 
     /**
@@ -1226,8 +1208,6 @@ export class NetworkRule implements IRule {
      */
     constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
-        // TODO: Remove this completely
-        this.ruleText = RuleGenerator.generate(node);
         this.filterListId = filterListId;
         this.allowlist = node.exception;
 
@@ -1267,7 +1247,6 @@ export class NetworkRule implements IRule {
             }
 
             this.loadOption(option.name.value, value, option.exception);
-            this.usedOptionNames.add(option.name.value);
         }
 
         this.validateOptions();
@@ -1993,8 +1972,18 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * $header rules are not compatible with any other
-     * modifiers except for $important, $csp, $removeheader, $badfilter.
+     * Validates $header rule.
+     *
+     * $header is compatible with the limited list of modifiers:
+     * - $important
+     * - $csp
+     * - $removeheader (on response headers)
+     * - $third-party
+     * - $match-case
+     * - $badfilter
+     * - $domain
+     * - all content type modifiers ($subdocument, $script, $stylesheet, etc).
+     *
      * The rules with any other modifiers are considered invalid and will be discarded.
      */
     private validateHeaderRule(): void {

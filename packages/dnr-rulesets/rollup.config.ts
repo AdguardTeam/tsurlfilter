@@ -13,8 +13,13 @@ const DIST_DIR = 'dist';
 const re2WasmUrl = await import.meta.resolve('@adguard/re2-wasm/build/wasm/re2.wasm');
 const re2WasmPath = fileURLToPath(re2WasmUrl);
 
+const entryPoints = {
+    'lib/index': 'src/lib/index.ts',
+    'utils/index': 'src/utils/index.ts',
+};
+
 const mainConfig = {
-    input: 'src/lib/index.ts',
+    input: entryPoints,
     output: [{
         dir: DIST_DIR,
         format: 'esm',
@@ -56,7 +61,7 @@ const cliConfig = {
 };
 
 const typesConfig = {
-    input: 'src/lib/index.ts',
+    input: entryPoints,
     output: {
         dir: `${DIST_DIR}/types`,
         format: 'esm',
