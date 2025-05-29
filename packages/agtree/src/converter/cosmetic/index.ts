@@ -129,33 +129,37 @@ export class CosmeticRuleConverter extends RuleConverterBase {
      * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
      */
-    // TODO: Add support for other cosmetic rule types
     public static convertToUbo(rule: AnyCosmeticRule): NodeConversionResult<AnyRule> {
         // Skip conversation if the rule is already in uBO format
         if (rule.syntax === AdblockSyntax.Ubo) {
             return createNodeConversionResult([rule], false);
         }
 
-        // Check if the rule is a simple hiding rule
-        // TODO: Handle elemhide rules with extended CSS pseudos even if type is not marked explicitly
-        if (rule.type === CosmeticRuleType.ElementHidingRule
-            && (rule.separator.value === CosmeticRuleSeparator.ElementHidingException
-                || rule.separator.value === CosmeticRuleSeparator.ElementHiding)
-            && !rule.modifiers
-        ) {
-            return createNodeConversionResult([rule], false);
-        }
-
-        // Convert cosmetic rule based on its type
-        if (rule.type === CosmeticRuleType.ScriptletInjectionRule) {
-            if (rule.syntax === AdblockSyntax.Adg && rule.modifiers?.children.length) {
-                // e.g. example.com##+js(set-constant.js, foo, bar):matches-path(/baz)
-                throw new RuleConversionError(
-                    'uBO scriptlet injection rules do not support cosmetic rule modifiers',
+        // TODO: Add support for other cosmetic rule types
+        switch (rule.type) {
+            case CosmeticRuleType.HtmlFilteringRule:
+                return HtmlRuleConverter.convertToUbo(rule);
+            case CosmeticRuleType.ElementHidingRule: {
+                // Check if the rule is a simple hiding rule
+                // TODO: Handle elemhide rules with extended CSS pseudos even if type is not marked explicitly
+                const isElementHidingRule = (
+                    rule.separator.value === CosmeticRuleSeparator.ElementHidingException
+                    || rule.separator.value === CosmeticRuleSeparator.ElementHiding
                 );
-            }
 
-            return ScriptletRuleConverter.convertToUbo(rule);
+                if (isElementHidingRule && !rule.modifiers) {
+                    return createNodeConversionResult([rule], false);
+                }
+                break;
+            }
+            case CosmeticRuleType.ScriptletInjectionRule:
+                return ScriptletRuleConverter.convertToUbo(rule);
+            case CosmeticRuleType.JsInjectionRule:
+                throw new RuleConversionError(
+                    'uBO does not support JS injection rules',
+                );
+            default:
+                break;
         }
 
         let convertedModifiers: ConversionResult<{

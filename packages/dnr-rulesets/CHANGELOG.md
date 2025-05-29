@@ -11,6 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `utils` entry point with `getVersion` and `getVersionTimestampMs` functions.
 
+## [3.0.0-alpha.12] - 2025-05-28
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v3.3.4`.
+
+### Fixed
+
+- Types for `NodeNext` module resolution.
+
+[3.0.0-alpha.12]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.12
+
 ## [3.0.0-alpha.7] - 2025-05-19
 
 ### Changed

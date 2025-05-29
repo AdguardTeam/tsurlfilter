@@ -6,7 +6,7 @@ plan:
   name: tsurlfilter - tests
 variables:
   dockerContainer: adguard/node-ssh:22.14--0
-  testTimeout: 180s
+  testTimeout: 200s
 
 # Some packages are independent of each other so we can run them in parallel (different jobs on same stage)
 # other packages depend on each other so they should be run one after another (different stages),

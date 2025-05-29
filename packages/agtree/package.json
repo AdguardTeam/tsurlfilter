@@ -1,6 +1,6 @@
 {
     "name": "@adguard/agtree",
-    "version": "3.2.0",
+    "version": "3.2.1",
     "description": "Tool set for working with adblock filter lists",
     "keywords": [
         "adblock",
@@ -71,7 +71,7 @@
     "scripts": {
         "build": "pnpm clean && pnpm build-txt && pnpm build-compatibility-tables-wiki && pnpm build-rollup && pnpm build-types",
         "build-rollup": "rollup --config rollup.config.ts --configPlugin typescript",
-        "build-types": "tsc --project tsconfig.build.json",
+        "build-types": "tsc --project tsconfig.build.json && tsx scripts/transform-dts.ts",
         "build-txt": "tsx scripts/build-txt.ts",
         "build-compatibility-tables-wiki": "tsx scripts/build-compatibility-tables-wiki.ts",
         "clean": "rimraf dist",
@@ -130,7 +130,9 @@
         "rimraf": "catalog:",
         "rollup": "catalog:",
         "rollup-plugin-node-externals": "catalog:",
+        "ts-morph": "catalog:",
         "ts-node": "^10.9.2",
+        "tsd": "catalog:",
         "tsx": "catalog:",
         "type-fest": "^4.18.0",
         "typescript": "catalog:",
