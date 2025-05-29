@@ -217,6 +217,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 return ScriptingApi.executeScriptFunc({
                     tabId,
                     frameId,
+                    frameUrl: frameContext.url,
                     scriptFunction: localScriptFunction,
                 });
             }));
@@ -250,6 +251,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 return ScriptingApi.executeScriptlet({
                     tabId,
                     frameId,
+                    frameUrl: frameContext.url,
                     scriptletData,
                     domainName: getDomain(frameContext.url),
                 });
@@ -279,6 +281,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 cssText,
                 tabId,
                 frameId,
+                frameUrl: frameContext.url,
             });
         } catch (e) {
             logger.debug(
@@ -316,6 +319,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             await ScriptingApi.executeScriptsViaUserScripts({
                 tabId,
                 frameId,
+                frameUrl: frameContext.url,
                 scriptText,
             });
         } catch (e) {

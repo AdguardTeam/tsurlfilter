@@ -2,6 +2,7 @@ import { type ScriptletData } from '@adguard/tsurlfilter';
 import { type Source } from '@adguard/scriptlets';
 
 import { BACKGROUND_TAB_ID } from '../../common/constants';
+import { isExtensionUrl } from '../../common/utils/url';
 
 import { appContext } from './app-context';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
@@ -11,8 +12,24 @@ import { UserScriptsApi } from './user-scripts-api';
  * Parameters for applying CSS rules.
  */
 export type InsertCSSParams = {
+    /**
+     * The ID of the tab.
+     */
     tabId: number;
+
+    /**
+     * The ID of the frame.
+     */
     frameId: number;
+
+    /**
+     * The frame URL.
+     */
+    frameUrl: string;
+
+    /**
+     * The CSS text to be applied.
+     */
     cssText: string;
 };
 
@@ -26,6 +43,11 @@ type ExecuteTarget = {
      * The ID of the frame.
      */
     frameId: number;
+
+    /**
+     * The frame URL.
+     */
+    frameUrl: string;
 };
 
 /**
@@ -96,12 +118,19 @@ export class ScriptingApi {
      * @param params Parameters for applying CSS rules.
      * @param params.tabId Tab id.
      * @param params.frameId Frame id.
+     * @param params.frameUrl Frame URL.
      * @param params.cssText CSS text.
      *
      * @returns Promise that resolves when the CSS is injected.
      */
-    public static async insertCSS({ tabId, frameId, cssText }: InsertCSSParams): Promise<void> {
-        if (tabId === BACKGROUND_TAB_ID) {
+    public static async insertCSS({
+        tabId,
+        frameId,
+        cssText,
+        frameUrl,
+    }: InsertCSSParams): Promise<void> {
+        // There is no reason to insert a CSS stylesheet into the background page or extension pages
+        if (tabId === BACKGROUND_TAB_ID || isExtensionUrl(frameUrl)) {
             return;
         }
 
@@ -118,6 +147,7 @@ export class ScriptingApi {
      * @param params Parameters for executing the scriptlet.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
+     * @param params.frameUrl The frame URL.
      * @param params.scriptletData The scriptlet data to be executed.
      * @param params.domainName The domain name of the frame. Used for debugging.
      *
@@ -126,11 +156,12 @@ export class ScriptingApi {
     public static async executeScriptlet({
         tabId,
         frameId,
+        frameUrl,
         scriptletData,
         domainName,
     }: ExecuteScriptletParams): Promise<void> {
-        // There is no reason to inject a script into the background page
-        if (tabId === BACKGROUND_TAB_ID) {
+        // There is no reason to inject a script into the background page or extension pages
+        if (tabId === BACKGROUND_TAB_ID || isExtensionUrl(frameUrl)) {
             return;
         }
 
@@ -156,6 +187,7 @@ export class ScriptingApi {
      * @param params Parameters for executing the script.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
+     * @param params.frameUrl The frame URL.
      * @param params.scriptFunction The script function to be executed.
      *
      * @returns Promise that resolves when the script is executed.
@@ -163,10 +195,11 @@ export class ScriptingApi {
     public static async executeScriptFunc({
         tabId,
         frameId,
+        frameUrl,
         scriptFunction,
     }: ExecuteScriptFuncParams): Promise<void> {
-        // There is no reason to inject a script into the background page
-        if (tabId === BACKGROUND_TAB_ID) {
+        // There is no reason to inject a script into the background page or extension pages
+        if (tabId === BACKGROUND_TAB_ID || isExtensionUrl(frameUrl)) {
             return;
         }
 
@@ -198,6 +231,7 @@ export class ScriptingApi {
      * @param params Parameters for executing the scripts or scriptlets.
      * @param params.tabId The ID of the tab.
      * @param params.frameId The ID of the frame.
+     * @param params.frameUrl The frame URL.
      * @param params.scriptText Combined script text to be injected.
      *
      * @returns Promise that resolves when the scripts are executed.
@@ -205,16 +239,18 @@ export class ScriptingApi {
     public static async executeScriptsViaUserScripts({
         tabId,
         frameId,
+        frameUrl,
         scriptText,
     }: ExecuteCombinedScriptParams): Promise<void> {
-        // There is no reason to inject a script into the background page
-        if (tabId === BACKGROUND_TAB_ID) {
+        // There is no reason to inject a script into the background page or extension pages
+        if (tabId === BACKGROUND_TAB_ID || isExtensionUrl(frameUrl)) {
             return;
         }
 
         await UserScriptsApi.executeScripts({
-            frameId,
             tabId,
+            frameId,
+            frameUrl,
             scriptText,
         });
     }

@@ -42,6 +42,7 @@ export class UserScriptsApi {
      * @param params.tabId The ID of the tab where the scripts will be executed.
      * @param params.frameId The ID of the frame within the tab where the scripts will
      * be executed.
+     * @param params.frameUrl The frame URL.
      *
      * @returns A promise that resolves when the scripts have been executed.
      *
@@ -51,6 +52,7 @@ export class UserScriptsApi {
         scriptText,
         tabId,
         frameId,
+        frameUrl,
     }: ExecuteCombinedScriptParams): Promise<void> {
         const code = UserScriptsApi.wrapScriptCode(
             String(appContext.startTimeMs),
@@ -58,6 +60,7 @@ export class UserScriptsApi {
         );
 
         try {
+            logger.debug('Executing user script to tabId#frameId with frameUrl', tabId, frameId, frameUrl);
             await chrome.userScripts.execute({
                 target: {
                     frameIds: [frameId],
