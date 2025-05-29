@@ -45,7 +45,7 @@ export class DomainsLookupTable implements ILookupTable {
      * @returns True if the rule was added.
      */
     addRule(rule: RuleParts, storageIdx: number): boolean {
-        if (!rule.domains) {
+        if (!rule.domains || rule.domains.length === 0) {
             return false;
         }
 
@@ -53,7 +53,13 @@ export class DomainsLookupTable implements ILookupTable {
             return false;
         }
 
-        rule.domains.forEach((domain) => {
+        const filteredDomains = rule.domains.filter((domain) => !domain.startsWith('~'));
+
+        if (filteredDomains.length === 0) {
+            return false;
+        }
+
+        filteredDomains.forEach((domain) => {
             const hash = CachedFastHash.get(domain);
 
             // Add the rule to the lookup table
