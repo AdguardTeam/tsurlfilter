@@ -60,7 +60,6 @@ export class UserScriptsApi {
         );
 
         try {
-            logger.debug('Executing user script to tabId#frameId with frameUrl', tabId, frameId, frameUrl);
             await chrome.userScripts.execute({
                 target: {
                     frameIds: [frameId],
@@ -71,7 +70,10 @@ export class UserScriptsApi {
                 world: 'MAIN',
             });
         } catch (e) {
-            logger.error(`Failed to execute user script to tabId#frameId (${tabId}#${frameId}) :`, e);
+            logger.error(
+                `Failed to execute user script to tabId#frameId ${tabId}#${frameId} with frameUrl ${frameUrl} due to:`,
+                e,
+            );
         }
     }
 
@@ -101,7 +103,7 @@ export class UserScriptsApi {
                         configurable: false
                     });
                 } catch (error) {
-                    console.error('Error executing AG js rule with uniqueId "${injectedKey}" due to: ' + error);
+                    console.error('Error executing AG js rule with uniqueId "${injectedKey}" due to:', error);
                 }
             })()
         `;
