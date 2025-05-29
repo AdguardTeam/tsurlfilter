@@ -11,6 +11,9 @@ import {
 } from './lib';
 import { Watcher, WatchOptions } from './lib/manifest/watch';
 
+const DEFAULT_PATH_TO_FILTERS = './filters';
+const DEFAULT_OUTPUT_PATH_FOR_RULESETS = './filters/declarative';
+
 /**
  * Helper function to process array options that might be:
  * - Already proper arrays (from space-separated args)
@@ -39,9 +42,6 @@ const processArrayOption = (option: unknown): string[] => {
 
     return option ? [String(option)] : [];
 };
-
-const DEFAULT_PATH_TO_FILTERS = './filters';
-const DEFAULT_OUTPUT_PATH_FOR_RULESETS = './filters/declarative';
 
 /**
  * Extended type for correct type checking of WatchOptions in CLI.

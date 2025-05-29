@@ -7,12 +7,14 @@ import { version } from '../package.json';
 
 export const DEFAULT_DEST_RULE_SETS_DIR = './build/rulesets';
 
+const CLI_NAME = 'tsurlfilter';
+
 /**
  * Main function to set up and run the CLI program.
  */
 async function main() {
     program
-        .name('tsurlfilter')
+        .name(CLI_NAME)
         .description('CLI to convert filters to declarative rulesets')
         .version(version);
 
@@ -50,8 +52,13 @@ const processFileName = path.basename(process.argv[1]);
  *
  * Using basename ensures the check is robust against differences in absolute
  * paths, symlinks, and installation methods.
+ *
+ * Check if the script is executed directly as CLI, with an additional safeguard:
+ * - scriptFileName === processFileName: ensures it's directly executed (CLI).
+ * - processFileName.includes('tsurlfilter'): ensures it's specifically the intended CLI script,
+ *   preventing accidental interception when used as an API inside other CLI tools.
  */
-const isRunningViaCli = scriptFileName === processFileName;
+const isRunningViaCli = scriptFileName === processFileName && processFileName.includes(CLI_NAME);
 
 if (isRunningViaCli) {
     main();

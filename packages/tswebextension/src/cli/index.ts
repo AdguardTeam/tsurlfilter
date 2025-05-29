@@ -10,12 +10,14 @@ import { copyWar } from './copyWar';
 
 export const DEFAULT_WAR_PATH = 'build/war';
 
+const CLI_NAME = 'tswebextension';
+
 /**
  * Main entrypoint.
  */
 async function main(): Promise<void> {
     program
-        .name('tswebextension')
+        .name(CLI_NAME)
         .description('CLI to some development utils')
         .version(version);
 
@@ -44,8 +46,13 @@ const processFileName = path.basename(process.argv[1]);
  *
  * Using basename ensures the check is robust against differences in absolute
  * paths, symlinks, and installation methods.
+ *
+ * Check if the script is executed directly as CLI, with an additional safeguard:
+ * - scriptFileName === processFileName: ensures it's directly executed (CLI).
+ * - processFileName.includes('tsurlfilter'): ensures it's specifically the intended CLI script,
+ *   preventing accidental interception when used as an API inside other CLI tools.
  */
-const isRunningViaCli = scriptFileName === processFileName;
+const isRunningViaCli = scriptFileName === processFileName && processFileName.includes(CLI_NAME);
 
 if (isRunningViaCli) {
     main();
