@@ -32,7 +32,8 @@ type FilterDTO = {
  * Gets {@link FilterDTO} array from filter metadata.
  * AdGuard Quick Fixes filter is excluded from downloading and conversion.
  *
- * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`
+ * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`.
+ *
  * @returns Array of filter data.
  */
 const getUrlsOfFiltersResources = async (
