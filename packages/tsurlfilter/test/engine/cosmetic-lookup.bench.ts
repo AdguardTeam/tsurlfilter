@@ -26,7 +26,7 @@ describe('Build cosmetics engine', () => {
 
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
     const preprocessed = TsUrlFilterOld.FilterListPreprocessor.preprocess(rawFilter);
-    
+
     bench('old cosmetic engine', () => {
         const list = new TsUrlFilterOld.BufferRuleList(2, preprocessed.filterList, false, false, false, preprocessed.sourceMap);
         const storage = new TsUrlFilterOld.RuleStorage([list]);
