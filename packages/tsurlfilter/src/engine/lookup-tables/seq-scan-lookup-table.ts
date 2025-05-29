@@ -1,6 +1,7 @@
+import { NetworkRuleParser } from '@adguard/agtree';
 import { type ILookupTable } from './lookup-table';
 import { type Request } from '../../request';
-import { type NetworkRule } from '../../rules/network-rule';
+import { NetworkRule } from '../../rules/network-rule';
 import { type RuleParts } from '../../filterlist/tokenize';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 
@@ -37,16 +38,23 @@ export class SeqScanLookupTable implements ILookupTable {
     /**
      * Implements the ILookupTable interface for SeqScanLookupTable.
      *
-     * @param _rule Rule to add.
+     * @param rule Rule to add.
      * @param storageIdx Index of the rule in the storage.
      *
      * @returns True if the rule was added.
      */
-    addRule(_rule: RuleParts, storageIdx: number): boolean {
+    addRule(rule: RuleParts, storageIdx: number): boolean {
         if (!this.rules.has(storageIdx)) {
             try {
-                // FIXME: we need the original rule in this case
-                this.rules.set(storageIdx, this.ruleStorage.retrieveNetworkRule(storageIdx)!);
+                // FIXME: double check this
+                this.rules.set(
+                    storageIdx,
+                    new NetworkRule(
+                        NetworkRuleParser.parse(rule.text),
+                        this.ruleStorage.getFilterListId(storageIdx),
+                        storageIdx,
+                    ),
+                );
                 this.rulesCount += 1;
                 return true;
             } catch (e) {
