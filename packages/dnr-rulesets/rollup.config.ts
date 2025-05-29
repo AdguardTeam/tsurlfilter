@@ -34,8 +34,10 @@ const mainConfig = {
 const cliConfig = {
     input: 'src/cli.ts',
     output: [{
-        file: `${DIST_DIR}/cli.js`,
-        format: 'esm',
+        file: `${DIST_DIR}/cli.cjs`,
+        // Not ESM, because re2-wasm package in ESM format uses raw `__dirname`
+        // without `import.meta.url` wrapper.
+        format: 'cjs',
         exports: 'named',
         banner: '#!/usr/bin/env node',
     }],
