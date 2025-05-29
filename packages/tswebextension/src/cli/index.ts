@@ -49,10 +49,10 @@ const processFileName = path.basename(process.argv[1]);
  *
  * Check if the script is executed directly as CLI, with an additional safeguard:
  * - scriptFileName === processFileName: ensures it's directly executed (CLI).
- * - processFileName.includes('tsurlfilter'): ensures it's specifically the intended CLI script,
+ * - process.argv[1].includes(CLI_NAME): ensures it's specifically the intended CLI script,
  *   preventing accidental interception when used as an API inside other CLI tools.
  */
-const isRunningViaCli = scriptFileName === processFileName && processFileName.includes(CLI_NAME);
+const isRunningViaCli = scriptFileName === processFileName && process.argv[1].includes(CLI_NAME);
 
 if (isRunningViaCli) {
     main();
