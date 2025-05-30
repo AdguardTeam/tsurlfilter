@@ -58,7 +58,12 @@ export class TrieLookupTable implements ILookupTable {
      * @returns True if the rule was added.
      */
     public addRule(rule: RuleParts, storageIdx: number): boolean {
-        const { pattern } = rule;
+        // FIXME: refactor allowlist handling
+        let { pattern } = rule;
+
+        if (pattern?.startsWith('@@')) {
+            pattern = pattern.slice(2);
+        }
 
         if (!pattern) {
             return false;
