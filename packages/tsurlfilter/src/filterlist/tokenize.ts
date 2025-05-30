@@ -18,6 +18,7 @@ export type RuleParts = {
     cosmeticSeparator?: number,
     // FIXME: Remove this?
     text: string,
+    allowlist: boolean,
 };
 
 const NETWORK_RULE_SEPARATOR = '$';
@@ -25,6 +26,8 @@ const NETWORK_RULE_MODIFIER_ASSIGN = '=';
 const REGEX_MARKER = '/';
 const DOMAIN_MODIFIER = 'domain';
 const DOMAIN_MODIFIER_LENGTH = DOMAIN_MODIFIER.length;
+const ALLOWLIST_MARKER = '@@';
+const ALLOWLIST_MARKER_LENGTH = ALLOWLIST_MARKER.length;
 
 const COSMETIC_SEPARATOR_OFFSET_MASK = (1 << 26) - 1; // 0x03FFFFFF (26 lowest bits)
 
@@ -236,6 +239,7 @@ export function tokenize(rule: string, ignoreCosmetics = false): RuleParts | nul
             cosmeticContent: rule.slice(offset + length),
             cosmeticSeparator,
             text: rule,
+            allowlist: decodeIsAllowlist(cosmeticSeparator),
         };
     }
 
@@ -247,7 +251,12 @@ export function tokenize(rule: string, ignoreCosmetics = false): RuleParts | nul
     const networkSeparator = findNetworkRuleSeparator(rule);
 
     if (networkSeparator !== -1) {
-        const pattern = rule.slice(0, networkSeparator).trim();
+        let pattern = rule.slice(0, networkSeparator).trim();
+        let allowlist = false;
+        if (pattern.startsWith(ALLOWLIST_MARKER)) {
+            pattern = pattern.slice(ALLOWLIST_MARKER_LENGTH);
+            allowlist = true;
+        }
         const domains = extractDomainsFromNetworkRule(rule, networkSeparator);
 
         return {
@@ -255,12 +264,21 @@ export function tokenize(rule: string, ignoreCosmetics = false): RuleParts | nul
             pattern,
             domains,
             text: rule,
+            allowlist,
         };
+    }
+
+    let pattern = rule;
+    let allowlist = false;
+    if (pattern.startsWith(ALLOWLIST_MARKER)) {
+        pattern = pattern.slice(ALLOWLIST_MARKER_LENGTH);
+        allowlist = true;
     }
 
     return {
         type: RuleType.Network,
-        pattern: rule,
+        pattern,
         text: rule,
+        allowlist,
     };
 }
