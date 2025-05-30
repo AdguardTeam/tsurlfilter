@@ -23,10 +23,10 @@
         "tgz": "lerna run build --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies && lerna run tgz --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies"
     },
     "devDependencies": {
-        "husky": "^9.1.7",
+        "husky": "catalog:",
         "lerna": "8.1.8",
         "semver": "^7.7.2",
-        "vitest": "^2.1.9"
+        "vitest": "catalog:"
     },
     "pnpm": {
         "neverBuiltDependencies": [],

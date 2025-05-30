@@ -17,7 +17,7 @@
             "img"
         ]
     },
-    "no-duplicate-header": {
+    "no-duplicate-heading": {
         "siblings_only": true
     },
     "no-blanks-blockquote": false,
