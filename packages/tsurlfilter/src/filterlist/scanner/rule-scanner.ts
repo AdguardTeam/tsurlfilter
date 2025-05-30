@@ -1,8 +1,13 @@
-
 import { IndexedRule } from '../../rules/rule';
 import { ScannerType } from './scanner-type';
-import { ILineReader } from '../reader/line-reader';
-import { CosmeticRuleType, decodeType, RuleParts, RuleType, tokenize } from '../tokenize';
+import { type ILineReader } from '../reader/line-reader';
+import {
+    CosmeticRuleType,
+    decodeType,
+    type RuleParts,
+    RuleType,
+    tokenize,
+} from '../tokenize';
 
 /**
  * Represents the RuleScanner configuration.
@@ -118,7 +123,7 @@ export class RuleScanner {
         let line = this.readNextLine();
 
         while (line !== null) {
-            const ruleParts = tokenize(line);
+            const ruleParts = tokenize(line, this.ignoreCosmetic);
             if (ruleParts && !this.isIgnored(ruleParts)) {
                 this.currentRule = ruleParts;
                 this.currentRuleIndex = lineIndex;
@@ -165,7 +170,7 @@ export class RuleScanner {
     /**
      * Reads the next line and returns it.
      *
-     * @return - Next line string or null.
+     * @returns - Next line string or null.
      */
     private readNextLine(): string | null {
         const line = this.reader.readLine();

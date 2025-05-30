@@ -203,10 +203,11 @@ const extractDomainsFromNetworkRule = (rule: string, separator: number): string[
  * Tokenizes an adblock rule into main parts.
  *
  * @param rule The adblock rule to tokenize.
+ * @param ignoreCosmetics If true, ignores cosmetic rules.
  *
  * @returns The rule parts or null if the rule is not a network or cosmetic rule.
  */
-export function tokenize(rule: string): RuleParts | null {
+export function tokenize(rule: string, ignoreCosmetics = false): RuleParts | null {
     // Drop rules that are too short or empty
     if (rule.length < 4) {
         return null;
@@ -220,6 +221,10 @@ export function tokenize(rule: string): RuleParts | null {
     const cosmeticSeparator = findCosmeticSeparator(rule);
 
     if (cosmeticSeparator !== null) {
+        if (ignoreCosmetics) {
+            return null;
+        }
+
         const offset = decodeOffset(cosmeticSeparator);
         const length = decodeLength(cosmeticSeparator);
         const pattern = rule.slice(0, offset).trim();
