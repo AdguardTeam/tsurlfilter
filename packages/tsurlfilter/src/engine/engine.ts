@@ -3,37 +3,66 @@
 import { LRUCache } from 'lru-cache';
 
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
+import { MatchingResult } from './matching-result';
 import { NetworkEngine } from './network-engine';
 import { Request } from '../request';
-import { MatchingResult } from './matching-result';
-import { NetworkRule } from '../rules/network-rule';
-import { RuleStorage } from '../filterlist/rule-storage';
-import { type CosmeticResult } from './cosmetic-engine/cosmetic-result';
-import { type CosmeticOption } from './cosmetic-option';
-import { ScannerType } from '../filterlist/scanner/scanner-type';
-import { type IndexedStorageRule } from '../rules/rule';
-import { CosmeticRule } from '../rules/cosmetic-rule';
 import { RequestType } from '../request-type';
-import { StringRuleList } from '../filterlist/string-rule-list';
+import { RuleStorage } from '../filterlist/rule-storage';
 import { RuleType } from '../filterlist/tokenize';
+import { ScannerType } from '../filterlist/scanner/scanner-type';
+import { StringRuleList } from '../filterlist/string-rule-list';
+import { type CosmeticOption } from './cosmetic-option';
+import { type CosmeticResult } from './cosmetic-engine/cosmetic-result';
+import { type IndexedStorageRule } from '../rules/rule';
+import { type NetworkRule } from '../rules/network-rule';
 
+/**
+ * Filter list.
+ */
 interface FilterList {
+    /**
+     * Filter list identifier.
+     */
     id: number;
 
+    /**
+     * Filter list text.
+     */
     text: string;
 
+    /**
+     * Whether to ignore cosmetic rules from this filter list.
+     */
     ignoreCosmetic?: boolean;
 
+    /**
+     * Whether to ignore network rules from this filter list.
+     */
     ignoreNetwork?: boolean;
 
+    /**
+     * Whether to ignore unsafe rules from this filter list.
+     */
     ignoreUnsafe?: boolean;
 }
 
+/**
+ * Engine options.
+ */
 export interface EngineOptions {
+    /**
+     * List of filters.
+     */
     filters: FilterList[];
 
+    /**
+     * Whether to skip initial scan.
+     */
     skipInitialScan?: boolean;
 
+    /**
+     * Request cache size. If not specified, the default value is used, which is 500.
+     */
     requestCacheSize?: number;
 }
 
