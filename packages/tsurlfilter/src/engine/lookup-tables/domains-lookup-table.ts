@@ -106,19 +106,21 @@ export class DomainsLookupTable implements ILookupTable {
             const hash = CachedFastHash.get(domains[i]);
             const rulesIndexes = this.domainsLookupTable.get(hash);
             if (rulesIndexes) {
-                let rule: NetworkRule | null = null;
+                for (let j = 0; j < rulesIndexes.length; j += 1) {
+                    let rule: NetworkRule | null = null;
 
-                try {
-                    rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[i]);
-                } catch (e) {
-                    // Fast tokenizing possibly allowed invalid rules
-                    // Remove the rule index from the lookup table but keep the same array reference
-                    rulesIndexes.splice(i, 1);
-                    i -= 1;
-                }
+                    try {
+                        rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
+                    } catch (e) {
+                        // Fast tokenizing possibly allowed invalid rules
+                        // Remove the rule index from the lookup table but keep the same array reference
+                        rulesIndexes.splice(j, 1);
+                        j -= 1;
+                    }
 
-                if (rule && rule.match(request)) {
-                    result.push(rule);
+                    if (rule && rule.match(request)) {
+                        result.push(rule);
+                    }
                 }
             }
         }
