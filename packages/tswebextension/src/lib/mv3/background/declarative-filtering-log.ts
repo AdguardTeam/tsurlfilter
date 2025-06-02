@@ -103,7 +103,7 @@ class DeclarativeFilteringLog {
             sourceRules,
             declarativeRuleJson: JSON.stringify(declarativeRule),
         };
-    }
+    };
 
     /**
      * Fires an {@link FilteringEventType.MatchedDeclarativeRule} event with
