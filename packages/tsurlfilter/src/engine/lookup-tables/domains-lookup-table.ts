@@ -48,11 +48,17 @@ export class DomainsLookupTable implements ILookupTable {
             return false;
         }
 
-        if (rule.domains.some(DomainModifier.isWildcardOrRegexDomain)) {
-            return false;
-        }
+        const filteredDomains: string[] = [];
 
-        const filteredDomains = rule.domains.filter((domain) => !domain.startsWith('~'));
+        for (const domain of rule.domains) {
+            if (DomainModifier.isWildcardOrRegexDomain(domain)) {
+                return false;
+            }
+
+            if (!domain.startsWith('~')) {
+                filteredDomains.push(domain);
+            }
+        }
 
         if (filteredDomains.length === 0) {
             return false;
