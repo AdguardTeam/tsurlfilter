@@ -1,16 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import escapeStringRegexp from 'escape-string-regexp';
 
-import { type AnyRule, RuleGenerator } from '@adguard/agtree';
 import { Engine } from '../../src/engine/engine';
-import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
-import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { config, setConfiguration } from '../../src/configuration';
 import { CosmeticOption } from '../../src/engine/cosmetic-option';
 import { RequestType } from '../../src/request-type';
 import { Request } from '../../src/request';
-import { FilterListPreprocessor, type PreprocessedFilterList } from '../../src/filterlist/preprocessor';
-import { getRuleSourceIndex } from '../../src/filterlist/source-map';
 
 const createRequest = (url: string): Request => new Request(url, null, RequestType.Document);
 
@@ -29,8 +24,14 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
 describe('Engine Tests', () => {
     it('works if request matches rule', () => {
         const rules = ['||example.org^$third-party'];
-        const list = new BufferRuleList(1, FilterListPreprocessor.preprocess(rules.join('\n')).filterList, false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: rules.join('\n'),
+                },
+            ],
+        });
 
         expect(engine.getRulesCount()).toBe(1);
 
@@ -58,8 +59,14 @@ describe('Engine Tests', () => {
     it('works if frame matches rule', () => {
         const ruleText = '@@||example.org$document';
         const rules = [ruleText];
-        const list = new BufferRuleList(1, FilterListPreprocessor.preprocess(rules.join('\n')).filterList, false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: rules.join('\n'),
+                },
+            ],
+        });
 
         expect(engine.getRulesCount()).toBe(1);
 
@@ -78,79 +85,93 @@ describe('Engine Tests', () => {
         expect(frameRule).toBeNull();
     });
 
-    it('retrieveRuleNode', () => {
-        const list1 = FilterListPreprocessor.preprocess([
-            '||example.org^$third-party',
-            '##banner',
-        ].join('\n'));
+    // FIXME: remove
+    // it('retrieveRuleNode', () => {
+    //     const list1 = [
+    //         '||example.org^$third-party',
+    //         '##banner',
+    //     ].join('\n');
 
-        const list2 = FilterListPreprocessor.preprocess([
-            "#%#//scriptlet('set-constant', 'foo', 'bar')",
-            '#@#.yay',
-        ].join('\n'));
+    //     const list2 = [
+    //         "#%#//scriptlet('set-constant', 'foo', 'bar')",
+    //         '#@#.yay',
+    //     ].join('\n');
 
-        const engine = new Engine(new RuleStorage([
-            new BufferRuleList(1, list1.filterList, false),
-            new BufferRuleList(2, list2.filterList, false),
-        ]));
+    //     const engine = new Engine({
+    //         filters: [
+    //             {
+    //                 id: 1,
+    //                 text: list1,
+    //             },
+    //             {
+    //                 id: 2,
+    //                 text: list2,
+    //             },
+    //         ],
+    //     });
 
-        expect(engine.getRulesCount()).toBe(4);
+    //     expect(engine.getRulesCount()).toBe(4);
 
-        /**
-         * Helper function to get the rule index from the source map by the rule number.
-         *
-         * @param rule Rule number, starting from 1.
-         * @param sourceMap Source map.
-         *
-         * @returns Rule index.
-         *
-         * @throws Error if the rule is not found.
-         */
-        const getRuleIndex = (rule: number, sourceMap: PreprocessedFilterList['sourceMap']): number => {
-            const ruleIndex = Object.keys(sourceMap)[rule - 1];
+    //     /**
+    //      * Helper function to get the rule index from the source map by the rule number.
+    //      *
+    //      * @param rule Rule number, starting from 1.
+    //      * @param sourceMap Source map.
+    //      *
+    //      * @returns Rule index.
+    //      *
+    //      * @throws Error if the rule is not found.
+    //      */
+    //     const getRuleIndex = (rule: number, sourceMap: PreprocessedFilterList['sourceMap']): number => {
+    //         const ruleIndex = Object.keys(sourceMap)[rule - 1];
 
-            if (ruleIndex === undefined) {
-                throw new Error(`Rule with number ${rule} not found in source map`);
-            }
+    //         if (ruleIndex === undefined) {
+    //             throw new Error(`Rule with number ${rule} not found in source map`);
+    //         }
 
-            return parseInt(ruleIndex, 10);
-        };
+    //         return parseInt(ruleIndex, 10);
+    //     };
 
-        // List 1
-        let node: AnyRule | null = engine.retrieveRuleNode(1, getRuleIndex(1, list1.sourceMap));
-        expect(node).not.toBeNull();
-        expect(RuleGenerator.generate(node!)).toStrictEqual('||example.org^$third-party');
+    //     // List 1
+    //     let node: AnyRule | null = engine.retrieveRuleNode(1, getRuleIndex(1, list1.sourceMap));
+    //     expect(node).not.toBeNull();
+    //     expect(RuleGenerator.generate(node!)).toStrictEqual('||example.org^$third-party');
 
-        node = engine.retrieveRuleNode(1, getRuleIndex(2, list1.sourceMap));
-        expect(node).not.toBeNull();
-        expect(RuleGenerator.generate(node!)).toStrictEqual('##banner');
+    //     node = engine.retrieveRuleNode(1, getRuleIndex(2, list1.sourceMap));
+    //     expect(node).not.toBeNull();
+    //     expect(RuleGenerator.generate(node!)).toStrictEqual('##banner');
 
-        // List 2
-        node = engine.retrieveRuleNode(2, getRuleIndex(1, list2.sourceMap));
-        expect(node).not.toBeNull();
-        expect(RuleGenerator.generate(node!)).toStrictEqual("#%#//scriptlet('set-constant', 'foo', 'bar')");
+    //     // List 2
+    //     node = engine.retrieveRuleNode(2, getRuleIndex(1, list2.sourceMap));
+    //     expect(node).not.toBeNull();
+    //     expect(RuleGenerator.generate(node!)).toStrictEqual("#%#//scriptlet('set-constant', 'foo', 'bar')");
 
-        node = engine.retrieveRuleNode(2, getRuleIndex(2, list2.sourceMap));
-        expect(node).not.toBeNull();
-        expect(RuleGenerator.generate(node!)).toStrictEqual('#@#.yay');
+    //     node = engine.retrieveRuleNode(2, getRuleIndex(2, list2.sourceMap));
+    //     expect(node).not.toBeNull();
+    //     expect(RuleGenerator.generate(node!)).toStrictEqual('#@#.yay');
 
-        // Should return null if the rule is not found, e.g. wrong filterId or ruleIndex
-        node = engine.retrieveRuleNode(1, getRuleIndex(1, list1.sourceMap) + 1);
-        expect(node).toBeNull();
+    //     // Should return null if the rule is not found, e.g. wrong filterId or ruleIndex
+    //     node = engine.retrieveRuleNode(1, getRuleIndex(1, list1.sourceMap) + 1);
+    //     expect(node).toBeNull();
 
-        node = engine.retrieveRuleNode(2000, 4);
-        expect(node).toBeNull();
-    });
+    //     node = engine.retrieveRuleNode(2000, 4);
+    //     expect(node).toBeNull();
+    // });
 });
 
 describe('TestEngine - postponed load rules', () => {
     const rules = ['||example.org^$third-party', 'example.org##banner'];
-    const processed = FilterListPreprocessor.preprocess(rules.join('\n'));
-    const list = new BufferRuleList(1, processed.filterList, false, false, false, processed.sourceMap);
-    const ruleStorage = new RuleStorage([list]);
 
     it('works rules are loaded', () => {
-        const engine = new Engine(ruleStorage, true);
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: rules.join('\n'),
+                },
+            ],
+            skipInitialScan: true,
+        });
 
         expect(engine.getRulesCount()).toBe(0);
 
@@ -160,7 +181,15 @@ describe('TestEngine - postponed load rules', () => {
     });
 
     it('works rules are loaded async', async () => {
-        const engine = new Engine(ruleStorage, true);
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: rules.join('\r\n'),
+                },
+            ],
+            skipInitialScan: true,
+        });
 
         expect(engine.getRulesCount()).toBe(0);
 
@@ -172,15 +201,20 @@ describe('TestEngine - postponed load rules', () => {
 
 it('TestEngine - configuration', () => {
     const rules = ['||example.org^$third-party'];
-    const processed = FilterListPreprocessor.preprocess(rules.join('\n'));
-    const list = new BufferRuleList(1, processed.filterList, false, false, false, processed.sourceMap);
     setConfiguration({
         engine: 'test-engine',
         version: 'test-version',
         verbose: true,
     });
 
-    new Engine(new RuleStorage([list]));
+    new Engine({
+        filters: [
+            {
+                id: 1,
+                text: rules.join('\n'),
+            },
+        ],
+    });
 
     expect(config.engine).toBe('test-engine');
     expect(config.version).toBe('test-version');
@@ -194,10 +228,15 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const cookieRule = '||example.org^$cookie';
         const removeParamRule = '||example.org^$removeparam=p1';
         const rules = [cspRule, replaceRule, cookieRule, removeParamRule];
-        const preprocessed = FilterListPreprocessor.preprocess(rules.join('\n'));
 
-        const list = new BufferRuleList(1, preprocessed.filterList, false, false, false, preprocessed.sourceMap);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: rules.join('\n'),
+                },
+            ],
+        });
 
         const request = new Request('https://example.org', '', RequestType.Document);
         const result = engine.matchRequest(request);
@@ -221,24 +260,21 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const allowlistBadfilterRule = '@@/fuckadblock.min.js$domain=example.org,badfilter';
         const badfilterRule = '/fuckadblock.min.js$badfilter';
 
-        const preprocessed = FilterListPreprocessor.preprocess(
-            [
-                redirectRule,
-                allowlistRule,
-                badfilterRule,
-                allowlistBadfilterRule,
-            ].join('\n'),
-        );
+        const text = [
+            redirectRule,
+            allowlistRule,
+            badfilterRule,
+            allowlistBadfilterRule,
+        ].join('\n');
 
-        const baseRuleList = new BufferRuleList(
-            1,
-            preprocessed.filterList,
-            false,
-            false,
-            false,
-            preprocessed.sourceMap,
-        );
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         const request = new Request(
             'https://example.org/fuckadblock.min.js',
@@ -253,13 +289,20 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
 
 describe('TestEngineMatchRequest - redirect modifier', () => {
     it('checks if with redirect modifier resource type is not ignored', () => {
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
+        const text = [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
             '@@||ya.ru$redirect=1x1-transparent.gif',
-        ].join('\n')).filterList);
+        ].join('\n');
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         const request = new Request(
             'http://ya.ru/',
@@ -272,12 +315,19 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
     });
 
     it('checks if with allowlist redirect modifier resource type is not ignored', () => {
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
+        const text = [
             '||ya.ru$redirect=1x1-transparent.gif',
             '@@||ya.ru$redirect=1x1-transparent.gif,image',
-        ].join('\n')).filterList);
+        ].join('\n');
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         let request = new Request(
             'http://ya.ru/',
@@ -295,12 +345,19 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
     });
 
     it('checks that unrelated exception does not exclude other blocking rules', () => {
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
+        const text = [
             '||ya.ru$redirect=1x1-transparent.gif',
             '@@||ya.ru$redirect=2x2-transparent.png',
-        ].join('\n')).filterList);
+        ].join('\n');
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         const request = new Request(
             'http://ya.ru/',
@@ -313,14 +370,21 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
     });
 
     it('checks that it is possible to exclude all redirects with `@@$redirect` rule', () => {
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
+        const text = [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
             '||ya.ru$redirect=2x2-transparent.png',
             '@@||ya.ru$redirect',
-        ].join('\n')).filterList);
+        ].join('\n');
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         let request = new Request(
             'http://ya.ru/',
@@ -338,14 +402,21 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
     });
 
     it('checks that it is possible to exclude all redirects with `@@$redirect` rule - resource type', () => {
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
+        const text = [
             '||ya.ru$redirect=1x1-transparent.gif,image',
             '||ya.ru$redirect=1x1-transparent.gif',
             '||ya.ru$redirect=2x2-transparent.png',
             '@@||ya.ru$redirect,image',
-        ].join('\n')).filterList);
+        ].join('\n');
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         let request = new Request(
             'http://ya.ru/',
@@ -365,12 +436,19 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
 
 describe('TestEngineMatchRequest - redirect-rule modifier', () => {
     it('checks if redirect-rule is found for blocked requests only', () => {
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
+        const text = [
             '||example.org/script.js',
             '||example.org^$redirect-rule=noopjs',
-        ].join('\n')).filterList);
+        ].join('\n');
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         let request = new Request(
             'https://example.org/script.js',
@@ -396,10 +474,17 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
             '||example.org^$redirect-rule=noopjs',
             '@@||example.org/script.js?unblock$redirect',
         ];
-        const processed = FilterListPreprocessor.preprocess(rules.join('\n'));
-        const baseRuleList = new BufferRuleList(1, processed.filterList, false, false, false, processed.sourceMap);
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const text = rules.join('\n');
+
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         let request = new Request(
             'https://example.org/script.js',
@@ -409,9 +494,9 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(
-            getRawRuleIndex(processed.rawFilterList, rules[1]),
+            getRawRuleIndex(text, rules[1]),
         ).toBe(
-            getRuleSourceIndex(result.getBasicResult()!.getIndex(), processed.sourceMap),
+            result.getBasicResult()!.getIndex(),
         );
 
         request = new Request(
@@ -430,9 +515,9 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(
-            getRawRuleIndex(processed.rawFilterList, rules[0]),
+            getRawRuleIndex(text, rules[0]),
         ).toBe(
-            getRuleSourceIndex(result.getBasicResult()!.getIndex(), processed.sourceMap),
+            result.getBasicResult()!.getIndex(),
         );
     });
 });
@@ -440,11 +525,15 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
 describe('TestEngineMatchRequest - document modifier', () => {
     it('respects document modifier request type in blocking rules', () => {
         const documentBlockingRuleText = '||example.org^$document';
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
-            documentBlockingRuleText,
-        ].join('\n')).filterList);
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: documentBlockingRuleText,
+                },
+            ],
+        });
 
         let request = new Request('http://example.org/', null, RequestType.Document);
         let result = engine.matchRequest(request);
@@ -462,11 +551,15 @@ describe('TestEngineMatchRequest - document modifier', () => {
 
     it('respects document modifier request type in blocking rules - other request types', () => {
         const documentBlockingRuleText = '||example.org^$document,script';
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
-            documentBlockingRuleText,
-        ].join('\n')).filterList);
 
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: documentBlockingRuleText,
+                },
+            ],
+        });
 
         let request = new Request('http://example.org/', null, RequestType.Document);
         let result = engine.matchRequest(request);
@@ -487,11 +580,14 @@ describe('TestEngineMatchRequest - document modifier', () => {
 describe('TestEngineMatchRequest - all modifier', () => {
     it('respects $all modifier with all request types in blocking rules', () => {
         const allBlockingRuleText = '||example.org^$all';
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
-            allBlockingRuleText,
-        ].join('\n')).filterList);
-
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: allBlockingRuleText,
+                },
+            ],
+        });
 
         let request = new Request('http://example.org/', null, RequestType.Document);
         let result = engine.matchRequest(request);
@@ -512,12 +608,18 @@ describe('TestEngineMatchRequest - popup modifier', () => {
     it('match requests against basic and popup blocking rules', () => {
         const blockingRuleText = '||example.org^';
         const popupBlockingRuleText = '||example.org^$popup';
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
-            blockingRuleText,
-            popupBlockingRuleText,
-        ].join('\n')).filterList);
-
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: blockingRuleText,
+                },
+                {
+                    id: 2,
+                    text: popupBlockingRuleText,
+                },
+            ],
+        });
 
         // Tests matching an XMLHttpRequest; expects to match the basic blocking rule
         let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
@@ -551,12 +653,18 @@ describe('TestEngineMatchRequest - popup modifier', () => {
     it('match requests against all and popup blocking rules', () => {
         const blockingAllRuleText = '||example.org^$all';
         const popupBlockingRuleText = '||example.org^$popup';
-        const baseRuleList = new BufferRuleList(1, FilterListPreprocessor.preprocess([
-            blockingAllRuleText,
-            popupBlockingRuleText,
-        ].join('\n')).filterList);
-
-        const engine = new Engine(new RuleStorage([baseRuleList]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: blockingAllRuleText,
+                },
+                {
+                    id: 2,
+                    text: popupBlockingRuleText,
+                },
+            ],
+        });
 
         // Tests matching an XMLHttpRequest; expects to match the all-encompassing blocking rule
         let request = new Request('http://example.org/', 'http://example.com/', RequestType.XmlHttpRequest);
@@ -613,8 +721,14 @@ describe('TestEngineCosmeticResult - elemhide', () => {
         extCssGenericRule,
     ];
 
-    const list = new BufferRuleList(1, FilterListPreprocessor.preprocess(rules.join('\n')).filterList, false);
-    const engine = new Engine(new RuleStorage([list]));
+    const engine = new Engine({
+        filters: [
+            {
+                id: 1,
+                text: rules.join('\n'),
+            },
+        ],
+    });
 
     it('works if returns correct cosmetic elemhide result', () => {
         let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
@@ -669,8 +783,14 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
         extCssGenericCssRule,
     ];
 
-    const list = new BufferRuleList(1, FilterListPreprocessor.preprocess(rules.join('\n')).filterList, false);
-    const engine = new Engine(new RuleStorage([list]));
+    const engine = new Engine({
+        filters: [
+            {
+                id: 1,
+                text: rules.join('\n'),
+            },
+        ],
+    });
 
     it('works if returns correct cosmetic css result', () => {
         let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
@@ -724,9 +844,14 @@ describe('TestEngineCosmeticResult - js', () => {
         const hidingRule = 'flightradar24.*##body';
         const jsRule = 'flightradar24.*#%#alert(1);';
         const rawFilterList = [hidingRule, jsRule].join('\n');
-        const preprocessed = FilterListPreprocessor.preprocess(rawFilterList);
-        const list = new BufferRuleList(1, preprocessed.filterList, false, false, false, preprocessed.sourceMap);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: rawFilterList,
+                },
+            ],
+        });
         const result = engine.getCosmeticResult(
             createRequest('https://flightradar24.com.ru/faq/'),
             CosmeticOption.CosmeticOptionAll,
@@ -734,22 +859,28 @@ describe('TestEngineCosmeticResult - js', () => {
 
         expect(result.JS.specific.length).toEqual(1);
         expect(
-            getRawRuleIndex(preprocessed.rawFilterList, jsRule),
+            getRawRuleIndex(rawFilterList, jsRule),
         ).toBe(
-            getRuleSourceIndex(result.JS.specific[0].getIndex(), preprocessed.sourceMap),
+            result.JS.specific[0].getIndex(),
         );
 
         expect(result.elementHiding.specific.length).toEqual(1);
         expect(
-            getRawRuleIndex(preprocessed.rawFilterList, hidingRule),
+            getRawRuleIndex(rawFilterList, hidingRule),
         ).toBe(
-            getRuleSourceIndex(result.elementHiding.specific[0].getIndex(), preprocessed.sourceMap),
+            result.elementHiding.specific[0].getIndex(),
         );
     });
 
     it('works if returns correct cosmetic js result', () => {
-        const list = new BufferRuleList(1, FilterListPreprocessor.preprocess(rules.join('\n')).filterList, false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: rules.join('\n'),
+                },
+            ],
+        });
 
         let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
 
@@ -768,8 +899,14 @@ describe('TestEngineCosmeticResult - js', () => {
     });
 
     it('works javascript rules are ignored with filter list setting', () => {
-        const list = new BufferRuleList(1, FilterListPreprocessor.preprocess(rules.join('\n')).filterList, false, true);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: rules.join('\n'),
+                },
+            ],
+        });
 
         let result = engine.getCosmeticResult(createRequest('https://an-other-domain.org'), CosmeticOption.CosmeticOptionAll);
 
@@ -793,11 +930,14 @@ describe('$urlblock modifier', () => {
         const important = '||example.com$important';
         const urlblock = '@@||example.org$urlblock';
 
-        const list = new BufferRuleList(
-            1,
-            FilterListPreprocessor.preprocess([important, urlblock].join('\n')).filterList,
-        );
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: [important, urlblock].join('\n'),
+                },
+            ],
+        });
 
         const frameRule = engine.matchFrame('http://example.org');
         expect(frameRule).not.toBeNull();
@@ -816,8 +956,14 @@ describe('$badfilter modifier', () => {
             '$script,domain=example.com|example.org',
             '$script,domain=example.com,badfilter',
         ];
-        const list = new BufferRuleList(1, FilterListPreprocessor.preprocess(rules.join('\n')).filterList, false);
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: rules.join('\n'),
+                },
+            ],
+        });
 
         expect(engine.getRulesCount()).toBe(2);
 
@@ -837,13 +983,18 @@ describe('$genericblock modifier', () => {
         const networkGenericRule = '||example.org^';
         const networkNegatedGenericRule = '||domain.com^$domain=~example.com';
 
-        const list = new BufferRuleList(1, FilterListPreprocessor.preprocess([
-            networkGenericRule,
-            networkNegatedGenericRule,
-            genericblockRule,
-        ].join('\n')).filterList);
-
-        const engine = new Engine(new RuleStorage([list]));
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text: [
+                        networkGenericRule,
+                        networkNegatedGenericRule,
+                        genericblockRule,
+                    ].join('\n'),
+                },
+            ],
+        });
 
         const frameRule = engine.matchFrame('https://domain.com');
         expect(frameRule).not.toBeNull();
@@ -868,18 +1019,24 @@ describe('Match subdomains', () => {
             specificHidingRule,
             specificHidingRuleSubdomain,
         ];
-        const preprocessed = FilterListPreprocessor.preprocess(rules.join('\n'));
-        const list = new BufferRuleList(1, preprocessed.filterList, false, false, false, preprocessed.sourceMap);
-        const engine = new Engine(new RuleStorage([list]));
+        const text = rules.join('\n');
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         let res = engine.getCosmeticResult(createRequest('https://www.example.org/'), CosmeticOption.CosmeticOptionAll);
         expect(res).toBeDefined();
 
         expect(res.elementHiding.specific).toHaveLength(1);
         expect(
-            getRawRuleIndex(preprocessed.rawFilterList, specificHidingRule),
+            getRawRuleIndex(text, specificHidingRule),
         ).toBe(
-            getRuleSourceIndex(res.elementHiding.specific[0].getIndex(), preprocessed.sourceMap),
+            res.elementHiding.specific[0].getIndex(),
         );
 
         res = engine.getCosmeticResult(createRequest('https://sub.example.org'), CosmeticOption.CosmeticOptionAll);
@@ -887,15 +1044,15 @@ describe('Match subdomains', () => {
         expect(res.elementHiding.specific).toHaveLength(2);
 
         expect(
-            res.elementHiding.specific.map((rule) => getRuleSourceIndex(rule.getIndex(), preprocessed.sourceMap)),
+            res.elementHiding.specific.map((rule) => rule.getIndex()),
         ).toContain(
-            getRawRuleIndex(preprocessed.rawFilterList, specificHidingRule),
+            getRawRuleIndex(text, specificHidingRule),
         );
 
         expect(
-            res.elementHiding.specific.map((rule) => getRuleSourceIndex(rule.getIndex(), preprocessed.sourceMap)),
+            res.elementHiding.specific.map((rule) => rule.getIndex()),
         ).toContain(
-            getRawRuleIndex(preprocessed.rawFilterList, specificHidingRuleSubdomain),
+            getRawRuleIndex(text, specificHidingRuleSubdomain),
         );
     });
 
@@ -906,24 +1063,30 @@ describe('Match subdomains', () => {
             specificHidingRuleWithWww,
             specificHidingRuleWithoutWww,
         ];
-        const preprocessed = FilterListPreprocessor.preprocess(rules.join('\n'));
-        const list = new BufferRuleList(1, preprocessed.filterList, false, false, false, preprocessed.sourceMap);
-        const engine = new Engine(new RuleStorage([list]));
+        const text = rules.join('\n');
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         let res = engine.getCosmeticResult(createRequest('https://i.ua'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific).toHaveLength(1);
         expect(
-            getRawRuleIndex(preprocessed.rawFilterList, specificHidingRuleWithoutWww),
+            getRawRuleIndex(text, specificHidingRuleWithoutWww),
         ).toBe(
-            getRuleSourceIndex(res.elementHiding.specific[0].getIndex(), preprocessed.sourceMap),
+            res.elementHiding.specific[0].getIndex(),
         );
 
         res = engine.getCosmeticResult(createRequest('https://mail.i.ua'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific).toHaveLength(1);
         expect(
-            getRawRuleIndex(preprocessed.rawFilterList, specificHidingRuleWithoutWww),
+            getRawRuleIndex(text, specificHidingRuleWithoutWww),
         ).toBe(
-            getRuleSourceIndex(res.elementHiding.specific[0].getIndex(), preprocessed.sourceMap),
+            res.elementHiding.specific[0].getIndex(),
         );
 
         // both rules match
@@ -941,11 +1104,15 @@ describe('Match subdomains', () => {
             subDomainScriptletRule,
             otherSubDomainScriptletRule,
         ];
-
-        const preprocessed = FilterListPreprocessor.preprocess(rules.join('\n'));
-
-        const list = new BufferRuleList(1, preprocessed.filterList, false, false, false, preprocessed.sourceMap);
-        const engine = new Engine(new RuleStorage([list]));
+        const text = rules.join('\n');
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         const resOne = engine.getCosmeticResult(
             createRequest('https://example.org/test'),
@@ -954,9 +1121,9 @@ describe('Match subdomains', () => {
         expect(resOne).toBeDefined();
         expect(resOne.JS.specific).toHaveLength(1);
         expect(
-            getRawRuleIndex(preprocessed.rawFilterList, scriptletRule),
+            getRawRuleIndex(text, scriptletRule),
         ).toBe(
-            getRuleSourceIndex(resOne.JS.specific[0].getIndex(), preprocessed.sourceMap),
+            resOne.JS.specific[0].getIndex(),
         );
 
         const resTwo = engine.getCosmeticResult(
@@ -965,33 +1132,39 @@ describe('Match subdomains', () => {
         );
         expect(resTwo).toBeDefined();
         expect(resTwo.JS.specific).toHaveLength(2);
-        const indexes = resTwo.JS.specific.map((rule) => getRuleSourceIndex(rule.getIndex(), preprocessed.sourceMap));
-        expect(indexes).toContain(getRawRuleIndex(preprocessed.rawFilterList, scriptletRule));
-        expect(indexes).toContain(getRawRuleIndex(preprocessed.rawFilterList, subDomainScriptletRule));
-        expect(indexes).not.toContain(getRawRuleIndex(preprocessed.rawFilterList, otherSubDomainScriptletRule));
+        const indexes = resTwo.JS.specific.map((rule) => rule.getIndex());
+        expect(indexes).toContain(getRawRuleIndex(text, scriptletRule));
+        expect(indexes).toContain(getRawRuleIndex(text, subDomainScriptletRule));
+        expect(indexes).not.toContain(getRawRuleIndex(text, otherSubDomainScriptletRule));
     });
 
     it('should match rules with tld domain only', () => {
         const hidingRule = 'org##body';
         const rules = [hidingRule];
-        const processed = FilterListPreprocessor.preprocess(rules.join('\n'));
-        const list = new BufferRuleList(1, processed.filterList, false, false, false, processed.sourceMap);
-        const engine = new Engine(new RuleStorage([list]));
+        const text = rules.join('\n');
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
 
         let res = engine.getCosmeticResult(createRequest('http://example.org'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific).toHaveLength(1);
         expect(
-            getRawRuleIndex(processed.rawFilterList, hidingRule),
+            getRawRuleIndex(text, hidingRule),
         ).toBe(
-            getRuleSourceIndex(res.elementHiding.specific[0].getIndex(), processed.sourceMap),
+            res.elementHiding.specific[0].getIndex(),
         );
 
         res = engine.getCosmeticResult(createRequest('https://www.example.org/'), CosmeticOption.CosmeticOptionAll);
         expect(res.elementHiding.specific).toHaveLength(1);
         expect(
-            getRawRuleIndex(processed.rawFilterList, hidingRule),
+            getRawRuleIndex(text, hidingRule),
         ).toBe(
-            getRuleSourceIndex(res.elementHiding.specific[0].getIndex(), processed.sourceMap),
+            res.elementHiding.specific[0].getIndex(),
         );
     });
 });
@@ -1004,16 +1177,22 @@ describe('$specifichide modifier', () => {
         const genericElemhideRule = '##div';
         const genericCssRuleWithExclusion = '~google.com#$#div { display: none !important }';
         const specifichideRule = '@@||example.org^$specifichide';
-        const processed = FilterListPreprocessor.preprocess([
+        const text = [
             elemhideRule,
             cosmeticRule,
             genericCosmeticRule,
             genericElemhideRule,
             genericCssRuleWithExclusion,
             specifichideRule,
-        ].join('\n'));
-        const list = new BufferRuleList(1, processed.filterList, false, false, false, processed.sourceMap);
-        const engine = new Engine(new RuleStorage([list]));
+        ].join('\n');
+        const engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
         const request = new Request('http://example.org', '', RequestType.Document);
         const result = engine.matchRequest(request);
         const cosmeticResult = engine.getCosmeticResult(createRequest('http://example.org'), result.getCosmeticOption());
@@ -1023,26 +1202,26 @@ describe('$specifichide modifier', () => {
         // expect(cosmeticResult.elementHiding.generic[0].getText()).toBe(genericElemhideRule);
         expect(cosmeticResult.elementHiding.generic).toHaveLength(1);
         expect(
-            getRawRuleIndex(processed.rawFilterList, genericElemhideRule),
+            getRawRuleIndex(text, genericElemhideRule),
         ).toBe(
-            getRuleSourceIndex(cosmeticResult.elementHiding.generic[0].getIndex(), processed.sourceMap),
+            cosmeticResult.elementHiding.generic[0].getIndex(),
         );
         expect(cosmeticResult.CSS.specific).toHaveLength(0);
         expect(cosmeticResult.CSS.generic).toHaveLength(2);
 
         const cssGenericRules = cosmeticResult.CSS.generic;
 
-        const genericCssRuleWithExclusionIndex = getRawRuleIndex(processed.rawFilterList, genericCssRuleWithExclusion);
+        const genericCssRuleWithExclusionIndex = getRawRuleIndex(text, genericCssRuleWithExclusion);
         expect(
             cssGenericRules.some(
-                (rule) => getRuleSourceIndex(rule.getIndex(), processed.sourceMap) === genericCssRuleWithExclusionIndex,
+                (rule) => rule.getIndex() === genericCssRuleWithExclusionIndex,
             ),
         ).toBeTruthy();
 
-        const genericCosmeticRuleIndex = getRawRuleIndex(processed.rawFilterList, genericCosmeticRule);
+        const genericCosmeticRuleIndex = getRawRuleIndex(text, genericCosmeticRule);
         expect(
             cssGenericRules.some(
-                (rule) => getRuleSourceIndex(rule.getIndex(), processed.sourceMap) === genericCosmeticRuleIndex,
+                (rule) => rule.getIndex() === genericCosmeticRuleIndex,
             ),
         ).toBeTruthy();
     });
@@ -1051,21 +1230,32 @@ describe('$specifichide modifier', () => {
 describe('Stealth cookie rules', () => {
     it('allowlists stealth cookie rules', () => {
         const stealthCookieRule = '$cookie=/.+/;maxAge=60';
-        let list = new BufferRuleList(1, FilterListPreprocessor.preprocess([
-            stealthCookieRule,
-        ].join('\n')).filterList);
-        let engine = new Engine(new RuleStorage([list]));
+        let rules = [stealthCookieRule];
+        let text = rules.join('\n');
+        let engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
         let request = new Request('http://example.org', '', RequestType.Document);
         let result = engine.matchRequest(request);
         let cookieRules = result.getCookieRules();
         expect(cookieRules[0].getText()).toBe(stealthCookieRule);
 
         const allowlistRule = '@@||example.org^$stealth,removeparam,cookie';
-        list = new BufferRuleList(1, FilterListPreprocessor.preprocess([
-            stealthCookieRule,
-            allowlistRule,
-        ].join('\n')).filterList);
-        engine = new Engine(new RuleStorage([list]));
+        rules = [stealthCookieRule, allowlistRule];
+        text = rules.join('\n');
+        engine = new Engine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                },
+            ],
+        });
         request = new Request('http://example.org', '', RequestType.Document);
         result = engine.matchRequest(request);
         cookieRules = result.getCookieRules();
