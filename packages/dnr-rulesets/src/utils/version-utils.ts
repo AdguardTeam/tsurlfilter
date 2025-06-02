@@ -1,5 +1,11 @@
 import { version } from '../../package.json';
-import { COLON, DASH, DOT, SPACE, UTC_PLUS_0 } from '../common/constants';
+import {
+    COLON,
+    DASH,
+    DOT,
+    SPACE,
+    UTC_PLUS_0,
+} from '../common/constants';
 
 /**
  * Length of the generated patch version.
@@ -18,9 +24,10 @@ export const getVersion = (): string => version;
 /**
  * Utility for number formatting.
  *
- * @param value numeric value
- * @param length length of the formatted string, default is 2
- * @returns formatted string
+ * @param value Numeric value.
+ * @param length Length of the formatted string, default is 2.
+ *
+ * @returns Formatted string.
  */
 const formatNumber = (value: number, length = 2): string => String(value).padStart(length, '0');
 

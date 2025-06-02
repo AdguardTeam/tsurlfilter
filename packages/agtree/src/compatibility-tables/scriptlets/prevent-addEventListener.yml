@@ -30,7 +30,7 @@ ubo_any:
     - name: listenerSearch
       required: false
 
-abp_any:  
+abp_any:
   name: prevent-listener
   version_added: 3.11.2
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref

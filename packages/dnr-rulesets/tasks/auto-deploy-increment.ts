@@ -12,6 +12,7 @@ const { version } = packageJson;
  * @see {@link https://semver.org/}
  *
  * @param currentVersion Current package version.
+ *
  * @returns Updated package version.
  */
 const updateVersion = (currentVersion: string): string => {

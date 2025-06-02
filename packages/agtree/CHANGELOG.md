@@ -7,6 +7,34 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [3.2.1] - 2025-05-28
+
+### Added
+
+- Support for converting HTML rules to uBlock syntax in the `RuleConverter`.
+
+### Fixed
+
+- Types for `NodeNext` module resolution.
+
+[3.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.1
+
+## [3.2.0] - 2025-05-22
+
+### Added
+
+- Support for converting HTML rules to uBlock syntax.
+
+[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.0
+
+## [3.1.5] - 2025-05-20
+
+### Added
+
+- UBO alias `nofab.js` for AdGuard *scriptlet* `prevent-fab-3.2.0`.
+
+[3.1.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.5
+
 ## [3.1.4] - 2025-05-19
 
 ### Fixed

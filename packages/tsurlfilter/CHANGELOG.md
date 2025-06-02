@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Compatibility of `$header` modifier with `$match-case`
   and `$third-party` modifiers in MV2 [AdguardBrowserExtension#2942].
 
+### Changed
+
+<!-- FIXME: update dependencies to the latest versions -->
+- Updated [@adguard/agtree] to `v3.1.5`.
+- Updated [@adguard/scriptlets] to `v2.2.1`.
+
 ### Removed
 
 - `getText` and `getUsedOptionNames` methods from `NetworkRule` class.
@@ -21,6 +27,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated [@adguard/logger] to `v2.0.0`.
 
 [AdguardBrowserExtension#2942]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2942
+
+## [3.3.4] - 2025-05-28
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.1`.
+
+### Fixed
+
+- Types for `NodeNext` module resolution.
+
+[3.3.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.3.4
+
+## [3.3.3] - 2025-05-22
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.0`.
+
+### Fixed
+
+- Internal code for source rule finding from rulesets.
+
+[3.3.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.3.3
 
 ## [3.3.2] - 2025-05-19
 

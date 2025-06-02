@@ -76,14 +76,13 @@
     },
     "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tswebextension#readme",
     "scripts": {
-        "lint": "pnpm lint:code && pnpm lint:tsc",
+        "lint": "pnpm lint:code && pnpm lint:types",
         "lint:code": "eslint --cache .",
-        "lint:tsc": "tsc",
-        "check-types": "pnpm lint:tsc",
+        "lint:types": "tsc",
         "prebuild": "rimraf dist",
         "build": "pnpm prebuild && pnpm build:types && rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc && pnpm postbuild",
         "postbuild": "tsx tasks/build-txt.ts",
-        "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
+        "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types && tsx tasks/transform-dts.ts",
         "update:companiesdb": "tsx tasks/update-companiesdb.ts",
         "start": "rollup -c rollup.config.ts --configPlugin @rollup/plugin-swc -w",
         "test": "vitest run",
@@ -97,7 +96,6 @@
         "report-coverage": "cat ./coverage/lcov.info | coveralls",
         "precommit": "lint-staged",
         "prepublishOnly": "pnpm build",
-        "increment": "node ../../scripts/increment.mjs",
         "tgz": "pnpm pack --out tswebextension.tgz"
     },
     "lint-staged": {
@@ -162,6 +160,8 @@
         "rollup-plugin-node-externals": "catalog:",
         "sinon-chrome": "^3.0.1",
         "terser": "catalog:",
+        "ts-morph": "catalog:",
+        "tsd": "catalog:",
         "tsx": "catalog:",
         "typescript": "catalog:",
         "vitest": "catalog:"

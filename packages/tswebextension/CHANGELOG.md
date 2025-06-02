@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Static getter `isUserScriptsApiSupported` to check if the current browser
   supports User Scripts API.
 
+## Changed
+
+<!-- FIXME: update dependencies to the latest versions -->
+- Updated [@adguard/agtree] to `v3.1.5`.
+- Updated [@adguard/scriptlets] to `v2.2.1`.
+- Updated [@adguard/tsurlfilter] to `v3.x.x`.
+
 ### Fixed
 
 - Invalid HTML rule selectors are breaking site loading
@@ -36,6 +43,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated [@adguard/logger] to `v2.0.0`.
+
+## [3.1.0] - 2025-05-28
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.1`.
+- Updated [@adguard/tsurlfilter] to `v3.3.4`.
+
+### Fixed
+
+- Types for `NodeNext` module resolution.
+
+[3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0
+
+## [3.1.0-alpha.3] - 2025-05-22
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.0`.
+- Updated [@adguard/tsurlfilter] to `v3.3.3`.
+
+### Fixed
+
+- Improved rule set caching to avoid inconsistent behaviors.
+- Improved rule set update in declarative filtering log to avoid unexpected behaviors during configuration changes.
+
+[3.1.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0-alpha.3
 
 ## [3.1.0-alpha.2] - 2025-05-19
 
@@ -1186,7 +1220,7 @@ its setting [AdguardBrowserExtension#2584].
 
 ## [0.1.1] - 2023-04-04
 
-## Changed
+### Changed
 
 - Improved injection algorithm for cosmetic rules (js and css).
   logic using the Finite State Machine to avoid double injections with
