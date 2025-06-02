@@ -1,5 +1,5 @@
 import { parse } from 'tldts';
-import { ADG_SCRIPTLET_MASK, QuoteUtils } from '@adguard/agtree';
+import { ADG_SCRIPTLET_MASK, QuoteType, QuoteUtils } from '@adguard/agtree';
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { type RuleStorage } from '../../filterlist/rule-storage';
@@ -88,21 +88,29 @@ export class CosmeticLookupTable {
         }
 
         if (decodeIsAllowlist(rule.cosmeticSeparator!)) {
-            if (decodeType(rule.cosmeticSeparator!) === CosmeticRuleType.JsInjectionRule) {
-                if (rule.cosmeticContent!.startsWith(`${ADG_SCRIPTLET_MASK}(`) && rule.cosmeticContent!.endsWith(')')) {
-                    // get scriptlet name
-                    const params = rule.cosmeticContent!.slice(ADG_SCRIPTLET_MASK.length + 1, -1).split(',')
-                        .map((p) => QuoteUtils.removeQuotes(p.trim()));
+            if (
+                decodeType(rule.cosmeticSeparator!) === CosmeticRuleType.JsInjectionRule
+                && rule.cosmeticContent!.startsWith(`${ADG_SCRIPTLET_MASK}(`)
+                && rule.cosmeticContent!.endsWith(')')
+            ) {
+                // get scriptlet name
+                const params = rule.cosmeticContent!.slice(ADG_SCRIPTLET_MASK.length + 1, -1).split(',')
+                    .map((p) => QuoteUtils.removeQuotesAndUnescape(p.trim()));
 
-                    // Store scriptlet rules by name to enable the possibility of allowlisting them.
-                    // See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
-                    if (params[0] !== undefined && params[0] !== '' && params.length === 1) {
-                        this.addAllowlistRule(params[0], storageIdx);
-                    }
+                // Store scriptlet rules by name to enable the possibility of allowlisting them.
+                // See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
+                if (params[0] !== undefined && params.length === 1) {
+                    this.addAllowlistRule(params[0], storageIdx);
                 }
+
                 // Use normalized scriptlet content for better matching.
                 // For example, //scriptlet('log', 'arg') can be matched by //scriptlet("log", "arg").
-                this.addAllowlistRule(rule.cosmeticContent!, storageIdx);
+                this.addAllowlistRule(
+                    // FIXME: maybe move ScriptletParams from cosmetic-rule.ts to a common file and reuse it here
+                    // eslint-disable-next-line max-len
+                    `${ADG_SCRIPTLET_MASK}(${params.map((p) => QuoteUtils.setStringQuoteType(p, QuoteType.Single)).join(', ')})`,
+                    storageIdx,
+                );
             } else {
                 // Store all other rules by their content.
                 this.addAllowlistRule(rule.cosmeticContent!, storageIdx);
