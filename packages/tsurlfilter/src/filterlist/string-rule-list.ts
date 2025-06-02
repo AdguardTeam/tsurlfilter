@@ -79,7 +79,7 @@ export class StringRuleList implements IRuleList {
     /**
      * Creates a new rules scanner that reads the list contents.
      *
-     * @param scannerType
+     * @param scannerType Scanner type.
      *
      * @returns Scanner object.
      */
