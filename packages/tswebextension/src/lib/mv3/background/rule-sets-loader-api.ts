@@ -281,8 +281,7 @@ export class RuleSetsLoaderApi {
                     throw new Error(`Invalid rule set id: ${ruleSetId}`);
                 }
 
-                // eslint-disable-next-line max-len
-                logger.info(`Syncing rule set with IDB: ${ruleSetId} (previous checksum: ${idbChecksum}, current checksum: ${checksum})`);
+                logger.info(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Syncing rule set with IDB: ${ruleSetId} (previous checksum: ${idbChecksum}, current checksum: ${checksum})`);
 
                 const ruleSetPath = getRuleSetPath(ruleSetId, this.ruleSetsPath);
                 const rawRuleSet = await fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath));
@@ -331,9 +330,9 @@ export class RuleSetsLoaderApi {
                     },
                 });
 
-                logger.info(`Synced rule set with IDB: ${ruleSetId}`);
+                logger.info(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Synced rule set with IDB: ${ruleSetId}`);
             } catch (err) {
-                logger.error(`Failed to sync rule set ${ruleSetId}:`, err);
+                logger.error(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Failed to sync rule set ${ruleSetId}:`, err);
                 throw err;
             } finally {
                 this.syncLocks.delete(ruleSetId);

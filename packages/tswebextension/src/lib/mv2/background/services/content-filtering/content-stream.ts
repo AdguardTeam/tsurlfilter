@@ -319,7 +319,7 @@ export class ContentStream {
         // This indicates the original byte stream was likely invalid for the determined charset.
         // In this case, we write the raw chunks directly to the filter.
         if (this.content.includes(REPLACEMENT_CHAR)) {
-            logger.debug(`[ContentStream] Writing raw chunks for request ${this.context.requestId}`);
+            logger.debug(`[tsweb.ContentStream.onResponseFinish]: Writing raw chunks for request ${this.context.requestId}`);
             // Write all buffered raw chunks directly
             for (const chunk of this.rawChunks) {
                 this.filter.write(chunk);
