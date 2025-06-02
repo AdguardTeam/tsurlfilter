@@ -8,22 +8,20 @@ import {
     beforeEach,
     afterEach,
 } from 'vitest';
-import fs from 'fs';
-import zlib from 'zlib';
-import console from 'console';
-import { performance } from 'perf_hooks';
-import {
-    CosmeticOption,
-    Engine,
-    Request,
-    RequestType,
-    BufferRuleList,
-    RuleStorage,
-    DnsEngine,
-    CosmeticEngine,
-    setLogger,
-    FilterListPreprocessor,
-} from '../../src';
+import fs from 'node:fs';
+import zlib from 'node:zlib';
+import console from 'node:console';
+import { performance } from 'node:perf_hooks';
+import { RequestType } from 'tsurlfilter-old/es/request-type';
+
+import { setLogger } from '../../src/utils/logger';
+import { StringRuleList } from '../../src/filterlist/string-rule-list';
+import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { Engine } from '../../src/engine/engine';
+import { Request } from '../../src/request';
+import { DnsEngine } from '../../src/engine/dns-engine';
+import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
+import { CosmeticOption } from '../../src/engine/cosmetic-option';
 
 /* eslint-disable jsdoc/require-description-complete-sentence */
 /**
@@ -287,7 +285,7 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
     return totalMatches;
 }
 
-// TODO: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
+// FIXME: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
 describe('Benchmarks', () => {
     beforeAll(() => {
         /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -316,7 +314,7 @@ describe('Benchmarks', () => {
         setLogger(console);
     });
 
-    const easyListPrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/easylist.txt', 'utf8'));
+    const easyList = fs.readFileSync('./test/resources/easylist.txt', 'utf8');
 
     /**
      * Helper function that formats memory usage.
@@ -374,10 +372,16 @@ describe('Benchmarks', () => {
 
         const startParse = Date.now();
 
-        const list = new BufferRuleList(1, easyListPrepared.filterList, true, false, false, easyListPrepared.sourceMap);
+        const list = new StringRuleList(1, easyList, true, false, false);
         const ruleStorage = new RuleStorage([list]);
 
-        const engine = new Engine(ruleStorage, loadAsync);
+        const engine = new Engine({
+            filters: [{
+                id: 1,
+                text: easyList,
+            }],
+            skipInitialScan: loadAsync,
+        });
 
         if (loadAsync) {
             const chunkSize = 1000;
@@ -420,8 +424,8 @@ describe('Benchmarks', () => {
         console.log(`Allocations + cache overhead: ${formatMemory(matchingOverheadMem)}`);
     }
 
-    const adguardSdnFilterPrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/adguard_sdn_filter.txt', 'utf8'));
-    const hostsFilePrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/hosts', 'utf8'), true);
+    const adguardSdnFilter = fs.readFileSync('./test/resources/adguard_sdn_filter.txt', 'utf8');
+    const hostsFile = fs.readFileSync('./test/resources/hosts', 'utf8');
 
     /**
      * Runs a bench on the DnsEngine. This function allows to parameterize the
@@ -439,8 +443,8 @@ describe('Benchmarks', () => {
         console.log(`Memory after initialization: ${formatMemory(initMem)})`);
 
         const startParse = Date.now();
-        const ruleList = new BufferRuleList(1, adguardSdnFilterPrepared.filterList, true, false, false, adguardSdnFilterPrepared.sourceMap);
-        const hostsList = new BufferRuleList(2, hostsFilePrepared.filterList, true, false, false, hostsFilePrepared.sourceMap);
+        const ruleList = new StringRuleList(1, adguardSdnFilter, true, false, false);
+        const hostsList = new StringRuleList(2, hostsFile, true, false, false);
         const ruleStorage = new RuleStorage([ruleList, hostsList]);
 
         const engine = new DnsEngine(ruleStorage);
@@ -483,7 +487,7 @@ describe('Benchmarks', () => {
         console.log(`Allocations + cache overhead: ${formatMemory(matchingOverheadMem)}`);
     }
 
-    const adguardBaseFilterPrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/adguard_base_filter.txt', 'utf8'));
+    const adguardBaseFilter = fs.readFileSync('./test/resources/adguard_base_filter.txt', 'utf8');
 
     /**
      * Runs a bench on the CosmeticEngine. This function allows to parameterize
@@ -502,8 +506,7 @@ describe('Benchmarks', () => {
         console.log(`Memory after initialization: ${formatMemory(initMem)}`);
 
         const startParse = Date.now();
-        // eslint-disable-next-line new-cap
-        const list = new BufferRuleList(1, adguardBaseFilterPrepared.filterList, false, false, false, adguardBaseFilterPrepared.sourceMap);
+        const list = new StringRuleList(1, adguardBaseFilter, false, false, false);
         const ruleStorage = new RuleStorage([list]);
 
         const engine = new CosmeticEngine(ruleStorage);
