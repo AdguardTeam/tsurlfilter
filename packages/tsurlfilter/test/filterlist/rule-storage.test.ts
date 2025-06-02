@@ -1,12 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import escapeStringRegexp from 'escape-string-regexp';
 
-import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { FilterListPreprocessor, NetworkRule, getRuleSourceIndex } from '../../src';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
+import { StringRuleList } from '../../src/filterlist/string-rule-list';
+import { NetworkRule } from '../../src/rules/network-rule';
 
 describe('Test RuleStorage', () => {
+    // FIXME: make unit tests atomic
     // ! WARNING: Do not run these tests individually, as the scanner state is shared between tests
     // and you may get unexpected results.
 
@@ -22,17 +23,33 @@ describe('Test RuleStorage', () => {
         return rawFilterList.search(new RegExp(`^${escapeStringRegexp(rule)}$`, 'm'));
     };
 
-    const processed1 = FilterListPreprocessor.preprocess('||example.org\n! test\n##banner');
-    const processed2 = FilterListPreprocessor.preprocess('||example.com\n! test\n##advert');
-    const processed3 = FilterListPreprocessor.preprocess('||example.net\n! test\n##advert');
+    const rules1 = [
+        '||example.org',
+        '! test',
+        '##banner',
+    ];
 
-    const list1 = new BufferRuleList(1, processed1.filterList, false, false, false, processed1.sourceMap);
-    const list2 = new BufferRuleList(2, processed2.filterList, false, false, false, processed2.sourceMap);
-    const list3 = new BufferRuleList(1001, processed3.filterList, false, false, false, processed3.sourceMap);
+    const rules2 = [
+        '||example.com',
+        '! test',
+        '##advert',
+    ];
 
-    // Create storage from lists
+    const rules3 = [
+        '||example.net',
+        '! test',
+        '##advert',
+    ];
+
+    const text1 = rules1.join('\n');
+    const text2 = rules2.join('\n');
+    const text3 = rules3.join('\n');
+
+    const list1 = new StringRuleList(1, text1, false, false, false);
+    const list2 = new StringRuleList(2, text2, false, false, false);
+    const list3 = new StringRuleList(1001, text3, false, false, false);
+
     const storage = new RuleStorage([list1, list2, list3]);
-    // Create a scanner instance
     const scanner = storage.createRuleStorageScanner(ScannerType.All);
 
     it('checks simple storage methods', () => {
@@ -40,7 +57,6 @@ describe('Test RuleStorage', () => {
         expect(scanner).toBeTruthy();
     });
 
-    // Time to scan!
     let indexedRule;
 
     it('scans rule 1 from list 1', () => {
@@ -49,13 +65,8 @@ describe('Test RuleStorage', () => {
 
         expect(indexedRule).toBeTruthy();
         expect(indexedRule!.rule).toBeTruthy();
-        expect(
-            getRuleSourceIndex(indexedRule!.rule.getIndex(), processed1.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed1.rawFilterList, '||example.org'),
-        );
-        expect(indexedRule!.rule.getFilterListId()).toBe(1);
-        expect(indexedRule!.index).toBe(4);
+        expect(indexedRule!.index).toBe(getRawRuleIndex(text1, '||example.org'));
+        expect(indexedRule!.listId).toBe(1);
     });
 
     it('scans rule 2 from list 1', () => {
@@ -64,13 +75,8 @@ describe('Test RuleStorage', () => {
 
         expect(indexedRule).toBeTruthy();
         expect(indexedRule!.rule).toBeTruthy();
-        expect(
-            getRuleSourceIndex(indexedRule!.rule.getIndex(), processed1.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed1.rawFilterList, '##banner'),
-        );
-        expect(indexedRule!.rule.getFilterListId()).toBe(1);
-        expect(indexedRule!.index).toBe(28);
+        expect(indexedRule!.index).toBe(getRawRuleIndex(text1, '##banner'));
+        expect(indexedRule!.listId).toBe(1);
     });
 
     it('scans rule 1 from list 2', () => {
@@ -79,13 +85,8 @@ describe('Test RuleStorage', () => {
 
         expect(indexedRule).toBeTruthy();
         expect(indexedRule!.rule).toBeTruthy();
-        expect(
-            getRuleSourceIndex(indexedRule!.rule.getIndex(), processed2.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed2.rawFilterList, '||example.com'),
-        );
-        expect(indexedRule!.rule.getFilterListId()).toBe(2);
-        expect(indexedRule!.index).toBe(32772);
+        expect(indexedRule!.index).toBe(text1.length + getRawRuleIndex(text2, '||example.com'));
+        expect(indexedRule!.listId).toBe(2);
     });
 
     it('scans rule 2 from list 2', () => {
@@ -94,13 +95,8 @@ describe('Test RuleStorage', () => {
 
         expect(indexedRule).toBeTruthy();
         expect(indexedRule!.rule).toBeTruthy();
-        expect(
-            getRuleSourceIndex(indexedRule!.rule.getIndex(), processed2.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed2.rawFilterList, '##advert'),
-        );
-        expect(indexedRule!.rule.getFilterListId()).toBe(2);
-        expect(indexedRule!.index).toBe(32796);
+        expect(indexedRule!.index).toBe(text1.length + getRawRuleIndex(text2, '##advert'));
+        expect(indexedRule!.listId).toBe(2);
     });
 
     it('scans rule 1 from list 3', () => {
@@ -109,13 +105,8 @@ describe('Test RuleStorage', () => {
 
         expect(indexedRule).toBeTruthy();
         expect(indexedRule!.rule).toBeTruthy();
-        expect(
-            getRuleSourceIndex(indexedRule!.rule.getIndex(), processed3.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed3.rawFilterList, '||example.net'),
-        );
-        expect(indexedRule!.rule.getFilterListId()).toBe(1001);
-        expect(indexedRule!.index).toBe(65540);
+        expect(indexedRule!.index).toBe(text1.length + text2.length + getRawRuleIndex(text3, '||example.net'));
+        expect(indexedRule!.listId).toBe(1001);
     });
 
     it('scans rule 2 from list 3', () => {
@@ -124,16 +115,12 @@ describe('Test RuleStorage', () => {
 
         expect(indexedRule).toBeTruthy();
         expect(indexedRule!.rule).toBeTruthy();
-        expect(
-            getRuleSourceIndex(indexedRule!.rule.getIndex(), processed3.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed3.rawFilterList, '##advert'),
-        );
-        expect(indexedRule!.rule.getFilterListId()).toBe(1001);
-        expect(indexedRule!.index).toBe(65564);
+        expect(indexedRule!.index).toBe(text1.length + text2.length + getRawRuleIndex(text3, '##advert'));
+        expect(indexedRule!.listId).toBe(1001);
     });
 
-    it('checks that there\'s nothing more to read', () => {
+    // FIXME: remove binary shifts
+    it('checks that there is nothing more to read', () => {
         expect(scanner.scan()).toBeFalsy();
         // Check that nothing breaks if we read a finished scanner
         expect(scanner.scan()).toBeFalsy();
@@ -145,44 +132,28 @@ describe('Test RuleStorage', () => {
         let rule = storage.retrieveRule(4);
 
         expect(rule).toBeTruthy();
-        expect(
-            getRuleSourceIndex(rule!.getIndex(), processed1.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed1.rawFilterList, '||example.org'),
-        );
+        expect(rule!.getIndex()).toBe(getRawRuleIndex(text1, '||example.org'));
         expect(rule!.getFilterListId()).toBe(1);
 
         // Rule 2 from the list 1
         rule = storage.retrieveRule(28);
 
         expect(rule).toBeTruthy();
-        expect(
-            getRuleSourceIndex(rule!.getIndex(), processed1.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed1.rawFilterList, '##banner'),
-        );
+        expect(rule!.getIndex()).toBe(getRawRuleIndex(text1, '##banner'));
         expect(rule!.getFilterListId()).toBe(1);
 
         // Rule 1 from the list 2
-        rule = storage.retrieveRule(32772);
+        rule = storage.retrieveRule(text1.length + 32772);
 
         expect(rule).toBeTruthy();
-        expect(
-            getRuleSourceIndex(rule!.getIndex(), processed2.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed2.rawFilterList, '||example.com'),
-        );
+        expect(rule!.getIndex()).toBe(getRawRuleIndex(text2, '||example.com'));
         expect(rule!.getFilterListId()).toBe(2);
 
         // Rule 2 from the list 2
-        rule = storage.retrieveRule(32796);
+        rule = storage.retrieveRule(text1.length + 32796);
 
         expect(rule).toBeTruthy();
-        expect(
-            getRuleSourceIndex(rule!.getIndex(), processed2.sourceMap),
-        ).toBe(
-            getRawRuleIndex(processed2.rawFilterList, '##advert'),
-        );
+        expect(rule!.getIndex()).toBe(getRawRuleIndex(text2, '##advert'));
         expect(rule!.getFilterListId()).toBe(2);
 
         // Check cache
