@@ -250,8 +250,8 @@ catalogs:
       specifier: ^5.64.2
       version: 5.98.0
     zod:
-      specifier: 3.21.4
-      version: 3.21.4
+      specifier: 3.24.4
+      version: 3.24.4
   eslint9:
     eslint:
       specifier: ^9.8.0
@@ -293,7 +293,7 @@ importers:
         version: 0.12.0
       zod:
         specifier: 'catalog:'
-        version: 3.21.4
+        version: 3.24.4
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: 'catalog:'
@@ -360,7 +360,7 @@ importers:
         version: link:../tswebextension
       zod:
         specifier: 'catalog:'
-        version: 3.21.4
+        version: 3.24.4
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: 'catalog:'
@@ -454,7 +454,7 @@ importers:
         version: 5.1.2
       zod:
         specifier: 'catalog:'
-        version: 3.21.4
+        version: 3.24.4
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: 'catalog:'
@@ -917,7 +917,7 @@ importers:
         version: 11.3.0
       zod:
         specifier: 'catalog:'
-        version: 3.21.4
+        version: 3.24.4
     devDependencies:
       '@adguard/tsurlfilter':
         specifier: workspace:^
@@ -1471,10 +1471,10 @@ importers:
         version: 5.7.112
       zod:
         specifier: 'catalog:'
-        version: 3.21.4
+        version: 3.24.4
       zod-validation-error:
         specifier: ^3.4.0
-        version: 3.4.0(zod@3.21.4)
+        version: 3.4.0(zod@3.24.4)
     devDependencies:
       '@rollup/plugin-alias':
         specifier: 'catalog:'
@@ -1688,7 +1688,7 @@ importers:
         version: 0.12.0
       zod:
         specifier: 'catalog:'
-        version: 3.21.4
+        version: 3.24.4
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: 'catalog:'
@@ -9498,6 +9498,9 @@ packages:
 
   zod@3.21.4:
     resolution: {integrity: sha512-m46AKbrzKVzOzs/DZgVnG5H55N1sv1M8qZU3A8RIKbs3mrACDNeIOeilDymVb2HdmP8uwshOCF4uJ8uM9rCqJw==}
+
+  zod@3.24.4:
+    resolution: {integrity: sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==}
 
 snapshots:
 
@@ -18485,10 +18488,12 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.7.0
 
-  zod-validation-error@3.4.0(zod@3.21.4):
+  zod-validation-error@3.4.0(zod@3.24.4):
     dependencies:
-      zod: 3.21.4
+      zod: 3.24.4
 
   zod@3.19.1: {}
 
   zod@3.21.4: {}
+
+  zod@3.24.4: {}
