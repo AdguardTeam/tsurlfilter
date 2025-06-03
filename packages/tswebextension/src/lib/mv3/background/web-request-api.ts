@@ -417,8 +417,14 @@ export class WebRequestApi {
 
         if (WebRequestApi.isAssistantFrame(tabId, details)) {
             logger.debug(
-                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
+                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId ${frameId}`,
             );
+            return;
+        }
+
+        if (!CosmeticApi.shouldApplyCosmetics(tabId, details.url)) {
+            // eslint-disable-next-line max-len
+            logger.debug(`Skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${details.url}`);
             return;
         }
 
@@ -753,8 +759,14 @@ export class WebRequestApi {
 
         if (WebRequestApi.isAssistantFrame(tabId, details)) {
             logger.debug(
-                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId: ${frameId}`,
+                `Assistant frame detected, skipping cosmetics injection for tabId ${tabId} and frameId ${frameId}`,
             );
+            return;
+        }
+
+        if (!CosmeticApi.shouldApplyCosmetics(tabId, details.url)) {
+            // eslint-disable-next-line max-len
+            logger.debug(`Skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${details.url}`);
             return;
         }
 

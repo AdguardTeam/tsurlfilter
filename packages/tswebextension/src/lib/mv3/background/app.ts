@@ -5,7 +5,7 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor, NETWORK_RULE_OPTIONS, type PreprocessedFilterList } from '@adguard/tsurlfilter';
+import { FilterListPreprocessor, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
@@ -14,7 +14,6 @@ import { type MessageHandler, type AppInterface } from '../../common/app';
 import {
     ALLOWLIST_FILTER_ID,
     BLOCKING_TRUSTED_FILTER_ID,
-    LF,
     QUICK_FIXES_FILTER_ID,
     USER_FILTER_ID,
 } from '../../common/constants';
@@ -25,7 +24,7 @@ import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-set
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 
-import { allowlistApi } from './allowlist-api';
+import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { declarativeFilteringLog } from './declarative-filtering-log';
@@ -355,7 +354,7 @@ export class TsWebExtension implements AppInterface<
             // Update allowlist settings.
             allowlistApi.configure(configuration);
             // Combine all allowlist rules into one network rule.
-            const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
+            const combinedAllowlistRule = allowlistApi.combineAllowListRulesForDNR();
 
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
@@ -373,7 +372,7 @@ export class TsWebExtension implements AppInterface<
                 {
                     getContent: (): Promise<PreprocessedFilterList> => {
                         return Promise.resolve(
-                            FilterListPreprocessor.preprocess(combinedAllowlistRules),
+                            FilterListPreprocessor.preprocess(combinedAllowlistRule),
                         );
                     },
                 },
@@ -390,17 +389,13 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
-            const temporaryBadfilterRules = configuration.trustedDomains
-                .map((rule) => {
-                    return `${rule},${NETWORK_RULE_OPTIONS.BADFILTER}`;
-                })
-                .join(LF);
+            const trustedDomainsExceptionRule = AllowlistApi.getAllowlistRule(configuration.trustedDomains);
 
             const blockingPageTrustedFilter = new Filter(
                 BLOCKING_TRUSTED_FILTER_ID,
                 {
                     getContent: (): Promise<PreprocessedFilterList> => {
-                        return Promise.resolve(FilterListPreprocessor.preprocess(temporaryBadfilterRules));
+                        return Promise.resolve(FilterListPreprocessor.preprocess(trustedDomainsExceptionRule));
                     },
                 },
                 true,

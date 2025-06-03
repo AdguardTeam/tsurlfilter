@@ -68,7 +68,7 @@ export class UserScriptsApi {
                 world: 'MAIN',
             });
         } catch (e) {
-            logger.error(`Failed to execute user script to tabId#frameId (${tabId}#${frameId}) :`, e);
+            logger.info(`Failed to execute user script to tabId ${tabId} and frameId ${frameId} due to:`, e);
         }
     }
 
@@ -98,7 +98,7 @@ export class UserScriptsApi {
                         configurable: false
                     });
                 } catch (error) {
-                    console.error('Error executing AG js rule with uniqueId "${injectedKey}" due to: ' + error);
+                    console.error('Error executing AG js rule with uniqueId "${injectedKey}" due to:', error);
                 }
             })()
         `;
