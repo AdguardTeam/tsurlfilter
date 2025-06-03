@@ -78,7 +78,7 @@ Build:
             echo "Size after cleanup:" && du -h | tail -n 1
   artifacts:
     - name: eslint-plugin-logger-context.tgz
-      location: packages/logger/eslint-plugin-logger-context/
+      location: packages/eslint-plugin-logger-context/
       pattern: eslint-plugin-logger-context.tgz
       shared: true
       required: true
