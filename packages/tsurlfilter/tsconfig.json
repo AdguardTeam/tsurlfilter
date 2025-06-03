@@ -15,4 +15,7 @@
         "vitest.config.ts",
         "tasks/**/*.ts"
     ],
+    "exclude": [
+        "test/builders/rollup-ts/**/*.ts",
+    ]
 }

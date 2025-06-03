@@ -1,22 +1,11 @@
-import {
-    describe,
-    expect,
-    it,
-    vi,
-} from 'vitest';
-import * as idb from 'idb';
+import { describe, expect, it } from 'vitest';
 import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 
+import { IdbSingleton } from '../../../../src/lib/common/idb-singleton';
 import { FiltersStorage } from '../../../../src/lib/common/storage/filters';
-
-vi.mock('idb', { spy: true });
 
 describe('FiltersStorage', () => {
     it('deletes content if the db version increases', async () => {
-        // Initial DB version setup
-        const dbVersionDescriptor = Object.getOwnPropertyDescriptor(FiltersStorage, 'DB_VERSION');
-        Object.defineProperty(FiltersStorage, 'DB_VERSION', { ...dbVersionDescriptor, value: 1 });
-
         // Insert data into storage
         const preprocessed = FilterListPreprocessor.preprocess('@@||example.com^$document');
         await FiltersStorage.setMultiple({
@@ -29,56 +18,11 @@ describe('FiltersStorage', () => {
         // Check that the data is correctly stored
         await expect(FiltersStorage.get(1)).resolves.not.toBeUndefined();
 
-        // Simulate DB closure and reopen (clearing connection)
-        let dbDescriptor = Object.getOwnPropertyDescriptor(FiltersStorage, 'db');
-        dbDescriptor?.value.close();
-        Object.defineProperty(FiltersStorage, 'db', { ...dbDescriptor, value: null }); // Clear DB
+        // Increase database version by adding a new store
+        await IdbSingleton.getOpenedDb('foo');
 
         // Reopen the DB and check that the data is still present
-        await expect(FiltersStorage.get(1)).resolves.not.toBeUndefined();
-
-        // Close the DB connection again
-        dbDescriptor = Object.getOwnPropertyDescriptor(FiltersStorage, 'db');
-        dbDescriptor?.value.close();
-        Object.defineProperty(FiltersStorage, 'db', { ...dbDescriptor, value: null });
-
-        // Increase DB version
-        Object.defineProperty(FiltersStorage, 'DB_VERSION', { value: 2 });
-
-        // Data should be deleted since the version has increased
         await expect(FiltersStorage.get(1)).resolves.toBeUndefined();
-    });
-
-    it('initializer promise prevents trying to open the DB multiple times', async () => {
-        // Insert data into storage
-        const preprocessed = FilterListPreprocessor.preprocess('@@||example.com^$document');
-        await FiltersStorage.setMultiple({
-            1: {
-                ...preprocessed,
-                checksum: 'foo',
-            },
-        });
-
-        // Imitate the DB being closed
-        const dbDescriptor = Object.getOwnPropertyDescriptor(FiltersStorage, 'db');
-        dbDescriptor?.value.close();
-        Object.defineProperty(FiltersStorage, 'db', { ...dbDescriptor, value: null });
-
-        const getOpenedDbSpy = vi.spyOn(FiltersStorage, 'getOpenedDb' as any);
-        const openDBSpy = vi.spyOn(idb, 'openDB');
-
-        await expect(FiltersStorage.get(1)).resolves.not.toBeUndefined();
-
-        // Get the data from the storage - `get` method calls 5 methods internally,
-        // which means 5 calls to `FiltersStorage.getOpenedDb`
-        expect(getOpenedDbSpy).toHaveBeenCalledTimes(5);
-
-        // But regardless of the number of calls to `getOpenedDb`, `openDB` should be called only once
-        expect(openDBSpy).toHaveBeenCalledTimes(1);
-
-        // Reset the spies
-        getOpenedDbSpy.mockClear();
-        openDBSpy.mockClear();
     });
 
     it('sets and gets data correctly', async () => {

@@ -46,7 +46,7 @@ Build:
 
             # Pack the AGTree package into a tarball
             cd packages/agtree
-            pnpm pack --out agtree.tgz
+            pnpm tgz
     - inject-variables:
         file: ./packages/agtree/dist/build.txt
         scope: RESULT

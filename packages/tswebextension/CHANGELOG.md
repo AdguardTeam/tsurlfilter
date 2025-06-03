@@ -5,11 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-05-28
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.1`.
+- Updated [@adguard/tsurlfilter] to `v3.3.4`.
+
+### Fixed
+
+- Types for `NodeNext` module resolution.
+
+[3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0
+
+## [3.1.0-alpha.3] - 2025-05-22
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.0`.
+- Updated [@adguard/tsurlfilter] to `v3.3.3`.
+
+### Fixed
+
+- Improved rule set caching to avoid inconsistent behaviors.
+- Improved rule set update in declarative filtering log to avoid unexpected behaviors during configuration changes.
+
+[3.1.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0-alpha.3
+
+## [3.1.0-alpha.2] - 2025-05-19
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.1.4`.
+- Updated [@adguard/tsurlfilter] to `v3.3.2`.
+
+### Fixed
+
+- Updated `zod` dependency to version `3.24.4` to resolve vulnerability warnings.
+
+[3.1.0-alpha.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0-alpha.2
+
+## [3.1.0-alpha.1] - 2025-05-15
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.3.1`.
+
+[3.1.0-alpha.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0-alpha.1
+
+## [3.1.0-alpha.0] - 2025-04-30
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.1.3`.
+- Updated [@adguard/tsurlfilter] to `v3.3.0-alpha.0`.
+- Instead of byte ranges, rulesets will be synchronized to IndexedDB internally.
+
+### Removed
+
+- `FiltersApi` export.
+
+[3.1.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.1.0-alpha.0
+
 ## [3.0.2] - 2025-04-15
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v3.2.3`.
+- Updated [@adguard/tsurlfilter] to `v3.2.3`.
 
 ## [3.0.1] - 2025-03-06
 
@@ -130,7 +192,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.6] - 2024-11-19
 
-- Updated `@adguard/tsurlfilter` to `v3.0.7`.
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.0.7`.
 
 [2.0.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.6
 
@@ -138,8 +202,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/agtree` to `v2.1.3`.
-- Updated `@adguard/tsurlfilter` to `v3.0.6`.
+- Updated [@adguard/agtree] to `v2.1.3`.
+- Updated [@adguard/tsurlfilter] to `v3.0.6`.
 
 [2.0.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v2.0.5
 

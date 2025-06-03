@@ -29,7 +29,7 @@ ubo_any:
     - name: stack
       required: false
 
-abp_any:  
+abp_any:
   name: json-prune
   version_added: 3.9.0
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref

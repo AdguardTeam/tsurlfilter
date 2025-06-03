@@ -5,7 +5,7 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { FilterListPreprocessor, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
@@ -183,6 +183,17 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
+     * Synchronize rule set with IDB.
+     *
+     * @param ruleSetId Rule set identifier.
+     * @param ruleSetsPath Path to rule sets.
+     */
+    public static async syncRuleSetWithIdb(ruleSetId: number, ruleSetsPath: string): Promise<void> {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        await ruleSetsLoaderApi.syncRuleSetWithIdb(String(ruleSetId));
+    }
+
+    /**
      * Starts filtering along with launching the tab listener, which will record
      * tab urls to work correctly with domain blocking/allowing rules, for
      * example: cosmetic rules in iframes.
@@ -224,7 +235,8 @@ export class TsWebExtension implements AppInterface<
 
         await StealthService.clearAll();
 
-        TsWebExtension.updateRuleSetsForFilteringLog([], false);
+        declarativeFilteringLog.startUpdate();
+        declarativeFilteringLog.finishUpdate([], false);
 
         engineApi.stopEngine();
     }
@@ -270,7 +282,11 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        await FiltersApi.syncFiltersWithStorage(config.staticFiltersIds, config.ruleSetsPath);
+        const loader = new RuleSetsLoaderApi(config.ruleSetsPath);
+
+        await Promise.all(
+            config.staticFiltersIds.map((staticFilterId) => loader.syncRuleSetWithIdb(String(staticFilterId))),
+        );
 
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
@@ -289,6 +305,8 @@ export class TsWebExtension implements AppInterface<
         };
 
         if (configuration.settings.filteringEnabled) {
+            declarativeFilteringLog.startUpdate();
+
             res.stealthResult = await StealthService.applySettings(configuration.settings);
 
             // Extract filters info from configuration and wrap them into IFilters.
@@ -325,20 +343,34 @@ export class TsWebExtension implements AppInterface<
 
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
-                { getContent: () => Promise.resolve(configuration.userrules) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(configuration.userrules);
+                    },
+                },
                 true,
             );
 
             const allowlistFilter = new Filter(
                 ALLOWLIST_FILTER_ID,
                 // TODO: Generate AST directly for allowlist rules.
-                { getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(combinedAllowlistRules)) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(
+                            FilterListPreprocessor.preprocess(combinedAllowlistRules),
+                        );
+                    },
+                },
                 true,
             );
 
             const quickFixesFilter = new Filter(
                 QUICK_FIXES_FILTER_ID,
-                { getContent: () => Promise.resolve(configuration.quickFixesRules) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(configuration.quickFixesRules);
+                    },
+                },
                 true,
             );
 
@@ -371,7 +403,7 @@ export class TsWebExtension implements AppInterface<
             ];
 
             // Update rulesets in declarative filtering log.
-            TsWebExtension.updateRuleSetsForFilteringLog(ruleSets, configuration.declarativeLogEnabled);
+            declarativeFilteringLog.finishUpdate(ruleSets, configuration.declarativeLogEnabled);
 
             res.staticFilters = staticRuleSets;
         } else {
@@ -665,25 +697,6 @@ export class TsWebExtension implements AppInterface<
             logger.error(`[tswebextension.loadStaticRuleSets]: Cannot scan rules of filter list with ids ${filterListIds} due to: ${getErrorMessage(e)}`);
 
             return [];
-        }
-    }
-
-    /**
-     * Set provided list of rule sets to a filtering log.
-     *
-     * @param allRuleSets List of {@link IRuleSet}.
-     * @param declarativeLogEnabled Should we log matched declarative rules.
-     */
-    private static updateRuleSetsForFilteringLog(
-        allRuleSets: IRuleSet[],
-        declarativeLogEnabled: boolean,
-    ): void {
-        declarativeFilteringLog.ruleSets = allRuleSets;
-
-        if (declarativeLogEnabled) {
-            declarativeFilteringLog.start();
-        } else {
-            declarativeFilteringLog.stop();
         }
     }
 

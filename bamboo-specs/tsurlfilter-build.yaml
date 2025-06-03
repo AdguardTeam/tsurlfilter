@@ -44,7 +44,7 @@ Build:
             pnpm --filter "@adguard/tsurlfilter..." --depth=-1 build
 
             cd packages/tsurlfilter
-            pnpm pack --out tsurlfilter.tgz
+            pnpm tgz
     - inject-variables:
         file: ./packages/tsurlfilter/dist/build.txt
         scope: RESULT

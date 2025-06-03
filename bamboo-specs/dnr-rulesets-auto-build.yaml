@@ -132,7 +132,7 @@ branch-overrides:
                   cd packages/dnr-rulesets
 
                   # Create artifacts
-                  pnpm pack --out dnr-rulesets.tgz
+                  pnpm tgz
           - inject-variables:
               file: packages/dnr-rulesets/dist/build.txt
               scope: RESULT
