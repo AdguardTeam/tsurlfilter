@@ -1548,6 +1548,9 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0(zod@3.24.4)
     devDependencies:
+      '@adguard/eslint-plugin-logger-context':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@rollup/plugin-alias':
         specifier: 'catalog:'
         version: 5.1.1(rollup@4.39.0)
@@ -1765,6 +1768,9 @@ importers:
         specifier: 'catalog:'
         version: 3.24.4
     devDependencies:
+      '@adguard/eslint-plugin-logger-context':
+        specifier: ^1.0.1
+        version: 1.0.1
       '@rollup/plugin-commonjs':
         specifier: 'catalog:'
         version: 28.0.3(rollup@4.39.0)
@@ -1909,6 +1915,9 @@ packages:
 
   '@adguard/ecss-tree@1.1.0':
     resolution: {integrity: sha512-Qs7cpUH5AexO9JAXxMPmh6CwdNEnP1qUBSpvHnGxPmHQDjBzpAn4qz8zsJILmX4Rc5Up0iqeYcYC7Pq5HBvoyQ==}
+
+  '@adguard/eslint-plugin-logger-context@1.0.1':
+    resolution: {integrity: sha512-KfHD0UrCkkHQK7cq5nBvY9cJ/kDJoMwKfq66cJngLRKnCkCYGKGBT+HPmwapkXK96UItfPswW07i1VWIaZSgpA==}
 
   '@adguard/extended-css@2.1.1':
     resolution: {integrity: sha512-TsHZ20oUWhbtrzQ4w70B96oHkGBIUZg2FdMfkq4StGfLmXQb+kI7fQb6BtXP2D0bvraIHMq6/mtKExglDJ9vsg==}
@@ -9631,6 +9640,8 @@ snapshots:
   '@adguard/ecss-tree@1.1.0':
     dependencies:
       css-tree: 2.3.1
+
+  '@adguard/eslint-plugin-logger-context@1.0.1': {}
 
   '@adguard/extended-css@2.1.1': {}
 

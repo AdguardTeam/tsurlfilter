@@ -20,7 +20,7 @@ module.exports = {
   rules: {
     '@adguard/logger-context/require-logger-context': ['error', {
       // optional
-      contextModuleName: 'moduleName',
+      contextModuleName: 'module',
       // optional
       loggerVariableName: 'logger',
     }],
@@ -30,5 +30,5 @@ module.exports = {
 
 **Example of correct usage:**
 ```js
-logger.info('[ext.page-handler]: some message');
+logger.info('[module.page-handler]: some message');
 ```
