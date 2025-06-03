@@ -17,7 +17,6 @@ import {
     QUICK_FIXES_FILTER_ID,
     USER_FILTER_ID,
 } from '../../common/constants';
-import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
@@ -145,7 +144,7 @@ export class TsWebExtension implements AppInterface<
      * {@link ConfigurationResult}.
      */
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        logger.debug('[tswebextension.innerStart]: start');
+        logger.trace('[tsweb.TsWebExtension.innerStart]: start');
 
         if (!appContext.startTimeMs) {
             appContext.startTimeMs = Date.now();
@@ -179,13 +178,13 @@ export class TsWebExtension implements AppInterface<
             this.isStarted = true;
             this.startPromise = undefined;
 
-            logger.debug('[tswebextension.innerStart]: started');
+            logger.trace('[tsweb.TsWebExtension.innerStart]: started');
 
             return res;
         } catch (e) {
             this.startPromise = undefined;
 
-            logger.debug('[tswebextension.innerStart]: failed due to ', getErrorMessage(e));
+            logger.error('[tsweb.TsWebExtension.innerStart]: failed: ', e);
 
             throw new Error('Cannot be started: ', { cause: e as Error });
         }
@@ -215,16 +214,16 @@ export class TsWebExtension implements AppInterface<
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 
-        logger.debug('[tswebextension.start]: is started ', this.isStarted);
+        logger.trace('[tsweb.TsWebExtension.start]: is started ', this.isStarted);
 
         if (this.isStarted) {
             throw new Error('Already started');
         }
 
         if (this.startPromise) {
-            logger.debug('[tswebextension.start]: already called start, waiting');
+            logger.trace('[tsweb.TsWebExtension.start]: already called start, waiting');
             const res = await this.startPromise;
-            logger.debug('[tswebextension.start]: awaited start');
+            logger.trace('[tsweb.TsWebExtension.start]: awaited start');
             return res;
         }
 
@@ -308,7 +307,7 @@ export class TsWebExtension implements AppInterface<
             'filterList',
             'conversionMap',
         ];
-        logger.debug('[tswebextension.configure]: start with ', stringifyObjectWithoutKeys(config, binaryFields));
+        logger.trace('[tsweb.TsWebExtension.configure]: start with ', stringifyObjectWithoutKeys(config, binaryFields));
 
         const configuration = configurationMV3Validator.parse(config); // error happens here
 
@@ -449,7 +448,7 @@ export class TsWebExtension implements AppInterface<
 
         documentBlockingService.configure(config);
 
-        logger.debug('[tswebextension.configure]: end');
+        logger.trace('[tsweb.TsWebExtension.configure]: end');
 
         return res;
     }
@@ -725,8 +724,7 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             const filterListIds = staticFilters.map((f) => f.getId());
 
-            // eslint-disable-next-line max-len
-            logger.error(`[tswebextension.loadStaticRuleSets]: Cannot scan rules of filter list with ids ${filterListIds} due to: ${getErrorMessage(e)}`);
+            logger.error(`[tsweb.TsWebExtension.loadStaticRuleSets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
 
             return [];
         }

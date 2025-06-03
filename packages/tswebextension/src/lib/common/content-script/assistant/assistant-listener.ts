@@ -52,7 +52,7 @@ export const createAssistantMessageListener = (): void => {
 
     browser.runtime.onMessage.addListener(async (message): Promise<undefined> => {
         if (!hasTypeField(message)) {
-            logger.debug('[tswebextension.assistantListener]: message do not contain required field "type": ', message);
+            logger.warn('[tsweb.assistant-listener]: message do not contain required field "type": ', message);
             return;
         }
 
@@ -72,7 +72,7 @@ export const createAssistantMessageListener = (): void => {
                         payload: { ruleText },
                     });
                     if (!res) {
-                        logger.debug(`[tswebextension.assistantListener]: rule '${ruleText}' has not been applied.`);
+                        logger.warn(`[tsweb.assistant-listener]: rule '${ruleText}' has not been applied.`);
                     }
                 });
 
@@ -85,8 +85,7 @@ export const createAssistantMessageListener = (): void => {
                 break;
             }
             default: {
-                // eslint-disable-next-line max-len
-                logger.debug(`[tswebextension.assistantListener]: not found handler for message type '${message.type}'`);
+                logger.error(`[tsweb.assistant-listener]: not found handler for message type '${message.type}'`);
             }
         }
     });

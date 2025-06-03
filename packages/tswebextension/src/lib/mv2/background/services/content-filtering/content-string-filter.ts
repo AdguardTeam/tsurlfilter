@@ -103,7 +103,7 @@ export class ContentStringFilter implements ContentStringFilterInterface {
             const parsed = HtmlRuleParser.parse(rule);
 
             if (!parsed) {
-                logger.info(`Ignoring rule with invalid HTML selector: ${rule.getContent()}`);
+                logger.info(`[tsweb.ContentStringFilter.applyHtmlRules]: ignoring rule with invalid HTML selector: ${rule.getContent()}`);
                 continue;
             }
 

@@ -195,7 +195,7 @@ export const configurationValidator = zod.object({
         LogLevel.Warn,
         LogLevel.Info,
         LogLevel.Debug,
-        LogLevel.Trace,
+        LogLevel.Verbose,
     ]).optional(),
 
     settings: settingsConfigValidator,

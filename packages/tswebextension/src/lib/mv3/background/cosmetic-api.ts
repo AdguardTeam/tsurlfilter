@@ -1,7 +1,6 @@
 import { type ScriptletData, type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
-import { getErrorMessage } from '../../common/error';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl } from '../../common/utils/url';
@@ -221,7 +220,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 });
             }));
         } catch (e) {
-            logger.debug('[applyJsFuncsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+            logger.info('[tsweb.CosmeticApi.applyJsFuncsByTabAndFrame]: error occurred during injection: ', e);
         }
     }
 
@@ -255,8 +254,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 });
             }));
         } catch (e) {
-            // TODO: getErrorMessage may not be needed since logger should handle arg types
-            logger.debug('[applyScriptletsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+            logger.info('[tsweb.CosmeticApi.applyScriptletsByTabAndFrame]: error occurred during injection: ', e);
         }
     }
 
@@ -299,12 +297,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 frameId,
             });
         } catch (e) {
-            logger.debug(
-                '[applyCssByTabAndFrame] error occurred during injection',
-                getErrorMessage(e),
-                'with frame context:',
-                frameContext,
-            );
+            logger.info('[tsweb.CosmeticApi.applyCssByTabAndFrame]: error occurred during injection: ', e, 'with frame context:', frameContext);
         }
     }
 
@@ -337,10 +330,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 scriptText,
             });
         } catch (e) {
-            logger.debug(
-                '[applyJsFuncsAndScriptletsByTabAndFrame] error occurred during injection',
-                getErrorMessage(e),
-            );
+            logger.info('[tsweb.CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame]: error occurred during injection: ', e);
         }
     }
 

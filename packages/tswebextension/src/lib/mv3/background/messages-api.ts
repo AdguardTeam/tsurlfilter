@@ -76,12 +76,12 @@ export class MessagesApi {
         message: Message,
         sender: browser.Runtime.MessageSender,
     ): Promise<unknown> {
-        logger.debug('[tswebextension.handleMessage]: ', message);
+        logger.trace('[tsweb.MessagesApi.handleMessage]: received: ', message);
 
         try {
             message = messageValidator.parse(message);
         } catch (e) {
-            logger.error('[tswebextension.handleMessage]: cannot parse message: ', message);
+            logger.error('[tsweb.MessagesApi.handleMessage]: cannot parse message: ', message);
             // Ignore this message
             return undefined;
         }
@@ -113,7 +113,7 @@ export class MessagesApi {
                 return this.handleSaveCssHitsStats(sender, message.payload);
             }
             default: {
-                logger.error('[tswebextension.handleMessage]: did not found handler for message');
+                logger.error('[tsweb.MessagesApi.handleMessage]: did not found handler for message');
             }
         }
 
@@ -132,19 +132,19 @@ export class MessagesApi {
         sender: browser.Runtime.MessageSender,
         payload?: unknown,
     ): ContentScriptCosmeticData | undefined {
-        logger.debug('[tswebextension.handleGetCosmeticData]: received call: ', payload);
+        logger.trace('[tsweb.MessagesApi.handleGetCosmeticData]: received call: ', payload);
         if (!payload || !sender?.tab?.id) {
             return undefined;
         }
 
         if (!this.tsWebExtension.isStarted) {
-            logger.debug('[tswebextension.handleGetCosmeticData]: tswebextension is not started.');
+            logger.debug('[tsweb.MessagesApi.handleGetCosmeticData]: tswebextension is not started.');
             return undefined;
         }
 
         const res = getCosmeticDataPayloadValidator.safeParse(payload);
         if (!res.success) {
-            logger.error('[tswebextension.handleGetCosmeticData]: cannot parse payload: ', payload, res.error);
+            logger.error('[tsweb.MessagesApi.handleGetCosmeticData]: cannot parse payload: ', payload, res.error);
             return undefined;
         }
 
@@ -201,7 +201,7 @@ export class MessagesApi {
         sender: browser.Runtime.MessageSender,
         payload?: unknown,
     ): ContentScriptCookieRulesData | undefined {
-        logger.debug('[tswebextension.getCookieRules]: received call: ', payload);
+        logger.trace('[tsweb.MessagesApi.getCookieRules]: received call: ', payload);
 
         const { isStorageInitialized } = appContext;
 
@@ -218,20 +218,20 @@ export class MessagesApi {
         const res = getCookieRulesPayloadValidator.safeParse(payload);
         if (!res.success) {
             // this log message is added here as error for faster identification of the issue
-            logger.error('[tswebextension.getCookieRules]: cannot parse payload: ', payload, res.error);
+            logger.error('[tsweb.MessagesApi.getCookieRules]: cannot parse payload: ', payload, res.error);
             return undefined;
         }
 
         const { documentUrl } = res.data;
 
         if (isEmptySrcFrame(documentUrl)) {
-            logger.debug('[tswebextension.getCookieRules]: frame has empty src');
+            logger.debug('[tsweb.MessagesApi.getCookieRules]: frame has empty src');
             return undefined;
         }
 
         const tabId = sender.tab?.id;
         if (tabId === undefined) {
-            logger.debug('[tswebextension.getCookieRules]: tabId is undefined');
+            logger.debug('[tsweb.MessagesApi.getCookieRules]: tabId is undefined');
             return undefined;
         }
 

@@ -601,7 +601,7 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     }
 
     /**
-     * Logs a message if the tab context is expected to exist.
+     * Checks if the tab context is expected to exist.
      *
      * This method is needed to identify cases when tab context does not exist
      * when it should exist, for example when tab context is not created or created too late.
@@ -609,13 +609,15 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * @param tabId Tab ID to check.
      * @param url Tab URL to check.
      *
+     * @returns True if tab context is expected to exist, false otherwise.
+     *
      * @todo Remove this method when issue above will be fixed.
      */
-    private static logIfTabContextExpectedToExist(tabId: number, url?: string): void {
+    private static checkIfTabContextExpectedToExist(tabId: number, url?: string): boolean {
         // Early exit - if tab already does not hosts content,
         // we don't need to perform any additional checks.
         if (!TabContextCommon.isTabHostingContent(tabId)) {
-            return;
+            return false;
         }
 
         // List of URLs we shouldn't log for about expected tab context.
@@ -627,13 +629,10 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
 
         // We skip only if we are sure that URL is not empty and starts with one of the forbidden URLs.
         if (url && doNotLogForUrls.some((forbiddenUrl) => url.startsWith(forbiddenUrl))) {
-            return;
+            return false;
         }
 
-        logger.debug(
-            '[tsweb.TabsApi.logIfTabContextExpectedToExist]'
-                    + `At this point tab#${tabId} context should already exist`,
-        );
+        return true;
     }
 
     /**
@@ -652,7 +651,9 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     ): void {
         const tabContext = this.getTabContext(tabId);
         if (!tabContext) {
-            TabsApiCommon.logIfTabContextExpectedToExist(tabId, frameContext.url);
+            if (TabsApiCommon.checkIfTabContextExpectedToExist(tabId, frameContext.url)) {
+                logger.debug(`[tsweb.TabsApiCommon.setFrameContext]: at this point tab#${tabId} context should already exist`);
+            }
             return;
         }
         tabContext.setFrameContext(frameId, frameContext);
@@ -689,14 +690,16 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
         const tabContext = this.getTabContext(tabId);
 
         if (!tabContext) {
-            TabsApiCommon.logIfTabContextExpectedToExist(tabId, partialFrameContext.url);
+            if (TabsApiCommon.checkIfTabContextExpectedToExist(tabId, partialFrameContext.url)) {
+                logger.debug(`[tsweb.TabsApiCommon.updateFrameContext]: at this point tab#${tabId} context should already exist`);
+            }
             return;
         }
 
         const frameContext = tabContext?.getFrameContext(frameId);
 
         if (!frameContext) {
-            logger.debug('At this point frame context should already exist');
+            logger.debug(`[tsweb.TabsApiCommon.updateFrameContext]: at this point frame#${frameId} context should already exist`);
             return;
         }
 

@@ -134,7 +134,7 @@ export class RequestContextStorage extends Map<string, RequestContext> {
         }
 
         // TODO: Throws error if request context not found after RequestEvents refactoring.
-        logger.error(`Request context not found for requestId: ${requestId}`);
+        logger.error('[tsweb.RequestContextStorage.update]: request context not found for requestId: ', requestId);
         super.set(requestId, data as RequestContext);
         return undefined;
     }

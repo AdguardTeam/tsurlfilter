@@ -6,7 +6,6 @@ import { RuleGenerator } from '@adguard/agtree/generator';
 import { RuleSerializer } from '@adguard/agtree/serializer';
 import { type FilterListConversionMap, type PreprocessedFilterList } from './schema';
 import { logger } from '../../utils/logger';
-import { getErrorMessage } from '../../common/error';
 import { type FilterListSourceMap } from '../source-map/schema';
 import { findNextLineBreakIndex } from '../../utils/string-utils';
 import { EMPTY_STRING, LF } from '../../common/constants';
@@ -146,9 +145,9 @@ export class FilterListPreprocessor {
                     outputOffset += ruleText.length + lineBreakLength;
                 }
             } catch (error: unknown) {
-                // TODO: Integrate Logger library to be able to set log level AG-40234
-                // Log issues just as an info AG-37460
-                logger.info(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
+                // Log issues to info channel to make them visible for
+                // filter maintainers. See AG-37460.
+                logger.info(`[tsurl.FilterListPreprocessor.preprocess]: failed to process rule: '${ruleText}' due to:`, error);
 
                 // Add invalid rules as is to the converted filter list,
                 // but not to the output byte buffer / source map.
@@ -215,9 +214,9 @@ export class FilterListPreprocessor {
                     RuleSerializer.serialize(ruleNode, filterList);
                 }
             } catch (error: unknown) {
-                // TODO: Integrate Logger library to be able to set log level AG-40234
-                // Log issues just as an info AG-37460
-                logger.info(`Failed to process rule: '${ruleText}' due to ${getErrorMessage(error)}`);
+                // Log issues to info channel to make them visible for
+                // filter maintainers. See AG-37460.
+                logger.info(`[tsurl.FilterListPreprocessor.preprocessLightweight]: failed to process rule: '${ruleText}' due to:`, error);
             }
 
             outputOffset += ruleText.length + lineBreakLength;

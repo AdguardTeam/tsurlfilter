@@ -3,10 +3,10 @@ import {
     describe,
     it,
     expect,
-    beforeAll,
     afterAll,
     beforeEach,
     afterEach,
+    vi,
 } from 'vitest';
 import fs from 'fs';
 import zlib from 'zlib';
@@ -21,7 +21,6 @@ import {
     RuleStorage,
     DnsEngine,
     CosmeticEngine,
-    setLogger,
     FilterListPreprocessor,
 } from '../../src';
 
@@ -289,21 +288,6 @@ function runEngine(requests: Request[], matchFunc: (r: Request) => boolean): num
 
 // TODO: Consider using Vitest benchmark feature: https://vitest.dev/guide/features#benchmarking
 describe('Benchmarks', () => {
-    beforeAll(() => {
-        /* eslint-disable @typescript-eslint/no-unused-vars */
-        setLogger({
-            error(message?: string): void {
-            },
-            info(message?: string): void {
-            },
-            debug(message?: string): void {
-            },
-            warn(message?: string): void {
-            },
-        });
-        /* eslint-disable @typescript-eslint/no-unused-vars */
-    });
-
     beforeEach(() => {
         console.log(`Benchmark: "${expect.getState().currentTestName}"`);
     });
@@ -313,7 +297,7 @@ describe('Benchmarks', () => {
     });
 
     afterAll(() => {
-        setLogger(console);
+        vi.restoreAllMocks();
     });
 
     const easyListPrepared = FilterListPreprocessor.preprocess(fs.readFileSync('./test/resources/easylist.txt', 'utf8'));

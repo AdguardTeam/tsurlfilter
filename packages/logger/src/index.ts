@@ -1,1 +1,2 @@
-export { Logger, LogLevel } from './Logger';
+export { Logger, LogLevel, LogMethod } from './Logger';
+export { getErrorMessage } from './error';

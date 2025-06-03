@@ -68,7 +68,7 @@ export class UserScriptsApi {
                 world: 'MAIN',
             });
         } catch (e) {
-            logger.info(`Failed to execute user script to tabId ${tabId} and frameId ${frameId} due to:`, e);
+            logger.error(`[tsweb.UserScriptsApi.executeScripts]: failed to execute user script to tabId#frameId (${tabId}#${frameId}) :`, e);
         }
     }
 

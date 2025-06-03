@@ -14,7 +14,7 @@
         "rollup.config.ts",
         "vitest.config.ts",
         "tasks/**/*.ts",
-        "types/vitest-custom.d.ts",
+        "types/vitest-custom.d.ts"
     ],
     "exclude": [
         "test/builders/rollup-ts/**/*.ts",

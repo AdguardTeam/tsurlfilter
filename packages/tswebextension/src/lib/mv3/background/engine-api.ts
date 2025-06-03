@@ -18,7 +18,6 @@ import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type AnyRule } from '@adguard/agtree';
 
 import { QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
-import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, isHttpRequest, getHost } from '../../common/utils/url';
 
@@ -95,7 +94,7 @@ export class EngineApi {
                 );
             } catch (e) {
                 const filterId = filters[i].getId();
-                logger.error(`Cannot create IRuleList for filter ${filterId} due to: ${getErrorMessage(e)}`);
+                logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
             }
         }
 

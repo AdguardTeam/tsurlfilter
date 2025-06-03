@@ -89,11 +89,11 @@ describe('Content string filter', () => {
         const modified = contentStringFilter.applyRules(content);
 
         expect(logger.info).toHaveBeenCalledWith(
-            'Ignoring rule with invalid HTML selector: [href*="http"]',
+            '[tsweb.ContentStringFilter.applyHtmlRules]: ignoring rule with invalid HTML selector: [href*="http"]',
         );
 
         expect(logger.info).toHaveBeenCalledWith(
-            'Ignoring rule with invalid HTML selector: div:contains(foo)',
+            '[tsweb.ContentStringFilter.applyHtmlRules]: ignoring rule with invalid HTML selector: div:contains(foo)',
         );
 
         expect(modified).toBe('<html><head></head><body><span>test</span></body></html>');

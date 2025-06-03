@@ -87,8 +87,7 @@ export class DocumentBlockingService extends DocumentBlockingServiceCommon {
 
         // if documentBlockingPage is undefined, block request
         if (!this.documentBlockingPageUrl) {
-            // eslint-disable-next-line max-len
-            logger.warn(`[handleDocumentBlocking] documentBlockingPageUrl is not set while handling request ${requestUrl}`);
+            logger.warn(`[tsweb.DocumentBlockingService.handleDocumentBlocking]: documentBlockingPageUrl is not set while handling request ${requestUrl}`);
             return;
         }
 
