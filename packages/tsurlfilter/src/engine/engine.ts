@@ -36,9 +36,9 @@ interface FilterList {
     ignoreCosmetic?: boolean;
 
     /**
-     * Whether to ignore network rules from this filter list.
+     * Whether to ignore javascript rules from this filter list.
      */
-    ignoreNetwork?: boolean;
+    ignoreJS?: boolean;
 
     /**
      * Whether to ignore unsafe rules from this filter list.
@@ -111,7 +111,7 @@ export class Engine {
                 f.id,
                 f.text,
                 f.ignoreCosmetic ?? false,
-                f.ignoreNetwork ?? false,
+                f.ignoreJS ?? false,
                 f.ignoreUnsafe ?? false,
             ),
         );

@@ -904,6 +904,7 @@ describe('TestEngineCosmeticResult - js', () => {
                 {
                     id: 1,
                     text: rules.join('\n'),
+                    ignoreJS: true,
                 },
             ],
         });
