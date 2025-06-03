@@ -1,6 +1,6 @@
 {
     "name": "@adguard/eslint-plugin-logger-context",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "ESLint plugin that requires AdGuard logger calls to start with a context tag.",
     "main": "./dist/index.js",
     "module": "./dist/es/index.mjs",
