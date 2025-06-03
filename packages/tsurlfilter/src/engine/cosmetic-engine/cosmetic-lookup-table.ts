@@ -118,7 +118,8 @@ export class CosmeticLookupTable {
             return;
         }
 
-        if (!rule.domains || !rule.domains.length) {
+        // FIXME: consider splitting restricted and permitted domains in tokenizer
+        if (!rule.domains || rule.domains.every((d) => d.startsWith('~'))) {
             this.genericRules.push(this.ruleStorage.retrieveRule(storageIdx) as CosmeticRule);
             return;
         }
