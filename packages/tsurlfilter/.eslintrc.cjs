@@ -27,7 +27,14 @@ module.exports = {
         '@typescript-eslint/indent': ['error', 4],
         'no-bitwise': 'off',
         'no-new': 'off',
-        'max-len': ['error', { code: 120, ignoreUrls: true }],
+        'max-len': ['error', {
+            code: 120,
+            ignoreUrls: true,
+            /**
+             * Ignore calls to logger, e.g. logger.error(), because of the long string.
+             */
+            ignorePattern: 'logger\\.',
+        }],
         'import-newlines/enforce': ['error', 3, 120],
         'import/prefer-default-export': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
@@ -93,41 +100,13 @@ module.exports = {
         'jsdoc/sort-tags': ['error', {
             linesBetween: 1,
             tagSequence: [
-                {
-                    tags: [
-                        'file',
-                    ],
-                },
-                {
-                    tags: [
-                        'template',
-                    ],
-                },
-                {
-                    tags: [
-                        'see',
-                    ],
-                },
-                {
-                    tags: [
-                        'param',
-                    ],
-                },
-                {
-                    tags: [
-                        'returns',
-                    ],
-                },
-                {
-                    tags: [
-                        'throws',
-                    ],
-                },
-                {
-                    tags: [
-                        'example',
-                    ],
-                },
+                { tags: ['file'] },
+                { tags: ['template'] },
+                { tags: ['see'] },
+                { tags: ['param'] },
+                { tags: ['returns'] },
+                { tags: ['throws'] },
+                { tags: ['example'] },
             ],
         }],
     },

@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
 
 const MAX_LINE_LENGTH = 120;
@@ -39,6 +38,10 @@ module.exports = {
             ignoreUrls: true,
             ignoreTrailingComments: false,
             ignoreComments: false,
+            /*
+             * Ignore calls to logger, e.g. logger.error(), because of the long string.
+             */
+            ignorePattern: 'logger\\.',
         }],
         'import/prefer-default-export': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
@@ -143,41 +146,13 @@ module.exports = {
         'jsdoc/sort-tags': ['error', {
             linesBetween: 1,
             tagSequence: [
-                {
-                    tags: [
-                        'file',
-                    ],
-                },
-                {
-                    tags: [
-                        'template',
-                    ],
-                },
-                {
-                    tags: [
-                        'see',
-                    ],
-                },
-                {
-                    tags: [
-                        'param',
-                    ],
-                },
-                {
-                    tags: [
-                        'returns',
-                    ],
-                },
-                {
-                    tags: [
-                        'throws',
-                    ],
-                },
-                {
-                    tags: [
-                        'example',
-                    ],
-                },
+                { tags: ['file'] },
+                { tags: ['template'] },
+                { tags: ['see'] },
+                { tags: ['param'] },
+                { tags: ['returns'] },
+                { tags: ['throws'] },
+                { tags: ['example'] },
             ],
         }],
     },

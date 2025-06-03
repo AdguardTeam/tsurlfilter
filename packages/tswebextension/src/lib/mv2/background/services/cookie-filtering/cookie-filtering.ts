@@ -88,7 +88,7 @@ export class CookieFiltering {
         // remove or change headers in context.
         this.applyRules(context)
             .catch((e) => {
-                logger.error((e as Error).message);
+                logger.error('[tsweb.CookieFiltering.onBeforeSendHeaders]: cannot apply rules due to: ', e);
             });
 
         // Removes cookie from headers and updates context.
@@ -297,7 +297,7 @@ export class CookieFiltering {
         // remove or change headers in context.
         this.applyRules(context)
             .catch((e) => {
-                logger.error((e as Error).message);
+                logger.error('[tsweb.CookieFiltering.onHeadersReceived]: cannot apply rules due to: ', e);
             });
 
         // Remove cookie headers.

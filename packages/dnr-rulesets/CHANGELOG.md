@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `utils` entry point with `getVersion` and `getVersionTimestampMs` functions.
 
+### Changed
+
+- Updated [@adguard/logger] to `v2.0.0`.
+
 ## [3.0.0-alpha.12] - 2025-05-28
 
 ### Changed
@@ -126,3 +130,5 @@ For example, while bundling the manifest with the extension.
 ### Changed
 
 - Improve filters compatibility with Declarative Net Request API.
+
+[@adguard/logger]: ../logger/CHANGELOG.md

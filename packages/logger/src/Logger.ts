@@ -9,29 +9,49 @@ export const enum LogLevelNumeric {
     Warn,
     Info,
     Debug,
-    Trace,
+    Verbose,
 }
 
 /**
  * String presentation of log levels, for convenient users usage.
+ * Ordered in the same way as LogLevelNumeric.
+ *
+ * First three levels will be shown to users, and the last two are for developers.
  */
 export enum LogLevel {
+    /**
+     * For errors.
+     */
     Error = 'error',
+    /**
+     * For not critical errors.
+     */
     Warn = 'warn',
+    /**
+     * For important information.
+     * Use for general operational messages.
+     */
     Info = 'info',
+    /**
+     * For debugging purposes, e.g. Inside conditions, loops or some edge cases.
+     */
     Debug = 'debug',
-    Trace = 'trace',
+    /**
+     * For ultra-detailed, step-by-step traces (like stack traces or flow tracking).
+     */
+    Verbose = 'verbose',
 }
 
 /**
  * Log levels map, which maps number level to string level.
+ * Ordered in the same way as LogLevelNumeric.
  */
 const levelMapNumToString = {
     [LogLevelNumeric.Error]: LogLevel.Error,
     [LogLevelNumeric.Warn]: LogLevel.Warn,
     [LogLevelNumeric.Info]: LogLevel.Info,
     [LogLevelNumeric.Debug]: LogLevel.Debug,
-    [LogLevelNumeric.Trace]: LogLevel.Trace,
+    [LogLevelNumeric.Verbose]: LogLevel.Verbose,
 };
 
 /**
@@ -50,11 +70,14 @@ const levelMapStringToNum: Record<string, LogLevelNumeric> = Object.entries(leve
 
 /**
  * Methods supported by console. Used to manage levels.
+ * Ordered in the same way as LogLevelNumeric.
  */
-export const enum LogMethod {
-    Log = 'log',
-    Info = 'info',
+export enum LogMethod {
     Error = 'error',
+    Warn = 'warn',
+    Info = 'info',
+    Debug = 'debug',
+    Trace = 'trace',
 }
 
 /**
@@ -69,49 +92,39 @@ export type WriterMethod = (...args: any[]) => void;
  */
 export interface Writer {
     /**
-     * Log method.
-     *
-     * @param args
-     */
-    log: WriterMethod;
-
-    /**
-     * Info method.
-     *
-     * @param args
-     */
-    info: WriterMethod;
-
-    /**
      * Error method.
-     *
-     * @param args
      */
     error: WriterMethod;
 
     /**
-     * Trace method.
-     *
-     * @param args
+     * Warn method.
      */
-    trace?: WriterMethod;
+    warn: WriterMethod;
+
+    /**
+     * Info method.
+     */
+    info: WriterMethod;
+
+    /**
+     * Debug method.
+     */
+    debug: WriterMethod;
+
+    /**
+     * Trace method.
+     */
+    trace: WriterMethod;
 
     /**
      * Group collapsed method.
-     *
-     * @param args
      */
     groupCollapsed?: WriterMethod;
 
     /**
      * Group end method.
-     *
-     * @param args
      */
     groupEnd?: WriterMethod;
-
-    // We do not use 'warn' channel, since in the extensions warn is counted as error.
-    // warn: WriterMethod;
 }
 
 /**
@@ -131,24 +144,36 @@ export class Logger {
         this.writer = writer;
 
         // bind the logging methods to avoid losing context
-        this.debug = this.debug.bind(this);
-        this.info = this.info.bind(this);
-        this.warn = this.warn.bind(this);
         this.error = this.error.bind(this);
+        this.warn = this.warn.bind(this);
+        this.info = this.info.bind(this);
+        this.debug = this.debug.bind(this);
+        this.trace = this.trace.bind(this);
     }
 
     /**
-     * Print debug messages. Usually used for technical information.
-     * Will be printed in 'log' channel.
+     * Print error messages.
+     * Use when something went wrong.
      *
      * @param args Printed arguments.
      */
-    public debug(...args: unknown[]): void {
-        this.print(LogLevelNumeric.Debug, LogMethod.Log, args);
+    public error(...args: unknown[]): void {
+        this.print(LogLevelNumeric.Error, LogMethod.Error, args);
+    }
+
+    /**
+     * Print warn messages.
+     * Use when Something might go wrong.
+     *
+     * @param args Printed arguments.
+     */
+    public warn(...args: unknown[]): void {
+        this.print(LogLevelNumeric.Warn, LogMethod.Warn, args);
     }
 
     /**
      * Print messages you want to disclose to users.
+     * Use for general operational messages.
      *
      * @param args Printed arguments.
      */
@@ -157,23 +182,22 @@ export class Logger {
     }
 
     /**
-     * Print warn messages.
-     * NOTE: We do not use 'warn' channel, since in the extensions warn is
-     * counted as error. Instead of this we use 'info' channel.
+     * Print debug messages. Usually used for technical information.
      *
      * @param args Printed arguments.
      */
-    public warn(...args: unknown[]): void {
-        this.print(LogLevelNumeric.Warn, LogMethod.Info, args);
+    public debug(...args: unknown[]): void {
+        this.print(LogLevelNumeric.Debug, LogMethod.Debug, args);
     }
 
     /**
-     * Print error messages.
+     * Print trace messages.
+     * Ultra-detailed, step-by-step traces (like stack traces or flow tracking).
      *
      * @param args Printed arguments.
      */
-    public error(...args: unknown[]): void {
-        this.print(LogLevelNumeric.Error, LogMethod.Error, args);
+    public trace(...args: unknown[]): void {
+        this.print(LogLevelNumeric.Verbose, LogMethod.Trace, args);
     }
 
     /**
@@ -206,12 +230,39 @@ export class Logger {
      * @param error Error to print.
      *
      * @returns Error message.
-     *
-     * @private
      */
     private static errorToString(error: Error): string {
         const message = getErrorMessage(error);
         return `${message}\nStack trace:\n${error.stack}`;
+    }
+
+    /**
+     * Prints error message with stack trace.
+     * It prints the message with the stack trace in a collapsed group.
+     * This is useful for debugging purposes, as it allows to see the stack trace
+     * without cluttering the console with too many messages.
+     *
+     * @param formattedTime Formatted time.
+     * @param formattedArgs Formatted arguments.
+     */
+    private printWithStackTrace(
+        formattedTime: string,
+        formattedArgs: any[],
+    ): void {
+        // If grouping is not supported, print just expanded trace, but this
+        // leads to a lot of dirty logs in the console, since the stack trace
+        // will be printed for every message.
+        if (!this.writer.groupCollapsed || !this.writer.groupEnd) {
+            // Print expanded trace
+            this.writer.trace(formattedTime, ...formattedArgs);
+            return;
+        }
+
+        // Print collapsed trace to make logs more readable and access to stack
+        // trace by clicking on the group.
+        this.writer.groupCollapsed(formattedTime, ...formattedArgs);
+        this.writer.trace();
+        this.writer.groupEnd();
     }
 
     /**
@@ -220,18 +271,18 @@ export class Logger {
      * @param level Logger level.
      * @param method Logger method.
      * @param args Printed arguments.
-     *
-     * @private
      */
     private print(
         level: LogLevelNumeric,
         method: LogMethod,
         args: any[],
     ): void {
-        // skip writing if the basic conditions are not met
+        // Skip writing if the basic conditions are not met.
         if (this.currentLevelValue < level) {
             return;
         }
+
+        // Do not print if no arguments are passed.
         if (!args || args.length === 0 || !args[0]) {
             return;
         }
@@ -255,30 +306,22 @@ export class Logger {
         const formattedTime = `${formatTime(new Date())}:`;
 
         /**
-         * Conditions in which trace can happen:
-         * 1. Method is not error (because console.error provides call stack trace)
-         * 2. Log level is equal or higher that `LogLevel.Trace`.
-         * 3. Writer has `trace` method.
+         * If current log level is Debug or Verbose, print all channels with stack
+         * trace via using writer.trace method to help identify the location of the
+         * log.
+         *
+         * Exception is Error method, because it is already contains build-in
+         * stack trace.
          */
         if (
-            method === LogMethod.Error
-            || this.currentLevelValue < levelMapStringToNum[LogLevel.Trace]
-            || !this.writer.trace
+            this.currentLevelValue >= levelMapStringToNum[LogLevel.Debug]
+            && method !== LogMethod.Error
         ) {
-            // Print with regular method
-            this.writer[method](formattedTime, ...formattedArgs);
+            this.printWithStackTrace(formattedTime, formattedArgs);
             return;
         }
 
-        if (!this.writer.groupCollapsed || !this.writer.groupEnd) {
-            // Print expanded trace
-            this.writer.trace(formattedTime, ...formattedArgs);
-            return;
-        }
-
-        // Print collapsed trace
-        this.writer.groupCollapsed(formattedTime, ...formattedArgs);
-        this.writer.trace();
-        this.writer.groupEnd();
+        // Otherwise just print with requested method of writer.
+        this.writer[method](formattedTime, ...formattedArgs);
     }
 }

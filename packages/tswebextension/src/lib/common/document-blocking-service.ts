@@ -267,7 +267,7 @@ export abstract class DocumentBlockingServiceCommon {
                     browser.tabs.remove(tabId);
                 })
                 .catch((e: unknown) => {
-                    logger.warn(`Cannot open info page about blocked domain due to ${e}`);
+                    logger.warn('[tsweb.DocumentBlockingServiceCommon.redirectToBlockingUrl]: cannot open info page about blocked domain: ', e);
                 });
         } else {
             // Browser doesn't allow redirects to extension pages which are not listed in web
