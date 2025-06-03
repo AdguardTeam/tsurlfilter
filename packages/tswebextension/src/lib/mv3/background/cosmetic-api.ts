@@ -3,9 +3,9 @@ import { type ScriptletData, type CosmeticResult, type CosmeticRule } from '@adg
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
-import { getDomain } from '../../common/utils/url';
+import { getDomain, isExtensionUrl } from '../../common/utils/url';
 import { tabsApi } from '../tabs/tabs-api';
-import { USER_FILTER_ID } from '../../common/constants';
+import { BACKGROUND_TAB_ID, USER_FILTER_ID } from '../../common/constants';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
@@ -256,6 +256,24 @@ export class CosmeticApi extends CosmeticApiCommon {
         } catch (e) {
             logger.info('[tsweb.CosmeticApi.applyScriptletsByTabAndFrame]: error occurred during injection: ', e);
         }
+    }
+
+    /**
+     * Checks if cosmetics should be applied —
+     * background page or extension pages do not need cosmetics applied.
+     *
+     * @param tabId Tab id.
+     * @param frameUrl Frame url.
+     *
+     * @returns True if cosmetics should be applied, false otherwise.
+     */
+    public static shouldApplyCosmetics(tabId: number, frameUrl: string): boolean {
+        // no need to apply cosmetic rules on background or extension pages
+        if (tabId === BACKGROUND_TAB_ID || isExtensionUrl(frameUrl)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

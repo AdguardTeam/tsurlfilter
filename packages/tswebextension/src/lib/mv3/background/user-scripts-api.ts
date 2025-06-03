@@ -98,7 +98,7 @@ export class UserScriptsApi {
                         configurable: false
                     });
                 } catch (error) {
-                    console.error('Error executing AG js rule with uniqueId "${injectedKey}" due to: ' + error);
+                    console.error('Error executing AG js rule with uniqueId "${injectedKey}" due to:', error);
                 }
             })()
         `;
