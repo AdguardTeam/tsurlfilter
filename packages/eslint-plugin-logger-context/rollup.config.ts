@@ -1,6 +1,7 @@
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import externals from 'rollup-plugin-node-externals';
 import json from '@rollup/plugin-json';
 
 // TODO: commonjs format is needed since we use eslint in common js format and
@@ -18,9 +19,10 @@ export default {
         entryFileNames: '[name].mjs',
     }],
     plugins: [
+        externals(),
         // To resolve export version and name from package.json
         json(),
-        resolve(),
+        resolve({ preferBuiltins: false }),
         commonjs(),
         typescript({
             tsconfig: 'tsconfig.build.json',

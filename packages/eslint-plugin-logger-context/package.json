@@ -7,6 +7,7 @@
     "types": "./dist/types/src/index.d.ts",
     "files": [
         "dist",
+        "!dist/build.txt",
         "src"
     ],
     "exports": {
@@ -19,6 +20,7 @@
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm build:types",
+        "postbuild": "tsx scripts/build-txt.ts",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
         "lint": "eslint --cache --ignore-path .gitignore . && tsc",
         "tgz": "pnpm pack --out eslint-plugin-logger-context.tgz"
@@ -58,6 +60,7 @@
         "eslint-plugin-jsdoc": "catalog:",
         "rimraf": "catalog:",
         "rollup": "catalog:",
+        "rollup-plugin-node-externals": "catalog:",
         "tslib": "catalog:",
         "tsx": "catalog:",
         "typescript": "catalog:"
