@@ -358,12 +358,7 @@ List of hostnames or domains of sites, which should be excluded from blocking or
 
 type: `string[]`
 
-For MV2:
 List of domain names of sites, which should be temporary excluded from document blocking.
-
-For MV3:
-List of blocking rules which should be temporarily badfiltered
-since user clicked "Proceed anyway" button on the blocking page.
 
 #### userrules (MV2)
 

@@ -102,6 +102,12 @@ export class TabsCosmeticInjector {
                 return;
             }
 
+            if (!CosmeticApi.shouldApplyCosmetics(tabId, url)) {
+                // eslint-disable-next-line max-len
+                logger.debug(`Skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${url}`);
+                return;
+            }
+
             const tasks = [
                 CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
             ];
