@@ -14,6 +14,7 @@ module.exports = {
     plugins: [
         'import',
         'import-newlines',
+        '@adguard/logger-context',
         '@typescript-eslint',
         '@vitest',
     ],
@@ -154,6 +155,11 @@ module.exports = {
                 { tags: ['throws'] },
                 { tags: ['example'] },
             ],
+        }],
+
+        // Check that every logger call has a context tag.
+        '@adguard/logger-context/require-logger-context': ['error', {
+            contextModuleName: 'tsweb',
         }],
     },
 };

@@ -103,8 +103,7 @@ export class TabsCosmeticInjector {
             }
 
             if (!CosmeticApi.shouldApplyCosmetics(tabId, url)) {
-                // eslint-disable-next-line max-len
-                logger.debug(`Skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${url}`);
+                logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTab]: skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${url}`);
                 return;
             }
 

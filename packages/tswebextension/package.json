@@ -126,6 +126,7 @@
         "zod": "catalog:"
     },
     "devDependencies": {
+        "@adguard/eslint-plugin-logger-context": "^1.0.1",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",
