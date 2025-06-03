@@ -50,12 +50,14 @@ export class DnsEngine {
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.HostRules);
 
         while (scanner.scan()) {
+            // FIXME: tokenize always happens
             const indexedRule = scanner.getRule();
             if (indexedRule) {
-                if (indexedRule.rule instanceof HostRule) {
-                    this.addRule(indexedRule.rule, indexedRule.index);
-                } else if (indexedRule.rule instanceof NetworkRule
-                && indexedRule.rule.isHostLevelNetworkRule()) {
+                // TODO: Get rid of full parsing here
+                const rule = this.ruleStorage.retrieveRule(indexedRule.index, false);
+                if (rule instanceof HostRule) {
+                    this.addRule(rule, indexedRule.index);
+                } else if (rule instanceof NetworkRule && rule.isHostLevelNetworkRule()) {
                     this.networkEngine.addRule(indexedRule.rule, indexedRule.index);
                 }
             }
