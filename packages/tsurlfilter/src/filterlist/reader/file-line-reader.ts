@@ -1,4 +1,5 @@
-import fs from 'fs';
+import { readFileSync } from 'node:fs';
+
 import { type ILineReader } from './line-reader';
 import { BufferLineReader } from './buffer-line-reader';
 
@@ -20,12 +21,14 @@ export class FileLineReader implements ILineReader {
      * @throws Error if the file cannot be read.
      */
     constructor(path: string) {
-        const buffer = fs.readFileSync(path);
+        const buffer = readFileSync(path);
         this.innerReader = new BufferLineReader(buffer);
     }
 
     /**
      * Reads next line in the reader.
+     *
+     * @returns Next line or null if there are no more lines.
      */
     public readLine(): string | null {
         return this.innerReader.readLine();
@@ -33,6 +36,8 @@ export class FileLineReader implements ILineReader {
 
     /**
      * Returns the current position of this line reader.
+     *
+     * @returns Current position of this reader.
      */
     getCurrentPos(): number {
         return this.innerReader.getCurrentPos();

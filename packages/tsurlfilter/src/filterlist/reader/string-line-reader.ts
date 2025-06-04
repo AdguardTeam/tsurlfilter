@@ -18,7 +18,7 @@ export class StringLineReader implements ILineReader {
     /**
      * Constructor of the StringLineReader.
      *
-     * @param text - Text to read line by line.
+     * @param text Text to read line by line.
      */
     constructor(text: string) {
         this.text = text;
@@ -27,7 +27,7 @@ export class StringLineReader implements ILineReader {
     /**
      * Reads next line in the reader.
      *
-     * @return - Text or null if there's nothing to read left.
+     * @returns Text or null if there's nothing to read left.
      */
     public readLine(): string | null {
         if (this.currentIndex === -1) {

@@ -2,8 +2,8 @@
 // pnpm vitest bench cosmetic-lookup
 import { bench, describe, vi } from 'vitest';
 import * as TsUrlFilterOld from 'tsurlfilter-old';
-
 import { readFileSync } from 'node:fs';
+
 import { setLogger } from '../../src/utils/logger';
 import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
 import { RuleStorage } from '../../src/filterlist/rule-storage';

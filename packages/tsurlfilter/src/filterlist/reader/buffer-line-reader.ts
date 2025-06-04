@@ -30,16 +30,16 @@ export class BufferLineReader implements ILineReader {
     /**
      * Constructor of a BufferLineReader.
      *
-     * @param buffer - Uint8Array that contains a UTF-8 encoded string.
+     * @param buffer Uint8Array that contains a UTF-8 encoded string.
      */
     constructor(buffer: Uint8Array) {
         this.buffer = buffer;
     }
 
     /**
-     * Reads the next line in the buffer
+     * Reads the next line in the buffer.
      *
-     * @return text or null on end
+     * @returns Text or null on end.
      */
     public readLine(): string | null {
         if (this.currentIndex === -1) {

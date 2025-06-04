@@ -113,7 +113,7 @@ export class RuleStorageScanner {
 
         const offset = this.getListOffset(rule.listId);
         const index = offset + rule.index;
-        return new IndexedStorageRule(rule.rule, index, rule.listId)
+        return new IndexedStorageRule(rule.rule, index, rule.listId);
     }
 
     /**

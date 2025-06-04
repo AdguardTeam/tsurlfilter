@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 
-import { RuleParts } from "../filterlist/tokenize";
+import { type RuleParts } from '../filterlist/tokenize';
 
 /**
  * Default rule index for source mapping.
@@ -49,6 +49,7 @@ export class IndexedRule {
      *
      * @param rule Rule.
      * @param index Index of the rule.
+     * @param listId ID of the filter list this rule belongs to.
      */
     constructor(rule: RuleParts, index: number, listId: number) {
         this.listId = listId;
@@ -78,6 +79,7 @@ export class IndexedStorageRule {
      *
      * @param rule Rule.
      * @param index Index of the rule.
+     * @param listId ID of the filter list this rule belongs to.
      */
     constructor(rule: RuleParts, index: number, listId: number) {
         this.listId = listId;
