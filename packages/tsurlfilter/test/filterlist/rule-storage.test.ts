@@ -1,28 +1,30 @@
-import { describe, it, expect } from 'vitest';
+import {
+    describe,
+    it,
+    expect,
+    beforeEach,
+} from 'vitest';
 import escapeStringRegexp from 'escape-string-regexp';
 
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
 import { NetworkRule } from '../../src/rules/network-rule';
+import { type RuleStorageScanner } from '../../src/filterlist/scanner/rule-storage-scanner';
+
+/**
+ * Helper function to get the rule index from the raw filter list by the rule text.
+ *
+ * @param rawFilterList Raw filter list.
+ * @param rule Rule text.
+ *
+ * @returns Rule index or -1 if the rule couldn't be found.
+ */
+const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
+    return rawFilterList.search(new RegExp(`^${escapeStringRegexp(rule)}$`, 'm'));
+};
 
 describe('Test RuleStorage', () => {
-    // FIXME: make unit tests atomic
-    // ! WARNING: Do not run these tests individually, as the scanner state is shared between tests
-    // and you may get unexpected results.
-
-    /**
-     * Helper function to get the rule index from the raw filter list by the rule text.
-     *
-     * @param rawFilterList Raw filter list.
-     * @param rule Rule text.
-     *
-     * @returns Rule index or -1 if the rule couldn't be found.
-     */
-    const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
-        return rawFilterList.search(new RegExp(`^${escapeStringRegexp(rule)}$`, 'm'));
-    };
-
     const rules1 = [
         '||example.org',
         '! test',
@@ -49,17 +51,18 @@ describe('Test RuleStorage', () => {
     const list2 = new StringRuleList(2, text2, false, false, false);
     const list3 = new StringRuleList(1001, text3, false, false, false);
 
-    const storage = new RuleStorage([list1, list2, list3]);
-    const scanner = storage.createRuleStorageScanner(ScannerType.All);
+    let storage: RuleStorage;
+    let scanner: RuleStorageScanner;
 
-    it('checks simple storage methods', () => {
-        expect(storage).toBeTruthy();
-        expect(scanner).toBeTruthy();
+    beforeEach(() => {
+        storage = new RuleStorage([list1, list2, list3]);
+        scanner = storage.createRuleStorageScanner(ScannerType.All);
     });
 
-    let indexedRule;
+    it('scanning', () => {
+        let indexedRule;
 
-    it('scans rule 1 from list 1', () => {
+        // scans rule 1 from list 1
         expect(scanner.scan()).toBeTruthy();
         indexedRule = scanner.getRule();
 
@@ -67,9 +70,8 @@ describe('Test RuleStorage', () => {
         expect(indexedRule!.rule).toBeTruthy();
         expect(indexedRule!.index).toBe(getRawRuleIndex(text1, '||example.org'));
         expect(indexedRule!.listId).toBe(1);
-    });
 
-    it('scans rule 2 from list 1', () => {
+        // scans rule 2 from list 1
         expect(scanner.scan()).toBeTruthy();
         indexedRule = scanner.getRule();
 
@@ -77,9 +79,8 @@ describe('Test RuleStorage', () => {
         expect(indexedRule!.rule).toBeTruthy();
         expect(indexedRule!.index).toBe(getRawRuleIndex(text1, '##banner'));
         expect(indexedRule!.listId).toBe(1);
-    });
 
-    it('scans rule 1 from list 2', () => {
+        // scans rule 1 from list 2
         expect(scanner.scan()).toBeTruthy();
         indexedRule = scanner.getRule();
 
@@ -87,9 +88,8 @@ describe('Test RuleStorage', () => {
         expect(indexedRule!.rule).toBeTruthy();
         expect(indexedRule!.index).toBe(text1.length + getRawRuleIndex(text2, '||example.com'));
         expect(indexedRule!.listId).toBe(2);
-    });
 
-    it('scans rule 2 from list 2', () => {
+        // scans rule 2 from list 2
         expect(scanner.scan()).toBeTruthy();
         indexedRule = scanner.getRule();
 
@@ -97,9 +97,8 @@ describe('Test RuleStorage', () => {
         expect(indexedRule!.rule).toBeTruthy();
         expect(indexedRule!.index).toBe(text1.length + getRawRuleIndex(text2, '##advert'));
         expect(indexedRule!.listId).toBe(2);
-    });
 
-    it('scans rule 1 from list 3', () => {
+        // scans rule 1 from list 3
         expect(scanner.scan()).toBeTruthy();
         indexedRule = scanner.getRule();
 
@@ -107,9 +106,8 @@ describe('Test RuleStorage', () => {
         expect(indexedRule!.rule).toBeTruthy();
         expect(indexedRule!.index).toBe(text1.length + text2.length + getRawRuleIndex(text3, '||example.net'));
         expect(indexedRule!.listId).toBe(1001);
-    });
 
-    it('scans rule 2 from list 3', () => {
+        // scans rule 2 from list 3
         expect(scanner.scan()).toBeTruthy();
         indexedRule = scanner.getRule();
 
@@ -117,17 +115,19 @@ describe('Test RuleStorage', () => {
         expect(indexedRule!.rule).toBeTruthy();
         expect(indexedRule!.index).toBe(text1.length + text2.length + getRawRuleIndex(text3, '##advert'));
         expect(indexedRule!.listId).toBe(1001);
-    });
 
-    // FIXME: remove binary shifts
-    it('checks that there is nothing more to read', () => {
+        // checks that there is nothing more to read
         expect(scanner.scan()).toBeFalsy();
         // Check that nothing breaks if we read a finished scanner
         expect(scanner.scan()).toBeFalsy();
     });
 
-    // Time to retrieve!
     it('retrieves rules by index', () => {
+        // scan all rules
+        while (scanner.scan()) {
+            // do nothing
+        }
+
         // Rule 1 from the list 1
         let rule = storage.retrieveRule(4);
 
@@ -166,6 +166,11 @@ describe('Test RuleStorage', () => {
     });
 
     it('retrieves rules by index', () => {
+        // scan all rules
+        while (scanner.scan()) {
+            // do nothing
+        }
+
         // Rule 1 from the list 1
         let rule = storage.retrieveNetworkRule(0);
 
