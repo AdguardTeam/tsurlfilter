@@ -15,11 +15,6 @@ import { type RuleParts } from '../filterlist/tokenize';
  */
 export class NetworkEngine {
     /**
-     * Count of rules added to the engine.
-     */
-    public rulesCount: number;
-
-    /**
      * Storage for the network filtering rules.
      */
     private ruleStorage: RuleStorage;
@@ -52,7 +47,6 @@ export class NetworkEngine {
      */
     constructor(storage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = storage;
-        this.rulesCount = 0;
 
         this.domainsLookupTable = new DomainsLookupTable(storage);
         this.hostnameLookupTable = new HostnameLookupTable(storage);
@@ -127,7 +121,12 @@ export class NetworkEngine {
                 }
             }
         }
+    }
 
-        this.rulesCount += 1;
+    public get rulesCount(): number {
+        return this.domainsLookupTable.getRulesCount()
+            + this.hostnameLookupTable.getRulesCount()
+            + this.shortcutsLookupTable.getRulesCount()
+            + this.seqScanLookupTable.getRulesCount();
     }
 }
