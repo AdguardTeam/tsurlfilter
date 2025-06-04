@@ -192,14 +192,26 @@ const extractDomainsFromNetworkRule = (rule: string, separator: number): string[
         i += 1;
     }
 
-    // find next comma or the end of the string
-    let end = rule.indexOf(',', i);
+    const start = i;
 
-    if (end === -1) {
-        end = rule.length;
+    // find next unescaped comma or the end of the string
+    // let end = rule.indexOf(',', i);
+    // while (end !== -1 && end < rule.length && rule[end - 1] === '\\') {
+    //     end = rule.indexOf(',', end + 1);
+    // }
+
+    while (i < rule.length) {
+        if (rule[i] === '\\') {
+            i += 2;
+            continue;
+        }
+        if (rule[i] === ',') {
+            break;
+        }
+        i += 1;
     }
 
-    return rule.slice(i, end).trim().split('|').map((d) => d.trim());
+    return rule.slice(start, i).trim().split('|').map((d) => d.trim());
 };
 
 /**
