@@ -1,8 +1,4 @@
-import { InputByteBuffer } from '@adguard/agtree';
-
-import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
-import { BufferReader } from '../../filterlist/reader/buffer-reader';
-import { getRuleSourceIndex, getRuleSourceText } from '../../filterlist/source-map';
+import { StringLineReader } from '../../filterlist/reader/string-line-reader';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type IFilter } from './filter';
@@ -28,7 +24,7 @@ type ScannedRulesWithErrors = {
  * FilterScanner returns indexed, only network rules from IFilter's content.
  */
 export class FilterScanner implements IFilterScanner {
-    private readonly filter: PreprocessedFilterList;
+    private readonly filter: string;
 
     private readonly filterId: number;
 
@@ -38,7 +34,7 @@ export class FilterScanner implements IFilterScanner {
      * @param filter From which filter the rules should be scanned.
      * @param filterId Id of filter.
      */
-    constructor(filter: PreprocessedFilterList, filterId: number) {
+    constructor(filter: string, filterId: number) {
         this.filter = filter;
         this.filterId = filterId;
     }
@@ -76,18 +72,15 @@ export class FilterScanner implements IFilterScanner {
         filterFn?: (r: IndexedNetworkRuleWithHash) => boolean,
         maxNumberOfScannedNetworkRules?: number,
     ): ScannedRulesWithErrors {
-        const { filterList } = this.filter;
-
         const result: ScannedRulesWithErrors = {
             errors: [],
             rules: [],
         };
 
-        const buffer = new InputByteBuffer(filterList);
-        const reader = new BufferReader(buffer);
+        const reader = new StringLineReader(this.filter);
 
         let ruleBufferIndex = reader.getCurrentPos();
-        let ruleNode = reader.readNext();
+        let ruleNode = reader.readLine();
         let curNumberOfScannedNetworkRules = 0;
 
         while (ruleNode) {
