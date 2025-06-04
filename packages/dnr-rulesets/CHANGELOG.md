@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `utils` entry point with `getVersion` and `getVersionTimestampMs` functions.
 - New `watch` command to watch for changes in the filters
   and automatically rebuild DNR.
+- New option `-raw-filters` for `load` command to load raw text filters and save
+  them to the specified directory.
 
 ### Changed
 

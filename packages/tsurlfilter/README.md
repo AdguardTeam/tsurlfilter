@@ -639,6 +639,61 @@ For more information about the declarative converter, see the its [documentation
 ||testcases.adguard.com$removeparam=p2case6
 ```
 
+## Converting filters to declarative rulesets
+
+This library provides a utility to convert AdGuard filter lists and metadata into declarative rulesets suitable for browser extensions or other use cases. This can be accessed both programmatically (API) and via the CLI.
+
+### API usage
+
+You can use the `convertFilters` function directly in your TypeScript/JavaScript code:
+
+```ts
+import { convertFilters } from '@adguard/tsurlfilter/cli/convertFilters';
+
+// Example usage:
+await convertFilters(
+  './filters',           // Path to directory containing filter files and metadata (e.g., filters.json)
+  './resources',         // Path to web-accessible resources (can be obtained via `@adguard/tswebextension` CLI's `war` command)
+  './build/rulesets',    // Destination directory for generated rulesets
+  {
+    debug: true,         // (optional) Print additional debug information
+    prettifyJson: true,  // (optional) Prettify JSON output (default: true)
+  }
+);
+```
+
+**Parameters:**
+- `filtersAndMetadataDir` (string): Path to the directory with filter files and metadata (should contain e.g. `filters.json`).
+- `resourcesDir` (string): Path to web-accessible resources (used for ruleset generation).
+- `destRulesetsDir` (string): Output directory for the resulting declarative rulesets.
+- `options` (object, optional):
+    - `debug` (boolean): Print debug info to console (default: false).
+    - `prettifyJson` (boolean): Prettify JSON output (default: true).
+
+### CLI usage
+
+You can perform the same conversion using the CLI:
+
+```sh
+npx tsurlfilter convert <filtersAndMetadataDir> <resourcesDir> <destRulesetsDir> [options]
+```
+
+**Arguments:**
+- `<filtersAndMetadataDir>`: Path to directory with filter files and metadata (should contain e.g. `filters.json`).
+- `<resourcesDir>`: Path to web-accessible resources.
+- `<destRulesetsDir>`: Output directory for the resulting declarative rulesets.
+
+**Options:**
+- `--debug`           Enable debug mode (default: false)
+- `--prettify-json`   Prettify JSON output (default: true)
+
+**Example:**
+```sh
+npx tsurlfilter convert ./filters ./resources ./build/rulesets --debug --prettify-json
+```
+
+See the output directory for the generated rulesets and metadata.
+
 ## Development
 
 This project is part of the `@adguard/extensions` monorepo.
