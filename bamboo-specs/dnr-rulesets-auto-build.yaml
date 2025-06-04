@@ -15,7 +15,7 @@ stages:
         - DoNothing
 
 # Since auto-build is being run only for a stable branches now:
-# 'stable/dnr-rulesets' or 'stable/dnr-rulesets-2.0' —
+# 'stable/dnr-rulesets-3.0'
 # we should skip the build stage for other branches.
 DoNothing:
   key: NOTHING
@@ -27,7 +27,7 @@ DoNothing:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
     - checkout:
-        force-clean-build: 'true'
+        force-clean-build: true
     - script:
         interpreter: SHELL
         scripts:
@@ -59,7 +59,7 @@ triggers: []
 branches: &branches
   create: manually
   delete: never
-  link-to-jira: 'true'
+  link-to-jira: true
 
 notifications: &notifications
   - events:
@@ -69,13 +69,12 @@ notifications: &notifications
           name: Build webhook
           url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
-# Run plan only for 'stable/dnr-rulesets' or 'stable/dnr-rulesets-2.0' branch.
+# Run plan only for 'stable/dnr-rulesets-3.0' branch.
 # Override is needed to skip the build stage for other branches,
 # because even if branches are not supposed to be run for PRs (due to 'create: manually' above),
 # build was triggered by 'cron' anyway.
 branch-overrides:
-  # 'stable/dnr-rulesets' or 'stable/dnr-rulesets-2.0'
-  - '^stable\/dnr-rulesets(-2\.0)?$':
+  - stable/dnr-rulesets-3.0:
       stages:
         - Build:
             - Build
@@ -89,7 +88,7 @@ branch-overrides:
             ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
         tasks:
           - checkout:
-              force-clean-build: 'true'
+              force-clean-build: true
           - script:
               interpreter: SHELL
               scripts:
@@ -104,9 +103,8 @@ branch-overrides:
 
                   BRANCH="${bamboo.planRepository.branchName}"
 
-                  # Deploy package from "stable/dnr-rulesets" or
-                  # "stable/dnr-rulesets-2.0" branches only
-                  if [ $BRANCH != "stable/dnr-rulesets" ] && [ $BRANCH != "stable/dnr-rulesets-2.0" ]
+                  # Deploy package from "stable/dnr-rulesets-3.0" branch only
+                  if [ $BRANCH != "stable/dnr-rulesets-3.0" ]
                   then
                     echo "deployment is not supported on branch ${BRANCH}, skipping"
                     exit 0;
