@@ -3,7 +3,8 @@
     "version": "3.0.0-alpha.12",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
-        "dist/**/*"
+        "dist/**/*",
+        "!dist/filters/filters.json"
     ],
     "bin": {
         "dnr-rulesets": "dist/cli.cjs"
@@ -59,6 +60,7 @@
         "@rollup/plugin-json": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",
         "@rollup/plugin-swc": "catalog:",
+        "@rollup/plugin-typescript": "catalog:",
         "@stylistic/eslint-plugin": "^2.6.1",
         "@swc-node/register": "catalog:",
         "@swc/core": "catalog:",
@@ -67,12 +69,12 @@
         "@vitest/coverage-v8": "catalog:",
         "axios": "catalog:",
         "eslint": "catalog:eslint9",
-        "rollup-plugin-copy": "^3.5.0",
+        "eslint-plugin-import-newlines": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",
         "eslint-plugin-simple-import-sort": "^12.1.1",
-        "eslint-plugin-import-newlines": "catalog:",
         "rimraf": "catalog:",
         "rollup": "catalog:",
+        "rollup-plugin-copy": "^3.5.0",
         "rollup-plugin-dts": "catalog:",
         "rollup-plugin-node-externals": "catalog:",
         "ts-morph": "catalog:",

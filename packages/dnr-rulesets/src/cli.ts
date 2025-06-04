@@ -4,11 +4,8 @@ import { Logger } from '@adguard/logger';
 import { program } from 'commander';
 
 import { version } from '../package.json';
-import {
-    AssetsLoader,
-    ManifestPatcher,
-    type PatchManifestOptions,
-} from './lib';
+import { AssetsLoader, ManifestPatcher, type PatchManifestOptions } from './lib';
+import { AssetsLoaderOptions } from './lib/assets/loader';
 import { Watcher, WatchOptions } from './lib/manifest/watch';
 
 const DEFAULT_PATH_TO_FILTERS = './filters';
@@ -19,11 +16,11 @@ const DEFAULT_OUTPUT_PATH_FOR_RULESETS = './filters/declarative';
  * - Already proper arrays (from space-separated args)
  * - Single comma-separated strings (e.g. "--ids 1,2,3")
  * - Single elements
- * - Undefined/null
+ * - Undefined/null.
  *
  * @param option Option value from Commander.
  *
- * @returns Properly processed array
+ * @returns Properly processed array.
  */
 const processArrayOption = (option: unknown): string[] => {
     if (Array.isArray(option)) {
@@ -66,30 +63,33 @@ program
 
 program
     .command('load')
-    .description('Downloads rule sets for MV3 extension')
-    .argument('[path-to-output]', 'rule sets download path')
-    .action(async (dest: string) => {
+    .description('Downloads rulesets for MV3 extension')
+    .argument('<path-to-output>', 'rulesets download path')
+    .option('-r, --raw-filters', 'download raw filters in addition to DNR rulesets', false)
+    .action(async (dest: string, options?: AssetsLoaderOptions) => {
         const logger = new Logger();
         const loader = new AssetsLoader();
 
         try {
-            await loader.load(dest);
+            await loader.load(dest, options);
             logger.info(`assets was copied to ${dest}`);
         } catch (e) {
             logger.error(e);
         }
     });
 
+/* eslint-disable max-len */
 program
     .command('manifest')
     .description('Patch MV3 manifest file')
-    .argument('[path-to-manifest]', 'manifest src path')
-    .argument('[path-to-filters]', 'filters src path')
+    .argument('<path-to-manifest>', 'manifest src path')
+    .argument('<path-to-filters>', 'filters src path')
     .option('-f, --force-update', 'force update rulesets with existing id, otherwise it will throw error if ruleset is already in the manifest', false)
     .option('-i, --ids <ids...>', 'filters ids to process, others will be ignored, by default will process all filters matched via `--filters-match`', [])
     .option('-e, --enable <ids...>', 'enable filters by default in manifest.json (they will be enabled after enabling/reloading extension)', [])
     .option('-r, --ruleset-prefix <prefix>', 'prefix for filters ids', 'ruleset_')
     .option('-m, --filters-match <match>', 'filters files match glob pattern', 'filter_+([0-9]).txt')
+    /* eslint-enable max-len */
     .action((
         manifestPath: string,
         filtersPath: string,
@@ -106,11 +106,12 @@ program
         patcher.patch(manifestPath, filtersPath, processedOptions);
     });
 
+/* eslint-disable max-len */
 program
     .command('watch')
     .description('Watch for changes in the filters directory and rebuild DNR rulesets')
-    .argument('[path-to-manifest]', 'path to the manifest.json')
-    .argument('[path-to-resources]', 'folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)')
+    .argument('<path-to-manifest>', 'path to the manifest.json')
+    .argument('<path-to-resources>', 'folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)')
     .option('-p, --path-to-filters', 'path to filters and i18n metadata file (default: `./filters` relative to manifest folder)', '')
     .option('-o, --output-path-for-rulesets', 'output path for rulesets (default: `./filters/declarative` relative to manifest folder)', '')
     .option('-f, --force-update', 'force update rulesets with existing id, otherwise it will throw error if ruleset is already in the manifest', true)
@@ -120,12 +121,14 @@ program
     .option('-m, --filters-match <match>', 'filters files match glob pattern', 'filter_+([0-9]).txt')
     .option('-l, --load', 'download filters on first start before watch', false)
     .option('-d, --debug', 'enable extended logging during conversion or not', false)
-    .action((
+    /* eslint-enable max-len */
+    .action(async (
         manifestPath: string,
         resourcesPath: string,
         options?: Partial<WatchOptionsCli>,
     ) => {
         if (!manifestPath || !resourcesPath) {
+            // eslint-disable-next-line max-len
             throw new Error(`Please provide all required arguments: manifestPath (provided: ${manifestPath}), resourcesPath (provided: ${resourcesPath})`);
         }
 
@@ -136,15 +139,18 @@ program
             enable: processArrayOption(options?.enable),
         };
 
+        const defaultFiltersPath = path.resolve(path.dirname(manifestPath), DEFAULT_PATH_TO_FILTERS);
+        const defaultDestRulesetsPath = path.resolve(path.dirname(manifestPath), DEFAULT_OUTPUT_PATH_FOR_RULESETS);
+
         const paths = {
             manifestPath,
-            filtersPath: options?.pathToFilters || path.resolve(path.dirname(manifestPath), DEFAULT_PATH_TO_FILTERS),
+            filtersPath: options?.pathToFilters || defaultFiltersPath,
             resourcesPath,
-            destinationRulesetsPath: options?.outputPathForRulesets || path.resolve(path.dirname(manifestPath), DEFAULT_OUTPUT_PATH_FOR_RULESETS),
+            destinationRulesetsPath: options?.outputPathForRulesets || defaultDestRulesetsPath,
         };
 
         const watcher = new Watcher();
-        watcher.watch(paths, processedOptions);
+        await watcher.watch(paths, processedOptions);
     });
 
 program.parse(process.argv);

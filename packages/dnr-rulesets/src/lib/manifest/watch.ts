@@ -1,18 +1,12 @@
 #!/usr/bin/env node
 /**
- * @file Watch task for track changes in the filters directory and rebuild DNR rulesets
+ * @file Watch task for track changes in the filters directory and rebuild DNR rulesets.
  */
-
-import fs from 'node:fs';
-import path from 'node:path';
 
 import { convertFilters } from '@adguard/tsurlfilter/cli';
 import { ChokidarOptions, type FSWatcher, watch } from 'chokidar';
-import { exists } from 'fs-extra';
 
-import { FILTERS_METADATA_I18N_FILE_NAME } from '../../../common/constants';
-import { startDownload, writeMetadataFilesToMetadataRuleset } from '../../../common/filters-downloader';
-import { Metadata } from '../../../common/metadata';
+import { startDownload } from '../../../common/filters-downloader';
 import { ManifestPatcher, PatchManifestOptions } from './patcher';
 
 export type WatchPaths = {
@@ -70,12 +64,10 @@ export class Watcher {
      * @param paths.filtersPath Path to filters directory.
      * @param paths.resourcesPath Path to resources directory.
      * @param paths.destinationRulesetsPath Path to destination rulesets directory.
-     * @param metadata Metadata to write to the ruleset.
      * @param debug Whether to enable debug logging or not.
      */
     private rebuildDnrRulesets = async (
         { filtersPath, resourcesPath, destinationRulesetsPath }: WatchPaths,
-        metadata: Metadata,
         debug: boolean = false,
     ): Promise<void> => {
         console.log('Rebuilding DNR rulesets...');
@@ -89,30 +81,6 @@ export class Watcher {
                 prettifyJson: false,
             },
         );
-
-        await writeMetadataFilesToMetadataRuleset(metadata, destinationRulesetsPath);
-    };
-
-    /**
-     * Reads metadata from the filtersPath.
-     *
-     * @throws an error if the metadata file is not found.
-     *
-     * @param manifestPath Path to the directory containing the metadata file.
-     *
-     * @returns Promise that resolves to the metadata object.
-     */
-    private readMetadata = async (manifestPath: string): Promise<Metadata> => {
-        const manifestFilePath = path.join(manifestPath, FILTERS_METADATA_I18N_FILE_NAME);
-
-        const isExists = await exists(manifestFilePath);
-        if (!isExists) {
-            throw new Error(`Metadata file not found: ${manifestFilePath}`);
-        }
-
-        const data = await fs.promises.readFile(manifestFilePath, { encoding: 'utf-8' });
-
-        return JSON.parse(data);
     };
 
     /**
@@ -123,7 +91,7 @@ export class Watcher {
      * @param paths.filtersPath Path to filters directory.
      * @param paths.resourcesPath Path to resources directory.
      * @param paths.destinationRulesetsPath Path to destination rulesets directory.
-     * @param options Patch options. {@link PatchManifestOptions}
+     * @param options Patch options {@link PatchManifestOptions}.
      */
     private filtersChangesListener = async (
         paths: WatchPaths,
@@ -131,10 +99,7 @@ export class Watcher {
     ): Promise<void> => {
         const { manifestPath, filtersPath } = paths;
 
-        // Read manifest on each call to capture all possible changes.
-        const metadata = await this.readMetadata(filtersPath);
-
-        await this.rebuildDnrRulesets(paths, metadata, options?.debug);
+        await this.rebuildDnrRulesets(paths, options?.debug);
 
         const patcher = new ManifestPatcher();
         patcher.patch(manifestPath, filtersPath, options);
@@ -148,7 +113,7 @@ export class Watcher {
      * @param paths.filtersPath Path to filters directory and metadata file.
      * @param paths.resourcesPath Path to resources directory.
      * @param paths.destinationRulesetsPath Path to destination rulesets directory.
-     * @param options Patch options. {@link PatchManifestOptions}
+     * @param options Patch options {@link PatchManifestOptions}.
      */
     public watch = async (
         paths: WatchPaths,
@@ -157,8 +122,9 @@ export class Watcher {
         const { filtersPath } = paths;
 
         if (options?.load) {
-            console.log(`Downloading filters from the server ${filtersPath}...`);
+            console.log(`Downloading filters from the server to ${filtersPath}...`);
             await startDownload(filtersPath);
+            console.log(`Downloading filters from the server to ${filtersPath} is done.`);
         }
 
         // eslint-disable-next-line prefer-const

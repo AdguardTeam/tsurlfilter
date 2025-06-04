@@ -6,7 +6,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import swc from '@rollup/plugin-swc';
 import copy from 'rollup-plugin-copy';
 import { dts } from 'rollup-plugin-dts';
-import nodeExternals from 'rollup-plugin-node-externals';
+import { nodeExternals } from 'rollup-plugin-node-externals';
 
 const DIST_DIR = 'dist';
 
@@ -24,14 +24,14 @@ const mainConfig = {
         dir: DIST_DIR,
         format: 'esm',
         exports: 'named',
-        preserveModules: true,
-        preserveModulesRoot: 'src',
     }],
     plugins: [
+        nodeExternals(),
         resolve({ extensions: ['.ts', '.js'] }),
         json(),
         swc(),
-        nodeExternals(),
+        // Required to handle sprintf-js package from agtree
+        commonjs(),
     ],
 };
 

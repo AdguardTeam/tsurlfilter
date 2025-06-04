@@ -17,6 +17,8 @@ import { generateMD5Hash } from '../src/utils/checksum';
 import { MetadataRuleSet } from '../src/rules/declarative-converter/metadata-ruleset';
 import { getRuleSetId, getRuleSetPath } from '../src/rules/declarative-converter-utils';
 
+export const LOCAL_METADATA_FILE_NAME = 'filters.json';
+
 const ensureDirSync = (dirPath: string) => {
     if (!fs.existsSync(dirPath)) {
         fs.mkdirSync(dirPath, { recursive: true });
@@ -54,13 +56,13 @@ interface ConvertFiltersOptions {
  * rulesets and saves them with counters, source map and list of source filter
  * identifiers on the specified path.
  *
- * @param filtersDir Path fo source filters.
+ * @param filtersAndMetadataDir Path fo source filters with metadata to convert.
  * @param resourcesDir Path to web accessible resources.
  * @param destRulesetsDir Destination path for declarative rulesets.
  * @param options Options for convert filters {@link ConvertFiltersOptions}.
  */
 export const convertFilters = async (
-    filtersDir: string,
+    filtersAndMetadataDir: string,
     resourcesDir: string,
     destRulesetsDir: string,
     options: ConvertFiltersOptions = {},
@@ -70,26 +72,28 @@ export const convertFilters = async (
         prettifyJson = CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson,
     } = options;
 
-    const filtersPath = path.resolve(process.cwd(), filtersDir);
+    const filtersWithMetadataPath = path.resolve(process.cwd(), filtersAndMetadataDir);
     const resourcesPath = path.resolve(process.cwd(), resourcesDir);
     const destRulesetsPath = path.resolve(process.cwd(), destRulesetsDir);
 
-    ensureDirSync(filtersPath);
+    ensureDirSync(filtersWithMetadataPath);
     ensureDirSync(destRulesetsPath);
 
     const filtersPaths = new Map<number, string>();
 
-    console.info(`Scanning ${filtersPath} for filters...`);
+    console.info(`Scanning ${filtersWithMetadataPath} for filters...`);
 
-    const files = await fs.promises.readdir(filtersPath);
+    const files = await fs.promises.readdir(filtersWithMetadataPath);
     const filters = files
         .map((filePath: string) => {
-            console.info(`Extracting filter id from file '${path.join(filtersPath, filePath)}'...`);
+            const curPath = path.join(filtersWithMetadataPath, filePath);
+
+            console.info(`Extracting filter id from file ${curPath}...`);
 
             const index = getIdFromFilterName(filePath);
 
             if (!index) {
-                console.info(`Path '${path.join(filtersPath, filePath)}' skipped`);
+                console.info(`Path '${curPath}' skipped`);
                 return null;
             }
 
@@ -97,7 +101,7 @@ export const convertFilters = async (
 
             filtersPaths.set(filterId, filePath);
             const data = fs.readFileSync(
-                path.resolve(filtersPath, filePath),
+                path.resolve(filtersWithMetadataPath, filePath),
                 { encoding: 'utf-8' },
             );
 
@@ -190,7 +194,7 @@ export const convertFilters = async (
         limitations.forEach((e) => console.log(e.message));
     }
 
-    const metadataRuleSet = new MetadataRuleSet();
+    const checksums: Record<string, string> = {};
 
     for (let i = 0; i < convertedRulesets.length; i += 1) {
         const ruleSet = convertedRulesets[i];
@@ -205,7 +209,7 @@ export const convertFilters = async (
         // eslint-disable-next-line no-await-in-loop
         await fs.promises.writeFile(ruleSetPath, result);
 
-        metadataRuleSet.setChecksum(id, generateMD5Hash(result));
+        checksums[id] = generateMD5Hash(result);
 
         console.log('===============================================');
         console.info(`Ruleset with id ${id} and all ruleset info`);
@@ -213,6 +217,22 @@ export const convertFilters = async (
         console.info(`to ${ruleSetPath}`);
         console.log('===============================================');
     }
+
+    // We save metadata to special ruleset since it is required condition to use
+    // "skip review" option in CWS, that changes should be only in rulesets.
+    // We also have filters_i18n.json file in the filtersPath, but it is not
+    // often updated, so we pack inside ruleset only filters' metadata with
+    // versions, checksums and other information, not translations.
+    const rawMetadata = await fs.promises.readFile(
+        path.join(filtersAndMetadataDir, LOCAL_METADATA_FILE_NAME),
+        { encoding: 'utf-8' },
+    );
+    const metadata = JSON.parse(rawMetadata);
+
+    const metadataRuleSet = new MetadataRuleSet(
+        checksums,
+        { metadata },
+    );
 
     const metadataRulesetId = metadataRuleSet.getId();
     const metadataRulesetDir = path.join(destRulesetsPath, getRuleSetId(metadataRulesetId));

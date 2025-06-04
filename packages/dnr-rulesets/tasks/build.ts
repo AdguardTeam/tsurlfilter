@@ -8,10 +8,7 @@ import {
     FILTERS_DIR,
     RESOURCES_DIR,
 } from '../common/constants';
-import {
-    startDownload,
-    writeMetadataFilesToMetadataRuleset,
-} from '../common/filters-downloader';
+import { startDownload } from '../common/filters-downloader';
 import { version } from '../package.json';
 
 /**
@@ -59,7 +56,7 @@ const removeTxtFiles = async (dir: string): Promise<void> => {
  * and then convert and save json to path specified in the manifest.
  */
 const build = async (): Promise<void> => {
-    const metadata = await startDownload();
+    await startDownload();
 
     await convertFilters(
         FILTERS_DIR,
@@ -70,8 +67,6 @@ const build = async (): Promise<void> => {
             prettifyJson: false,
         },
     );
-
-    await writeMetadataFilesToMetadataRuleset(metadata);
 
     await removeTxtFiles(FILTERS_DIR);
 

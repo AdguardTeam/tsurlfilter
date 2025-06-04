@@ -2,7 +2,7 @@ import { program } from 'commander';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-import { convertFilters } from './convertFilters';
+import { convertFilters, LOCAL_METADATA_FILE_NAME } from './convertFilters';
 import { version } from '../package.json';
 
 export const DEFAULT_DEST_RULE_SETS_DIR = './build/rulesets';
@@ -21,13 +21,14 @@ async function main() {
     program
         .command('convert')
         .description('Converts filters to declarative rule sets')
-        .argument('<filters_dir>', 'Path to filters to convert')
+        // eslint-disable-next-line max-len
+        .argument('<filters_and_metadata_dir>', `Path to filters and their metadata with name "${LOCAL_METADATA_FILE_NAME}" to convert`)
         .argument('<resources_dir>', 'Path to web accessible resources')
         .argument('[dest_rule_sets_dir]', 'Destination path for rule sets', DEFAULT_DEST_RULE_SETS_DIR)
         .option('--debug', 'Enable debug mode', false)
         .option('--prettify-json', 'Prettify JSON output', true)
-        .action(async (filtersDir, resourcesDir, destRulesetsDir, options) => {
-            await convertFilters(filtersDir, resourcesDir, destRulesetsDir, {
+        .action(async (filtersAndMetadataDir, resourcesDir, destRulesetsDir, options) => {
+            await convertFilters(filtersAndMetadataDir, resourcesDir, destRulesetsDir, {
                 debug: options.debug,
                 prettifyJson: options.prettifyJson,
             });
