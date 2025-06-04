@@ -74,7 +74,8 @@ notifications: &notifications
 # because even if branches are not supposed to be run for PRs (due to 'create: manually' above),
 # build was triggered by 'cron' anyway.
 branch-overrides:
-  - stable/dnr-rulesets-3.0:
+  -
+    stable/dnr-rulesets-3.0:
       stages:
         - Build:
             - Build
