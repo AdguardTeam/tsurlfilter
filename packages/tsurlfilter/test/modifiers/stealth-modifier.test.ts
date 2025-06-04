@@ -3,18 +3,19 @@ import {
     it,
     expect,
     afterEach,
+    afterAll,
     vi,
 } from 'vitest';
 
 import { StealthModifier, StealthOptionName } from '../../src/modifiers/stealth-modifier';
-import { LoggerMock } from '../mocks';
-import { setLogger } from '../../src';
+import { loggerMocks } from '../setup';
 
 describe('Stealth modifier api', () => {
-    const loggerMock = new LoggerMock();
-    setLogger(loggerMock);
-
     afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    afterAll(() => {
         vi.resetAllMocks();
     });
 
@@ -25,18 +26,30 @@ describe('Stealth modifier api', () => {
 
         modifier = new StealthModifier('    ');
         expect(modifier.hasValues()).toBeFalsy();
-        expect(loggerMock.debug).toHaveBeenCalledTimes(0);
+        expect(loggerMocks.trace).toHaveBeenCalledTimes(0);
 
         modifier = new StealthModifier('referrer|flash');
         expect(modifier.hasValues()).toBeTruthy();
         expect(modifier.hasStealthOption(StealthOptionName.HideReferrer)).toBeTruthy();
-        expect(loggerMock.debug).toHaveBeenCalledTimes(0);
+        expect(loggerMocks.trace).toHaveBeenCalledTimes(0);
+
+        let traceCalls = 0;
+        modifier = new StealthModifier('donottrack|donottrack');
+        traceCalls += 1;
+        expect(modifier.hasValues()).toBeTruthy();
+        expect(loggerMocks.trace).toHaveBeenCalledTimes(traceCalls);
+        expect(loggerMocks.trace).toHaveBeenCalledWith(
+            // eslint-disable-next-line max-len
+            '[tsurl.StealthModifier.constructor]: duplicate $stealth modifier value "donottrack" in "donottrack|donottrack"',
+        );
 
         modifier = new StealthModifier('webrtc|java');
+        traceCalls += 1;
         expect(modifier.hasValues()).toBeFalsy();
-        expect(loggerMock.debug).toHaveBeenCalledTimes(1);
-        expect(loggerMock.debug).toHaveBeenCalledWith(
-            '$stealth modifier does not contain any options supported by browser extension: "webrtc|java"',
+        expect(loggerMocks.trace).toHaveBeenCalledTimes(traceCalls);
+        expect(loggerMocks.trace).toHaveBeenCalledWith(
+            // eslint-disable-next-line max-len
+            '[tsurl.StealthModifier.constructor]: $stealth modifier does not contain any options supported by browser extension: "webrtc|java"',
         );
 
         expect(() => {

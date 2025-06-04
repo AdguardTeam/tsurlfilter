@@ -5,7 +5,7 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor, NETWORK_RULE_OPTIONS, type PreprocessedFilterList } from '@adguard/tsurlfilter';
+import { FilterListPreprocessor, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
@@ -14,18 +14,16 @@ import { type MessageHandler, type AppInterface } from '../../common/app';
 import {
     ALLOWLIST_FILTER_ID,
     BLOCKING_TRUSTED_FILTER_ID,
-    LF,
     QUICK_FIXES_FILTER_ID,
     USER_FILTER_ID,
 } from '../../common/constants';
-import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 
-import { allowlistApi } from './allowlist-api';
+import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { declarativeFilteringLog } from './declarative-filtering-log';
@@ -146,7 +144,7 @@ export class TsWebExtension implements AppInterface<
      * {@link ConfigurationResult}.
      */
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        logger.debug('[tswebextension.innerStart]: start');
+        logger.trace('[tsweb.TsWebExtension.innerStart]: start');
 
         if (!appContext.startTimeMs) {
             appContext.startTimeMs = Date.now();
@@ -180,13 +178,13 @@ export class TsWebExtension implements AppInterface<
             this.isStarted = true;
             this.startPromise = undefined;
 
-            logger.debug('[tswebextension.innerStart]: started');
+            logger.trace('[tsweb.TsWebExtension.innerStart]: started');
 
             return res;
         } catch (e) {
             this.startPromise = undefined;
 
-            logger.debug('[tswebextension.innerStart]: failed due to ', getErrorMessage(e));
+            logger.error('[tsweb.TsWebExtension.innerStart]: failed: ', e);
 
             throw new Error('Cannot be started: ', { cause: e as Error });
         }
@@ -216,16 +214,16 @@ export class TsWebExtension implements AppInterface<
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 
-        logger.debug('[tswebextension.start]: is started ', this.isStarted);
+        logger.trace('[tsweb.TsWebExtension.start]: is started ', this.isStarted);
 
         if (this.isStarted) {
             throw new Error('Already started');
         }
 
         if (this.startPromise) {
-            logger.debug('[tswebextension.start]: already called start, waiting');
+            logger.trace('[tsweb.TsWebExtension.start]: already called start, waiting');
             const res = await this.startPromise;
-            logger.debug('[tswebextension.start]: awaited start');
+            logger.trace('[tsweb.TsWebExtension.start]: awaited start');
             return res;
         }
 
@@ -309,7 +307,7 @@ export class TsWebExtension implements AppInterface<
             'filterList',
             'conversionMap',
         ];
-        logger.debug('[tswebextension.configure]: start with ', stringifyObjectWithoutKeys(config, binaryFields));
+        logger.trace('[tsweb.TsWebExtension.configure]: start with ', stringifyObjectWithoutKeys(config, binaryFields));
 
         const configuration = configurationMV3Validator.parse(config); // error happens here
 
@@ -355,7 +353,7 @@ export class TsWebExtension implements AppInterface<
             // Update allowlist settings.
             allowlistApi.configure(configuration);
             // Combine all allowlist rules into one network rule.
-            const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
+            const combinedAllowlistRule = allowlistApi.combineAllowListRulesForDNR();
 
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
@@ -373,7 +371,7 @@ export class TsWebExtension implements AppInterface<
                 {
                     getContent: (): Promise<PreprocessedFilterList> => {
                         return Promise.resolve(
-                            FilterListPreprocessor.preprocess(combinedAllowlistRules),
+                            FilterListPreprocessor.preprocess(combinedAllowlistRule),
                         );
                     },
                 },
@@ -390,17 +388,13 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
-            const temporaryBadfilterRules = configuration.trustedDomains
-                .map((rule) => {
-                    return `${rule},${NETWORK_RULE_OPTIONS.BADFILTER}`;
-                })
-                .join(LF);
+            const trustedDomainsExceptionRule = AllowlistApi.getAllowlistRule(configuration.trustedDomains);
 
             const blockingPageTrustedFilter = new Filter(
                 BLOCKING_TRUSTED_FILTER_ID,
                 {
                     getContent: (): Promise<PreprocessedFilterList> => {
-                        return Promise.resolve(FilterListPreprocessor.preprocess(temporaryBadfilterRules));
+                        return Promise.resolve(FilterListPreprocessor.preprocess(trustedDomainsExceptionRule));
                     },
                 },
                 true,
@@ -454,7 +448,7 @@ export class TsWebExtension implements AppInterface<
 
         documentBlockingService.configure(config);
 
-        logger.debug('[tswebextension.configure]: end');
+        logger.trace('[tsweb.TsWebExtension.configure]: end');
 
         return res;
     }
@@ -730,8 +724,7 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             const filterListIds = staticFilters.map((f) => f.getId());
 
-            // eslint-disable-next-line max-len
-            logger.error(`[tswebextension.loadStaticRuleSets]: Cannot scan rules of filter list with ids ${filterListIds} due to: ${getErrorMessage(e)}`);
+            logger.error(`[tsweb.TsWebExtension.loadStaticRuleSets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
 
             return [];
         }

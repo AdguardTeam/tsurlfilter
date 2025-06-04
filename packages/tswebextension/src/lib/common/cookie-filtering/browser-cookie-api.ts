@@ -26,7 +26,7 @@ export class BrowserCookieApi {
             await browser.cookies.remove({ name, url });
             return true;
         } catch (e) {
-            logger.error('[tswebextension.removeCookie]: error on removing cookie via browser.cookies.remove: ', e);
+            logger.error('[tsweb.BrowserCookieApi.removeCookie]: error on removing cookie via browser.cookies.remove: ', e);
         }
 
         return false;
@@ -52,9 +52,9 @@ export class BrowserCookieApi {
                 // if url is not matched with domain, cookie cannot be set
                 // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2683
                 || (cookie.domain && !BrowserCookieApi.doesDomainMatchUrl(cookie.domain, cookie.url))) {
-                logger.info('[tswebextension.modifyCookie]: error on modifying cookie via browser.cookies.set: ', e);
+                logger.info('[tsweb.BrowserCookieApi.modifyCookie]: error on modifying cookie via browser.cookies.set: ', e);
             } else {
-                logger.error('[tswebextension.modifyCookie]: error on modifying cookie via browser.cookies.set: ', e);
+                logger.error('[tsweb.BrowserCookieApi.modifyCookie]: error on modifying cookie via browser.cookies.set: ', e);
             }
         }
 
@@ -74,7 +74,7 @@ export class BrowserCookieApi {
 
             return found;
         } catch (e) {
-            logger.error('[tswebextension.findCookies]: error on finding cookies via browser.cookies.getAll: ', e);
+            logger.error('[tsweb.BrowserCookieApi.findCookies]: error on finding cookies via browser.cookies.getAll: ', e);
         }
 
         return [];

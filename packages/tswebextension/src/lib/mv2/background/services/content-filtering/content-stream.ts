@@ -255,7 +255,7 @@ export class ContentStream {
                     this.disconnect(event.data);
                 }
             } catch (e) {
-                logger.warn('[ContentStream] Error during charset detection/initial decode. Disconnecting.', e);
+                logger.warn('[tsweb.ContentStream.onResponseData]: Error during charset detection/initial decode. Disconnecting.', e);
                 this.disconnect(event.data);
             }
         } else {
@@ -263,10 +263,7 @@ export class ContentStream {
                 const decodedChunk = this.decoder!.decode(event.data, { stream: true });
                 this.content += decodedChunk;
             } catch (decodingError) {
-                logger.warn(
-                    '[ContentStream] Error decoding subsequent chunk with charset. Disconnecting.',
-                    decodingError,
-                );
+                logger.warn('[tsweb.ContentStream.onResponseData]: Error decoding subsequent chunk with charset. Disconnecting.', decodingError);
                 this.disconnect(event.data);
             }
         }
@@ -276,8 +273,8 @@ export class ContentStream {
      * Handler for response error.
      */
     private onResponseError(): void {
-        if (this.filter.error && this.filter.error) {
-            logger.info(this.filter.error);
+        if (this.filter.error) {
+            logger.info('[tsweb.ContentStream.onResponseError]: catched error: ', this.filter.error);
         }
     }
 
@@ -306,9 +303,7 @@ export class ContentStream {
         if (charset) {
             if (SUPPORTED_CHARSETS.indexOf(charset) < 0) {
                 // Charset is detected and it is not supported
-                logger.warn(
-                    `Skipping request ${this.context.requestId} with Content-Type ${this.context.contentTypeHeader}`,
-                );
+                logger.warn(`[tsweb.ContentStream.onResponseFinish]: skipping request ${this.context.requestId} with Content-Type ${this.context.contentTypeHeader}`);
                 this.write(this.content);
                 return;
             }
@@ -324,7 +319,7 @@ export class ContentStream {
         // This indicates the original byte stream was likely invalid for the determined charset.
         // In this case, we write the raw chunks directly to the filter.
         if (this.content.includes(REPLACEMENT_CHAR)) {
-            logger.debug(`[ContentStream] Writing raw chunks for request ${this.context.requestId}`);
+            logger.debug(`[tsweb.ContentStream.onResponseFinish]: Writing raw chunks for request ${this.context.requestId}`);
             // Write all buffered raw chunks directly
             for (const chunk of this.rawChunks) {
                 this.filter.write(chunk);

@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - CLI was not worked since to ESM builds.
 
+### Changed
+
+- Updated [@adguard/logger] to `v2.0.0`.
+
 [AdguardBrowserExtension#2942]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2942
 
 ## [3.3.4] - 2025-05-28
@@ -942,6 +946,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [1.0.57]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.57
 
+[@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/agtree]: ../agtree/CHANGELOG.md
 [@adguard/css-tokenizer]: ../css-tokenizer/CHANGELOG.md
 

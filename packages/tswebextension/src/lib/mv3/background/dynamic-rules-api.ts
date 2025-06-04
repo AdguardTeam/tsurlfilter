@@ -7,7 +7,6 @@ import {
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
-import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 
 export type { ConversionResult };
@@ -172,8 +171,7 @@ export default class DynamicRulesApi {
         try {
             await Promise.all(tasks);
         } catch (e) {
-            // eslint-disable-next-line max-len
-            logger.error(`[tswebextension.cancelAllStaticRulesUpdates]: cannot cancel all updates to static rules due to: ${getErrorMessage(e)}`);
+            logger.error('[tsweb.DynamicRulesApi.cancelAllStaticRulesUpdates]: cannot cancel all updates to static rules due to: ', e);
         }
     }
 
@@ -209,8 +207,7 @@ export default class DynamicRulesApi {
         try {
             await Promise.all(tasks);
         } catch (e) {
-            // eslint-disable-next-line max-len
-            logger.error(`[tswebextension.applyBadFilterRules]: cannot apply updates to static rules due to: ${getErrorMessage(e)}`);
+            logger.error('[tsweb.DynamicRulesApi.applyBadFilterRules]: cannot apply updates to static rules due to: ', e);
         }
     }
 

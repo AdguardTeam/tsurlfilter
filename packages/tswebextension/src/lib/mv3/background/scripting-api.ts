@@ -1,8 +1,6 @@
 import { type ScriptletData } from '@adguard/tsurlfilter';
 import { type Source } from '@adguard/scriptlets';
 
-import { BACKGROUND_TAB_ID } from '../../common/constants';
-
 import { appContext } from './app-context';
 import { type LocalScriptFunction } from './services/local-script-rules-service';
 import { UserScriptsApi } from './user-scripts-api';
@@ -11,8 +9,19 @@ import { UserScriptsApi } from './user-scripts-api';
  * Parameters for applying CSS rules.
  */
 export type InsertCSSParams = {
+    /**
+     * The ID of the tab.
+     */
     tabId: number;
+
+    /**
+     * The ID of the frame.
+     */
     frameId: number;
+
+    /**
+     * The CSS text to be applied.
+     */
     cssText: string;
 };
 
@@ -100,11 +109,11 @@ export class ScriptingApi {
      *
      * @returns Promise that resolves when the CSS is injected.
      */
-    public static async insertCSS({ tabId, frameId, cssText }: InsertCSSParams): Promise<void> {
-        if (tabId === BACKGROUND_TAB_ID) {
-            return;
-        }
-
+    public static async insertCSS({
+        tabId,
+        frameId,
+        cssText,
+    }: InsertCSSParams): Promise<void> {
         await chrome.scripting.insertCSS({
             css: cssText,
             origin: 'USER',
@@ -129,11 +138,6 @@ export class ScriptingApi {
         scriptletData,
         domainName,
     }: ExecuteScriptletParams): Promise<void> {
-        // There is no reason to inject a script into the background page
-        if (tabId === BACKGROUND_TAB_ID) {
-            return;
-        }
-
         const params: Source = {
             ...scriptletData.params,
             uniqueId: String(appContext.startTimeMs),
@@ -165,11 +169,6 @@ export class ScriptingApi {
         frameId,
         scriptFunction,
     }: ExecuteScriptFuncParams): Promise<void> {
-        // There is no reason to inject a script into the background page
-        if (tabId === BACKGROUND_TAB_ID) {
-            return;
-        }
-
         /**
          * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
          *
@@ -207,14 +206,9 @@ export class ScriptingApi {
         frameId,
         scriptText,
     }: ExecuteCombinedScriptParams): Promise<void> {
-        // There is no reason to inject a script into the background page
-        if (tabId === BACKGROUND_TAB_ID) {
-            return;
-        }
-
         await UserScriptsApi.executeScripts({
-            frameId,
             tabId,
+            frameId,
             scriptText,
         });
     }
