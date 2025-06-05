@@ -68,9 +68,12 @@ import {
     const handleAppMessage = async (message: any) => {
         switch (message.type) {
             case 'OPEN_ASSISTANT': {
-                const active = await browser.tabs.query({ active: true });
-                if (active[0]?.id) {
-                    await adguardApi.openAssistant(active[0].id);
+                // we need current window, because if we open assistant in the incognito mode,
+                // it will be not clear where to inject it AG-42726
+                const currentWindow = await browser.windows.getCurrent();
+                const [activeTab] = await browser.tabs.query({ active: true, windowId: currentWindow.id });
+                if (activeTab?.id) {
+                    await adguardApi.openAssistant(activeTab.id);
                 }
                 break;
             }
