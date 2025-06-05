@@ -6,6 +6,7 @@ import {
     hasUnquotedSubstring,
     fastHash,
     replaceAll,
+    fastHash31,
 } from '../../src/utils/string-utils';
 
 describe('splitByDelimiterWithEscapeCharacter', () => {
@@ -134,5 +135,38 @@ describe('fastHash', () => {
         expect(hashTwo).toBeLessThan(Number.MAX_SAFE_INTEGER);
 
         expect(hashOne).not.toBe(hashTwo);
+    });
+});
+
+describe('fastHash31', () => {
+    it('returns 0 for empty string', () => {
+        expect(fastHash31('')).toBe(0);
+    });
+
+    it('returns consistent hash for same input', () => {
+        const hash1 = fastHash31('example.com');
+        const hash2 = fastHash31('example.com');
+        expect(hash1).toBe(hash2);
+    });
+
+    it('returns different hashes for different strings', () => {
+        const hash1 = fastHash31('example.com');
+        const hash2 = fastHash31('example.net');
+        expect(hash1).not.toBe(hash2);
+    });
+
+    it('hash is always in [1, 2^31-1] for valuable strings', () => {
+        const samples = [
+            'a',
+            'test',
+            'example.com',
+            'anotherstring',
+            'verylongstringverylongstringverylongstring',
+        ];
+        for (const s of samples) {
+            const hash = fastHash31(s);
+            expect(hash).toBeGreaterThanOrEqual(1);
+            expect(hash).toBeLessThanOrEqual(0x7fffffff);
+        }
     });
 });

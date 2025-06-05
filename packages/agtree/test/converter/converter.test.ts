@@ -774,6 +774,159 @@ describe('Converter integration tests', () => {
                     ],
                     shouldConvert: true,
                 },
+                {
+                    actual: 'example.com,~example.net$$div[max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net##^div',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$$div[attr][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net##^div[attr]',
+                    ],
+                    shouldConvert: true,
+                },
+            ])("should convert '$actual' to '$expected'", (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
+            });
+        });
+
+        describe('should convert html rule to uBo', () => {
+            test.each([
+                {
+                    actual: 'example.com$$script[tag-content="12313"][max-length="262144"]',
+                    expected: [
+                        'example.com##^script:has-text(12313)',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$$div[max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net##^div',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$$div[attr][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net##^div[attr]',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
+                    expected: [
+                        "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
+                    expected: [
+                        // eslint-disable-next-line max-len
+                        "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                // eslint-disable-next-line max-len
+                    actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
+                    expected: [
+                        'example.com,~example.net#@#^script:has-text(console.log(""doubles""))',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net#@#^script[data-test]:has-text(12313)',
+                    ],
+                    shouldConvert: true,
+                },
+            ])("should convert '$actual' to '$expected'", (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
+            });
+        });
+
+        describe('should not convert html rule to uBo', () => {
+            test.each([
+                {
+                    actual: String.raw`~example.com,google.com$$div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
+                    expected: [
+                        String.raw`~example.com,google.com##^div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: String.raw`~example.com,google.com$$div[id="ad_text"][tag-content="teas""ernet"][max-length="500"][min-length="50"][wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]`,
+                    expected: [
+                        // eslint-disable-next-line max-len
+                        String.raw`~example.com,google.com##^div[id="ad_text"]:has-text(teas""ernet)[wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]:min-text-length(50)`,
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: String.raw`~example.com,google.com$$div[id="ad_text"][max-length="500000"][min-length="50"]`,
+                    expected: [
+                        String.raw`~example.com,google.com##^div[id="ad_text"]:min-text-length(50)`,
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
+                    expected: [
+                        "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
+                    expected: [
+                        // eslint-disable-next-line max-len
+                        "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                // eslint-disable-next-line max-len
+                    actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
+                    expected: [
+                        'example.com,~example.net#@#^script:has-text(console.log(""doubles""))',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net#@#^script[data-test]:has-text(12313)',
+                    ],
+                    shouldConvert: true,
+                },
             ])("should convert '$actual' to '$expected'", (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
             });

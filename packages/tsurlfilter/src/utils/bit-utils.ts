@@ -1,37 +1,28 @@
+/* eslint-disable no-param-reassign */
 /**
- * Counts the number of bits in the number and returns it.
+ * Counts the number of set bits (1s) in a 32-bit number using Hamming Weight (SWAR) method.
  *
- * @param a Number to count bits.
+ * @param a Number to count bits in.
  *
- * @returns The number of bits in the number.
+ * @returns The number of bits set to 1.
  */
 export function getBitCount(a: number): number {
-    let count = 0;
-    let n = a;
-
-    while (n > 0) {
-        count += n & 1;
-        n >>= 1;
-    }
-    return count;
+    a -= ((a >>> 1) & 0x55555555);
+    a = (a & 0x33333333) + ((a >>> 2) & 0x33333333);
+    a = (a + (a >>> 4)) & 0x0F0F0F0F;
+    a += (a >>> 8);
+    a += (a >>> 16);
+    return a & 0x3F;
 }
 
 /**
  * Count the number of bits enabled in a number based on a bit mask.
  *
  * @param base Base number to check.
- * @param mask Mask to check.
+ * @param mask Mask to apply.
  *
- * @returns The number of bits enabled in the base number based on the mask.
- *
- * @example
- * countEnabledBits(0b100, 0b110); // 1
- * countEnabledBits(0b111, 0b000); // 0
+ * @returns Number of bits set in `base & mask`.
  */
-export function countEnabledBits(base: number, mask: number) {
-    // Get the common bits between the base and the mask
-    const common = base & mask;
-
-    // Count the number of bits enabled in the common bits
-    return getBitCount(common);
+export function countEnabledBits(base: number, mask: number): number {
+    return getBitCount(base & mask);
 }

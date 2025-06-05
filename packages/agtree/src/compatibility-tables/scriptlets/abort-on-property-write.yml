@@ -25,7 +25,7 @@ ubo_any:
     - name: property
       required: true
 
-abp_any:  
+abp_any:
   name: abort-on-property-write
   version_added: 3.4.3
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref

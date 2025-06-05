@@ -12,7 +12,7 @@ export class BadFilterRulesConverter extends DeclarativeRuleConverter {
      *
      * @param filterId Filter id.
      * @param rules List of indexed rules.
-     * @param offsetId Offset for the IDs of the converted rules.
+     * @param usedIds Set with already used IDs to exclude duplications in IDs.
      *
      * @returns Empty converted rules.
      */
@@ -23,7 +23,7 @@ export class BadFilterRulesConverter extends DeclarativeRuleConverter {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         rules: IndexedNetworkRuleWithHash[],
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        offsetId: number,
+        usedIds: Set<number>,
     ): Promise<ConvertedRules> {
         return Promise.resolve({
             sourceMapValues: [],
