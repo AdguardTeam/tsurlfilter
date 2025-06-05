@@ -129,35 +129,35 @@ describe('Test RuleStorage', () => {
         }
 
         // Rule 1 from the list 1
-        let rule = storage.retrieveRule(4);
+        let rule = storage.retrieveRule(getRawRuleIndex(text1, '||example.org'));
 
         expect(rule).toBeTruthy();
         expect(rule!.getIndex()).toBe(getRawRuleIndex(text1, '||example.org'));
         expect(rule!.getFilterListId()).toBe(1);
 
         // Rule 2 from the list 1
-        rule = storage.retrieveRule(28);
+        rule = storage.retrieveRule(getRawRuleIndex(text1, '##banner'));
 
         expect(rule).toBeTruthy();
         expect(rule!.getIndex()).toBe(getRawRuleIndex(text1, '##banner'));
         expect(rule!.getFilterListId()).toBe(1);
 
         // Rule 1 from the list 2
-        rule = storage.retrieveRule(text1.length + 32772);
+        rule = storage.retrieveRule(text1.length + getRawRuleIndex(text2, '||example.com'));
 
         expect(rule).toBeTruthy();
         expect(rule!.getIndex()).toBe(getRawRuleIndex(text2, '||example.com'));
         expect(rule!.getFilterListId()).toBe(2);
 
         // Rule 2 from the list 2
-        rule = storage.retrieveRule(text1.length + 32796);
+        rule = storage.retrieveRule(text1.length + getRawRuleIndex(text2, '##advert'));
 
         expect(rule).toBeTruthy();
         expect(rule!.getIndex()).toBe(getRawRuleIndex(text2, '##advert'));
         expect(rule!.getFilterListId()).toBe(2);
 
         // Check cache
-        rule = storage.retrieveRule(32796);
+        rule = storage.retrieveRule(text1.length + getRawRuleIndex(text2, '##advert'));
         expect(rule).toBeTruthy();
 
         // Incorrect index
