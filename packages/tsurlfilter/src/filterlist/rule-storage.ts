@@ -1,4 +1,5 @@
 import { RuleParser } from '@adguard/agtree';
+import { defaultParserOptions } from '@adguard/agtree/parser';
 import { type IRuleList } from './rule-list';
 import { RuleStorageScanner } from './scanner/rule-storage-scanner';
 import { type IRule } from '../rules/rule';
@@ -130,7 +131,11 @@ export class RuleStorage {
             return null;
         }
 
-        const result = RuleFactory.createRule(RuleParser.parse(ruleText), listId, ruleId, false, false, ignoreHost);
+        const node = RuleParser.parse(ruleText, {
+            ...defaultParserOptions,
+            parseHostRules: !ignoreHost,
+        });
+        const result = RuleFactory.createRule(node, listId, ruleId, false, false, ignoreHost);
 
         if (result) {
             this.cache.set(storageIdx, result);
