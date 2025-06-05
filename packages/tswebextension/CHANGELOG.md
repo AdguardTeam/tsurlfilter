@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased <!-- release/browser-extension-v5.3 -->
 
+### Fixed
+
+- Network rules with $important modifier are applied even if protection is disabled [AdGuardBrowserExtension#3227]
+
+[AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
+
 ## Unreleased <!-- release/browser-extension-v5.2 -->
 
 ### Added
