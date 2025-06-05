@@ -1,11 +1,15 @@
 /* eslint-disable no-console, no-plusplus */
 import { describe, it, expect } from 'vitest';
-import fs from 'fs';
 import console from 'console';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { NetworkRuleParser } from '@adguard/agtree';
 
 import { SimpleRegex } from '../../src/rules/simple-regex';
 import { EMPTY_STRING } from '../../src/common/constants';
+
+// eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
+const __dirname = new URL('.', import.meta.url).pathname;
 
 /**
  * Maximum amount of patterns that will be passed down to benchmark from incoming rule list.
@@ -16,11 +20,11 @@ const MAX_PATTERNS_COUNT = 320;
 
 const enum FilePath {
     // Rule lists to get patterns from
-    AdguardRegexpPatternNetworkRules = './test/resources/adguard_regexp_pattern_network_rules.txt',
-    EasylistBaseRules = './test/resources/easylist.txt',
+    AdguardRegexpPatternNetworkRules = '../resources/adguard_regexp_pattern_network_rules.txt',
+    EasylistBaseRules = '../resources/easylist.txt',
     // Reference files to compare results with
-    RegexpShortcutsReference = './test/resources/shortcuts-regexp-reference.txt',
-    BasicShortcutsReference = './test/resources/shortcuts-basic-reference.txt',
+    RegexpShortcutsReference = '../resources/shortcuts-regexp-reference.txt',
+    BasicShortcutsReference = '../resources/shortcuts-basic-reference.txt',
 }
 
 /**
@@ -31,7 +35,7 @@ const enum FilePath {
  * @returns List of patterns extracted from rule list.
  */
 const getPatterns = async (filePath: string): Promise<string[]> => {
-    const rulesString: string = await fs.promises.readFile(filePath, 'utf8');
+    const rulesString: string = await readFile(join(__dirname, filePath), 'utf8');
 
     const rulesList = rulesString
         .split('\n')
@@ -76,8 +80,7 @@ const validateExtraction = async (
 ): Promise<void> => {
     const shortcuts = patterns.map((pattern) => SimpleRegex.extractShortcut(pattern));
 
-    const reference = await fs.promises
-        .readFile(referencePath, 'utf8')
+    const reference = await readFile(join(__dirname, referencePath), 'utf8')
         .then((r: string) => r.split('\n'))
         .then((r: string[]) => r.filter((s) => !s.startsWith('!')));
 
