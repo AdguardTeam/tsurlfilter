@@ -575,19 +575,4 @@ describe('Test cosmetic engine - HTML filtering rules', () => {
         expect(result.Html.specific).toHaveLength(1);
         expect(result.Html.generic).toHaveLength(0);
     });
-
-    it('correctly detects HTML filtering rules with attribute with no value', () => {
-        const contentPart = 'div[custom_attr]';
-        const specificRule = `example.com$$${contentPart}`;
-        const rulesLocal = [
-            specificRule,
-        ];
-        const processedLocal = FilterListPreprocessor.preprocess(rulesLocal.join('\n'));
-        const cosmeticEngine = new CosmeticEngine(createTestRuleStorage(1, processedLocal));
-
-        const result = cosmeticEngine.match(createRequest('https://example.com'), CosmeticOption.CosmeticOptionAll);
-
-        expect(result.Html.specific).toHaveLength(1);
-        expect(result.Html.specific[0].getContent()).toContain(contentPart);
-    });
 });

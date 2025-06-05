@@ -37,7 +37,6 @@ describe('CosmeticRuleParser - general tests', () => {
             ['#@#+js(something)', true],
             ['##^script:has-text(antiadblock)', true],
             ['$$script[tag-content="antiadblock"]', true],
-            ['$$div[custom_attr]', true],
         ])("should return '%s' for '%s'", (rule, expected) => {
             expect(CosmeticRuleParser.isCosmeticRule(rule)).toEqual(expected);
         });

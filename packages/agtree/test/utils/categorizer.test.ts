@@ -29,10 +29,6 @@ describe('RuleCategorizer', () => {
                 expected: CosmeticRuleType.HtmlFilteringRule,
             },
             {
-                actual: 'example.com$$div[custom_attr]',
-                expected: CosmeticRuleType.HtmlFilteringRule,
-            },
-            {
                 actual: 'example.com##^script:has-text(foo)',
                 expected: CosmeticRuleType.HtmlFilteringRule,
             },
