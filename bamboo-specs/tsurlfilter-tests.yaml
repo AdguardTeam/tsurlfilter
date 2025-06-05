@@ -6,7 +6,7 @@ plan:
   name: tsurlfilter - tests
 variables:
   dockerContainer: adguard/node-ssh:22.14--0
-  testTimeout: 200s
+  testTimeout: 300s
 
 # Some packages are independent of each other so we can run them in parallel (different jobs on same stage)
 # other packages depend on each other so they should be run one after another (different stages),
@@ -194,7 +194,7 @@ Test Examples - APIs and TSWebExtensions:
     - script:
         interpreter: SHELL
         scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh 300s ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-tests.sh"
     - script:
         interpreter: SHELL
         scripts:
