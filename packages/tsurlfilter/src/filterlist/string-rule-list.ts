@@ -1,3 +1,4 @@
+import { findNextLineBreakIndex } from '../utils/string-utils';
 import { StringLineReader } from './reader/string-line-reader';
 import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
 import { RuleScanner } from './scanner/rule-scanner';
@@ -106,10 +107,7 @@ export class StringRuleList implements IRuleList {
             return null;
         }
 
-        let endOfLine = this.rulesText.indexOf('\n', ruleIdx);
-        if (endOfLine === -1) {
-            endOfLine = this.rulesText.length;
-        }
+        const [endOfLine] = findNextLineBreakIndex(this.rulesText, ruleIdx);
 
         const line = this.rulesText.substring(ruleIdx, endOfLine).trim();
         if (!line) {

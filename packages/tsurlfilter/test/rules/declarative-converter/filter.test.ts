@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
 
-import { FilterListPreprocessor } from '../../../src';
 import { Filter } from '../../../src/rules/declarative-converter';
+import { CRLF } from '../../../src/common/constants';
 
 describe('Filter', () => {
     // NOTE: Testing filter SHOULD contain some of convertible while
     // preprocessing rules.
-    const rawContent = [
+    const rules = [
         '||example.com^$document',
         '||example.net^',
         '@@||example.io^',
@@ -17,43 +17,44 @@ describe('Filter', () => {
         'samnytt.se#@#div[class=""], a, .sticky > div[style="display:grid"], .post-content > div.mx-auto:has-text(/annons/i)',
         'wolt.com##button:has(> div > div > div > span:has-text(Sponsored))',
         '4wank.com#?#.video-holder > center > :-abp-contains(/^Advertisement$/)',
-    ].join('\r\n');
+    ];
+    const text = rules.join(CRLF);
 
     it('loads content from string source provider', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
+            { getContent: async () => text },
             true,
         );
 
         const loadedContent = await filter.getContent();
 
-        expect(FilterListPreprocessor.getOriginalFilterListText(loadedContent)).toStrictEqual(rawContent);
+        expect(loadedContent).toStrictEqual(text);
     });
 
     it('returns original rule by index', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
+            { getContent: async () => text },
             true,
         );
 
-        const preprocessedFilter = await filter.getContent();
+        const indices = rules.reduce((acc, _, i) => {
+            const prev = acc[i - 1] ?? 0;
+            const offset = i === 0 ? 0 : CRLF.length;
+            acc.push(prev + (i === 0 ? 0 : rules[i - 1].length + offset));
+            return acc;
+        }, [] as number[]);
 
-        const indexes = Object.keys(preprocessedFilter.sourceMap).map(Number);
-        const rules = await Promise.all(indexes.map(async (index) => filter.getRuleByIndex(index)));
+        const retrievedRules = await Promise.all(indices.map(async (index) => filter.getRuleByIndex(index)));
 
-        // TODO: It looks like poor design: it is not obvious that we should save
-        // and operate preprocessed filter content, but not raw original one. AG-37306
-        const preprocessedContent = preprocessedFilter.rawFilterList.split('\r\n');
-
-        expect(rules).toStrictEqual(preprocessedContent);
+        expect(retrievedRules).toStrictEqual(rules);
     });
 
     it('unloads content correctly', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
+            { getContent: async () => text },
             true,
         );
 
@@ -70,7 +71,7 @@ describe('Filter', () => {
     it('does not return stale content after unload', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
+            { getContent: async () => text },
             true,
         );
 
@@ -85,7 +86,7 @@ describe('Filter', () => {
 
         // Reload content after unloading
         const newContent = await filter.getContent();
-        expect(FilterListPreprocessor.getOriginalFilterListText(newContent)).toStrictEqual(rawContent);
+        expect(newContent).toStrictEqual(text);
     });
 
     it('waits for content to load before unloading', async () => {
@@ -108,7 +109,7 @@ describe('Filter', () => {
         filter.unloadContent();
 
         // Resolve content fetch
-        resolveFetch!(FilterListPreprocessor.preprocess(rawContent));
+        resolveFetch!(text);
 
         // Ensure content is still correctly unloaded after the fetch completes
         await contentPromise;
@@ -119,7 +120,7 @@ describe('Filter', () => {
     it('prevents memory leaks by resetting contentLoadingPromise', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
+            { getContent: async () => text },
             true,
         );
 

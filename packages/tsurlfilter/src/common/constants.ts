@@ -16,6 +16,8 @@ export const LF = '\n';
 export const CR = '\r';
 export const FF = '\f';
 
+export const CRLF = '\r\n';
+
 export const TAB = '\t';
 
 export const RE_NUMBER = /^\d+$/;
