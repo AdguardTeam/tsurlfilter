@@ -37,6 +37,14 @@ class DeclarativeFilteringLog {
     }
 
     /**
+     * Initializes the declarative filtering log.
+     * Binds needed methods to the instance.
+     */
+    constructor() {
+        this.logMatchedRule = this.logMatchedRule.bind(this);
+    }
+
+    /**
      * Acquires the mutex lock within the specified timeout.
      * Used to prevent getting rule info during rule set updates.
      *
