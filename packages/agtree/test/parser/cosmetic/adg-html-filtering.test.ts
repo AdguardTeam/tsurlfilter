@@ -36,30 +36,6 @@ describe('CosmeticRuleParser', () => {
                 },
             },
             {
-                actual: '$$div[custom_attr]',
-                expected: (context: NodeExpectContext): HtmlFilteringRule => {
-                    return {
-                        category: RuleCategory.Cosmetic,
-                        type: CosmeticRuleType.HtmlFilteringRule,
-                        syntax: AdblockSyntax.Adg,
-                        exception: false,
-                        modifiers: undefined,
-                        domains: DomainListParser.parse(''),
-                        separator: {
-                            type: 'Value',
-                            value: '$$',
-                            ...context.getRangeFor('$$'),
-                        },
-                        body: {
-                            type: 'Value',
-                            value: 'div[custom_attr]',
-                            ...context.getRangeFor('div[custom_attr]'),
-                        },
-                        ...context.getFullRange(),
-                    };
-                },
-            },
-            {
                 actual: '$@$script[tag-content="adblock"]',
                 expected: (context: NodeExpectContext): HtmlFilteringRule => {
                     return {

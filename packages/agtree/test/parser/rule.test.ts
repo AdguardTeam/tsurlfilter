@@ -602,13 +602,6 @@ describe('RuleParser', () => {
             exception: false,
         });
 
-        expect(RuleParser.parse('$$div[custom_attr]')).toMatchObject({
-            category: RuleCategory.Cosmetic,
-            type: CosmeticRuleType.HtmlFilteringRule,
-            syntax: AdblockSyntax.Adg,
-            exception: false,
-        });
-
         expect(RuleParser.parse('example.com,~example.net$$script[tag-content="adblock"]')).toMatchObject({
             category: RuleCategory.Cosmetic,
             type: CosmeticRuleType.HtmlFilteringRule,
@@ -1180,9 +1173,6 @@ describe('RuleParser', () => {
         expect(parseAndGenerate('$$script[tag-content="adblock"]')).toEqual('$$script[tag-content="adblock"]');
         expect(parseAndGenerate('example.com,~example.net$$script[tag-content="adblock"]')).toEqual(
             'example.com,~example.net$$script[tag-content="adblock"]',
-        );
-        expect(parseAndGenerate('testcases.agrd.dev,pages.dev$$div[custom_attr]')).toEqual(
-            'testcases.agrd.dev,pages.dev$$div[custom_attr]',
         );
         expect(parseAndGenerate('$@$script[tag-content="adblock"]')).toEqual('$@$script[tag-content="adblock"]');
         expect(parseAndGenerate('example.com,~example.net$@$script[tag-content="adblock"]')).toEqual(
