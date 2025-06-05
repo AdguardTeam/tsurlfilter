@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { type ILogger } from '../../src';
+import { type ILogger } from '../../src/utils/logger';
 
 export class LoggerMock implements ILogger {
     public error = vi.fn();

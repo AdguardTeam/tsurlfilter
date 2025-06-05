@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 
-import { RequestType } from '../../../src';
 import { Request } from '../../../src/request';
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { TrieLookupTable } from '../../../src/engine/lookup-tables/trie-lookup-table';
 import { tokenize } from '../../../src/filterlist/tokenize';
+import { RequestType } from '../../../src/request-type';
 
 describe('Trie Lookup Table Tests', () => {
     it('adds rule to look up table', () => {

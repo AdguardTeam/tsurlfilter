@@ -2,7 +2,6 @@ import fs from 'fs';
 
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
 import { type DeclarativeRule, DeclarativeFilterConverter, Filter } from '../src/rules/declarative-converter';
-import { FilterListPreprocessor } from '../src';
 
 const readmeTxtPath = './src/rules/declarative-converter/readme.txt';
 const readmeMdPath = './src/rules/declarative-converter/README.md';
@@ -79,7 +78,7 @@ const convertTxtToRules = async (
 ): Promise<DeclarativeRule[]> => {
     const filter = new Filter(
         0,
-        { getContent: async () => Promise.resolve(FilterListPreprocessor.preprocess(rules.join('\n'))) },
+        { getContent: async () => Promise.resolve(rules.join('\n')) },
         true,
     );
 

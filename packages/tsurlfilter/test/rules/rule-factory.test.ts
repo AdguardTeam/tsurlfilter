@@ -2,8 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { NetworkRule } from '../../src/rules/network-rule';
 import { HostRule } from '../../src/rules/host-rule';
-import { CompatibilityTypes, RULE_INDEX_NONE, setConfiguration } from '../../src';
 import { createRule } from '../helpers/rule-creator';
+import { RULE_INDEX_NONE } from '../../src/rules/rule';
+import { CompatibilityTypes, setConfiguration } from '../../src/configuration';
 
 describe('RuleFactory Builder Test', () => {
     it('works if builder creates correct rules', () => {

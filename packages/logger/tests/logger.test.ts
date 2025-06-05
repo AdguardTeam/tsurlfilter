@@ -6,8 +6,7 @@ import {
     vi,
 } from 'vitest';
 
-import { Logger, LogLevel } from '../src';
-import { type Writer } from '../src/Logger';
+import { Logger, LogLevel, type Writer } from '../src/Logger';
 
 describe('works', () => {
     const writer: Writer = {

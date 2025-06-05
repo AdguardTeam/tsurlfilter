@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
 import { DomainModifier } from '../../src/modifiers/domain-modifier';
-import { setLogger } from '../../src';
 import { LoggerMock } from '../mocks';
+import { setLogger } from '../../src/utils/logger';
 
 describe('Domain modifier', () => {
     describe('constructor and valid domains string', () => {

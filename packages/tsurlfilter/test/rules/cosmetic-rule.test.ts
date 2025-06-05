@@ -10,8 +10,9 @@ import { CosmeticRuleType } from '@adguard/agtree';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
-import { type CosmeticRule, RULE_INDEX_NONE } from '../../src';
 import { createCosmeticRule } from '../helpers/rule-creator';
+import { RULE_INDEX_NONE } from '../../src/rules/rule';
+import { type CosmeticRule } from '../../src/rules/cosmetic-rule';
 
 const parseParamsFromScript = (script: string): Source | null => {
     const matchArr = script.match(/\{"args.+"}/);
