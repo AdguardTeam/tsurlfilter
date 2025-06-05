@@ -9,7 +9,6 @@ import {
     Filter,
 } from '../src/rules/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
-import { FilterListPreprocessor } from '../src/filterlist/preprocessor';
 import { getIdFromFilterName } from '../src/utils/resource-names';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
@@ -102,7 +101,7 @@ export const convertFilters = async (
 
             return new Filter(
                 filterId,
-                { getContent: async () => FilterListPreprocessor.preprocess(data) },
+                { getContent: async () => data },
                 // we consider that all preinstalled filters are trusted
                 true,
             );

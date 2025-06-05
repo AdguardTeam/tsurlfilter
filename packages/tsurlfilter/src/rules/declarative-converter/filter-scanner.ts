@@ -79,38 +79,34 @@ export class FilterScanner implements IFilterScanner {
 
         const reader = new StringLineReader(this.filter);
 
-        let ruleBufferIndex = reader.getCurrentPos();
-        let ruleNode = reader.readLine();
+        let ruleIndex = reader.getCurrentPos();
+        let ruleText = reader.readLine();
         let curNumberOfScannedNetworkRules = 0;
 
-        while (ruleNode) {
+        while (ruleText) {
             let indexedNetworkRulesWithHash: IndexedNetworkRuleWithHash[] = [];
 
             try {
-                indexedNetworkRulesWithHash = IndexedNetworkRuleWithHash.createFromNode(
+                indexedNetworkRulesWithHash = IndexedNetworkRuleWithHash.createFromText(
                     this.filterId,
-                    ruleBufferIndex,
-                    ruleNode,
+                    ruleIndex,
+                    ruleText,
                 );
             } catch (e) {
                 if (e instanceof Error) {
                     result.errors.push(e);
                 } else {
-                    const lineIndex = getRuleSourceIndex(ruleBufferIndex, this.filter.sourceMap);
-                    const rawRule = getRuleSourceText(lineIndex, this.filter.rawFilterList);
-                    const originalRawRule = this.filter.conversionMap[lineIndex];
-                    // eslint-disable-next-line max-len
-                    let errorMessage = `Unknown error during creating indexed rule with hash from raw string: filter id - ${this.filterId}, line index - ${lineIndex}, line - ${rawRule}`;
-                    if (originalRawRule) {
-                        errorMessage += `, original line - ${originalRawRule}`;
-                    }
-                    const err = new Error(errorMessage);
+                    const err = new Error([
+                        'Unknown error during creating indexed rule with hash from raw string:',
+                        `filter id - ${this.filterId}, rule index - ${ruleIndex}`,
+                        `rule text - ${ruleText}`,
+                    ].join(' '));
                     result.errors.push(err);
                 }
                 continue;
             } finally {
-                ruleBufferIndex = reader.getCurrentPos();
-                ruleNode = reader.readNext();
+                ruleIndex = reader.getCurrentPos();
+                ruleText = reader.readLine();
             }
 
             const filteredRules = filterFn
@@ -121,10 +117,12 @@ export class FilterScanner implements IFilterScanner {
 
             curNumberOfScannedNetworkRules += filteredRules.length;
 
-            if (maxNumberOfScannedNetworkRules !== undefined
-                && curNumberOfScannedNetworkRules >= maxNumberOfScannedNetworkRules) {
+            if (
+                maxNumberOfScannedNetworkRules !== undefined
+                && curNumberOfScannedNetworkRules >= maxNumberOfScannedNetworkRules
+            ) {
                 const lastScannedRule = indexedNetworkRulesWithHash[indexedNetworkRulesWithHash.length - 1];
-                const lineIndex = getRuleSourceIndex(lastScannedRule.index, this.filter.sourceMap);
+                const lineIndex = lastScannedRule.index;
                 // This error needed for future improvements, for example
                 // to show in the UI which rules were skipped.
                 const err = new MaxScannedRulesError(

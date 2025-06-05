@@ -25,22 +25,34 @@ export interface IRule {
      * ID of the filter list this rule belongs to.
      */
     getFilterListId(): number;
+
+    // FIXME: Consider adding it
+    // /**
+    //  * Returns rule text.
+    //  *
+    //  * @returns Rule text.
+    //  */
+    // getText(): string;
 }
 
 /**
  * Rule with index.
  */
 // TODO: Consider remove this because rule already has an index field
-export class IndexedRule {
+// FIXME: Consider something else than generic type (needed because DNR converter vs scanner)
+export class IndexedRule<T = RuleParts> {
     /**
      * Rule.
      */
-    public rule: RuleParts;
+    public rule: T;
 
+    /**
+     * ID of the filter list this rule belongs to.
+     */
     public listId: number;
 
     /**
-     * Index.
+     * Rule index.
      */
     public index: number;
 
@@ -51,7 +63,7 @@ export class IndexedRule {
      * @param index Index of the rule.
      * @param listId ID of the filter list this rule belongs to.
      */
-    constructor(rule: RuleParts, index: number, listId: number) {
+    constructor(rule: T, index: number, listId: number) {
         this.listId = listId;
         this.rule = rule;
         this.index = index;
@@ -68,10 +80,13 @@ export class IndexedStorageRule {
     public rule: RuleParts;
 
     /**
-     * Index.
+     * Rule index.
      */
     public index: number;
 
+    /**
+     * ID of the filter list this rule belongs to.
+     */
     public listId: number;
 
     /**

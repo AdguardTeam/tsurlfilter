@@ -1,4 +1,4 @@
-import { type AnyRule } from '@adguard/agtree';
+import { RuleParser, type AnyRule } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
 
 import { getErrorMessage } from '../../common/error';
@@ -10,7 +10,7 @@ import { RuleFactory } from '../rule-factory';
 /**
  * Network rule with index and hash.
  */
-export class IndexedNetworkRuleWithHash extends IndexedRule {
+export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRule> {
     /**
      * Rule's hash created with {@link fastHash}. Needed to quickly compare
      * two different network rules with the same pattern part for future
@@ -38,7 +38,8 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      * @param hash Hash of the rule.
      */
     constructor(rule: NetworkRule, index: number, hash: number) {
-        super(rule, index);
+        // FIXME: list id
+        super(rule, index, -1);
 
         this.hash = hash;
         this.rule = rule;
@@ -97,7 +98,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
             );
         } catch (e) {
             // eslint-disable-next-line max-len
-            throw new Error(`Cannot create IRule from filter "${filterId}" and byte offset "${lineIndex}": ${getErrorMessage(e)}`);
+            throw new Error(`Cannot create IRule from filter "${filterId}" and line "${lineIndex}": ${getErrorMessage(e)}`);
         }
 
         /**
@@ -132,7 +133,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      *
      * @param filterId Filter's id from which rule was extracted.
      * @param lineIndex Line index of rule in that filter.
-     * @param node Rule node.
+     * @param text Rule text.
      *
      * @throws Error when rule cannot be converted to AG syntax or when indexed
      * rule cannot be created from the rule which is already converted to AG
@@ -140,14 +141,15 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      *
      * @returns Item of {@link IndexedNetworkRuleWithHash}.
      */
-    public static createFromNode(
+    public static createFromText(
         filterId: number,
         lineIndex: number,
-        node: AnyRule,
+        text: string,
     ): IndexedNetworkRuleWithHash[] {
         // Converts a raw string rule to AG syntax (apply aliases, etc.)
         let rulesConvertedToAGSyntax: AnyRule[];
         try {
+            const node = RuleParser.parse(text);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAGSyntax = conversionResult.result;

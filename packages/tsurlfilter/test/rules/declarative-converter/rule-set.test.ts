@@ -5,7 +5,6 @@ import {
     type MockInstance,
     vi,
 } from 'vitest';
-import { RuleParser } from '@adguard/agtree';
 
 import {
     type IFilter,
@@ -164,10 +163,10 @@ describe('RuleSet', () => {
         const ruleSetHashMap = new RulesHashMap(sources);
         const badFilterRules = badFilterRulesRaw
             .map(
-                (rawString) => IndexedNetworkRuleWithHash.createFromNode(
+                (rawString) => IndexedNetworkRuleWithHash.createFromText(
                     filterId,
                     badFilterRuleIndex,
-                    RuleParser.parse(rawString),
+                    rawString,
                 ),
             )
             .flat();

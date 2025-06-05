@@ -1,5 +1,4 @@
 import { z as zod } from 'zod';
-import { RuleParser } from '@adguard/agtree/parser';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
@@ -489,12 +488,12 @@ export class RuleSet implements IRuleSet {
         let networkIndexedRulesWithHash: IndexedNetworkRuleWithHash[] = [];
 
         try {
-            networkIndexedRulesWithHash = IndexedNetworkRuleWithHash.createFromNode(
+            networkIndexedRulesWithHash = IndexedNetworkRuleWithHash.createFromText(
                 filterId,
                 // We don't need line index because this indexedNetworkRulesWithHash
                 // will be used only for matching $badfilter rules.
                 0,
-                RuleParser.parse(sourceRule),
+                sourceRule,
             );
         } catch (e) {
             return [];
@@ -664,16 +663,9 @@ export class RuleSet implements IRuleSet {
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
 
-        // TODO: Improve this code once we introduce multiple filters within a single rule set
-        // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array
-        const filter = this.filterList.values().next().value!;
-        const content = await filter.getContent();
-
         const metadataRule = createMetadataRule({
             metadata: this.getSerializedRuleSetData(),
             lazyMetadata: this.getSerializedRuleSetLazyData(),
-            conversionMap: content.conversionMap,
-            rawFilterList: content.rawFilterList,
         });
 
         const declarativeRules = await this.getDeclarativeRules();

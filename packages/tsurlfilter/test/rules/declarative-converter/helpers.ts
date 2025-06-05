@@ -1,7 +1,7 @@
 import type { ScannedFilter } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { FilterScanner } from '../../../src/rules/declarative-converter/filter-scanner';
-import { FilterListPreprocessor, NetworkRule, NetworkRuleOption } from '../../../src';
 import { Filter, type IFilter } from '../../../src/rules/declarative-converter/filter';
+import { NetworkRule, NetworkRuleOption } from '../../../src/rules/network-rule';
 
 export const createFilter = (
     rules: string[],
@@ -9,7 +9,7 @@ export const createFilter = (
 ): IFilter => {
     return new Filter(
         filterId,
-        { getContent: async () => FilterListPreprocessor.preprocess(rules.join('\n')) },
+        { getContent: async () => rules.join('\n') },
         true,
     );
 };

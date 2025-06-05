@@ -1,6 +1,5 @@
 import { EMPTY_STRING } from '../../common/constants';
-import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
-import { getRuleSourceIndex, getRuleSourceText } from '../../filterlist/source-map';
+import { StringRuleList } from '../../filterlist/string-rule-list';
 
 import { UnavailableFilterSourceError } from './errors/unavailable-sources-errors';
 
@@ -11,7 +10,7 @@ type IStringSourceProvider = {
     /**
      * Returns filter content.
      */
-    getContent: () => Promise<PreprocessedFilterList>;
+    getContent: () => Promise<string>;
 };
 
 /**
@@ -43,7 +42,7 @@ export interface IFilter {
      *
      * @throws Error {@link UnavailableFilterSourceError} if content is not available.
      */
-    getContent(): Promise<PreprocessedFilterList>;
+    getContent(): Promise<string>;
 
     /**
      * Unload filter content.
@@ -72,12 +71,12 @@ export class Filter implements IFilter {
     /**
      * Content of filter (lazy loading).
      */
-    private content: PreprocessedFilterList | null = null;
+    private content: string | null = null;
 
     /**
      * Promise for content loading.
      */
-    private contentLoadingPromise: Promise<PreprocessedFilterList> | null = null;
+    private contentLoadingPromise: Promise<string> | null = null;
 
     /**
      * Provider of filter content.
@@ -88,6 +87,8 @@ export class Filter implements IFilter {
      * Filter trusted flag.
      */
     private readonly trusted: boolean;
+
+    private stringRuleList: StringRuleList | null = null;
 
     /**
      * Creates new FilterList.
@@ -112,7 +113,7 @@ export class Filter implements IFilter {
     }
 
     /** @inheritdoc */
-    public async getContent(): Promise<PreprocessedFilterList> {
+    public async getContent(): Promise<string> {
         // If content is already loaded, return it
         if (this.content) {
             return this.content;
@@ -124,11 +125,11 @@ export class Filter implements IFilter {
         }
 
         // Assign the promise immediately to avoid race conditions
-        this.contentLoadingPromise = (async (): Promise<PreprocessedFilterList> => {
+        this.contentLoadingPromise = (async (): Promise<string> => {
             try {
                 const content = await this.source.getContent();
 
-                if (!content || content.rawFilterList.length === 0 || content.filterList.length === 0) {
+                if (!content || content.length === 0) {
                     throw new Error('Loaded empty content');
                 }
 
@@ -150,10 +151,13 @@ export class Filter implements IFilter {
     public async getRuleByIndex(index: number): Promise<string> {
         const content = await this.getContent();
 
-        const lineIndex = getRuleSourceIndex(index, content.sourceMap);
-        const sourceRule = getRuleSourceText(lineIndex, content.rawFilterList) ?? EMPTY_STRING;
+        if (!this.stringRuleList) {
+            this.stringRuleList = new StringRuleList(this.id, content, this.trusted);
+        }
 
-        return sourceRule;
+        const rule = this.stringRuleList.retrieveRuleText(index);
+
+        return rule ?? EMPTY_STRING;
     }
 
     /** @inheritdoc */
