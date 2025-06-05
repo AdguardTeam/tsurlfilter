@@ -109,11 +109,15 @@ export class StringRuleList implements IRuleList {
 
         const [endOfLine] = findNextLineBreakIndex(this.rulesText, ruleIdx);
 
-        const line = this.rulesText.substring(ruleIdx, endOfLine).trim();
+        // Prevent memory leaks by splitting the string into an array and then joining it back.
+        // This ensures the returned string is a completely new copy, rather than a slice referencing the original,
+        // which could prevent the original string from being garbage collected.
+        const line = this.rulesText.slice(ruleIdx, endOfLine).split('').join('');
+
         if (!line) {
             return null;
         }
 
-        return line;
+        return line.trim();
     }
 }
