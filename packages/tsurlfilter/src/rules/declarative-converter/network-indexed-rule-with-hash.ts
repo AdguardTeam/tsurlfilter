@@ -124,7 +124,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRule> {
             );
         } catch (e) {
             // eslint-disable-next-line max-len
-            throw new Error(`Cannot create IRule from filter "${filterId}" and line "${index}": ${getErrorMessage(e)}`);
+            throw new Error(`Cannot create IRule from filter "${filterId}" and rule index "${index}": ${getErrorMessage(e)}`);
         }
 
         /**
