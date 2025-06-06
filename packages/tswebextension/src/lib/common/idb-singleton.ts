@@ -55,10 +55,10 @@ export class IdbSingleton {
                 // Probe: open with undefined version, which opens the current version.
                 let db = await openDB(IdbSingleton.DB_NAME, undefined, {
                     upgrade(_database, oldVersion, newVersion) {
-                        logger.debug('Upgrade IDB version from', oldVersion, 'to', newVersion);
+                        logger.debug('[tsweb.IdbSingleton.getOpenedDb]: Upgrade IDB version from', oldVersion, 'to', newVersion);
                     },
                     blocked() {
-                        logger.warn('IDB upgrade blocked');
+                        logger.warn('[tsweb.IdbSingleton.getOpenedDb]: IDB upgrade blocked');
                     },
                 });
 
@@ -70,7 +70,7 @@ export class IdbSingleton {
                     db = await openDB(IdbSingleton.DB_NAME, currentVersion + 1, {
                         upgrade(database, oldVersion, newVersion, tx) {
                             onUpgrade?.(oldVersion, newVersion);
-                            logger.debug('Upgrade IDB version from', oldVersion, 'to', newVersion);
+                            logger.debug('[tsweb.IdbSingleton.getOpenedDb]: Upgrade IDB version from', oldVersion, 'to', newVersion);
                             for (const name of Array.from(database.objectStoreNames)) {
                                 tx.objectStore(name).clear();
                             }
@@ -79,7 +79,7 @@ export class IdbSingleton {
                             }
                         },
                         blocked() {
-                            logger.warn('IDB upgrade blocked');
+                            logger.warn('[tsweb.IdbSingleton.getOpenedDb]: IDB upgrade blocked');
                         },
                     });
                 }

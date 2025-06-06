@@ -59,19 +59,17 @@ const writer = {
 const logger = new Logger(writer);
 ```
 
-#### `Trace` logging level
+#### Verbose logging and trace output
 
-This logging level made solely for development purposes, to provided clickable call stack trace in console.
+This mode is designed solely for development and debugging purposes, providing clickable call stack traces in the console for maximum insight into code execution.
 
-This level works as `Debug` level, only difference is that for every method of logger it prints with call stack trace.
-Except `error()` which already provides call stack trace. In order to make it work these conditions should meet:
+When the logger is set to `LogLevel.Verbose`, every log method except `error()` will print with a call stack trace. This helps track the flow of execution and diagnose complex issues. The stack trace is shown as a collapsed group in the console if the writer supports `groupCollapsed` and `groupEnd`, making logs more readable; otherwise, traces are printed expanded.
 
-- Logging level must be `LogLevel.Trace` or higher.
-- It should not be `error()` method.
-- `Writer` must have `trace()` method.
+To enable this behavior, the following conditions must be met:
+- Logging level must be set to `LogLevel.Verbose`.
+- The log method must not be `error()` (since `error()` already includes a stack trace).
 
-If logging level is `LogLevel.Trace` or higher and `trace()` method is not provided with `writer` it will
-work as regular `LogLevel.Debug` level.
+This feature is intended for developers who need detailed, step-by-step tracking of application execution.
 
 ## Development
 

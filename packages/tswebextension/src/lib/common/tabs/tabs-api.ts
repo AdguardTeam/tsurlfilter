@@ -5,7 +5,7 @@ import { type DocumentApi } from '../../mv2/background/document-api';
 import { MAIN_FRAME_ID, NO_PARENT_FRAME_ID } from '../constants';
 import { EventChannel } from '../utils/channels';
 import { logger } from '../utils/logger';
-import { getDomain, isHttpRequest } from '../utils/url';
+import { getDomain } from '../utils/url';
 
 import { type FrameCommon } from './frame';
 import { TabContextCommon } from './tab-context';
@@ -20,7 +20,7 @@ export type TabInfo = Tabs.Tab & {
     /**
      * Tab id.
      */
-    id: number,
+    id: number;
 };
 
 /**
@@ -57,6 +57,27 @@ export type TabFrameRequestContextCommon = {
  * Tabs API common class.
  */
 export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextCommon<F>> {
+    /**
+     * Keys of the tab changed info.
+     *
+     * See {@link Tabs.OnUpdatedChangeInfoType}.
+     */
+    private static readonly TAB_CHANGED_INFO_KEYS: Array<keyof Tabs.OnUpdatedChangeInfoType> = [
+        'attention',
+        'audible',
+        'autoDiscardable',
+        'discarded',
+        'favIconUrl',
+        'hidden',
+        'isArticle',
+        'mutedInfo',
+        'pinned',
+        'sharingState',
+        'status',
+        'title',
+        'url',
+    ];
+
     public context = new Map<number, T>();
 
     public onCreate = new EventChannel<T>();
@@ -128,11 +149,140 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      * Creates a new tab context.
      *
      * @param tab Tab info.
+     *
+     * @returns Created tab context.
+     */
+    protected abstract createTabContext(tab: TabInfo): T;
+
+    /**
+     * Creates a new tab context on tab creation.
+     *
+     * @param tab Tab info.
      * @param tab.id Tab id.
      *
      * @returns Created tab context, or null if tab is not browser tab.
      */
-    protected abstract handleTabCreate(tab: Tabs.Tab): T | null;
+    protected handleTabCreate(tab: Tabs.Tab): T | null {
+        if (!TabContextCommon.isBrowserTab(tab)) {
+            return null;
+        }
+
+        /**
+         * If tab context already created at this point, it means that
+         * context has been created by `createTabContextIfNotExists` method.
+         * Instead of re-creating the context and firing `onCreate` event,
+         * we just update the existing tab info and fire `onUpdate` event.
+         */
+        let tabContext = this.context.get(tab.id);
+        if (tabContext && tabContext.isSyntheticTab) {
+            /**
+             * We previously in `createTabContextIfNotExists` marked
+             * tab context as synthetic, because Tabs API `onCreated`
+             * event is fired, this context no longer synthetic.
+             */
+            tabContext.isSyntheticTab = false;
+
+            const changedInfo = this.getTabChangedInfo(tabContext, tab);
+            this.handleTabUpdate(tab.id, changedInfo, tab);
+        } else {
+            tabContext = this.createTabContext(tab);
+            this.context.set(tab.id, tabContext);
+            this.onCreate.dispatch(tabContext);
+        }
+
+        return tabContext;
+    }
+
+    /**
+     * Creates and adds a new tab context if it does not exist in the context map,
+     * in case if Tabs API does not fire `onCreated` event before point of call.
+     *
+     * The cases are:
+     * - The right side of split screen in Edge does not fire any Tabs API events (see issue link below).
+     * - `onCreated` might be fired later than `onBeforeNavigate` and `onBeforeRequest`,
+     *   where we precalculate cosmetics and blocking rules.
+     *
+     * @see {@link https://github.com/microsoft/MicrosoftEdge-Extensions/issues/296 | Edge Split Screen Issue}
+     *
+     * @param tabId Tab ID.
+     * @param url Tab URL.
+     *
+     * @todo Add removal logic for stale tab contexts. It potentially bloats memory
+     *       in case if Tabs API does not fire the `onRemoved` event.
+     * @todo Currently, Edge does not fire `onUpdated` and `onActivated` events
+     *       for the right side of split screen. When this issue is fixed (see issue link above),
+     *       we need to make sure that the tab context is updated and tabs are activated correctly.
+     */
+    public createTabContextIfNotExists(tabId: number, url: string): void {
+        // Do nothing if the tab context already exists.
+        if (this.context.has(tabId)) {
+            return;
+        }
+
+        /**
+         * We need to create a synthetic tab info object with minimal properties,
+         * to be able to create a tab context. At later point when `onCreated` will be
+         * fired, we will update the tab context with full tab info in {@link handleTabCreate}.
+         *
+         * NOTE: This method doesn't uses `tabs.get(tabId)` to retrieve full tab info,
+         * because it requires method to be async, and it is used inside
+         * of `webRequest.onBeforeRequest` and `webNavigation.onBeforeNavigate` events
+         * which needs to be sync and requires immediate handling. Full tab info
+         * will be needed for Filtering Log to show the tab title, etc.
+         */
+        const syntheticTab: Tabs.Tab = {
+            id: tabId,
+            url,
+
+            // If we are creating tab manually it means that `onCreated`
+            // event was not fired, so we don't know the tab index yet.
+            index: -1,
+
+            // This properties required, so we default all of them to `false`.
+            highlighted: false,
+            active: false,
+            pinned: false,
+            incognito: false,
+        };
+
+        const syntheticTabContext = this.handleTabCreate(syntheticTab);
+
+        /**
+         * Mark the tab context as synthetic.
+         * This is needed at later point to determine if the tab
+         * context was created manually or from Tabs API event.
+         */
+        if (syntheticTabContext) {
+            syntheticTabContext.isSyntheticTab = true;
+        }
+    }
+
+    /**
+     * Returns tab changed info.
+     *
+     * This method is used to compare the old tab info with the new tab info
+     * in case if `onCreated` is fired on synthetic tab context and we need to
+     * actualize the tab info by emulating native `onUpdated` event.
+     *
+     * @param tabContext Existing tab context.
+     * @param newTabInfo Tab info to be updated.
+     *
+     * @returns Tab changed info.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    private getTabChangedInfo(tabContext: T, newTabInfo: Tabs.Tab): Tabs.OnUpdatedChangeInfoType {
+        const oldTabInfo = tabContext.info;
+        const changedInfo: Tabs.OnUpdatedChangeInfoType = {};
+
+        for (const key of TabsApiCommon.TAB_CHANGED_INFO_KEYS) {
+            if (oldTabInfo[key] !== newTabInfo[key]) {
+                // @ts-expect-error - Tab info keys always matches with changed info keys
+                changedInfo[key] = newTabInfo[key];
+            }
+        }
+
+        return changedInfo;
+    }
 
     /**
      * Updates tab context data on tab update.
@@ -147,11 +297,6 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
      */
     protected handleTabUpdate(tabId: number, changeInfo: Tabs.OnUpdatedChangeInfoType, tabInfo: Tabs.Tab): void {
         if (!TabContextCommon.isBrowserTab(tabInfo)) {
-            return;
-        }
-
-        // Skip updates for non-http requests.
-        if (changeInfo.url && !isHttpRequest(changeInfo.url)) {
             return;
         }
 
@@ -351,6 +496,34 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     }
 
     /**
+     * Checks whether the tab with the specified ID
+     * can display the extension page or not.
+     *
+     * The tab is not allowed to display the extension page if:
+     * - Tab is in incognito mode.
+     * - Synthetic tab, because we created it manually,
+     *   we can't know for sure if tab is in incognito or not,
+     *   so by default extension page is not allowed in those tabs.
+     *
+     * @param tabId Tab ID.
+     *
+     * @returns True if extension page is not allowed for tab, false otherwise.
+     */
+    public canShowExtensionPageInTab(tabId: number): boolean {
+        const tabContext = this.getTabContext(tabId);
+
+        if (!tabContext) {
+            return false;
+        }
+
+        if (tabContext.isSyntheticTab) {
+            return true;
+        }
+
+        return tabContext.info.incognito;
+    }
+
+    /**
      * Increments tab context blocked request count.
      *
      * @param tabId Tab ID.
@@ -428,6 +601,41 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     }
 
     /**
+     * Checks if the tab context is expected to exist.
+     *
+     * This method is needed to identify cases when tab context does not exist
+     * when it should exist, for example when tab context is not created or created too late.
+     *
+     * @param tabId Tab ID to check.
+     * @param url Tab URL to check.
+     *
+     * @returns True if tab context is expected to exist, false otherwise.
+     *
+     * @todo Remove this method when issue above will be fixed.
+     */
+    private static checkIfTabContextExpectedToExist(tabId: number, url?: string): boolean {
+        // Early exit - if tab already does not hosts content,
+        // we don't need to perform any additional checks.
+        if (!TabContextCommon.isTabHostingContent(tabId)) {
+            return false;
+        }
+
+        // List of URLs we shouldn't log for about expected tab context.
+        const doNotLogForUrls = [
+            'devtools://', // Chrome DevTools
+            'chrome-extension://', // Chrome extension
+            'https://devtools.azureedge.net', // Edge DevTools
+        ];
+
+        // We skip only if we are sure that URL is not empty and starts with one of the forbidden URLs.
+        if (url && doNotLogForUrls.some((forbiddenUrl) => url.startsWith(forbiddenUrl))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Sets frame context.
      *
      * @param tabId Tab ID.
@@ -443,7 +651,9 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
     ): void {
         const tabContext = this.getTabContext(tabId);
         if (!tabContext) {
-            logger.debug('At this point tab context should already exist');
+            if (TabsApiCommon.checkIfTabContextExpectedToExist(tabId, frameContext.url)) {
+                logger.debug(`[tsweb.TabsApiCommon.setFrameContext]: at this point tab#${tabId} context should already exist`);
+            }
             return;
         }
         tabContext.setFrameContext(frameId, frameContext);
@@ -480,14 +690,16 @@ export abstract class TabsApiCommon<F extends FrameCommon, T extends TabContextC
         const tabContext = this.getTabContext(tabId);
 
         if (!tabContext) {
-            logger.debug('At this point tab context should already exist');
+            if (TabsApiCommon.checkIfTabContextExpectedToExist(tabId, partialFrameContext.url)) {
+                logger.debug(`[tsweb.TabsApiCommon.updateFrameContext]: at this point tab#${tabId} context should already exist`);
+            }
             return;
         }
 
         const frameContext = tabContext?.getFrameContext(frameId);
 
         if (!frameContext) {
-            logger.debug('At this point frame context should already exist');
+            logger.debug(`[tsweb.TabsApiCommon.updateFrameContext]: at this point frame#${frameId} context should already exist`);
             return;
         }
 

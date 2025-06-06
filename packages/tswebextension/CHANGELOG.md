@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2025-06-06
+
+### Added
+
+- Extension blocking page support for requests blocked by `$document` rules in MV3.
+- `filterId` query param to `documentBlockingPageUrl` for both MV2 and MV3.
+- Support for Chrome's User Scripts API that allows more reliable script
+  injection in MV3 if developer mode is enabled.
+- Static getter `isUserScriptsApiSupported` to check if the current browser
+  supports User Scripts API.
+
+### Changed
+
+- Updated [@adguard/logger] to `v2.0.0`.
+- Updated [@adguard/scriptlets] to `v2.2.7`.
+- Updated [@adguard/tsurlfilter] to `v3.4.0`.
+
+### Fixed
+
+- Invalid HTML filtering rule selectors are breaking site loading
+  [AdguardBrowserExtension#2646], [AdguardBrowserExtension#2826].
+- Scriptlet rules are not displayed in the filtering log [AdguardBrowserExtension#3164].
+- Stealth mode's `Hide Referer from third parties` option may break some websites [AdguardBrowserExtension#2839].
+- Filtering doesn't work in Edge's split screen [AdguardBrowserExtension#2832].
+- `$replace` rules may break some websites [AdguardBrowserExtension#3122].
+- Increase file size limit to 10MB for `$replace` rules in Firefox [AdguardBrowserExtension#3192].
+- Allow to specify attributes without value in selector for HTML filtering rules [#147].
+
+[#147]: https://github.com/AdguardTeam/tsurlfilter/issues/147
+[AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
+[AdguardBrowserExtension#2826]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2826
+[AdguardBrowserExtension#2832]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2832
+[AdguardBrowserExtension#2839]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2839
+[AdguardBrowserExtension#3122]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3122
+[AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
+[AdguardBrowserExtension#3192]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3192
+
+[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.0
+
 ## [3.1.0] - 2025-05-28
 
 ### Changed
@@ -1181,7 +1220,7 @@ its setting [AdguardBrowserExtension#2584].
 
 ## [0.1.1] - 2023-04-04
 
-## Changed
+### Changed
 
 - Improved injection algorithm for cosmetic rules (js and css).
   logic using the Finite State Machine to avoid double injections with

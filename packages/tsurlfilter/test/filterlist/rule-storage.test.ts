@@ -5,6 +5,7 @@ import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { FilterListPreprocessor, NetworkRule, getRuleSourceIndex } from '../../src';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
+import { createNetworkRule } from '../helpers/rule-creator';
 
 describe('Test RuleStorage', () => {
     // ! WARNING: Do not run these tests individually, as the scanner state is shared between tests
@@ -200,7 +201,7 @@ describe('Test RuleStorage', () => {
 
         expect(rule).toBeTruthy();
         expect(rule instanceof NetworkRule).toBeTruthy();
-        expect(rule!.getText()).toBe('||example.org');
+        expect(rule).toMatchNetworkRule(createNetworkRule('||example.org', 1));
         expect(rule!.getFilterListId()).toBe(1);
 
         rule = storage.retrieveNetworkRule(21);

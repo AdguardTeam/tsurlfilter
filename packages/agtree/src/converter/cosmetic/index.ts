@@ -162,7 +162,10 @@ export class CosmeticRuleConverter extends RuleConverterBase {
                 break;
         }
 
-        let convertedModifiers: ConversionResult<{ modifierList: ModifierList, domains?: DomainList }> | undefined;
+        let convertedModifiers: ConversionResult<{
+            modifierList: ModifierList;
+            domains?: DomainList;
+        }> | undefined;
 
         // Convert cosmetic rule modifiers, if any
         if (rule.modifiers) {

@@ -55,16 +55,22 @@ describe('Content stream', () => {
         statusCode: 200,
     } as RequestContext;
 
-    it('checks content stream with utf-8 encoding', () => {
+    // Helper function to create stream instance and mock filter
+    const createStreamInstance = (requestContext: RequestContext = context):
+    { stream: ContentStream; mockFilter: MockStreamFilter } => {
         const mockFilter = new MockStreamFilter();
         const stream = new ContentStream(
-            context,
+            requestContext,
             contentStringFilter,
             () => mockFilter,
             new MockFilteringLog(),
         );
-
         stream.init();
+        return { stream, mockFilter };
+    };
+
+    it('checks content stream with utf-8 encoding', () => {
+        const { stream, mockFilter } = createStreamInstance();
 
         stream.setCharset(DEFAULT_CHARSET);
 
@@ -78,15 +84,7 @@ describe('Content stream', () => {
     });
 
     it('checks content stream with win-1251 encoding', () => {
-        const mockFilter = new MockStreamFilter();
-        const stream = new ContentStream(
-            context,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
-
-        stream.init();
+        const { stream, mockFilter } = createStreamInstance();
 
         stream.setCharset(WIN_1251);
 
@@ -100,15 +98,7 @@ describe('Content stream', () => {
     });
 
     it('checks content stream with win-1252 encoding', () => {
-        const mockFilter = new MockStreamFilter();
-        const stream = new ContentStream(
-            context,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
-
-        stream.init();
+        const { stream, mockFilter } = createStreamInstance();
 
         stream.setCharset(WIN_1252);
 
@@ -125,15 +115,7 @@ describe('Content stream', () => {
     it('checks parsing charset from data - utf-8', () => {
         const data = 'Тест charset in data <meta charset="UTF-8">';
 
-        const mockFilter = new MockStreamFilter();
-        const stream = new ContentStream(
-            context,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
-
-        stream.init();
+        const { stream, mockFilter } = createStreamInstance();
 
         mockFilter.send(textEncoderUtf8.encode(data));
 
@@ -147,15 +129,7 @@ describe('Content stream', () => {
     it('checks parsing charset from data - utf-8 - http-equiv', () => {
         const data = 'Тест charset in data <meta content="text/html; charset=utf-8" http-equiv="content-type"/>';
 
-        const mockFilter = new MockStreamFilter();
-        const stream = new ContentStream(
-            context,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
-
-        stream.init();
+        const { stream, mockFilter } = createStreamInstance();
 
         mockFilter.send(textEncoderUtf8.encode(data));
 
@@ -169,15 +143,7 @@ describe('Content stream', () => {
     it('checks parsing charset from data - win-1251', () => {
         const data = 'Тест charset in data <meta charset="windows-1251">';
 
-        const mockFilter = new MockStreamFilter();
-        const stream = new ContentStream(
-            context,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
-
-        stream.init();
+        const { stream, mockFilter } = createStreamInstance();
 
         mockFilter.send(textEncoderWin1251.encode(data));
 
@@ -191,15 +157,7 @@ describe('Content stream', () => {
     it('checks parsing charset from data - iso-8859-1', () => {
         const data = 'Charset in data <meta charset="iso-8859-1">';
 
-        const mockFilter = new MockStreamFilter();
-        const stream = new ContentStream(
-            context,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
-
-        stream.init();
+        const { stream, mockFilter } = createStreamInstance();
 
         mockFilter.send(textEncoderIso8859.encode(data));
 
@@ -213,15 +171,7 @@ describe('Content stream', () => {
     it('checks parsing charset from data - win-1251', () => {
         const data = 'Тест charset in data <meta http-equiv="content-type" content="text/html; charset=windows-1251">';
 
-        const mockFilter = new MockStreamFilter();
-        const stream = new ContentStream(
-            context,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
-
-        stream.init();
+        const { stream, mockFilter } = createStreamInstance();
 
         mockFilter.send(textEncoderWin1251.encode(data));
 
@@ -235,15 +185,7 @@ describe('Content stream', () => {
     it('checks parsing charset from data - no charset in data', () => {
         const data = 'No charset in data';
 
-        const mockFilter = new MockStreamFilter();
-        const stream = new ContentStream(
-            context,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
-
-        stream.init();
+        const { stream, mockFilter } = createStreamInstance();
 
         mockFilter.send(textEncoderIso8859.encode(data));
 
@@ -257,15 +199,7 @@ describe('Content stream', () => {
     it('checks parsing charset from data - unsupported charset in data', () => {
         const data = 'unsupported charset in data <meta charset="koi8-r">';
 
-        const mockFilter = new MockStreamFilter();
-        const stream = new ContentStream(
-            context,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
-
-        stream.init();
+        const { stream, mockFilter } = createStreamInstance();
 
         mockFilter.send(textEncoderUtf8.encode(data));
 
@@ -277,16 +211,7 @@ describe('Content stream', () => {
     });
 
     it('checks content stream with empty content', () => {
-        const mockFilter = new MockStreamFilter();
-
-        const stream = new ContentStream(
-            context,
-            contentStringFilter,
-            () => mockFilter,
-            new MockFilteringLog(),
-        );
-
-        stream.init();
+        const { stream, mockFilter } = createStreamInstance();
 
         stream.setCharset(DEFAULT_CHARSET);
 
@@ -326,5 +251,43 @@ describe('Content stream', () => {
 
         expect(spyWrite).toBeCalledWith(data);
         expect(spyDisconnect).toBeCalledTimes(1);
+    });
+
+    it('should write raw chunks back if decoding results in replacement characters', () => {
+        // Create invalid UTF-8 data, 0xFF and 0xFE are invalid UTF-8 bytes
+        const invalidData = Uint8Array.from([0xFF, 0xFE]).buffer;
+
+        const { stream, mockFilter } = createStreamInstance();
+
+        stream.setCharset(DEFAULT_CHARSET);
+
+        const spyWrite = vi.spyOn(mockFilter, 'write');
+        const spyDisconnect = vi.spyOn(mockFilter, 'disconnect');
+        const spyClose = vi.spyOn(mockFilter, 'close');
+
+        // Access private properties/methods for testing (using typecasting to get around privacy)
+        const streamAny = stream as any;
+
+        // Simulate onResponseData with invalid data
+        // This should add the invalidData to rawChunks and try to decode it, resulting in \\uFFFD in content
+        streamAny.onResponseData({ data: invalidData });
+
+        // Verify the raw chunk was stored
+        expect(streamAny.rawChunks).toHaveLength(1);
+        expect(streamAny.rawChunks[0]).toBe(invalidData);
+        // Verify that decoding the invalid data produced the actual replacement character
+        expect(streamAny.content).toContain('\uFFFD');
+
+        // Call onResponseFinish
+        streamAny.onResponseFinish();
+
+        // Verify that the original raw chunk (invalidData) was written back
+        expect(spyWrite).toHaveBeenCalledWith(invalidData);
+        expect(spyClose).toHaveBeenCalled();
+        expect(spyDisconnect).not.toHaveBeenCalled(); // Should not disconnect, should write+close
+
+        // Content and rawChunks should be cleared after fallback
+        expect(streamAny.content).toBe('');
+        expect(streamAny.rawChunks).toHaveLength(0);
     });
 });

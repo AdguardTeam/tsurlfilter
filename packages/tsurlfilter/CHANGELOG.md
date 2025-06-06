@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0] - 2025-06-06
+
+### Added
+
+- Compatibility of `$header` modifier with `$match-case`
+  and `$third-party` modifiers in MV2 [AdguardBrowserExtension#2942].
+
+### Changed
+
+- Updated [@adguard/logger] to `v2.0.0`.
+- Updated [@adguard/scriptlets] to `v2.2.7`.
+
+### Removed
+
+- `getText` and `getUsedOptionNames` methods from `NetworkRule` class.
+
+[3.4.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.0
+[AdguardBrowserExtension#2942]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2942
+
 ## [3.3.4] - 2025-05-28
 
 ### Changed
@@ -919,6 +938,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [1.0.57]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.57
 
+[@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/agtree]: ../agtree/CHANGELOG.md
 [@adguard/css-tokenizer]: ../css-tokenizer/CHANGELOG.md
 

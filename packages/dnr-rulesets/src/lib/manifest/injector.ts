@@ -51,6 +51,9 @@ export interface RulesetsInjectorInterface {
      * @param options Apply options {@link ApplyRulesetsOptions}.
      *
      * @returns Patched manifest with defined declarative_net_request.
+     *
+     * @throws Error if manifest already contains ruleset with the specified ids
+     * and {@link options.forceUpdate} is `false` or if manifest file or filters directory are not found.
      */
     applyRulesets<T extends Manifest>(
         generateRulesetPath: RulesetPathGenerator,
@@ -61,6 +64,8 @@ export interface RulesetsInjectorInterface {
 }
 
 /**
+ * Api for injecting rulesets into manifest.
+ *
  * @see {@link RulesetsInjectorInterface}
  */
 export class RulesetsInjector implements RulesetsInjectorInterface {
@@ -69,11 +74,7 @@ export class RulesetsInjector implements RulesetsInjectorInterface {
      */
     private static readonly DEFAULT_RULESET_PREFIX = 'ruleset_';
 
-    /**
-     * @inheritdoc
-     * @throws Error if manifest already contains ruleset with the specified ids
-     * and {@link options.forceUpdate} is `false` or if manifest file or filters directory are not found.
-     */
+    /** @inheritdoc */
     public applyRulesets<T extends Manifest>(
         generateRulesetPath: RulesetPathGenerator,
         manifest: T,

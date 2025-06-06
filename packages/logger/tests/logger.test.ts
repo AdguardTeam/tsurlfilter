@@ -9,11 +9,13 @@ import {
 import { Logger, LogLevel } from '../src';
 import { type Writer } from '../src/Logger';
 
-describe('works', () => {
+describe('checking that ', () => {
     const writer: Writer = {
-        log: vi.fn(),
-        info: vi.fn(),
         error: vi.fn(),
+        warn: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn(),
+        trace: vi.fn(),
     };
 
     afterEach(() => {
@@ -34,22 +36,7 @@ describe('works', () => {
         });
     });
 
-    describe('calls expected method of writer', () => {
-        it('info calls info', () => {
-            const logger = new Logger(writer);
-            const message = 'some message';
-            logger.info(message);
-            expect(writer.info).toHaveBeenCalledWith(expect.any(String), message);
-        });
-
-        it('debug calls log', () => {
-            const logger = new Logger(writer);
-            logger.currentLevel = LogLevel.Debug;
-            const message = 'some message';
-            logger.debug(message);
-            expect(writer.log).toHaveBeenCalledWith(expect.any(String), message);
-        });
-
+    describe('calls expected method of writer with default log level', () => {
         it('error calls error', () => {
             const logger = new Logger(writer);
             const message = 'some message';
@@ -61,7 +48,28 @@ describe('works', () => {
             const logger = new Logger(writer);
             const message = 'some message';
             logger.warn(message);
+            expect(writer.warn).toHaveBeenCalledWith(expect.any(String), message);
+        });
+
+        it('info calls info', () => {
+            const logger = new Logger(writer);
+            const message = 'some message';
+            logger.info(message);
             expect(writer.info).toHaveBeenCalledWith(expect.any(String), message);
+        });
+
+        it('debug not called', () => {
+            const logger = new Logger(writer);
+            const message = 'some message';
+            logger.debug(message);
+            expect(writer.debug).not.toHaveBeenCalled();
+        });
+
+        it('trace not called', () => {
+            const logger = new Logger(writer);
+            const message = 'some message';
+            logger.trace(message);
+            expect(writer.trace).not.toHaveBeenCalled();
         });
     });
 
@@ -73,94 +81,126 @@ describe('works', () => {
 
         it('switches log levels', () => {
             const logger = new Logger(writer);
-            logger.currentLevel = LogLevel.Trace;
-            expect(logger.currentLevel).toBe(LogLevel.Trace);
-            logger.currentLevel = LogLevel.Debug;
-            expect(logger.currentLevel).toBe(LogLevel.Debug);
-            logger.currentLevel = LogLevel.Info;
-            expect(logger.currentLevel).toBe(LogLevel.Info);
-            logger.currentLevel = LogLevel.Error;
-            expect(logger.currentLevel).toBe(LogLevel.Error);
+
+            Object.values(LogLevel).forEach((level) => {
+                logger.currentLevel = level;
+                expect(logger.currentLevel).toBe(level);
+            });
         });
 
-        it('does not print message if debug is printed and info is selected', () => {
+        it('does not print message if debug is called and info level is selected', () => {
             const logger = new Logger(writer);
             const message = 'some message';
+
             expect(logger.currentLevel).toBe(LogLevel.Info);
             logger.debug(message);
-            expect(writer.info).not.toHaveBeenCalled();
-            expect(writer.log).not.toHaveBeenCalled();
+
             expect(writer.error).not.toHaveBeenCalled();
+            expect(writer.warn).not.toHaveBeenCalled();
+            expect(writer.info).not.toHaveBeenCalled();
+            expect(writer.debug).not.toHaveBeenCalled();
+            expect(writer.trace).not.toHaveBeenCalled();
         });
 
         it('prints message if debug method is called and debug level is selected', () => {
             const logger = new Logger(writer);
             const message = 'some message';
+
+            // Just spy on the debug and trace methods without changing theirs
+            // implementations.
+            const loggerDebugSpy = vi.spyOn(logger, 'debug');
+            const loggerTraceSpy = vi.spyOn(logger, 'trace');
+
             logger.currentLevel = LogLevel.Debug;
             logger.debug(message);
-            expect(writer.info).not.toHaveBeenCalled();
-            expect(writer.log).toHaveBeenCalled();
+
             expect(writer.error).not.toHaveBeenCalled();
+            expect(writer.warn).not.toHaveBeenCalled();
+            expect(writer.info).not.toHaveBeenCalled();
+
+            // Check logger method
+            expect(logger.debug).toHaveBeenCalledOnce();
+            // Check writer method 'trace' since with Debug level we call trace
+            // method to capture stack trace and help identify the location
+            // of the log.
+            expect(writer.trace).toHaveBeenCalledOnce();
+
+            expect(logger.trace).not.toHaveBeenCalled();
+
+            // Clean up
+            loggerDebugSpy.mockRestore();
+            loggerTraceSpy.mockRestore();
         });
 
-        describe('log level -- trace', () => {
-            const writerWithTrace: Writer = {
-                log: vi.fn(),
-                info: vi.fn(),
-                error: vi.fn(),
-                trace: vi.fn(),
-            };
+        it('does not print with trace method if error is called and level is not enough', () => {
+            const logger = new Logger(writer);
+            const message = 'some message';
 
-            it('does not print with trace method if error is called', () => {
-                const logger = new Logger(writerWithTrace);
-                const message = 'some message';
-                logger.currentLevel = LogLevel.Trace;
-                logger.error(message);
-                expect(writerWithTrace.error).toHaveBeenCalled();
-                expect(writerWithTrace.trace).not.toHaveBeenCalled();
-            });
+            logger.currentLevel = LogLevel.Debug;
+            logger.error(message);
 
-            it('does not print with trace method if level is not enough', () => {
-                const logger = new Logger(writerWithTrace);
-                const message = 'some message';
-                logger.currentLevel = LogLevel.Debug;
+            expect(writer.error).toHaveBeenCalledOnce();
+            expect(writer.warn).not.toHaveBeenCalled();
+            expect(writer.info).not.toHaveBeenCalled();
+            expect(writer.debug).not.toHaveBeenCalled();
+            expect(writer.trace).not.toHaveBeenCalled();
+        });
 
-                logger.debug(message);
-                expect(writerWithTrace.log).toHaveBeenCalled();
+        it('if level is warn - print with regular methods for all channels', () => {
+            const logger = new Logger(writer);
+            const message = 'some message';
+            logger.currentLevel = LogLevel.Warn;
 
-                logger.info(message);
-                logger.warn(message);
-                expect(writerWithTrace.info).toHaveBeenCalledTimes(2);
+            logger.error(message);
+            logger.warn(message);
+            logger.info(message);
+            logger.debug(message);
+            logger.trace(message);
 
-                expect(writerWithTrace.trace).not.toHaveBeenCalled();
-            });
+            expect(writer.error).toHaveBeenCalledOnce();
+            expect(writer.warn).toHaveBeenCalledOnce();
+            // Since level is not enough.
+            expect(writer.info).not.toHaveBeenCalled();
+            expect(writer.debug).not.toHaveBeenCalled();
+            expect(writer.trace).not.toHaveBeenCalled();
+        });
 
-            it('print with regular methods if trace method is not provided and level is enough', () => {
-                const logger = new Logger(writer);
-                const message = 'some message';
-                logger.currentLevel = LogLevel.Trace;
+        it('if level is debug - print with trace from all channels except error', () => {
+            const logger = new Logger(writer);
+            const message = 'some message';
+            logger.currentLevel = LogLevel.Debug;
 
-                logger.debug(message);
-                expect(writer.log).toHaveBeenCalled();
+            logger.error(message);
+            logger.warn(message);
+            logger.info(message);
+            logger.debug(message);
+            logger.trace(message);
 
-                logger.info(message);
-                logger.warn(message);
-                expect(writer.info).toHaveBeenCalledTimes(2);
-            });
+            // Because if log level is Debug or Trace, we call trace method in writer
+            // to capture stack trace and help identify the location of the log.
+            // 3 times for warn, info and debug, trace is ignored since log level
+            // is Debug.
+            expect(writer.trace).toHaveBeenCalledTimes(3);
+            // But we do not call trace writer method for error in any case.
+            expect(writer.error).toHaveBeenCalledOnce();
+        });
 
-            it('print with trace method', () => {
-                const logger = new Logger(writerWithTrace);
-                const message = 'some message';
-                logger.currentLevel = LogLevel.Trace;
+        it('if level is verbose - print with trace from all channels except error', () => {
+            const logger = new Logger(writer);
+            const message = 'some message';
+            logger.currentLevel = LogLevel.Verbose;
 
-                logger.debug(message);
-                logger.info(message);
-                logger.warn(message);
-                logger.error(message);
+            logger.error(message);
+            logger.warn(message);
+            logger.info(message);
+            logger.debug(message);
+            logger.trace(message);
 
-                expect(writerWithTrace.trace).toHaveBeenCalledTimes(3);
-                expect(writerWithTrace.error).toHaveBeenCalled();
-            });
+            // Because if log level is Debug or Trace, we call trace method in writer
+            // to capture stack trace and help identify the location of the log.
+            expect(writer.trace).toHaveBeenCalledTimes(4);
+            // But we do not call trace writer method for error in any case.
+            expect(writer.error).toHaveBeenCalledOnce();
         });
     });
 });

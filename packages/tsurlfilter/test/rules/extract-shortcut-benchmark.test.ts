@@ -1,11 +1,15 @@
 /* eslint-disable no-console, no-plusplus */
 import { describe, it, expect } from 'vitest';
 import fs from 'fs';
+import path from 'path';
 import console from 'console';
 import { NetworkRuleParser } from '@adguard/agtree';
 
 import { SimpleRegex } from '../../src/rules/simple-regex';
 import { EMPTY_STRING } from '../../src/common/constants';
+
+// eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
+const __dirname = new URL('.', import.meta.url).pathname;
 
 /**
  * Maximum amount of patterns that will be passed down to benchmark from incoming rule list.
@@ -16,11 +20,11 @@ const MAX_PATTERNS_COUNT = 320;
 
 const enum FilePath {
     // Rule lists to get patterns from
-    AdguardRegexpPatternNetworkRules = './test/resources/adguard_regexp_pattern_network_rules.txt',
-    EasylistBaseRules = './test/resources/easylist.txt',
+    AdguardRegexpPatternNetworkRules = '../resources/adguard_regexp_pattern_network_rules.txt',
+    EasylistBaseRules = '../resources/easylist.txt',
     // Reference files to compare results with
-    RegexpShortcutsReference = './test/resources/shortcuts-regexp-reference.txt',
-    BasicShortcutsReference = './test/resources/shortcuts-basic-reference.txt',
+    RegexpShortcutsReference = '../resources/shortcuts-regexp-reference.txt',
+    BasicShortcutsReference = '../resources/shortcuts-basic-reference.txt',
 }
 
 /**
@@ -31,7 +35,9 @@ const enum FilePath {
  * @returns List of patterns extracted from rule list.
  */
 const getPatterns = async (filePath: string): Promise<string[]> => {
-    const rulesString: string = await fs.promises.readFile(filePath, 'utf8');
+    // If we run the tests from the Vitest workspace, we need to set the correct path
+    // See https://github.com/vitest-dev/vitest/issues/5277
+    const rulesString: string = await fs.promises.readFile(path.join(__dirname, filePath), 'utf8');
 
     const rulesList = rulesString
         .split('\n')
@@ -77,7 +83,9 @@ const validateExtraction = async (
     const shortcuts = patterns.map((pattern) => SimpleRegex.extractShortcut(pattern));
 
     const reference = await fs.promises
-        .readFile(referencePath, 'utf8')
+        // If we run the tests from the Vitest workspace, we need to set the correct path
+        // See https://github.com/vitest-dev/vitest/issues/5277
+        .readFile(path.join(__dirname, referencePath), 'utf8')
         .then((r: string) => r.split('\n'))
         .then((r: string[]) => r.filter((s) => !s.startsWith('!')));
 

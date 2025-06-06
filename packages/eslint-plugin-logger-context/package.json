@@ -1,0 +1,68 @@
+{
+    "name": "@adguard/eslint-plugin-logger-context",
+    "version": "1.0.1",
+    "description": "ESLint plugin that requires AdGuard logger calls to start with a context tag.",
+    "main": "./dist/index.js",
+    "module": "./dist/es/index.mjs",
+    "types": "./dist/types/src/index.d.ts",
+    "files": [
+        "dist",
+        "!dist/build.txt",
+        "src"
+    ],
+    "exports": {
+        ".": {
+            "require": "./dist/index.js",
+            "import": "./dist/es/index.mjs",
+            "types": "./dist/types/src/index.d.ts"
+        }
+    },
+    "scripts": {
+        "prebuild": "rimraf dist",
+        "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm build:types",
+        "postbuild": "tsx scripts/build-txt.ts",
+        "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types",
+        "lint": "eslint --cache --ignore-path .gitignore . && tsc",
+        "tgz": "pnpm pack --out eslint-plugin-logger-context.tgz"
+    },
+    "keywords": [
+        "eslint",
+        "eslintplugin",
+        "logger",
+        "adguard",
+        "context"
+    ],
+    "author": "Adguard Software Ltd.",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "directory": "packages/eslint-plugin-logger-context"
+    },
+    "bugs": {
+        "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
+    },
+    "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/eslint-plugin-logger-context#readme",
+    "devDependencies": {
+        "@adguard/logger": "workspace:^",
+        "@rollup/plugin-commonjs": "catalog:",
+        "@rollup/plugin-json": "catalog:",
+        "@rollup/plugin-node-resolve": "catalog:",
+        "@rollup/plugin-typescript": "catalog:",
+        "@types/node": "catalog:",
+        "@typescript-eslint/eslint-plugin": "catalog:",
+        "@typescript-eslint/parser": "catalog:",
+        "@typescript-eslint/utils": "^8.32.1",
+        "eslint": "catalog:",
+        "eslint-config-airbnb-base": "catalog:",
+        "eslint-config-airbnb-typescript": "catalog:",
+        "eslint-plugin-import": "catalog:",
+        "eslint-plugin-jsdoc": "catalog:",
+        "rimraf": "catalog:",
+        "rollup": "catalog:",
+        "rollup-plugin-node-externals": "catalog:",
+        "tslib": "catalog:",
+        "tsx": "catalog:",
+        "typescript": "catalog:"
+    }
+}

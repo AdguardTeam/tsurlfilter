@@ -35,6 +35,7 @@ module.exports = {
         'no-constant-condition': ['error', { checkLoops: false }],
         '@typescript-eslint/interface-name-prefix': 'off',
         '@typescript-eslint/explicit-function-return-type': 'error',
+        '@typescript-eslint/member-delimiter-style': 'error',
         'arrow-body-style': 'off',
         'no-param-reassign': 'off',
         'import/no-cycle': 'off',

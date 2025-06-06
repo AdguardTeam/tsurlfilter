@@ -71,7 +71,7 @@ export class CookieFiltering {
         // removing them from context to correct process them in headers.
         this.applyRules(context)
             .catch((e) => {
-                logger.error('[tswebextension.onBeforeSendHeaders]: cannot apply rules due to: ', e);
+                logger.error('[tsweb.CookieFiltering.onBeforeSendHeaders]: cannot apply rules due to: ', e);
             });
     }
 
@@ -111,7 +111,7 @@ export class CookieFiltering {
         // removing them from context to correct process them in headers.
         this.applyRules(context)
             .catch((e) => {
-                logger.error('[tswebextension.onHeadersReceived]: cannot apply rules due to: ', e);
+                logger.error('[tsweb.CookieFiltering.onHeadersReceived]: cannot apply rules due to: ', e);
             });
     }
 

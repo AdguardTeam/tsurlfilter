@@ -9,6 +9,9 @@ The list of available filters can be found by `filters` in [the metadata](https:
         - [CLI](#cli)
         - [API](#api)
         - [Output structure](#output-structure)
+        - [Utils](#utils)
+            - [getVersion](#getversion)
+            - [getVersionTimestampMs](#getversiontimestampms)
     - [Advanced usage](#advanced-usage)
         - [Injecting rulesets to the manifest object](#injecting-rulesets-to-the-manifest-object)
     - [Example](#example)
@@ -171,6 +174,31 @@ You can also integrate functions for downloading and updating the manifest into 
 |       |lazy_Metadata.json // Additional ruleset metadata for lazy loading
 |
 |filter_<id>.txt // Original filter rules with specified id
+```
+
+### Utils
+
+The package provides a set of utility functions for working with DNR rulesets.
+
+#### `getVersion()`
+
+Returns the version of the package.
+
+```ts
+import { getVersion } from '@adguard/dnr-rulesets/utils';
+
+const dnrRulesetsVersion = getVersion();
+```
+
+#### `getVersionTimestampMs()`
+
+Returns the timestamp of the dnr-rulesets build, based on the patch version,
+or current timestamp of the function call if date and time is not present in the patch version.
+
+```ts
+import { getVersionTimestampMs } from '@adguard/dnr-rulesets/utils';
+
+const dnrRulesetsBuildTimestamp = getVersionTimestampMs();
 ```
 
 ## Advanced usage

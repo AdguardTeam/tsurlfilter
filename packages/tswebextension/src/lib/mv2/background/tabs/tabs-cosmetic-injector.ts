@@ -48,7 +48,7 @@ export class TabsCosmeticInjector {
         // Handles errors
         promises.forEach((promise) => {
             if (promise.status === 'rejected') {
-                logger.error(promise.reason);
+                logger.error('[tsweb.TabsCosmeticInjector.processOpenTabs]: cannot process tab: ', promise.reason);
             }
         });
 
@@ -141,8 +141,7 @@ export class TabsCosmeticInjector {
 
             const frameContext = this.tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.cosmeticResult) {
-                // eslint-disable-next-line max-len
-                logger.debug(`[tswebextension.processOpenTab]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTab]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
                 return;
             }
 

@@ -96,6 +96,7 @@ Table of content:
                 - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
                 - [getRawFilterList() (MV3 only)](#getrawfilterlist-mv3-only)
                 - [getPreprocessedFilterList() (MV3 only)](#getpreprocessedfilterlist-mv3-only)
+                - [isUserScriptsApiSupported](#isuserscriptsapisupported)
     - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
         - [events](#events)
             - [sendRequest](#sendrequest)
@@ -204,6 +205,7 @@ In the content script, we need access to `@adguard/assistant` only when the user
 Same approach with dynamic injecting we use for stealth options GPC and Hide
 Document Referrer. Handlers for these options will dynamically register content
 scripts via `scripting.registerContentScript`.
+
 ## API
 
 The main idea of the library is to provide a common interface for different browsers and manifest versions.
@@ -457,7 +459,7 @@ Enables filtering if true.
 
 type: `string`
 
-Redirect url for $document rules.
+Redirect url for blocking rules with `$document` modifier.
 
 ##### assistantUrl
 
@@ -755,6 +757,13 @@ Throws error if rule sets path is not set.
 > [tsurlfilter documentation][tsurlfilter-preprocessed-filter-list].
 
 [tsurlfilter-preprocessed-filter-list]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#preprocessedfilterlist-interface
+
+##### isUserScriptsApiSupported
+
+type: `static get property`
+return type: `boolean`
+
+Indicates whether user scripts API is supported in the current browser. Returns `true` if the user scripts API is supported, `false` otherwise.
 
 ## Filtering Log API (MV2 only)
 
