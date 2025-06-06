@@ -59,6 +59,29 @@ export class HtmlRuleParser {
         // Loading attributes filter
         while (htmlAttributesStartIndex !== -1) {
             const equalityIndex = ruleContent.indexOf('=', htmlAttributesStartIndex + 1);
+
+            // if there is no equality sign inside of `[...]`,
+            // consider it as a simple standard attribute, e.g. 'div[custom_attr]'
+            // because special attributes, i.e. 'tag-content', require value
+            if (equalityIndex === -1) {
+                const currentAttrEndIndex = ruleContent.indexOf(
+                    HtmlRuleParser.ATTRIBUTE_END_MARK,
+                    htmlAttributesStartIndex + 1,
+                );
+
+                const attributeName = ruleContent.substring(htmlAttributesStartIndex + 1, currentAttrEndIndex);
+
+                selector.push(HtmlRuleParser.ATTRIBUTE_START_MARK);
+                selector.push(attributeName);
+                selector.push(HtmlRuleParser.ATTRIBUTE_END_MARK);
+
+                htmlAttributesStartIndex = ruleContent.indexOf(
+                    HtmlRuleParser.ATTRIBUTE_START_MARK,
+                    currentAttrEndIndex + 1,
+                );
+                continue;
+            }
+
             const quoteStartIndex = ruleContent.indexOf(HtmlRuleParser.QUOTES, equalityIndex + 1);
             const quoteEndIndex = HtmlRuleParser.getClosingQuoteIndex(ruleContent, quoteStartIndex + 1);
             if (quoteStartIndex === -1 || quoteEndIndex === -1) {

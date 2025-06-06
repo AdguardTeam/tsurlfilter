@@ -26,14 +26,6 @@ describe('Html rule attributes parser', () => {
         expect(parsed!.tagName).toBe('div');
         expect(parsed!.selector).toBe('div');
 
-        ruleText = 'example.org$$div[id]';
-        rule = createCosmeticRule(ruleText, 0);
-
-        parsed = HtmlRuleParser.parse(rule);
-        expect(parsed).not.toBeNull();
-        expect(parsed!.tagName).toBe('div');
-        expect(parsed!.selector).toBe('div');
-
         ruleText = 'example.org$$div[id=""';
         rule = createCosmeticRule(ruleText, 0);
 
@@ -73,5 +65,23 @@ describe('Html rule attributes parser', () => {
         rule = createCosmeticRule(ruleText, 0);
         parsed = HtmlRuleParser.parse(rule);
         expect(parsed).toBeNull();
+    });
+
+    it('checks parsing of attribute with no value', () => {
+        let ruleText = 'example.org$$div[custom_attr]';
+        let rule = createCosmeticRule(ruleText, 0);
+
+        let parsed = HtmlRuleParser.parse(rule);
+        expect(parsed).not.toBeNull();
+        expect(parsed!.tagName).toBe('div');
+        expect(parsed!.selector).toBe('div[custom_attr]');
+
+        ruleText = 'example.org$$div[id]';
+        rule = createCosmeticRule(ruleText, 0);
+
+        parsed = HtmlRuleParser.parse(rule);
+        expect(parsed).not.toBeNull();
+        expect(parsed!.tagName).toBe('div');
+        expect(parsed!.selector).toBe('div[id]');
     });
 });
