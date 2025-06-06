@@ -139,4 +139,63 @@ describe('Html rule selector', () => {
         elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
         expect(elements).toBeNull();
     });
+
+    it('checks attribute with no value AND element is matched', () => {
+        document.body.innerHTML = `
+        <html>
+            <body>
+                <div id="test1">no match</div>
+                <div custom_attr id="test2">match</div>
+            </body>
+        </html>
+        `;
+
+        const rule = createCosmeticRule('example.org$$div[custom_attr]', 0);
+        const parsed = HtmlRuleParser.parse(rule);
+        expect(parsed).not.toBeNull();
+
+        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        expect(elements).not.toBeNull();
+        expect(elements).toHaveLength(1);
+        expect(elements).toContain(document.getElementById('test2')!);
+    });
+
+    it('checks attribute with no value AND few element are matched', () => {
+        document.body.innerHTML = `
+        <html>
+            <body>
+                <div id="test1">no match</div>
+                <div custom_attr="custom1" id="test2">match</div>
+                <div custom_attr="custom2" id="test3">match</div>
+            </body>
+        </html>
+        `;
+
+        const rule = createCosmeticRule('example.org$$div[custom_attr]', 0);
+        const parsed = HtmlRuleParser.parse(rule);
+        expect(parsed).not.toBeNull();
+
+        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        expect(elements).not.toBeNull();
+        expect(elements).toHaveLength(2);
+        expect(elements).toContain(document.getElementById('test2')!);
+        expect(elements).toContain(document.getElementById('test3')!);
+    });
+
+    it('checks attribute with no value AND no matched elements', () => {
+        document.body.innerHTML = `
+        <html>
+            <body>
+                <div id="test1">no match</div>
+            </body>
+        </html>
+        `;
+
+        const rule = createCosmeticRule('example.org$$div[custom_attr]', 0);
+        const parsed = HtmlRuleParser.parse(rule);
+        expect(parsed).not.toBeNull();
+
+        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        expect(elements).toBeNull();
+    });
 });

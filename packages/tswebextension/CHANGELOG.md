@@ -25,14 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Invalid HTML rule selectors are breaking site loading
+- Invalid HTML filtering rule selectors are breaking site loading
   [AdguardBrowserExtension#2646], [AdguardBrowserExtension#2826].
 - Scriptlet rules are not displayed in the filtering log [AdguardBrowserExtension#3164].
 - Stealth mode's `Hide Referer from third parties` option may break some websites [AdguardBrowserExtension#2839].
 - Filtering doesn't work in Edge's split screen [AdguardBrowserExtension#2832].
 - `$replace` rules may break some websites [AdguardBrowserExtension#3122].
-- Increase file size limit to 10MB for `$replace` rules in Firefox [AdguardBrowserExtension#3192]
+- Increase file size limit to 10MB for `$replace` rules in Firefox [AdguardBrowserExtension#3192].
+- Allow to specify attributes without value in selector for HTML filtering rules [#147].
 
+[#147]: https://github.com/AdguardTeam/tsurlfilter/issues/147
 [AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
 [AdguardBrowserExtension#2826]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2826
 [AdguardBrowserExtension#2832]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2832
