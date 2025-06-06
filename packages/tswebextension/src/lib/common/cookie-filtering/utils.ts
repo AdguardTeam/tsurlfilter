@@ -119,16 +119,14 @@ export class CookieUtils {
         const parts = setCookieValue.split(';').filter((s) => !!s);
         const nameValuePart = parts.shift();
         if (!nameValuePart) {
-            // eslint-disable-next-line max-len
-            logger.debug(`[tswebextension.parseSetCookie]: cannot shift first name-value pair from Set-Cookie header '${setCookieValue}'.`);
+            logger.debug(`[tsweb.CookieUtils.parseSetCookie]: cannot shift first name-value pair from Set-Cookie header '${setCookieValue}'.`);
             return null;
         }
 
         const nameValue = nameValuePart.split('=');
         const name = nameValue.shift();
         if (!name) {
-            // eslint-disable-next-line max-len
-            logger.debug(`[tswebextension.parseSetCookie]: cannot extract name from first name-value pair from Set-Cookie header '${setCookieValue}'.`);
+            logger.debug(`[tsweb.CookieUtils.parseSetCookie]: cannot extract name from first name-value pair from Set-Cookie header '${setCookieValue}'.`);
             return null;
         }
         // Everything after the first =, joined by a "=" if there was more

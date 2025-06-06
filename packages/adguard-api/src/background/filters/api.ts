@@ -74,8 +74,8 @@ export class FiltersApi {
      * @returns filters data for {@link TsWebExtension} configuration
      */
     public async getFilters(filterIds: number[]): Promise<{
-        content: Uint8Array[],
-        sourceMap: Record<string, number>,
+        content: Uint8Array[];
+        sourceMap: Record<string, number>;
         filterId: number;
         trusted: boolean;
     }[]> {

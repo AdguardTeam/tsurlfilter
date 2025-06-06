@@ -9,9 +9,9 @@ import { isHttpRequest, isThirdPartyRequest } from '../../../../common/utils/url
 import { tabsApi } from '../../api';
 import CookieUtils from '../../services/cookie-filtering/utils';
 import { type TabFrameRequestContextMV2 } from '../../tabs/tabs-api';
-import { isFirefox } from '../../utils';
 import { requestContextStorage, RequestContextState } from '../request-context-storage';
 import { DocumentLifecycle } from '../../../../common/interfaces';
+import { browserDetectorMV2 } from '../../utils/browser-detector';
 
 import { RequestEvent, type RequestData } from './request-event';
 
@@ -19,9 +19,9 @@ const MAX_URL_LENGTH = 1024 * 16;
 
 type ChromiumBrowser = typeof browser & {
     webRequest: {
-        OnHeadersReceivedOptions: unknown
-        OnBeforeSendHeadersOptions: unknown
-    }
+        OnHeadersReceivedOptions: unknown;
+        OnBeforeSendHeadersOptions: unknown;
+    };
 };
 
 export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType & {
@@ -31,6 +31,12 @@ export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType &
      * TODO: Use this for store matchingResult.
      */
     documentId?: string;
+
+    /**
+     * The UUID of the parent document making the request.
+     */
+    parentDocumentId?: string;
+
     /**
      * The document lifecycle of the frame.
      *
@@ -38,7 +44,7 @@ export type OnBeforeRequestDetailsType = WebRequest.OnBeforeRequestDetailsType &
      *
      * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle
      */
-    documentLifecycle?: DocumentLifecycle
+    documentLifecycle?: DocumentLifecycle;
 };
 
 /**
@@ -344,6 +350,8 @@ export class RequestEvents {
             responseHeaders,
             statusCode,
         } = details;
+
+        const isFirefox = browserDetectorMV2.isFirefox();
 
         /**
          * Firefox packs all cookies in a single set-cookie header concatenated with `\n`

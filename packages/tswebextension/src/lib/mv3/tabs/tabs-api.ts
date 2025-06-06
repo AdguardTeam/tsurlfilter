@@ -1,6 +1,6 @@
-import browser, { type Tabs } from 'webextension-polyfill';
+import browser from 'webextension-polyfill';
 
-import { TabsApiCommon, type TabFrameRequestContextCommon } from '../../common/tabs/tabs-api';
+import { type TabInfo, TabsApiCommon, type TabFrameRequestContextCommon } from '../../common/tabs/tabs-api';
 import { isHttpOrWsRequest } from '../../common/utils/url';
 import { DocumentApi } from '../background/document-api';
 
@@ -20,15 +20,9 @@ export class TabsApi extends TabsApiCommon<FrameMV3, TabContext> {
     /**
      * @inheritdoc
      */
-    protected handleTabCreate(tab: Tabs.Tab): TabContext | null {
-        if (!TabContext.isBrowserTab(tab)) {
-            return null;
-        }
-
-        const tabContext = TabContext.createNewTabContext(tab);
-        this.context.set(tab.id, tabContext);
-        this.onCreate.dispatch(tabContext);
-        return tabContext;
+    // eslint-disable-next-line class-methods-use-this
+    protected createTabContext(tab: TabInfo): TabContext {
+        return TabContext.createNewTabContext(tab);
     }
 
     /**

@@ -61,7 +61,7 @@ export class UboCosmeticRuleModifierConverter {
      */
     public static convertFromAdg(
         modifierList: ModifierList,
-    ): ConversionResult<{ modifierList: ModifierList, domains?: DomainList }> {
+    ): ConversionResult<{ modifierList: ModifierList; domains?: DomainList }> {
         const conversionMap = new MultiValueMap<number, Modifier | null>();
         let domainList: DomainList | null = null;
         let regexDomainValue: string | undefined;

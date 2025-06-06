@@ -317,7 +317,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
                 const badFilterRule = rule.rule;
                 const ruleToCheck = r.rule;
 
-                if (badFilterRule.negatesBadfilter(ruleToCheck)) {
+                if (badFilterRule.rule.negatesBadfilter(ruleToCheck.rule)) {
                     return false;
                 }
             }
@@ -534,7 +534,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             // version of applying $badfilter rules.
             const someRulesMatched = indexedNetworkRulesWithHash
                 .flat()
-                .some((rule) => badFilterRule.rule.negatesBadfilter(rule));
+                .some((rule) => badFilterRule.rule.rule.negatesBadfilter(rule));
 
             if (someRulesMatched) {
                 disableRuleIds.push(id);

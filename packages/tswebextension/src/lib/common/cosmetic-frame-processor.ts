@@ -9,44 +9,44 @@ export type PrecalculateCosmeticProps = {
     /**
      * Frame url.
      */
-    url: string,
+    url: string;
 
     /**
      * Frame tab id.
      */
-    tabId: number,
+    tabId: number;
 
     /**
      * Frame id.
      */
-    frameId: number,
+    frameId: number;
 
     /**
      * Parent frame id.
      */
-    parentFrameId: number,
+    parentFrameId: number;
 
     /**
      * Frame creation timestamp.
      */
-    timeStamp: number,
+    timeStamp: number;
 
     /**
      * Parent document id.
      */
-    parentDocumentId?: string
+    parentDocumentId?: string;
 
     /**
      * The UUID of the document making the request.
      */
-    documentId?: string,
+    documentId?: string;
 
     /**
      * The document lifecycle of the frame.
      *
      * @see https://developer.chrome.com/docs/extensions/reference/api/extensionTypes#type-DocumentLifecycle.
      */
-    documentLifecycle?: DocumentLifecycle,
+    documentLifecycle?: DocumentLifecycle;
 };
 
 /**
@@ -56,22 +56,22 @@ export type HandleSubFrameWithoutUrlProps = {
     /**
      * Tab id.
      */
-    tabId: number,
+    tabId: number;
 
     /**
      * Frame id.
      */
-    frameId: number,
+    frameId: number;
 
     /**
      * Main frame url.
      */
-    mainFrameUrl?: string,
+    mainFrameUrl?: string;
 
     /**
      * Parent document id.
      */
-    parentDocumentId?: string,
+    parentDocumentId?: string;
 };
 
 /**
@@ -81,27 +81,27 @@ export type HandleSubFrameWithUrlProps = {
     /**
      * Frame url.
      */
-    url: string,
+    url: string;
 
     /**
      * Tab id.
      */
-    tabId: number,
+    tabId: number;
 
     /**
      * Frame id.
      */
-    frameId: number,
+    frameId: number;
 
     /**
      * Main frame url.
      */
-    mainFrameUrl?: string,
+    mainFrameUrl?: string;
 
     /**
      * Main frame rule.
      */
-    mainFrameRule: any,
+    mainFrameRule: any;
 };
 
 /**
@@ -111,20 +111,20 @@ export type HandleMainFrameProps = {
     /**
      * Url.
      */
-    url: string,
+    url: string;
 
     /**
      * Tab id.
      */
-    tabId: number,
+    tabId: number;
 
     /**
      * Frame id.
      */
-    frameId: number,
+    frameId: number;
 
     /**
      * Document id.
      */
-    documentId?: number,
+    documentId?: number;
 };

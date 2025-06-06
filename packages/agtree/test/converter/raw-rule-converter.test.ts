@@ -28,6 +28,12 @@ describe('Raw rule converter wrapper should work correctly', () => {
                     'example.com$$script[tag-content="foo"][max-length="262144"]',
                 ],
             },
+            {
+                actual: 'example.com,~example.net##^div[custom_attr]',
+                expected: [
+                    'example.com,~example.net$$div[custom_attr][max-length="262144"]',
+                ],
+            },
             // multiple rules in the result
             {
                 actual: 'example.com#$#abp-snippet1 arg0 arg1; abp-snippet2 arg0 arg1',

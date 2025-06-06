@@ -1,25 +1,6 @@
-// TODO: Integrate Logger library AG-40234
-/* eslint-disable import/no-mutable-exports */
-/**
- * Logger interface.
- */
-export interface ILogger {
-    error(message?: string): void;
-    warn(message?: string): void;
-    debug(message?: string): void;
-    info(message?: string): void;
-}
+import { Logger } from '@adguard/logger';
 
 /**
  * Export logger implementation.
  */
-export let logger: ILogger = console;
-
-/**
- * Set logger implementation.
- *
- * @param loggerImpl The logger implementation to set.
- */
-export function setLogger(loggerImpl: ILogger): void {
-    logger = loggerImpl;
-}
+export const logger = new Logger(console);

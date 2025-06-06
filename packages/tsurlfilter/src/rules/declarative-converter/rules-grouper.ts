@@ -28,19 +28,19 @@ export class DeclarativeRulesGrouper {
     private static getRuleGroup(indexedNetworkRuleWithHash: IndexedNetworkRuleWithHash): RulesGroup {
         const { rule } = indexedNetworkRuleWithHash;
 
-        if (rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
+        if (rule.rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
             return RulesGroup.RemoveParam;
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
+        if (rule.rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
             return RulesGroup.RemoveHeader;
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
+        if (rule.rule.isOptionEnabled(NetworkRuleOption.Csp)) {
             return RulesGroup.Csp;
         }
 
-        if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
+        if (rule.rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
             return RulesGroup.BadFilter;
         }
 

@@ -31,7 +31,8 @@ type FilterDTO = {
  * Gets {@link FilterDTO} array from filter metadata.
  * AdGuard Quick Fixes filter is excluded from downloading and conversion.
  *
- * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`
+ * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`.
+ *
  * @returns Array of filter data.
  */
 const getUrlsOfFiltersResources = async (
@@ -124,6 +125,7 @@ const createTxt = async (): Promise<void> => {
  * Used as a cleanup step after filters conversion to remove unnecessary txt files.
  *
  * @param dir Directory with txt files.
+ *
  * @returns Promise that resolves when all txt files are removed.
  */
 const removeTxtFiles = async (dir: string): Promise<void> => {
@@ -145,9 +147,10 @@ const removeTxtFiles = async (dir: string): Promise<void> => {
  *     "enabled": true,
  *     "path": "filters/declarative/rules.json"
  *   }]
- * }
+ * }.
  *
- * we should find corresponding text file in resources, and then convert and save json to path specified in the manifest
+ * We should find corresponding text file in resources,
+ * and then convert and save json to path specified in the manifest.
  */
 const build = async (): Promise<void> => {
     const metadata = await startDownload();

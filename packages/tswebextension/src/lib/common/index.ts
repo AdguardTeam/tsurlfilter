@@ -6,7 +6,6 @@ export * from './filtering-log';
 export * from './stealth-helper';
 export * from './content-script/send-app-message';
 export * from './request-type';
-export * from './error';
 export * from './constants';
 export * from './storage/core';
 export * from './storage';

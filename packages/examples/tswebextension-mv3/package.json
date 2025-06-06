@@ -9,7 +9,9 @@
         "build": "pnpm build:precompile-rules && pnpm build:extension",
         "build:extension": "tsx ./scripts/build",
         "build:precompile-rules": "tsx ./scripts/precompile-rules.ts",
-        "lint": "eslint --cache --ignore-path .gitignore . && tsc --noEmit",
+        "lint": "pnpm lint:code && pnpm lint:types",
+        "lint:code": "eslint --cache --ignore-path .gitignore .",
+        "lint:types": "tsc --noEmit",
         "tswebextension": "tswebextension",
         "test": "rimraf tmp && cross-env PW_EXPERIMENTAL_SERVICE_WORKER_NETWORK_EVENTS=1 tsx ./scripts/browser-test/index.ts",
         "clean": "rimraf build && rimraf extension/filters"

@@ -112,16 +112,16 @@ export class StealthModifier {
             const option = StealthOption[optionName];
 
             if (this.options & option) {
-                logger.debug(`Duplicate $stealth modifier value "${optionName}" in "${optionsStr}"`);
+                // TODO: Change log level to 'warn' after AG-42379
+                logger.trace(`[tsurl.StealthModifier.constructor]: duplicate $stealth modifier value "${optionName}" in "${optionsStr}"`);
             }
 
             this.options |= option;
         }
 
         if (this.options === StealthOption.NotSet) {
-            // eslint-disable-next-line max-len
-            const msg = `$stealth modifier does not contain any options supported by browser extension: "${optionsStr}"`;
-            logger.debug(msg);
+            // TODO: Change log level to 'warn' after AG-42379
+            logger.trace(`[tsurl.StealthModifier.constructor]: $stealth modifier does not contain any options supported by browser extension: "${optionsStr}"`);
         }
     }
 
