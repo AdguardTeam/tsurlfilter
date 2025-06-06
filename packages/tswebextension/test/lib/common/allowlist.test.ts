@@ -6,6 +6,7 @@ import {
 } from 'vitest';
 import { BufferRuleList, FilterListPreprocessor } from '@adguard/tsurlfilter';
 
+import { createNetworkRule } from '../../helpers/rule-creator';
 import { getConfigurationMv2Fixture } from '../mv2/background/fixtures/configuration';
 import { getConfigurationMv3Fixture } from '../mv3/fixtures/configuration';
 import { Allowlist } from '../../../src/lib/mv2/background/allowlist';
@@ -150,7 +151,8 @@ describe('Allowlist Api', () => {
             it.each(testCases)('should return $expected rule for $domain', ({ domain, expected }) => {
                 const rule = Allowlist.createAllowlistRule(domain)!;
 
-                expect(rule.getText()).toBe(expected);
+                expect(rule).not.toBeUndefined();
+                expect(rule).toEqual(createNetworkRule(expected, ALLOWLIST_FILTER_ID));
                 expect(rule.getFilterListId()).toBe(ALLOWLIST_FILTER_ID);
             });
         });

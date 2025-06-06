@@ -14,7 +14,7 @@
  * ### Covers:
  * - `import` declarations
  * - `export` declarations
- * - `import("./x").Type` (ImportType nodes)
+ * - `import("./x").Type` (ImportType nodes).
  *
  * This is useful for projects targeting `"module"` + `"NodeNext"` in `tsconfig.json`,
  * where `.d.ts` files must reflect the `.js` suffix used in runtime ESM.
@@ -49,11 +49,12 @@ project.addSourceFilesAtPaths(path.join(__dirname, `../dist/lib/**/*${EXT_DTS}`)
  * - keeps non-relative or already-extended specifiers unchanged
  * - './foo'  → './foo.js'
  * - '../foo' → '../foo.js'
- * - './bar'  → './bar/index.js' (if ./bar/index.d.ts exists)
+ * - './bar'  → './bar/index.js' (if ./bar/index.d.ts exists).
  *
- * @param dir Source file directory
- * @param spec Module specifier
- * @returns Rewritten module specifier or null if no change is needed
+ * @param dir Source file directory.
+ * @param spec Module specifier.
+ *
+ * @returns Rewritten module specifier or null if no change is needed.
  */
 function rewriteSpecifier(dir: string, spec: string): string | null {
     // Ignore non-relative specifiers

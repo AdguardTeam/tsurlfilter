@@ -54,7 +54,7 @@ export class RedirectsService {
         const redirectSource = this.redirects.getRedirect(title);
 
         if (!redirectSource) {
-            logger.debug(`There is no redirect source with title: "${title}"`);
+            logger.warn(`[tsweb.RedirectsService.createRedirectUrl]: there is no redirect source with title: "${title}"`);
             return null;
         }
 

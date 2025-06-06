@@ -7,7 +7,7 @@ import { MessageType } from '../../common/message-constants';
 import { sendAppMessage } from '../../common/content-script/send-app-message';
 import { HIDING_STYLE, createHidingCssRule } from '../common/hidden-style';
 
-type RequestInitiatorElement = HTMLElement & { src?: string, data?: string };
+type RequestInitiatorElement = HTMLElement & { src?: string; data?: string };
 
 /**
  * Hides broken items after blocking a network request.

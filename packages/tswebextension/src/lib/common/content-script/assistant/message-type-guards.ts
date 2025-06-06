@@ -9,7 +9,7 @@ import { type Message } from '../../message';
  * Base assistant message for open and close.
  */
 type AssistantMessage = {
-    type: Message['type']
+    type: Message['type'];
 };
 
 /**

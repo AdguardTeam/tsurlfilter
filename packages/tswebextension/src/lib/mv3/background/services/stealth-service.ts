@@ -357,8 +357,7 @@ export class StealthService {
 
                 return isReferrerHidden;
             } catch (e) {
-                // eslint-disable-next-line max-len
-                logger.error('[tswebextension.setHideReferrer]: error on removing the stealth rule "hide-referrer": ', e);
+                logger.error('[tsweb.StealthService.setHideReferrer]: error on removing the stealth rule "hide-referrer": ', e);
 
                 return !isReferrerHidden;
             }
@@ -382,7 +381,7 @@ export class StealthService {
 
             return isReferrerHidden;
         } catch (e) {
-            logger.error('[tswebextension.setHideReferrer]: error on setting the stealth rule $referrer: ', e);
+            logger.error('[tsweb.StealthService.setHideReferrer]: error on setting the stealth rule $referrer: ', e);
 
             return !isReferrerHidden;
         }
@@ -403,8 +402,7 @@ export class StealthService {
 
                 return isBlockChromeClientData;
             } catch (e) {
-                // eslint-disable-next-line max-len
-                logger.error('[tswebextension.setBlockChromeClientData]: error on removing the stealth rule $xclientdata: ', e);
+                logger.error('[tsweb.StealthService.setBlockChromeClientData]: error on removing the stealth rule $xclientdata: ', e);
 
                 return !isBlockChromeClientData;
             }
@@ -428,8 +426,7 @@ export class StealthService {
 
             return isBlockChromeClientData;
         } catch (e) {
-            // eslint-disable-next-line max-len
-            logger.error('[tswebextension.setBlockChromeClientData]: error on setting the stealth rule $xclientdata: ', e);
+            logger.error('[tsweb.StealthService.setBlockChromeClientData]: error on setting the stealth rule $xclientdata: ', e);
 
             return !isBlockChromeClientData;
         }
@@ -457,7 +454,7 @@ export class StealthService {
 
                 return isSendDoNotTrack;
             } catch (e) {
-                logger.error('[tswebextension.setSendDoNotTrack]: error on removing the stealth rule $donottrack: ', e);
+                logger.error('[tsweb.StealthService.setSendDoNotTrack]: error on removing the stealth rule $donottrack: ', e);
 
                 return !isSendDoNotTrack;
             }
@@ -499,7 +496,7 @@ export class StealthService {
 
             return isSendDoNotTrack;
         } catch (e) {
-            logger.error('[tswebextension.setSendDoNotTrack]: error on setting the stealth rule $donottrack: ', e);
+            logger.error('[tsweb.StealthService.setSendDoNotTrack]: error on setting the stealth rule $donottrack: ', e);
 
             return !isSendDoNotTrack;
         }
@@ -527,8 +524,7 @@ export class StealthService {
 
                 return isHideSearchQueries;
             } catch (e) {
-                // eslint-disable-next-line max-len
-                logger.error('[tswebextension.setHideSearchQueries]: error on removing the stealth rule $searchqueries: ', e);
+                logger.error('[tsweb.StealthService.setHideSearchQueries]: error on removing the stealth rule $searchqueries: ', e);
 
                 return !isHideSearchQueries;
             }
@@ -566,8 +562,7 @@ export class StealthService {
 
             return isHideSearchQueries;
         } catch (e) {
-            // eslint-disable-next-line max-len
-            logger.error('[tswebextension.setHideSearchQueries]: error on setting the stealth rule $searchqueries: ', e);
+            logger.error('[tsweb.StealthService.setHideSearchQueries]: error on setting the stealth rule $searchqueries: ', e);
 
             return !isHideSearchQueries;
         }
@@ -584,9 +579,9 @@ export class StealthService {
      * @throws Error if the permissions are not granted, but required to set the WebRTC policy.
      */
     public static async setDisableWebRTC(isWebRTCDisabled: boolean): Promise<boolean> {
-        const isPermissionGranted = await chrome.permissions.contains({
-            permissions: StealthService.REQUIRED_PERMISSIONS,
-        });
+        const permissions = StealthService.REQUIRED_PERMISSIONS;
+
+        const isPermissionGranted = await chrome.permissions.contains({ permissions });
 
         if (!isPermissionGranted) {
             // If the option is disabled, do nothing.
@@ -594,7 +589,7 @@ export class StealthService {
                 return isWebRTCDisabled;
             }
 
-            logger.error(`Permissions are not granted: ${StealthService.REQUIRED_PERMISSIONS.join(', ')}`);
+            logger.error('[tsweb.StealthService.setDisableWebRTC]: permissions are not granted: ', permissions.join(', '));
 
             return !isWebRTCDisabled;
         }
@@ -613,7 +608,7 @@ export class StealthService {
 
             return isWebRTCDisabled;
         } catch (e) {
-            logger.error('[tswebextension.setDisableWebRTC]: error on setting the WebRTC policy ($webrtc): ', e);
+            logger.error('[tsweb.StealthService.setDisableWebRTC]: error on setting the WebRTC policy ($webrtc): ', e);
 
             /**
              * Edge case: If error occurred while applying WebRTC

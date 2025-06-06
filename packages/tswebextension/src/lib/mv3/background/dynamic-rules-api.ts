@@ -7,7 +7,6 @@ import {
 } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
 
-import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 
 export type { ConversionResult };
@@ -70,11 +69,13 @@ export default class DynamicRulesApi {
      * Filters will combine into one in following order:
      * - quickFixesFilter - they are most important and should be applied first,
      * - allowlistRules,
+     * - blockingPageTrustedFilter - created on the blocking page by user,
      * - userRules,
      * - customFilters.
      *
      * @param quickFixesFilter Filter with hotfix rules.
      * @param allowlistRules Filter with allowlist rules.
+     * @param blockingPageTrustedFilter Filter with blocking page trusted domains rules (badfiltered rules).
      * @param userRules Filter with user rules.
      * @param customFilters List of custom filters.
      * @param enabledStaticRuleSets List of enabled static rule sets to apply
@@ -92,6 +93,7 @@ export default class DynamicRulesApi {
     public static async updateDynamicFiltering(
         quickFixesFilter: IFilter,
         allowlistRules: IFilter,
+        blockingPageTrustedFilter: IFilter,
         userRules: IFilter,
         customFilters: IFilter[],
         enabledStaticRuleSets: IRuleSet[],
@@ -100,6 +102,7 @@ export default class DynamicRulesApi {
         const filterList = [
             quickFixesFilter,
             allowlistRules,
+            blockingPageTrustedFilter,
             userRules,
             ...customFilters,
         ];
@@ -168,8 +171,7 @@ export default class DynamicRulesApi {
         try {
             await Promise.all(tasks);
         } catch (e) {
-            // eslint-disable-next-line max-len
-            logger.error(`[tswebextension.cancelAllStaticRulesUpdates]: cannot cancel all updates to static rules due to: ${getErrorMessage(e)}`);
+            logger.error('[tsweb.DynamicRulesApi.cancelAllStaticRulesUpdates]: cannot cancel all updates to static rules due to: ', e);
         }
     }
 
@@ -205,8 +207,7 @@ export default class DynamicRulesApi {
         try {
             await Promise.all(tasks);
         } catch (e) {
-            // eslint-disable-next-line max-len
-            logger.error(`[tswebextension.applyBadFilterRules]: cannot apply updates to static rules due to: ${getErrorMessage(e)}`);
+            logger.error('[tsweb.DynamicRulesApi.applyBadFilterRules]: cannot apply updates to static rules due to: ', e);
         }
     }
 

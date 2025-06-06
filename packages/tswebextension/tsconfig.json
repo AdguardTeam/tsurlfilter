@@ -9,7 +9,8 @@
         "vitest.workspace.ts",
         "vitest.setup.ts",
         "tasks/constants.ts",
-        "test"
+        "test",
+        "tools",
     ],
     "exclude": [
         "test/smoke",

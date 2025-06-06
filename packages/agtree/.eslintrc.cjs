@@ -83,6 +83,7 @@ module.exports = {
             },
         ],
         'arrow-body-style': 'off',
+        '@typescript-eslint/member-delimiter-style': 'error',
         'no-await-in-loop': 'off',
         // Force proper import and export of types
         '@typescript-eslint/consistent-type-imports': [

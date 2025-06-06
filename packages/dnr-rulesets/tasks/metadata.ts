@@ -1,9 +1,6 @@
 import axios from 'axios';
 
-import {
-    FILTERS_METADATA_I18N_URL,
-    FILTERS_METADATA_URL,
-} from './constants';
+import { FILTERS_METADATA_I18N_URL, FILTERS_METADATA_URL } from './constants';
 
 /**
  * Filter metadata.

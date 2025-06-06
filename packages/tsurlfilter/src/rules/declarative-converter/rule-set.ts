@@ -1,5 +1,6 @@
 import { z as zod } from 'zod';
 import { RuleParser } from '@adguard/agtree/parser';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
@@ -19,8 +20,8 @@ import { createMetadataRule } from './metadata-rule';
  * identifier of that rule.
  */
 export type SourceRuleAndFilterId = {
-    sourceRule: string,
-    filterId: number,
+    sourceRule: string;
+    filterId: number;
 };
 
 /**
@@ -29,8 +30,8 @@ export type SourceRuleAndFilterId = {
  * from dynamic rulesets.
  */
 export type UpdateStaticRulesOptions = {
-    rulesetId: string,
-    disableRuleIds: number[],
+    rulesetId: string;
+    disableRuleIds: number[];
 };
 
 /**
@@ -142,9 +143,9 @@ export interface IRuleSet {
  * Rule set content's provider for lazy load data.
  */
 export type RuleSetContentProvider = {
-    loadSourceMap: () => Promise<ISourceMap>,
-    loadFilterList: () => Promise<IFilter[]>,
-    loadDeclarativeRules: () => Promise<DeclarativeRule[]>,
+    loadSourceMap: () => Promise<ISourceMap>;
+    loadFilterList: () => Promise<IFilter[]>;
+    loadDeclarativeRules: () => Promise<DeclarativeRule[]>;
 };
 
 const serializedRuleSetLazyDataValidator = zod.strictObject({
@@ -171,32 +172,32 @@ export type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValida
  * raw filters.
  */
 export type SerializedRuleSet = {
-    id: string,
+    id: string;
     /**
      * Metadata needed for instant creating ruleset.
      */
-    data: string,
+    data: string;
     /**
      * Metadata needed for lazy load some data to ruleset to find and show
      * source rules when declarative filtering log is enabled.
      */
-    lazyData: string,
+    lazyData: string;
 };
 
 /**
  * A deserialized rule set with loaded data and provider for lazy loading data.
  */
 export type DeserializedRuleSet = {
-    id: string,
+    id: string;
     /**
      * Metadata needed for instant creating ruleset.
      */
-    data: SerializedRuleSetData,
+    data: SerializedRuleSetData;
     /**
      * Metadata needed for lazy load some data to ruleset to find and show
      * source rules when declarative filtering log is enabled.
      */
-    ruleSetContentProvider: RuleSetContentProvider,
+    ruleSetContentProvider: RuleSetContentProvider;
 };
 
 /**
@@ -501,7 +502,7 @@ export class RuleSet implements IRuleSet {
             return [];
         }
 
-        const networkRules = networkIndexedRulesWithHash.map(({ rule }) => rule);
+        const networkRules = networkIndexedRulesWithHash.map(({ rule }) => rule.rule);
 
         return networkRules;
     }
@@ -617,8 +618,7 @@ export class RuleSet implements IRuleSet {
             unsafeRulesCount: this.unsafeRulesCount,
             rulesCount: this.rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
-            // TODO: Remove .getText() completely
-            badFilterRulesRaw: this.badFilterRules.map((r) => r.rule.getText()) || [],
+            badFilterRulesRaw: this.badFilterRules.map((r) => RuleGenerator.generate(r.rule.node)),
         };
     }
 

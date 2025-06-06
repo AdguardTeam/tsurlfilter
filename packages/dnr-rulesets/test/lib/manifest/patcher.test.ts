@@ -165,8 +165,14 @@ describe('ManifestPatcher', () => {
         expect(mockInjector.applyRulesets).toHaveBeenCalledTimes(1);
         expect(mockInjector.applyRulesets).toHaveBeenCalledWith(expect.any(Function), manifest, filterNames, undefined);
         expect(mockRelative).toHaveBeenCalledTimes(2);
-        expect(mockRelative).toHaveBeenCalledWith(resolvedDir, `${resolvedFiltersPath}/declarative/ruleset_1/ruleset_1.json`);
-        expect(mockRelative).toHaveBeenCalledWith(resolvedDir, `${resolvedFiltersPath}/declarative/ruleset_2/ruleset_2.json`);
+        expect(mockRelative).toHaveBeenCalledWith(
+            resolvedDir,
+            `${resolvedFiltersPath}/declarative/ruleset_1/ruleset_1.json`,
+        );
+        expect(mockRelative).toHaveBeenCalledWith(
+            resolvedDir,
+            `${resolvedFiltersPath}/declarative/ruleset_2/ruleset_2.json`,
+        );
         expect(mockWriteFileSync).toHaveBeenCalledTimes(1);
         expect(mockWriteFileSync).toHaveBeenCalledWith(resolvedManifestPath, JSON.stringify({
             ...manifest,

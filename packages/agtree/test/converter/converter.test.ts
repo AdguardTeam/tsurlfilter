@@ -864,6 +864,13 @@ describe('Converter integration tests', () => {
         describe('should not convert html rule to uBo', () => {
             test.each([
                 {
+                    actual: 'example.com,~example.net$$div[custom_attr]',
+                    expected: [
+                        'example.com,~example.net##^div[custom_attr]',
+                    ],
+                    shouldConvert: true,
+                },
+                {
                     actual: String.raw`~example.com,google.com$$div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
                     expected: [
                         String.raw`~example.com,google.com##^div[id="ad_text"][wildcard="*teasernet*tararar*"]`,

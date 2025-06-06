@@ -27,11 +27,6 @@ export type FilterMV2 = z.infer<typeof filterMV2Validator>;
  * Configuration validator for MV2.
  */
 export const configurationMV2Validator = configurationValidator.extend({
-    /**
-     * List of domain names of sites, which should be temporary excluded from document blocking.
-     */
-    trustedDomains: z.string().array(),
-
     filters: filterMV2Validator.array(),
 });
 

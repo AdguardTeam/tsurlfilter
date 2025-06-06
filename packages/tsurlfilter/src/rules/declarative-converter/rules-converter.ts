@@ -590,7 +590,7 @@ export class DeclarativeRulesConverter {
             const networkRuleToTest = ruleToTest.rule;
 
             for (const { rule } of allBadFilterRules) {
-                if (rule.negatesBadfilter(networkRuleToTest)) {
+                if (rule.rule.negatesBadfilter(networkRuleToTest.rule)) {
                     return false;
                 }
             }

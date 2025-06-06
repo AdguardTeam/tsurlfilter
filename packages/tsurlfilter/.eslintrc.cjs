@@ -10,6 +10,7 @@ module.exports = {
     plugins: [
         'import',
         'import-newlines',
+        '@adguard/logger-context',
         '@typescript-eslint',
     ],
     extends: [
@@ -27,7 +28,14 @@ module.exports = {
         '@typescript-eslint/indent': ['error', 4],
         'no-bitwise': 'off',
         'no-new': 'off',
-        'max-len': ['error', { code: 120, ignoreUrls: true }],
+        'max-len': ['error', {
+            code: 120,
+            ignoreUrls: true,
+            /**
+             * Ignore calls to logger, e.g. logger.error(), because of the long string.
+             */
+            ignorePattern: 'logger\\.',
+        }],
         'import-newlines/enforce': ['error', 3, 120],
         'import/prefer-default-export': 'off',
         '@typescript-eslint/no-non-null-assertion': 'off',
@@ -36,6 +44,7 @@ module.exports = {
         'no-restricted-syntax': ['error', 'LabeledStatement', 'WithStatement'],
         'no-constant-condition': ['error', { checkLoops: false }],
         '@typescript-eslint/interface-name-prefix': 'off',
+        '@typescript-eslint/member-delimiter-style': 'error',
         'arrow-body-style': 'off',
 
         // Force proper import and export of types
@@ -92,42 +101,19 @@ module.exports = {
         'jsdoc/sort-tags': ['error', {
             linesBetween: 1,
             tagSequence: [
-                {
-                    tags: [
-                        'file',
-                    ],
-                },
-                {
-                    tags: [
-                        'template',
-                    ],
-                },
-                {
-                    tags: [
-                        'see',
-                    ],
-                },
-                {
-                    tags: [
-                        'param',
-                    ],
-                },
-                {
-                    tags: [
-                        'returns',
-                    ],
-                },
-                {
-                    tags: [
-                        'throws',
-                    ],
-                },
-                {
-                    tags: [
-                        'example',
-                    ],
-                },
+                { tags: ['file'] },
+                { tags: ['template'] },
+                { tags: ['see'] },
+                { tags: ['param'] },
+                { tags: ['returns'] },
+                { tags: ['throws'] },
+                { tags: ['example'] },
             ],
+        }],
+
+        // Check that every logger call has a context tag.
+        '@adguard/logger-context/require-logger-context': ['error', {
+            contextModuleName: 'tsurl',
         }],
     },
 };

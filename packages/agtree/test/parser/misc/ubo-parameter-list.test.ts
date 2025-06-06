@@ -95,7 +95,7 @@ describe('UboParameterListParser', () => {
     });
 
     describe('UboParameterListParser.parse - valid cases when requireQuotes disabled', () => {
-        test.each<{ actual: string; expected: ParameterList; }>([
+        test.each<{ actual: string; expected: ParameterList }>([
             {
                 actual: String.raw`abc`,
                 expected: {
