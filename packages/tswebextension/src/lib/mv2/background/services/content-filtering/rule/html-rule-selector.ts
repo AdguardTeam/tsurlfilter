@@ -26,7 +26,13 @@ export class HtmlRuleSelector {
      * @returns Array of elements or null.
      */
     public getMatchedElements(doc: Document): Element[] | null {
-        const elements = doc.querySelectorAll(this.ruleAttributes.selector!);
+        // Return null if selector is not set (undefined or empty)
+        if (!this.ruleAttributes.selector) {
+            return null;
+        }
+
+        // At this point we have a valid selector, so its safe to use querySelectorAll
+        const elements = doc.querySelectorAll(this.ruleAttributes.selector);
 
         let result = null;
 

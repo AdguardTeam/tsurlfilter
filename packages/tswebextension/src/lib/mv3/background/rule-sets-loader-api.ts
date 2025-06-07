@@ -16,7 +16,6 @@ import { type IDBPDatabase } from 'idb';
 import { IdbSingleton } from '../../common/idb-singleton';
 import { FiltersStorage } from '../../common/storage/filters';
 import { logger } from '../../common/utils/logger';
-import { getErrorMessage } from '../../common/error';
 
 /**
  * RuleSetsLoaderApi is responsible for creating {@link IRuleSet} instances from provided rule set IDs and paths.
@@ -223,7 +222,7 @@ export class RuleSetsLoaderApi {
                 this.isInitialized = true;
                 this.initializerPromise = undefined;
             } catch (error) {
-                logger.error('Failed to initialize RuleSetsLoaderApi. Got error:', getErrorMessage(error));
+                logger.error('[tsweb.RuleSetsLoaderApi.initialize]: failed to initialize. Got error: ', error);
                 throw error;
             }
         };
@@ -282,8 +281,7 @@ export class RuleSetsLoaderApi {
                     throw new Error(`Invalid rule set id: ${ruleSetId}`);
                 }
 
-                // eslint-disable-next-line max-len
-                logger.info(`Syncing rule set with IDB: ${ruleSetId} (previous checksum: ${idbChecksum}, current checksum: ${checksum})`);
+                logger.info(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Syncing rule set with IDB: ${ruleSetId} (previous checksum: ${idbChecksum}, current checksum: ${checksum})`);
 
                 const ruleSetPath = getRuleSetPath(ruleSetId, this.ruleSetsPath);
                 const rawRuleSet = await fetchExtensionResourceText(browser.runtime.getURL(ruleSetPath));
@@ -332,9 +330,9 @@ export class RuleSetsLoaderApi {
                     },
                 });
 
-                logger.info(`Synced rule set with IDB: ${ruleSetId}`);
+                logger.info(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Synced rule set with IDB: ${ruleSetId}`);
             } catch (err) {
-                logger.error(`Failed to sync rule set ${ruleSetId}:`, getErrorMessage(err));
+                logger.error(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Failed to sync rule set ${ruleSetId}:`, err);
                 throw err;
             } finally {
                 this.syncLocks.delete(ruleSetId);

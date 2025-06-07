@@ -1,6 +1,6 @@
 {
     "name": "@adguard/tswebextension",
-    "version": "3.1.0",
+    "version": "3.2.0",
     "description": "This is a TypeScript library that implements AdGuard's extension API",
     "type": "module",
     "main": "dist/index.js",
@@ -126,6 +126,7 @@
         "zod": "catalog:"
     },
     "devDependencies": {
+        "@adguard/eslint-plugin-logger-context": "^1.0.1",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",

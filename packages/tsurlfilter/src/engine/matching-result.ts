@@ -320,7 +320,7 @@ export class MatchingResult {
         return this.stealthRules.find((r: NetworkRule) => {
             const stealthModifier = r.getStealthModifier();
             if (!stealthModifier) {
-                logger.debug(`Stealth rule without stealth modifier: ${r}`);
+                logger.debug(`[tsurl.MatchingResult.getStealthRule]: stealth rule without stealth modifier: ${r}`);
                 return false;
             }
             if (stealthOption) {

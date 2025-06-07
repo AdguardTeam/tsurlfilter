@@ -11,7 +11,9 @@
         "build:ff": "BROWSER=firefox tsx ./scripts/build/index.ts",
         "run:ff": "tsx ./scripts/launchFirefoxExtension.ts",
         "test": "tsx ./scripts/browser-test/index.ts",
-        "lint": "eslint --cache --ignore-path .gitignore --ignore-pattern 'web-ext.d.ts' . && tsc --noEmit",
+        "lint": "pnpm lint:code && pnpm lint:types",
+        "lint:code": "eslint --cache --ignore-path .gitignore --ignore-pattern 'web-ext.d.ts' .",
+        "lint:types": "tsc --noEmit",
         "tswebextension": "tswebextension",
         "clean": "rimraf build"
     },

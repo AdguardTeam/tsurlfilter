@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-06-06
+
+### Added
+
+- `utils` entry point with `getVersion` and `getVersionTimestampMs` functions.
+
+### Changed
+
+- Updated [@adguard/logger] to `v2.0.0`.
+
 ## [3.0.0-alpha.12] - 2025-05-28
 
 ### Changed
@@ -33,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v3.3.1`.
+- Updated `@adguard/tsurlfilter` to `3.3.1`.
 
 [3.0.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.3
 
@@ -41,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated `@adguard/tsurlfilter` to `v3.3.0-alpha.0`.
+- Updated `@adguard/tsurlfilter` to `3.3.0-alpha.0`.
 
 ### Removed
 
@@ -120,3 +130,5 @@ For example, while bundling the manifest with the extension.
 ### Changed
 
 - Improve filters compatibility with Declarative Net Request API.
+
+[@adguard/logger]: ../logger/CHANGELOG.md

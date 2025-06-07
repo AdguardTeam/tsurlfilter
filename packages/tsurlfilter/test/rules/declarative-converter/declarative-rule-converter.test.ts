@@ -15,7 +15,7 @@ import {
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
 import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
-import { createNetworkRule } from '../../helpers/rule-creator';
+import { createNetworkRule, createNetworkRuleWithNode } from '../../helpers/rule-creator';
 
 import { createScannedFilter } from './helpers';
 
@@ -434,10 +434,10 @@ describe('DeclarativeRuleConverter', () => {
             declarativeRules,
         } = await DeclarativeRulesConverter.convert([filter]);
 
-        const networkRule = createNetworkRule(regexpRuleText, filterId);
+        const networkRule = createNetworkRuleWithNode(regexpRuleText, filterId);
 
         const expectedError = new UnsupportedRegexpError(
-            `Regex is unsupported: "${networkRule.getText()}"`,
+            `Regex is unsupported: "${regexpRuleText}"`,
             networkRule,
             // Note that the declarative rule will be "undefined" due to
             // a conversion error, but this will not prevent error checking
@@ -466,10 +466,10 @@ describe('DeclarativeRuleConverter', () => {
             declarativeRules,
         } = await DeclarativeRulesConverter.convert([filter]);
 
-        const networkRule = createNetworkRule(regexpRuleText, filterId);
+        const networkRule = createNetworkRuleWithNode(regexpRuleText, filterId);
 
         const expectedError = new UnsupportedRegexpError(
-            `Regex is unsupported: "${networkRule.getText()}"`,
+            `Regex is unsupported: "${regexpRuleText}"`,
             networkRule,
             // Note that the declarative rule will be "undefined" due to
             // a conversion error, but this will not prevent error checking

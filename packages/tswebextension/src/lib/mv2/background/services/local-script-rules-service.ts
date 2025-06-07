@@ -2,13 +2,13 @@ import { type CosmeticRule } from '@adguard/tsurlfilter';
 import { some } from 'lodash-es';
 
 type ScriptDomains = {
-    permittedDomains: string[],
-    restrictedDomains: string[],
+    permittedDomains: string[];
+    restrictedDomains: string[];
 };
 
 export type LocalScriptRules = {
-    comment: string,
-    rules: Record<string, ScriptDomains[]>,
+    comment: string;
+    rules: Record<string, ScriptDomains[]>;
 };
 
 /**

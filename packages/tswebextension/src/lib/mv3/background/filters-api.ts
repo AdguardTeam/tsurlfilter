@@ -9,7 +9,7 @@ import { FiltersStorage } from '../../common/storage/filters';
 import { type ConfigurationMV3 } from './configuration';
 
 export type UpdateStaticFiltersResult = {
-    errors: FailedEnableRuleSetsError[],
+    errors: FailedEnableRuleSetsError[];
 };
 
 const loadFilterContentValidator = zod.function()

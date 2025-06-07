@@ -10,7 +10,6 @@ import {
 } from '@adguard/tsurlfilter';
 
 import { type StealthConfig } from '../../common/configuration';
-import { getErrorMessage } from '../../common/error';
 import { defaultFilteringLog, type FilteringLogInterface } from '../../common/filtering-log';
 import { StealthActions } from '../../common/stealth-actions';
 import { logger } from '../../common/utils/logger';
@@ -112,7 +111,7 @@ export class StealthApi {
                 await this.handleBlockWebRTC();
             }
         } catch (e) {
-            logger.error(getErrorMessage(e));
+            logger.error('[tsweb.StealthApi.updateWebRtcPrivacyPermissions]: error updating privacy.network settings: ', e);
         }
     }
 
@@ -243,7 +242,7 @@ export class StealthApi {
                 });
             }
         } catch (e) {
-            logger.error(`Error updating privacy.network settings: ${getErrorMessage(e)}`);
+            logger.error('[tsweb.StealthApi.handleBlockWebRTC]: error updating privacy.network settings: ', e);
         }
 
         // privacy.network.peerConnectionEnabled is currently only supported in Firefox
@@ -260,7 +259,7 @@ export class StealthApi {
                     });
                 }
             } catch (e) {
-                logger.error(`Error updating privacy.network settings: ${getErrorMessage(e)}`);
+                logger.error('[tsweb.StealthApi.handleBlockWebRTC]: error updating privacy.network settings: ', e);
             }
         }
     }

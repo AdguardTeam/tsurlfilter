@@ -10,9 +10,11 @@
     "lint:code": "eslint . --cache --ext .ts",
     "lint:types": "tsc"
   },
+  "type": "module",
   "dependencies": {
     "agtree-v1": "npm:@adguard/agtree@^1.1.7",
     "agtree-v2": "npm:@adguard/agtree@^2.3.0",
+    "agtree-v3": "npm:@adguard/agtree@^3.1.2",
     "benchmark": "catalog:",
     "date-fns": "catalog:",
     "markdown-table": "catalog:",
@@ -24,8 +26,6 @@
   "devDependencies": {
     "@types/benchmark": "catalog:",
     "@types/node": "catalog:",
-    "@typescript-eslint/eslint-plugin": "catalog:",
-    "date-fns": "catalog:",
     "eslint": "catalog:",
     "eslint-config-airbnb-base": "catalog:",
     "eslint-config-airbnb-typescript": "catalog:",

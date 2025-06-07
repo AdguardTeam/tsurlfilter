@@ -37,6 +37,14 @@ class DeclarativeFilteringLog {
     }
 
     /**
+     * Initializes the declarative filtering log.
+     * Binds needed methods to the instance.
+     */
+    constructor() {
+        this.logMatchedRule = this.logMatchedRule.bind(this);
+    }
+
+    /**
      * Acquires the mutex lock within the specified timeout.
      * Used to prevent getting rule info during rule set updates.
      *
@@ -115,7 +123,7 @@ class DeclarativeFilteringLog {
      *
      * @param record Request details {@link browser.declarativeNetRequest.MatchedRuleInfoDebug}.
      */
-    private logMatchedRule = async (record: chrome.declarativeNetRequest.MatchedRuleInfoDebug): Promise<void> => {
+    private async logMatchedRule(record: chrome.declarativeNetRequest.MatchedRuleInfoDebug): Promise<void> {
         const {
             request: { requestId },
             rule: { rulesetId, ruleId },
@@ -124,7 +132,7 @@ class DeclarativeFilteringLog {
         const context = requestContextStorage.get(requestId);
 
         if (!context) {
-            logger.debug('[logMatchedRule]: cannot find request context for request id', requestId);
+            logger.error('[tsweb.DeclarativeFilteringLog.logMatchedRule]: cannot find request context for request id ', requestId);
             return;
         }
 
@@ -133,7 +141,7 @@ class DeclarativeFilteringLog {
         try {
             declarativeRuleInfo = await this.getRuleInfo(rulesetId, ruleId);
         } catch (e) {
-            logger.debug(e);
+            logger.error('[tsweb.DeclarativeFilteringLog.logMatchedRule]: cannot get rule info due to: ', e);
             return;
         }
 
@@ -145,14 +153,14 @@ class DeclarativeFilteringLog {
                 declarativeRuleInfo,
             },
         });
-    };
+    }
 
     /**
      * Toggles the listener for declarativeNetRequest.onRuleMatchedDebug.
      *
      * @param needToAddListener If true, the listener will be added, otherwise removed.
      */
-    private toggleListener = (needToAddListener: boolean): void => {
+    private toggleListener(needToAddListener: boolean): void {
         // Wrapped in try-catch to prevent the extension from crashing if browser
         // will change the API in the future.
         try {
@@ -179,23 +187,23 @@ class DeclarativeFilteringLog {
                 ? 'Cannot start recording declarative network rules due to: '
                 : 'Cannot stop recording declarative network rules due to: ';
 
-            logger.debug(message, e);
+            logger.error(`[tsweb.DeclarativeFilteringLog.toggleListener]: ${message}: `, e);
         }
-    };
+    }
 
     /**
      * Starts recording.
      */
-    public start = (): void => {
+    public start(): void {
         this.toggleListener(true);
-    };
+    }
 
     /**
      * Stops recording.
      */
-    public stop = (): void => {
+    public stop(): void {
         this.toggleListener(false);
-    };
+    }
 }
 
 export const declarativeFilteringLog = new DeclarativeFilteringLog();

@@ -24,7 +24,8 @@ describe('Html rule selector', () => {
         const rule = createCosmeticRule(ruleText, 0);
 
         const parsed = HtmlRuleParser.parse(rule);
-        const elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        expect(parsed).not.toBeNull();
+        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
 
         expect(elements).not.toBeNull();
         expect(elements).toHaveLength(1);
@@ -38,7 +39,8 @@ describe('Html rule selector', () => {
 
         let rule = createCosmeticRule('example.org$$div[id="ad_text"][wildcard="*teasernet*tararar*"]', 0);
         let parsed = HtmlRuleParser.parse(rule);
-        let elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        expect(parsed).not.toBeNull();
+        let elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
 
         expect(elements).not.toBeNull();
         expect(elements).toHaveLength(1);
@@ -46,7 +48,8 @@ describe('Html rule selector', () => {
 
         rule = createCosmeticRule('example.org$$div[id="ad_text"][wildcard="*AN_OTHER_ONE*"]', 0);
         parsed = HtmlRuleParser.parse(rule);
-        elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        expect(parsed).not.toBeNull();
+        elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
 
         expect(elements).toBeNull();
     });
@@ -58,7 +61,8 @@ describe('Html rule selector', () => {
 
         const rule = createCosmeticRule('example.org$$div[wildcard="*Test*[123]{123}*"]', 0);
         const parsed = HtmlRuleParser.parse(rule);
-        const elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        expect(parsed).not.toBeNull();
+        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
 
         expect(elements).not.toBeNull();
         expect(elements).toHaveLength(1);
@@ -72,7 +76,8 @@ describe('Html rule selector', () => {
 
         let rule = createCosmeticRule('example.org$$div[id="ad_text"][tag-content="teasernet"]', 0);
         let parsed = HtmlRuleParser.parse(rule);
-        let elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        expect(parsed).not.toBeNull();
+        let elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
 
         expect(elements).not.toBeNull();
         expect(elements).toHaveLength(1);
@@ -80,7 +85,8 @@ describe('Html rule selector', () => {
 
         rule = createCosmeticRule('example.org$$div[id="ad_text"][tag-content="an-other"]', 0);
         parsed = HtmlRuleParser.parse(rule);
-        elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        expect(parsed).not.toBeNull();
+        elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
 
         expect(elements).toBeNull();
     });
@@ -92,7 +98,8 @@ describe('Html rule selector', () => {
 
         let rule = createCosmeticRule('example.org$$div[max-length="500"][min-length="5"]', 0);
         let parsed = HtmlRuleParser.parse(rule);
-        let elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        expect(parsed).not.toBeNull();
+        let elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
 
         expect(elements).not.toBeNull();
         expect(elements).toHaveLength(1);
@@ -100,13 +107,15 @@ describe('Html rule selector', () => {
 
         rule = createCosmeticRule('example.org$$div[max-length="5"][min-length="1"]', 0);
         parsed = HtmlRuleParser.parse(rule);
-        elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        expect(parsed).not.toBeNull();
+        elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
 
         expect(elements).toBeNull();
 
         rule = createCosmeticRule('example.org$$div[max-length="500"][min-length="100"]', 0);
         parsed = HtmlRuleParser.parse(rule);
-        elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        expect(parsed).not.toBeNull();
+        elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
 
         expect(elements).toBeNull();
     });
@@ -118,7 +127,8 @@ describe('Html rule selector', () => {
 
         let rule = createCosmeticRule('example.org$$div[parent-search-level="5"][parent-elements="td,table"]', 0);
         let parsed = HtmlRuleParser.parse(rule);
-        let elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        expect(parsed).not.toBeNull();
+        let elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
 
         expect(elements).not.toBeNull();
         expect(elements).toHaveLength(1);
@@ -126,7 +136,66 @@ describe('Html rule selector', () => {
 
         rule = createCosmeticRule('example.org$$div[parent-search-level="5"][parent-elements=""]', 0);
         parsed = HtmlRuleParser.parse(rule);
-        elements = new HtmlRuleSelector(parsed).getMatchedElements(document);
+        elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        expect(elements).toBeNull();
+    });
+
+    it('checks attribute with no value AND element is matched', () => {
+        document.body.innerHTML = `
+        <html>
+            <body>
+                <div id="test1">no match</div>
+                <div custom_attr id="test2">match</div>
+            </body>
+        </html>
+        `;
+
+        const rule = createCosmeticRule('example.org$$div[custom_attr]', 0);
+        const parsed = HtmlRuleParser.parse(rule);
+        expect(parsed).not.toBeNull();
+
+        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        expect(elements).not.toBeNull();
+        expect(elements).toHaveLength(1);
+        expect(elements).toContain(document.getElementById('test2')!);
+    });
+
+    it('checks attribute with no value AND few element are matched', () => {
+        document.body.innerHTML = `
+        <html>
+            <body>
+                <div id="test1">no match</div>
+                <div custom_attr="custom1" id="test2">match</div>
+                <div custom_attr="custom2" id="test3">match</div>
+            </body>
+        </html>
+        `;
+
+        const rule = createCosmeticRule('example.org$$div[custom_attr]', 0);
+        const parsed = HtmlRuleParser.parse(rule);
+        expect(parsed).not.toBeNull();
+
+        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
+        expect(elements).not.toBeNull();
+        expect(elements).toHaveLength(2);
+        expect(elements).toContain(document.getElementById('test2')!);
+        expect(elements).toContain(document.getElementById('test3')!);
+    });
+
+    it('checks attribute with no value AND no matched elements', () => {
+        document.body.innerHTML = `
+        <html>
+            <body>
+                <div id="test1">no match</div>
+            </body>
+        </html>
+        `;
+
+        const rule = createCosmeticRule('example.org$$div[custom_attr]', 0);
+        const parsed = HtmlRuleParser.parse(rule);
+        expect(parsed).not.toBeNull();
+
+        const elements = new HtmlRuleSelector(parsed!).getMatchedElements(document);
         expect(elements).toBeNull();
     });
 });

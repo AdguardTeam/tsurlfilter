@@ -18,7 +18,7 @@ type ScriptsAndScriptletsDataMv2 = {
     /**
      * JS and scriptlet rules **combined** script text.
      */
-    scriptText: string,
+    scriptText: string;
 };
 
 /**
@@ -94,6 +94,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameUrl Frame url.
      *
      * @returns Script text or empty string if no script rules are passed.
+     *
+     * @todo Move to common class when a way to use appContext in common
+     * class will be found.
      */
     public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string {
         const permittedRules = CosmeticApi.sanitizeScriptRules(rules);
@@ -104,15 +107,8 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         const uniqueScriptStrings = new Set<string>();
 
-        let debug = false;
-        const { configuration } = appContext;
-        if (configuration) {
-            const { settings } = configuration;
-            if (settings) {
-                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
-                debug = settings.debugScriptlets;
-            }
-        }
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
+        const debug = appContext?.configuration?.settings?.debugScriptlets;
 
         const scriptParams = {
             debug,
@@ -237,7 +233,9 @@ export class CosmeticApi extends CosmeticApiCommon {
         Promise.all([
             CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
             CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
-        ]).catch((e) => logger.error(e));
+        ]).catch((e) => {
+            logger.error('[tsweb.CosmeticApi.injectCosmetic]: error occurred during injection: ', e);
+        });
     }
 
     /**
@@ -268,7 +266,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                     CosmeticApi.applyJsByTabAndFrame(tabId, frameId, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
-                logger.debug('[applyJsByTabAndFrame] error occurred during injection', e);
+                logger.debug('[tsweb.CosmeticApi.applyJsByTabAndFrame]: error occurred during injection', e);
             }
         }
     }
@@ -333,7 +331,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                     CosmeticApi.applyCssByTabAndFrame(tabId, frameId, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
-                logger.debug('[applyCssByTabAndFrame] error occurred during injection', e);
+                logger.debug('[tsweb.CosmeticApi.applyCssByTabAndFrame]: error occurred during injection', e);
             }
         }
     }

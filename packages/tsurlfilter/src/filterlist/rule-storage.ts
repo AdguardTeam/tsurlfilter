@@ -117,7 +117,7 @@ export class RuleStorage {
         const list = this.listsMap.get(listId);
 
         if (!list) {
-            logger.warn(`Failed to retrieve list ${listId}, should not happen in normal operation`);
+            logger.warn(`[tsurl.RuleStorage.retrieveRule]: failed to retrieve list ${listId}, should not happen in normal operation`);
 
             return null;
         }
@@ -125,7 +125,7 @@ export class RuleStorage {
         const ruleNode = list.retrieveRuleNode(ruleId);
 
         if (!ruleNode) {
-            logger.warn(`Failed to retrieve rule ${ruleId}, should not happen in normal operation`);
+            logger.warn(`[tsurl.RuleStorage.retrieveRule]: failed to retrieve rule ${ruleId}, should not happen in normal operation`);
 
             return null;
         }

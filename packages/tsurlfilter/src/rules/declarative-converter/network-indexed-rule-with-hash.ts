@@ -1,11 +1,14 @@
-import { type AnyRule } from '@adguard/agtree';
+import { type AnyRule, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { getErrorMessage } from '../../common/error';
 import { fastHash31, fastHash } from '../../utils/string-utils';
 import { NetworkRule } from '../network-rule';
 import { IndexedRule, type IRule } from '../rule';
 import { RuleFactory } from '../rule-factory';
+
+import { NetworkRuleWithNode } from './network-rule-with-node';
 
 /**
  * Network rule with index and hashes for pattern and rule's text.
@@ -35,7 +38,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      *
      * @see {@link https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier}
      */
-    public declare rule: NetworkRule;
+    public declare rule: NetworkRuleWithNode;
 
     /**
      * Constructor.
@@ -44,11 +47,10 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      * @param index Rule's index.
      * @param hash Hash of the rule.
      */
-    constructor(rule: NetworkRule, index: number, hash: number) {
+    constructor(rule: NetworkRuleWithNode, index: number, hash: number) {
         super(rule, index);
 
         this.hash = hash;
-        this.rule = rule;
     }
 
     /**
@@ -80,7 +82,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      * @returns Hash for pattern part of the network rule.
      */
     public getRuleTextHash(salt?: number): number {
-        const textOfNetworkRule = this.rule.getText();
+        const textOfNetworkRule = RuleGenerator.generate(this.rule.node);
 
         // Append a null-char to not collide with legitimate rule text.
         const trialText = salt === undefined ? textOfNetworkRule : `${textOfNetworkRule}\0${salt}`;
@@ -141,10 +143,12 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
 
         const patternHash = IndexedNetworkRuleWithHash.createRulePatternHash(networkRule);
 
+        const networkRuleWithNode = new NetworkRuleWithNode(networkRule, ruleConvertedToAGSyntax as NetworkRuleNode);
+
         // If rule is not empty - pack to IndexedNetworkRuleWithHash and add it
         // to the result array.
         const indexedNetworkRuleWithHash = new IndexedNetworkRuleWithHash(
-            networkRule,
+            networkRuleWithNode,
             index,
             patternHash,
         );

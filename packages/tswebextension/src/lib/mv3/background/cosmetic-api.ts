@@ -1,16 +1,17 @@
 import { type ScriptletData, type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 
 import { CosmeticApiCommon, type ContentScriptCosmeticData, type LogJsRulesParams } from '../../common/cosmetic-api';
-import { getErrorMessage } from '../../common/error';
 import { createFrameMatchQuery } from '../../common/utils/create-frame-match-query';
 import { logger } from '../../common/utils/logger';
-import { getDomain } from '../../common/utils/url';
+import { getDomain, isExtensionUrl } from '../../common/utils/url';
 import { tabsApi } from '../tabs/tabs-api';
+import { BACKGROUND_TAB_ID, USER_FILTER_ID } from '../../common/constants';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
 import { ScriptingApi } from './scripting-api';
 import { localScriptRulesService } from './services/local-script-rules-service';
+import { UserScriptsApi } from './user-scripts-api';
 
 /**
  * Data for JS and scriptlets rules for MV3.
@@ -19,12 +20,12 @@ type ScriptsAndScriptletsDataMv3 = {
     /**
      * Script texts from JS rules.
      */
-    scriptTexts: string[],
+    scriptTexts: string[];
 
     /**
      * List of scriptlet data objects.
      */
-    scriptletDataList: ScriptletData[],
+    scriptletDataList: ScriptletData[];
 };
 
 /**
@@ -67,9 +68,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 const scriptletData = rule.getScriptletData();
 
                 if (scriptletData) {
-                    scriptletDataList.push(
-                        scriptletData,
-                    );
+                    scriptletDataList.push(scriptletData);
                 }
             } else {
                 // TODO: Optimize script injection by checking if common scripts (e.g., AG_)
@@ -89,6 +88,40 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
+     * Builds scripts from cosmetic rules.
+     *
+     * @param rules Cosmetic rules.
+     * @param frameUrl Frame url.
+     *
+     * @returns Script text or empty string if no script rules are passed.
+     *
+     * @todo Move to common class when a way to use appContext in common
+     * class will be found.
+     */
+    public static getScriptText(rules: CosmeticRule[], frameUrl?: string): string {
+        const uniqueScriptStrings = new Set<string>();
+
+        // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2584
+        const debug = appContext?.configuration?.settings?.debugScriptlets;
+
+        const scriptParams = {
+            debug,
+            frameUrl,
+        };
+
+        rules.forEach((rule) => {
+            const scriptStr = rule.getScript(scriptParams);
+            if (scriptStr) {
+                uniqueScriptStrings.add(scriptStr);
+            }
+        });
+
+        const scriptText = CosmeticApi.combineScripts(uniqueScriptStrings);
+
+        return CosmeticApi.wrapScriptText(scriptText);
+    }
+
+    /**
      * Returns content script data for applying cosmetic.
      *
      * @param frameUrl Frame url.
@@ -102,8 +135,6 @@ export class CosmeticApi extends CosmeticApiCommon {
         tabId: number,
         frameId: number,
     ): ContentScriptCosmeticData {
-        const { isStorageInitialized } = appContext;
-
         const data: ContentScriptCosmeticData = {
             isAppStarted: false,
             areHitsStatsCollected: false,
@@ -111,7 +142,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         };
 
         // if storage is not initialized, then app is not ready yet.
-        if (!isStorageInitialized) {
+        if (!appContext.isStorageInitialized) {
             return data;
         }
 
@@ -126,6 +157,12 @@ export class CosmeticApi extends CosmeticApiCommon {
         if (!tabContext?.info.url) {
             return data;
         }
+
+        // Do not collect hits stats if website is allowlisted
+        const isDocumentAllowlisted = !!tabContext.mainFrameRule
+            && tabContext.mainFrameRule.isFilteringDisabled();
+
+        data.areHitsStatsCollected = data.areHitsStatsCollected && !isDocumentAllowlisted;
 
         const matchQuery = createFrameMatchQuery(frameUrl, frameId, tabContext);
 
@@ -145,11 +182,7 @@ export class CosmeticApi extends CosmeticApiCommon {
     public static async applyJsFuncsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        if (!frameContext) {
-            return;
-        }
-
-        const scriptTexts = frameContext.preparedCosmeticResult?.scriptTexts;
+        const scriptTexts = frameContext?.preparedCosmeticResult?.scriptTexts;
 
         if (!scriptTexts || scriptTexts.length === 0) {
             return;
@@ -187,7 +220,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 });
             }));
         } catch (e) {
-            logger.debug('[applyJsFuncsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+            logger.info('[tsweb.CosmeticApi.applyJsFuncsByTabAndFrame]: error occurred during injection: ', e);
         }
     }
 
@@ -221,9 +254,26 @@ export class CosmeticApi extends CosmeticApiCommon {
                 });
             }));
         } catch (e) {
-            // TODO: getErrorMessage may not be needed since logger should handle arg types
-            logger.debug('[applyScriptletsByTabAndFrame] error occurred during injection', getErrorMessage(e));
+            logger.info('[tsweb.CosmeticApi.applyScriptletsByTabAndFrame]: error occurred during injection: ', e);
         }
+    }
+
+    /**
+     * Checks if cosmetics should be applied —
+     * background page or extension pages do not need cosmetics applied.
+     *
+     * @param tabId Tab id.
+     * @param frameUrl Frame url.
+     *
+     * @returns True if cosmetics should be applied, false otherwise.
+     */
+    public static shouldApplyCosmetics(tabId: number, frameUrl: string): boolean {
+        // no need to apply cosmetic rules on background or extension pages
+        if (tabId === BACKGROUND_TAB_ID || isExtensionUrl(frameUrl)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -233,9 +283,9 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameId Frame id.
      */
     public static async applyCssByTabAndFrame(tabId: number, frameId: number): Promise<void> {
-        const requestContext = tabsApi.getFrameContext(tabId, frameId);
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
-        const cssText = requestContext?.preparedCosmeticResult?.cssText;
+        const cssText = frameContext?.preparedCosmeticResult?.cssText;
         if (!cssText) {
             return;
         }
@@ -247,12 +297,40 @@ export class CosmeticApi extends CosmeticApiCommon {
                 frameId,
             });
         } catch (e) {
-            logger.debug(
-                '[applyCssByTabAndFrame] error occurred during injection',
-                getErrorMessage(e),
-                'with request context:',
-                requestContext,
-            );
+            logger.info('[tsweb.CosmeticApi.applyCssByTabAndFrame]: error occurred during injection: ', e, 'with frame context:', frameContext);
+        }
+    }
+
+    /**
+     * Injects js functions and scriptlets to specified tab and frame.
+     *
+     * @param tabId Tab id.
+     * @param frameId Frame id.
+     */
+    public static async applyJsFuncsAndScriptletsByTabAndFrame(
+        tabId: number,
+        frameId: number,
+    ): Promise<void> {
+        const frameContext = tabsApi.getFrameContext(tabId, frameId);
+
+        if (!frameContext || !frameContext.preparedCosmeticResult) {
+            return;
+        }
+
+        const { scriptText } = frameContext.preparedCosmeticResult;
+
+        if (!scriptText) {
+            return;
+        }
+
+        try {
+            await ScriptingApi.executeScriptsViaUserScripts({
+                tabId,
+                frameId,
+                scriptText,
+            });
+        } catch (e) {
+            logger.info('[tsweb.CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame]: error occurred during injection: ', e);
         }
     }
 
@@ -264,8 +342,21 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @returns True if the rule is a local script rule, otherwise false.
      */
     private static shouldSanitizeScriptRule(rule: CosmeticRule): boolean {
-        const ruleText = rule.getContent();
-        return localScriptRulesService.isLocalScript(ruleText);
+        // Scriptlets should not be excluded for remote filters
+        if (rule.isScriptlet) {
+            return true;
+        }
+
+        // User rules should not be excluded
+        const filterId = rule.getFilterListId();
+        if (filterId === USER_FILTER_ID) {
+            return true;
+        }
+
+        /**
+         * @see {@link LocalScriptRulesService} for details about script source
+         */
+        return localScriptRulesService.isLocalScript(rule.getContent());
     }
 
     /**
@@ -279,9 +370,14 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param params Data for js rule logging.
      */
     public static logScriptRules(params: LogJsRulesParams): void {
+        const filterFn = UserScriptsApi.isSupported
+            // via userScripts API we can inject any script
+            ? (): boolean => true
+            : CosmeticApi.shouldSanitizeScriptRule;
+
         super.logScriptRules(
             params,
-            CosmeticApi.shouldSanitizeScriptRule,
+            filterFn,
         );
     }
 }

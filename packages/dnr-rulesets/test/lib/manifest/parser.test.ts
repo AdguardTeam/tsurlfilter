@@ -1,13 +1,6 @@
-import {
-    describe,
-    expect,
-    it,
-} from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import {
-    type Manifest,
-    ManifestParser,
-} from '../../../src/lib/manifest/parser';
+import { type Manifest, ManifestParser } from '../../../src/lib/manifest/parser';
 
 describe('ManifestParser', () => {
     const parser = new ManifestParser();
