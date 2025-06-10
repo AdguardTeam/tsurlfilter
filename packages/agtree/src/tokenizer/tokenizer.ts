@@ -184,7 +184,7 @@ const TAB = '\t'.charCodeAt(0);
 const CR = '\r'.charCodeAt(0);
 const LF = LF_RAW.charCodeAt(0);
 const FF = '\f'.charCodeAt(0);
-const ESC = '\\'.charCodeAt(0);
+const BACKSLASH = '\\'.charCodeAt(0);
 const DOLLAR_SIGN = '$'.charCodeAt(0);
 const SLASH = '/'.charCodeAt(0);
 const EQUALS_SIGN = '='.charCodeAt(0);
@@ -359,7 +359,7 @@ export const tokenize = (string: string, onToken: OnTokenCallback) => {
                 break;
             }
 
-            case ESC: {
+            case BACKSLASH: {
                 onToken(TokenType.Escaped, i, i + 2, stop, skip, jump);
                 i += 2;
                 break;
