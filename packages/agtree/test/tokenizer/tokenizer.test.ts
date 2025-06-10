@@ -25,12 +25,13 @@ describe('Tokenizer', () => {
     });
 
     test('Whitespace and LineBreak', () => {
-        const tokens = runTokenizer(' \t\r\n\n\r');
+        const tokens = runTokenizer(' \t\r\n\n\r\f');
         expect(tokens).toEqual([
             { type: TokenType.Whitespace, value: ' \t' },
             { type: TokenType.LineBreak, value: '\r\n' },
             { type: TokenType.LineBreak, value: '\n' },
             { type: TokenType.LineBreak, value: '\r' },
+            { type: TokenType.LineBreak, value: '\f' },
             { type: TokenType.Eof, value: '' },
         ]);
     });

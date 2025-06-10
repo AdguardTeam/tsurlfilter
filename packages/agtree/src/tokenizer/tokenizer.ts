@@ -183,6 +183,7 @@ const SPACE = ' '.charCodeAt(0);
 const TAB = '\t'.charCodeAt(0);
 const CR = '\r'.charCodeAt(0);
 const LF = LF_RAW.charCodeAt(0);
+const FF = '\f'.charCodeAt(0);
 const ESC = '\\'.charCodeAt(0);
 const DOLLAR_SIGN = '$'.charCodeAt(0);
 const SLASH = '/'.charCodeAt(0);
@@ -348,7 +349,8 @@ export const tokenize = (string: string, onToken: OnTokenCallback) => {
                 break;
             }
 
-            case LF: {
+            case LF:
+            case FF: {
                 // reset rule info when reached a line break
                 cosmeticRule = false;
 
