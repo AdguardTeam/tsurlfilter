@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2025-06-10
+
+### Fixed
+
+- Error logging during user script execution via `chrome.userScripts` API.
+
+[3.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.1
+
 ## [3.2.0] - 2025-06-06
 
 ### Added
@@ -33,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Increase file size limit to 10MB for `$replace` rules in Firefox [AdguardBrowserExtension#3192].
 - Allow to specify attributes without value in selector for HTML filtering rules [#147].
 
+[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.0
 [#147]: https://github.com/AdguardTeam/tsurlfilter/issues/147
 [AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
 [AdguardBrowserExtension#2826]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2826
@@ -41,8 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3122]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3122
 [AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
 [AdguardBrowserExtension#3192]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3192
-
-[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.0
 
 ## [3.1.0] - 2025-05-28
 
