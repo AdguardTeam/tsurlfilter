@@ -156,6 +156,11 @@ export const enum TokenType {
     Dot,
 
     /**
+     * Semicolon: `;`.
+     */
+    Semicolon,
+
+    /**
      * Any other character.
      */
     Symbol,
@@ -209,6 +214,7 @@ const AND_SIGN = '&'.charCodeAt(0);
 const TILDE = '~'.charCodeAt(0);
 const CARET = '^'.charCodeAt(0);
 const DOT = '.'.charCodeAt(0);
+const SEMICOLON = ';'.charCodeAt(0);
 
 /**
  * Function to stop tokenization.
@@ -578,6 +584,11 @@ export const tokenize = (string: string, onToken: OnTokenCallback) => {
 
             case DOT:
                 onToken(TokenType.Dot, i, i + 1, stop, skip, jump);
+                i += 1;
+                break;
+
+            case SEMICOLON:
+                onToken(TokenType.Semicolon, i, i + 1, stop, skip, jump);
                 i += 1;
                 break;
 
