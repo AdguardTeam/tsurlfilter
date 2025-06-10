@@ -20,7 +20,9 @@
         "clean": "node scripts/cleanup.mjs",
         "prepare": "node .husky/install.mjs",
         "increment": "node scripts/increment.mjs",
-        "tgz": "lerna run build --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies && lerna run tgz --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies"
+        "tgz": "lerna run build --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies && lerna run tgz --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies",
+        "reinstall": "pnpm clean && pnpm install",
+        "ri": "pnpm reinstall"
     },
     "devDependencies": {
         "husky": "catalog:",
