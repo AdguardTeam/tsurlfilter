@@ -20,6 +20,9 @@
 !include 'tswebextension-permissions.yaml'
 
 ---
+!include 'tswebextension-increment.yaml'
+
+---
 !include 'tswebextension-update-companiesdb.yaml'
 
 ---
