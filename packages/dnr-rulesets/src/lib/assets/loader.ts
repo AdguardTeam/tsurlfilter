@@ -9,9 +9,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export type AssetsLoaderOptions = {
     /**
-     * Whether to download raw text filters instead of DNR rulesets.
+     * Whether to download latest text filters instead of DNR rulesets.
      */
-    rawFilters?: boolean;
+    latestFilters?: boolean;
 };
 
 /**
@@ -32,7 +32,7 @@ export class AssetsLoader {
     public async load(dest: string, options?: AssetsLoaderOptions): Promise<void> {
         const to = path.resolve(process.cwd(), dest);
 
-        if (options?.rawFilters) {
+        if (options?.latestFilters) {
             await startDownload(to);
             return;
         }
@@ -42,5 +42,7 @@ export class AssetsLoader {
         console.log(`Copying rulesets from ${src} to ${to}`);
 
         await copy(src, to);
+
+        console.log(`Copying rulesets from ${src} to ${to} done.`);
     }
 }

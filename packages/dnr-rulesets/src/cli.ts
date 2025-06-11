@@ -65,7 +65,7 @@ program
     .command('load')
     .description('Downloads rulesets for MV3 extension')
     .argument('<path-to-output>', 'rulesets download path')
-    .option('-r, --raw-filters', 'download raw filters in addition to DNR rulesets', false)
+    .option('-l, --latest-filters', 'download latest text filters instead of DNR rulesets', false)
     .action(async (dest: string, options?: AssetsLoaderOptions) => {
         const logger = new Logger();
         const loader = new AssetsLoader();
@@ -118,8 +118,8 @@ program
     .option('-i, --ids <ids...>', 'filters ids to process, others will be ignored, by default will process all filters matched via `--filters-match`', [])
     .option('-e, --enable <ids...>', 'enable filters by default in manifest.json (they will be enabled after enabling/reloading extension)', [])
     .option('-r, --ruleset-prefix <prefix>', 'prefix for filters ids', 'ruleset_')
-    .option('-m, --filters-match <match>', 'filters files match glob pattern', 'filter_+([0-9]).txt')
-    .option('-l, --load', 'download filters on first start before watch', false)
+    .option('-m, --filters-match <match>', 'filters files match glob pattern', ManifestPatcher.DEFAULT_FILTERS_MATCH_GLOB)
+    .option('-l, --latest-filters', 'download latest text filters on first start before watch', false)
     .option('-d, --debug', 'enable extended logging during conversion or not', false)
     /* eslint-enable max-len */
     .action(async (

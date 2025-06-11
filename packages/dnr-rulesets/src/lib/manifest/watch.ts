@@ -33,9 +33,10 @@ export type WatchPaths = {
 
 export type WatchOptions = PatchManifestOptions & {
     /**
-     * Whether to download filters from the server on start watching or not.
+     * Whether to download latest filters from the server before start watching
+     * or not. It is useful for cases when you want to debug fresh filters.
      */
-    load?: boolean;
+    latestFilters?: boolean;
 
     /**
      * Whether to enable extended logging during conversion or not.
@@ -121,7 +122,7 @@ export class Watcher {
     ): Promise<void> => {
         const { filtersPath } = paths;
 
-        if (options?.load) {
+        if (options?.latestFilters) {
             console.log(`Downloading filters from the server to ${filtersPath}...`);
             await startDownload(filtersPath);
             console.log(`Downloading filters from the server to ${filtersPath} is done.`);

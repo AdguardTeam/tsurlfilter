@@ -16,14 +16,9 @@ import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regex
 import { generateMD5Hash } from '../src/utils/checksum';
 import { MetadataRuleSet } from '../src/rules/declarative-converter/metadata-ruleset';
 import { getRuleSetId, getRuleSetPath } from '../src/rules/declarative-converter-utils';
+import { ensureDirSync } from './utils';
 
 export const LOCAL_METADATA_FILE_NAME = 'filters.json';
-
-const ensureDirSync = (dirPath: string) => {
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-    }
-};
 
 /**
  * Default options used by convert filters.

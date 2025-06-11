@@ -110,7 +110,7 @@ dnr-rulesets load <path-to-output>
 
 Options for `load` command:
 
-- `-r, --raw-filters` - download raw filters in addition to DNR rulesets (default: false)
+- `-l, --latest-filters` - download latest text filters instead of DNR rulesets (default: false)
 
 #### `manifest` command
 
@@ -153,7 +153,7 @@ Options for `watch` command:
 - `-e, --enable <ids...>` - enable filters by default in manifest.json (default: [])
 - `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
 - `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
-- `-l, --load` - download filters on first start before watch (default: false)
+- `-l, --latest-filters` - download latest text filters on first start before watch (default: false)
 - `-d, --debug` - enable extended logging during conversion (default: false)
 
 **Note about array options**: For options that accept multiple values (`ids` and `enable`), use please following syntax:

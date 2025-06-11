@@ -1,9 +1,11 @@
+/* eslint-disable no-console */
 import { program } from 'commander';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 import { convertFilters, LOCAL_METADATA_FILE_NAME } from './convertFilters';
 import { version } from '../package.json';
+import { Extractor } from './extractFilters';
 
 export const DEFAULT_DEST_RULE_SETS_DIR = './build/rulesets';
 
@@ -20,11 +22,11 @@ async function main() {
 
     program
         .command('convert')
-        .description('Converts filters to declarative rule sets')
+        .description('Converts filters to declarative rulesets')
         // eslint-disable-next-line max-len
         .argument('<filters_and_metadata_dir>', `Path to filters and their metadata with name "${LOCAL_METADATA_FILE_NAME}" to convert`)
         .argument('<resources_dir>', 'Path to web accessible resources')
-        .argument('[dest_rule_sets_dir]', 'Destination path for rule sets', DEFAULT_DEST_RULE_SETS_DIR)
+        .argument('[dest_rule_sets_dir]', 'Destination path for rulesets', DEFAULT_DEST_RULE_SETS_DIR)
         .option('--debug', 'Enable debug mode', false)
         .option('--prettify-json', 'Prettify JSON output', true)
         .action(async (filtersAndMetadataDir, resourcesDir, destRulesetsDir, options) => {
@@ -32,6 +34,23 @@ async function main() {
                 debug: options.debug,
                 prettifyJson: options.prettifyJson,
             });
+        });
+
+    program
+        .command('extract-filters')
+        .description('Extracts filters from converted declarative rulesets')
+        .argument('<path-to-rulesets>', 'path to the rulesets directory')
+        .argument('<path-to-output>', 'path to save extracted filters')
+        .action(async (
+            rulesetsPath: string,
+            outputPath: string,
+        ) => {
+            try {
+                await Extractor.extract(rulesetsPath, outputPath);
+                console.log(`Filters extracted to ${outputPath}`);
+            } catch (error) {
+                console.error('Error extracting filters:', error);
+            }
         });
 
     await program.parseAsync(process.argv);
@@ -65,4 +84,5 @@ if (isRunningViaCli) {
     main();
 }
 
+// For API-like usage, we export the convertFilters function.
 export { convertFilters };
