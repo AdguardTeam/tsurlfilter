@@ -21,42 +21,42 @@ describe('Allowlist Api', () => {
             {
                 input: ['example.com', 'example.org'],
                 inverted: false,
-                expected: '@@$document,to=example.com|example.org',
+                expected: '@@$document,important,to=example.com|example.org',
             },
             {
                 input: ['*.pages.dev'],
                 inverted: false,
-                expected: '@@$document,to=pages.dev',
+                expected: '@@$document,important,to=pages.dev',
             },
             {
                 input: ['pages.dev'],
                 inverted: false,
-                expected: '@@$document,to=pages.dev',
+                expected: '@@$document,important,to=pages.dev',
             },
             {
                 input: ['*.pages.dev', 'pages.dev'],
                 inverted: false,
-                expected: '@@$document,to=pages.dev',
+                expected: '@@$document,important,to=pages.dev',
             },
             {
                 input: ['*.allowlist.pages.dev', 'pages.dev'],
                 inverted: false,
-                expected: '@@$document,to=allowlist.pages.dev|pages.dev',
+                expected: '@@$document,important,to=allowlist.pages.dev|pages.dev',
             },
             {
                 input: ['*.allowlist.pages.dev', '*.pages.dev'],
                 inverted: false,
-                expected: '@@$document,to=allowlist.pages.dev|pages.dev',
+                expected: '@@$document,important,to=allowlist.pages.dev|pages.dev',
             },
             {
                 input: ['*.allowlist.pages.dev', '*.dev'],
                 inverted: false,
-                expected: '@@$document,to=allowlist.pages.dev|dev',
+                expected: '@@$document,important,to=allowlist.pages.dev|dev',
             },
             {
                 input: ['example.com', 'example.org'],
                 inverted: true,
-                expected: '@@$document,to=~example.com|~example.org',
+                expected: '@@$document,important,to=~example.com|~example.org',
             },
             {
                 input: [],
