@@ -1,0 +1,70 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: TSWEBEXTENSIONINCR
+  name: tswebextension - increment
+variables:
+  dockerContainer: adguard/node-ssh:22.14--0
+
+stages:
+  - Increment:
+      manual: true
+      final: false
+      jobs:
+        - Increment
+
+Increment:
+  key: INCRTSWEBEXTENSION
+  docker:
+    image: "${bamboo.dockerContainer}"
+    volumes:
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            branch="${bamboo.planRepository.branchName}"
+
+            # Throw error if current branch is not "master",
+            # because we do not deploy changes from other branches
+            if [ $branch != "master" ]
+            then
+              echo "increment is not supported on branch ${branch}"
+              exit 1;
+            fi
+
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
+            pnpm install
+
+            pnpm run increment tswebextension
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          commitMessage: 'skipci: Automatic increment build number for TSWebextension'
+          selectedRepository: defaultRepository
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+
+branches:
+  create: manually
+  delete: never
+  link-to-jira: true
+
+labels: [ ]
+
+other:
+  concurrent-build-plugin: system-default

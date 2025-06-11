@@ -136,6 +136,16 @@ class DeclarativeFilteringLog {
             return;
         }
 
+        /**
+         * Session rules are used for Tracking protection (formerly stealth mode)
+         * and the rules should not be logged as they are not logged for MV2 as well.
+         *
+         * For more details see tswebextension/src/lib/mv3/background/services/stealth-service.ts.
+         */
+        if (rulesetId === chrome.declarativeNetRequest.SESSION_RULESET_ID) {
+            return;
+        }
+
         let declarativeRuleInfo: DeclarativeRuleInfo;
 
         try {
