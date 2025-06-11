@@ -1,6 +1,5 @@
 import path from 'node:path';
 
-import { Logger } from '@adguard/logger';
 import { program } from 'commander';
 
 import { version } from '../package.json';
@@ -67,14 +66,13 @@ program
     .argument('<path-to-output>', 'rulesets download path')
     .option('-l, --latest-filters', 'download latest text filters instead of DNR rulesets', false)
     .action(async (dest: string, options?: AssetsLoaderOptions) => {
-        const logger = new Logger();
         const loader = new AssetsLoader();
 
         try {
             await loader.load(dest, options);
-            logger.info(`assets was copied to ${dest}`);
+            console.info(`assets was copied to ${dest}`);
         } catch (e) {
-            logger.error(e);
+            console.error(e);
         }
     });
 

@@ -52,17 +52,19 @@ export type Metadata = {
  *
  * @returns Filter metadata.
  */
-export async function downloadMetadata(pathToSave: string): Promise<Metadata> {
+export async function downloadMetadata(pathToSave?: string): Promise<Metadata> {
     console.info(`Download ${FILTERS_METADATA_URL}...`);
 
     const { data } = await axios.get<Metadata>(FILTERS_METADATA_URL, { responseType: 'json' });
 
-    await fs.promises.writeFile(
-        pathToSave,
-        JSON.stringify(data, null, '\t'),
-    );
+    if (pathToSave) {
+        await fs.promises.writeFile(
+            pathToSave,
+            JSON.stringify(data, null, '\t'),
+        );
 
-    console.info(`Download ${FILTERS_METADATA_URL} done, saved to ${pathToSave}`);
+        console.info(`Download ${FILTERS_METADATA_URL} done, saved to ${pathToSave}`);
+    }
 
     return data;
 }
