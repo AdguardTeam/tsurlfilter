@@ -9,11 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Network rules with $important modifier are applied even if protection is disabled [AdGuardBrowserExtension#3227]
+- Network rules with $important modifier are applied even if protection is disabled [AdGuardBrowserExtension#3227].
 
 [AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
 
-## Unreleased <!-- release/browser-extension-v5.2 -->
+## [3.2.1] - 2025-06-11
+
+### Fixed
+
+- Error logging during user script execution via `chrome.userScripts` API.
+- Session rules logging which are used for Tracking protection.
+
+[3.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.1
+
+## [3.2.0] - 2025-06-06
 
 ### Added
 
@@ -24,23 +33,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Static getter `isUserScriptsApiSupported` to check if the current browser
   supports User Scripts API.
 
-## Changed
+### Changed
 
-<!-- FIXME: update dependencies to the latest versions -->
-- Updated [@adguard/agtree] to `v3.1.5`.
-- Updated [@adguard/scriptlets] to `v2.2.1`.
-- Updated [@adguard/tsurlfilter] to `v3.x.x`.
+- Updated [@adguard/logger] to `v2.0.0`.
+- Updated [@adguard/scriptlets] to `v2.2.7`.
+- Updated [@adguard/tsurlfilter] to `v3.4.0`.
 
 ### Fixed
 
-- Invalid HTML rule selectors are breaking site loading
+- Invalid HTML filtering rule selectors are breaking site loading
   [AdguardBrowserExtension#2646], [AdguardBrowserExtension#2826].
 - Scriptlet rules are not displayed in the filtering log [AdguardBrowserExtension#3164].
 - Stealth mode's `Hide Referer from third parties` option may break some websites [AdguardBrowserExtension#2839].
 - Filtering doesn't work in Edge's split screen [AdguardBrowserExtension#2832].
 - `$replace` rules may break some websites [AdguardBrowserExtension#3122].
-- Increase file size limit to 10MB for `$replace` rules in Firefox [AdguardBrowserExtension#3192]
+- Increase file size limit to 10MB for `$replace` rules in Firefox [AdguardBrowserExtension#3192].
+- Allow to specify attributes without value in selector for HTML filtering rules [#147].
 
+[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.0
+[#147]: https://github.com/AdguardTeam/tsurlfilter/issues/147
 [AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
 [AdguardBrowserExtension#2826]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2826
 [AdguardBrowserExtension#2832]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2832
@@ -48,10 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#3122]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3122
 [AdguardBrowserExtension#3164]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3164
 [AdguardBrowserExtension#3192]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3192
-
-### Changed
-
-- Updated [@adguard/logger] to `v2.0.0`.
 
 ## [3.1.0] - 2025-05-28
 

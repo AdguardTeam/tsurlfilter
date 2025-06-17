@@ -10,8 +10,8 @@ catalogs:
       specifier: ^4.3.70
       version: 4.3.70
     '@adguard/scriptlets':
-      specifier: ^2.2.1
-      version: 2.2.1
+      specifier: ^2.2.7
+      version: 2.2.7
     '@rollup/plugin-alias':
       specifier: ^5.1.1
       version: 5.1.1
@@ -1519,7 +1519,7 @@ importers:
         version: 1.2.0
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.2.1
+        version: 2.2.7
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1721,7 +1721,7 @@ importers:
         version: link:../logger
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.2.1
+        version: 2.2.7
       '@adguard/text-encoding':
         specifier: ^0.8.3
         version: 0.8.3
@@ -1934,8 +1934,8 @@ packages:
   '@adguard/scriptlets@1.12.1':
     resolution: {integrity: sha512-luAGl8hHEjKZfTFqWG8PBsif2wAPWNi0uuT+xzyBTk+IllHDYOLPSwyMKh2ru7nKCQJEOgMVwNoIrPB4zuuX1w==}
 
-  '@adguard/scriptlets@2.2.1':
-    resolution: {integrity: sha512-OUIfzIgarkeQhMVv6wWK/mbRnkOpePIRFBlMxwFevcGnbry7sDdNti44M+ipyDXEi9G3C+YnIEXGEPmbKvBREw==}
+  '@adguard/scriptlets@2.2.7':
+    resolution: {integrity: sha512-UK7aNkbGOACPaJEDGKj5g9Zyl+zNTM0DZf2/6+RaMavnGDQuObtkBvzZO0/0G4BVqRDdstULlrgzazmaLeHukw==}
 
   '@adguard/text-encoding@0.8.3':
     resolution: {integrity: sha512-LA0bsY+YYnQqItGaYMoVL0l55JDi/uwvUca53V6M6mvKNHtaYDTlf3yAeW2PafsTfWvoYH7gObGu8eCvPh69tg==}
@@ -9661,7 +9661,7 @@ snapshots:
       '@babel/runtime': 7.27.0
       js-yaml: 3.14.1
 
-  '@adguard/scriptlets@2.2.1':
+  '@adguard/scriptlets@2.2.7':
     dependencies:
       '@adguard/agtree': link:packages/agtree
       '@types/trusted-types': 2.0.7
