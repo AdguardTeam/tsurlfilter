@@ -37,6 +37,14 @@ class DeclarativeFilteringLog {
     }
 
     /**
+     * Initializes the declarative filtering log.
+     * Binds needed methods to the instance.
+     */
+    constructor() {
+        this.logMatchedRule = this.logMatchedRule.bind(this);
+    }
+
+    /**
      * Acquires the mutex lock within the specified timeout.
      * Used to prevent getting rule info during rule set updates.
      *
@@ -125,6 +133,16 @@ class DeclarativeFilteringLog {
 
         if (!context) {
             logger.error('[tsweb.DeclarativeFilteringLog.logMatchedRule]: cannot find request context for request id ', requestId);
+            return;
+        }
+
+        /**
+         * Session rules are used for Tracking protection (formerly stealth mode)
+         * and the rules should not be logged as they are not logged for MV2 as well.
+         *
+         * For more details see tswebextension/src/lib/mv3/background/services/stealth-service.ts.
+         */
+        if (rulesetId === chrome.declarativeNetRequest.SESSION_RULESET_ID) {
             return;
         }
 

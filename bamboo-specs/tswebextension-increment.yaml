@@ -2,8 +2,8 @@
 version: 2
 plan:
   project-key: AJL
-  key: DNRRULESETSINCREMENT
-  name: DNR Rulesets - increment
+  key: TSWEBEXTENSIONINCR
+  name: tswebextension - increment
 variables:
   dockerContainer: adguard/node-ssh:22.14--0
 
@@ -15,7 +15,7 @@ stages:
         - Increment
 
 Increment:
-  key: INCR
+  key: INCRTSWEBEXTENSION
   docker:
     image: "${bamboo.dockerContainer}"
     volumes:
@@ -31,8 +31,7 @@ Increment:
 
             # Throw error if current branch is not "master",
             # because we do not deploy changes from other branches
-            # TODO: update the stable branch name if needed
-            if [ $branch != "master" && $branch != "stable/dnr-rulesets-3.0" ]
+            if [ $branch != "master" ]
             then
               echo "increment is not supported on branch ${branch}"
               exit 1;
@@ -50,12 +49,11 @@ Increment:
             pnpm config set store-dir ${bamboo.cachePnpm}
             pnpm install
 
-            # Increment @adguard/dnr-rulesets
-            pnpm run increment dnr-rulesets
+            pnpm run increment tswebextension
     - any-task:
         plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
         configuration:
-          commitMessage: 'skipci: Automatic increment build number for DNR Rulesets'
+          commitMessage: 'skipci: Automatic increment build number for TSWebextension'
           selectedRepository: defaultRepository
   requirements:
     - adg-docker: 'true'
