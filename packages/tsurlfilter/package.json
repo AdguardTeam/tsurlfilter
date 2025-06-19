@@ -96,7 +96,7 @@
         "lint:types": "tsc",
         "start": "rollup -c rollup.config.ts -w",
         "prebuild": "rimraf dist && pnpm build:types",
-        "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript --bundleConfigAsCjs && pnpm postbuild",
+        "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript --bundleConfigAsCjs",
         "postbuild": "tsx tasks/build-txt.ts",
         "build:types": "tsc --project tsconfig.build.json --declaration --emitDeclarationOnly --outdir dist/types && tsx tasks/transform-dts.ts",
         "docs": "typedoc src --out docs",

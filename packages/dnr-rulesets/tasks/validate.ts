@@ -3,8 +3,8 @@ import { extractRuleSetId, getRuleSetPath } from '@adguard/tsurlfilter/es/declar
 import fs from 'fs';
 import path from 'path';
 
+import { DEST_RULESETS_DIR } from '../common/constants';
 import { version } from '../package.json';
-import { DEST_RULE_SETS_DIR } from './constants';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
@@ -169,7 +169,7 @@ const validateRulesets = async (newData: RulesetIdsAndMetadataKeys): Promise<voi
  * Validates rulesets.
  */
 const validate = async (): Promise<void> => {
-    const newData = await getValidatorData(DEST_RULE_SETS_DIR);
+    const newData = await getValidatorData(DEST_RULESETS_DIR);
 
     await validateRulesets(newData);
 };

@@ -20,7 +20,7 @@ describe('load', () => {
     const dest = 'dest';
     const src = 'src';
     const to = 'to';
-    const filtersRelativePath = '../../filters';
+    const filtersRelativePath = '../filters';
 
     const mockResolve = vi.mocked(path.resolve);
     const mockCopy = vi.mocked(copy);
