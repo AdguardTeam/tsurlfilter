@@ -3,10 +3,11 @@
     "version": "3.1.0",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
-        "dist/**/*"
+        "dist/**/*",
+        "!dist/filters/filters.json"
     ],
     "bin": {
-        "dnr-rulesets": "dist/cli.js"
+        "dnr-rulesets": "dist/cli.cjs"
     },
     "main": "dist/lib/index.js",
     "types": "dist/types/lib/index.d.ts",
@@ -45,32 +46,35 @@
     "license": "GPL-3.0-only",
     "dependencies": {
         "@adguard/logger": "workspace:^",
+        "chokidar": "^4.0.3",
         "commander": "catalog:",
         "fast-glob": "^3.3.2",
         "fs-extra": "catalog:",
         "zod": "catalog:"
     },
     "devDependencies": {
+        "@adguard/re2-wasm": "1.2.0",
         "@adguard/tsurlfilter": "workspace:^",
         "@eslint/js": "^9.8.0",
+        "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",
         "@rollup/plugin-node-resolve": "catalog:",
         "@rollup/plugin-swc": "catalog:",
+        "@rollup/plugin-typescript": "catalog:",
         "@stylistic/eslint-plugin": "^2.6.1",
         "@swc-node/register": "catalog:",
         "@swc/core": "catalog:",
         "@types/fs-extra": "catalog:",
-        "@types/lodash-es": "catalog:",
         "@types/node": "catalog:",
         "@vitest/coverage-v8": "catalog:",
         "axios": "catalog:",
         "eslint": "catalog:eslint9",
+        "eslint-plugin-import-newlines": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",
         "eslint-plugin-simple-import-sort": "^12.1.1",
-        "eslint-plugin-import-newlines": "catalog:",
-        "lodash-es": "catalog:",
         "rimraf": "catalog:",
         "rollup": "catalog:",
+        "rollup-plugin-copy": "^3.5.0",
         "rollup-plugin-dts": "catalog:",
         "rollup-plugin-node-externals": "catalog:",
         "ts-morph": "catalog:",

@@ -75,6 +75,11 @@ export class MetadataRuleSet {
      * @note
      * This constructor uses references for the provided arguments. If immutability is required, ensure to clone the
      * inputs before passing them.
+     *
+     * @todo TODO: Consider mark `checksums` and `additionalProperties` as required parameters.
+     * For deserialization - add static method which will create an instance
+     * with deserialized checksums and additional properties via constructor,
+     * and get them stronger types.
      */
     constructor(
         checksums: ChecksumMap = {},
