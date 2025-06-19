@@ -99,6 +99,7 @@ const cliConfig = {
             file: `${OUTPUT_PATH}/cli.js`,
             format: 'esm',
             sourcemap: false,
+            banner: '#!/usr/bin/env node',
         },
     ],
     plugins: [
