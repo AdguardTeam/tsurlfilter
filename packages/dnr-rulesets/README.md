@@ -9,9 +9,6 @@ The list of available filters can be found by `filters` in [the metadata](https:
         - [CLI](#cli)
         - [API](#api)
         - [Output structure](#output-structure)
-        - [Utils](#utils)
-            - [getVersion](#getversion)
-            - [getVersionTimestampMs](#getversiontimestampms)
     - [Advanced usage](#advanced-usage)
         - [Injecting rulesets to the manifest object](#injecting-rulesets-to-the-manifest-object)
     - [Example](#example)
@@ -97,18 +94,74 @@ npm install --save-dev @adguard/dnr-rulesets
 {
     "scripts": {
         "load-dnr-rulesets": "dnr-rulesets load <path-to-output>",
-        "patch-manifest": "dnr-rulesets manifest <path-to-manifest> <path-to-output>"
+        "patch-manifest": "dnr-rulesets manifest <path-to-manifest> <path-to-filters>"
     }
 }
 ```
 
-`patch-manifest` command also provide two options:
+Available commands:
+
+#### `load` command
+
+Downloads and saves DNR rulesets to the specified directory.
+```bash
+dnr-rulesets load <path-to-output>
+```
+
+Options for `load` command:
+
+- `-l, --latest-filters` - download latest text filters instead of DNR rulesets (default: false)
+
+#### `manifest` command
+
+Patches the extension manifest to include DNR rulesets.
+```bash
+dnr-rulesets manifest <path-to-manifest> <path-to-filters> [options]
+```
+
+Options for `manifest` command:
 
 - `-f, --force-update` - force update rulesets with existing id (default: false)
-- `-i, --ids <ids...>` - filters ids to append (default: [])
+- `-i, --ids <ids...>` - filters ids to append, others will be ignored (default: [] - append all)
 - `-e, --enable <ids...>` - enable filters by default (default: [])
 - `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
 - `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
+
+**Note about array options**: For options that accept multiple values (`ids` and `enable`), use please following syntax:
+
+```bash
+--ids=1,2
+```
+
+#### `watch` command
+
+Watches for changes in the filter files and rebuilds DNR rulesets.
+```bash
+dnr-rulesets watch <path-to-manifest> <path-to-resources> [options]
+```
+
+Arguments:
+- `<path-to-manifest>` - path to the manifest.json file
+- `<path-to-resources>` - folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)
+
+Options for `watch` command:
+
+- `-p, --path-to-filters` - path to filters and i18n metadata file (default: `./filters` relative to manifest folder)
+- `-o, --output-path-for-rulesets` - output path for rulesets (default: `./filters/declarative` relative to manifest folder)
+- `-f, --force-update` - force update rulesets with existing id (default: true)
+- `-i, --ids <ids...>` - filters ids to process, others will be ignored (default: [] - process all filters matched via `--filters-match`)
+- `-e, --enable <ids...>` - enable filters by default in manifest.json (default: [])
+- `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
+- `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
+- `-l, --latest-filters` - download latest text filters on first start before watch (default: false)
+- `-d, --debug` - enable extended logging during conversion (default: false)
+- `-j, --prettify-json` - prettify JSON output (default: true)
+
+**Note about array options**: For options that accept multiple values (`ids` and `enable`), use please following syntax:
+
+```bash
+--ids=1,2
+```
 
 1. Run the script to load DNR rulesets as part of your build flow.
 
@@ -174,31 +227,6 @@ You can also integrate functions for downloading and updating the manifest into 
 |       |lazy_Metadata.json // Additional ruleset metadata for lazy loading
 |
 |filter_<id>.txt // Original filter rules with specified id
-```
-
-### Utils
-
-The package provides a set of utility functions for working with DNR rulesets.
-
-#### `getVersion()`
-
-Returns the version of the package.
-
-```ts
-import { getVersion } from '@adguard/dnr-rulesets/utils';
-
-const dnrRulesetsVersion = getVersion();
-```
-
-#### `getVersionTimestampMs()`
-
-Returns the timestamp of the dnr-rulesets build, based on the patch version,
-or current timestamp of the function call if date and time is not present in the patch version.
-
-```ts
-import { getVersionTimestampMs } from '@adguard/dnr-rulesets/utils';
-
-const dnrRulesetsBuildTimestamp = getVersionTimestampMs();
 ```
 
 ## Advanced usage
@@ -605,7 +633,7 @@ Blocks ads and trackers on various Macedonian websites.
 Downloads original rules, converts it to DNR rule sets via [TSUrlFilter declarative-converter](../tsurlfilter/README.md#declarativeconverter) and generates extension manifest with predefined rules resources.
 
 ```bash
-pnpm run build:assets
+pnpm build:assets
 ```
 
 ### `build:lib`
@@ -613,15 +641,15 @@ pnpm run build:assets
 Builds SDK to load DNR rule sets to the specified directory.
 
 ```bash
-pnpm run build:lib
+pnpm build:lib
 ```
 
 ### `build:cli`
 
-Builds CLI utility to load DNR rule sets to the specified directory.
+Builds CLI utility to load DNR rule sets to the specified directory, inject rulesets to the manifest object and can be used for local development for DNR rulesets.
 
 ```bash
-pnpm run build:cli
+pnpm build:cli
 ```
 
 ### `build:docs`
@@ -629,7 +657,7 @@ pnpm run build:cli
 Generates [Included filter lists](#included-filter-lists) section.
 
 ```bash
-pnpm run build:docs
+pnpm build:docs
 ```
 
 ### `build`
@@ -637,5 +665,12 @@ pnpm run build:docs
 Clears `dist` folder and runs `build:assets`, `build:cli` and `build:lib` scripts.
 
 ```bash
-pnpm run build
+pnpm build
+```
+
+### `watch`
+Watches for changes in the `dist/filters` folder and rebuilds DNR rulesets.
+
+```bash
+pnpm watch
 ```
