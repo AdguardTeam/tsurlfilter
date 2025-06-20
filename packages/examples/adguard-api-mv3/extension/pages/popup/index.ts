@@ -8,5 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     openAssistantButton.addEventListener('click', async () => {
         await chrome.runtime.sendMessage({ type: 'OPEN_ASSISTANT' });
+        window.close();
     });
 });
