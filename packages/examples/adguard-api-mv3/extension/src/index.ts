@@ -87,11 +87,11 @@ import {
         return handleAppMessage(message);
     });
 
-    // Disable Adguard in 1 minute
+    // Disable Adguard in 2 minute, since one minute might not be enough for testing
     setTimeout(async () => {
         adguardApi.onRequestBlocked.removeListener(onRequestBlocked);
         adguardApi.onAssistantCreateRule.unsubscribe(onAssistantCreateRule);
         await adguardApi.stop();
         console.log('Adguard API MV3 has been disabled.');
-    }, 60 * 1000);
+    }, 2 * 60 * 1000);
 })();
