@@ -19,7 +19,7 @@ import { type NetworkRule } from '../rules/network-rule';
 /**
  * Filter list.
  */
-interface FilterList {
+export interface EngineFilterList {
     /**
      * Filter list identifier.
      */
@@ -53,7 +53,7 @@ export interface EngineOptions {
     /**
      * List of filters.
      */
-    filters: FilterList[];
+    filters: EngineFilterList[];
 
     /**
      * Whether to skip initial scan.
