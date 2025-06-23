@@ -68,9 +68,12 @@ import {
     const handleAppMessage = async (message: any) => {
         switch (message.type) {
             case 'OPEN_ASSISTANT': {
-                const active = await browser.tabs.query({ active: true });
-                if (active[0]?.id) {
-                    await adguardApi.openAssistant(active[0].id);
+                // We need the last focused window because if the assistant is opened in incognito mode,
+                // it won’t be clear where to inject the assistant. AG-42726
+                const currentWindow = await browser.windows.getLastFocused();
+                const [activeTab] = await browser.tabs.query({ active: true, windowId: currentWindow.id });
+                if (activeTab?.id) {
+                    await adguardApi.openAssistant(activeTab.id);
                 }
                 break;
             }
