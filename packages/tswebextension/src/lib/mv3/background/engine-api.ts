@@ -1,7 +1,4 @@
 import {
-    type IRuleList,
-    BufferRuleList,
-    RuleStorage,
     Engine,
     RequestType,
     Request,
@@ -12,12 +9,12 @@ import {
     type HTTPMethod,
     setConfiguration,
     CompatibilityTypes,
+    type EngineFilterList,
 } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
-import { type AnyRule } from '@adguard/agtree';
 
-import { QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, isHttpRequest, getHost } from '../../common/utils/url';
@@ -75,7 +72,7 @@ export class EngineApi {
             verbose,
         } = config;
 
-        const lists: IRuleList[] = [];
+        const lists: EngineFilterList[] = [];
 
         for (let i = 0; i < filters.length; i += 1) {
             try {
@@ -84,56 +81,51 @@ export class EngineApi {
                 const content = await filter.getContent();
                 const trusted = filter.isTrusted();
 
-                lists.push(
-                    new BufferRuleList(
-                        filter.getId(),
-                        content.filterList,
-                        false,
-                        !trusted,
-                        !trusted,
-                        content.sourceMap,
-                    ),
-                );
+                lists.push({
+                    id: filter.getId(),
+                    text: content,
+                    ignoreCosmetic: false,
+                    ignoreJS: !trusted,
+                    ignoreUnsafe: !trusted,
+                });
             } catch (e) {
                 const filterId = filters[i].getId();
                 logger.error(`Cannot create IRuleList for filter ${filterId} due to: ${getErrorMessage(e)}`);
             }
         }
 
-        if (userrules.filterList.length > 0) {
+        if (userrules.length > 0) {
             // Note: rules are already converted at the extension side
-            lists.push(
-                new BufferRuleList(
-                    USER_FILTER_ID,
-                    userrules.filterList,
-                    false,
-                    false,
-                    false,
-                    userrules.sourceMap,
-                ),
-            );
+            lists.push({
+                id: USER_FILTER_ID,
+                text: userrules,
+                ignoreCosmetic: false,
+                ignoreJS: false,
+                ignoreUnsafe: false,
+            });
         }
 
-        if (quickFixesRules.filterList.length > 0) {
+        if (quickFixesRules.length > 0) {
             // Note: rules are already converted at the extension side
-            lists.push(
-                new BufferRuleList(
-                    QUICK_FIXES_FILTER_ID,
-                    quickFixesRules.filterList,
-                    false,
-                    false,
-                    false,
-                    quickFixesRules.sourceMap,
-                ),
-            );
+            lists.push({
+                id: QUICK_FIXES_FILTER_ID,
+                text: quickFixesRules,
+                ignoreCosmetic: false,
+                ignoreJS: false,
+                ignoreUnsafe: false,
+            });
         }
 
         const allowlistRulesList = allowlistApi.getAllowlistRules();
         if (allowlistRulesList) {
-            lists.push(allowlistRulesList);
+            lists.push({
+                id: ALLOWLIST_FILTER_ID,
+                text: allowlistRulesList,
+                ignoreCosmetic: false,
+                ignoreJS: false,
+                ignoreUnsafe: false,
+            });
         }
-
-        const ruleStorage = new RuleStorage(lists);
 
         /*
          * UI thread becomes blocked on the options page while request filter is
@@ -142,7 +134,10 @@ export class EngineApi {
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
         */
-        const engine = new Engine(ruleStorage, true);
+        const engine = new Engine({
+            filters: lists,
+            skipInitialScan: true,
+        });
         await engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
         this.engine = engine;
 
@@ -265,24 +260,6 @@ export class EngineApi {
         );
 
         return this.engine.matchRequest(request, frameRule);
-    }
-
-    /**
-     * Retrieves a rule node by its filter list identifier and rule index.
-     *
-     * If there's no rule by that index or the rule structure is invalid, it will return null.
-     *
-     * @param filterId Filter list identifier.
-     * @param ruleIndex Rule index.
-     *
-     * @returns Rule node or `null`.
-     */
-    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        if (!this.engine) {
-            return null;
-        }
-
-        return this.engine.retrieveRuleNode(filterId, ruleIndex);
     }
 }
 

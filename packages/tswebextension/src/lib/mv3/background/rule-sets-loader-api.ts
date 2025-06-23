@@ -1,5 +1,4 @@
-import { RuleParser } from '@adguard/agtree';
-import { fetchExtensionResourceText, FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { fetchExtensionResourceText } from '@adguard/tsurlfilter';
 import {
     type IFilter,
     type IRuleSet,
@@ -413,7 +412,7 @@ export class RuleSetsLoaderApi {
         // We don't need filter id and line index because this
         // indexedRulesWithHash will be used only for matching $badfilter rules.
         const badFilterRules = badFilterRulesRaw
-            .map((rawString) => IndexedNetworkRuleWithHash.createFromNode(0, 0, RuleParser.parse(rawString)))
+            .map((rawString) => IndexedNetworkRuleWithHash.createFromText(0, 0, rawString))
             .flat();
 
         const ruleset = new RuleSet(

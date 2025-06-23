@@ -19,14 +19,6 @@ export {
     ResourceType,
 } from '@adguard/tsurlfilter/es/declarative-converter';
 
-export {
-    getRuleSourceIndex,
-    getRuleSourceText,
-    type PreprocessedFilterList,
-    FilterListPreprocessor,
-    preprocessedFilterListValidator,
-} from '@adguard/tsurlfilter';
-
 // re-exports to prevent collision, when both tsurlfilter and tswebextension are imported
 export type {
     NetworkRule,

@@ -1,13 +1,13 @@
 import { z as zod } from 'zod';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { preprocessedFilterListValidator, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 
 import { configurationValidator, settingsConfigValidator } from '../../common/configuration';
 
 /**
  * Custom filter list configuration validator for MV3.
  */
-export const customFilterMV3Validator = preprocessedFilterListValidator.extend({
+export const customFilterMV3Validator = zod.object({
+    content: zod.string(), // FIXME
+
     /**
      * Filter identifier.
      */
@@ -82,14 +82,14 @@ export const configurationMV3Validator = configurationValidator.extend({
     /**
      * List of hotfix rules which should applied dynamically.
      */
-    quickFixesRules: customFilterMV3Validator.omit({ filterId: true }),
+    quickFixesRules: zod.string(),
 
     settings: settingsConfigMV3,
 
     /**
      * List of rules added by user.
      */
-    userrules: customFilterMV3Validator.omit({ filterId: true }),
+    userrules: zod.string(),
 });
 
 /**

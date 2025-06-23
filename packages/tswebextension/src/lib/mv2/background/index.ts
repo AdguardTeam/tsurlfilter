@@ -4,12 +4,6 @@ export {
     NetworkRule,
     CosmeticRule,
     NetworkRuleOption,
-    FilterListPreprocessor,
-    type PreprocessedFilterList,
-    type FilterListConversionMap,
-    type FilterListSourceMap,
-    getRuleSourceIndex,
-    getRuleSourceText,
 } from '@adguard/tsurlfilter';
 
 export * from './api';

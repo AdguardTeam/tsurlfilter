@@ -5,9 +5,7 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
-import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 
 import { type MessageHandler, type AppInterface } from '../../common/app';
@@ -344,7 +342,7 @@ export class TsWebExtension implements AppInterface<
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
                 {
-                    getContent: (): Promise<PreprocessedFilterList> => {
+                    getContent: (): Promise<string> => {
                         return Promise.resolve(configuration.userrules);
                     },
                 },
@@ -355,10 +353,8 @@ export class TsWebExtension implements AppInterface<
                 ALLOWLIST_FILTER_ID,
                 // TODO: Generate AST directly for allowlist rules.
                 {
-                    getContent: (): Promise<PreprocessedFilterList> => {
-                        return Promise.resolve(
-                            FilterListPreprocessor.preprocess(combinedAllowlistRules),
-                        );
+                    getContent: (): Promise<string> => {
+                        return Promise.resolve(combinedAllowlistRules);
                     },
                 },
                 true,
@@ -367,7 +363,7 @@ export class TsWebExtension implements AppInterface<
             const quickFixesFilter = new Filter(
                 QUICK_FIXES_FILTER_ID,
                 {
-                    getContent: (): Promise<PreprocessedFilterList> => {
+                    getContent: (): Promise<string> => {
                         return Promise.resolve(configuration.quickFixesRules);
                     },
                 },
@@ -751,20 +747,5 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             logger.currentLevel = LogLevel.Info;
         }
-    }
-
-    /**
-     * Retrieves a rule node by its filter list identifier and rule index.
-     *
-     * If there's no rule by that index or the rule structure is invalid, it will return null.
-     *
-     * @param filterId Filter list identifier.
-     * @param ruleIndex Rule index.
-     *
-     * @returns Rule node or `null`.
-     */
-    // eslint-disable-next-line class-methods-use-this
-    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        return engineApi.retrieveRuleNode(filterId, ruleIndex);
     }
 }

@@ -4,7 +4,7 @@ import {
     beforeEach,
     it,
 } from 'vitest';
-import { BufferRuleList, FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { StringRuleList } from '@adguard/tsurlfilter';
 
 import { getConfigurationMv2Fixture } from '../mv2/background/fixtures/configuration';
 import { getConfigurationMv3Fixture } from '../mv3/fixtures/configuration';
@@ -54,11 +54,9 @@ describe('Allowlist Api', () => {
                 title: 'should return filter list, when API is enabled and  not inverted',
                 enabled: true,
                 inverted: false,
-                expected: new BufferRuleList(
+                expected: new StringRuleList(
                     ALLOWLIST_FILTER_ID,
-                    FilterListPreprocessor.preprocess(
-                        '@@///(www\\.)?example\\.com/$document,important',
-                    ).filterList,
+                    '@@///(www\\.)?example\\.com/$document,important',
                 ),
             },
             {

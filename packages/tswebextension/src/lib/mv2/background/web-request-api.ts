@@ -210,7 +210,7 @@ import { TabsApi } from './tabs';
 import { isFirefox, isOpera } from './utils/browser-detector';
 import { type OnBeforeRequestDetailsType } from './request/events/request-events';
 
-export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromise | void;
+export type WebRequestEventResponse = WebRequest.BlockingResponseOrPromiseOrVoid | void;
 
 export type InjectCosmeticParams = {
     frameId: number,

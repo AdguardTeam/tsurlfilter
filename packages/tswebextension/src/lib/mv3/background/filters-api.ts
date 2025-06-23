@@ -1,7 +1,7 @@
 import zod from 'zod';
 import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
-import { type PreprocessedFilterList, preprocessedFilterListValidator } from '@adguard/tsurlfilter';
+import { type ConvertedFilterList } from '@adguard/tsurlfilter';
 
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { FiltersStorage } from '../../common/storage/filters';
@@ -14,11 +14,7 @@ export type UpdateStaticFiltersResult = {
 
 const loadFilterContentValidator = zod.function()
     .args(zod.number())
-    .returns(
-        zod.promise(
-            preprocessedFilterListValidator,
-        ),
-    );
+    .returns(zod.promise(zod.string()));
 
 /**
  * Lazy load filter content.
@@ -112,7 +108,7 @@ export default class FiltersApi {
 
             const filter = new Filter(
                 filterId,
-                { getContent: (): Promise<PreprocessedFilterList> => loadFilterContent(filterId) },
+                { getContent: (): Promise<string> => loadFilterContent(filterId) },
                 /**
                  * Static filters are trusted.
                  */
@@ -136,7 +132,7 @@ export default class FiltersApi {
         return customFilters.map((f) => new Filter(
             f.filterId,
             {
-                getContent: () => Promise.resolve(f),
+                getContent: () => Promise.resolve(f.content), // FIXME
             },
             f.trusted,
         ));
@@ -152,7 +148,7 @@ export default class FiltersApi {
      *
      * @throws Error if the filter content cannot be loaded.
      */
-    public static loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
+    public static loadFilterContent = async (filterId: number): Promise<ConvertedFilterList> => {
         try {
             const result = await FiltersStorage.get(filterId);
 

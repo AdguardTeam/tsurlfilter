@@ -27,14 +27,14 @@ export type DetailsHandler<Details> = (
  */
 export type EventCallback<Details> = (
     requestData: RequestData<Details>
-) => WebRequest.BlockingResponseOrPromise | void;
+) => WebRequest.BlockingResponseOrPromiseOrVoid | void;
 
 /**
  * Function registered as listener of the browser.WebRequest event.
  */
 export type BrowserEventListener<Details> = (
     details: Details
-) => WebRequest.BlockingResponseOrPromise | void;
+) => WebRequest.BlockingResponseOrPromiseOrVoid | void;
 
 /**
  * More flexible variants for {@link Events.Event} interfaces.
@@ -68,10 +68,10 @@ export class RequestEvent<Details, Options> {
         filter: WebRequest.RequestFilter,
         extraInfoSpec?: Options[],
     ): void {
-        // TODO: Remove BlockingResponseOrPromise because in MV3 we cannot block
+        // TODO: Remove BlockingResponseOrPromiseOrVoid because in MV3 we cannot block
         // response, so we need to left only void or promise<void> as result
         // of handlers.
-        const handleBrowserEvent = (details: Details): void | WebRequest.BlockingResponseOrPromise => {
+        const handleBrowserEvent = (details: Details): void | WebRequest.BlockingResponseOrPromiseOrVoid => {
             const data = handler(details);
 
             /**

@@ -1,5 +1,4 @@
 import { Filter, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor } from '@adguard/tsurlfilter';
 
 export const createFilter = (
     rules: string[],
@@ -7,7 +6,7 @@ export const createFilter = (
 ): IFilter => {
     return new Filter(
         filterId,
-        { getContent: async () => FilterListPreprocessor.preprocess(rules.join('\n')) },
+        { getContent: async () => rules.join('\n') },
         true,
     );
 };

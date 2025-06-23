@@ -50,7 +50,7 @@ export const createAssistantMessageListener = (): void => {
         return;
     }
 
-    browser.runtime.onMessage.addListener(async (message): Promise<undefined> => {
+    browser.runtime.onMessage.addListener(async (message: any): Promise<undefined> => {
         if (!hasTypeField(message)) {
             logger.debug('[tswebextension.assistantListener]: message do not contain required field "type": ', message);
             return;

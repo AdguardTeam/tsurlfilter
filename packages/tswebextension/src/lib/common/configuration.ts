@@ -1,6 +1,5 @@
 import { z as zod } from 'zod';
 import { LogLevel } from '@adguard/logger';
-import { filterListChunksValidator, filterListSourceMapValidator } from '@adguard/tsurlfilter';
 import { EXTENDED_CSS_VERSION } from '@adguard/extended-css/version';
 
 import packageJson from '../../../package.json';
@@ -86,23 +85,6 @@ export const stealthConfigValidator = zod.object({
 export type StealthConfig = zod.infer<typeof stealthConfigValidator>;
 
 /**
- * Filter list configuration validator for MV2.
- */
-export const basicFilterValidator = zod.object({
-    /**
-     * Filter list text content.
-     */
-    content: filterListChunksValidator,
-
-    /**
-     * Source map.
-     */
-    sourceMap: filterListSourceMapValidator.optional(),
-});
-
-export type BasicFilterValidator = zod.infer<typeof basicFilterValidator>;
-
-/**
  * Settings configuration schema.
  */
 export const settingsConfigValidator = zod.object({
@@ -177,7 +159,7 @@ export const configurationValidator = zod.object({
     /**
      * List of rules added by user.
      */
-    userrules: basicFilterValidator,
+    userrules: zod.string(),
 
     /**
      * Flag responsible for logging.
