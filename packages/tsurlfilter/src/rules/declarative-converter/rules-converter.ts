@@ -119,8 +119,10 @@ type FiltersIdsWithGroupedRules = [number, GroupedRules][];
 export class DeclarativeRulesConverter {
     /**
      * The declarative identifier of a rule must be a natural number.
+     *
+     * 1 is reserved for the metadata rule.
      */
-    static readonly MIN_DECLARATIVE_RULE_ID = 1;
+    static readonly MIN_DECLARATIVE_RULE_ID = 2;
 
     /**
      * The declarative identifier of a rule must be less than signed 32-bit

@@ -45,6 +45,7 @@
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0-only",
     "dependencies": {
+        "@adguard/agtree": "workspace:^",
         "@adguard/logger": "workspace:^",
         "chokidar": "^4.0.3",
         "commander": "catalog:",

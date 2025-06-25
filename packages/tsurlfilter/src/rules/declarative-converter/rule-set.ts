@@ -35,6 +35,16 @@ export type UpdateStaticRulesOptions = {
 };
 
 /**
+ * Describes several fields which is required to apply "safety" patch to rulesets:
+ * rulesets with these fields can be passed through CWS skip review option.
+ * FIXME: Better doc.
+ */
+export interface SafetyPatch {
+    disableUnsafeRulesIds: number[];
+    addUnsafeRules: string[];
+}
+
+/**
  * Keeps converted declarative rules and source map for it.
  */
 export interface IRuleSet {
@@ -112,6 +122,22 @@ export interface IRuleSet {
     getDeclarativeRules(): Promise<DeclarativeRule[]>;
 
     /**
+     * Contains ids of unsafe declarative rules that should be disabled to pass
+     * skip review option in CWS.
+     *
+     * FIXME: Better description.
+     */
+    getDisableUnsafeRulesIds(): Promise<number[]>;
+
+    /**
+     * Contains unsafe declarative rules that should be added to pass
+     * skip review option in CWS.
+     *
+     * FIXME: Better description.
+     */
+    getAddUnsafeRules(): Promise<string[]>;
+
+    /**
      * Unload ruleset content.
      * This method can be used to free memory until the content is needed again.
      */
@@ -119,6 +145,7 @@ export interface IRuleSet {
 
     /**
      * Serializes rule set to primitives values with lazy load.
+     * FIXME: Delete method as unused.
      *
      * @returns Serialized rule set.
      *
@@ -131,12 +158,18 @@ export interface IRuleSet {
      * Serializes rule set to a single file.
      *
      * @param prettyPrint Whether to pretty print the output. Default is `true`.
+     * @param safetyPatch Optional safety patch to apply.
+     * @param extraDnrRules Optional rules to add in ruleset.
      *
      * @returns Serialized rule set.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
      */
-    serializeCompact(prettyPrint?: boolean): Promise<string>;
+    serializeCompact(
+        prettyPrint?: boolean,
+        // safetyPatch?: SafetyPatch,
+        // extraDnrRules?: DeclarativeRule[],
+    ): Promise<string>;
 }
 
 /**
@@ -161,6 +194,8 @@ const serializedRuleSetDataValidator = zod.strictObject({
     rulesCount: zod.number(),
     ruleSetHashMapRaw: zod.string(),
     badFilterRulesRaw: zod.string().array(),
+    disableUnsafeRulesIds: zod.number().array().optional(),
+    addUnsafeRules: zod.string().array().optional(),
 });
 
 export type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
@@ -173,10 +208,12 @@ export type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValida
  */
 export type SerializedRuleSet = {
     id: string;
+
     /**
      * Metadata needed for instant creating ruleset.
      */
     data: string;
+
     /**
      * Metadata needed for lazy load some data to ruleset to find and show
      * source rules when declarative filtering log is enabled.
@@ -189,10 +226,12 @@ export type SerializedRuleSet = {
  */
 export type DeserializedRuleSet = {
     id: string;
+
     /**
      * Metadata needed for instant creating ruleset.
      */
     data: SerializedRuleSetData;
+
     /**
      * Metadata needed for lazy load some data to ruleset to find and show
      * source rules when declarative filtering log is enabled.
@@ -226,6 +265,22 @@ export class RuleSet implements IRuleSet {
      * Converted declarative unsafe rules.
      */
     private readonly unsafeRulesCount: number = 0;
+
+    /**
+     * Contains ids of unsafe declarative rules that should be disabled to pass
+     * skip review option in CWS.
+     *
+     * FIXME: Better description.
+     */
+    private readonly disableUnsafeRulesIds: number[] = [];
+
+    /**
+     * Contains unsafe declarative rules that should be added to pass
+     * skip review option in CWS.
+     *
+     * FIXME: Better description.
+     */
+    private readonly addUnsafeRules: string[] = [];
 
     /**
      * Converted declarative regexp rules.
@@ -282,6 +337,8 @@ export class RuleSet implements IRuleSet {
      * @param ruleSetContentProvider Rule set content provider.
      * @param badFilterRules List of rules with $badfilter modifier.
      * @param rulesHashMap Dictionary with hashes for all source rules.
+     * @param disableUnsafeRulesIds List of unsafe rule IDs to disable.
+     * @param addUnsafeRules List of unsafe rules to add.
      */
     constructor(
         id: string,
@@ -291,6 +348,8 @@ export class RuleSet implements IRuleSet {
         ruleSetContentProvider: RuleSetContentProvider,
         badFilterRules: IndexedNetworkRuleWithHash[],
         rulesHashMap: IRulesHashMap,
+        disableUnsafeRulesIds: number[] = [],
+        addUnsafeRules: string[] = [],
     ) {
         this.id = id;
         this.rulesCount = rulesCount;
@@ -299,6 +358,18 @@ export class RuleSet implements IRuleSet {
         this.ruleSetContentProvider = ruleSetContentProvider;
         this.badFilterRules = badFilterRules;
         this.rulesHashMap = rulesHashMap;
+        this.disableUnsafeRulesIds = disableUnsafeRulesIds;
+        this.addUnsafeRules = addUnsafeRules;
+    }
+
+    /** @inheritdoc */
+    getDisableUnsafeRulesIds(): Promise<number[]> {
+        return Promise.resolve(this.disableUnsafeRulesIds);
+    }
+
+    /** @inheritdoc */
+    getAddUnsafeRules(): Promise<string[]> {
+        return Promise.resolve(this.addUnsafeRules);
     }
 
     /** @inheritdoc */
@@ -610,13 +681,22 @@ export class RuleSet implements IRuleSet {
     /**
      * Helper method to get serialized rule set data.
      *
+     * @param safetyPatch Optional safety patch to apply.
+     *
      * @returns Serialized rule set data.
      */
     private getSerializedRuleSetData(): SerializedRuleSetData {
+        // const {
+        //     disableUnsafeRulesIds = [],
+        //     addUnsafeRules = [],
+        // } = safetyPatch || {};
+
         return {
             regexpRulesCount: this.regexpRulesCount,
             unsafeRulesCount: this.unsafeRulesCount,
             rulesCount: this.rulesCount,
+            // disableUnsafeRulesIds,
+            // addUnsafeRules,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
             badFilterRulesRaw: this.badFilterRules.map((r) => RuleGenerator.generate(r.rule.node)),
         };
@@ -655,7 +735,12 @@ export class RuleSet implements IRuleSet {
     }
 
     /** @inheritdoc */
-    public async serializeCompact(prettyPrint = true): Promise<string> {
+    public async serializeCompact(
+        prettyPrint = true,
+        // safetyPatch?: SafetyPatch,
+        // addDnrRules?: DeclarativeRule[],
+        // excludeDnrRules?: DeclarativeRule[],
+    ): Promise<string> {
         try {
             await this.loadContent();
         } catch (e) {
@@ -680,6 +765,12 @@ export class RuleSet implements IRuleSet {
         const declarativeRules = await this.getDeclarativeRules();
 
         declarativeRules.unshift(metadataRule);
+
+        // declarativeRules.push(...(addDnrRules || []));
+
+        // const excludedDnrIds =
+
+        // declarativeRules = declarativeRules.filter((r) => !excludeDnrRules?.includes(r));
 
         const result = serializeJson(declarativeRules, prettyPrint);
 

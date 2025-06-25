@@ -1,4 +1,5 @@
 export * from './filter-converter';
+export * from './rules-converter';
 export * from './rule-set';
 export * from './filter';
 export * from './source-map';

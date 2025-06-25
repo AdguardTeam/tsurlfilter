@@ -5,10 +5,13 @@ import { program } from 'commander';
 import { version } from '../package.json';
 import { AssetsLoader, ManifestPatcher, type PatchManifestOptions } from './lib';
 import { AssetsLoaderOptions } from './lib/assets/loader';
+import { buildSafePatch } from './lib/build-safe-patch';
 import { Watcher, WatchOptions } from './lib/manifest/watch';
 
 const DEFAULT_PATH_TO_FILTERS = './filters';
 const DEFAULT_OUTPUT_PATH_FOR_RULESETS = './filters/declarative';
+
+const parseBool = (v: string) => /^true|1|yes|on$/i.test(v);
 
 /**
  * Helper function to process array options that might be:
@@ -59,6 +62,28 @@ type WatchOptionsCli = WatchOptions & {
 program
     .name('dnr-rulesets CLI')
     .version(version);
+
+program
+    .command('build-safe-patch')
+    .description('Compare two ruleset folders and create a safety patch for skip-review')
+    .argument('<old_dir>', 'Path to old ruleset folder')
+    .argument('<new_dir>', 'Path to new ruleset folder')
+    .argument('<out_dir>', 'Output dir for patches')
+    // parseBool is needed since commander.js treats boolean options as strings
+    .option('--prettify-json <bool>', 'Prettify JSON output', parseBool, true)
+    .action(async (oldDir, newDir, outDir, options) => {
+        try {
+            await buildSafePatch({
+                oldDir,
+                newDir,
+                outDir,
+                ...options,
+            });
+        } catch (e) {
+            console.error(e);
+            process.exit(1);
+        }
+    });
 
 program
     .command('load')
