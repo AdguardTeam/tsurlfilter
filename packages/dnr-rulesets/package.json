@@ -47,8 +47,10 @@
     "dependencies": {
         "@adguard/agtree": "workspace:^",
         "@adguard/logger": "workspace:^",
+        "@types/crypto-js": "^4.2.2",
         "chokidar": "^4.0.3",
         "commander": "catalog:",
+        "crypto-js": "^4.2.0",
         "fast-glob": "^3.3.2",
         "fs-extra": "catalog:",
         "zod": "catalog:"

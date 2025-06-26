@@ -912,12 +912,18 @@ importers:
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
+      '@types/crypto-js':
+        specifier: ^4.2.2
+        version: 4.2.2
       chokidar:
         specifier: ^4.0.3
         version: 4.0.3
       commander:
         specifier: 'catalog:'
         version: 12.1.0
+      crypto-js:
+        specifier: ^4.2.0
+        version: 4.2.0
       fast-glob:
         specifier: ^3.3.2
         version: 3.3.3
@@ -3360,6 +3366,9 @@ packages:
 
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
+
+  '@types/crypto-js@4.2.2':
+    resolution: {integrity: sha512-sDOLlVbHhXpAUAL0YHDUUwDZf3iN4Bwi4W6a0W0b+QcAezUbRtH4FVb+9J4h+XFPW7l/gQ9F8qC7P+Ec4k8QVQ==}
 
   '@types/css-tree@2.3.10':
     resolution: {integrity: sha512-WcaBazJ84RxABvRttQjjFWgTcHvZR9jGr0Y3hccPkHjFyk/a3N8EuxjKr+QfrwjoM5b1yI1Uj1i7EzOAAwBwag==}
@@ -11040,6 +11049,8 @@ snapshots:
   '@types/clone-deep@4.0.4': {}
 
   '@types/cookie@0.6.0': {}
+
+  '@types/crypto-js@4.2.2': {}
 
   '@types/css-tree@2.3.10': {}
 

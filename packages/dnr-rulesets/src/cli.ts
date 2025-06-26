@@ -5,7 +5,7 @@ import { program } from 'commander';
 import { version } from '../package.json';
 import { AssetsLoader, ManifestPatcher, type PatchManifestOptions } from './lib';
 import { AssetsLoaderOptions } from './lib/assets/loader';
-import { buildSafePatch } from './lib/build-safe-patch';
+import { processRulesets } from './lib/build-safe-patch';
 import { Watcher, WatchOptions } from './lib/manifest/watch';
 
 const DEFAULT_PATH_TO_FILTERS = './filters';
@@ -66,19 +66,17 @@ program
 program
     .command('build-safe-patch')
     .description('Compare two ruleset folders and create a safety patch for skip-review')
-    .argument('<old-dir>', 'Path to old ruleset folder')
-    .argument('<new-dir>', 'Path to new ruleset folder')
-    .argument('<out-dir>', 'Output dir for patches')
+    .argument('<old-dir>', 'Path to old rulesets folder')
+    .argument('<new-dir>', 'Path to new rulesets folder')
     // eslint-disable-next-line max-len
     .argument('<path-to-resources>', 'Folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)')
     // parseBool is needed since commander.js treats boolean options as strings
     .option('--prettify-json <bool>', 'Prettify JSON output', parseBool, true)
-    .action(async (oldDir, newDir, outDir, resourcesPath, options) => {
+    .action(async (oldDir, newDir, resourcesPath, options) => {
         try {
-            await buildSafePatch({
+            await processRulesets({
                 oldDir,
                 newDir,
-                outDir,
                 resourcesPath,
                 ...options,
             });

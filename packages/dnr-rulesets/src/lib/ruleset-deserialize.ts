@@ -7,23 +7,21 @@ import {
     RuleSet,
     RulesHashMap,
 } from '@adguard/tsurlfilter/es/declarative-converter';
+import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 import { promises as fs } from 'fs';
-import path from 'path';
 
 /**
- * Loads RuleSet and Filter from directory by id, similar to extension.
+ * Loads ruleset and filter from directory by id.
  *
- * @param dir Directory with ruleset and filter.
+ * @param rulesetPath Path to the ruleset.
  * @param id String id (e.g., '999').
  *
  * @returns Promise with loaded RuleSet and Filter.
  */
 export async function loadRuleSetAndFilterFromDir(
-    dir: string,
+    rulesetPath: string,
     id: string,
 ): Promise<{ ruleSet: RuleSet; filter: IFilter }> {
-    const rulesetPath = path.join(dir, `declarative/ruleset_${id}/ruleset_${id}.json`);
-
     const rulesetRaw = await fs.readFile(rulesetPath, 'utf8');
 
     // --- Extract metadata, lazyMetadata, and rules from ruleset JSON ---
@@ -48,7 +46,7 @@ export async function loadRuleSetAndFilterFromDir(
     );
 
     // --- Prepare RuleSet.deserialize dependencies ---
-    const ruleSetId = id;
+    const ruleSetId = getRuleSetId(id);
     const rawData = JSON.stringify(metadata);
     const loadLazyData = async () => JSON.stringify(lazyMetadata);
     const loadDeclarativeRules = async () => JSON.stringify(parsedRuleSet.slice(1));
@@ -62,8 +60,6 @@ export async function loadRuleSetAndFilterFromDir(
             rulesCount,
             ruleSetHashMapRaw,
             badFilterRulesRaw,
-            // disableUnsafeRulesIds,
-            // addUnsafeRules,
         },
         ruleSetContentProvider,
     } = await RuleSet.deserialize(
@@ -88,8 +84,6 @@ export async function loadRuleSetAndFilterFromDir(
         ruleSetContentProvider,
         badFilterRules,
         ruleSetHashMap,
-        // disableUnsafeRulesIds,
-        // addUnsafeRules,
     );
 
     return { ruleSet, filter };
