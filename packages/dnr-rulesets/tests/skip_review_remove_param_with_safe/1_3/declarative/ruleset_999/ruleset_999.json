@@ -1,0 +1,104 @@
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "dummy.rule.adguard.com",
+			"resourceTypes": [
+				"xmlhttprequest"
+			]
+		},
+		"metadata": {
+			"metadata": {
+				"regexpRulesCount": 0,
+				"unsafeRulesCount": 0,
+				"rulesCount": 5,
+				"disableUnsafeRulesIds": [
+					206262349
+				],
+				"addUnsafeRules": [
+					"||google.com$removeparam=param1",
+					"||google.com$removeparam=param3",
+					"||youtube.com$removeparam=param5"
+				],
+				"ruleSetHashMapRaw": "[[3904357177,[[999,4]]],[625118499,[[999,26],[999,97],[999,168]]],[3904343938,[[999,75]]],[3904363804,[[999,146]]],[2305523599,[[999,251]]]]",
+				"badFilterRulesRaw": []
+			},
+			"lazyMetadata": {
+				"sourceMapRaw": "[[1756873529,4,999],[1756860290,75,999],[1756880156,146,999],[158039951,251,999],[206262349,26,999],[206262349,97,999],[206262349,168,999]]",
+				"filterIds": [
+					999
+				]
+			},
+			"conversionMap": {},
+			"rawFilterList": "example.org\n||google.com$removeparam=param1\nexample.com\n||google.com$removeparam=param2\nexample.net\n||google.com$removeparam=param3\n// --- Safety patch ---\nyoutube.com"
+		}
+	},
+	{
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "example.org"
+		},
+		"id": 1756873529,
+		"priority": 1
+	},
+	{
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "example.com"
+		},
+		"id": 1756860290,
+		"priority": 1
+	},
+	{
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "example.net"
+		},
+		"id": 1756880156,
+		"priority": 1
+	},
+	{
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "youtube.com"
+		},
+		"id": 158039951,
+		"priority": 1
+	},
+	{
+		"action": {
+			"redirect": {
+				"transform": {
+					"queryTransform": {
+						"removeParams": [
+							"param1",
+							"param2",
+							"param3"
+						]
+					}
+				}
+			},
+			"type": "redirect"
+		},
+		"condition": {
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame"
+			],
+			"urlFilter": "||google.com"
+		},
+		"id": 206262349,
+		"priority": 1
+	}
+]

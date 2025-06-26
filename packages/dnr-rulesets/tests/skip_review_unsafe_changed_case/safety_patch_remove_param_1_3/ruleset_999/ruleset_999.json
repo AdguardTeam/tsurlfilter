@@ -1,0 +1,73 @@
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "dummy.rule.adguard.com",
+			"resourceTypes": [
+				"xmlhttprequest"
+			]
+		},
+		"metadata": {
+			"metadata": {
+				"regexpRulesCount": 0,
+				"unsafeRulesCount": 0,
+				"rulesCount": 3,
+				"ruleSetHashMapRaw": "[[3904357177,[[999,4]]],[889265644,[[999,26]]],[3904343938,[[999,86]]]]",
+				"badFilterRulesRaw": [],
+				"disableUnsafeRulesIds": [
+					1337038616
+				],
+				"addUnsafeRules": [
+					"||example.com/ad3.js$script,redirect=noopjs"
+				]
+			},
+			"lazyMetadata": {
+				"sourceMapRaw": "[[1756873529,4,999],[1999455787,26,999],[1756860290,86,999]]",
+				"filterIds": [
+					999
+				]
+			},
+			"conversionMap": {},
+			"rawFilterList": "example.org\n||example.com/ad3.js$script,redirect=noopjs\nexample.com"
+		}
+	},
+	{
+		"id": 1756873529,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "example.org"
+		},
+		"priority": 1
+	},
+	{
+		"id": 1756860290,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "example.com"
+		},
+		"priority": 1
+	},
+	{
+		"action": {
+			"redirect": {
+				"extensionPath": "/web-accessible-resources/noopjs.js"
+			},
+			"type": "redirect"
+		},
+		"condition": {
+			"resourceTypes": [
+				"script"
+			],
+			"urlFilter": "||example.com/ad.js"
+		},
+		"id": 1337038616,
+		"priority": 1101
+	}
+]

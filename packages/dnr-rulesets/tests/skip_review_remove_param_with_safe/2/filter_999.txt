@@ -1,0 +1,7 @@
+example.org
+||google.com$removeparam=param1
+example.com
+||google.com$removeparam=param4
+||youtube.com$document
+example.net
+||google.com$removeparam=param3

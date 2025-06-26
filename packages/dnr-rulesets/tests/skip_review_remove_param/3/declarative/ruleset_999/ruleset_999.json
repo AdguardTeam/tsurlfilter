@@ -1,0 +1,108 @@
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "dummy.rule.adguard.com",
+			"resourceTypes": [
+				"xmlhttprequest"
+			]
+		},
+		"metadata": {
+			"metadata": {
+				"regexpRulesCount": 0,
+				"unsafeRulesCount": 0,
+				"rulesCount": 5,
+				"ruleSetHashMapRaw": "[[3904357177,[[999,4]]],[625118499,[[999,26],[999,169]]],[3904343938,[[999,75]]],[4228164367,[[999,97]]],[3904363804,[[999,147]]]]",
+				"badFilterRulesRaw": []
+			},
+			"lazyMetadata": {
+				"sourceMapRaw": "[[1756873529,4,999],[1756860290,75,999],[1756880156,147,999],[206262349,26,999],[206262349,169,999],[1366010341,97,999]]",
+				"filterIds": [
+					999
+				]
+			},
+			"conversionMap": {},
+			"rawFilterList": "example.org\n||google.com$removeparam=param1\nexample.com\n||youtube.com$removeparam=param5\nexample.net\n||google.com$removeparam=param3"
+		}
+	},
+	{
+		"id": 1756873529,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "example.org"
+		},
+		"priority": 1
+	},
+	{
+		"id": 1756860290,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "example.com"
+		},
+		"priority": 1
+	},
+	{
+		"id": 1756880156,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "example.net"
+		},
+		"priority": 1
+	},
+	{
+		"id": 206262349,
+		"action": {
+			"type": "redirect",
+			"redirect": {
+				"transform": {
+					"queryTransform": {
+						"removeParams": [
+							"param1",
+							"param3"
+						]
+					}
+				}
+			}
+		},
+		"condition": {
+			"urlFilter": "||google.com",
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame"
+			]
+		},
+		"priority": 1
+	},
+	{
+		"id": 1366010341,
+		"action": {
+			"type": "redirect",
+			"redirect": {
+				"transform": {
+					"queryTransform": {
+						"removeParams": [
+							"param5"
+						]
+					}
+				}
+			}
+		},
+		"condition": {
+			"urlFilter": "||youtube.com",
+			"resourceTypes": [
+				"main_frame",
+				"sub_frame"
+			]
+		},
+		"priority": 1
+	}
+]

@@ -1,0 +1,10 @@
+{
+  "disableUnsafeRulesIds": [
+    206262349
+  ],
+  "addUnsafeRules": [
+    "||google.com$removeparam=param1",
+    "||google.com$removeparam=param3",
+    "||youtube.com$removeparam=param5"
+  ]
+}

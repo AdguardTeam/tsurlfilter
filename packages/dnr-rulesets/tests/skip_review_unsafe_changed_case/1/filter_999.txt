@@ -1,0 +1,3 @@
+example.org
+||example.com/ad.js$script,redirect=noopjs
+example.com

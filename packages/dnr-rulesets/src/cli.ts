@@ -66,17 +66,20 @@ program
 program
     .command('build-safe-patch')
     .description('Compare two ruleset folders and create a safety patch for skip-review')
-    .argument('<old_dir>', 'Path to old ruleset folder')
-    .argument('<new_dir>', 'Path to new ruleset folder')
-    .argument('<out_dir>', 'Output dir for patches')
+    .argument('<old-dir>', 'Path to old ruleset folder')
+    .argument('<new-dir>', 'Path to new ruleset folder')
+    .argument('<out-dir>', 'Output dir for patches')
+    // eslint-disable-next-line max-len
+    .argument('<path-to-resources>', 'Folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)')
     // parseBool is needed since commander.js treats boolean options as strings
     .option('--prettify-json <bool>', 'Prettify JSON output', parseBool, true)
-    .action(async (oldDir, newDir, outDir, options) => {
+    .action(async (oldDir, newDir, outDir, resourcesPath, options) => {
         try {
             await buildSafePatch({
                 oldDir,
                 newDir,
                 outDir,
+                resourcesPath,
                 ...options,
             });
         } catch (e) {

@@ -145,7 +145,8 @@ export interface IRuleSet {
 
     /**
      * Serializes rule set to primitives values with lazy load.
-     * FIXME: Delete method as unused.
+     *
+     * FIXME: Replace this method with `serializeCompact` method.
      *
      * @returns Serialized rule set.
      *
@@ -167,8 +168,7 @@ export interface IRuleSet {
      */
     serializeCompact(
         prettyPrint?: boolean,
-        // safetyPatch?: SafetyPatch,
-        // extraDnrRules?: DeclarativeRule[],
+        safetyPatch?: SafetyPatch,
     ): Promise<string>;
 }
 
@@ -685,18 +685,18 @@ export class RuleSet implements IRuleSet {
      *
      * @returns Serialized rule set data.
      */
-    private getSerializedRuleSetData(): SerializedRuleSetData {
-        // const {
-        //     disableUnsafeRulesIds = [],
-        //     addUnsafeRules = [],
-        // } = safetyPatch || {};
+    private getSerializedRuleSetData(safetyPatch?: SafetyPatch): SerializedRuleSetData {
+        const {
+            disableUnsafeRulesIds = [],
+            addUnsafeRules = [],
+        } = safetyPatch || {};
 
         return {
             regexpRulesCount: this.regexpRulesCount,
             unsafeRulesCount: this.unsafeRulesCount,
             rulesCount: this.rulesCount,
-            // disableUnsafeRulesIds,
-            // addUnsafeRules,
+            disableUnsafeRulesIds,
+            addUnsafeRules,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
             badFilterRulesRaw: this.badFilterRules.map((r) => RuleGenerator.generate(r.rule.node)),
         };
@@ -737,9 +737,7 @@ export class RuleSet implements IRuleSet {
     /** @inheritdoc */
     public async serializeCompact(
         prettyPrint = true,
-        // safetyPatch?: SafetyPatch,
-        // addDnrRules?: DeclarativeRule[],
-        // excludeDnrRules?: DeclarativeRule[],
+        safetyPatch?: SafetyPatch,
     ): Promise<string> {
         try {
             await this.loadContent();
@@ -756,7 +754,7 @@ export class RuleSet implements IRuleSet {
         const content = await filter.getContent();
 
         const metadataRule = createMetadataRule({
-            metadata: this.getSerializedRuleSetData(),
+            metadata: this.getSerializedRuleSetData(safetyPatch),
             lazyMetadata: this.getSerializedRuleSetLazyData(),
             conversionMap: content.conversionMap,
             rawFilterList: content.rawFilterList,
@@ -765,12 +763,6 @@ export class RuleSet implements IRuleSet {
         const declarativeRules = await this.getDeclarativeRules();
 
         declarativeRules.unshift(metadataRule);
-
-        // declarativeRules.push(...(addDnrRules || []));
-
-        // const excludedDnrIds =
-
-        // declarativeRules = declarativeRules.filter((r) => !excludeDnrRules?.includes(r));
 
         const result = serializeJson(declarativeRules, prettyPrint);
 

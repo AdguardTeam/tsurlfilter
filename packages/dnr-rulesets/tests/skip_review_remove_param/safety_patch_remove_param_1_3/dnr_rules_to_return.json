@@ -1,0 +1,27 @@
+[
+  {
+    "action": {
+      "redirect": {
+        "transform": {
+          "queryTransform": {
+            "removeParams": [
+              "param1",
+              "param2",
+              "param3"
+            ]
+          }
+        }
+      },
+      "type": "redirect"
+    },
+    "condition": {
+      "resourceTypes": [
+        "main_frame",
+        "sub_frame"
+      ],
+      "urlFilter": "||google.com"
+    },
+    "id": 206262349,
+    "priority": 1
+  }
+]

@@ -1,0 +1,8 @@
+example.org
+||google.com$removeparam=param1
+example.com
+||google.com$removeparam=param2
+example.net
+||google.com$removeparam=param3
+// --- Safety patch ---
+||youtube.com$document
