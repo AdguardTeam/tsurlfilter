@@ -22,7 +22,7 @@ export class ManifestPatcher {
     /**
      * Default glob patter to match filter files.
      */
-    private static readonly DEFAULT_FILTERS_MATCH_GLOB = 'filter_+([0-9]).txt';
+    public static readonly DEFAULT_FILTERS_MATCH_GLOB = 'filter_+([0-9]).txt';
 
     /**
      * Create new instance of {@link ManifestPatcher}.
