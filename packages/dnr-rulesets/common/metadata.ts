@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+
 import axios from 'axios';
 
 import { FILTERS_METADATA_I18N_URL, FILTERS_METADATA_URL } from './constants';
@@ -46,19 +48,45 @@ export type Metadata = {
 /**
  * Download metadata from {@link FILTERS_METADATA_URL}.
  *
+ * @param pathToSave Path to save metadata file.
+ *
  * @returns Filter metadata.
  */
-export async function getMetadata(): Promise<Metadata> {
-    const res = await axios.get<Metadata>(FILTERS_METADATA_URL);
-    return res.data;
+export async function downloadMetadata(pathToSave?: string): Promise<Metadata> {
+    console.info(`Download ${FILTERS_METADATA_URL}...`);
+
+    const { data } = await axios.get<Metadata>(FILTERS_METADATA_URL, { responseType: 'json' });
+
+    if (pathToSave) {
+        await fs.promises.writeFile(
+            pathToSave,
+            JSON.stringify(data, null, '\t'),
+        );
+
+        console.info(`Download ${FILTERS_METADATA_URL} done, saved to ${pathToSave}`);
+    }
+
+    return data;
 }
 
 /**
  * Download i18n metadata from {@link FILTERS_METADATA_I18N_URL}.
  *
+ * @param pathToSave Path to save i18n metadata file.
+ *
  * @returns I18n Filter metadata.
  */
-export async function getI18nMetadata(): Promise<unknown> {
-    const res = await axios.get(FILTERS_METADATA_I18N_URL);
-    return res.data;
+export async function downloadI18nMetadata(pathToSave: string): Promise<unknown> {
+    console.info(`Download ${FILTERS_METADATA_I18N_URL}...`);
+
+    const { data } = await axios.get(FILTERS_METADATA_I18N_URL);
+
+    await fs.promises.writeFile(
+        pathToSave,
+        JSON.stringify(data, null, '\t'),
+    );
+
+    console.info(`Download ${FILTERS_METADATA_I18N_URL} done, saved to ${pathToSave}`);
+
+    return data;
 }

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Network rules with $important modifier are applied even if protection is disabled [AdGuardBrowserExtension#3227].
+- CLI was not worked since switch to ESM builds.
 
 [AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
 
@@ -27,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Extension blocking page support for requests blocked by `$document` rules in MV3.
-- `filterId` query param to `documentBlockingPageUrl` for both MV2 and MV3.
+- `filterId` query param to `documentBlockingPageUrl` for both MV2 and MV3 [#35].
 - Support for Chrome's User Scripts API that allows more reliable script
   injection in MV3 if developer mode is enabled.
 - Static getter `isUserScriptsApiSupported` to check if the current browser
@@ -51,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow to specify attributes without value in selector for HTML filtering rules [#147].
 
 [3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.0
+[#35]: https://github.com/AdguardTeam/tsurlfilter/issues/35
 [#147]: https://github.com/AdguardTeam/tsurlfilter/issues/147
 [AdguardBrowserExtension#2646]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2646
 [AdguardBrowserExtension#2826]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2826

@@ -92,25 +92,25 @@ export class RulesetsInjector implements RulesetsInjectorInterface {
         const ruleResources = manifest.declarative_net_request.rule_resources;
 
         for (const filterName of filterNames) {
-            const rulesetIndexMatch = filterName.match(/\d+/);
+            const rulesetIdMatch = filterName.match(/\d+/);
 
-            if (!rulesetIndexMatch) {
+            if (!rulesetIdMatch) {
                 continue;
             }
 
-            const rulesetIndex = rulesetIndexMatch[0];
+            const matchedRulesetId = rulesetIdMatch[0];
 
             if (Array.isArray(options?.ids)
                 && options.ids.length > 0
-                && !options.ids.includes(rulesetIndex)) {
+                && !options.ids.includes(matchedRulesetId)) {
                 continue;
             }
 
-            const rulesetId = `${options?.rulesetPrefix ?? RulesetsInjector.DEFAULT_RULESET_PREFIX}${rulesetIndex}`;
+            const rulesetId = `${options?.rulesetPrefix ?? RulesetsInjector.DEFAULT_RULESET_PREFIX}${matchedRulesetId}`;
 
             const isEnabled = Array.isArray(options?.enable)
                 && options.enable.length > 0
-                && options.enable.includes(rulesetIndex);
+                && options.enable.includes(matchedRulesetId);
 
             const ruleset = {
                 id: rulesetId,
