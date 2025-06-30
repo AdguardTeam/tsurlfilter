@@ -5,11 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [3.2.2] - 2025-06-30
+
+### Changed
+
+- Updated [@adguard/assistant] to `v4.3.74`.
 
 ### Fixed
 
 - CLI was not worked since switch to ESM builds.
+
+[3.2.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.2
 
 ## [3.2.1] - 2025-06-11
 
@@ -1446,5 +1452,6 @@ its setting [AdguardBrowserExtension#2584].
 [@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/tsurlfilter]: ../tsurlfilter/CHANGELOG.md
 
+[@adguard/assistant]: https://github.com/AdguardTeam/AdguardAssistant/blob/master/CHANGELOG.md
 [@adguard/extended-css]: https://github.com/AdguardTeam/ExtendedCss/blob/master/CHANGELOG.md
 [@adguard/scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/CHANGELOG.md
