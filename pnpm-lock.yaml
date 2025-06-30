@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@adguard/assistant':
+      specifier: ^4.3.74
+      version: 4.3.74
     '@adguard/scriptlets':
       specifier: ^2.2.7
       version: 2.2.7
@@ -21,24 +24,48 @@ catalogs:
     '@rollup/plugin-node-resolve':
       specifier: ^15.3.0
       version: 15.3.1
+    '@rollup/plugin-swc':
+      specifier: ^0.4.0
+      version: 0.4.0
     '@rollup/plugin-terser':
       specifier: ^0.4.4
       version: 0.4.4
     '@rollup/plugin-typescript':
       specifier: ^12.1.1
       version: 12.1.2
+    '@swc-node/register':
+      specifier: ^1.10.9
+      version: 1.10.10
     '@swc/core':
       specifier: ^1.10.18
       version: 1.11.18
+    '@types/archiver':
+      specifier: ^6.0.2
+      version: 6.0.3
+    '@types/benchmark':
+      specifier: ^2.1.5
+      version: 2.1.5
     '@types/chrome':
       specifier: ^0.0.305
       version: 0.0.305
+    '@types/fs-extra':
+      specifier: ^11.0.4
+      version: 11.0.4
     '@types/lodash-es':
       specifier: ^4.17.12
       version: 4.17.12
     '@types/node':
       specifier: ^22.14.0
       version: 22.14.0
+    '@types/react':
+      specifier: ^17.0.80
+      version: 17.0.85
+    '@types/react-dom':
+      specifier: ^17.0.25
+      version: 17.0.26
+    '@types/webextension-polyfill':
+      specifier: ^0.12.1
+      version: 0.12.1
     '@typescript-eslint/eslint-plugin':
       specifier: ^7.5.0
       version: 7.18.0
@@ -51,15 +78,48 @@ catalogs:
     '@vitest/expect':
       specifier: 2.1.9
       version: 2.1.9
+    archiver:
+      specifier: ^7.0.1
+      version: 7.0.1
+    axios:
+      specifier: ^1.7.2
+      version: 1.8.4
+    benchmark:
+      specifier: ^2.1.4
+      version: 2.1.4
+    bowser:
+      specifier: 2.11.0
+      version: 2.11.0
+    chalk:
+      specifier: 4.1.2
+      version: 4.1.2
+    clean-webpack-plugin:
+      specifier: ^4.0.0
+      version: 4.0.0
     commander:
       specifier: ^12.1.0
       version: 12.1.0
+    copy-webpack-plugin:
+      specifier: ^10.0.0
+      version: 10.2.4
+    core-js:
+      specifier: ^3.33.3
+      version: 3.41.0
     coveralls:
       specifier: 3.1.1
       version: 3.1.1
     cross-env:
       specifier: ^7.0.3
       version: 7.0.3
+    crypto-browserify:
+      specifier: ^3.12.0
+      version: 3.12.1
+    css-loader:
+      specifier: ^6.7.1
+      version: 6.11.0
+    date-fns:
+      specifier: ^4.1.0
+      version: 4.1.0
     esbuild:
       specifier: ^0.19.12
       version: 0.19.12
@@ -81,6 +141,18 @@ catalogs:
     eslint-plugin-jsdoc:
       specifier: ^48.11.0
       version: 48.11.0
+    eslint-webpack-plugin:
+      specifier: ^3.2.0
+      version: 3.2.0
+    fs-extra:
+      specifier: ^11.2.0
+      version: 11.3.0
+    html-webpack-plugin:
+      specifier: ^5.5.0
+      version: 5.6.3
+    husky:
+      specifier: ^9.1.7
+      version: 9.1.7
     is-ip:
       specifier: 3.1.0
       version: 3.1.0
@@ -93,6 +165,30 @@ catalogs:
     lru-cache:
       specifier: ^11.0.2
       version: 11.1.0
+    markdown-table:
+      specifier: ^3.0.3
+      version: 3.0.4
+    markdownlint:
+      specifier: ^0.37.4
+      version: 0.37.4
+    markdownlint-cli:
+      specifier: ^0.44.0
+      version: 0.44.0
+    node-fetch:
+      specifier: ^3.3.2
+      version: 3.3.2
+    os-name:
+      specifier: ^6.0.0
+      version: 6.0.0
+    playwright:
+      specifier: ^1.52.0
+      version: 1.52.0
+    react:
+      specifier: ^17.0.2
+      version: 17.0.2
+    react-dom:
+      specifier: ^17.0.2
+      version: 17.0.2
     rimraf:
       specifier: ^6.0.1
       version: 6.0.1
@@ -102,9 +198,27 @@ catalogs:
     rollup-plugin-cleanup:
       specifier: ^3.2.1
       version: 3.2.1
+    rollup-plugin-dts:
+      specifier: ^6.0.2
+      version: 6.2.1
     rollup-plugin-node-externals:
       specifier: ^8.0.0
       version: 8.0.0
+    stream-browserify:
+      specifier: ^3.0.0
+      version: 3.0.0
+    style-loader:
+      specifier: ^3.3.1
+      version: 3.3.4
+    swc-loader:
+      specifier: ^0.2.3
+      version: 0.2.6
+    systeminformation:
+      specifier: ^5.22.0
+      version: 5.25.11
+    terser:
+      specifier: ^5.21.0
+      version: 5.39.0
     tldts:
       specifier: ^5.7.112
       version: 5.7.112
@@ -126,9 +240,22 @@ catalogs:
     vitest:
       specifier: ^2.1.9
       version: 2.1.9
+    vm-browserify:
+      specifier: ^1.1.2
+      version: 1.1.2
+    webextension-polyfill:
+      specifier: 0.12.0
+      version: 0.12.0
+    webpack:
+      specifier: ^5.64.2
+      version: 5.98.0
     zod:
       specifier: 3.24.4
       version: 3.24.4
+  eslint9:
+    eslint:
+      specifier: ^9.8.0
+      version: 9.24.0
 
 overrides:
   '@adguard/agtree': workspace:^
@@ -154,7 +281,7 @@ importers:
     dependencies:
       '@adguard/assistant':
         specifier: 'catalog:'
-        version: 4.3.70
+        version: 4.3.74
       '@adguard/filters-downloader':
         specifier: ^2.2.6
         version: 2.4.0
@@ -1594,7 +1721,7 @@ importers:
         version: link:../agtree
       '@adguard/assistant':
         specifier: 'catalog:'
-        version: 4.3.70
+        version: 4.3.74
       '@adguard/extended-css':
         specifier: ^2.1.1
         version: 2.1.1
@@ -1785,8 +1912,8 @@ packages:
     resolution: {integrity: sha512-S1bV5QIja38Ndc6cHzASeV2Gm4qh+aPwRlm9T3wODNfLkFrjD2HgIG3h3alkxz9YLBzbprGc2qq12ds5QK6+NQ==}
     engines: {node: '>=22'}
 
-  '@adguard/assistant@4.3.70':
-    resolution: {integrity: sha512-q5o4ejQgRQMFbtV49X1ark0Ytb+MP/3vC9XErHqAcvh6wHpN/Hm2Q1+jbhiHHIs/H2rCU20TyVwZlGs0xtQ60w==}
+  '@adguard/assistant@4.3.74':
+    resolution: {integrity: sha512-Cf9FhfIbzzN6+y6wjpuccENcohUlYo1I4QVXyw0iafJydljpKz7l2nE/XlSU79nESEZeWnX0BVqY6wLkItcGUg==}
 
   '@adguard/css-tokenizer@1.2.0':
     resolution: {integrity: sha512-cUj5j/AU5z/T4//5M6KnIJBpykAY4QbDsoiQ2DaWX/r2XkepMkTb8DhIbUHJD/QLGEyLeQLpi+nlxAgf4NTRRQ==}
@@ -9518,7 +9645,7 @@ snapshots:
       xregexp: 5.1.2
       zod: 3.21.4
 
-  '@adguard/assistant@4.3.70': {}
+  '@adguard/assistant@4.3.74': {}
 
   '@adguard/css-tokenizer@1.2.0': {}
 
