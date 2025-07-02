@@ -5,20 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.2.2] - 2025-06-30
-
-### Changed
-
-- Updated [@adguard/assistant] to `v4.3.74`.
+## [3.2.3] - 2025-07-02
 
 ### Added
 
 - Using unsafe rules from rulesets metadata in MV3 to allow "skip review"
   feature in CWS.
 
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.4.1`.
+
 ### Fixed
 
 - CLI was not worked since switch to ESM builds.
+
+[3.2.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.3
+
+## [3.2.2] - 2025-06-30
+
+### Changed
+
+- Updated [@adguard/assistant] to `v4.3.74`.
 
 [3.2.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.2
 
