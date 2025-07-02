@@ -6,6 +6,7 @@ import {
     BASE_DIR,
     DEST_RULESETS_DIR,
     FILTERS_DIR,
+    LOCAL_METADATA_FILE_NAME,
     RESOURCES_DIR,
 } from '../common/constants';
 import { startDownload } from '../common/filters-downloader';
@@ -41,6 +42,21 @@ const removeTxtFiles = async (dir: string): Promise<void> => {
 };
 
 /**
+ * Removes filters metadata file from the specified directory.
+ * This file is generated during the conversion process and is not needed
+ * after that.
+ *
+ * @param dir Directory where the filters metadata file is located.
+ */
+const removeFiltersMetadata = async (dir: string): Promise<void> => {
+    const filtersMetadataPath = path.join(dir, LOCAL_METADATA_FILE_NAME);
+
+    if (fs.existsSync(filtersMetadataPath)) {
+        await fs.promises.unlink(filtersMetadataPath);
+    }
+};
+
+/**
  * Compiles rules to declarative json
  * Actually for each rule set entry in manifest's declarative_net_request:
  *
@@ -69,6 +85,10 @@ const build = async (): Promise<void> => {
     );
 
     await removeTxtFiles(FILTERS_DIR);
+
+    // After single conversion, do not forget to remove filters.json file,
+    // since it is packed inside metadata ruleset.
+    await removeFiltersMetadata(FILTERS_DIR);
 
     await createVersionTxt();
 };
