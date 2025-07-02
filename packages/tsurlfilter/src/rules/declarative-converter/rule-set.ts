@@ -112,6 +112,11 @@ export interface IRuleSet {
     getDeclarativeRules(): Promise<DeclarativeRule[]>;
 
     /**
+     * Contains unsafe declarative rules which is separate from ruleset.
+     */
+    getUnsafeRules(): Promise<DeclarativeRule[]>;
+
+    /**
      * Unload ruleset content.
      * This method can be used to free memory until the content is needed again.
      */
@@ -119,6 +124,11 @@ export interface IRuleSet {
 
     /**
      * Serializes rule set to primitives values with lazy load.
+     *
+     * TODO: Replace this method with `serializeCompact` method, because this
+     * one is not used in the codebase.
+     *
+     * @deprecated
      *
      * @returns Serialized rule set.
      *
@@ -131,12 +141,20 @@ export interface IRuleSet {
      * Serializes rule set to a single file.
      *
      * @param prettyPrint Whether to pretty print the output. Default is `true`.
+     * @param unsafeRules Optional list of unsafe rules to add to the serialized
+     * output. If this parameter is provided, number of unsafe rules will be
+     * excluded from the counter of declarative rules in the serialized metadata.
      *
      * @returns Serialized rule set.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
+     * @throws Error if counter of unsafe rules is not equal to the length of
+     * the provided `unsafeRules` array.
      */
-    serializeCompact(prettyPrint?: boolean): Promise<string>;
+    serializeCompact(
+        prettyPrint?: boolean,
+        unsafeRules?: DeclarativeRule[],
+    ): Promise<string>;
 }
 
 /**
@@ -157,10 +175,11 @@ export type SerializedRuleSetLazyData = zod.infer<typeof serializedRuleSetLazyDa
 
 const serializedRuleSetDataValidator = zod.strictObject({
     regexpRulesCount: zod.number(),
-    unsafeRulesCount: zod.number().optional(),
+    unsafeRulesCount: zod.number(),
     rulesCount: zod.number(),
     ruleSetHashMapRaw: zod.string(),
     badFilterRulesRaw: zod.string().array(),
+    unsafeRules: DeclarativeRuleValidator.array().optional(),
 });
 
 export type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
@@ -173,10 +192,12 @@ export type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValida
  */
 export type SerializedRuleSet = {
     id: string;
+
     /**
      * Metadata needed for instant creating ruleset.
      */
     data: string;
+
     /**
      * Metadata needed for lazy load some data to ruleset to find and show
      * source rules when declarative filtering log is enabled.
@@ -189,10 +210,12 @@ export type SerializedRuleSet = {
  */
 export type DeserializedRuleSet = {
     id: string;
+
     /**
      * Metadata needed for instant creating ruleset.
      */
     data: SerializedRuleSetData;
+
     /**
      * Metadata needed for lazy load some data to ruleset to find and show
      * source rules when declarative filtering log is enabled.
@@ -226,6 +249,17 @@ export class RuleSet implements IRuleSet {
      * Converted declarative unsafe rules.
      */
     private readonly unsafeRulesCount: number = 0;
+
+    /**
+     * Array with unsafe declarative rules, which can be optionally provided
+     * when creating a ruleset.
+     *
+     * This can be used to store unsafe rules inside metadata rule to use
+     * "skip review" feature in CWS.
+     *
+     * {@link https://developer.chrome.com/docs/webstore/skip-review/}.
+     */
+    private readonly unsafeRules: DeclarativeRule[] = [];
 
     /**
      * Converted declarative regexp rules.
@@ -282,6 +316,7 @@ export class RuleSet implements IRuleSet {
      * @param ruleSetContentProvider Rule set content provider.
      * @param badFilterRules List of rules with $badfilter modifier.
      * @param rulesHashMap Dictionary with hashes for all source rules.
+     * @param unsafeRules List of unsafe DNR rules.
      */
     constructor(
         id: string,
@@ -291,6 +326,7 @@ export class RuleSet implements IRuleSet {
         ruleSetContentProvider: RuleSetContentProvider,
         badFilterRules: IndexedNetworkRuleWithHash[],
         rulesHashMap: IRulesHashMap,
+        unsafeRules: DeclarativeRule[] = [],
     ) {
         this.id = id;
         this.rulesCount = rulesCount;
@@ -299,6 +335,12 @@ export class RuleSet implements IRuleSet {
         this.ruleSetContentProvider = ruleSetContentProvider;
         this.badFilterRules = badFilterRules;
         this.rulesHashMap = rulesHashMap;
+        this.unsafeRules = unsafeRules;
+    }
+
+    /** @inheritdoc */
+    getUnsafeRules(): Promise<DeclarativeRule[]> {
+        return Promise.resolve(this.unsafeRules);
     }
 
     /** @inheritdoc */
@@ -610,15 +652,21 @@ export class RuleSet implements IRuleSet {
     /**
      * Helper method to get serialized rule set data.
      *
+     * @param unsafeRules Optional list of unsafe rules to add to the serialized
+     * output.
+     *
      * @returns Serialized rule set data.
      */
-    private getSerializedRuleSetData(): SerializedRuleSetData {
+    private getSerializedRuleSetData(unsafeRules: DeclarativeRule[] = []): SerializedRuleSetData {
         return {
             regexpRulesCount: this.regexpRulesCount,
             unsafeRulesCount: this.unsafeRulesCount,
-            rulesCount: this.rulesCount,
+            // If unsaferRules is provided, we should not count them in
+            // the rules count, since they are moved to the metadata rule.
+            rulesCount: this.rulesCount - unsafeRules.length,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
             badFilterRulesRaw: this.badFilterRules.map((r) => RuleGenerator.generate(r.rule.node)),
+            unsafeRules,
         };
     }
 
@@ -655,7 +703,10 @@ export class RuleSet implements IRuleSet {
     }
 
     /** @inheritdoc */
-    public async serializeCompact(prettyPrint = true): Promise<string> {
+    public async serializeCompact(
+        prettyPrint = true,
+        unsafeRules: DeclarativeRule[] = [],
+    ): Promise<string> {
         try {
             await this.loadContent();
         } catch (e) {
@@ -670,16 +721,29 @@ export class RuleSet implements IRuleSet {
         const filter = this.filterList.values().next().value!;
         const content = await filter.getContent();
 
+        if (unsafeRules.length > 0 && unsafeRules.length !== this.unsafeRulesCount) {
+            const id = this.getId();
+            // eslint-disable-next-line max-len
+            const msg = `Unsafe rules count is not equal to the length of provided unsafe rules array in rule set '${id}'`;
+            throw new Error(msg);
+        }
+
         const metadataRule = createMetadataRule({
-            metadata: this.getSerializedRuleSetData(),
+            metadata: this.getSerializedRuleSetData(unsafeRules),
             lazyMetadata: this.getSerializedRuleSetLazyData(),
             conversionMap: content.conversionMap,
             rawFilterList: content.rawFilterList,
         });
 
-        const declarativeRules = await this.getDeclarativeRules();
+        let declarativeRules = await this.getDeclarativeRules();
 
         declarativeRules.unshift(metadataRule);
+
+        const unsafeRulesIds = new Set(unsafeRules.map((rule) => rule.id));
+
+        declarativeRules = declarativeRules.filter((rule) => {
+            return !unsafeRulesIds.has(rule.id);
+        });
 
         const result = serializeJson(declarativeRules, prettyPrint);
 

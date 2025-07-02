@@ -906,9 +906,21 @@ importers:
 
   packages/dnr-rulesets:
     dependencies:
+      '@adguard/agtree':
+        specifier: workspace:^
+        version: link:../agtree
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
+      '@adguard/re2-wasm':
+        specifier: 1.2.0
+        version: 1.2.0
+      '@adguard/tsurlfilter':
+        specifier: workspace:^
+        version: link:../tsurlfilter
+      axios:
+        specifier: 'catalog:'
+        version: 1.8.4
       chokidar:
         specifier: ^4.0.3
         version: 4.0.3
@@ -925,12 +937,6 @@ importers:
         specifier: 'catalog:'
         version: 3.24.4
     devDependencies:
-      '@adguard/re2-wasm':
-        specifier: 1.2.0
-        version: 1.2.0
-      '@adguard/tsurlfilter':
-        specifier: workspace:^
-        version: link:../tsurlfilter
       '@eslint/js':
         specifier: ^9.8.0
         version: 9.24.0
@@ -967,9 +973,6 @@ importers:
       '@vitest/coverage-v8':
         specifier: 'catalog:'
         version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
-      axios:
-        specifier: 'catalog:'
-        version: 1.8.4
       eslint:
         specifier: catalog:eslint9
         version: 9.24.0

@@ -394,6 +394,7 @@ export class RuleSetsLoaderApi {
                 regexpRulesCount,
                 unsafeRulesCount,
                 rulesCount,
+                unsafeRules,
                 ruleSetHashMapRaw,
                 badFilterRulesRaw,
             },
@@ -417,12 +418,12 @@ export class RuleSetsLoaderApi {
         const ruleset = new RuleSet(
             ruleSetId,
             rulesCount,
-            // it is ok to set 0 since this method is used for static rulesets where unsafe rules are not used
-            unsafeRulesCount || 0,
+            unsafeRulesCount,
             regexpRulesCount,
             ruleSetContentProvider,
             badFilterRules,
             ruleSetHashMap,
+            unsafeRules,
         );
 
         if (filterList.some((f) => f.getId() === ruleSetIdNumber)) {

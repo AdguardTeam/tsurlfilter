@@ -40,6 +40,7 @@ import { type StealthConfigurationResult, StealthService } from './services/stea
 import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
 import { UserScriptsApi } from './user-scripts-api';
+import { SessionRulesApi } from './session-rules-api';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
@@ -412,6 +413,11 @@ export class TsWebExtension implements AppInterface<
                 this.webAccessibleResourcesPath,
             );
 
+            await SessionRulesApi.updateSessionRules(
+                enabledStaticRuleSets,
+                res.dynamicRules.declarativeRulesToCancel,
+            );
+
             // Reload engine for cosmetic rules
             engineApi.waitingForEngine = engineApi.startEngine({
                 filters: [
@@ -423,7 +429,7 @@ export class TsWebExtension implements AppInterface<
             });
             await engineApi.waitingForEngine;
 
-            // TODO: Recreate only dynamic rule set, because static cannot be changed
+            // TODO: Recreate only dynamic ruleset, because static cannot be changed
             const ruleSets = [
                 ...staticRuleSets,
                 res.dynamicRules.ruleSet,

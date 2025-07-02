@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Possibility to exclude unsafe rules from rulesets and save them to the metadata of rulesets
+  for use "skip review" feature in CWS.
+
 ### Fixed
 
 - CLI was not worked since to ESM builds.
