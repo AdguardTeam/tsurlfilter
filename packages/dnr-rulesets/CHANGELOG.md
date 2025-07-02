@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ## Added
+
+- New `exclude-unsafe-rules` CLI command to exclude unsafe rules from rulesets
+  and save them to the metadata of rulesets for use "skip review" feature in CWS.
 - New `watch` command to watch for changes in the filters
   and automatically rebuild DNR.
 - New option `--latest-filters` for `load` command to load fresh text filters
