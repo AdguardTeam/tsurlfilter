@@ -1,0 +1,42 @@
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "dummy.rule.adguard.com",
+			"resourceTypes": [
+				"xmlhttprequest"
+			]
+		},
+		"metadata": {
+			"metadata": {
+				"regexpRulesCount": 0,
+				"unsafeRulesCount": 0,
+				"rulesCount": 1,
+				"ruleSetHashMapRaw": "[[3904343938,[[999,4]]]]",
+				"badFilterRulesRaw": [],
+				"unsafeRules": []
+			},
+			"lazyMetadata": {
+				"sourceMapRaw": "[[1756860290,4,999]]",
+				"filterIds": [
+					999
+				]
+			},
+			"conversionMap": {},
+			"rawFilterList": "example.com"
+		}
+	},
+	{
+		"id": 1756860290,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "example.com"
+		},
+		"priority": 1
+	}
+]

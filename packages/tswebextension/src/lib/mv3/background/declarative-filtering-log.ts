@@ -138,7 +138,11 @@ class DeclarativeFilteringLog {
 
         /**
          * Session rules are used for Tracking protection (formerly stealth mode)
-         * and the rules should not be logged as they are not logged for MV2 as well.
+         * with unsafe rules from static rulesets.
+         * Rules from Tracking protection should not be logged as they are not
+         * logged for MV2 as well.
+         *
+         * TODO: Add processing for unsafe rules from static rulesets.
          *
          * For more details see tswebextension/src/lib/mv3/background/services/stealth-service.ts.
          */

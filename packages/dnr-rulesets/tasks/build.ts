@@ -16,7 +16,7 @@ import { version } from '../package.json';
  *
  * @returns Promise that resolves when build.txt is created.
  */
-const createTxt = async (): Promise<void> => {
+const createVersionTxt = async (): Promise<void> => {
     return fs.promises.writeFile(
         path.join(BASE_DIR, 'build.txt'),
         `version=${version}`,
@@ -70,7 +70,7 @@ const build = async (): Promise<void> => {
 
     await removeTxtFiles(FILTERS_DIR);
 
-    await createTxt();
+    await createVersionTxt();
 };
 
 build();

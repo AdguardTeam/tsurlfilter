@@ -3,10 +3,10 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { ensureDirSync, findFiles } from './utils';
-import { RULESET_NAME_PREFIX } from '../src/common/constants';
-import { MetadataRuleSet } from '../src/rules/declarative-converter';
+import { METADATA_RULESET_ID, MetadataRuleSet } from '../src/rules/declarative-converter';
 import { LOCAL_METADATA_FILE_NAME } from './convertFilters';
 import { FilterListPreprocessor } from '../src/filterlist/preprocessor/preprocessor';
+import { extractRuleSetId, RULESET_FILE_EXT } from '../src/rules/declarative-converter-utils/rule-set-path';
 
 /**
  * Extractor class for extracting text filters from rulesets.
@@ -54,17 +54,20 @@ export class Extractor {
 
         const rulesetsPaths = await findFiles(
             rulesetsPath,
-            (filePath: string) => filePath.endsWith('.json'),
+            (filePath: string) => filePath.endsWith(RULESET_FILE_EXT),
         );
 
         for (const rulesetPath of rulesetsPaths) {
             const jsonFilePath = rulesetPath;
 
-            const basename = path.basename(jsonFilePath, '.json');
-            const filterId = basename.slice(RULESET_NAME_PREFIX.length);
-
             try {
-                if (filterId === '0') {
+                const filterId = extractRuleSetId(jsonFilePath);
+
+                if (filterId === null) {
+                    throw new Error(`Cannot extract ruleset id from ${jsonFilePath}`);
+                }
+
+                if (filterId === METADATA_RULESET_ID) {
                     await Extractor.extractMetadata(jsonFilePath, outputPath);
                     continue;
                 }

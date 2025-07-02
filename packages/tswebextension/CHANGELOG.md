@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated [@adguard/assistant] to `v4.3.74`.
 
+### Added
+
+- Using unsafe rules from rulesets metadata in MV3 to allow "skip review"
+  feature in CWS.
+
 ### Fixed
 
 - CLI was not worked since switch to ESM builds.

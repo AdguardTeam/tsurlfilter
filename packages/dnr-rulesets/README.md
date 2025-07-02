@@ -111,7 +111,7 @@ Downloads and saves DNR rulesets to the specified directory.
 dnr-rulesets load <path-to-output>
 ```
 
-Options for `load` command:
+**Options for `load` command:**
 
 - `-l, --latest-filters` - download latest text filters instead of DNR rulesets (default: false)
 
@@ -122,7 +122,7 @@ Patches the extension manifest to include DNR rulesets.
 dnr-rulesets manifest <path-to-manifest> <path-to-filters> [options]
 ```
 
-Options for `manifest` command:
+**Options for `manifest` command:**
 
 - `-f, --force-update` - force update rulesets with existing id (default: false)
 - `-i, --ids <ids...>` - filters ids to append, others will be ignored (default: [] - append all)
@@ -143,11 +143,11 @@ Watches for changes in the filter files and rebuilds DNR rulesets.
 dnr-rulesets watch <path-to-manifest> <path-to-resources> [options]
 ```
 
-Arguments:
+**Arguments:**
 - `<path-to-manifest>` - path to the manifest.json file
 - `<path-to-resources>` - folder with resources to build $redirect rules (can be obtained via `@adguard/tswebextension war` command)
 
-Options for `watch` command:
+**Options for `watch` command:**
 
 - `-p, --path-to-filters` - path to filters and i18n metadata file (default: `./filters` relative to manifest folder)
 - `-o, --output-path-for-rulesets` - output path for rulesets (default: `./filters/declarative` relative to manifest folder)
@@ -159,6 +159,28 @@ Options for `watch` command:
 - `-l, --latest-filters` - download latest text filters on first start before watch (default: false)
 - `-d, --debug` - enable extended logging during conversion (default: false)
 - `-j, --prettify-json` - prettify JSON output (default: true)
+
+### `exclude-unsafe-rules` command
+
+Scans rulesets in the specified directory, excludes unsafe rules, and saves
+excluded unsafe rules to the metadata files, and update rulesets checksums.
+
+```bash
+dnr-rulesets exclude-unsafe-rules <dir> [options]
+```
+
+**Arguments:**
+- `<dir>`: Path to the folder containing rulesets to process.
+
+**Options:**
+- `-j, --prettify-json <bool>`: Prettify JSON output (`true` or `false`, default: `true`)
+- `-l, --limit <number>`: Limit the number of unsafe rules to exclude. If the number of unsafe rules exceeds this limit, the command will throw an error.
+
+**Example:**
+```bash
+dnr-rulesets exclude-unsafe-rules ./filters/declarative --prettify-json false --limit 100
+```
+
 
 **Note about array options**: For options that accept multiple values (`ids` and `enable`), use please following syntax:
 
