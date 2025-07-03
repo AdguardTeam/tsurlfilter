@@ -169,10 +169,10 @@ branch-overrides:
         artifacts: *artifacts
         requirements: *requirements
 
-      # runs plan every 3 hours
+      # runs plan every 1 hour since our filters are updated every hour.
       triggers:
         - cron:
-            expression: 0 0 */3 * * ?
+            expression: 0 0 */1 * * ?
 
       branches: *branches
 
