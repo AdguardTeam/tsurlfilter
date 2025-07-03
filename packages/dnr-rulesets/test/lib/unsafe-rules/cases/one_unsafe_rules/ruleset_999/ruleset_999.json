@@ -16,8 +16,7 @@
 				"unsafeRulesCount": 1,
 				"rulesCount": 1,
 				"ruleSetHashMapRaw": "[[1718877695,[[999,4]]]]",
-				"badFilterRulesRaw": [],
-				"unsafeRules": []
+				"badFilterRulesRaw": []
 			},
 			"lazyMetadata": {
 				"sourceMapRaw": "[[428251515,4,999]]",

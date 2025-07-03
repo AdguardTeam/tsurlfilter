@@ -257,9 +257,13 @@ export class RuleSet implements IRuleSet {
      * This can be used to store unsafe rules inside metadata rule to use
      * "skip review" feature in CWS.
      *
+     * It's marked as optional to keep backward compatibility with old rulesets.
+     *
      * {@link https://developer.chrome.com/docs/webstore/skip-review/}.
+     *
+     * @todo TODO: Mark this field as required in the next major version.
      */
-    private readonly unsafeRules: DeclarativeRule[] = [];
+    private readonly unsafeRules?: DeclarativeRule[];
 
     /**
      * Converted declarative regexp rules.
@@ -326,7 +330,7 @@ export class RuleSet implements IRuleSet {
         ruleSetContentProvider: RuleSetContentProvider,
         badFilterRules: IndexedNetworkRuleWithHash[],
         rulesHashMap: IRulesHashMap,
-        unsafeRules: DeclarativeRule[] = [],
+        unsafeRules?: DeclarativeRule[],
     ) {
         this.id = id;
         this.rulesCount = rulesCount;
@@ -340,7 +344,7 @@ export class RuleSet implements IRuleSet {
 
     /** @inheritdoc */
     getUnsafeRules(): Promise<DeclarativeRule[]> {
-        return Promise.resolve(this.unsafeRules);
+        return Promise.resolve(this.unsafeRules || []);
     }
 
     /** @inheritdoc */
@@ -657,13 +661,19 @@ export class RuleSet implements IRuleSet {
      *
      * @returns Serialized rule set data.
      */
-    private getSerializedRuleSetData(unsafeRules: DeclarativeRule[] = []): SerializedRuleSetData {
+    private getSerializedRuleSetData(unsafeRules?: DeclarativeRule[]): SerializedRuleSetData {
+        let { rulesCount } = this;
+
+        // If unsaferRules is provided, we should not count them in
+        // the rules count, since they are moved to the metadata rule.
+        if (unsafeRules) {
+            rulesCount -= unsafeRules.length;
+        }
+
         return {
             regexpRulesCount: this.regexpRulesCount,
             unsafeRulesCount: this.unsafeRulesCount,
-            // If unsaferRules is provided, we should not count them in
-            // the rules count, since they are moved to the metadata rule.
-            rulesCount: this.rulesCount - unsafeRules.length,
+            rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
             badFilterRulesRaw: this.badFilterRules.map((r) => RuleGenerator.generate(r.rule.node)),
             unsafeRules,
@@ -705,7 +715,7 @@ export class RuleSet implements IRuleSet {
     /** @inheritdoc */
     public async serializeCompact(
         prettyPrint = true,
-        unsafeRules: DeclarativeRule[] = [],
+        unsafeRules?: DeclarativeRule[],
     ): Promise<string> {
         try {
             await this.loadContent();
@@ -721,7 +731,10 @@ export class RuleSet implements IRuleSet {
         const filter = this.filterList.values().next().value!;
         const content = await filter.getContent();
 
-        if (unsafeRules.length > 0 && unsafeRules.length !== this.unsafeRulesCount) {
+        // To ensure that unsafe rules are provided and their count is correct,
+        // we check if the length of the provided unsafe rules array is equal to
+        // the `unsafeRulesCount` property of the rule set.
+        if (unsafeRules && unsafeRules.length > 0 && unsafeRules.length !== this.unsafeRulesCount) {
             const id = this.getId();
             // eslint-disable-next-line max-len
             const msg = `Unsafe rules count is not equal to the length of provided unsafe rules array in rule set '${id}'`;
@@ -739,11 +752,14 @@ export class RuleSet implements IRuleSet {
 
         declarativeRules.unshift(metadataRule);
 
-        const unsafeRulesIds = new Set(unsafeRules.map((rule) => rule.id));
+        // Exclude unsafe rules from declarative rules if they are provided.
+        if (unsafeRules) {
+            const unsafeRulesIds = new Set(unsafeRules.map((rule) => rule.id));
 
-        declarativeRules = declarativeRules.filter((rule) => {
-            return !unsafeRulesIds.has(rule.id);
-        });
+            declarativeRules = declarativeRules.filter((rule) => {
+                return !unsafeRulesIds.has(rule.id);
+            });
+        }
 
         const result = serializeJson(declarativeRules, prettyPrint);
 
