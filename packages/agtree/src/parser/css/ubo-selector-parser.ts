@@ -211,7 +211,8 @@ const hasAnyUboModifier = (raw: string): boolean => {
     
     while (position < raw.length) {
         const colonIndex = raw.indexOf(COLON, position);
-        
+
+        // Find next colon
         if (colonIndex === -1) {
             break;
         }
@@ -220,12 +221,14 @@ const hasAnyUboModifier = (raw: string): boolean => {
         
         const openingParenthesisIndex = raw.indexOf(OPEN_PARENTHESIS, colonIndex + 1);
         
+        // If there is no opening parenthesis, then the selector doesn't contain any uBO modifier
         if (openingParenthesisIndex === -1) {
             continue;
         }
         
         const possibleModifier = raw.slice(colonIndex + 1, openingParenthesisIndex);
         
+        // Check if the modifier is a known uBO modifier
         if (KNOWN_UBO_MODIFIERS.has(possibleModifier)) {
             return true;
         }
