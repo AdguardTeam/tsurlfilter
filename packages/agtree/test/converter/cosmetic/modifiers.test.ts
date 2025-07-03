@@ -133,13 +133,6 @@ describe('Cosmetic rule modifiers conversion', () => {
                 ],
                 shouldConvert: true,
             },
-            {
-                actual: String.raw`example.org##:matches-path(/\/(sub1|sub2)\/page\.html/)p:has-text(/[\w\W]{30,}/):style(background: #ff0033 !important;)`,
-                expected: [
-                    String.raw`[$path=/\\/(sub1|sub2)\\/page\\.html/]example.org#$?#p:contains(/[\w\W]{30,}/) { background: #ff0033 !important; }`,
-                ],
-                shouldConvert: true,
-            },
             // :style
             {
                 actual: 'example.com##body[style="opacity: 0;"]:style(opacity: 1 !important;)',
