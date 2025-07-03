@@ -204,35 +204,27 @@ type StackedUboModifier = {
  * @returns `true` if the selector has any uBO modifier, `false` otherwise.
  */
 const hasAnyUboModifier = (raw: string): boolean => {
-    // in case there are several colons in the string,
-    // we need to check correctly that the parenthesis and the expression starts after the colon.
-    // so we move from the beginning of the string through the colons checking each one
-    let position = 0;
+    // Find the first colon
+    let colonIndex = raw.indexOf(COLON);
 
-    while (position < raw.length) {
-        const colonIndex = raw.indexOf(COLON, position);
-
-        // Find next colon
-        if (colonIndex === -1) {
-            break;
-        }
-
-        position = colonIndex + 1;
-
+    while (colonIndex !== -1) {
+        // Find next opening parenthesis
         const openingParenthesisIndex = raw.indexOf(OPEN_PARENTHESIS, colonIndex + 1);
 
         // If there is no opening parenthesis, then the selector doesn't contain any uBO modifier
         if (openingParenthesisIndex === -1) {
-            continue;
+            return false;
         }
-
-        const possibleModifier = raw.slice(colonIndex + 1, openingParenthesisIndex);
 
         // Check if the modifier is a known uBO modifier
-        if (KNOWN_UBO_MODIFIERS.has(possibleModifier)) {
+        if (KNOWN_UBO_MODIFIERS.has(raw.slice(colonIndex + 1, openingParenthesisIndex))) {
             return true;
         }
+
+        // Find next colon
+        colonIndex = raw.indexOf(COLON, colonIndex + 1);
     }
+
     return false;
 };
 
