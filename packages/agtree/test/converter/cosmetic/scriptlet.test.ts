@@ -146,6 +146,12 @@ describe('Scriptlet conversion', () => {
                     "memo-book.pl#%#//scriptlet('ubo-rc', '.locked', 'body, html', 'stay')",
                 ],
             },
+            {
+                actual: 'bokepgemoy.com##+js(nobab)',
+                expected: [
+                    "bokepgemoy.com#%#//scriptlet('ubo-nobab')",
+                ],
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });

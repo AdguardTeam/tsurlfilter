@@ -2,5 +2,16 @@
 # Note: content blocking products do not support scriptlets
 adg_os_any|adg_ext_any:
   name: prevent-bab
+  aliases:
+    - nobab.js
+    - ubo-nobab.js
+    - bab-defuser.js
+    - ubo-bab-defuser.js
+    - ubo-nobab
+    - ubo-bab-defuser
   version_added: 1.0.4
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-bab
+
+ubo_any:
+  name: nobab
+  docs: https://github.com/gorhill/ublock/wiki/Resources-Library#nobabjs-
