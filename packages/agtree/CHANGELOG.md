@@ -7,11 +7,17 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
-## [Unreleased]
+## [3.2.2] - 2025-07-08
+
+### Added
+
+- UBO alias `ubo-nobab` for AdGuard *scriptlet* `prevent-bab`.
 
 ### Fixed
 
 - Recognition of `uBO` modifier in a string with several colons.
+
+[3.2.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.2
 
 ## [3.2.1] - 2025-05-28
 
