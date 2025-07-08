@@ -140,6 +140,35 @@ describe('Cosmetic rule modifiers conversion', () => {
                 ],
                 shouldConvert: true,
             },
+            // :style
+            {
+                actual: 'example.com##body[style="opacity: 0;"]:style(opacity: 1 !important;)',
+                expected: [
+                    String.raw`example.com#$#body[style="opacity: 0;"] { opacity: 1 !important; }`,
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: 'example.com##*::selection:style(color:white!important;background:#0078d7!important;)',
+                expected: [
+                    'example.com#$#*::selection { color:white!important;background:#0078d7!important; }',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: 'example.com##.social::first-line:style(color: #0000 !important;)',
+                expected: [
+                    'example.com#$#.social::first-line { color: #0000 !important; }',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: 'example.*##html[style] > body [id][class] > script ~ [class]:not(empty):not(:last-of-type) article + article.post:style(display: none !important)',
+                expected: [
+                    'example.*#$#html[style] > body [id][class] > script ~ [class]:not(empty):not(:last-of-type) article + article.post { display: none !important }',
+                ],
+                shouldConvert: true,
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(CosmeticRuleConverter, 'convertToAdg');
         });
