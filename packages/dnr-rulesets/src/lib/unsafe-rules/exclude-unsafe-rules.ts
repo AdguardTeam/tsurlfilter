@@ -104,16 +104,16 @@ async function updateMetadataRuleset(
     );
 
     const metadataRuleset = MetadataRuleSet.deserialize(rawMetadataRuleset);
-    const filtersMetadata = metadataRuleset.getAdditionalProperty('metadata');
 
-    const metadataRuleSet = new MetadataRuleSet(
-        checksums,
-        { metadata: filtersMetadata },
-    );
+    // Update each checksum in the metadata ruleset instead of recreating whole
+    // ruleset to keep all additional properties not touched by this operation.
+    Object.entries(checksums).forEach(([checksum, ruleSetId]) => {
+        metadataRuleset.setChecksum(ruleSetId, checksum);
+    });
 
     await fs.writeFile(
         metadataRuleSetPath,
-        metadataRuleSet.serialize(prettifyJson),
+        metadataRuleset.serialize(prettifyJson),
     );
 
     console.log(`Metadata ruleset updated and saved to ${metadataRuleSetPath}`);

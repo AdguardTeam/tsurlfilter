@@ -11,6 +11,7 @@ import {
 } from '../common/constants';
 import { startDownload } from '../common/filters-downloader';
 import { version } from '../package.json';
+import { getVersion, getVersionTimestampMs } from '../src/utils/version-utils';
 
 /**
  * Creates build.txt file with package version.
@@ -81,6 +82,10 @@ const build = async (): Promise<void> => {
         {
             debug: true,
             prettifyJson: false,
+            additionalProperties: {
+                version: getVersion(),
+                versionTimestampMs: getVersionTimestampMs(),
+            },
         },
     );
 
