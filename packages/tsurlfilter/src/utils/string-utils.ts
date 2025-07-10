@@ -403,7 +403,7 @@ export const isAlphaNumeric = (codePoint: number): boolean => {
  *
  * @param str The string to check.
  * @param start The start index to check from.
- * @param end The end index to check to.
+ * @param end The end index to check to (exclusive).
  *
  * @returns True if the string contains whitespace, false otherwise.
  */
