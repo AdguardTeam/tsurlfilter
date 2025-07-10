@@ -25,6 +25,7 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
       - [Retrieving cosmetic data](#retrieving-cosmetic-data)
     - [MatchingResult](#matchingresult)
       - [**getBasicResult**](#getbasicresult)
+      - [**getDocumentBlockingResult**](#getdocumentblockingresult)
       - [**getCosmeticOption**](#getcosmeticoption)
       - [**Other rules**](#other-rules)
     - [CosmeticResult](#cosmeticresult)
@@ -194,6 +195,17 @@ MatchingResult contains all the rules matching a web request, and provides metho
  * @returns basic result rule
  */
 getBasicResult(): NetworkRule | null;
+```
+
+##### **getDocumentBlockingResult**
+
+```ts
+/**
+ * Returns a rule that should block a document request.
+ *
+ * @returns Document blocking rule if any, null otherwise.
+ */
+getDocumentBlockingResult(): NetworkRule | null;
 ```
 
 ##### **getCosmeticOption**
