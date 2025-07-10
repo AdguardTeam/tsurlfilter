@@ -33,10 +33,13 @@ async function main() {
         .option('--debug', 'Enable debug mode', false)
         // parseBool is needed since commander.js treats boolean options as strings
         .option('--prettify-json <bool>', 'Prettify JSON output', parseBool, true)
+        // eslint-disable-next-line max-len
+        .option('--additional-properties <json>', 'Additional properties to include in metadata ruleset as JSON string', '{}')
         .action(async (filtersAndMetadataDir, resourcesDir, destRulesetsDir, options) => {
             await convertFilters(filtersAndMetadataDir, resourcesDir, destRulesetsDir, {
                 debug: options.debug,
                 prettifyJson: options.prettifyJson,
+                additionalProperties: JSON.parse(options.additionalProperties),
             });
         });
 
