@@ -5,11 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.4.3] - 2025-07-09
+## [3.4.4] - 2025-07-09
 
 ### Added
 
 - Possibility to pack additional properties into metadata ruleset.
+
+[3.4.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.4
+
+## [3.4.3] - 2025-07-08
+
+### Changed
+
+- Updated [@adguard/scriptlets] to `v2.2.8`.
+- Updated [@adguard/agtree] to `v3.2.2`.
 
 [3.4.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.3
 
