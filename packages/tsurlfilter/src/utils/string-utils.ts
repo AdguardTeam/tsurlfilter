@@ -456,7 +456,7 @@ export const findPrevNonWhitespace = (str: string, start: number): number => {
  * @param str The string to search.
  * @param start The starting index.
  *
- * @returns The index of the next whitespace character.
+ * @returns The index of the next whitespace character or the length of the string if not found.
  */
 export const findNextWhitespace = (str: string, start: number): number => {
     let i = str.indexOf(SPACE, start);
