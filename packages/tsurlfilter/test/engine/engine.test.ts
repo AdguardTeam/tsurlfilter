@@ -249,6 +249,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const result = engine.matchRequest(request);
 
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(redirectRule));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 });
 
@@ -270,6 +271,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
         const result = engine.matchRequest(request);
 
         expect(result.getBasicResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks if with allowlist redirect modifier resource type is not ignored', () => {
@@ -451,14 +453,18 @@ describe('TestEngineMatchRequest - document modifier', () => {
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(documentBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(createNetworkRule(documentBlockingRuleText));
 
         request = new Request('http://other.org/', null, RequestType.Document);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).toBeNull();
 
         request = new Request('http://example.org/', null, RequestType.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('respects document modifier request type in blocking rules - other request types', () => {
@@ -473,15 +479,20 @@ describe('TestEngineMatchRequest - document modifier', () => {
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(documentBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(createNetworkRule(documentBlockingRuleText));
 
         request = new Request('http://example.org/', null, RequestType.Script);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(documentBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(createNetworkRule(documentBlockingRuleText));
 
         request = new Request('http://example.org/', null, RequestType.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 });
 
@@ -498,14 +509,18 @@ describe('TestEngineMatchRequest - all modifier', () => {
         let result = engine.matchRequest(request);
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(allBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(createNetworkRule(allBlockingRuleText));
 
         request = new Request('http://other.org/', null, RequestType.Document);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).toBeNull();
 
         request = new Request('http://example.org/', null, RequestType.Image);
         result = engine.matchRequest(request);
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(allBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(createNetworkRule(allBlockingRuleText));
     });
 });
 
@@ -526,6 +541,7 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingRuleText));
         expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).toBeNull();
 
         // Tests matching a script request; expects to match the basic blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
@@ -533,6 +549,7 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingRuleText));
         expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).toBeNull();
 
         // Tests matching an image request; expects to match the basic blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
@@ -540,6 +557,7 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingRuleText));
         expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).toBeNull();
 
         // Tests matching a document request; expects to match the popup blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
@@ -547,6 +565,7 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingRuleText));
         expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('match requests against all and popup blocking rules', () => {
@@ -565,6 +584,8 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
         expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
 
         // Tests matching a script request; expects to match the all-encompassing blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
@@ -572,6 +593,8 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
         expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
 
         // Tests matching an image request; expects to match the all-encompassing blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
@@ -579,6 +602,8 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
         expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
 
         // Tests matching a document request; expects to match the popup blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
@@ -586,6 +611,8 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(result.getBasicResult()).not.toBeNull();
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
         expect(result.getPopupRule()).toMatchNetworkRule(createNetworkRule(popupBlockingRuleText));
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(createNetworkRule(blockingAllRuleText));
     });
 });
 
@@ -805,9 +832,12 @@ describe('$urlblock modifier', () => {
         expect(frameRule).toMatchNetworkRule(createNetworkRule(urlblock));
 
         const request = new Request('http://example.com/image.png', 'http://example.org', RequestType.Image);
-        const result = engine.matchRequest(request, frameRule).getBasicResult();
-        expect(result).toBeTruthy();
-        expect(result).toMatchNetworkRule(createNetworkRule(important));
+        const matchingResult = engine.matchRequest(request, frameRule);
+        const basicResult = matchingResult.getBasicResult();
+        expect(basicResult).toBeTruthy();
+        expect(basicResult).toMatchNetworkRule(createNetworkRule(important));
+        expect(basicResult).not.toBeNull();
+        expect(matchingResult.getDocumentBlockingResult()).toBeNull();
     });
 });
 
