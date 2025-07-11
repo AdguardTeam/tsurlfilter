@@ -427,7 +427,7 @@ export const hasWhitespace = (str: string, start: number, end: number): boolean 
  * @param len The length of the string.
  *
  * @returns The index of the next non-whitespace character or the length of the string if not found.
- * 
+ *
  * @note This function looks only for space and tab, because we split lines earlier.
  */
 export const findNextNonWhitespace = (str: string, start: number, len: number): number => {
