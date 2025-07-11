@@ -14,52 +14,224 @@ import {
     TAB,
 } from '../common/constants';
 
+/**
+ * Rule category.
+ */
 export const enum RuleCategory {
+    /**
+     * Host rule.
+     *
+     * @example
+     * ```adblock
+     * 127.0.0.1 example.com
+     * ```
+     */
     Host,
+
+    /**
+     * Network rule.
+     *
+     * @example
+     * ```adblock
+     * ||example.com
+     * ```
+     */
     Network,
+
+    /**
+     * Cosmetic rule.
+     *
+     * @example
+     * ```adblock
+     * example.com##.ads
+     * ```
+     */
     Cosmetic,
 }
 
+/**
+ * Cosmetic rule type.
+ */
 export const enum CosmeticRuleType {
+    /**
+     * Element hiding rule.
+     *
+     * @example
+     * ```adblock
+     * example.com##.ads
+     * ```
+     */
     ElementHidingRule,
+
+    /**
+     * CSS injection rule.
+     *
+     * @example
+     * ```adblock
+     * example.com#$#.selector { ... }
+     * ```
+     */
     CssInjectionRule,
+
+    /**
+     * JS injection rule.
+     *
+     * @example
+     * ```adblock
+     * example.com#%#js-code
+     * ```
+     */
     JsInjectionRule,
+
+    /**
+     * HTML filtering rule.
+     *
+     * @example
+     * ```adblock
+     * example.com$$selector
+     * ```
+     */
     HtmlFilteringRule,
 }
 
+/**
+ * Host rule parts.
+ */
 export type HostRuleParts = {
+    /**
+     * Rule category.
+     */
     category: RuleCategory.Host;
+
+    /**
+     * Start position of the domains.
+     */
     domainsStart: number;
+
+    /**
+     * End position of the domains.
+     */
     domainsEnd: number;
+
+    /**
+     * Start position of the IP.
+     */
     ipStart?: number;
+
+    /**
+     * End position of the IP.
+     */
     ipEnd?: number;
 };
 
+/**
+ * Network rule parts.
+ */
 export type NetworkRuleParts = {
+    /**
+     * Rule category.
+     */
     category: RuleCategory.Network;
+
+    /**
+     * Whether the rule is an allowlist.
+     */
     allowlist: boolean;
+
+    /**
+     * Start position of the pattern.
+     */
     patternStart: number;
+
+    /**
+     * End position of the pattern.
+     */
     patternEnd: number;
+
+    /**
+     * Start position of the modifiers.
+     */
     modifiersStart?: number;
+
+    /**
+     * End position of the modifiers.
+     */
     modifiersEnd?: number;
+
+    /**
+     * Start position of the domains.
+     */
     domainsStart?: number;
+
+    /**
+     * End position of the domains.
+     */
     domainsEnd?: number;
 };
 
+/**
+ * Cosmetic rule parts.
+ */
 export type CosmeticRuleParts = {
+    /**
+     * Rule category.
+     */
     category: RuleCategory.Cosmetic;
+
+    /**
+     * Type of the cosmetic rule.
+     */
     type: CosmeticRuleType;
+
+    /**
+     * Whether the rule is an allowlist.
+     */
     allowlist: boolean;
+
+    /**
+     * Start position of the pattern.
+     */
     patternStart?: number;
+
+    /**
+     * End position of the pattern.
+     */
     patternEnd?: number;
+
+    /**
+     * Start position of the content.
+     */
     contentStart: number;
+
+    /**
+     * End position of the content.
+     */
     contentEnd: number;
+
+    /**
+     * Start position of the separator.
+     */
     separatorStart: number;
+
+    /**
+     * End position of the separator.
+     */
     separatorEnd: number;
+
+    /**
+     * Start position of the domains.
+     */
     domainsStart?: number;
+
+    /**
+     * End position of the domains.
+     */
     domainsEnd?: number;
 };
 
+/**
+ * Rule parts.
+ */
 export type RuleParts = HostRuleParts | NetworkRuleParts | CosmeticRuleParts;
 
 const MIN_RULE_LENGTH = 4;
@@ -78,6 +250,9 @@ const COSMETIC_SEPARATOR_OFFSET_MASK = (1 << 26) - 1; // 0x03FFFFFF (26 lowest b
 const COSMETIC_SEPARATOR_LEN_SHIFT = 26; // 3 bits
 const COSMETIC_SEPARATOR_TYPE_SHIFT = 29; // 2 bits
 const COSMETIC_SEPARATOR_ALLOW_SHIFT = 31; // 1 bit
+
+const DOMAIN_START_SHIFT = 16;
+const DOMAIN_END_MASK = 0xFFFF;
 
 /**
  * Encodes the offset, length, type, and allow flag into a single number.
@@ -208,10 +383,6 @@ const findHashmarkBasedCosmeticSeparator = (rule: string): number | null => {
     return null;
 };
 
-const isHostLikeComment = (rule: string): boolean => {
-    return rule.startsWith('#');
-};
-
 /**
  * Encodes the start and end positions of domains.
  *
@@ -221,7 +392,7 @@ const isHostLikeComment = (rule: string): boolean => {
  * @returns The encoded domains value.
  */
 const encodeDomains = (start: number, end: number): number => {
-    return (start << 16) | end;
+    return (start << DOMAIN_START_SHIFT) | end;
 };
 
 /**
@@ -232,7 +403,7 @@ const encodeDomains = (start: number, end: number): number => {
  * @returns The start position of the domains.
  */
 const decodeDomainsStart = (value: number): number => {
-    return value >> 16;
+    return value >> DOMAIN_START_SHIFT;
 };
 
 /**
@@ -243,7 +414,7 @@ const decodeDomainsStart = (value: number): number => {
  * @returns The end position of the domains.
  */
 const decodeDomainsEnd = (value: number): number => {
-    return value & 0xFFFF;
+    return value & DOMAIN_END_MASK;
 };
 
 /**
@@ -266,11 +437,7 @@ const extractDomainsFromModifierList = (
         return null;
     }
 
-    // skip whitespace
-    let i = start + DOMAIN_MODIFIER_LENGTH;
-    while (i < modifiersEnd && (rule[i] === SPACE || rule[i] === TAB)) {
-        i += 1;
-    }
+    let i = findNextNonWhitespace(rule, start + DOMAIN_MODIFIER_LENGTH, modifiersEnd);
 
     if (rule[i] !== MODIFIER_ASSIGN) {
         return null;
@@ -280,9 +447,7 @@ const extractDomainsFromModifierList = (
 
     const valueStart = i;
 
-    while (i < modifiersEnd && (rule[i] === SPACE || rule[i] === TAB)) {
-        i += 1;
-    }
+    i = findNextNonWhitespace(rule, i, modifiersEnd);
 
     // find next unescaped comma or the end of the string
     while (i < modifiersEnd) {
@@ -482,7 +647,7 @@ export function getRuleParts(
     }
 
     // Check host-like comments after the cosmetic separator, to avoid false positives, like `##example.com`
-    if (isHostLikeComment(rule)) {
+    if (rule[realStart] === HOST_COMMENT_MARKER) {
         return null;
     }
 
