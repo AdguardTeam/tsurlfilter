@@ -3,6 +3,7 @@ import {
     FF,
     LF,
     SPACE,
+    TAB,
 } from '../common/constants';
 
 /**
@@ -395,4 +396,84 @@ export const isAlpha = (codePoint: number): boolean => {
  */
 export const isAlphaNumeric = (codePoint: number): boolean => {
     return isAlpha(codePoint) || isNumber(codePoint);
+};
+
+/**
+ * Checks if a string contains whitespace characters (spaces or tabs).
+ *
+ * @param str The string to check.
+ * @param start The start index to check from.
+ * @param end The end index to check to (exclusive).
+ *
+ * @returns True if the string contains whitespace, false otherwise.
+ *
+ * @note This function looks only for space and tab, because we split lines earlier.
+ */
+export const hasWhitespace = (str: string, start: number, end: number): boolean => {
+    for (let i = start; i < end; i += 1) {
+        const ch = str[i];
+        if (ch === SPACE || ch === TAB) {
+            return true;
+        }
+    }
+    return false;
+};
+
+/**
+ * Finds the next non-whitespace character in a string.
+ *
+ * @param str The string to search.
+ * @param start The starting index.
+ * @param len The length of the string.
+ *
+ * @returns The index of the next non-whitespace character or the length of the string if not found.
+ *
+ * @note This function looks only for space and tab, because we split lines earlier.
+ */
+export const findNextNonWhitespace = (str: string, start: number, len: number): number => {
+    let i = start;
+    while (i < len && (str[i] === SPACE || str[i] === TAB)) {
+        i += 1;
+    }
+    return i;
+};
+
+/**
+ * Finds the previous non-whitespace character in a string.
+ *
+ * @param str The string to search.
+ * @param start The starting index.
+ *
+ * @returns The index of the previous non-whitespace character or `0` if not found.
+ *
+ * @note This function looks only for space and tab, because we split lines earlier.
+ */
+export const findPrevNonWhitespace = (str: string, start: number): number => {
+    let i = start;
+    while (i > 0 && (str[i - 1] === SPACE || str[i - 1] === TAB)) {
+        i -= 1;
+    }
+    return i;
+};
+
+/**
+ * Finds the next whitespace character in a string.
+ *
+ * @param str The string to search.
+ * @param start The starting index.
+ *
+ * @returns The index of the next whitespace character or the length of the string if not found.
+ *
+ * @note This function looks only for space and tab, because we split lines earlier.
+ */
+export const findNextWhitespace = (str: string, start: number): number => {
+    let i = str.indexOf(SPACE, start);
+    if (i !== -1) {
+        return i;
+    }
+    i = str.indexOf(TAB, start);
+    if (i !== -1) {
+        return i;
+    }
+    return str.length;
 };
