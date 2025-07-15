@@ -2,11 +2,21 @@
  * @file Scriptlet injection rule converter
  */
 
-import { CosmeticRuleSeparator, type ParameterList, type ScriptletInjectionRule } from '../../nodes';
+import {
+    CosmeticRuleSeparator,
+    type DomainList,
+    type ParameterList,
+    type ScriptletInjectionRule,
+} from '../../nodes';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { QuoteType, QuoteUtils } from '../../utils/quotes';
-import { EMPTY, SPACE } from '../../utils/constants';
+import {
+    ADG_DOMAINS_MODIFIER,
+    EMPTY,
+    PIPE_MODIFIER_SEPARATOR,
+    SPACE,
+} from '../../utils/constants';
 import {
     getScriptletName,
     setScriptletName,
@@ -14,10 +24,12 @@ import {
     transformAllScriptletArguments,
     transformNthScriptletArgument,
 } from '../../ast-utils/scriptlets';
+import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode, cloneModifierListNode, cloneScriptletRuleNode } from '../../ast-utils/clone';
 import { GenericPlatform, scriptletsCompatibilityTable } from '../../compatibility-tables';
 import { isNull, isUndefined } from '../../utils/type-guards';
+import { DomainListParser } from '../../parser';
 
 const ABP_SCRIPTLET_PREFIX = 'abp-';
 const UBO_SCRIPTLET_PREFIX = 'ubo-';
@@ -267,6 +279,51 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             return createNodeConversionResult([rule], false);
         }
 
+        let ruleDomainsList: DomainList | undefined = cloneDomainListNode(rule.domains);
+
+        if (rule.syntax === AdblockSyntax.Adg && rule.modifiers?.children.length) {
+            const { modifiers } = rule;
+
+            // Validate modifiers structure
+            if (!modifiers || !modifiers.children || modifiers.children.length === 0) {
+                throw new RuleConversionError('Invalid modifiers in AdGuard rule.');
+            }
+
+            // Check for single domain modifier
+            const [domainModifier] = modifiers.children;
+            const hasSingleDomainModifier = (
+                modifiers.children.length === 1
+                && domainModifier.name?.value === ADG_DOMAINS_MODIFIER
+                && domainModifier.value?.value
+            );
+
+            if (!hasSingleDomainModifier) {
+                throw new RuleConversionError(
+                    'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
+                );
+            }
+
+            // Validate domain modifier
+            if (!domainModifier.value?.value) {
+                throw new RuleConversionError('Invalid domain modifier in AdGuard rule.');
+            }
+
+            // Parse domain list
+            const parsedDomainList = DomainListParser.parse(
+                domainModifier.value.value,
+                {},
+                domainModifier.start,
+                PIPE_MODIFIER_SEPARATOR,
+            );
+
+            // Merge domain lists
+            if (ruleDomainsList) {
+                ruleDomainsList.children.push(...parsedDomainList.children);
+            } else {
+                ruleDomainsList = parsedDomainList;
+            }
+        }
+
         const separator = rule.separator.value;
         let convertedSeparator = separator;
 
@@ -292,7 +349,10 @@ export class ScriptletRuleConverter extends RuleConverterBase {
             } else {
                 // Otherwise, try to find the corresponding uBO scriptlet name, or use the original one if not found
                 const uboScriptlet = scriptletsCompatibilityTable.getFirst(scriptletName, GenericPlatform.UboAny);
-                uboScriptletName = uboScriptlet?.name ?? scriptletName;
+                if (!uboScriptlet) {
+                    throw new RuleConversionError(`Scriptlet "${scriptletName}" is not supported in uBlock Origin.`);
+                }
+                uboScriptletName = uboScriptlet.name;
             }
 
             // Remove the '.js' suffix if it's there - its presence is not mandatory
@@ -394,7 +454,7 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                     type: rule.type,
                     syntax: AdblockSyntax.Ubo,
                     exception: rule.exception,
-                    domains: cloneDomainListNode(rule.domains),
+                    domains: ruleDomainsList,
                     separator: {
                         type: 'Value',
                         value: convertedSeparator,
@@ -404,10 +464,6 @@ export class ScriptletRuleConverter extends RuleConverterBase {
                         children: [scriptlet],
                     },
                 };
-
-                if (rule.modifiers) {
-                    res.modifiers = cloneModifierListNode(rule.modifiers);
-                }
 
                 return res;
             }),

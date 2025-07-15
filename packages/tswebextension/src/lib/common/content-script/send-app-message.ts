@@ -13,6 +13,6 @@ import { type MessageType, MESSAGE_HANDLER_NAME } from '../message-constants';
  * @returns Promise resolved with response from the background page.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const sendAppMessage = async (message: { type: MessageType, payload?: unknown }): Promise<any> => {
+export const sendAppMessage = async (message: { type: MessageType; payload?: unknown }): Promise<any> => {
     return browser.runtime.sendMessage({ handlerName: MESSAGE_HANDLER_NAME, ...message });
 };

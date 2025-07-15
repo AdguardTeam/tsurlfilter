@@ -36,7 +36,6 @@ export * from './utils/string-utils';
 export * from './utils/bit-utils';
 export * from './utils/resource-names';
 export { fetchExtensionResourceText } from './utils/resource-fetch';
-export { type ByteRange } from './utils/byte-range';
 export { createAllowlistRuleList } from './filterlist/allowlist-creator';
 export { RuleSyntaxUtils } from './utils/rule-syntax-utils';
 export { HTTPMethod } from './modifiers/method-modifier';

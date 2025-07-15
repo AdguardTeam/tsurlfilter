@@ -98,6 +98,7 @@
 
 import { getErrorMessage } from '../../common/error';
 import type { NetworkRule } from '../network-rule';
+import { isSafeRule } from '../declarative-converter-utils/is-safe-dnr-rule';
 
 import {
     type IRuleSet,
@@ -317,7 +318,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
                 const badFilterRule = rule.rule;
                 const ruleToCheck = r.rule;
 
-                if (badFilterRule.negatesBadfilter(ruleToCheck)) {
+                if (badFilterRule.rule.negatesBadfilter(ruleToCheck.rule)) {
                     return false;
                 }
             }
@@ -416,10 +417,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
 
         const rulesHashMap = new RulesHashMap(listOfRulesWithHash);
 
-        // calculate number of unsafe rules only for dynamic rules
-        const unsafeRulesCount = DeclarativeFilterConverter.COMBINED_RULESET_ID === ruleSetId
-            ? declarativeRules.filter((r) => !DeclarativeRulesConverter.isSafeRule(r)).length
-            : 0;
+        const unsafeRulesCount = declarativeRules.filter((r) => !isSafeRule(r)).length;
 
         const regexRulesCount = declarativeRules.filter((r) => DeclarativeRulesConverter.isRegexRule(r)).length;
 
@@ -534,7 +532,7 @@ export class DeclarativeFilterConverter implements IFilterConverter {
             // version of applying $badfilter rules.
             const someRulesMatched = indexedNetworkRulesWithHash
                 .flat()
-                .some((rule) => badFilterRule.rule.negatesBadfilter(rule));
+                .some((rule) => badFilterRule.rule.rule.negatesBadfilter(rule));
 
             if (someRulesMatched) {
                 disableRuleIds.push(id);

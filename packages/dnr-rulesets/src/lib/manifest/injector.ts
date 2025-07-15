@@ -51,6 +51,9 @@ export interface RulesetsInjectorInterface {
      * @param options Apply options {@link ApplyRulesetsOptions}.
      *
      * @returns Patched manifest with defined declarative_net_request.
+     *
+     * @throws Error if manifest already contains ruleset with the specified ids
+     * and {@link options.forceUpdate} is `false` or if manifest file or filters directory are not found.
      */
     applyRulesets<T extends Manifest>(
         generateRulesetPath: RulesetPathGenerator,
@@ -61,6 +64,8 @@ export interface RulesetsInjectorInterface {
 }
 
 /**
+ * Api for injecting rulesets into manifest.
+ *
  * @see {@link RulesetsInjectorInterface}
  */
 export class RulesetsInjector implements RulesetsInjectorInterface {
@@ -69,11 +74,7 @@ export class RulesetsInjector implements RulesetsInjectorInterface {
      */
     private static readonly DEFAULT_RULESET_PREFIX = 'ruleset_';
 
-    /**
-     * @inheritdoc
-     * @throws Error if manifest already contains ruleset with the specified ids
-     * and {@link options.forceUpdate} is `false` or if manifest file or filters directory are not found.
-     */
+    /** @inheritdoc */
     public applyRulesets<T extends Manifest>(
         generateRulesetPath: RulesetPathGenerator,
         manifest: T,
@@ -91,25 +92,25 @@ export class RulesetsInjector implements RulesetsInjectorInterface {
         const ruleResources = manifest.declarative_net_request.rule_resources;
 
         for (const filterName of filterNames) {
-            const rulesetIndexMatch = filterName.match(/\d+/);
+            const rulesetIdMatch = filterName.match(/\d+/);
 
-            if (!rulesetIndexMatch) {
+            if (!rulesetIdMatch) {
                 continue;
             }
 
-            const rulesetIndex = rulesetIndexMatch[0];
+            const matchedRulesetId = rulesetIdMatch[0];
 
             if (Array.isArray(options?.ids)
                 && options.ids.length > 0
-                && !options.ids.includes(rulesetIndex)) {
+                && !options.ids.includes(matchedRulesetId)) {
                 continue;
             }
 
-            const rulesetId = `${options?.rulesetPrefix ?? RulesetsInjector.DEFAULT_RULESET_PREFIX}${rulesetIndex}`;
+            const rulesetId = `${options?.rulesetPrefix ?? RulesetsInjector.DEFAULT_RULESET_PREFIX}${matchedRulesetId}`;
 
             const isEnabled = Array.isArray(options?.enable)
                 && options.enable.length > 0
-                && options.enable.includes(rulesetIndex);
+                && options.enable.includes(matchedRulesetId);
 
             const ruleset = {
                 id: rulesetId,

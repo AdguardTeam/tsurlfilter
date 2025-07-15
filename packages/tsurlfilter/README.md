@@ -25,6 +25,7 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
       - [Retrieving cosmetic data](#retrieving-cosmetic-data)
     - [MatchingResult](#matchingresult)
       - [**getBasicResult**](#getbasicresult)
+      - [**getDocumentBlockingResult**](#getdocumentblockingresult)
       - [**getCosmeticOption**](#getcosmeticoption)
       - [**Other rules**](#other-rules)
     - [CosmeticResult](#cosmeticresult)
@@ -194,6 +195,17 @@ MatchingResult contains all the rules matching a web request, and provides metho
  * @returns basic result rule
  */
 getBasicResult(): NetworkRule | null;
+```
+
+##### **getDocumentBlockingResult**
+
+```ts
+/**
+ * Returns a rule that should block a document request.
+ *
+ * @returns Document blocking rule if any, null otherwise.
+ */
+getDocumentBlockingResult(): NetworkRule | null;
 ```
 
 ##### **getCosmeticOption**
@@ -502,7 +514,7 @@ type RawListWithConversionMap = Pick<PreprocessedFilterList, 'rawFilterList' | '
 
 #### <a id="declarative-filter-converter"></a>DeclarativeFilterConverter
 
-Converts a list of IFilters to a single rule set or to a list of rule sets. See `examples/manifest-v3/` for an example usage.
+Converts a list of IFilters to a single ruleset or to a list of rulesets. See `examples/manifest-v3/` for an example usage.
 
 ##### Public methods
 
@@ -595,7 +607,7 @@ let filterId = 0;
         }),
     );
 
-    // get declarative rules from static rule set
+    // get declarative rules from static ruleset
     console.log(await staticRuleSet.getDeclarativeRules());
 
     const { declarativeRulesToCancel, ruleSet: dynamicRuleSet } = await converter.convertDynamicRuleSets(
@@ -610,7 +622,7 @@ let filterId = 0;
     // will print rule from rawFilter1 which flagged as badfilter
     console.log(declarativeRulesToCancel);
 
-    // get declarative rules from dynamic rule set
+    // get declarative rules from dynamic ruleset
     console.log(await dynamicRuleSet.getDeclarativeRules());
 })();
 ```
@@ -639,6 +651,87 @@ For more information about the declarative converter, see the its [documentation
 ||testcases.adguard.com$removeparam=p2case6
 ```
 
+## Converting filters to declarative rulesets
+
+This library provides a utility to convert AdGuard filter lists and metadata into declarative rulesets suitable for browser extensions or other use cases. This can be accessed both programmatically (API) and via the CLI.
+
+### API usage
+
+You can use the `convertFilters` function directly in your TypeScript/JavaScript code:
+
+```ts
+import { convertFilters } from '@adguard/tsurlfilter/cli/convertFilters';
+
+// Example usage:
+await convertFilters(
+  './filters',           // Path to directory containing filter files and metadata (e.g., filters.json)
+  './resources',         // Path to web-accessible resources (can be obtained via `@adguard/tswebextension` CLI's `war` command)
+  './build/rulesets',    // Destination directory for generated rulesets
+  {
+    debug: true,         // (optional) Print additional debug information
+    prettifyJson: true,  // (optional) Prettify JSON output (default: true)
+    additionalProperties: {
+      // (optional) Additional properties to include in metadata ruleset
+      // This field is not validated, but it must be JSON serializable.
+      // Validation should be performed by users.
+      version: '1.2.3',
+    },
+  }
+);
+```
+
+**Parameters:**
+- `filtersAndMetadataDir` (string): Path to the directory with filter files and metadata (should contain e.g. `filters.json`).
+- `resourcesDir` (string): Path to web-accessible resources (used for ruleset generation).
+- `destRulesetsDir` (string): Output directory for the resulting declarative rulesets.
+- `options` (object, optional):
+    - `debug` (boolean): Print debug info to console (default: false).
+    - `prettifyJson` (boolean): Prettify JSON output (default: true).
+    - `additionalProperties` (object): Additional properties to include in metadata ruleset. This field is not validated, but it must be JSON serializable. Validation should be performed by users.
+
+### CLI usage
+
+You can perform the same conversion using the CLI:
+
+```sh
+npx tsurlfilter convert <filtersAndMetadataDir> <resourcesDir> [destRulesetsDir] [options]
+```
+
+**Arguments:**
+- `<filtersAndMetadataDir>`: Path to directory with filter files and metadata (should contain e.g. `filters.json`).
+- `<resourcesDir>`: Path to web-accessible resources.
+- `[destRulesetsDir]`: (Optional) Output directory for the resulting declarative rulesets. Defaults to `./build/rulesets` if omitted.
+
+**Options:**
+- `--debug`           Enable debug mode (default: false)
+- `--prettify-json`   Prettify JSON output (default: true)
+
+**Example:**
+```sh
+npx tsurlfilter convert ./filters ./resources ./build/rulesets --debug --prettify-json
+```
+
+See the output directory for the generated rulesets and metadata.
+
+#### Extracting filters from rulesets
+
+You can also extract original filters from previously converted declarative rulesets using the CLI:
+
+```sh
+npx tsurlfilter extract-filters <path-to-rulesets> <path-to-output>
+```
+
+**Arguments:**
+- `<path-to-rulesets>`: Path to the directory containing the declarative rulesets (as generated by the `convert` command).
+- `<path-to-output>`: Path to the file or directory where the extracted filters will be saved.
+
+**Example:**
+```sh
+npx tsurlfilter extract-filters ./build/rulesets ./filters
+```
+
+This will extract the filters from the rulesets and their metadata and save these files to the specified output path.
+
 ## Development
 
 This project is part of the `@adguard/extensions` monorepo.
@@ -652,7 +745,7 @@ npx lerna run --scope=@adguard/tsurlfilter:<script>
 
 - `lint`: Run ESLint and TSC
 - `lint:code`: Run ESLint
-- `lint:tsc`: Run TSC
+- `lint:types`: Run TSC
 - `start` Start build in watch mode
 - `build`: Build the project
 - `build:types`: Generate types

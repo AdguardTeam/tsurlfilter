@@ -5,6 +5,7 @@
 import {
     type AnyCosmeticRule,
     type AnyRule,
+    CosmeticRuleSeparator,
     CosmeticRuleType,
     type DomainList,
     type ModifierList,
@@ -128,20 +129,43 @@ export class CosmeticRuleConverter extends RuleConverterBase {
      * If the rule was not converted, the result array will contain the original node with the same object reference
      * @throws If the rule is invalid or cannot be converted
      */
-    // TODO: Add support for other cosmetic rule types
     public static convertToUbo(rule: AnyCosmeticRule): NodeConversionResult<AnyRule> {
-        // Convert cosmetic rule based on its type
-        if (rule.type === CosmeticRuleType.ScriptletInjectionRule) {
-            if (rule.syntax === AdblockSyntax.Adg && rule.modifiers?.children.length) {
-                // e.g. example.com##+js(set-constant.js, foo, bar):matches-path(/baz)
-                throw new RuleConversionError(
-                    'uBO scriptlet injection rules do not support cosmetic rule modifiers',
-                );
-            }
-            return ScriptletRuleConverter.convertToUbo(rule);
+        // Skip conversation if the rule is already in uBO format
+        if (rule.syntax === AdblockSyntax.Ubo) {
+            return createNodeConversionResult([rule], false);
         }
 
-        let convertedModifiers: ConversionResult<{ modifierList: ModifierList, domains?: DomainList }> | undefined;
+        // TODO: Add support for other cosmetic rule types
+        switch (rule.type) {
+            case CosmeticRuleType.HtmlFilteringRule:
+                return HtmlRuleConverter.convertToUbo(rule);
+            case CosmeticRuleType.ElementHidingRule: {
+                // Check if the rule is a simple hiding rule
+                // TODO: Handle elemhide rules with extended CSS pseudos even if type is not marked explicitly
+                const isElementHidingRule = (
+                    rule.separator.value === CosmeticRuleSeparator.ElementHidingException
+                    || rule.separator.value === CosmeticRuleSeparator.ElementHiding
+                );
+
+                if (isElementHidingRule && !rule.modifiers) {
+                    return createNodeConversionResult([rule], false);
+                }
+                break;
+            }
+            case CosmeticRuleType.ScriptletInjectionRule:
+                return ScriptletRuleConverter.convertToUbo(rule);
+            case CosmeticRuleType.JsInjectionRule:
+                throw new RuleConversionError(
+                    'uBO does not support JS injection rules',
+                );
+            default:
+                break;
+        }
+
+        let convertedModifiers: ConversionResult<{
+            modifierList: ModifierList;
+            domains?: DomainList;
+        }> | undefined;
 
         // Convert cosmetic rule modifiers, if any
         if (rule.modifiers) {
@@ -153,19 +177,28 @@ export class CosmeticRuleConverter extends RuleConverterBase {
             }
         }
 
+        const result = clone(rule);
+
+        result.syntax = AdblockSyntax.Ubo;
+
         if (convertedModifiers && convertedModifiers.isConverted) {
-            const result = clone(rule);
             result.modifiers = convertedModifiers.result.modifierList;
-            result.syntax = AdblockSyntax.Ubo;
 
             if (convertedModifiers.result.domains) {
                 result.domains = convertedModifiers.result.domains;
                 result.domains.separator = COMMA;
             }
-
-            return createNodeConversionResult([result], true);
         }
 
-        return createNodeConversionResult([rule], false);
+        // Handle separator to uBO format
+        let convertedSeparator = result.separator.value;
+
+        convertedSeparator = rule.exception
+            ? CosmeticRuleSeparator.ElementHidingException
+            : CosmeticRuleSeparator.ElementHiding;
+
+        result.separator.value = convertedSeparator;
+
+        return createNodeConversionResult([result], true);
     }
 }

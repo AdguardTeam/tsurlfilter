@@ -2,7 +2,7 @@
  * Error with a message.
  */
 type ErrorWithMessage = {
-    message: string
+    message: string;
 };
 
 /**

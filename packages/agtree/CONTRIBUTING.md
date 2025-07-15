@@ -19,7 +19,7 @@ Here is a guide on how to set up the development environment and how to submit y
   add `feature/` or `fix/` prefix to your branch name, and refer to the issue number if there is one. Example: `fix/42`.
 - Open the **project root** folder in your editor.
 - Make your changes and test them.
-- Check code by running `pnpm check-types`, `pnpm lint` and `pnpm test` commands (Husky will run these commands
+- Check code by running `pnpm lint:types`, `pnpm lint` and `pnpm test` commands (Husky will run these commands
   automatically before each commit).
 - If everything is OK, commit your changes and push them to your forked repository. Example:
     - Add files to commit with `git add .`
@@ -46,14 +46,15 @@ During development, you can use the following commands (listed in `package.json`
 - `pnpm build-compatibility-tables` - build compatibility tables to `dist/compatibility-tables.json` file.
   This is a transformed data structure that is used by the library.
 - `build-compatibility-tables-wiki` - build compatibility tables to Markdown files in the `wiki` folder.
-- `pnpm check-types` - check type definitions with [TypeScript][typescript].
+- `pnpm lint:types` - check type definitions with [TypeScript][typescript].
 - `pnpm clean` - remove the `dist` folder.
 - `pnpm clean-types` - remove the `dist/types` folder.
 - `pnpm coverage` - run tests with [Vitest][vitest] and generate a code coverage report.
 - `pnpm increment` - increment the version of the library in `package.json` (patch version by default).
 - `pnpm lint` - run all linters.
+- `pnpm lint:code` - lint the code with [ESLint][eslint].
+- `pnpm lint:types` - lint the type definitions with [TypeScript][typescript].
 - `pnpm lint:md` - lint the markdown files with [markdownlint][markdownlint].
-- `pnpm lint:ts` - lint the code with [ESLint][eslint].
 - `pnpm precommit` - run all checks before committing.
 - `pnpm test` - run tests with [Vitest][vitest].
 

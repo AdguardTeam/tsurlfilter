@@ -1,4 +1,3 @@
-<!-- markdownlint-disable MD024 -->
 # AGTree Changelog
 
 All notable changes to this project will be documented in this file.
@@ -7,6 +6,83 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
+
+## [3.2.2] - 2025-07-08
+
+### Added
+
+- UBO alias `ubo-nobab` for AdGuard *scriptlet* `prevent-bab`.
+
+### Fixed
+
+- Recognition of `uBO` modifier in a string with several colons.
+
+[3.2.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.2
+
+## [3.2.1] - 2025-05-28
+
+### Added
+
+- Support for converting HTML rules to uBlock syntax in the `RuleConverter`.
+
+### Fixed
+
+- Types for `NodeNext` module resolution.
+
+[3.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.1
+
+## [3.2.0] - 2025-05-22
+
+### Added
+
+- Support for converting HTML rules to uBlock syntax.
+
+[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.0
+
+## [3.1.5] - 2025-05-20
+
+### Added
+
+- UBO alias `nofab.js` for AdGuard *scriptlet* `prevent-fab-3.2.0`.
+
+[3.1.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.5
+
+## [3.1.4] - 2025-05-19
+
+### Fixed
+
+- Updated `zod` dependency to version `3.24.4` to resolve vulnerability warnings.
+
+[3.1.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.4
+
+## [3.1.3] - 2025-04-29
+
+### Added
+
+- Export of `FilterListGenerator` from `@adguard/agtree/generator`.
+
+[3.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.3
+
+## [3.1.2] - 2025-04-23
+
+### Added
+
+- Export of `FilterListConverter` and `RawRuleConverter`.
+
+[3.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.2
+
+## [3.1.1] - 2025-04-17
+
+### Changed
+
+- Proper conversion of the cosmetic rule separators to uBlock Origin format.
+- Limit conversion of `ADG` scriptlets to `uBO` if no equivalents are available.
+
+### Fixed
+
+- Removed a space in the list of parameters in the `safari_cb_affinity` directive.
+
+[3.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.1.1
 
 ## [3.1.0] - 2025-03-31
 

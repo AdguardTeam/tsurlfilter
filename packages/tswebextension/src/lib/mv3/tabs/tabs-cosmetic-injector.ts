@@ -6,6 +6,7 @@ import { CosmeticApi } from '../background/cosmetic-api';
 import { CosmeticFrameProcessor } from '../background/cosmetic-frame-processor';
 import { ContentType } from '../../common/request-type';
 import { appContext } from '../background/app-context';
+import { UserScriptsApi } from '../background/user-scripts-api';
 
 import { FrameMV3 } from './frame';
 import { tabsApi } from './tabs-api';
@@ -29,7 +30,7 @@ export class TabsCosmeticInjector {
         // Handles errors
         promises.forEach((promise) => {
             if (promise.status === 'rejected') {
-                logger.error('[tswebextension.processOpenTabs]: cannot inject cosmetic to open tab: ', promise.reason);
+                logger.error('[tsweb.TabsCosmeticInjector.processOpenTabs]: cannot inject cosmetic to open tab: ', promise.reason);
             }
         });
 
@@ -101,20 +102,34 @@ export class TabsCosmeticInjector {
                 return;
             }
 
+            if (!CosmeticApi.shouldApplyCosmetics(tabId, url)) {
+                logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTab]: skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${url}`);
+                return;
+            }
+
+            const tasks = [
+                CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+            ];
+
+            if (UserScriptsApi.isSupported) {
+                tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
+            } else {
+                tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));
+                tasks.push(CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId));
+            }
+
             // TODO: Can be moved to CosmeticApi.injectCosmetic() like in MV2
             // since it is used not only here.
             // Note: this is an async function, but we will not await it because
             // events do not support async listeners.
-            Promise.all([
-                CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId),
-                CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
-                CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId),
-            ]).catch((e) => logger.error(e));
+            Promise.all(tasks).catch((e) => {
+                logger.error('[tsweb.TabsCosmeticInjector.processOpenTab]: cannot apply cosmetic rules: ', e);
+            });
 
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.cosmeticResult) {
                 // eslint-disable-next-line max-len
-                logger.debug(`[tswebextension.processOpenTab]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+                logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTab]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
                 return;
             }
 

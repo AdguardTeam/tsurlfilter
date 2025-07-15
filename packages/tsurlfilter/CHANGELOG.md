@@ -5,6 +5,140 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.5] - 2025-07-10
+
+### Added
+
+- `MatchingResult.getDocumentBlockingResult()` method.
+
+[3.4.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.5
+
+## [3.4.4] - 2025-07-09
+
+### Added
+
+- Possibility to pack additional properties into metadata ruleset.
+
+[3.4.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.4
+
+## [3.4.3] - 2025-07-08
+
+### Changed
+
+- Updated [@adguard/scriptlets] to `v2.2.8`.
+- Updated [@adguard/agtree] to `v3.2.2`.
+
+[3.4.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.3
+
+## [3.4.2] - 2025-07-03
+
+### Fixed
+
+- Marked `unsafeRules` in Ruleset as optional to keep backward compatibility.
+
+[3.4.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.2
+
+## [3.4.1] - 2025-07-02
+
+### Added
+
+- Possibility to exclude unsafe rules from rulesets and save them to the metadata of rulesets
+  for use "skip review" feature in CWS.
+- Export of `isSafeRule` from `declarative-converter-utils`.
+
+### Fixed
+
+- CLI was not worked since switch to ESM builds.
+- `unsafeRulesCount` is added for rulesets after the conversion.
+
+[3.4.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.1
+
+## [3.4.0] - 2025-06-06
+
+### Added
+
+- Compatibility of `$header` modifier with `$match-case`
+  and `$third-party` modifiers in MV2 [AdguardBrowserExtension#2942].
+
+### Changed
+
+- Updated [@adguard/logger] to `v2.0.0`.
+- Updated [@adguard/scriptlets] to `v2.2.7`.
+
+### Removed
+
+- `getText` and `getUsedOptionNames` methods from `NetworkRule` class.
+
+[3.4.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.0
+[AdguardBrowserExtension#2942]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2942
+
+## [3.3.4] - 2025-05-28
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.1`.
+
+### Fixed
+
+- Types for `NodeNext` module resolution.
+
+[3.3.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.3.4
+
+## [3.3.3] - 2025-05-22
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.2.0`.
+
+### Fixed
+
+- Internal code for source rule finding from rulesets.
+
+[3.3.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.3.3
+
+## [3.3.2] - 2025-05-19
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.1.4`.
+
+### Fixed
+
+- Updated `zod` dependency to version `3.24.4` to resolve vulnerability warnings.
+
+[3.3.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.3.2
+
+## [3.3.1] - 2025-05-15
+
+### Changed
+
+- DNR converter now keep IDs of converted rules the same between launches
+  if text of the rule is the same.
+
+[3.3.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.3.1
+
+## [3.3.0-alpha.0] - 2025-04-30
+
+### Changed
+
+- Updated [@adguard/agtree] to `v3.1.3`.
+
+### Removed
+
+- Byte ranges management for rulesets.
+
+[3.3.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.3.0-alpha.0
+
+## [3.2.3] - 2025-04-15
+
+### Fixed
+
+- `fetchExtensionResourceText` util — enforce min byte range length when fetching resources
+  [AdguardBrowserExtension#3128].
+
+[3.2.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.2.3
+[AdguardBrowserExtension#3128]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3128
+
 ## [3.2.2] - 2025-03-31
 
 ### Changed
@@ -852,6 +986,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [1.0.57]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v1.0.57
 
+[@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/agtree]: ../agtree/CHANGELOG.md
 [@adguard/css-tokenizer]: ../css-tokenizer/CHANGELOG.md
 

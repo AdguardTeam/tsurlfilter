@@ -211,7 +211,7 @@ export class MatchingResult {
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
                 // This check needed to split $all rules from $popup rules
-                && (rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
+                && !MatchingResult.isDocumentRule(rule)) {
                 this.popupRule = rule;
                 continue;
             }
@@ -305,6 +305,24 @@ export class MatchingResult {
     }
 
     /**
+     * Returns a rule that should block a document request.
+     *
+     * @returns Document blocking rule if any, null otherwise.
+     */
+    getDocumentBlockingResult(): NetworkRule | null {
+        if (!this.basicRule || this.basicRule.isDocumentLevelAllowlistRule()) {
+            return null;
+        }
+
+        // Document-level blocking rules are the only ones that can block 'document' requests
+        if (MatchingResult.isDocumentRule(this.basicRule)) {
+            return this.basicRule;
+        }
+
+        return null;
+    }
+
+    /**
      * Returns a single stealth rule, that is corresponding to the given option.
      * If no option is given, returns a rule that disables stealth completely if any.
      *
@@ -320,7 +338,7 @@ export class MatchingResult {
         return this.stealthRules.find((r: NetworkRule) => {
             const stealthModifier = r.getStealthModifier();
             if (!stealthModifier) {
-                logger.debug(`Stealth rule without stealth modifier: ${r}`);
+                logger.debug(`[tsurl.MatchingResult.getStealthRule]: stealth rule without stealth modifier: ${r}`);
                 return false;
             }
             if (stealthOption) {
@@ -558,6 +576,17 @@ export class MatchingResult {
      */
     private static isSubDocumentRule(rule: NetworkRule): boolean {
         return (rule.getPermittedRequestTypes() & RequestType.SubDocument) === RequestType.SubDocument;
+    }
+
+    /**
+     * Checks if a network rule is document rule.
+     *
+     * @param rule Rule to check.
+     *
+     * @returns True if the rule is document rule, false otherwise.
+     */
+    private static isDocumentRule(rule: NetworkRule): boolean {
+        return (rule.getPermittedRequestTypes() & RequestType.Document) === RequestType.Document;
     }
 
     /**

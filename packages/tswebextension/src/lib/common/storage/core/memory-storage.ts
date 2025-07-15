@@ -86,7 +86,7 @@ export class MemoryStorage<Data = unknown> implements ExtendedStorageInterface<s
 
             return await Promise.resolve(true);
         } catch (error) {
-            logger.error('Error in setMultiple:', error);
+            logger.error('[tsweb.MemoryStorage.setMultiple]: error in setMultiple: ', error);
             return Promise.resolve(false);
         }
     }
@@ -103,7 +103,7 @@ export class MemoryStorage<Data = unknown> implements ExtendedStorageInterface<s
             keys.forEach((key) => this.store.delete(key));
             return await Promise.resolve(true);
         } catch (error) {
-            logger.error('Error in removeMultiple:', error);
+            logger.error('[tsweb.MemoryStorage.removeMultiple]: error in removeMultiple: ', error);
             return Promise.resolve(false);
         }
     }

@@ -222,7 +222,7 @@ const hasAnyUboModifier = (raw: string): boolean => {
         }
 
         // Find next colon
-        colonIndex = raw.indexOf(COLON, openingParenthesisIndex + 1);
+        colonIndex = raw.indexOf(COLON, colonIndex + 1);
     }
 
     return false;

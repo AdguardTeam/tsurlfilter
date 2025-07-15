@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
-import path from 'path';
-import fs from 'fs';
+import path from 'node:path';
+import fs from 'node:fs';
 
 import {
     type ConversionResult,
@@ -9,19 +9,16 @@ import {
     Filter,
 } from '../src/rules/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
-import { FilterListPreprocessor } from '../src';
+import { FilterListPreprocessor } from '../src/filterlist/preprocessor';
 import { getIdFromFilterName } from '../src/utils/resource-names';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
 import { generateMD5Hash } from '../src/utils/checksum';
 import { MetadataRuleSet } from '../src/rules/declarative-converter/metadata-ruleset';
 import { getRuleSetId, getRuleSetPath } from '../src/rules/declarative-converter-utils';
+import { ensureDirSync } from './utils';
 
-const ensureDirSync = (dirPath: string) => {
-    if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-    }
-};
+export const LOCAL_METADATA_FILE_NAME = 'filters.json';
 
 /**
  * Default options used by convert filters.
@@ -47,46 +44,60 @@ interface ConvertFiltersOptions {
      * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson}.
      */
     prettifyJson?: boolean;
+
+    /**
+     * Additional properties that can be passed to the converter to record
+     * inside metadata ruleset.
+     * This field is not validated, but it must be JSON serializable.
+     * Validation should be performed by users.
+     */
+    additionalProperties?: Record<string, unknown>;
 }
 
 /**
  * Converts filters with textual rules from the provided path to declarative
- * rule sets and saves them with counters, source map and list of source filter
+ * rulesets and saves them with counters, source map and list of source filter
  * identifiers on the specified path.
  *
- * @param filtersDir Path fo source filters.
+ * @param filtersAndMetadataDir Path fo source filters with metadata to convert.
  * @param resourcesDir Path to web accessible resources.
- * @param destRuleSetsDir Destination path for declarative rule sets.
+ * @param destRulesetsDir Destination path for declarative rulesets.
  * @param options Options for convert filters {@link ConvertFiltersOptions}.
  */
 export const convertFilters = async (
-    filtersDir: string,
+    filtersAndMetadataDir: string,
     resourcesDir: string,
-    destRuleSetsDir: string,
+    destRulesetsDir: string,
     options: ConvertFiltersOptions = {},
 ): Promise<void> => {
     const {
         debug = CONVERT_FILTER_DEFAULT_OPTIONS.debug,
         prettifyJson = CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson,
+        additionalProperties,
     } = options;
 
-    const filtersPath = path.resolve(process.cwd(), filtersDir);
+    const filtersWithMetadataPath = path.resolve(process.cwd(), filtersAndMetadataDir);
     const resourcesPath = path.resolve(process.cwd(), resourcesDir);
-    const destRuleSetsPath = path.resolve(process.cwd(), destRuleSetsDir);
+    const destRulesetsPath = path.resolve(process.cwd(), destRulesetsDir);
 
-    ensureDirSync(filtersPath);
-    ensureDirSync(destRuleSetsPath);
+    ensureDirSync(filtersWithMetadataPath);
+    ensureDirSync(destRulesetsPath);
 
     const filtersPaths = new Map<number, string>();
 
-    const files = fs.readdirSync(filtersPath);
+    console.info(`Scanning ${filtersWithMetadataPath} for filters...`);
+
+    const files = await fs.promises.readdir(filtersWithMetadataPath);
     const filters = files
         .map((filePath: string) => {
-            console.info(`Parsing ${filePath}...`);
+            const curPath = path.join(filtersWithMetadataPath, filePath);
+
+            console.info(`Extracting filter id from file ${curPath}...`);
+
             const index = getIdFromFilterName(filePath);
 
             if (!index) {
-                console.info(`${filePath} skipped`);
+                console.info(`Path '${curPath}' skipped`);
                 return null;
             }
 
@@ -94,11 +105,11 @@ export const convertFilters = async (
 
             filtersPaths.set(filterId, filePath);
             const data = fs.readFileSync(
-                path.resolve(filtersPath, filePath),
+                path.resolve(filtersWithMetadataPath, filePath),
                 { encoding: 'utf-8' },
             );
 
-            console.info(`Preparing filter #${filterId} to convert`);
+            console.info(`Added filter #${filterId} to convert`);
 
             return new Filter(
                 filterId,
@@ -109,7 +120,7 @@ export const convertFilters = async (
         })
         .filter((filter): filter is Filter => filter !== null);
 
-    const convertedRuleSets: IRuleSet[] = [];
+    const convertedRulesets: IRuleSet[] = [];
     let errors: ConversionResult['errors'] = [];
     let limitations: ConversionResult['limitations'] = [];
 
@@ -123,6 +134,8 @@ export const convertFilters = async (
         compatibility: CompatibilityTypes.Extension,
     });
 
+    console.info(`Starting conversion filters: ${filters.map((f) => f.getId()).join(', ')}`);
+
     for (let i = 0; i < filters.length; i += 1) {
         const filter = filters[i];
 
@@ -132,7 +145,7 @@ export const convertFilters = async (
             { resourcesPath },
         );
 
-        convertedRuleSets.push(converted.ruleSet);
+        convertedRulesets.push(converted.ruleSet);
         errors = errors.concat(converted.errors);
         limitations = limitations.concat(converted.limitations);
 
@@ -160,11 +173,12 @@ export const convertFilters = async (
         }
     }
 
+    console.log('\n');
     console.log('======================================');
     console.log('Common info');
     console.log('======================================');
 
-    console.log(`Converted rule sets: ${convertedRuleSets.length}`);
+    console.log(`Converted rulesets: ${convertedRulesets.length}`);
 
     console.log(`Errors: ${errors.length}`);
 
@@ -184,36 +198,54 @@ export const convertFilters = async (
         limitations.forEach((e) => console.log(e.message));
     }
 
-    const metadataRuleSet = new MetadataRuleSet();
+    const checksums: Record<string, string> = {};
 
-    for (let i = 0; i < convertedRuleSets.length; i += 1) {
-        const ruleSet = convertedRuleSets[i];
+    for (let i = 0; i < convertedRulesets.length; i += 1) {
+        const ruleSet = convertedRulesets[i];
         const id = ruleSet.getId();
 
-        const ruleSetDir = path.join(destRuleSetsPath, getRuleSetId(id));
+        const ruleSetDir = path.join(destRulesetsPath, getRuleSetId(id));
         ensureDirSync(ruleSetDir);
 
         // eslint-disable-next-line no-await-in-loop
-        const { result, byteRangeMap } = await ruleSet.serializeCompact(prettifyJson);
-        const ruleSetPath = getRuleSetPath(id, destRuleSetsPath);
+        const result = await ruleSet.serializeCompact(prettifyJson);
+        const ruleSetPath = getRuleSetPath(id, destRulesetsPath);
         // eslint-disable-next-line no-await-in-loop
         await fs.promises.writeFile(ruleSetPath, result);
 
-        metadataRuleSet.setByteRangeMap(id, byteRangeMap);
-        metadataRuleSet.setChecksum(id, generateMD5Hash(result));
+        checksums[id] = generateMD5Hash(result);
 
         console.log('===============================================');
-        console.info(`Rule set with id ${id} and all rule set info`);
+        console.info(`Ruleset with id ${id} and all ruleset info`);
         console.info('(counters, source map, filter list) was saved');
         console.info(`to ${ruleSetPath}`);
         console.log('===============================================');
     }
 
+    // We save metadata to special ruleset since it is required condition to use
+    // "skip review" option in CWS, that changes should be only in rulesets.
+    // We also have filters_i18n.json file in the filtersPath, but it is not
+    // often updated, so we pack inside ruleset only filters' metadata with
+    // versions, checksums and other information, not translations.
+    const rawMetadata = await fs.promises.readFile(
+        path.join(filtersAndMetadataDir, LOCAL_METADATA_FILE_NAME),
+        { encoding: 'utf-8' },
+    );
+    const metadata = JSON.parse(rawMetadata);
+
+    const metadataRuleSet = new MetadataRuleSet(
+        checksums,
+        {
+            metadata,
+            ...additionalProperties,
+        },
+    );
+
     const metadataRulesetId = metadataRuleSet.getId();
-    const metadataRulesetDir = path.join(destRuleSetsPath, getRuleSetId(metadataRulesetId));
+    const metadataRulesetDir = path.join(destRulesetsPath, getRuleSetId(metadataRulesetId));
     ensureDirSync(metadataRulesetDir);
 
-    const metadataRuleSetPath = getRuleSetPath(metadataRulesetId, destRuleSetsPath);
+    const metadataRuleSetPath = getRuleSetPath(metadataRulesetId, destRulesetsPath);
     await fs.promises.writeFile(
         metadataRuleSetPath,
         metadataRuleSet.serialize(prettifyJson),

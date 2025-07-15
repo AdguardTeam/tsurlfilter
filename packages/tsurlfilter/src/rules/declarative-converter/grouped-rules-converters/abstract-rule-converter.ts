@@ -99,6 +99,7 @@
 
 import punycode from 'punycode/punycode.js';
 import { getRedirectFilename } from '@adguard/scriptlets/redirects';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { type NetworkRule, NetworkRuleOption } from '../../network-rule';
 import { type RemoveParamModifier } from '../../../modifiers/remove-param-modifier';
@@ -134,11 +135,12 @@ import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
 import { HTTPMethod } from '../../../modifiers/method-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../modifiers/permissions-modifier';
 import { SimpleRegex } from '../../simple-regex';
-import type { IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
+import { type IndexedNetworkRuleWithHash } from '../network-indexed-rule-with-hash';
 import { NetworkRuleDeclarativeValidator } from '../network-rule-validator';
 import { EmptyDomainsError } from '../errors/conversion-errors/empty-domains-error';
 import { re2Validator } from '../re2-regexp/re2-validator';
 import { getErrorMessage } from '../../../common/error';
+import { type NetworkRuleWithNode } from '../network-rule-with-node';
 
 /**
  * Contains the generic logic for converting a {@link NetworkRule}
@@ -714,8 +716,8 @@ export abstract class DeclarativeRuleConverter {
      *
      * @protected
      *
-     * @param rule Network rule.
      * @param id Rule identifier.
+     * @param rule Network rule.
      *
      * @throws An {@link UnsupportedModifierError} if the network rule
      * contains an unsupported modifier
@@ -728,8 +730,8 @@ export abstract class DeclarativeRuleConverter {
      * @returns A list of declarative rules.
      */
     protected async convertRule(
-        rule: NetworkRule,
         id: number,
+        rule: NetworkRuleWithNode,
     ): Promise<DeclarativeRule[]> {
         // If the rule is not convertible - method will throw an error.
         const shouldConvert = NetworkRuleDeclarativeValidator.shouldConvertNetworkRule(rule);
@@ -741,11 +743,11 @@ export abstract class DeclarativeRuleConverter {
 
         const declarativeRule: DeclarativeRule = {
             id,
-            action: this.getAction(rule),
-            condition: DeclarativeRuleConverter.getCondition(rule),
+            action: this.getAction(rule.rule),
+            condition: DeclarativeRuleConverter.getCondition(rule.rule),
         };
 
-        const priority = DeclarativeRuleConverter.getPriority(rule);
+        const priority = DeclarativeRuleConverter.getPriority(rule.rule);
         if (priority) {
             declarativeRule.priority = priority;
         }
@@ -782,7 +784,7 @@ export abstract class DeclarativeRuleConverter {
      * while the original rule has non-empty domains.
      */
     private static async checkDeclarativeRuleApplicable(
-        networkRule: NetworkRule,
+        networkRule: NetworkRuleWithNode,
         declarativeRule: DeclarativeRule,
     ): Promise<ConversionError | null> {
         const { regexFilter, resourceTypes } = declarativeRule.condition;
@@ -791,11 +793,11 @@ export abstract class DeclarativeRuleConverter {
             return new EmptyResourcesError('Conversion resourceTypes is empty', networkRule, declarativeRule);
         }
 
-        const permittedDomains = networkRule.getPermittedDomains();
+        const permittedDomains = networkRule.rule.getPermittedDomains();
         if (permittedDomains && permittedDomains.length > 0) {
             const { initiatorDomains } = declarativeRule.condition;
             if (!initiatorDomains || initiatorDomains.length === 0) {
-                const ruleText = networkRule.getText();
+                const ruleText = RuleGenerator.generate(networkRule.node);
                 const msg = `Conversion initiatorDomains is empty, but original rule's domains not: "${ruleText}"`;
                 return new EmptyDomainsError(msg, networkRule, declarativeRule);
             }
@@ -806,7 +808,7 @@ export abstract class DeclarativeRuleConverter {
             try {
                 await re2Validator.isRegexSupported(regexFilter);
             } catch (e) {
-                const ruleText = networkRule.getText();
+                const ruleText = RuleGenerator.generate(networkRule.node);
                 const msg = `Regex is unsupported: "${ruleText}"`;
                 return new UnsupportedRegexpError(
                     msg,
@@ -859,9 +861,10 @@ export abstract class DeclarativeRuleConverter {
      *
      * @param filterId An identifier for the filter.
      * @param rules Indexed rules.
-     * @param offsetId Offset for the IDs of the converted rules. Used in cases
-     * of converting several filters into one ruleset to exclude the possibility
-     * of duplicate IDs.
+     * @param usedIds Set with already used IDs to exclude duplications in IDs.
+     * Since we use hash of the rule text to generate ID, we need to ensure that
+     * the ID is unique for the whole ruleset (especially when we convert
+     * several filters into one ruleset).
      *
      * @returns Transformed declarative rules with their sources
      * and caught conversion errors.
@@ -869,7 +872,7 @@ export abstract class DeclarativeRuleConverter {
     protected async convertRules(
         filterId: number,
         rules: IndexedNetworkRuleWithHash[],
-        offsetId: number,
+        usedIds: Set<number>,
     ): Promise<ConvertedRules> {
         const res: ConvertedRules = {
             declarativeRules: [],
@@ -877,21 +880,20 @@ export abstract class DeclarativeRuleConverter {
             sourceMapValues: [],
         };
 
-        await Promise.all(rules.map(async ({ rule, index }: IndexedNetworkRuleWithHash) => {
-            // Here we use offset to generate unique IDs for each rule. Because
-            // sometimes we convert several filters into one ruleset, that's why
-            // we cannot just use the index on IndexedNetworkRuleWithHash - they
-            // can be the same for different filters.
-            const id = offsetId + index;
+        await Promise.all(rules.map(async (r: IndexedNetworkRuleWithHash) => {
+            const { rule, index } = r;
+
+            const id = DeclarativeRuleConverter.generateUniqueId(r, usedIds);
+
             let converted: DeclarativeRule[] = [];
 
             try {
                 converted = await this.convertRule(
-                    rule,
                     id,
+                    rule,
                 );
             } catch (e) {
-                const err = DeclarativeRuleConverter.catchErrorDuringConversion(rule, index, id, e);
+                const err = DeclarativeRuleConverter.catchErrorDuringConversion(rule.rule, index, id, e);
                 res.errors.push(err);
                 return;
             }
@@ -989,12 +991,36 @@ export abstract class DeclarativeRuleConverter {
     }
 
     /**
+     * Creates unique ID for rule via adding salt to the hash of the rule if
+     * found duplicate ID.
+     *
+     * @param r Indexed network rule with hash.
+     * @param usedIds Set with already used IDs to exclude duplications in IDs.
+     *
+     * @returns Unique ID for the rule.
+     */
+    private static generateUniqueId(r: IndexedNetworkRuleWithHash, usedIds: Set<number>): number {
+        let id = r.getRuleTextHash();
+
+        // While the ID is already used, we add salt to the hash of the rule.
+        let salt = 0;
+        while (usedIds.has(id)) {
+            salt += 1;
+            id = r.getRuleTextHash(salt);
+        }
+
+        usedIds.add(id);
+
+        return id;
+    }
+
+    /**
      * Converts provided bunch of indexed rules to declarative rules
      * via generating source map for it and catching errors of conversations.
      *
      * @param filterId Filter id.
      * @param rules Indexed network rules with hashes.
-     * @param offsetId Offset for the IDs of the converted rules.
+     * @param usedIds Set with already used IDs to exclude duplications in IDs.
      *
      * @returns Object of {@link ConvertedRules} which containing declarative
      * rules, source rule identifiers, errors and counter of regexp rules.
@@ -1002,6 +1028,6 @@ export abstract class DeclarativeRuleConverter {
     abstract convert(
         filterId: number,
         rules: IndexedNetworkRuleWithHash[],
-        offsetId: number,
+        usedIds: Set<number>,
     ): Promise<ConvertedRules>;
 }

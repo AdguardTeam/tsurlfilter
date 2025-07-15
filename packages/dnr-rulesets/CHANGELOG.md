@@ -5,6 +5,104 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2025-07-09
+
+### Changed
+
+- Version of DNR rulesets is now packed into metadata ruleset.
+
+[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.2.0
+
+## [3.1.3] - 2025-07-03
+
+### Updated
+
+- Updated [@adguard/tsurlfilter] to `v3.4.2`.
+
+[3.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.3
+
+## [3.1.2] - 2025-07-02
+
+### Removed
+
+- `filters.json` after build.
+
+[3.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.2
+
+## [3.1.1] - 2025-07-02
+
+### Added
+
+- New `exclude-unsafe-rules` CLI command to exclude unsafe rules from rulesets
+  and save them to the metadata of rulesets for use "skip review" feature in CWS.
+- New `watch` command to watch for changes in the filters
+  and automatically rebuild DNR.
+- New option `--latest-filters` for `load` command to load fresh text filters
+  instead of DNR rulesets and save them to the specified directory.
+
+### Updated
+
+- Updated [@adguard/tsurlfilter] to `v3.4.1`.
+
+[3.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.1
+
+## [3.1.0] - 2025-06-06
+
+### Added
+
+- `utils` entry point with `getVersion` and `getVersionTimestampMs` functions.
+
+### Changed
+
+- Updated [@adguard/logger] to `v2.0.0`.
+- Updated [@adguard/tsurlfilter] to `v3.4.0`.
+
+[3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.0
+
+## [3.0.0-alpha.12] - 2025-05-28
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v3.3.4`.
+
+### Fixed
+
+- Types for `NodeNext` module resolution.
+
+[3.0.0-alpha.12]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.12
+
+## [3.0.0-alpha.7] - 2025-05-19
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `v3.3.2`.
+
+### Fixed
+
+- Updated `zod` dependency to version `3.24.4` to resolve vulnerability warnings.
+
+[3.0.0-alpha.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.7
+
+## [3.0.0-alpha.3] - 2025-05-15
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `3.3.1`.
+
+[3.0.0-alpha.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.3
+
+## [3.0.0-alpha.0] - 2025-04-30
+
+### Changed
+
+- Updated `@adguard/tsurlfilter` to `3.3.0-alpha.0`.
+
+### Removed
+
+- Byte ranges from metadata ruleset.
+
+[3.0.0-alpha.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.0.0-alpha.0
+
 ## [2.0.0] - 2025-02-28
 
 ## Added
@@ -76,3 +174,5 @@ For example, while bundling the manifest with the extension.
 ### Changed
 
 - Improve filters compatibility with Declarative Net Request API.
+
+[@adguard/logger]: ../logger/CHANGELOG.md

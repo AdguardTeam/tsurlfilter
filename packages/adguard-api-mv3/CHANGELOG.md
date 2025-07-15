@@ -5,13 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.3 - 2024-11-22
+## [0.3.0] - 2025-05-27
+
+### Changed
+
+- Updated [@adguard/tswebextension] to `^3.1.0-alpha.3`.
+
+### Fixed
+
+- Updated `zod` dependency to version `3.24.4` to resolve vulnerability warnings.
+
+[0.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.3.0
+
+## [0.2.3] - 2024-11-22
 
 ### Changed
 
 - Updated [@adguard/tswebextension] to `v2.4.0-alpha.7`.
 
-## 0.2.1 - 2024-10-15
+[0.2.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.2.3
+
+## [0.2.1] - 2024-10-15
 
 ### Changed
 
@@ -28,7 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [AdguardBrowserExtension#2977]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2977
 [AdguardBrowserExtension#2980]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2980
 
-## 0.2.0 - 2024-10-02
+[0.2.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.2.1
+
+## [0.2.0] - 2024-10-02
 
 ### Changed
 
@@ -47,7 +63,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [#137]: https://github.com/AdguardTeam/tsurlfilter/issues/137
 
-## 0.1.7 - 2024-08-30
+[0.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.2.0
+
+## [0.1.7] - 2024-08-30
 
 ### Changed
 
@@ -57,18 +75,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [List of tracker categories].
 
 [List of tracker categories]: https://github.com/AdguardTeam/companiesdb/blob/main/README.md#tracker-categories
+[0.1.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.1.7
 
-## 0.1.3 - 2024-07-29
+## [0.1.3] - 2024-07-29
 
 ### Changed
 
 - Injection of the cosmetic rules is now done from the background page/
 
-## 0.1.0 - 2024-07-02
+[0.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.1.3
+
+## [0.1.0] - 2024-07-02
 
 ### Added
 
 - New `adguardApi.onRequestBlocking` API for tracking blocked requests.
 
+[0.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.1.0
 [@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/tswebextension]: ../tswebextension/CHANGELOG.md

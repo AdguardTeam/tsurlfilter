@@ -32,25 +32,25 @@ import { getErrorMessage } from '../common/error';
  * Init script params.
  */
 interface InitScriptParams {
-    debug?: boolean,
-    frameUrl?: string
+    debug?: boolean;
+    frameUrl?: string;
 }
 
 /**
  * Get scriptlet data response type.
  */
 export type ScriptletData = {
-    params: Source,
-    func: (source: Source, args: string[]) => void
+    params: Source;
+    func: (source: Source, args: string[]) => void;
 };
 
 /**
  * Script data type.
  */
 type ScriptData = {
-    code: string | null,
-    debug?: boolean,
-    frameUrl?: string
+    code: string | null;
+    debug?: boolean;
+    frameUrl?: string;
 };
 
 /**
@@ -58,7 +58,7 @@ type ScriptData = {
  */
 export type ScriptletsProps = {
     name: string;
-    args: string[],
+    args: string[];
 };
 
 class ScriptletParams {

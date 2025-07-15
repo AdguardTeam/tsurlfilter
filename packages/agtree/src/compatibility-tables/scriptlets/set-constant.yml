@@ -36,7 +36,7 @@ ubo_any:
     - name: runAt
       required: false
 
-abp_any:  
+abp_any:
   name: override-property-read
   version_added: 3.9.4
   docs: https://help.adblockplus.org/hc/en-us/articles/1500002338501-Snippet-filters-tutorial#snippets-ref

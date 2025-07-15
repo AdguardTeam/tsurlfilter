@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "moduleResolution": "bundler",
+        "target": "ESNext",
+        "module":"ESNext",
+        "lib": ["esnext", "dom"],
+        "strict": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "resolveJsonModule": true,
+    },
+    "typeRoots": [
+        "node_modules/@types",
+    ],
+}

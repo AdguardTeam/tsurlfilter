@@ -12,9 +12,10 @@ export class ParameterListGenerator extends BaseGenerator {
      *
      * @param params Parameter list AST
      * @param separator Separator character (default: comma)
+     * @param allowSpace Allow space between parameters (default: true)
      * @returns String representation of the parameter list
      */
-    public static generate(params: ParameterList, separator = COMMA): string {
+    public static generate(params: ParameterList, separator = COMMA, allowSpace = true): string {
         const collection: string[] = [];
 
         let i = 0;
@@ -27,9 +28,17 @@ export class ParameterListGenerator extends BaseGenerator {
             }
         }
 
-        // join parameters with separator
-        // if the separator is a space, join with a single space
-        const result = collection.join(separator === SPACE ? separator : `${separator}${SPACE}`);
+        let result = EMPTY;
+
+        // if allowSpace is true, join with a single separator
+        // without space
+        if (!allowSpace && separator !== SPACE) {
+            result = collection.join(separator);
+        } else {
+            // join parameters with separator
+            // if the separator is a space, join with a single space
+            result = collection.join(separator === SPACE ? separator : `${separator}${SPACE}`);
+        }
 
         return result;
     }

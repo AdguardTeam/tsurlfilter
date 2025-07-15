@@ -20,6 +20,9 @@
 !include 'tswebextension-permissions.yaml'
 
 ---
+!include 'tswebextension-increment.yaml'
+
+---
 !include 'tswebextension-update-companiesdb.yaml'
 
 ---
@@ -36,6 +39,9 @@
 
 ---
 !include 'agtree-deploy.yaml'
+
+---
+!include 'agtree-increment.yaml'
 
 ---
 !include 'agtree-permissions.yaml'
@@ -59,6 +65,15 @@
 !include 'logger-permissions.yaml'
 
 ---
+!include 'eslint-plugin-logger-context-build.yaml'
+
+---
+!include 'eslint-plugin-logger-context-deploy.yaml'
+
+---
+!include 'eslint-plugin-logger-context-permissions.yaml'
+
+---
 !include 'adguard-api-mv3-build.yaml'
 
 ---
@@ -72,6 +87,9 @@
 
 ---
 !include 'dnr-rulesets-deploy.yaml'
+
+---
+!include 'dnr-rulesets-increment.yaml'
 
 ---
 !include 'dnr-rulesets-permissions.yaml'

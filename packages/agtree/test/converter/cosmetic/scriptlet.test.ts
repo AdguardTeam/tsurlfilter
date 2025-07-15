@@ -8,6 +8,7 @@ import {
 import { RuleParser } from '../../../src/parser/rule-parser';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
 import { type ScriptletInjectionRule } from '../../../src/nodes';
+import { RuleConversionError } from '../../../src/errors/rule-conversion-error';
 
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {
@@ -145,6 +146,12 @@ describe('Scriptlet conversion', () => {
                     "memo-book.pl#%#//scriptlet('ubo-rc', '.locked', 'body, html', 'stay')",
                 ],
             },
+            {
+                actual: 'bokepgemoy.com##+js(nobab)',
+                expected: [
+                    "bokepgemoy.com#%#//scriptlet('ubo-nobab')",
+                ],
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToAdg');
         });
@@ -253,6 +260,10 @@ describe('Scriptlet conversion', () => {
                 expected: ['example.com##+js(set-session-storage-item, acceptCookies, false)'],
             },
             {
+                actual: "example.com#%#//scriptlet('prevent-fab-3.2.0')",
+                expected: ['example.com##+js(nofab)'],
+            },
+            {
                 // emptyArr as set-constant parameter
                 actual: "example.org#%#//scriptlet('set-constant', 'adUnits', 'emptyArr')",
                 expected: ['example.org##+js(set-constant, adUnits, [])'],
@@ -285,15 +296,111 @@ describe('Scriptlet conversion', () => {
                 actual: "example.com#%#//scriptlet('set-local-storage-item', 'mode', '$remove$')",
                 expected: ['example.com##+js(set-local-storage-item, mode, $remove$)'],
             },
-
+            // Should not convert already uBO scriptlet
             {
-                actual: String.raw`example.net,example.com#$#log Hello\ no\ quotes`,
+                actual: 'example.org##+js(google-ima)',
                 expected: [
-                    String.raw`example.net,example.com##+js(log, Hello no quotes)`,
+                    'example.org##+js(google-ima)',
+                ],
+                shouldConvert: false,
+            },
+            {
+                actual: 'example.org##+js(googletagservices_gpt)',
+                expected: [
+                    'example.org##+js(googletagservices_gpt)',
+                ],
+                shouldConvert: false,
+            },
+            {
+                actual: String.raw`example.net,example.com#$#set-cookie-reload Hello\ no\ quotes true`,
+                expected: [
+                    String.raw`example.net,example.com##+js(set-cookie-reload, Hello no quotes, true)`,
                 ],
             },
-        ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+            {
+                actual: "[$domain=/^example\\d+\\.xyz/]#%#//scriptlet('set-constant', 'foo', 'bar')",
+                expected: [
+                    '/^example\\d+\\.xyz/##+js(set-constant, foo, bar)',
+                ],
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: "[$domain=example.com|example.org]#%#//scriptlet('set-constant', 'form')",
+                expected: [
+                    'example.com,example.org##+js(set-constant, form)',
+                ],
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: String.raw`[$domain=/^example\.org$/|somesite.org|somesite2.*]#%#//scriptlet('set-constant', 'form')`,
+                expected: [
+                    String.raw`/^example\.org$/,somesite.org,somesite2.*##+js(set-constant, form)`,
+                ],
+            },
+        ])("should convert '$actual' to '$expected'", (testData) => {
             expect(testData).toBeConvertedProperly(ScriptletRuleConverter, 'convertToUbo');
+        });
+    });
+
+    describe('should throw error on unsupported scriptlets in uBO', () => {
+        test.each([
+            {
+                actual: String.raw`example.com#%#//scriptlet('inject-css-in-shadow-dom', '.block { display: none; }')`,
+                expected: 'Scriptlet "inject-css-in-shadow-dom" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('prevent-element-src-loading', 'img', '&adslot=')`,
+                expected: 'Scriptlet "prevent-element-src-loading" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('remove-in-shadow-dom', 'div[class^="bannerContainer"]')`,
+                expected: 'Scriptlet "remove-in-shadow-dom" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('hide-in-shadow-dom', '.ampAds')`,
+                expected: 'Scriptlet "hide-in-shadow-dom" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('trusted-set-local-storage-item', 'popupShow', '1')`,
+                expected: 'Scriptlet "trusted-set-local-storage-item" is not supported in uBlock Origin.',
+            },
+            {
+                actual: String.raw`example.com#%#//scriptlet('trusted-set-cookie', 'showCookie', 'true')`,
+                expected: 'Scriptlet "trusted-set-cookie" is not supported in uBlock Origin.',
+            },
+            {
+                actual: "[$path=/baz]example.com#%#//scriptlet('set-constant', 'foo', 'bar')",
+                expected: 'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
+            },
+            {
+                actual: String.raw`[$path=/m]example.com#%#//scriptlet('trusted-click-element', 'form')`,
+                expected: 'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: "[$domain=example.com|~test.example.com,path=/page.html]#%#//scriptlet('trusted-click-element', 'form')",
+                expected: 'uBlock Origin scriptlet injection rules do not support cosmetic rule modifiers.',
+            },
+            // non-valid domain syntax
+            {
+                // eslint-disable-next-line max-len
+                actual: "[$domain=example.com| |example.org]#%#//scriptlet('set-constant', 'form')",
+                expected: 'Empty value specified in the list',
+            },
+            {
+                actual: "[$domain=|example.com|example.org]#%#//scriptlet('set-constant', 'form')",
+                expected: 'Value list cannot start with a separator',
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: "[$domain=domain=exam[le.org|example.com|example,org|example or,]#%#//scriptlet('set-constant', 'form')",
+                expected: 'Modifier name cannot be empty',
+            },
+        ])("should throw error on '$actual'", ({ actual, expected }) => {
+            // eslint-disable-next-line max-len
+            expect(() => ScriptletRuleConverter.convertToUbo(RuleParser.parse(actual) as ScriptletInjectionRule)).toThrowError(
+                new RuleConversionError(expected),
+            );
         });
     });
 

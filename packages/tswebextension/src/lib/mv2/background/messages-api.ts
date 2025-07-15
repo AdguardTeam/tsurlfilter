@@ -146,7 +146,7 @@ export class MessagesApi {
         sender: Runtime.MessageSender,
         payload?: unknown,
     ): ContentScriptCosmeticData | null {
-        logger.debug('[tswebextension.handleGetCosmeticData]: received call: ', payload);
+        logger.trace('[tsweb.MessagesApi.handleGetCosmeticData]: received call: ', payload);
         if (!payload || !sender?.tab?.id) {
             return null;
         }
@@ -154,7 +154,7 @@ export class MessagesApi {
         const res = getExtendedCssPayloadValidator.safeParse(payload);
 
         if (!res.success) {
-            logger.error('[tswebextension.handleGetCosmeticData]: cannot parse payload: ', payload, res.error);
+            logger.error('[tsweb.MessagesApi.handleGetCosmeticData]: cannot parse payload: ', payload, res.error);
             return null;
         }
 

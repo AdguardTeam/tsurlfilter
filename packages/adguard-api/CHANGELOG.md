@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Changed
+
+- Updated [@adguard/assistant] to `v4.3.74`.
+
+## [3.1.0] - 2025-05-27
+
+### Changed
+
+- Updated [@adguard/tswebextension] to `^3.1.0-alpha.3`.
+
+### Fixed
+
+- Updated `zod` dependency to version `3.24.4` to resolve vulnerability warnings.
+
+[3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-v3.1.0
+
 ## [3.0.3] - 2024-11-22
 
 ### Changed

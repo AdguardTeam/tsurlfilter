@@ -1,0 +1,44 @@
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "dummy.rule.adguard.com",
+			"resourceTypes": [
+				"xmlhttprequest"
+			]
+		},
+		"metadata": {
+			"metadata": {
+				"regexpRulesCount": 0,
+				"unsafeRulesCount": 1,
+				"rulesCount": 1,
+				"ruleSetHashMapRaw": "[[1718877695,[[999,4]]]]",
+				"badFilterRulesRaw": []
+			},
+			"lazyMetadata": {
+				"sourceMapRaw": "[[428251515,4,999]]",
+				"filterIds": [
+					999
+				]
+			},
+			"conversionMap": {},
+			"rawFilterList": "||example.com/ad.js$redirect=noopjs"
+		}
+	},
+	{
+		"id": 428251515,
+		"action": {
+			"type": "redirect",
+			"redirect": {
+				"extensionPath": "/web-accessible-resources/redirects/noopjs.js"
+			}
+		},
+		"condition": {
+			"urlFilter": "||example.com/ad.js"
+		},
+		"priority": 1001
+	}
+]

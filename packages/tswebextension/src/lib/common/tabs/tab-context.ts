@@ -114,6 +114,20 @@ export class TabContextCommon<F extends FrameCommon> {
     }
 
     /**
+     * Checks if the tab hosts a content by checking its ID.
+     * Non-content tabs can be PWA apps and devtools windows.
+     *
+     * @see {@link https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/TAB_ID_NONE}.
+     *
+     * @param tabId Tab ID.
+     *
+     * @returns True if the tab is a content tab.
+     */
+    public static isTabHostingContent(tabId: number): boolean {
+        return tabId !== browser.tabs.TAB_ID_NONE;
+    }
+
+    /**
      * Checks if passed {@link Tabs.Tab} details represent a browser tab.
      *
      * @see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/tabs/Tab#type
@@ -124,7 +138,7 @@ export class TabContextCommon<F extends FrameCommon> {
      * @returns True if the tab is a browser tab, otherwise returns false.
      */
     public static isBrowserTab(tab: Tabs.Tab): tab is TabInfo {
-        return typeof tab.id === 'number' && tab.id !== browser.tabs.TAB_ID_NONE;
+        return typeof tab.id === 'number' && TabContextCommon.isTabHostingContent(tab.id);
     }
 
     /**
