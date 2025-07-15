@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { Application, OptionDefaults, TypeDocReader } from 'typedoc';
 
 /**
@@ -9,14 +10,14 @@ async function main() {
         entryPoints: ['src/index.ts'],
         out: 'docs',
         entryPointStrategy: 'expand',
-        excludeExternals: 'false',
-        excludePrivate: 'true',
-        excludeProtected: 'true',
-        categorizeByGroup: 'true',
+        excludeExternals: false,
+        excludePrivate: true,
+        excludeProtected: true,
+        categorizeByGroup: true,
         sort: ['source-order'],
         readme: 'README.md',
-        hideGenerator: 'true',
-        includeVersion: 'true',
+        hideGenerator: true,
+        includeVersion: true,
         sourceLinkTemplate: 'https://github.com/AdguardTeam/tsurlfilter/blob/{gitRevision}/{path}#L{line}',
         ignoredHighlightLanguages: ['adblock'],
         tsconfig: 'tsconfig.json',
@@ -24,7 +25,7 @@ async function main() {
         blockTags: [...OptionDefaults.blockTags, '@todo', '@file', '@note'],
 
         // Skip TypeScript errors during documentation generation
-        skipErrorChecking: 'true',
+        skipErrorChecking: true,
     }, [new TypeDocReader()]);
 
     // Generate documentation
