@@ -602,6 +602,13 @@ describe('RuleParser', () => {
             exception: false,
         });
 
+        expect(RuleParser.parse('$$div[custom_attr]')).toMatchObject({
+            category: RuleCategory.Cosmetic,
+            type: CosmeticRuleType.HtmlFilteringRule,
+            syntax: AdblockSyntax.Adg,
+            exception: false,
+        });
+
         expect(RuleParser.parse('example.com,~example.net$$script[tag-content="adblock"]')).toMatchObject({
             category: RuleCategory.Cosmetic,
             type: CosmeticRuleType.HtmlFilteringRule,
@@ -973,7 +980,12 @@ describe('RuleParser', () => {
         expect(parseAndGenerate('!#safari_cb_affinity(content_blockers)')).toEqual(
             '!#safari_cb_affinity(content_blockers)',
         );
-
+        expect(parseAndGenerate('!#safari_cb_affinity(general,privacy)')).toEqual(
+            '!#safari_cb_affinity(general,privacy)',
+        );
+        expect(parseAndGenerate('!#safari_cb_affinity(general, privacy)')).toEqual(
+            '!#safari_cb_affinity(general,privacy)',
+        );
         // Metadata comments
         expect(parseAndGenerate('! Title: My List')).toEqual('! Title: My List');
         expect(parseAndGenerate('! Version: 2.0.150')).toEqual('! Version: 2.0.150');
@@ -1168,6 +1180,9 @@ describe('RuleParser', () => {
         expect(parseAndGenerate('$$script[tag-content="adblock"]')).toEqual('$$script[tag-content="adblock"]');
         expect(parseAndGenerate('example.com,~example.net$$script[tag-content="adblock"]')).toEqual(
             'example.com,~example.net$$script[tag-content="adblock"]',
+        );
+        expect(parseAndGenerate('testcases.agrd.dev,pages.dev$$div[custom_attr]')).toEqual(
+            'testcases.agrd.dev,pages.dev$$div[custom_attr]',
         );
         expect(parseAndGenerate('$@$script[tag-content="adblock"]')).toEqual('$@$script[tag-content="adblock"]');
         expect(parseAndGenerate('example.com,~example.net$@$script[tag-content="adblock"]')).toEqual(

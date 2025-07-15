@@ -18,18 +18,16 @@ import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type AnyRule } from '@adguard/agtree';
 
 import { QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
-import { getErrorMessage } from '../../common/error';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, isHttpRequest, getHost } from '../../common/utils/url';
 
 import { allowlistApi } from './allowlist-api';
 import { type ConfigurationMV3 } from './configuration';
-import { DocumentApi } from './document-api';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 
 type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'quickFixesRules' | 'verbose'> & {
-    filters: IFilter[],
+    filters: IFilter[];
 };
 
 /**
@@ -96,7 +94,7 @@ export class EngineApi {
                 );
             } catch (e) {
                 const filterId = filters[i].getId();
-                logger.error(`Cannot create IRuleList for filter ${filterId} due to: ${getErrorMessage(e)}`);
+                logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for filter ${filterId} due to: `, e);
             }
         }
 
@@ -193,13 +191,6 @@ export class EngineApi {
         }
 
         const frameUrl = getHost(url);
-
-        // Checks if an allowlist rule exists at the document level,
-        // then discards all cosmetic rules.
-        const allowlistFrameRule = DocumentApi.matchFrame(url);
-        if (allowlistFrameRule) {
-            return new CosmeticResult();
-        }
 
         const request = new Request(url, frameUrl, RequestType.Document);
 

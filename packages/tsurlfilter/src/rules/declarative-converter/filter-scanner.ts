@@ -20,8 +20,8 @@ interface IFilterScanner {
  * Contains scanned indexed rules with theirs hashes and list of errors.
  */
 type ScannedRulesWithErrors = {
-    rules: IndexedNetworkRuleWithHash[],
-    errors: Error[],
+    rules: IndexedNetworkRuleWithHash[];
+    errors: Error[];
 };
 
 /**

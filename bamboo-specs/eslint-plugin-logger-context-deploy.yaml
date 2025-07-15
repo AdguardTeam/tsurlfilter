@@ -1,0 +1,47 @@
+---
+version: 2
+deployment:
+  name: eslint-plugin-logger-context - deploy
+  source-plan: AJL-ESLINTPLUGINLOGGERBUILD
+release-naming: ${bamboo.inject.version}
+environments:
+  - npmjs
+
+npmjs:
+  docker:
+    image: adguard/node-ssh:22.14--0
+    volumes:
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  triggers: [ ]
+  tasks:
+    - checkout:
+        force-clean-build: 'true'
+    - artifact-download:
+        artifacts:
+          - name: eslint-plugin-logger-context.tgz
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            # Publish tarball to NPM package registry
+            export NPM_TOKEN=${bamboo.npmSecretToken}
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
+            npm publish eslint-plugin-logger-context.tgz --access public
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+  notifications:
+    - events:
+        - deployment-started-and-finished
+      recipients:
+        - webhook:
+            name: Deploy webhook
+            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo

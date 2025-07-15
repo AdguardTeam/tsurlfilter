@@ -41,6 +41,7 @@ module.exports = {
                 SwitchCase: 1,
             },
         ],
+        '@typescript-eslint/member-delimiter-style': 'error',
         'jsdoc/multiline-blocks': ['error', { noSingleLineBlocks: true }],
         'import/prefer-default-export': 'off',
         'import-newlines/enforce': ['error', { items: 3, 'max-len': MAX_LINE_LENGTH }],
@@ -80,36 +81,13 @@ module.exports = {
         'jsdoc/sort-tags': ['error', {
             linesBetween: 1,
             tagSequence: [
-                {
-                    tags: [
-                        'file',
-                    ],
-                },
-                {
-                    tags: [
-                        'see',
-                    ],
-                },
-                {
-                    tags: [
-                        'param',
-                    ],
-                },
-                {
-                    tags: [
-                        'returns',
-                    ],
-                },
-                {
-                    tags: [
-                        'throws',
-                    ],
-                },
-                {
-                    tags: [
-                        'example',
-                    ],
-                },
+                { tags: ['file'] },
+                { tags: ['template'] },
+                { tags: ['see'] },
+                { tags: ['param'] },
+                { tags: ['returns'] },
+                { tags: ['throws'] },
+                { tags: ['example'] },
             ],
         }],
         'arrow-body-style': 'off',

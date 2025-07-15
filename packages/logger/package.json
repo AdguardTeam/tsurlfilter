@@ -1,6 +1,6 @@
 {
     "name": "@adguard/logger",
-    "version": "1.1.1",
+    "version": "2.0.0",
     "scripts": {
         "prebuild": "rimraf dist",
         "build": "pnpm prebuild && rollup -c rollup.config.ts --configPlugin typescript && pnpm build:types && pnpm build:txt",
@@ -11,7 +11,7 @@
         "lint:code": "eslint --cache --ignore-path .gitignore .",
         "lint:types": "tsc",
         "test:smoke": "(cd tests/smoke/esm && pnpm test) && (cd tests/smoke/cjs && pnpm test) && (cd tests/smoke/typescript && pnpm test)",
-        "increment": "pnpm version patch --no-git-tag-version"
+        "tgz": "pnpm pack --out logger.tgz"
     },
     "engines": {
         "node": ">=22"
@@ -46,22 +46,22 @@
         "logger"
     ],
     "devDependencies": {
-        "@rollup/plugin-commonjs": "^25.0.7",
-        "@rollup/plugin-node-resolve": "^15.2.3",
-        "@rollup/plugin-typescript": "^11.1.6",
-        "@types/node": "^20.11.30",
-        "@typescript-eslint/eslint-plugin": "^7.0.0",
-        "@typescript-eslint/parser": "^7.0.0",
-        "eslint": "8.57.0",
-        "eslint-config-airbnb-base": "15.0.0",
-        "eslint-config-airbnb-typescript": "18.0.0",
-        "eslint-plugin-import": "^2.25.2",
-        "eslint-plugin-jsdoc": "^48.2.1",
-        "rimraf": "^5.0.5",
-        "rollup": "^4.13.0",
-        "tslib": "^2.6.2",
-        "tsx": "^4.19.3",
-        "typescript": "^5.4.2",
-        "vitest": "^2.1.6"
+        "@rollup/plugin-commonjs": "catalog:",
+        "@rollup/plugin-node-resolve": "catalog:",
+        "@rollup/plugin-typescript": "catalog:",
+        "@types/node": "catalog:",
+        "@typescript-eslint/eslint-plugin": "catalog:",
+        "@typescript-eslint/parser": "catalog:",
+        "eslint": "catalog:",
+        "eslint-config-airbnb-base": "catalog:",
+        "eslint-config-airbnb-typescript": "catalog:",
+        "eslint-plugin-import": "catalog:",
+        "eslint-plugin-jsdoc": "catalog:",
+        "rimraf": "catalog:",
+        "rollup": "catalog:",
+        "tslib": "catalog:",
+        "tsx": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:"
     }
 }

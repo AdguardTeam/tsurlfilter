@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'adguard-api-v*'
+      - 'adguard-api-mv3-v*'
       - 'agtree-v*'
       - 'css-tokenizer-v*'
       - 'logger-v*'
@@ -35,6 +36,7 @@ jobs:
 
             const nameMap = {
               'adguard-api': 'AdGuard API',
+              'adguard-api-mv3': 'AdGuard API MV3',
               'agtree': 'AGTree',
               'css-tokenizer': 'CSS Tokenizer',
               'logger': 'Logger',
@@ -52,9 +54,18 @@ jobs:
               `Please see the [CHANGELOG](${changelogUrl}) for more information.`,
             ].join('\n');
 
+            // Regular expression from semver.org
+            // https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+            const SEMVER_REGEX = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$/;
+
+            // Note: capturing group 4 stands for the prerelease version
+            const match = SEMVER_REGEX.exec(packageVersion);
+            const isPreRelease = match && match[4] !== undefined;
+
             core.exportVariable('TAG_NAME', tag);
             core.exportVariable('RELEASE_NAME', releaseName);
             core.exportVariable('RELEASE_BODY', releaseBody);
+            core.exportVariable('IS_PRERELEASE', isPreRelease.toString());
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -63,7 +74,7 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           body: ${{ env.RELEASE_BODY }}
           draft: false
-          prerelease: false
+          prerelease: ${{ env.IS_PRERELEASE == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

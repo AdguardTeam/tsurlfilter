@@ -435,7 +435,7 @@ export interface RuleBase extends Node {
          * Newline character used in the rule (if any)
          */
         nl?: NewLine;
-    }
+    };
 }
 
 export interface InvalidRuleError extends Node {

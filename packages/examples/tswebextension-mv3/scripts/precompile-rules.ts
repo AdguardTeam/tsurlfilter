@@ -13,17 +13,20 @@ const RESOURCES_DIR = '/web-accessible-resources/redirects';
 
 const ADGUARD_FILTERS_IDS = DEFAULT_EXTENSION_CONFIG.staticFiltersIds;
 
-const EXTENSION_FILTERS_SERVER_URL_FORMAT = 'https://filters.adtidy.org/extension/chromium';
-const FILTER_DOWNLOAD_URL_FORMAT = `${EXTENSION_FILTERS_SERVER_URL_FORMAT}/filters/%filter.txt`;
+const MV3_EXTENSION_FILTERS_SERVER_URL_FORMAT = 'https://filters.adtidy.org/extension/chromium-mv3';
+const FILTER_DOWNLOAD_URL_FORMAT = `${MV3_EXTENSION_FILTERS_SERVER_URL_FORMAT}/filters/%filter.txt`;
+// Note: .js for proper work caching in CDN.
+const FILTERS_METADATA_URL = `${MV3_EXTENSION_FILTERS_SERVER_URL_FORMAT}/filters.js`;
+const LOCAL_FILTERS_METADATA_FILENAME = 'filters.json';
 
 export type UrlType = {
-    id: number,
-    url: string,
-    file: string,
+    id: number;
+    url: string;
+    file: string;
 };
 
 const getUrlsOfFiltersResources = () => {
-    return ADGUARD_FILTERS_IDS.map(filterId => ({
+    return ADGUARD_FILTERS_IDS.map((filterId: number) => ({
         id: filterId,
         url: FILTER_DOWNLOAD_URL_FORMAT.replace('%filter', `${filterId}`),
         file: getFilterName(filterId),
@@ -40,11 +43,32 @@ const downloadFilter = async (url: UrlType, filtersDir: string) => {
     console.info(`Download ${url.url} done`);
 };
 
+const downloadFiltersMetadata = async (url: string, filtersDir: string) => {
+    console.info(`Download filters metadata from ${url}...`);
+
+    // responseType 'text' since 'json' throws an error for some reason and we
+    // actually do not need to parse it as JSON here, just save it as a file.
+    const response = await axios.get(url, { responseType: 'text' });
+
+    console.log(`Filters metadata response: ${response}`);
+
+    const savePath = path.join(filtersDir, LOCAL_FILTERS_METADATA_FILENAME);
+
+    await fs.promises.writeFile(savePath, response.data);
+
+    console.info(`Download filters metadata done, saved to ${savePath}`);
+};
+
 const startDownload = async () => {
     await ensureDir(FILTERS_DIR);
 
     const urls = getUrlsOfFiltersResources();
-    await Promise.all(urls.map(url => downloadFilter(url, FILTERS_DIR)));
+    await Promise.all(urls.map((url: UrlType) => downloadFilter(url, FILTERS_DIR)));
+
+    await downloadFiltersMetadata(
+        FILTERS_METADATA_URL,
+        FILTERS_DIR,
+    );
 };
 
 /**

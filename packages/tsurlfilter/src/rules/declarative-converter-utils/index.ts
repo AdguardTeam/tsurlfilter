@@ -7,3 +7,7 @@ export {
     getRuleSetPath,
     extractRuleSetId,
 } from './rule-set-path';
+
+export {
+    isSafeRule,
+} from './is-safe-dnr-rule';

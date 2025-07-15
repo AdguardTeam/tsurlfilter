@@ -126,6 +126,7 @@ console.log(conversionResult.result.map(RuleGenerator.generate).join('\n'));
 ```ts
 import { FilterListParser } from '@adguard/agtree/parser';
 import { FilterListConverter } from '@adguard/agtree/converter';
+import { FilterListGenerator } from '@adguard/agtree/generator';
 import { readFileSync, writeFileSync } from 'fs';
 
 const filterListToConvert = `[Adblock Plus 3.1]
@@ -147,10 +148,10 @@ example.com#$#abp-snippet0 arg00 arg01; abp-snippet1 arg10 arg11
 const convertedFilterList = FilterListConverter.convertToAdg(FilterListParser.parse(filterListToConvert));
 
 // You can simply serialize the filter list node, then print it to the console
-console.log(FilterListParser.generate(convertedFilterList.result));
+console.log(FilterListGenerator.generate(convertedFilterList.result));
 
 // Or you can serialize the filter list node to a string and write it to a file
-// writeFileSync('converted-filter-list.txt', FilterListParser.generate(convertedFilterList.result));
+// writeFileSync('converted-filter-list.txt', FilterListGenerator.generate(convertedFilterList.result));
 ```
 
 ## Limitations

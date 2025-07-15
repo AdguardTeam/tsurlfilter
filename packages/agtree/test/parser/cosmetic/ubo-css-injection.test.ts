@@ -43,6 +43,39 @@ describe('CosmeticRuleParser', () => {
                     };
                 },
             },
+            // multiple colon case
+            {
+                actual: '##body[style="opacity: 0;"]:style(opacity: 1 !important;)',
+                expected: (context: NodeExpectContext): CssInjectionRule => {
+                    return {
+                        category: RuleCategory.Cosmetic,
+                        type: CosmeticRuleType.CssInjectionRule,
+                        syntax: AdblockSyntax.Ubo,
+                        exception: false,
+                        domains: DomainListParser.parse(''),
+                        separator: {
+                            type: 'Value',
+                            value: '##',
+                            ...context.getRangeFor('##'),
+                        },
+                        body: {
+                            type: 'CssInjectionRuleBody',
+                            selectorList: {
+                                type: 'Value',
+                                value: 'body[style="opacity: 0;"]',
+                                ...context.getRangeFor('body[style="opacity: 0;"]:style(opacity: 1 !important;)'),
+                            },
+                            declarationList: {
+                                type: 'Value',
+                                value: 'opacity: 1 !important;',
+                                ...context.getRangeFor('opacity: 1 !important;'),
+                            },
+                            ...context.getRangeFor('body[style="opacity: 0;"]:style(opacity: 1 !important;)'),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
             // with media query list
             {
                 // eslint-disable-next-line max-len

@@ -1,6 +1,7 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
+import { nodeExternals } from 'rollup-plugin-node-externals';
 
 import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
@@ -12,40 +13,14 @@ const OUTPUT_PATH = process.env.PACKAGE_OUTPUT_PATH
     ? `${process.env.PACKAGE_OUTPUT_PATH}/${DEFAULT_OUTPUT_PATH}`
     : DEFAULT_OUTPUT_PATH;
 
-const externalPackages = [
-    '@adguard/agtree',
-    '@adguard/css-tokenizer',
-    '@adguard/scriptlets',
-    'is-ip',
-    'punycode/',
-    'tldts',
-    'is-cidr',
-    'cidr-tools',
-    'zod',
-    'commander',
-    'tslib',
-    'module',
-    'lru-cache',
-    'zod-validation-error',
-    'crypto',
-];
-
-const externalFunction = (id: string): boolean => {
-    if (typeof id !== 'string') {
-        return false;
-    }
-    return (
-        /node_modules/.test(id)
-        || externalPackages.some((pkg) => id === pkg || id.startsWith(`${pkg}/`))
-    );
-};
-
 const commonConfig = {
     cache: false,
     watch: {
         include: 'src/**',
     },
     plugins: [
+        nodeExternals(),
+
         // Allow json resolution
         json(),
 
@@ -85,7 +60,6 @@ const esmConfig = {
             sourcemap: false,
         },
     ],
-    external: externalFunction,
     ...commonConfig,
 };
 
@@ -103,7 +77,6 @@ const esmDeclarativeConverterConfig = {
             sourcemap: false,
         },
     ],
-    external: externalFunction,
     ...commonConfig,
 };
 
@@ -116,7 +89,6 @@ const esmDeclarativeConverterUtilsConfig = {
             sourcemap: false,
         },
     ],
-    external: externalFunction,
     ...commonConfig,
 };
 
@@ -127,10 +99,12 @@ const cliConfig = {
             file: `${OUTPUT_PATH}/cli.js`,
             format: 'esm',
             sourcemap: false,
+            banner: '#!/usr/bin/env node',
         },
     ],
-    external: externalFunction,
     plugins: [
+        nodeExternals(),
+
         // Allow json resolution
         json(),
 

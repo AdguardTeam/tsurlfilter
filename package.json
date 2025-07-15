@@ -18,12 +18,17 @@
     "scripts": {
         "lint": "lerna run lint",
         "clean": "node scripts/cleanup.mjs",
-        "prepare": "node .husky/install.mjs"
+        "prepare": "node .husky/install.mjs",
+        "increment": "node scripts/increment.mjs",
+        "tgz": "lerna run build --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies && lerna run tgz --scope @adguard/dnr-rulesets --scope @adguard/api --scope @adguard/api-mv3 --include-dependencies",
+        "reinstall": "pnpm clean && pnpm install",
+        "ri": "pnpm reinstall"
     },
     "devDependencies": {
-        "husky": "^9.1.7",
+        "husky": "catalog:",
         "lerna": "8.1.8",
-        "vitest": "^2.1.9"
+        "semver": "^7.7.2",
+        "vitest": "catalog:"
     },
     "pnpm": {
         "neverBuiltDependencies": [],

@@ -5,21 +5,25 @@ import {
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
-import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { FilterListPreprocessor, type PreprocessedFilterList } from '@adguard/tsurlfilter';
 import { LogLevel } from '@adguard/logger';
 import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 
 import { type MessageHandler, type AppInterface } from '../../common/app';
-import { ALLOWLIST_FILTER_ID, QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
-import { getErrorMessage } from '../../common/error';
+import {
+    ALLOWLIST_FILTER_ID,
+    BLOCKING_TRUSTED_FILTER_ID,
+    QUICK_FIXES_FILTER_ID,
+    USER_FILTER_ID,
+} from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
 
-import { allowlistApi } from './allowlist-api';
+import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
 import { type ConfigurationMV3, type ConfigurationMV3Context, configurationMV3Validator } from './configuration';
 import { declarativeFilteringLog } from './declarative-filtering-log';
@@ -30,23 +34,26 @@ import FiltersApi, { type LoadFilterContent, type UpdateStaticFiltersResult } fr
 import { MessagesApi } from './messages-api';
 import { RequestEvents } from './request/events/request-events';
 import { RuleSetsLoaderApi } from './rule-sets-loader-api';
+import { documentBlockingService } from './services/document-blocking-service';
 import { type LocalScriptFunctionData, localScriptRulesService } from './services/local-script-rules-service';
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
+import { UserScriptsApi } from './user-scripts-api';
+import { SessionRulesApi } from './session-rules-api';
 
 type ConfigurationResult = {
-    staticFiltersStatus: UpdateStaticFiltersResult,
-    staticFilters: IRuleSet[],
-    dynamicRules?: ConversionResult
-    stealthResult?: StealthConfigurationResult,
+    staticFiltersStatus: UpdateStaticFiltersResult;
+    staticFilters: IRuleSet[];
+    dynamicRules?: ConversionResult;
+    stealthResult?: StealthConfigurationResult;
 };
 
 type FiltersUpdateInfo = {
-    staticFilters: IFilter[],
-    customFilters: IFilter[],
-    filtersIdsToEnable: number[]
-    filtersIdsToDisable: number[],
+    staticFilters: IFilter[];
+    customFilters: IFilter[];
+    filtersIdsToEnable: number[];
+    filtersIdsToDisable: number[];
 };
 
 // Reexport types
@@ -138,7 +145,7 @@ export class TsWebExtension implements AppInterface<
      * {@link ConfigurationResult}.
      */
     private async innerStart(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        logger.debug('[tswebextension.innerStart]: start');
+        logger.trace('[tsweb.TsWebExtension.innerStart]: start');
 
         if (!appContext.startTimeMs) {
             appContext.startTimeMs = Date.now();
@@ -162,6 +169,8 @@ export class TsWebExtension implements AppInterface<
             // Compute and save matching result for tabs, opened before app initialization.
             await TabsCosmeticInjector.processOpenTabs();
 
+            documentBlockingService.configure(config);
+
             // Do it only once on first start, because path to assistantUrl can
             // not be changed during runtime.
             Assistant.setAssistantUrl(config.settings.assistantUrl);
@@ -170,16 +179,27 @@ export class TsWebExtension implements AppInterface<
             this.isStarted = true;
             this.startPromise = undefined;
 
-            logger.debug('[tswebextension.innerStart]: started');
+            logger.trace('[tsweb.TsWebExtension.innerStart]: started');
 
             return res;
         } catch (e) {
             this.startPromise = undefined;
 
-            logger.debug('[tswebextension.innerStart]: failed due to ', getErrorMessage(e));
+            logger.error('[tsweb.TsWebExtension.innerStart]: failed: ', e);
 
             throw new Error('Cannot be started: ', { cause: e as Error });
         }
+    }
+
+    /**
+     * Synchronize rule set with IDB.
+     *
+     * @param ruleSetId Rule set identifier.
+     * @param ruleSetsPath Path to rule sets.
+     */
+    public static async syncRuleSetWithIdb(ruleSetId: number, ruleSetsPath: string): Promise<void> {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+        await ruleSetsLoaderApi.syncRuleSetWithIdb(String(ruleSetId));
     }
 
     /**
@@ -195,16 +215,16 @@ export class TsWebExtension implements AppInterface<
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 
-        logger.debug('[tswebextension.start]: is started ', this.isStarted);
+        logger.trace('[tsweb.TsWebExtension.start]: is started ', this.isStarted);
 
         if (this.isStarted) {
             throw new Error('Already started');
         }
 
         if (this.startPromise) {
-            logger.debug('[tswebextension.start]: already called start, waiting');
+            logger.trace('[tsweb.TsWebExtension.start]: already called start, waiting');
             const res = await this.startPromise;
-            logger.debug('[tswebextension.start]: awaited start');
+            logger.trace('[tsweb.TsWebExtension.start]: awaited start');
             return res;
         }
 
@@ -224,7 +244,8 @@ export class TsWebExtension implements AppInterface<
 
         await StealthService.clearAll();
 
-        TsWebExtension.updateRuleSetsForFilteringLog([], false);
+        declarativeFilteringLog.startUpdate();
+        declarativeFilteringLog.finishUpdate([], false);
 
         engineApi.stopEngine();
     }
@@ -270,16 +291,26 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        await FiltersApi.syncFiltersWithStorage(config.staticFiltersIds, config.ruleSetsPath);
+        const loader = new RuleSetsLoaderApi(config.ruleSetsPath);
+
+        await Promise.all(
+            config.staticFiltersIds.map((staticFilterId) => loader.syncRuleSetWithIdb(String(staticFilterId))),
+        );
 
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 
         // Exclude binary fields from logged config.
-        const binaryFields = ['userrules', 'sourceMap', 'rawFilterList', 'filterList', 'conversionMap'];
-        logger.debug('[tswebextension.configure]: start with ', stringifyObjectWithoutKeys(config, binaryFields));
+        const binaryFields = [
+            'userrules',
+            'sourceMap',
+            'rawFilterList',
+            'filterList',
+            'conversionMap',
+        ];
+        logger.trace('[tsweb.TsWebExtension.configure]: start with ', stringifyObjectWithoutKeys(config, binaryFields));
 
-        const configuration = configurationMV3Validator.parse(config);
+        const configuration = configurationMV3Validator.parse(config); // error happens here
 
         const res: ConfigurationResult = {
             staticFiltersStatus: {
@@ -289,6 +320,8 @@ export class TsWebExtension implements AppInterface<
         };
 
         if (configuration.settings.filteringEnabled) {
+            declarativeFilteringLog.startUpdate();
+
             res.stealthResult = await StealthService.applySettings(configuration.settings);
 
             // Extract filters info from configuration and wrap them into IFilters.
@@ -321,24 +354,50 @@ export class TsWebExtension implements AppInterface<
             // Update allowlist settings.
             allowlistApi.configure(configuration);
             // Combine all allowlist rules into one network rule.
-            const combinedAllowlistRules = allowlistApi.combineAllowListRulesForDNR();
+            const combinedAllowlistRule = allowlistApi.combineAllowListRulesForDNR();
 
             const userRulesFilter = new Filter(
                 USER_FILTER_ID,
-                { getContent: () => Promise.resolve(configuration.userrules) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(configuration.userrules);
+                    },
+                },
                 true,
             );
 
             const allowlistFilter = new Filter(
                 ALLOWLIST_FILTER_ID,
                 // TODO: Generate AST directly for allowlist rules.
-                { getContent: () => Promise.resolve(FilterListPreprocessor.preprocess(combinedAllowlistRules)) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(
+                            FilterListPreprocessor.preprocess(combinedAllowlistRule),
+                        );
+                    },
+                },
                 true,
             );
 
             const quickFixesFilter = new Filter(
                 QUICK_FIXES_FILTER_ID,
-                { getContent: () => Promise.resolve(configuration.quickFixesRules) },
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(configuration.quickFixesRules);
+                    },
+                },
+                true,
+            );
+
+            const trustedDomainsExceptionRule = AllowlistApi.getAllowlistRule(configuration.trustedDomains);
+
+            const blockingPageTrustedFilter = new Filter(
+                BLOCKING_TRUSTED_FILTER_ID,
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(FilterListPreprocessor.preprocess(trustedDomainsExceptionRule));
+                    },
+                },
                 true,
             );
 
@@ -347,10 +406,16 @@ export class TsWebExtension implements AppInterface<
             res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
                 quickFixesFilter,
                 allowlistFilter,
+                blockingPageTrustedFilter,
                 userRulesFilter,
                 customFilters,
                 enabledStaticRuleSets,
                 this.webAccessibleResourcesPath,
+            );
+
+            await SessionRulesApi.updateSessionRules(
+                enabledStaticRuleSets,
+                res.dynamicRules.declarativeRulesToCancel,
             );
 
             // Reload engine for cosmetic rules
@@ -364,14 +429,14 @@ export class TsWebExtension implements AppInterface<
             });
             await engineApi.waitingForEngine;
 
-            // TODO: Recreate only dynamic rule set, because static cannot be changed
+            // TODO: Recreate only dynamic ruleset, because static cannot be changed
             const ruleSets = [
                 ...staticRuleSets,
                 res.dynamicRules.ruleSet,
             ];
 
             // Update rulesets in declarative filtering log.
-            TsWebExtension.updateRuleSetsForFilteringLog(ruleSets, configuration.declarativeLogEnabled);
+            declarativeFilteringLog.finishUpdate(ruleSets, configuration.declarativeLogEnabled);
 
             res.staticFilters = staticRuleSets;
         } else {
@@ -387,13 +452,17 @@ export class TsWebExtension implements AppInterface<
         // Reload request events listeners.
         await WebRequestApi.flushMemoryCache();
 
-        logger.debug('[tswebextension.configure]: end');
+        documentBlockingService.configure(config);
+
+        logger.trace('[tsweb.TsWebExtension.configure]: end');
 
         return res;
     }
 
     /**
      * Sets prebuild local **script** rules.
+     *
+     * Should not be used if userScripts API is available.
      *
      * @param localScriptRules Object with pre-build JS rules. @see {@link LocalScriptRulesService}.
      */
@@ -661,29 +730,9 @@ export class TsWebExtension implements AppInterface<
         } catch (e) {
             const filterListIds = staticFilters.map((f) => f.getId());
 
-            // eslint-disable-next-line max-len
-            logger.error(`[tswebextension.loadStaticRuleSets]: Cannot scan rules of filter list with ids ${filterListIds} due to: ${getErrorMessage(e)}`);
+            logger.error(`[tsweb.TsWebExtension.loadStaticRuleSets]: cannot scan rules of filter list with ids ${filterListIds} due to: `, e);
 
             return [];
-        }
-    }
-
-    /**
-     * Set provided list of rule sets to a filtering log.
-     *
-     * @param allRuleSets List of {@link IRuleSet}.
-     * @param declarativeLogEnabled Should we log matched declarative rules.
-     */
-    private static updateRuleSetsForFilteringLog(
-        allRuleSets: IRuleSet[],
-        declarativeLogEnabled: boolean,
-    ): void {
-        declarativeFilteringLog.ruleSets = allRuleSets;
-
-        if (declarativeLogEnabled) {
-            declarativeFilteringLog.start();
-        } else {
-            declarativeFilteringLog.stop();
         }
     }
 
@@ -753,5 +802,14 @@ export class TsWebExtension implements AppInterface<
     // eslint-disable-next-line class-methods-use-this
     public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
         return engineApi.retrieveRuleNode(filterId, ruleIndex);
+    }
+
+    /**
+     * Indicates whether user scripts API is supported in the current browser.
+     *
+     * @returns `true` if user scripts API is supported, `false` otherwise.
+     */
+    public static get isUserScriptsApiSupported(): boolean {
+        return UserScriptsApi.isSupported;
     }
 }

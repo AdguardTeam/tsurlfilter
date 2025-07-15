@@ -2,6 +2,7 @@ import { type IRuleSet } from '@adguard/tsurlfilter/es/declarative-converter';
 
 import { type DeclarativeRuleInfo, defaultFilteringLog, FilteringEventType } from '../../common/filtering-log';
 import { logger } from '../../common/utils/logger';
+import { Mutex } from '../utils/mutex';
 
 import { requestContextStorage } from './request';
 
@@ -14,12 +15,17 @@ class DeclarativeFilteringLog {
     /**
      * Stores list of rule sets.
      */
-    ruleSets: IRuleSet[] = [];
+    private ruleSets: IRuleSet[] = [];
 
     /**
      * Is there an active listener for declarativeNetRequest.onRuleMatchedDebug or not.
      */
     #isListening = false;
+
+    /**
+     * Mutex for managing concurrent access to rule set updates.
+     */
+    private readonly mutex: Mutex = new Mutex();
 
     /**
      * Returns is there an active listener for declarativeNetRequest.onRuleMatchedDebug or not.
@@ -28,6 +34,47 @@ class DeclarativeFilteringLog {
      */
     public get isListening(): boolean {
         return this.#isListening;
+    }
+
+    /**
+     * Initializes the declarative filtering log.
+     * Binds needed methods to the instance.
+     */
+    constructor() {
+        this.logMatchedRule = this.logMatchedRule.bind(this);
+    }
+
+    /**
+     * Acquires the mutex lock within the specified timeout.
+     * Used to prevent getting rule info during rule set updates.
+     *
+     * @param timeoutMs The maximum time to wait (in milliseconds) to acquire the lock.
+     *
+     * @throws {TimeoutError} If the lock is not acquired within the specified time.
+     */
+    public async startUpdate(timeoutMs = 30000): Promise<void> {
+        await this.mutex.lock(timeoutMs);
+    }
+
+    /**
+     * Releases the mutex and sets the new rule sets.
+     * Used to prevent getting rule info during rule set updates.
+     * Also, you can specify whether to enable declarative logging after update.
+     *
+     * @param ruleSets List of {@link IRuleSet}.
+     * @param enableLog Should we enable declarative logging after update.
+     *
+     * @throws Error if no update is in progress.
+     */
+    public finishUpdate(ruleSets: IRuleSet[], enableLog: boolean): void {
+        this.ruleSets = ruleSets;
+        this.mutex.unlock();
+
+        if (enableLog) {
+            this.start();
+        } else {
+            this.stop();
+        }
     }
 
     /**
@@ -43,6 +90,10 @@ class DeclarativeFilteringLog {
      * @throws Error when couldn't find ruleset or rule in ruleset.
      */
     private getRuleInfo = async (ruleSetId: string, ruleId: number): Promise<DeclarativeRuleInfo> => {
+        if (this.mutex.isLocked()) {
+            await this.mutex.waitUntilUnlocked();
+        }
+
         const ruleSet = this.ruleSets.find((r) => r.getId() === ruleSetId);
         if (!ruleSet) {
             throw new Error(`Cannot find ruleset with id ${ruleSet}`);
@@ -72,7 +123,7 @@ class DeclarativeFilteringLog {
      *
      * @param record Request details {@link browser.declarativeNetRequest.MatchedRuleInfoDebug}.
      */
-    private logMatchedRule = async (record: chrome.declarativeNetRequest.MatchedRuleInfoDebug): Promise<void> => {
+    private async logMatchedRule(record: chrome.declarativeNetRequest.MatchedRuleInfoDebug): Promise<void> {
         const {
             request: { requestId },
             rule: { rulesetId, ruleId },
@@ -81,7 +132,21 @@ class DeclarativeFilteringLog {
         const context = requestContextStorage.get(requestId);
 
         if (!context) {
-            logger.debug('[logMatchedRule]: cannot find request context for request id', requestId);
+            logger.error('[tsweb.DeclarativeFilteringLog.logMatchedRule]: cannot find request context for request id ', requestId);
+            return;
+        }
+
+        /**
+         * Session rules are used for Tracking protection (formerly stealth mode)
+         * with unsafe rules from static rulesets.
+         * Rules from Tracking protection should not be logged as they are not
+         * logged for MV2 as well.
+         *
+         * TODO: Add processing for unsafe rules from static rulesets.
+         *
+         * For more details see tswebextension/src/lib/mv3/background/services/stealth-service.ts.
+         */
+        if (rulesetId === chrome.declarativeNetRequest.SESSION_RULESET_ID) {
             return;
         }
 
@@ -90,7 +155,7 @@ class DeclarativeFilteringLog {
         try {
             declarativeRuleInfo = await this.getRuleInfo(rulesetId, ruleId);
         } catch (e) {
-            logger.debug(e);
+            logger.error('[tsweb.DeclarativeFilteringLog.logMatchedRule]: cannot get rule info due to: ', e);
             return;
         }
 
@@ -102,14 +167,14 @@ class DeclarativeFilteringLog {
                 declarativeRuleInfo,
             },
         });
-    };
+    }
 
     /**
      * Toggles the listener for declarativeNetRequest.onRuleMatchedDebug.
      *
      * @param needToAddListener If true, the listener will be added, otherwise removed.
      */
-    private toggleListener = (needToAddListener: boolean): void => {
+    private toggleListener(needToAddListener: boolean): void {
         // Wrapped in try-catch to prevent the extension from crashing if browser
         // will change the API in the future.
         try {
@@ -136,23 +201,23 @@ class DeclarativeFilteringLog {
                 ? 'Cannot start recording declarative network rules due to: '
                 : 'Cannot stop recording declarative network rules due to: ';
 
-            logger.debug(message, e);
+            logger.error(`[tsweb.DeclarativeFilteringLog.toggleListener]: ${message}: `, e);
         }
-    };
+    }
 
     /**
      * Starts recording.
      */
-    public start = (): void => {
+    public start(): void {
         this.toggleListener(true);
-    };
+    }
 
     /**
      * Stops recording.
      */
-    public stop = (): void => {
+    public stop(): void {
         this.toggleListener(false);
-    };
+    }
 }
 
 export const declarativeFilteringLog = new DeclarativeFilteringLog();

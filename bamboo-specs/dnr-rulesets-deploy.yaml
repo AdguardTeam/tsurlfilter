@@ -6,8 +6,12 @@ deployment:
 release-naming: ${bamboo.inject.version}
 environments:
   - npmjs
+  - npmjs • alpha
+  - npmjs • beta
 
-npmjs:
+npmjs: &npmjs
+  variables: &npmjs-variables
+    publishArgs: --access public
   docker:
     image: adguard/node-ssh:22.14--0
     volumes:
@@ -15,7 +19,7 @@ npmjs:
   triggers: [ ]
   tasks:
     - checkout:
-        force-clean-build: 'true'
+        force-clean-build: true
     - artifact-download:
         artifacts:
           - name: dnr-rulesets.tgz
@@ -33,7 +37,7 @@ npmjs:
 
             export NPM_TOKEN=${bamboo.npmSecretToken}
             echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > .npmrc
-            npm publish dnr-rulesets.tgz --access public
+            npm publish dnr-rulesets.tgz $bamboo_publishArgs
   requirements:
     - adg-docker: 'true'
     - extension: 'true'
@@ -44,3 +48,15 @@ npmjs:
         - webhook:
             name: Deploy webhook
             url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+npmjs • alpha:
+  <<: *npmjs
+  variables:
+    <<: *npmjs-variables
+    publishArgs: --tag alpha --access public
+
+npmjs • beta:
+  <<: *npmjs
+  variables:
+    <<: *npmjs-variables
+    publishArgs: --tag beta --access public

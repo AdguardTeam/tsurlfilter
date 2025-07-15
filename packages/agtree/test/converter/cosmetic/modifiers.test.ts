@@ -140,6 +140,35 @@ describe('Cosmetic rule modifiers conversion', () => {
                 ],
                 shouldConvert: true,
             },
+            // :style
+            {
+                actual: 'example.com##body[style="opacity: 0;"]:style(opacity: 1 !important;)',
+                expected: [
+                    String.raw`example.com#$#body[style="opacity: 0;"] { opacity: 1 !important; }`,
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: 'example.com##*::selection:style(color:white!important;background:#0078d7!important;)',
+                expected: [
+                    'example.com#$#*::selection { color:white!important;background:#0078d7!important; }',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: 'example.com##.social::first-line:style(color: #0000 !important;)',
+                expected: [
+                    'example.com#$#.social::first-line { color: #0000 !important; }',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: 'example.*##html[style] > body [id][class] > script ~ [class]:not(empty):not(:last-of-type) article + article.post:style(display: none !important)',
+                expected: [
+                    'example.*#$#html[style] > body [id][class] > script ~ [class]:not(empty):not(:last-of-type) article + article.post { display: none !important }',
+                ],
+                shouldConvert: true,
+            },
         ])('should convert \'$actual\' to \'$expected\'', (testData) => {
             expect(testData).toBeConvertedProperly(CosmeticRuleConverter, 'convertToAdg');
         });
@@ -245,14 +274,21 @@ describe('Cosmetic rule modifiers conversion', () => {
             {
                 actual: '[$path=/^((?!\\/page).)*$/]example.com#@$#h1 { background-color: blue !important }',
                 expected: [
-                    String.raw`example.com#@$#:not(:matches-path(/\\/page/)) h1:style(background-color: blue !important)`,
+                    String.raw`example.com#@#:not(:matches-path(/\\/page/)) h1:style(background-color: blue !important)`,
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`[$path=/q]example.*#$?#body.page_qQuestionRoute div#page > div[class]:first-child > div[class]:first-child > section[class*=" "] > div[class] + div > div:not(:has(> div[id^="content-control-"])):not(:has(a[class])) { height: 0 !important; }`,
+                expected: [
+                    String.raw`example.*##:matches-path(/q) body.page_qQuestionRoute div#page > div[class]:first-child > div[class]:first-child > section[class*=" "] > div[class] + div > div:not(:has(> div[id^="content-control-"])):not(:has(a[class])):style(height: 0 !important;)`,
                 ],
                 shouldConvert: true,
             },
             {
                 actual: String.raw`[$path=/\/(sub1|sub2)\/page\.html/]example.org#$?#p:contains(/[\w\W]{30,}/) { background: #ff0033 !important; }`,
                 expected: [
-                    String.raw`example.org#$?#:matches-path(/\\/(sub1|sub2)\\/page\\.html/) p:contains(/[\w\W]{30,}/):style(background: #ff0033 !important;)`,
+                    String.raw`example.org##:matches-path(/\\/(sub1|sub2)\\/page\\.html/) p:contains(/[\w\W]{30,}/):style(background: #ff0033 !important;)`,
                 ],
                 shouldConvert: true,
             },
@@ -312,6 +348,20 @@ describe('Cosmetic rule modifiers conversion', () => {
                 actual: '[$domain=/example.(com\\|org)/|foo.com]#@#.banner',
                 expected: [
                     '/example.(com\\|org)/,foo.com#@#.banner',
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`[$domain=/^example\.org$/]#$#body > * > * > * > *:not(div)[id][class] ~ *:not(div)[id][class] { background: #e6e7e9 !important; }`,
+                expected: [
+                    String.raw`/^example\.org$/##body > * > * > * > *:not(div)[id][class] ~ *:not(div)[id][class]:style(background: #e6e7e9 !important;)`,
+                ],
+                shouldConvert: true,
+            },
+            {
+                actual: String.raw`[$domain=/^example\.org$/]#$?#body > * > * > * > *:not(div)[id][class] ~ *:not(div)[id][class] > *:not(div)[class] article:matches-css(height: /^(148(?:\.\d{1,3})?|149(?:\.\d{1,3})?|150(?:\.0{1,3})?)px$/) { remove: true; }`,
+                expected: [
+                    String.raw`/^example\.org$/##body > * > * > * > *:not(div)[id][class] ~ *:not(div)[id][class] > *:not(div)[class] article:matches-css(height: /^(148(?:\.\d{1,3})?|149(?:\.\d{1,3})?|150(?:\.0{1,3})?)px$/):remove()`,
                 ],
                 shouldConvert: true,
             },

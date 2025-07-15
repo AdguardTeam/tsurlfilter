@@ -6,6 +6,8 @@ import { HtmlRuleAttributes } from './html-rule-attributes';
 /**
  * Encapsulates html rule attributes parsing.
  */
+// TODO: Move this parser to AGTree
+// TODO: Add support for `:contains()` (https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3150)
 export class HtmlRuleParser {
     private static ATTRIBUTE_START_MARK = '[';
 
@@ -34,9 +36,9 @@ export class HtmlRuleParser {
      *
      * @param rule Rule to parse.
      *
-     * @returns Parsed rule attributes.
+     * @returns Parsed rule attributes or `null` if selector is invalid.
      */
-    public static parse(rule: CosmeticRule): HtmlRuleAttributes {
+    public static parse(rule: CosmeticRule): HtmlRuleAttributes | null {
         const result = new HtmlRuleAttributes();
 
         result.parentSearchLevel = HtmlRuleParser.DEFAULT_PARENT_SEARCH_LEVEL;
@@ -57,6 +59,29 @@ export class HtmlRuleParser {
         // Loading attributes filter
         while (htmlAttributesStartIndex !== -1) {
             const equalityIndex = ruleContent.indexOf('=', htmlAttributesStartIndex + 1);
+
+            // if there is no equality sign inside of `[...]`,
+            // consider it as a simple standard attribute, e.g. 'div[custom_attr]'
+            // because special attributes, i.e. 'tag-content', require value
+            if (equalityIndex === -1) {
+                const currentAttrEndIndex = ruleContent.indexOf(
+                    HtmlRuleParser.ATTRIBUTE_END_MARK,
+                    htmlAttributesStartIndex + 1,
+                );
+
+                const attributeName = ruleContent.substring(htmlAttributesStartIndex + 1, currentAttrEndIndex);
+
+                selector.push(HtmlRuleParser.ATTRIBUTE_START_MARK);
+                selector.push(attributeName);
+                selector.push(HtmlRuleParser.ATTRIBUTE_END_MARK);
+
+                htmlAttributesStartIndex = ruleContent.indexOf(
+                    HtmlRuleParser.ATTRIBUTE_START_MARK,
+                    currentAttrEndIndex + 1,
+                );
+                continue;
+            }
+
             const quoteStartIndex = ruleContent.indexOf(HtmlRuleParser.QUOTES, equalityIndex + 1);
             const quoteEndIndex = HtmlRuleParser.getClosingQuoteIndex(ruleContent, quoteStartIndex + 1);
             if (quoteStartIndex === -1 || quoteEndIndex === -1) {
@@ -108,7 +133,15 @@ export class HtmlRuleParser {
         // Validates selector immediately
         // eslint-disable-next-line no-undef
         if (typeof window !== 'undefined') {
-            window.document.querySelectorAll(result.selector);
+            try {
+                // Make a dummy query to check if selector is valid
+                // TODO: Once we add custom pseudo classes (like `:contains()`), we need a custom validation
+                // via `@adguard/css-tokenizer`
+                // https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3150
+                window.document.querySelector(result.selector);
+            } catch {
+                return null;
+            }
         }
 
         return result;

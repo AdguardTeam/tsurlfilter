@@ -688,5 +688,255 @@ describe('Converter integration tests', () => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
+        describe('should convert ExtCss separator to uBo', () => {
+            test.each([
+                // change separator if selector contains an ExtCss element that
+                // does not supported natively by any browser
+                {
+                    actual: '#?#*:contains(foo)',
+                    expected: ['##*:contains(foo)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '#$?#*:contains(foo) { display: none; }',
+                    expected: ['##*:contains(foo):style(display: none;)'],
+                    shouldConvert: true,
+                },
+                // but does not change separator if ExtCss element may supported by some browsers
+                {
+                    actual: '##*:has(foo)',
+                    expected: ['##*:has(foo)'],
+                    shouldConvert: false,
+                },
+                {
+                    actual: '#$#*:has(foo) { display: none; }',
+                    expected: ['##*:has(foo):style(display: none;)'],
+                    shouldConvert: true,
+                },
+                // sometimes we need to force selecting by ExtCss engine, even if we do not have any ExtCss elements
+                {
+                    actual: '#?#.banner',
+                    expected: ['##.banner'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '#$#.banner { display: none; }',
+                    expected: ['##.banner:style(display: none;)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '#$?#.banner { remove: true; }',
+                    expected: ['##.banner:remove()'],
+                    shouldConvert: true,
+                },
+                // case without spaces in css pseudo property
+                {
+                    actual: '#$?#.banner {remove:true;}',
+                    expected: ['##.banner:remove()'],
+                    shouldConvert: true,
+                },
+                // should not convert simple html hiding rules
+                {
+                    actual: '##div[foo="yay{"]',
+                    expected: ['##div[foo="yay{"]'],
+                    shouldConvert: false,
+                },
+                {
+                    actual: '##div[foo="yay{"][href="yay}"]',
+                    expected: ['##div[foo="yay{"][href="yay}"]'],
+                    shouldConvert: false,
+                },
+                // should convert CSS injection rules properly
+                {
+                    actual: 'example.org#$#body[style^="position: fixed"] { position: static !important; }',
+                    expected: ['example.org##body[style^="position: fixed"]:style(position: static !important;)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.org#?#div:matches-css(before, content: /^Реклама/):matches-css(max-height:100px)',
+                    expected: [
+                        'example.org##div:matches-css(before, content: /^Реклама/):matches-css(max-height:100px)',
+                    ],
+                    shouldConvert: true,
+                },
+                // should convert exception rules properly
+                {
+                    actual: 'example.org#@$##siteNav { transform: none !important; }',
+                    expected: [
+                        'example.org#@##siteNav:style(transform: none !important;)',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.*#@?#div[data-asin]:has(> div.sg-col > span[class*="widget=loom-desktop"])',
+                    expected: [
+                        'example.*#@#div[data-asin]:has(> div.sg-col > span[class*="widget=loom-desktop"])',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$$div[max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net##^div',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$$div[attr][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net##^div[attr]',
+                    ],
+                    shouldConvert: true,
+                },
+            ])("should convert '$actual' to '$expected'", (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
+            });
+        });
+
+        describe('should convert html rule to uBo', () => {
+            test.each([
+                {
+                    actual: 'example.com$$script[tag-content="12313"][max-length="262144"]',
+                    expected: [
+                        'example.com##^script:has-text(12313)',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$$div[max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net##^div',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$$div[attr][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net##^div[attr]',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
+                    expected: [
+                        "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
+                    expected: [
+                        // eslint-disable-next-line max-len
+                        "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                // eslint-disable-next-line max-len
+                    actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
+                    expected: [
+                        'example.com,~example.net#@#^script:has-text(console.log(""doubles""))',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net#@#^script[data-test]:has-text(12313)',
+                    ],
+                    shouldConvert: true,
+                },
+            ])("should convert '$actual' to '$expected'", (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
+            });
+        });
+
+        describe('should not convert html rule to uBo', () => {
+            test.each([
+                {
+                    actual: 'example.com,~example.net$$div[custom_attr]',
+                    expected: [
+                        'example.com,~example.net##^div[custom_attr]',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: String.raw`~example.com,google.com$$div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
+                    expected: [
+                        String.raw`~example.com,google.com##^div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: String.raw`~example.com,google.com$$div[id="ad_text"][tag-content="teas""ernet"][max-length="500"][min-length="50"][wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]`,
+                    expected: [
+                        // eslint-disable-next-line max-len
+                        String.raw`~example.com,google.com##^div[id="ad_text"]:has-text(teas""ernet)[wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]:min-text-length(50)`,
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: String.raw`~example.com,google.com$$div[id="ad_text"][max-length="500000"][min-length="50"]`,
+                    expected: [
+                        String.raw`~example.com,google.com##^div[id="ad_text"]:min-text-length(50)`,
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[data-test="1"][data-test2="2"][tag-content="12313"][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net#@#^script[data-test="1"][data-test2="2"]:has-text(12313)',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][max-length="262144"]',
+                    expected: [
+                        "example.com,~example.net#@#^script:has-text(d.createElement('script'))",
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    // eslint-disable-next-line max-len
+                    actual: 'example.com,~example.net$@$script[tag-content="d.createElement(\'script\')"][min-length="1234"][max-length="262144"]',
+                    expected: [
+                        // eslint-disable-next-line max-len
+                        "example.com,~example.net#@#^script:has-text(d.createElement('script')):min-text-length(1234)",
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                // eslint-disable-next-line max-len
+                    actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
+                    expected: [
+                        'example.com,~example.net#@#^script:has-text(console.log(""doubles""))',
+                    ],
+                    shouldConvert: true,
+                },
+                {
+                    actual: 'example.com,~example.net$@$script[data-test][tag-content="12313"][max-length="262144"]',
+                    expected: [
+                        'example.com,~example.net#@#^script[data-test]:has-text(12313)',
+                    ],
+                    shouldConvert: true,
+                },
+            ])("should convert '$actual' to '$expected'", (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToUbo');
+            });
+        });
     });
 });

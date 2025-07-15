@@ -9,12 +9,13 @@ import {
     type HandleMainFrameProps,
 } from '../../common/cosmetic-frame-processor';
 import { tabsApi } from '../tabs/tabs-api';
-import { FrameMV3 } from '../tabs/frame';
+import { type FrameMV3 } from '../tabs/frame';
 
 import { appContext } from './app-context';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
 import { CosmeticApi } from './cosmetic-api';
+import { UserScriptsApi } from './user-scripts-api';
 
 /**
  * Cosmetic frame processor.
@@ -41,7 +42,7 @@ export class CosmeticFrameProcessor {
      *
      * @returns True if recalculation should be skipped.
      */
-    private static shouldSkipRecalculation(
+    public static shouldSkipRecalculation(
         tabId: number,
         frameId: number,
         url: string,
@@ -147,7 +148,7 @@ export class CosmeticFrameProcessor {
      *
      * @param props Handle main frame props.
      */
-    public static handleMainFrame(props: HandleMainFrameProps): void {
+    private static handleMainFrame(props: HandleMainFrameProps): void {
         const {
             url,
             tabId,
@@ -164,38 +165,56 @@ export class CosmeticFrameProcessor {
 
         tabsApi.setMainFrameRule(tabId, frameId, mainFrameRule);
 
-        const result = engineApi.matchRequest({
+        const matchingResult = engineApi.matchRequest({
             requestUrl: url,
             frameUrl: url,
             requestType: RequestType.Document,
             frameRule: mainFrameRule,
         });
 
-        if (!result) {
+        if (!matchingResult) {
             return;
         }
 
-        const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
-
-        const {
-            scriptTexts,
-            scriptletDataList,
-        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+        const cosmeticResult = engineApi.getCosmeticResult(url, matchingResult.getCosmeticOption());
 
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
 
         const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
-        tabsApi.updateFrameContext(tabId, frameId, {
-            matchingResult: result,
-            cosmeticResult,
-            preparedCosmeticResult: {
+        const partialFrameContext: Partial<FrameMV3> = { matchingResult, cosmeticResult };
+
+        /**
+         * If user scripts API is supported, we should store one combined script
+         * text, because it will be injected once and it is more efficient.
+         */
+        if (UserScriptsApi.isSupported) {
+            const scriptText = CosmeticApi.getScriptText(cosmeticResult.getScriptRules());
+
+            partialFrameContext.preparedCosmeticResult = {
+                cssText,
+                scriptText,
+            };
+        } else {
+            /**
+             * Otherwise, we should store separate script texts and scriptlet
+             * data, because they will be injected separately with different
+             * params.
+             */
+            const {
                 scriptTexts,
                 scriptletDataList,
+            } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+
+            partialFrameContext.preparedCosmeticResult = {
                 cssText,
-            },
-        });
+                scriptTexts,
+                scriptletDataList,
+            };
+        }
+
+        tabsApi.updateFrameContext(tabId, frameId, partialFrameContext);
     }
 
     /**
@@ -250,32 +269,6 @@ export class CosmeticFrameProcessor {
      * @param props Precalculate cosmetic props.
      */
     public static precalculateCosmetics(props: PrecalculateCosmeticProps): void {
-        const {
-            tabId,
-            frameId,
-            parentFrameId,
-            url,
-            timeStamp,
-            parentDocumentId,
-            documentId,
-        } = props;
-
-        if (this.shouldSkipRecalculation(tabId, frameId, url, timeStamp)) {
-            return;
-        }
-
-        // set in the beginning to let other events know that cosmetic result will be calculated in this event to
-        // avoid double calculation
-        tabsApi.setFrameContext(tabId, frameId, new FrameMV3({
-            tabId,
-            frameId,
-            parentFrameId,
-            url,
-            timeStamp,
-            documentId,
-            parentDocumentId,
-        }));
-
         CosmeticFrameProcessor.handleFrame(props);
     }
 }

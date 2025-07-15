@@ -10,3 +10,7 @@ adg_os_any|adg_ext_any:
     - ubo-fuckadblock.js-3.2.0
     - ubo-nofab
   docs: https://github.com/AdguardTeam/Scriptlets/blob/master/wiki/about-scriptlets.md#prevent-fab-3.2.0
+
+ubo_any:
+  name: nofab.js
+  docs: https://github.com/gorhill/uBlock/wiki/Resources-Library#nofabjs-

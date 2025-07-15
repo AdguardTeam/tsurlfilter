@@ -22,6 +22,7 @@ import {
     type ScannedFilter,
 } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
+import { PREPROCESSOR_AGTREE_OPTIONS } from '../../../src';
 
 import { createFilter } from './helpers';
 
@@ -167,7 +168,7 @@ describe('RuleSet', () => {
                 (rawString) => IndexedNetworkRuleWithHash.createFromNode(
                     filterId,
                     badFilterRuleIndex,
-                    RuleParser.parse(rawString),
+                    RuleParser.parse(rawString, PREPROCESSOR_AGTREE_OPTIONS),
                 ),
             )
             .flat();
@@ -175,7 +176,7 @@ describe('RuleSet', () => {
         const deserializedRuleSet = new RuleSet(
             id,
             rulesCount,
-            unsafeRulesCount || 0,
+            unsafeRulesCount,
             regexpRulesCount,
             ruleSetContentProvider,
             badFilterRules,
@@ -184,7 +185,7 @@ describe('RuleSet', () => {
 
         // check $badfilter rules
         expect(deserializedRuleSet.getBadFilterRules()).toHaveLength(ruleSet.getBadFilterRules().length);
-        expect(deserializedRuleSet.getBadFilterRules()[0]).toStrictEqual(ruleSet.getBadFilterRules()[0]);
+        expect(deserializedRuleSet.getBadFilterRules()[0]).toEqual(ruleSet.getBadFilterRules()[0]);
 
         // check declarative rules
         const d1 = await ruleSet.getDeclarativeRules();

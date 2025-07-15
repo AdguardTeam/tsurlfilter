@@ -929,6 +929,7 @@ describe('Javascript rules', () => {
         expect(getScriptletName('#@%#//scriptlet()')).toBe(null);
         expect(getScriptletName("#@%#//scriptlet('set-cookie')")).toBe('set-cookie');
         expect(getScriptletName('#@%#//scriptlet("set-cookie")')).toBe('set-cookie');
+        expect(getScriptletName("#%#//scriptlet('ubo-nobab')")).toBe('ubo-nobab');
     });
 
     it('normalizes scriptlet rule content', () => {
@@ -1001,5 +1002,18 @@ describe('HTML filtering rules (content rules)', () => {
         expect(rule.getPermittedDomains()![0]).toBe('google.com');
         expect(rule.getRestrictedDomains()).toHaveLength(1);
         expect(rule.getRestrictedDomains()![0]).toBe('nigma.ru');
+    });
+
+    it('correctly parses html rules - attribute with no value', () => {
+        const contentPart = 'div[custom_attr]';
+        const domainPart = 'example.com';
+        const ruleText = `${domainPart}$$${contentPart}`;
+        const rule = createCosmeticRule(ruleText, 0);
+
+        expect(rule.isAllowlist()).toBeFalsy();
+        expect(rule.getType()).toBe(CosmeticRuleType.HtmlFilteringRule);
+        expect(rule.getContent()).toBe(contentPart);
+        expect(rule.getPermittedDomains()).toHaveLength(1);
+        expect(rule.getPermittedDomains()![0]).toBe(domainPart);
     });
 });

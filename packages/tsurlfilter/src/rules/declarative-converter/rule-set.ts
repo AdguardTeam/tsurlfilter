@@ -1,11 +1,11 @@
 import { z as zod } from 'zod';
 import { RuleParser } from '@adguard/agtree/parser';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
 import { EMPTY_STRING } from '../../common/constants';
 import { serializeJson } from '../../utils/misc';
-import { getByteRangeFor } from '../../utils/byte-range';
 
 import { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import { type DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
@@ -14,15 +14,14 @@ import { UnavailableRuleSetSourceError } from './errors/unavailable-sources-erro
 import { type ISourceMap, SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
 import { type IRulesHashMap } from './rules-hash-map';
 import { createMetadataRule } from './metadata-rule';
-import { type ByteRangeMap } from './metadata-ruleset';
 
 /**
  * The OriginalSource contains the text of the original rule and the filter
  * identifier of that rule.
  */
 export type SourceRuleAndFilterId = {
-    sourceRule: string,
-    filterId: number,
+    sourceRule: string;
+    filterId: number;
 };
 
 /**
@@ -31,49 +30,9 @@ export type SourceRuleAndFilterId = {
  * from dynamic rulesets.
  */
 export type UpdateStaticRulesOptions = {
-    rulesetId: string,
-    disableRuleIds: number[],
+    rulesetId: string;
+    disableRuleIds: number[];
 };
-
-/**
- * Possible categories for byte range.
- */
-export enum RuleSetByteRangeCategory {
-    /**
-     * Full byte range of the rule set file.
-     */
-    Full = 'full',
-
-    /**
-     * Byte range for the metadata rule, which is the first rule in the rule set.
-     */
-    MetadataRule = 'metadata_rule',
-
-    /**
-     * Byte range for the metadata of the rule set.
-     */
-    DeclarativeMetadata = 'declarative_metadata',
-
-    /**
-     * Byte range for the lazy metadata of the rule set.
-     */
-    DeclarativeLazyMetadata = 'declarative_lazy_metadata',
-
-    /**
-     * Byte range for the source map of the rule set.
-     */
-    DeclarativeSourceMap = 'declarative_source_map',
-
-    /**
-     * Byte range for the conversion map of the preprocessed filter list.
-     */
-    PreprocessedFilterListConversionMap = 'preprocessed_filter_list_conversion_map',
-
-    /**
-     * Byte range for the raw content of the preprocessed filter list.
-     */
-    PreprocessedFilterListRaw = 'preprocessed_filter_list_raw',
-}
 
 /**
  * Keeps converted declarative rules and source map for it.
@@ -153,6 +112,11 @@ export interface IRuleSet {
     getDeclarativeRules(): Promise<DeclarativeRule[]>;
 
     /**
+     * Contains unsafe declarative rules which is separate from ruleset.
+     */
+    getUnsafeRules(): Promise<DeclarativeRule[]>;
+
+    /**
      * Unload ruleset content.
      * This method can be used to free memory until the content is needed again.
      */
@@ -160,6 +124,11 @@ export interface IRuleSet {
 
     /**
      * Serializes rule set to primitives values with lazy load.
+     *
+     * TODO: Replace this method with `serializeCompact` method, because this
+     * one is not used in the codebase.
+     *
+     * @deprecated
      *
      * @returns Serialized rule set.
      *
@@ -172,21 +141,29 @@ export interface IRuleSet {
      * Serializes rule set to a single file.
      *
      * @param prettyPrint Whether to pretty print the output. Default is `true`.
+     * @param unsafeRules Optional list of unsafe rules to add to the serialized
+     * output. If this parameter is provided, number of unsafe rules will be
+     * excluded from the counter of declarative rules in the serialized metadata.
      *
-     * @returns An object with serialized rule set and byte range map.
+     * @returns Serialized rule set.
      *
      * @throws Error {@link UnavailableRuleSetSourceError} if rule set source is not available.
+     * @throws Error if counter of unsafe rules is not equal to the length of
+     * the provided `unsafeRules` array.
      */
-    serializeCompact(prettyPrint?: boolean): Promise<{ result: string, byteRangeMap: ByteRangeMap }>;
+    serializeCompact(
+        prettyPrint?: boolean,
+        unsafeRules?: DeclarativeRule[],
+    ): Promise<string>;
 }
 
 /**
  * Rule set content's provider for lazy load data.
  */
 export type RuleSetContentProvider = {
-    loadSourceMap: () => Promise<ISourceMap>,
-    loadFilterList: () => Promise<IFilter[]>,
-    loadDeclarativeRules: () => Promise<DeclarativeRule[]>,
+    loadSourceMap: () => Promise<ISourceMap>;
+    loadFilterList: () => Promise<IFilter[]>;
+    loadDeclarativeRules: () => Promise<DeclarativeRule[]>;
 };
 
 const serializedRuleSetLazyDataValidator = zod.strictObject({
@@ -194,17 +171,18 @@ const serializedRuleSetLazyDataValidator = zod.strictObject({
     filterIds: zod.number().array(),
 });
 
-type SerializedRuleSetLazyData = zod.infer<typeof serializedRuleSetLazyDataValidator>;
+export type SerializedRuleSetLazyData = zod.infer<typeof serializedRuleSetLazyDataValidator>;
 
 const serializedRuleSetDataValidator = zod.strictObject({
     regexpRulesCount: zod.number(),
-    unsafeRulesCount: zod.number().optional(),
+    unsafeRulesCount: zod.number(),
     rulesCount: zod.number(),
     ruleSetHashMapRaw: zod.string(),
     badFilterRulesRaw: zod.string().array(),
+    unsafeRules: DeclarativeRuleValidator.array().optional(),
 });
 
-type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
+export type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
 
 /**
  * A serialized rule set with primitive values separated into two parts: one is
@@ -213,32 +191,36 @@ type SerializedRuleSetData = zod.infer<typeof serializedRuleSetDataValidator>;
  * raw filters.
  */
 export type SerializedRuleSet = {
-    id: string,
+    id: string;
+
     /**
      * Metadata needed for instant creating ruleset.
      */
-    data: string,
+    data: string;
+
     /**
      * Metadata needed for lazy load some data to ruleset to find and show
      * source rules when declarative filtering log is enabled.
      */
-    lazyData: string,
+    lazyData: string;
 };
 
 /**
  * A deserialized rule set with loaded data and provider for lazy loading data.
  */
 export type DeserializedRuleSet = {
-    id: string,
+    id: string;
+
     /**
      * Metadata needed for instant creating ruleset.
      */
-    data: SerializedRuleSetData,
+    data: SerializedRuleSetData;
+
     /**
      * Metadata needed for lazy load some data to ruleset to find and show
      * source rules when declarative filtering log is enabled.
      */
-    ruleSetContentProvider: RuleSetContentProvider,
+    ruleSetContentProvider: RuleSetContentProvider;
 };
 
 /**
@@ -267,6 +249,21 @@ export class RuleSet implements IRuleSet {
      * Converted declarative unsafe rules.
      */
     private readonly unsafeRulesCount: number = 0;
+
+    /**
+     * Array with unsafe declarative rules, which can be optionally provided
+     * when creating a ruleset.
+     *
+     * This can be used to store unsafe rules inside metadata rule to use
+     * "skip review" feature in CWS.
+     *
+     * It's marked as optional to keep backward compatibility with old rulesets.
+     *
+     * {@link https://developer.chrome.com/docs/webstore/skip-review/}.
+     *
+     * @todo TODO: Mark this field as required in the next major version.
+     */
+    private readonly unsafeRules?: DeclarativeRule[];
 
     /**
      * Converted declarative regexp rules.
@@ -323,6 +320,7 @@ export class RuleSet implements IRuleSet {
      * @param ruleSetContentProvider Rule set content provider.
      * @param badFilterRules List of rules with $badfilter modifier.
      * @param rulesHashMap Dictionary with hashes for all source rules.
+     * @param unsafeRules List of unsafe DNR rules.
      */
     constructor(
         id: string,
@@ -332,6 +330,7 @@ export class RuleSet implements IRuleSet {
         ruleSetContentProvider: RuleSetContentProvider,
         badFilterRules: IndexedNetworkRuleWithHash[],
         rulesHashMap: IRulesHashMap,
+        unsafeRules?: DeclarativeRule[],
     ) {
         this.id = id;
         this.rulesCount = rulesCount;
@@ -340,6 +339,12 @@ export class RuleSet implements IRuleSet {
         this.ruleSetContentProvider = ruleSetContentProvider;
         this.badFilterRules = badFilterRules;
         this.rulesHashMap = rulesHashMap;
+        this.unsafeRules = unsafeRules;
+    }
+
+    /** @inheritdoc */
+    getUnsafeRules(): Promise<DeclarativeRule[]> {
+        return Promise.resolve(this.unsafeRules || []);
     }
 
     /** @inheritdoc */
@@ -372,9 +377,9 @@ export class RuleSet implements IRuleSet {
      *
      * @returns Promise with list of source rules.
      */
-    private findSourceRules(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]> {
+    private async findSourceRules(declarativeRuleId: number): Promise<SourceRuleAndFilterId[]> {
         if (!this.sourceMap) {
-            return Promise.resolve([]);
+            return [];
         }
 
         const sourcePairs = this.sourceMap.getByDeclarativeRuleId(declarativeRuleId);
@@ -422,6 +427,7 @@ export class RuleSet implements IRuleSet {
 
             this.sourceMap = await loadSourceMap();
             this.declarativeRules = await loadDeclarativeRules();
+            // TODO: Find a better method to load filters (AG-42364)
             const filtersList = await loadFilterList();
             filtersList.forEach((filter) => {
                 this.filterList.set(filter.getId(), filter);
@@ -542,7 +548,7 @@ export class RuleSet implements IRuleSet {
             return [];
         }
 
-        const networkRules = networkIndexedRulesWithHash.map(({ rule }) => rule);
+        const networkRules = networkIndexedRulesWithHash.map(({ rule }) => rule.rule);
 
         return networkRules;
     }
@@ -650,16 +656,27 @@ export class RuleSet implements IRuleSet {
     /**
      * Helper method to get serialized rule set data.
      *
+     * @param unsafeRules Optional list of unsafe rules to add to the serialized
+     * output.
+     *
      * @returns Serialized rule set data.
      */
-    private getSerializedRuleSetData(): SerializedRuleSetData {
+    private getSerializedRuleSetData(unsafeRules?: DeclarativeRule[]): SerializedRuleSetData {
+        let { rulesCount } = this;
+
+        // If unsaferRules is provided, we should not count them in
+        // the rules count, since they are moved to the metadata rule.
+        if (unsafeRules) {
+            rulesCount -= unsafeRules.length;
+        }
+
         return {
             regexpRulesCount: this.regexpRulesCount,
             unsafeRulesCount: this.unsafeRulesCount,
-            rulesCount: this.rulesCount,
+            rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
-            // TODO: Remove .getText() completely
-            badFilterRulesRaw: this.badFilterRules.map((r) => r.rule.getText()) || [],
+            badFilterRulesRaw: this.badFilterRules.map((r) => RuleGenerator.generate(r.rule.node)),
+            unsafeRules,
         };
     }
 
@@ -696,7 +713,10 @@ export class RuleSet implements IRuleSet {
     }
 
     /** @inheritdoc */
-    public async serializeCompact(prettyPrint = true): Promise<{ result: string, byteRangeMap: ByteRangeMap }> {
+    public async serializeCompact(
+        prettyPrint = true,
+        unsafeRules?: DeclarativeRule[],
+    ): Promise<string> {
         try {
             await this.loadContent();
         } catch (e) {
@@ -711,39 +731,38 @@ export class RuleSet implements IRuleSet {
         const filter = this.filterList.values().next().value!;
         const content = await filter.getContent();
 
+        // To ensure that unsafe rules are provided and their count is correct,
+        // we check if the length of the provided unsafe rules array is equal to
+        // the `unsafeRulesCount` property of the rule set.
+        if (unsafeRules && unsafeRules.length > 0 && unsafeRules.length !== this.unsafeRulesCount) {
+            const id = this.getId();
+            // eslint-disable-next-line max-len
+            const msg = `Unsafe rules count is not equal to the length of provided unsafe rules array in rule set '${id}'`;
+            throw new Error(msg);
+        }
+
         const metadataRule = createMetadataRule({
-            metadata: this.getSerializedRuleSetData(),
+            metadata: this.getSerializedRuleSetData(unsafeRules),
             lazyMetadata: this.getSerializedRuleSetLazyData(),
             conversionMap: content.conversionMap,
             rawFilterList: content.rawFilterList,
         });
 
-        const declarativeRules = await this.getDeclarativeRules();
+        let declarativeRules = await this.getDeclarativeRules();
 
         declarativeRules.unshift(metadataRule);
 
+        // Exclude unsafe rules from declarative rules if they are provided.
+        if (unsafeRules) {
+            const unsafeRulesIds = new Set(unsafeRules.map((rule) => rule.id));
+
+            declarativeRules = declarativeRules.filter((rule) => {
+                return !unsafeRulesIds.has(rule.id);
+            });
+        }
+
         const result = serializeJson(declarativeRules, prettyPrint);
 
-        // Create byte range map
-        // Note: query syntax based on https://datatracker.ietf.org/doc/html/rfc6901
-        // `/0` is a pointer to the first element in the array
-        // When we serialize the rule set, we produce an array of rules and the metadata rule is always the first one
-        const byteRangeMap: ByteRangeMap = {
-            [RuleSetByteRangeCategory.MetadataRule]: getByteRangeFor(result, '/0'),
-
-            /* eslint-disable max-len */
-            [RuleSetByteRangeCategory.DeclarativeMetadata]: getByteRangeFor(result, '/0/metadata/metadata'),
-            [RuleSetByteRangeCategory.DeclarativeLazyMetadata]: getByteRangeFor(result, '/0/metadata/lazyMetadata'),
-            [RuleSetByteRangeCategory.DeclarativeSourceMap]: getByteRangeFor(result, '/0/metadata/lazyMetadata/sourceMapRaw'),
-
-            [RuleSetByteRangeCategory.PreprocessedFilterListConversionMap]: getByteRangeFor(result, '/0/metadata/conversionMap'),
-            [RuleSetByteRangeCategory.PreprocessedFilterListRaw]: getByteRangeFor(result, '/0/metadata/rawFilterList'),
-            /* eslint-enable max-len */
-
-            // Get byte range for the whole array of rules (i.e. the whole file)
-            [RuleSetByteRangeCategory.Full]: getByteRangeFor(result, '/'),
-        };
-
-        return { result, byteRangeMap };
+        return result;
     }
 }

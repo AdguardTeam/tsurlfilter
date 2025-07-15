@@ -1,3 +1,12 @@
+import {
+    MODIFIER_ASSIGN_OPERATOR,
+    MODIFIERS_SEPARATOR,
+    NETWORK_RULE_EXCEPTION_MARKER,
+    NETWORK_RULE_SEPARATOR,
+    PIPE_MODIFIER_SEPARATOR,
+} from '@adguard/agtree';
+import { NETWORK_RULE_OPTIONS } from '@adguard/tsurlfilter';
+
 import { type AllowlistConfiguration, Allowlist as CommonAllowlist } from '../../common/allowlist';
 import { getUpperLevelDomain } from '../../common/utils/url';
 
@@ -37,6 +46,40 @@ export class AllowlistApi extends CommonAllowlist {
     }
 
     /**
+     * Creates allowlist rule for domains list.
+     *
+     * @param domains Domains to create allowlist rule for.
+     *
+     * @returns Allowlist rule for given domains or empty string if domains list is empty.
+     *
+     * @example
+     * ```
+     * const domains1 = ['example.com', 'example.org']
+     * getAllowlistRule(domains1) -> '@@$document,to=example.com|example.org'
+     *
+     * const domains2 = []
+     * getAllowlistRule(domains2) -> ''
+     * ```
+     */
+    public static getAllowlistRule(domains: string[]): string {
+        if (domains.length === 0) {
+            return '';
+        }
+
+        const concatenatedUniqueDomains = Array.from(new Set(domains)).join(PIPE_MODIFIER_SEPARATOR);
+        // e.g. '@@$document,to=example.com|example.org'
+        return [
+            NETWORK_RULE_EXCEPTION_MARKER,
+            NETWORK_RULE_SEPARATOR,
+            NETWORK_RULE_OPTIONS.DOCUMENT,
+            MODIFIERS_SEPARATOR,
+            NETWORK_RULE_OPTIONS.TO,
+            MODIFIER_ASSIGN_OPERATOR,
+            concatenatedUniqueDomains,
+        ].join('');
+    }
+
+    /**
      * Creates one allowlist rule for all allowlistRules. This one combined rule
      * will be passed to the DNR converter.
      *
@@ -49,15 +92,6 @@ export class AllowlistApi extends CommonAllowlist {
      * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/#domain-modifier
      *
      * @returns Combined rule in AG format.
-     *
-     * @example
-     * ```
-     * // configuration = { allowlist: 'example.com, example.org', enabled: true, inverted: false }
-     * combineAllowListRules() -> '@@$document,to=example.com|example.org'
-     *
-     * // configuration = { allowlist: 'example.com, example.org', enabled: true, inverted: true }
-     * combineAllowListRules() -> '@@$document,to=~example.com|~example.org'
-     * ```
      */
     public combineAllowListRulesForDNR(): string {
         const allDomains = this.domains.map((domain) => {
@@ -73,9 +107,7 @@ export class AllowlistApi extends CommonAllowlist {
             return this.inverted ? `~${d}` : d;
         });
 
-        const concatenatedUniqueDomains = Array.from(new Set(allDomains)).join('|');
-
-        return allDomains.length > 0 ? `@@$document,to=${concatenatedUniqueDomains}` : '';
+        return AllowlistApi.getAllowlistRule(allDomains);
     }
 }
 

@@ -90,7 +90,9 @@
  */
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
-import { RuleActionType, type DeclarativeRule } from './declarative-rule';
+import { isSafeRule } from '../declarative-converter-utils/is-safe-dnr-rule';
+
+import { type DeclarativeRule } from './declarative-rule';
 import { type ConvertedRules } from './converted-result';
 import { RegularRulesConverter } from './grouped-rules-converters/regular-converter';
 import { RemoveParamRulesConverter } from './grouped-rules-converters/remove-param-converter';
@@ -119,20 +121,17 @@ type FiltersIdsWithGroupedRules = [number, GroupedRules][];
 export class DeclarativeRulesConverter {
     /**
      * The declarative identifier of a rule must be a natural number.
+     *
+     * 1 is reserved for the metadata rule.
      */
-    static readonly START_DECLARATIVE_RULE_ID = 1;
+    static readonly MIN_DECLARATIVE_RULE_ID = 2;
 
     /**
-     * List of declarative rule actions which are considered safe.
-     *
-     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#safe_rules}
+     * The declarative identifier of a rule must be less than signed 32-bit
+     * integer. The maximum value of a signed 32-bit integer is 2^31 - 1.
+     * @see {@link https://groups.google.com/a/chromium.org/g/chromium-extensions/c/yVb56u5Vf0s?}
      */
-    static readonly SAFE_RULE_ACTIONS: ReadonlySet<RuleActionType> = new Set([
-        RuleActionType.BLOCK,
-        RuleActionType.ALLOW,
-        RuleActionType.ALLOW_ALL_REQUESTS,
-        RuleActionType.UPGRADE_SCHEME,
-    ]);
+    static readonly MAX_DECLARATIVE_RULE_ID = 2 ** 31 - 1;
 
     /**
      * Describes for which group of rules which converter should be used.
@@ -174,11 +173,17 @@ export class DeclarativeRulesConverter {
             errors: [],
         };
 
-        for (const [filterId, groupedRules] of filters) {
-            const highestUsedId = converted.declarativeRules.reduce((currentMax, rule) => {
-                return Math.max(currentMax, rule.id);
-            }, DeclarativeRulesConverter.START_DECLARATIVE_RULE_ID);
+        // Set to store unique IDs of declarative rules, it will be modified
+        // during the conversion process after each converted rule.
+        //
+        // Note: since we apply post-converting processing via grouping similar
+        // rules for some modifiers, we may have some "released" IDs, but we
+        // suppose that 2^31-1 is enough for all rules even with such not used
+        // IDs, so to keep the code simple we don't delete them from the set
+        // after conversion.
+        const uniqueIds = new Set<number>();
 
+        for (const [filterId, groupedRules] of filters) {
             const {
                 sourceMapValues,
                 declarativeRules,
@@ -187,7 +192,7 @@ export class DeclarativeRulesConverter {
             } = await this.convertRules(
                 filterId,
                 groupedRules,
-                highestUsedId,
+                uniqueIds,
                 options,
             );
 
@@ -207,6 +212,10 @@ export class DeclarativeRulesConverter {
             throw new Error('Declarative rules have non-unique identifiers.');
         }
 
+        if (!this.checkRulesHaveCorrectIds(converted.declarativeRules)) {
+            throw new Error('Declarative rules have incorrect identifiers.');
+        }
+
         return converted;
     }
 
@@ -215,8 +224,7 @@ export class DeclarativeRulesConverter {
      *
      * @param filterId Filed id.
      * @param groupsRules Grouped rules.
-     * @param lastUsedId To avoid intersections between the identifiers of
-     * the converted rules, we start converting new group rules with an offset.
+     * @param usedIds Set with already used IDs to exclude duplications in IDs.
      * @param options Options for conversion.
      *
      * @returns A list of declarative rules, a regexp rule counter,
@@ -226,7 +234,7 @@ export class DeclarativeRulesConverter {
     private static async convertRules(
         filterId: number,
         groupsRules: GroupedRules,
-        lastUsedId: number,
+        usedIds: Set<number>,
         options?: DeclarativeConverterOptions,
     ): Promise<ConvertedRules> {
         const converted: ConvertedRules = {
@@ -246,7 +254,7 @@ export class DeclarativeRulesConverter {
             } = await converter.convert(
                 filterId,
                 groupsRules[key],
-                lastUsedId,
+                usedIds,
             );
 
             converted.sourceMapValues = converted.sourceMapValues.concat(sourceMapValues);
@@ -258,7 +266,33 @@ export class DeclarativeRulesConverter {
     }
 
     /**
+     * Checks that IDs of declarative rules fit into the range of 1 to 2^31-1.
+     *
+     * This check is needed because we have post-converting grouping rules,
+     * where some code could easily change any part of an already converted DNR
+     * rule, and we would receive a critical error.
+     * That's why we added post-processing checks.
+     *
+     * @see {@link https://groups.google.com/a/chromium.org/g/chromium-extensions/c/yVb56u5Vf0s?}
+     *
+     * @param rules List of declarative rules.
+     *
+     * @returns True if all rules identifiers which fit in allowed range,
+     * otherwise false.
+     */
+    private static checkRulesHaveCorrectIds(rules: DeclarativeRule[]): boolean {
+        return rules.every(({ id }) => {
+            return id >= this.MIN_DECLARATIVE_RULE_ID && id <= this.MAX_DECLARATIVE_RULE_ID;
+        });
+    }
+
+    /**
      * Checks that declarative rules have unique identifiers.
+     *
+     * This check is needed because we have post-converting grouping rules,
+     * where some code could easily change any part of an already converted DNR
+     * rule, and we would receive a critical error.
+     * That's why we added post-processing checks.
      *
      * @param rules List of declarative rules.
      *
@@ -270,19 +304,6 @@ export class DeclarativeRulesConverter {
         const uniqueIds = new Set(ids);
 
         return uniqueIds.size === rules.length;
-    }
-
-    /**
-     * Checks whether the declarative rule is safe.
-     *
-     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#safe_rules}
-     *
-     * @param rule Declarative rule to check.
-     *
-     * @returns True if the rule is safe, otherwise false.
-     */
-    public static isSafeRule(rule: DeclarativeRule): boolean {
-        return this.SAFE_RULE_ACTIONS.has(rule.action.type);
     }
 
     /**
@@ -400,7 +421,7 @@ export class DeclarativeRulesConverter {
             for (let i = 0; i < declarativeRules.length; i += 1) {
                 const rule = declarativeRules[i];
 
-                if (maxNumberOfUnsafeRules && !this.isSafeRule(rule)) {
+                if (maxNumberOfUnsafeRules && !isSafeRule(rule)) {
                     unsafeRulesCounter += 1;
 
                     if (unsafeRulesCounter > maxNumberOfUnsafeRules) {
@@ -548,7 +569,7 @@ export class DeclarativeRulesConverter {
             const networkRuleToTest = ruleToTest.rule;
 
             for (const { rule } of allBadFilterRules) {
-                if (rule.negatesBadfilter(networkRuleToTest)) {
+                if (rule.rule.negatesBadfilter(networkRuleToTest.rule)) {
                     return false;
                 }
             }

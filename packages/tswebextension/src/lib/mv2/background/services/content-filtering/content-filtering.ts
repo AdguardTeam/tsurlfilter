@@ -82,14 +82,21 @@ export class ContentFiltering {
         // Sort replace rules alphabetically as noted here
         // https://github.com/AdguardTeam/CoreLibs/issues/45
         return replaceRules.sort((prev: NetworkRule, next: NetworkRule) => {
-            if (prev.getText() > next.getText()) {
-                return 1;
+            // Compare by pattern first
+            const patternComparison = prev.getPattern().localeCompare(next.getPattern());
+            if (patternComparison !== 0) {
+                return patternComparison;
             }
 
-            if (prev.getText() < next.getText()) {
-                return -1;
+            // Compare by advanced modifier value if both exist
+            const prevAdvancedModifier = prev.getAdvancedModifier();
+            const nextAdvancedModifier = next.getAdvancedModifier();
+
+            if (prevAdvancedModifier && nextAdvancedModifier) {
+                return prevAdvancedModifier.getValue().localeCompare(nextAdvancedModifier.getValue());
             }
 
+            // If one or both do not have an advanced modifier, keep the order
             return 0;
         });
     }

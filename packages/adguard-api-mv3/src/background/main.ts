@@ -178,6 +178,7 @@ export class AdguardApi {
             filtersPath: this.configuration.assetsPath,
             ruleSetsPath: `${this.configuration.assetsPath}${AdguardApi.DECLARATIVE_RULES_PATH}`,
             customFilters: [],
+            trustedDomains: [],
             // This is needed only for filters developers.
             declarativeLogEnabled: false,
             staticFiltersIds: this.configuration.filters,
