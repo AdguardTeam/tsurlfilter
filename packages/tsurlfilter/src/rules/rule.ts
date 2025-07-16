@@ -1,4 +1,5 @@
 /* eslint-disable max-classes-per-file */
+import { type RuleParts } from '../filterlist/rule-parts';
 
 /**
  * Default rule index for source mapping.
@@ -23,20 +24,32 @@ export interface IRule {
      * ID of the filter list this rule belongs to.
      */
     getFilterListId(): number;
+
+    // TODO (David): Consider adding it
+    // /**
+    //  * Returns rule text.
+    //  *
+    //  * @returns Rule text.
+    //  */
+    // getText(): string;
 }
 
 /**
  * Rule with index.
  */
-// TODO: Consider remove this because rule already has an index field
-export class IndexedRule {
+export class IndexedRule<T = RuleParts> {
     /**
      * Rule.
      */
-    public rule: IRule;
+    public rule: T;
 
     /**
-     * Index.
+     * ID of the filter list this rule belongs to.
+     */
+    public listId: number;
+
+    /**
+     * Rule index.
      */
     public index: number;
 
@@ -45,8 +58,10 @@ export class IndexedRule {
      *
      * @param rule Rule.
      * @param index Index of the rule.
+     * @param listId ID of the filter list this rule belongs to.
      */
-    constructor(rule: IRule, index: number) {
+    constructor(rule: T, index: number, listId: number) {
+        this.listId = listId;
         this.rule = rule;
         this.index = index;
     }
@@ -59,20 +74,27 @@ export class IndexedStorageRule {
     /**
      * Rule.
      */
-    public rule: IRule;
+    public rule: RuleParts;
 
     /**
-     * Index.
+     * Rule index.
      */
     public index: number;
+
+    /**
+     * ID of the filter list this rule belongs to.
+     */
+    public listId: number;
 
     /**
      * Constructor.
      *
      * @param rule Rule.
      * @param index Index of the rule.
+     * @param listId ID of the filter list this rule belongs to.
      */
-    constructor(rule: IRule, index: number) {
+    constructor(rule: RuleParts, index: number, listId: number) {
+        this.listId = listId;
         this.rule = rule;
         this.index = index;
     }
