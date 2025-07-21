@@ -122,6 +122,11 @@ export type HostRuleParts = {
      * End position of the IP.
      */
     ipEnd?: number;
+
+    /**
+     * Text of the rule.
+     */
+    text: string;
 };
 
 /**
@@ -167,6 +172,11 @@ export type NetworkRuleParts = {
      * End position of the domains.
      */
     domainsEnd?: number;
+
+    /**
+     * Text of the rule.
+     */
+    text: string;
 };
 
 /**
@@ -227,6 +237,11 @@ export type CosmeticRuleParts = {
      * End position of the domains.
      */
     domainsEnd?: number;
+
+    /**
+     * Text of the rule.
+     */
+    text: string;
 };
 
 /**
@@ -536,6 +551,7 @@ function buildCosmeticRuleParts(
         separatorEnd: offset + length,
         domainsStart,
         domainsEnd,
+        text: rule,
     };
 }
 
@@ -578,6 +594,7 @@ function getHostRuleParts(rule: string, realStart: number, realEnd: number): Hos
             category: RuleCategory.Host,
             domainsStart: realStart,
             domainsEnd: endWithoutComment,
+            text: rule,
         };
     }
 
@@ -594,6 +611,7 @@ function getHostRuleParts(rule: string, realStart: number, realEnd: number): Hos
         domainsEnd: endWithoutComment,
         ipStart,
         ipEnd,
+        text: rule,
     };
 }
 
@@ -696,6 +714,7 @@ export function getRuleParts(
             allowlist,
             patternStart: allowlist ? realStart + NETWORK_RULE_ALLOWLIST_MARKER_LENGTH : realStart,
             patternEnd: realEnd,
+            text: rule,
         };
     }
 
@@ -716,6 +735,7 @@ export function getRuleParts(
         patternEnd: lastDollarIndex,
         modifiersStart: modifierListStart,
         modifiersEnd: modifierListEnd,
+        text: rule,
     };
 
     const domains = extractDomainsFromModifierList(rule, modifierListStart, modifierListEnd);
