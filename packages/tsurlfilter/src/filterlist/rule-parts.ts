@@ -95,9 +95,24 @@ export const enum CosmeticRuleType {
 }
 
 /**
+ * Common rule parts.
+ */
+type CommonRuleParts = {
+    /**
+     * Rule category.
+     */
+    category: RuleCategory;
+
+    /**
+     * Text of the rule.
+     */
+    text: string;
+};
+
+/**
  * Host rule parts.
  */
-export type HostRuleParts = {
+export type HostRuleParts = CommonRuleParts & {
     /**
      * Rule category.
      */
@@ -122,17 +137,12 @@ export type HostRuleParts = {
      * End position of the IP.
      */
     ipEnd?: number;
-
-    /**
-     * Text of the rule.
-     */
-    text: string;
 };
 
 /**
  * Network rule parts.
  */
-export type NetworkRuleParts = {
+export type NetworkRuleParts = CommonRuleParts & {
     /**
      * Rule category.
      */
@@ -172,17 +182,12 @@ export type NetworkRuleParts = {
      * End position of the domains.
      */
     domainsEnd?: number;
-
-    /**
-     * Text of the rule.
-     */
-    text: string;
 };
 
 /**
  * Cosmetic rule parts.
  */
-export type CosmeticRuleParts = {
+export type CosmeticRuleParts = CommonRuleParts & {
     /**
      * Rule category.
      */
@@ -237,11 +242,6 @@ export type CosmeticRuleParts = {
      * End position of the domains.
      */
     domainsEnd?: number;
-
-    /**
-     * Text of the rule.
-     */
-    text: string;
 };
 
 /**
