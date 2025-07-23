@@ -1,0 +1,83 @@
+import { describe, it, expect } from 'vitest';
+
+import { Request } from '../../../src/request';
+import { createRuleStorage, fillLookupTable } from './lookup-table';
+import { DomainsLookupTable } from '../../../src/engine-new/lookup-tables/domains-lookup-table';
+import { RequestType } from '../../../src/request-type';
+import { getRuleParts, type NetworkRuleParts } from '../../../src/filterlist/rule-parts';
+
+describe('Domains Lookup Table Tests', () => {
+    it('adds rule to look up table', () => {
+        const ruleStorage = createRuleStorage([]);
+        const table = new DomainsLookupTable(ruleStorage);
+
+        expect(table.addRule(getRuleParts('path') as NetworkRuleParts, 0)).toBeFalsy();
+        expect(table.getRulesCount()).toBe(0);
+
+        expect(table.addRule(getRuleParts('||example.org^') as NetworkRuleParts, 0)).toBeFalsy();
+        expect(table.getRulesCount()).toBe(0);
+
+        expect(table.addRule(getRuleParts('path$domain=~example.com') as NetworkRuleParts, 0)).toBeFalsy();
+        expect(table.getRulesCount()).toBe(0);
+
+        expect(table.addRule(getRuleParts('path$domain=example.*') as NetworkRuleParts, 0)).toBeFalsy();
+        expect(table.getRulesCount()).toBe(0);
+
+        expect(table.addRule(getRuleParts('example.com$domain=/example/') as NetworkRuleParts, 0)).toBeFalsy();
+        expect(table.getRulesCount()).toBe(0);
+
+        expect(table.addRule(getRuleParts('path$domain=example.com') as NetworkRuleParts, 0)).toBeTruthy();
+        expect(table.getRulesCount()).toBe(1);
+    });
+
+    it('matches rules from lookup table', () => {
+        const rules = [
+            'path',
+            '||example.net^',
+            'path$domain=~example.net',
+            'path$domain=test.*',
+            'path$domain=example.com',
+            'path$domain=example.org',
+        ];
+
+        const ruleStorage = createRuleStorage(rules);
+        const table = new DomainsLookupTable(ruleStorage);
+
+        fillLookupTable(table, ruleStorage);
+        expect(table.getRulesCount()).toBe(2);
+
+        expect(table.matchAll(new Request('http://other.com/', '', RequestType.Document))).toHaveLength(0);
+        expect(table.matchAll(new Request('http://other.com/path', '', RequestType.Document))).toHaveLength(0);
+        expect(table.matchAll(new Request('http://example.net/path', '', RequestType.Document))).toHaveLength(0);
+        expect(table.matchAll(new Request('http://example.com/path', '', RequestType.Document))).toHaveLength(0);
+
+        expect(
+            table.matchAll(new Request('http://example.com/path', 'http://example.com', RequestType.Document)),
+        ).toHaveLength(1);
+        expect(
+            table.matchAll(new Request('http://example.org/path', 'http://example.org', RequestType.Document)),
+        ).toHaveLength(1);
+        expect(
+            table.matchAll(new Request('http://test.com/path', 'http://example.org', RequestType.Document)),
+        ).toHaveLength(1);
+        expect(
+            table.matchAll(new Request('http://test.com/path', 'http://sub.example.org', RequestType.Document)),
+        ).toHaveLength(1);
+    });
+
+    it('returns only unique rule', () => {
+        const rules = [
+            'path$domain=base.com|a.base.com|b.base.com',
+        ];
+
+        const ruleStorage = createRuleStorage(rules);
+        const table = new DomainsLookupTable(ruleStorage);
+
+        fillLookupTable(table, ruleStorage);
+        expect(table.getRulesCount()).toBe(1);
+
+        expect(
+            table.matchAll(new Request('http://base.com/path', 'http://base.com/', RequestType.Document)),
+        ).toHaveLength(1);
+    });
+});
