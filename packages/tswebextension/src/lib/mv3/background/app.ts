@@ -319,6 +319,11 @@ export class TsWebExtension implements AppInterface<
             staticFilters: [],
         };
 
+        // Stop handle onRuleMatchedDebug event.
+        // It should be stopped before declarative log update or removing filtering rules,
+        // otherwise, it may try to log applying of removed rules. AG-44355.
+        declarativeFilteringLog.stop();
+
         if (configuration.settings.filteringEnabled) {
             declarativeFilteringLog.startUpdate();
 
