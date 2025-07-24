@@ -83,19 +83,19 @@ export class BaseValuesModifier implements IValuesModifier {
         this.permitted = permittedValues.length > 0 ? permittedValues : null;
     }
 
-    getPermitted(): string[] | null {
+    public getPermitted(): string[] | null {
         return this.permitted;
     }
 
-    getRestricted(): string[] | null {
+    public getRestricted(): string[] | null {
         return this.restricted;
     }
 
-    getValue(): string {
+    public getValue(): string {
         return this.value;
     }
 
-    match(value: string): boolean {
+    public match(value: string): boolean {
         if (!this.restricted && !this.permitted) {
             return true;
         }

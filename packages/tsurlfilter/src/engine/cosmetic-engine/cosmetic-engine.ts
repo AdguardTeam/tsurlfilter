@@ -123,7 +123,7 @@ export class CosmeticEngine {
      *
      * @returns True if option matches targetOption.
      */
-    static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean {
+    public static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean {
         return (option & targetOption) === targetOption;
     }
 
@@ -135,7 +135,7 @@ export class CosmeticEngine {
      *
      * @returns CosmeticResult.
      */
-    match(request: Request, option: CosmeticOption): CosmeticResult {
+    public match(request: Request, option: CosmeticOption): CosmeticResult {
         const includeGeneric = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionGenericCSS);
         const includeSpecific = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionSpecificCSS);
 

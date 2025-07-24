@@ -69,7 +69,7 @@ export class ReplaceModifier implements IAdvancedModifier {
      *
      * @returns The replace option value.
      */
-    getValue(): string {
+    public getValue(): string {
         return this.replaceOption;
     }
 
@@ -78,7 +78,7 @@ export class ReplaceModifier implements IAdvancedModifier {
      *
      * @returns The function to apply the replacement.
      */
-    getApplyFunc(): (input: string) => string {
+    public getApplyFunc(): (input: string) => string {
         return this.replaceApply;
     }
 }

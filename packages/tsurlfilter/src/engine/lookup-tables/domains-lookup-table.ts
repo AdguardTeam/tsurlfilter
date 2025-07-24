@@ -42,7 +42,7 @@ export class DomainsLookupTable implements ILookupTable {
      *
      * @returns True if the rule was added.
      */
-    addRule(rule: NetworkRule, storageIdx: number): boolean {
+    public addRule(rule: NetworkRule, storageIdx: number): boolean {
         const permittedDomains = rule.getPermittedDomains();
         if (!permittedDomains || permittedDomains.length === 0) {
             return false;
@@ -73,7 +73,7 @@ export class DomainsLookupTable implements ILookupTable {
      *
      * @returns The count of rules added to this lookup table.
      */
-    getRulesCount(): number {
+    public getRulesCount(): number {
         return this.rulesCount;
     }
 
@@ -84,7 +84,7 @@ export class DomainsLookupTable implements ILookupTable {
      *
      * @returns Array of matching network rules.
      */
-    matchAll(request: Request): NetworkRule[] {
+    public matchAll(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];
 
         if (!request.sourceHostname) {

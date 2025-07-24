@@ -25,7 +25,7 @@ export class SeqScanLookupTable implements ILookupTable {
      *
      * @returns True if the rule was added.
      */
-    addRule(rule: NetworkRule): boolean {
+    public addRule(rule: NetworkRule): boolean {
         if (!this.rules.includes(rule)) {
             this.rules.push(rule);
             this.rulesCount += 1;
@@ -40,7 +40,7 @@ export class SeqScanLookupTable implements ILookupTable {
      *
      * @returns Count of rules added to this lookup table.
      */
-    getRulesCount(): number {
+    public getRulesCount(): number {
         return this.rulesCount;
     }
 
@@ -51,7 +51,7 @@ export class SeqScanLookupTable implements ILookupTable {
      *
      * @returns Array of matching rules.
      */
-    matchAll(request: Request): NetworkRule[] {
+    public matchAll(request: Request): NetworkRule[] {
         const result = [];
 
         for (let i = 0; i < this.rules.length; i += 1) {

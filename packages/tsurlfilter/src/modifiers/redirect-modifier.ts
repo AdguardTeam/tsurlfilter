@@ -35,7 +35,7 @@ export class RedirectModifier implements IAdvancedModifier {
      *
      * @returns The redirect title.
      */
-    getValue(): string {
+    public getValue(): string {
         return this.redirectTitle;
     }
 

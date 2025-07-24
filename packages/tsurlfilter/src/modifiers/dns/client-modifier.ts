@@ -19,7 +19,7 @@ class NetmasksCollection {
      *
      * @returns True if any of the containing masks contains provided value.
      */
-    contains(value: string): boolean {
+    public contains(value: string): boolean {
         if (isIp.v4(value)) {
             return this.ipv4Masks.some((x) => contains(x, value));
         }
@@ -85,7 +85,7 @@ export class ClientModifier extends BaseValuesModifier {
      *
      * @returns True if this modifier matches provided params.
      */
-    matchAny(clientName: string | undefined, clientIP: string | undefined): boolean {
+    public matchAny(clientName: string | undefined, clientIP: string | undefined): boolean {
         if (this.restricted) {
             if (clientName && this.restricted.includes(clientName)) {
                 return false;

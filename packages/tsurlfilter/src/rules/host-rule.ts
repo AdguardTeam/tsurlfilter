@@ -64,7 +64,7 @@ export class HostRule implements IRule {
      *
      * @returns True if the hostname matches one of the hostnames in the rule.
      */
-    match(hostname: string): boolean {
+    public match(hostname: string): boolean {
         return this.hostnames.includes(hostname);
     }
 
@@ -73,7 +73,7 @@ export class HostRule implements IRule {
      *
      * @returns The filter list ID.
      */
-    getFilterListId(): number {
+    public getFilterListId(): number {
         return this.filterListId;
     }
 
@@ -82,7 +82,7 @@ export class HostRule implements IRule {
      *
      * @returns The rule index.
      */
-    getIndex(): number {
+    public getIndex(): number {
         return this.ruleIndex;
     }
 
@@ -91,7 +91,7 @@ export class HostRule implements IRule {
      *
      * @returns IP address.
      */
-    getIp(): string {
+    public getIp(): string {
         return this.ip;
     }
 
@@ -100,7 +100,7 @@ export class HostRule implements IRule {
      *
      * @returns Array of hostnames.
      */
-    getHostnames(): string[] {
+    public getHostnames(): string[] {
         return this.hostnames;
     }
 
@@ -109,7 +109,7 @@ export class HostRule implements IRule {
      *
      * @returns True if the rule is invalid.
      */
-    isInvalid(): boolean {
+    public isInvalid(): boolean {
         return this.invalid;
     }
 }

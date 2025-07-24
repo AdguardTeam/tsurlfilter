@@ -80,7 +80,7 @@ export class NetworkEngine {
      *
      * @returns Rule matching request or null if no match was found.
      */
-    match(request: Request): NetworkRule | null {
+    public match(request: Request): NetworkRule | null {
         const networkRules = this.matchAll(request);
 
         if (networkRules.length === 0) {
@@ -99,7 +99,7 @@ export class NetworkEngine {
      *
      * @returns Array of matching rules.
      */
-    matchAll(request: Request): NetworkRule[] {
+    public matchAll(request: Request): NetworkRule[] {
         // First check by shortcuts
         const result = this.hostnameLookupTable.matchAll(request);
         result.push(...(this.shortcutsLookupTable.matchAll(request)));

@@ -92,7 +92,7 @@ export class RuleStorage {
      *
      * @returns Scanner instance.
      */
-    createRuleStorageScanner(scannerType: ScannerType): RuleStorageScanner {
+    public createRuleStorageScanner(scannerType: ScannerType): RuleStorageScanner {
         const scanners: RuleScanner[] = this.lists.map((list) => list.newScanner(scannerType));
         this.scanner = new RuleStorageScanner(scanners);
         return this.scanner;
@@ -106,7 +106,7 @@ export class RuleStorage {
      *
      * @returns The rule or null if not found or an error occurs.
      */
-    retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
+    public retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
         const rule = this.cache.get(storageIdx);
         if (rule) {
             return rule;
@@ -146,7 +146,7 @@ export class RuleStorage {
      *
      * @returns The rule or nil in any other case (not found or error).
      */
-    retrieveNetworkRule(storageIdx: number): NetworkRule | null {
+    public retrieveNetworkRule(storageIdx: number): NetworkRule | null {
         const rule = this.retrieveRule(storageIdx);
         if (!rule) {
             return null;
@@ -166,7 +166,7 @@ export class RuleStorage {
      *
      * @returns The rule or nil in any other case (not found or error).
      */
-    retrieveHostRule(storageIdx: number): HostRule | null {
+    public retrieveHostRule(storageIdx: number): HostRule | null {
         const rule = this.retrieveRule(storageIdx, false);
         if (!rule) {
             return null;
@@ -184,7 +184,7 @@ export class RuleStorage {
      *
      * @returns The size of the cache.
      */
-    getCacheSize(): number {
+    public getCacheSize(): number {
         return this.cache.size;
     }
 }

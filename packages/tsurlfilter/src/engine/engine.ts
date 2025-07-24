@@ -65,7 +65,7 @@ export class Engine {
     /**
      * Loads rules to engine.
      */
-    loadRules(): void {
+    public loadRules(): void {
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
 
         while (scanner.scan()) {
@@ -78,7 +78,7 @@ export class Engine {
      *
      * @param chunkSize Size of rules chunk to load at a time.
      */
-    async loadRulesAsync(chunkSize: number): Promise<void> {
+    public async loadRulesAsync(chunkSize: number): Promise<void> {
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
 
         let counter = 0;
@@ -109,7 +109,7 @@ export class Engine {
      *
      * @returns Matching result.
      */
-    matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult {
+    public matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult {
         let cacheKey = `${request.url}#${request.sourceHostname}#${request.requestType}`;
 
         if (request.method) {
@@ -142,7 +142,7 @@ export class Engine {
      *
      * @returns Document-level allowlist rule if found, otherwise null.
      */
-    matchFrame(frameUrl: string): NetworkRule | null {
+    public matchFrame(frameUrl: string): NetworkRule | null {
         const sourceRequest = new Request(frameUrl, '', RequestType.Document);
         let sourceRules = this.networkEngine.matchAll(sourceRequest);
 
@@ -168,7 +168,7 @@ export class Engine {
      *
      * @returns Cosmetic result.
      */
-    getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult {
+    public getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult {
         return this.cosmeticEngine.match(request, option);
     }
 
@@ -177,7 +177,7 @@ export class Engine {
      *
      * @returns The total number of rules.
      */
-    getRulesCount(): number {
+    public getRulesCount(): number {
         return this.networkEngine.rulesCount + this.cosmeticEngine.rulesCount;
     }
 

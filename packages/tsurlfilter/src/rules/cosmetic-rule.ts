@@ -73,11 +73,11 @@ class ScriptletParams {
         }
     }
 
-    get name(): string | undefined {
+    public get name(): string | undefined {
         return this.props?.name;
     }
 
-    get args(): string[] {
+    public get args(): string[] {
         return this.props?.args ?? [];
     }
 
@@ -242,11 +242,11 @@ export class CosmeticRule implements IRule {
      */
     public isScriptlet = false;
 
-    getIndex(): number {
+    public getIndex(): number {
         return this.ruleIndex;
     }
 
-    getFilterListId(): number {
+    public getFilterListId(): number {
         return this.filterListId;
     }
 
@@ -255,7 +255,7 @@ export class CosmeticRule implements IRule {
      *
      * @returns The content of the rule.
      */
-    getContent(): string {
+    public getContent(): string {
         return this.content;
     }
 
@@ -264,7 +264,7 @@ export class CosmeticRule implements IRule {
      *
      * @returns The type of the cosmetic rule.
      */
-    getType(): CosmeticRuleType {
+    public getType(): CosmeticRuleType {
         return this.type;
     }
 
@@ -276,7 +276,7 @@ export class CosmeticRule implements IRule {
      *
      * @returns True if the rule is an allowlist rule, false otherwise.
      */
-    isAllowlist(): boolean {
+    public isAllowlist(): boolean {
         return this.allowlist;
     }
 
@@ -288,7 +288,7 @@ export class CosmeticRule implements IRule {
      *
      * @returns Script code or null.
      */
-    getScript(options: InitScriptParams = {}): string | null {
+    public getScript(options: InitScriptParams = {}): string | null {
         const { debug = false, frameUrl } = options;
         const { scriptData } = this;
 
@@ -316,7 +316,7 @@ export class CosmeticRule implements IRule {
      *
      * @returns List of permitted domains or null if no domain modifier is set.
      */
-    getPermittedDomains(): string[] | null {
+    public getPermittedDomains(): string[] | null {
         if (this.domainModifier) {
             return this.domainModifier.getPermittedDomains();
         }
@@ -328,7 +328,7 @@ export class CosmeticRule implements IRule {
      *
      * @returns List of restricted domains or null if no domain modifier is set.
      */
-    getRestrictedDomains(): string[] | null {
+    public getRestrictedDomains(): string[] | null {
         if (this.domainModifier) {
             return this.domainModifier.getRestrictedDomains();
         }
@@ -342,7 +342,7 @@ export class CosmeticRule implements IRule {
      *
      * @returns True if the rule is generic, false otherwise.
      */
-    isGeneric(): boolean {
+    public isGeneric(): boolean {
         return !this.domainModifier?.hasPermittedDomains();
     }
 
@@ -351,7 +351,7 @@ export class CosmeticRule implements IRule {
      *
      * @returns True if the rule is ExtendedCss, false otherwise.
      */
-    isExtendedCss(): boolean {
+    public isExtendedCss(): boolean {
         return this.extendedCss;
     }
 
@@ -660,7 +660,7 @@ export class CosmeticRule implements IRule {
      *
      * @returns True if the rule matches the request, false otherwise.
      */
-    match(request: Request): boolean {
+    public match(request: Request): boolean {
         if (!this.domainModifier
             && !this.pathModifier
             && !this.urlModifier
@@ -696,7 +696,7 @@ export class CosmeticRule implements IRule {
      *
      * @returns The scriptlet data or null if not available.
      */
-    getScriptletData(): ScriptletData | null {
+    public getScriptletData(): ScriptletData | null {
         if (this.scriptletData) {
             return this.scriptletData;
         }
@@ -711,7 +711,7 @@ export class CosmeticRule implements IRule {
      *
      * @param options Initialization options for the script.
      */
-    initScript(options: InitScriptParams = {}) {
+    public initScript(options: InitScriptParams = {}) {
         const { debug = false, frameUrl } = options;
         const ruleContent = this.getContent();
         if (!this.isScriptlet) {

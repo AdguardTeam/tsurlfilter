@@ -45,6 +45,16 @@ module.exports = {
         'no-constant-condition': ['error', { checkLoops: false }],
         '@typescript-eslint/interface-name-prefix': 'off',
         '@typescript-eslint/member-delimiter-style': 'error',
+        '@typescript-eslint/explicit-member-accessibility': ['error', {
+            accessibility: 'explicit',
+            overrides: {
+                accessors: 'explicit',
+                constructors: 'no-public',
+                methods: 'explicit',
+                properties: 'off',
+                parameterProperties: 'explicit',
+            },
+        }],
         'arrow-body-style': 'off',
 
         // Force proper import and export of types

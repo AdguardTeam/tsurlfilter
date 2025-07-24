@@ -45,7 +45,7 @@ export class CosmeticStylesResult implements CosmeticContentResult {
      *
      * @param rule Cosmetic rule.
      */
-    append(rule: CosmeticRule): void {
+    public append(rule: CosmeticRule): void {
         if (rule.isGeneric()) {
             if (rule.isExtendedCss()) {
                 this.genericExtCss.push(rule);

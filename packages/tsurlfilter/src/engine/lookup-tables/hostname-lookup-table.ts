@@ -43,7 +43,7 @@ export class HostnameLookupTable implements ILookupTable {
      *
      * @returns True if the rule was added.
      */
-    addRule(rule: NetworkRule, storageIdx: number): boolean {
+    public addRule(rule: NetworkRule, storageIdx: number): boolean {
         const pattern = rule.getPattern();
         let hostname = '';
 
@@ -81,7 +81,7 @@ export class HostnameLookupTable implements ILookupTable {
      *
      * @returns The count of rules added to this lookup table.
      */
-    getRulesCount(): number {
+    public getRulesCount(): number {
         return this.rulesCount;
     }
 
@@ -92,7 +92,7 @@ export class HostnameLookupTable implements ILookupTable {
      *
      * @returns An array of matching network rules.
      */
-    matchAll(request: Request): NetworkRule[] {
+    public matchAll(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];
         const domains = request.subdomains;
         for (let i = 0; i < domains.length; i += 1) {
