@@ -9,6 +9,7 @@ import { HostRule } from '../rules/host-rule';
 import { type ScannerType } from './scanner-new/scanner-type';
 import { RuleFactory } from '../rules/rule-factory';
 import { logger } from '../utils/logger';
+import { CosmeticRule } from '../rules/cosmetic-rule';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists.
@@ -102,6 +103,17 @@ export class RuleStorage {
     }
 
     /**
+     * Retrieves the filter list identifier from the storage index.
+     *
+     * @param storageIdx Storage index of the rule.
+     *
+     * @returns The filter list identifier.
+     */
+    public getFilterListId(storageIdx: number): number {
+        return this.scanner.getIds(storageIdx)[0];
+    }
+
+    /**
      * Looks for the filtering rule in this storage.
      *
      * @param storageIdx The lookup index that you can get from the rule storage scanner.
@@ -109,7 +121,7 @@ export class RuleStorage {
      *
      * @returns The rule or null if not found or an error occurs.
      */
-    retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
+    public retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
         const rule = this.cache.get(storageIdx);
         if (rule) {
             return rule;
@@ -148,31 +160,17 @@ export class RuleStorage {
     }
 
     /**
-     * Retrieves the filter list identifier from the storage index.
-     *
-     * @param storageIdx Storage index of the rule.
-     *
-     * @returns The filter list identifier.
-     */
-    getFilterListId(storageIdx: number): number {
-        return this.scanner.getIds(storageIdx)[0];
-    }
-
-    /**
      * Retrieves a network rule from the storage.
      *
      * @param storageIdx Storage index of the rule.
      *
      * @returns The rule or nil in any other case (not found or error).
      */
-    retrieveNetworkRule(storageIdx: number): NetworkRule | null {
+    public retrieveNetworkRule(storageIdx: number): NetworkRule | null {
         const rule = this.retrieveRule(storageIdx);
-        if (!rule) {
-            return null;
-        }
 
         if (rule instanceof NetworkRule) {
-            return rule as NetworkRule;
+            return rule;
         }
 
         return null;
@@ -185,14 +183,28 @@ export class RuleStorage {
      *
      * @returns The rule or nil in any other case (not found or error).
      */
-    retrieveHostRule(storageIdx: number): HostRule | null {
+    public retrieveHostRule(storageIdx: number): HostRule | null {
         const rule = this.retrieveRule(storageIdx, false);
-        if (!rule) {
-            return null;
-        }
 
         if (rule instanceof HostRule) {
-            return rule as HostRule;
+            return rule;
+        }
+
+        return null;
+    }
+
+    /**
+     * Retrieves a cosmetic rule from the storage.
+     *
+     * @param storageIdx Storage index of the rule.
+     *
+     * @returns The rule or nil in any other case (not found or error).
+     */
+    public retrieveCosmeticRule(storageIdx: number): CosmeticRule | null {
+        const rule = this.retrieveRule(storageIdx);
+
+        if (rule instanceof CosmeticRule) {
+            return rule;
         }
 
         return null;
@@ -203,7 +215,7 @@ export class RuleStorage {
      *
      * @returns The size of the cache.
      */
-    getCacheSize(): number {
+    public getCacheSize(): number {
         return this.cache.size;
     }
 }

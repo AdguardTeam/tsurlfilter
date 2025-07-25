@@ -45,7 +45,7 @@ export class SeqScanLookupTable implements ILookupTable {
         }
 
         try {
-            // FIXME: double check this
+            // FIXME (David): double check this, probably there is a better way
             this.rules.set(
                 storageIdx,
                 new NetworkRule(

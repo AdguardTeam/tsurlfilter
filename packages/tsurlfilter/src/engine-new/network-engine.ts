@@ -64,6 +64,7 @@ export class NetworkEngine {
             if (indexedRule) {
                 // We can cast here, because scanner is created with `ScannerType.NetworkRules`
                 const ruleParts = indexedRule.rule as NetworkRuleParts;
+                // FIXME (David): do we need this check?
                 if (ruleParts) {
                     this.addRule(ruleParts, indexedRule.index);
                 }
