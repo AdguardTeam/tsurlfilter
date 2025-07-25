@@ -19,7 +19,7 @@ import { ensureDir } from 'fs-extra';
 import { findFiles } from '../../utils/find-files';
 import { loadRulesetAndFilter } from './ruleset-deserialize';
 
-// FIXME: Add some tests
+// TODO: Add some tests
 
 /**
  * Options for the build safe patch function.
