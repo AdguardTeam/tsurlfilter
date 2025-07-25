@@ -702,7 +702,7 @@ export function getRuleParts(
 
     if (dollarCount === 0) {
         if (!ignoreHosts && hasWhitespace(rule, realStart, realEnd)) {
-            // FIXME: domain-only host rules
+            // FIXME (David): domain-only host rules
             return getHostRuleParts(rule, realStart, realEnd);
         }
 
@@ -718,7 +718,7 @@ export function getRuleParts(
         };
     }
 
-    // FIXME: problematic case
+    // FIXME (David): problematic case
     // if (dollarCount > 1 && rule.indexOf('/', lastDollarIndex) !== -1) {
     //     // check if there is / somewhere after last dollar sign
     // }
