@@ -13,14 +13,16 @@ export type LocalScriptFunctionData = {
 };
 
 /**
- * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+ * Search for 'JS_RULES_EXECUTION' to find all parts of script execution
+ * process in the extension.
  *
- * Due to Chrome Web Store policies, we cannot execute remotely hosted code.
- * Therefore, we use the following approach:
- *
- * 1. We bundle AdGuard’s JS rules into a local file included with the extension.
- * 2. At runtime, we verify each JS rule to see if it's included in our local bundle.
- *    If it is, we allow it to run; otherwise, we discard it.
+ * 1. We collect and bundle all scripts that can be executed on web pages into
+ *    the extension package into so-called `localScriptRules`.
+ * 2. Rules that control when and where these scripts can be executed are also
+ *    bundled within the extension package inside ruleset files.
+ * 3. The rules look like: `example.org#%#scripttext`. Whenever the rule is
+ *    matched, we check if there's a function for `scripttext` in
+ *    `localScriptRules`, retrieve it from there and execute it.
  */
 export class LocalScriptRulesService {
     /**

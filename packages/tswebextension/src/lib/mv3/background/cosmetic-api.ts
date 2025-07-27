@@ -33,9 +33,18 @@ type ScriptsAndScriptletsDataMv3 = {
  */
 export class CosmeticApi extends CosmeticApiCommon {
     /**
-     * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+     * Search for 'JS_RULES_EXECUTION' to find all parts of script execution
+     * process in the extension.
      *
-     * This is STEP 3: All previously matched script rules are processed and filtered:
+     * 1. We collect and bundle all scripts that can be executed on web pages into
+     *    the extension package into so-called `localScriptRules`.
+     * 2. Rules that control when and where these scripts can be executed are also
+     *    bundled within the extension package inside ruleset files.
+     * 3. The rules look like: `example.org#%#scripttext`. Whenever the rule is
+     *    matched, we check if there's a function for `scripttext` in
+     *    `localScriptRules`, retrieve it from there and execute it.
+     *
+     * Here we're processing all previously matched script rules:
      * - JS and Scriptlet rules from pre-built filters (previously collected, pre-built and passed to the engine)
      *   are going to be executed as functions via chrome.scripting API.
      */
@@ -158,13 +167,19 @@ export class CosmeticApi extends CosmeticApiCommon {
         try {
             await Promise.all(scriptTexts.map((scriptText) => {
                 /**
-                 * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+                 * Search for 'JS_RULES_EXECUTION' to find all parts of script execution
+                 * process in the extension.
                  *
-                 * This is STEP 4.1: Selecting only local script functions which were pre-built into the extension.
-                 */
-
-                /**
-                 * Here we check if the script text is local to guarantee that we do not execute remote code.
+                 * 1. We collect and bundle all scripts that can be executed on web pages into
+                 *    the extension package into so-called `localScriptRules`.
+                 * 2. Rules that control when and where these scripts can be executed are also
+                 *    bundled within the extension package inside ruleset files.
+                 * 3. The rules look like: `example.org#%#scripttext`. Whenever the rule is
+                 *    matched, we check if there's a function for `scripttext` in
+                 *    `localScriptRules`, retrieve it from there and execute it.
+                 *
+                 * Here we're selecting only local script functions which were pre-built into the extension
+                 * to guarantee that we do not execute remote code.
                  */
                 const isLocalScript = localScriptRulesService.isLocalScript(scriptText);
                 if (!isLocalScript) {
