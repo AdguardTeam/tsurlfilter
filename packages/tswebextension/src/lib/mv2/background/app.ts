@@ -245,9 +245,18 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+     * Search for 'JS_RULES_EXECUTION' to find all parts of script execution
+     * process in the extension.
      *
-     * This is STEP 2.2: Local script rules are passed to the engine via this API method.
+     * 1. We collect and bundle all scripts that can be executed on web pages into
+     *    the extension package into so-called `localScriptRules`.
+     * 2. Rules that control when and where these scripts can be executed are also
+     *    bundled within the extension package inside ruleset files.
+     * 3. The rules look like: `example.org#%#scripttext`. Whenever the rule is
+     *    matched, we check if there's a function for `scripttext` in
+     *    `localScriptRules`, retrieve it from there and execute it.
+     *
+     * Here we're passing local script rules to the engine via this API method.
      */
     /**
      * Sets prebuild local script rules.

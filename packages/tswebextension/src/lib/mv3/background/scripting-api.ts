@@ -117,6 +117,20 @@ export class ScriptingApi {
             domainName: domainName ?? undefined,
         };
 
+        /**
+         * Search for 'JS_RULES_EXECUTION' to find all parts of script execution
+         * process in the extension.
+         *
+         * 1. We collect and bundle all scripts that can be executed on web pages into
+         *    the extension package into so-called `localScriptRules`.
+         * 2. Rules that control when and where these scripts can be executed are also
+         *    bundled within the extension package inside ruleset files.
+         * 3. The rules look like: `example.org#%#scripttext`. Whenever the rule is
+         *    matched, we check if there's a function for `scripttext` in
+         *    `localScriptRules`, retrieve it from there and execute it.
+         *
+         * Here we're applying JS functions of scriptlets from pre-built filters via chrome.scripting API.
+         */
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
             func: scriptletData.func,
@@ -147,9 +161,18 @@ export class ScriptingApi {
         }
 
         /**
-         * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
+         * Search for 'JS_RULES_EXECUTION' to find all parts of script execution
+         * process in the extension.
          *
-         * This is STEP 4.2: Apply JS functions from pre-built filters — via chrome.scripting API.
+         * 1. We collect and bundle all scripts that can be executed on web pages into
+         *    the extension package into so-called `localScriptRules`.
+         * 2. Rules that control when and where these scripts can be executed are also
+         *    bundled within the extension package inside ruleset files.
+         * 3. The rules look like: `example.org#%#scripttext`. Whenever the rule is
+         *    matched, we check if there's a function for `scripttext` in
+         *    `localScriptRules`, retrieve it from there and execute it.
+         *
+         * Here we're applying JS functions from pre-built filters via chrome.scripting API.
          */
         await chrome.scripting.executeScript({
             target: { tabId, frameIds: [frameId] },
