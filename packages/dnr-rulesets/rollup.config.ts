@@ -50,8 +50,14 @@ const cliConfig = {
         json(),
         swc(),
         nodeExternals({
-            // Bundle re2-wasm and its dependencies to include WASM files
-            exclude: ['@adguard/re2-wasm'],
+            exclude: [
+                // Bundle re2-wasm and its dependencies to include WASM files
+                '@adguard/re2-wasm',
+                // Bundle all AdGuard packages to avoid issues with
+                // `import.meta.url` in ESM format (all our libraries in
+                // ESM only), since output is CJS (because of re2-wasm).
+                /^@adguard\/(agtree|logger|tsurlfilter).*$/,
+            ],
         }),
         commonjs(),
         // We need to copy the re2.wasm file to the dist directory, because re2

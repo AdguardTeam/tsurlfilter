@@ -929,6 +929,7 @@ describe('Javascript rules', () => {
         expect(getScriptletName('#@%#//scriptlet()')).toBe(null);
         expect(getScriptletName("#@%#//scriptlet('set-cookie')")).toBe('set-cookie');
         expect(getScriptletName('#@%#//scriptlet("set-cookie")')).toBe('set-cookie');
+        expect(getScriptletName("#%#//scriptlet('ubo-nobab')")).toBe('ubo-nobab');
     });
 
     it('normalizes scriptlet rule content', () => {

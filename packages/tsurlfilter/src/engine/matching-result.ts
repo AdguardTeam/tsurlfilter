@@ -211,7 +211,7 @@ export class MatchingResult {
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
                 // This check needed to split $all rules from $popup rules
-                && (rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
+                && !MatchingResult.isDocumentRule(rule)) {
                 this.popupRule = rule;
                 continue;
             }
@@ -302,6 +302,24 @@ export class MatchingResult {
         }
 
         return basic;
+    }
+
+    /**
+     * Returns a rule that should block a document request.
+     *
+     * @returns Document blocking rule if any, null otherwise.
+     */
+    getDocumentBlockingResult(): NetworkRule | null {
+        if (!this.basicRule || this.basicRule.isDocumentLevelAllowlistRule()) {
+            return null;
+        }
+
+        // Document-level blocking rules are the only ones that can block 'document' requests
+        if (MatchingResult.isDocumentRule(this.basicRule)) {
+            return this.basicRule;
+        }
+
+        return null;
     }
 
     /**
@@ -558,6 +576,17 @@ export class MatchingResult {
      */
     private static isSubDocumentRule(rule: NetworkRule): boolean {
         return (rule.getPermittedRequestTypes() & RequestType.SubDocument) === RequestType.SubDocument;
+    }
+
+    /**
+     * Checks if a network rule is document rule.
+     *
+     * @param rule Rule to check.
+     *
+     * @returns True if the rule is document rule, false otherwise.
+     */
+    private static isDocumentRule(rule: NetworkRule): boolean {
+        return (rule.getPermittedRequestTypes() & RequestType.Document) === RequestType.Document;
     }
 
     /**

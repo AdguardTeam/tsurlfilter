@@ -50,16 +50,9 @@ export default class DynamicRulesApi {
      * @returns Maximum number of dynamic **unsafe** rules.
      */
     private static get MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES(): number {
-        // TODO: remove following default value and ts-ignore comment
-        // when the value become available in webextension-polyfill
-        let num = 5000;
-        try {
-            // @ts-ignore
-            num = chrome.declarativeNetRequest.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES;
-        } catch (e) {
-            // do nothing
-        }
-        return num;
+        // Replace chrome.declarativeNetRequest.MAX_NUMBER_OF_UNSAFE_SESSION_RULES
+        // with webextension-polyfill later, when the value becomes available.
+        return chrome.declarativeNetRequest.MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES;
     }
 
     /**

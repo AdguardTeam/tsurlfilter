@@ -176,7 +176,7 @@ describe('RuleSet', () => {
         const deserializedRuleSet = new RuleSet(
             id,
             rulesCount,
-            unsafeRulesCount || 0,
+            unsafeRulesCount,
             regexpRulesCount,
             ruleSetContentProvider,
             badFilterRules,

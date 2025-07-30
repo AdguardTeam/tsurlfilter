@@ -44,6 +44,14 @@ interface ConvertFiltersOptions {
      * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson}.
      */
     prettifyJson?: boolean;
+
+    /**
+     * Additional properties that can be passed to the converter to record
+     * inside metadata ruleset.
+     * This field is not validated, but it must be JSON serializable.
+     * Validation should be performed by users.
+     */
+    additionalProperties?: Record<string, unknown>;
 }
 
 /**
@@ -65,6 +73,7 @@ export const convertFilters = async (
     const {
         debug = CONVERT_FILTER_DEFAULT_OPTIONS.debug,
         prettifyJson = CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson,
+        additionalProperties,
     } = options;
 
     const filtersWithMetadataPath = path.resolve(process.cwd(), filtersAndMetadataDir);
@@ -226,7 +235,10 @@ export const convertFilters = async (
 
     const metadataRuleSet = new MetadataRuleSet(
         checksums,
-        { metadata },
+        {
+            metadata,
+            ...additionalProperties,
+        },
     );
 
     const metadataRulesetId = metadataRuleSet.getId();
