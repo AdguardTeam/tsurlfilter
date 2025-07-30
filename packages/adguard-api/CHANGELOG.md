@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated [@adguard/assistant] to `v4.3.74`.
+- Updated [@adguard/assistant] to `v4.3.75`.
 
 ## [3.1.0] - 2025-05-27
 
