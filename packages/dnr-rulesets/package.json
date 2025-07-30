@@ -1,10 +1,9 @@
 {
     "name": "@adguard/dnr-rulesets",
-    "version": "3.1.0",
+    "version": "3.2.20250716115023",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
-        "dist/**/*",
-        "!dist/filters/filters.json"
+        "dist/**/*"
     ],
     "bin": {
         "dnr-rulesets": "dist/cli.cjs"
@@ -45,7 +44,11 @@
     "author": "Adguard Software Ltd.",
     "license": "GPL-3.0-only",
     "dependencies": {
+        "@adguard/re2-wasm": "1.2.0",
+        "@adguard/agtree": "workspace:^",
         "@adguard/logger": "workspace:^",
+        "@adguard/tsurlfilter": "workspace:^",
+        "axios": "catalog:",
         "chokidar": "^4.0.3",
         "commander": "catalog:",
         "fast-glob": "^3.3.2",
@@ -53,8 +56,6 @@
         "zod": "catalog:"
     },
     "devDependencies": {
-        "@adguard/re2-wasm": "1.2.0",
-        "@adguard/tsurlfilter": "workspace:^",
         "@eslint/js": "^9.8.0",
         "@rollup/plugin-commonjs": "catalog:",
         "@rollup/plugin-json": "catalog:",
@@ -67,7 +68,6 @@
         "@types/fs-extra": "catalog:",
         "@types/node": "catalog:",
         "@vitest/coverage-v8": "catalog:",
-        "axios": "catalog:",
         "eslint": "catalog:eslint9",
         "eslint-plugin-import-newlines": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",

@@ -25,6 +25,7 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
       - [Retrieving cosmetic data](#retrieving-cosmetic-data)
     - [MatchingResult](#matchingresult)
       - [**getBasicResult**](#getbasicresult)
+      - [**getDocumentBlockingResult**](#getdocumentblockingresult)
       - [**getCosmeticOption**](#getcosmeticoption)
       - [**Other rules**](#other-rules)
     - [CosmeticResult](#cosmeticresult)
@@ -194,6 +195,17 @@ MatchingResult contains all the rules matching a web request, and provides metho
  * @returns basic result rule
  */
 getBasicResult(): NetworkRule | null;
+```
+
+##### **getDocumentBlockingResult**
+
+```ts
+/**
+ * Returns a rule that should block a document request.
+ *
+ * @returns Document blocking rule if any, null otherwise.
+ */
+getDocumentBlockingResult(): NetworkRule | null;
 ```
 
 ##### **getCosmeticOption**
@@ -658,6 +670,12 @@ await convertFilters(
   {
     debug: true,         // (optional) Print additional debug information
     prettifyJson: true,  // (optional) Prettify JSON output (default: true)
+    additionalProperties: {
+      // (optional) Additional properties to include in metadata ruleset
+      // This field is not validated, but it must be JSON serializable.
+      // Validation should be performed by users.
+      version: '1.2.3',
+    },
   }
 );
 ```
@@ -669,6 +687,7 @@ await convertFilters(
 - `options` (object, optional):
     - `debug` (boolean): Print debug info to console (default: false).
     - `prettifyJson` (boolean): Prettify JSON output (default: true).
+    - `additionalProperties` (object): Additional properties to include in metadata ruleset. This field is not validated, but it must be JSON serializable. Validation should be performed by users.
 
 ### CLI usage
 

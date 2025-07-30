@@ -5,15 +5,65 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.7] - 2025-07-30
+
+### Changed
+
+- Updated [@adguard/assistant] to `v4.3.75`.
+
+[3.2.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.7
+
+## [3.2.6] - 2025-07-25
+
+### Fixed
+
+- Declarative filtering log errors while new configuration applying in MV3.
+
+[3.2.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.6
+
+## [3.2.5] - 2025-07-10
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.4.5`.
+
+### Fixed
+
+- Wrong rule is displayed for page blocked by `$document` rule in MV3 [AdguardBrowserExtension#3260].
+
+[3.2.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.5
+[AdguardBrowserExtension#3260]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3260
+
+## [3.2.4] - 2025-07-03
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.4.2`.
+
+[3.2.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.4
+
+## [3.2.3] - 2025-07-02
+
+### Added
+
+- Using unsafe rules from rulesets metadata in MV3 to allow "skip review"
+  feature in CWS.
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.4.1`.
+
+### Fixed
+
+- CLI was not worked since switch to ESM builds.
+
+[3.2.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.3
+
 ## [3.2.2] - 2025-06-30
 
 ### Changed
 
 - Updated [@adguard/assistant] to `v4.3.74`.
-
-### Fixed
-
-- CLI was not worked since switch to ESM builds.
 
 [3.2.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.2
 

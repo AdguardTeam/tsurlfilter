@@ -5,11 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [3.4.5] - 2025-07-10
+
+### Added
+
+- `MatchingResult.getDocumentBlockingResult()` method.
+
+[3.4.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.5
+
+## [3.4.4] - 2025-07-09
+
+### Added
+
+- Possibility to pack additional properties into metadata ruleset.
+
+[3.4.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.4
+
+## [3.4.3] - 2025-07-08
+
+### Changed
+
+- Updated [@adguard/scriptlets] to `v2.2.8`.
+- Updated [@adguard/agtree] to `v3.2.2`.
+
+[3.4.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.3
+
+## [3.4.2] - 2025-07-03
 
 ### Fixed
 
-- CLI was not worked since to ESM builds.
+- Marked `unsafeRules` in Ruleset as optional to keep backward compatibility.
+
+[3.4.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.2
+
+## [3.4.1] - 2025-07-02
+
+### Added
+
+- Possibility to exclude unsafe rules from rulesets and save them to the metadata of rulesets
+  for use "skip review" feature in CWS.
+- Export of `isSafeRule` from `declarative-converter-utils`.
+
+### Fixed
+
+- CLI was not worked since switch to ESM builds.
+- `unsafeRulesCount` is added for rulesets after the conversion.
+
+[3.4.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.4.1
 
 ## [3.4.0] - 2025-06-06
 

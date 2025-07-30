@@ -7,11 +7,11 @@ settings:
 catalogs:
   default:
     '@adguard/assistant':
-      specifier: ^4.3.74
-      version: 4.3.74
+      specifier: ^4.3.75
+      version: 4.3.75
     '@adguard/scriptlets':
-      specifier: ^2.2.7
-      version: 2.2.7
+      specifier: ^2.2.8
+      version: 2.2.8
     '@rollup/plugin-alias':
       specifier: ^5.1.1
       version: 5.1.1
@@ -275,13 +275,13 @@ importers:
         version: 7.7.2
       vitest:
         specifier: 'catalog:'
-        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
 
   packages/adguard-api:
     dependencies:
       '@adguard/assistant':
         specifier: 'catalog:'
-        version: 4.3.74
+        version: 4.3.75
       '@adguard/filters-downloader':
         specifier: ^2.2.6
         version: 2.4.0
@@ -424,7 +424,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
 
   packages/agtree:
     dependencies:
@@ -500,7 +500,7 @@ importers:
         version: 7.18.0(eslint@8.57.1)(typescript@5.8.3)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
+        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
       '@vitest/expect':
         specifier: 'catalog:'
         version: 2.1.9
@@ -575,7 +575,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
 
   packages/benchmarks/agtree-benchmark:
     dependencies:
@@ -857,7 +857,7 @@ importers:
         version: 7.18.0(eslint@8.57.1)(typescript@5.8.3)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
+        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
       eslint:
         specifier: 'catalog:'
         version: 8.57.1
@@ -902,13 +902,25 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
 
   packages/dnr-rulesets:
     dependencies:
+      '@adguard/agtree':
+        specifier: workspace:^
+        version: link:../agtree
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
+      '@adguard/re2-wasm':
+        specifier: 1.2.0
+        version: 1.2.0
+      '@adguard/tsurlfilter':
+        specifier: workspace:^
+        version: link:../tsurlfilter
+      axios:
+        specifier: 'catalog:'
+        version: 1.8.4
       chokidar:
         specifier: ^4.0.3
         version: 4.0.3
@@ -925,12 +937,6 @@ importers:
         specifier: 'catalog:'
         version: 3.24.4
     devDependencies:
-      '@adguard/re2-wasm':
-        specifier: 1.2.0
-        version: 1.2.0
-      '@adguard/tsurlfilter':
-        specifier: workspace:^
-        version: link:../tsurlfilter
       '@eslint/js':
         specifier: ^9.8.0
         version: 9.24.0
@@ -966,10 +972,7 @@ importers:
         version: 22.14.0
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
-      axios:
-        specifier: 'catalog:'
-        version: 1.8.4
+        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
       eslint:
         specifier: catalog:eslint9
         version: 9.24.0
@@ -1014,7 +1017,7 @@ importers:
         version: 8.29.0(eslint@9.24.0)(typescript@5.8.3)
       vitest:
         specifier: 'catalog:'
-        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
 
   packages/eslint-plugin-logger-context:
     devDependencies:
@@ -1510,7 +1513,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
 
   packages/tsurlfilter:
     dependencies:
@@ -1528,7 +1531,7 @@ importers:
         version: 1.2.0
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.2.7
+        version: 2.2.8
       cidr-tools:
         specifier: ^6.4.1
         version: 6.4.2
@@ -1555,7 +1558,7 @@ importers:
         version: 3.24.4
       zod-validation-error:
         specifier: ^3.4.0
-        version: 3.4.0(zod@3.24.4)
+        version: 3.5.2(zod@3.24.4)
     devDependencies:
       '@adguard/eslint-plugin-logger-context':
         specifier: ^1.0.1
@@ -1592,7 +1595,7 @@ importers:
         version: 0.2.3
       '@types/lodash':
         specifier: ^4.17.0
-        version: 4.17.16
+        version: 4.17.20
       '@types/lodash-es':
         specifier: 'catalog:'
         version: 4.17.12
@@ -1616,7 +1619,7 @@ importers:
         version: 7.18.0(eslint@8.57.1)(typescript@5.8.3)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
+        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
       '@vitest/expect':
         specifier: 'catalog:'
         version: 2.1.9
@@ -1661,7 +1664,7 @@ importers:
         version: 4.17.21
       msw:
         specifier: ^2.7.0
-        version: 2.7.3(@types/node@22.14.0)(typescript@5.8.3)
+        version: 2.10.3(@types/node@22.14.0)(typescript@5.8.3)
       rimraf:
         specifier: 'catalog:'
         version: 6.0.1
@@ -1679,7 +1682,7 @@ importers:
         version: 0.13.0(rollup@4.39.0)
       tldts-core:
         specifier: ^6.1.13
-        version: 6.1.85
+        version: 6.1.86
       ts-morph:
         specifier: 'catalog:'
         version: 26.0.0
@@ -1700,7 +1703,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
 
   packages/tsurlfilter/test/builders/rollup-ts:
     devDependencies:
@@ -1721,7 +1724,7 @@ importers:
         version: link:../agtree
       '@adguard/assistant':
         specifier: 'catalog:'
-        version: 4.3.74
+        version: 4.3.75
       '@adguard/extended-css':
         specifier: ^2.1.1
         version: 2.1.1
@@ -1730,7 +1733,7 @@ importers:
         version: link:../logger
       '@adguard/scriptlets':
         specifier: 'catalog:'
-        version: 2.2.7
+        version: 2.2.8
       '@adguard/text-encoding':
         specifier: ^0.8.3
         version: 0.8.3
@@ -1827,10 +1830,10 @@ importers:
         version: 7.18.0(eslint@8.57.1)(typescript@5.8.3)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
+        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
       '@vitest/eslint-plugin':
         specifier: ^1.1.12
-        version: 1.1.39(@typescript-eslint/utils@8.32.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
+        version: 1.1.39(@typescript-eslint/utils@8.32.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
       coveralls:
         specifier: 'catalog:'
         version: 3.1.1
@@ -1896,7 +1899,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
 
 packages:
 
@@ -1912,8 +1915,8 @@ packages:
     resolution: {integrity: sha512-S1bV5QIja38Ndc6cHzASeV2Gm4qh+aPwRlm9T3wODNfLkFrjD2HgIG3h3alkxz9YLBzbprGc2qq12ds5QK6+NQ==}
     engines: {node: '>=22'}
 
-  '@adguard/assistant@4.3.74':
-    resolution: {integrity: sha512-Cf9FhfIbzzN6+y6wjpuccENcohUlYo1I4QVXyw0iafJydljpKz7l2nE/XlSU79nESEZeWnX0BVqY6wLkItcGUg==}
+  '@adguard/assistant@4.3.75':
+    resolution: {integrity: sha512-TI2L7/oEaTLeHS8nSb1PoIC1139b2+tQJJeNH55JSAb4oOc6AOOFq/mHM/+JgtS2T5JR3EgB2vy/HvI9jmqN9g==}
 
   '@adguard/css-tokenizer@1.2.0':
     resolution: {integrity: sha512-cUj5j/AU5z/T4//5M6KnIJBpykAY4QbDsoiQ2DaWX/r2XkepMkTb8DhIbUHJD/QLGEyLeQLpi+nlxAgf4NTRRQ==}
@@ -1943,8 +1946,8 @@ packages:
   '@adguard/scriptlets@1.12.1':
     resolution: {integrity: sha512-luAGl8hHEjKZfTFqWG8PBsif2wAPWNi0uuT+xzyBTk+IllHDYOLPSwyMKh2ru7nKCQJEOgMVwNoIrPB4zuuX1w==}
 
-  '@adguard/scriptlets@2.2.7':
-    resolution: {integrity: sha512-UK7aNkbGOACPaJEDGKj5g9Zyl+zNTM0DZf2/6+RaMavnGDQuObtkBvzZO0/0G4BVqRDdstULlrgzazmaLeHukw==}
+  '@adguard/scriptlets@2.2.8':
+    resolution: {integrity: sha512-V6d6akdFgRTHu6m6Q4E/j3v54xjRIntOUcoNLY+Wd/ch2BOGb6cmXGig/T767aoR5c5S1HkJq8LC6KDe9HqHGA==}
 
   '@adguard/text-encoding@0.8.3':
     resolution: {integrity: sha512-LA0bsY+YYnQqItGaYMoVL0l55JDi/uwvUca53V6M6mvKNHtaYDTlf3yAeW2PafsTfWvoYH7gObGu8eCvPh69tg==}
@@ -2664,8 +2667,8 @@ packages:
   '@mdn/browser-compat-data@4.1.12':
     resolution: {integrity: sha512-y3Ntio6hb5+m6asxcA3nnIN6URjAFMji2EZZVYGd2Ag5On4mmvPhMnXdiIScCMXgHjFX+5qXuKaojLLhJHZPAg==}
 
-  '@mswjs/interceptors@0.37.6':
-    resolution: {integrity: sha512-wK+5pLK5XFmgtH3aQ2YVvA3HohS3xqV/OxuVOdNx9Wpnz7VE/fnC+e1A7ln6LFYeck7gOJ/dsZV6OLplOtAJ2w==}
+  '@mswjs/interceptors@0.39.2':
+    resolution: {integrity: sha512-RuzCup9Ct91Y7V79xwCb146RaBRHZ7NBbrIUySumd1rpKqHL5OonaqrGIbug5hNwP/fRyxFMA6ISgw4FTtYFYg==}
     engines: {node: '>=18'}
 
   '@napi-rs/wasm-runtime@0.2.4':
@@ -3454,8 +3457,8 @@ packages:
   '@types/lodash-es@4.17.12':
     resolution: {integrity: sha512-0NgftHUcV4v34VhXm8QBSftKVXtbkBG3ViCjs6+eJ5a6y6Mi/jiFGPc1sC7QK+9BFhWrURE3EOggmWaSxL9OzQ==}
 
-  '@types/lodash@4.17.16':
-    resolution: {integrity: sha512-HX7Em5NYQAXKW+1T+FiuG27NGwzJfCX3s1GjOa7ujxZa52kjJLOr4FUxT+giF6Tgxv1e+/czV/iTtBw27WTU9g==}
+  '@types/lodash@4.17.20':
+    resolution: {integrity: sha512-H3MHACvFUEiujabxhaI/ImO6gUrd8oOurg7LQtS7mbwIXA/cUqWrvBsaeJ23aZEPk1TAYkurjfMbSELfoCXlGA==}
 
   '@types/markdown-it@14.1.2':
     resolution: {integrity: sha512-promo4eFwuiW+TfGxhi+0x3czqTYJkG8qB17ZUJiVF10Xm7NLVRSLUsfRTU/6h1e24VvRnXCx+hG7li58lkzog==}
@@ -7263,8 +7266,8 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
-  msw@2.7.3:
-    resolution: {integrity: sha512-+mycXv8l2fEAjFZ5sjrtjJDmm2ceKGjrNbBr1durRg6VkU9fNUE/gsmQ51hWbHqs+l35W1iM+ZsmOD9Fd6lspw==}
+  msw@2.10.3:
+    resolution: {integrity: sha512-rpqW4wIqISJlgDfu3tiqzuWC/d6jofSuMUsBu1rwepzSwX21aQoagsd+fjahJ8sewa6FwlYhu4no+jfGVQm2IA==}
     engines: {node: '>=18'}
     hasBin: true
     peerDependencies:
@@ -8907,8 +8910,8 @@ packages:
   tldts-core@5.7.112:
     resolution: {integrity: sha512-mutrEUgG2sp0e/MIAnv9TbSLR0IPbvmAImpzqul5O/HJ2XM1/I1sajchQ/fbj0fPdA31IiuWde8EUhfwyldY1Q==}
 
-  tldts-core@6.1.85:
-    resolution: {integrity: sha512-DTjUVvxckL1fIoPSb3KE7ISNtkWSawZdpfxGxwiIrZoO6EbHVDXXUIlIuWympPaeS+BLGyggozX/HTMsRAdsoA==}
+  tldts-core@6.1.86:
+    resolution: {integrity: sha512-Je6p7pkk+KMzMv2XXKmAE3McmolOQFdxkKw0R8EYNr7sELW46JqnNeTX8ybPiQgvg1ymCoF8LXs5fzFaZvJPTA==}
 
   tldts@5.6.45:
     resolution: {integrity: sha512-Arp9q296eI/ALgV1QjjMstjGV18In4WkwGoiY6ZtkqOeZ0KiSLEA+LkHk3YJv2BYqTgnrPUSsSOK6d1tfcCdBA==}
@@ -9595,11 +9598,11 @@ packages:
     resolution: {integrity: sha512-zK7YHHz4ZXpW89AHXUPbQVGKI7uvkd3hzusTdotCg1UxyaVtg0zFJSTfW/Dq5f7OBBVnq6cZIaC8Ti4hb6dtCA==}
     engines: {node: '>= 14'}
 
-  zod-validation-error@3.4.0:
-    resolution: {integrity: sha512-ZOPR9SVY6Pb2qqO5XHt+MkkTRxGXb4EVtnjc9JpXUOtUB1T9Ru7mZOT361AN3MsetVe7R0a1KZshJDZdgp9miQ==}
+  zod-validation-error@3.5.2:
+    resolution: {integrity: sha512-mdi7YOLtram5dzJ5aDtm1AG9+mxRma1iaMrZdYIpFO7epdKBUwLHIxTF8CPDeCQ828zAXYtizrKlEJAtzgfgrw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      zod: ^3.18.0
+      zod: ^3.25.0
 
   zod@3.19.1:
     resolution: {integrity: sha512-LYjZsEDhCdYET9ikFu6dVPGp2YH9DegXjdJToSzD9rO6fy4qiRYFoyEYwps88OseJlPyl2NOe2iJuhEhL7IpEA==}
@@ -9645,7 +9648,7 @@ snapshots:
       xregexp: 5.1.2
       zod: 3.21.4
 
-  '@adguard/assistant@4.3.74': {}
+  '@adguard/assistant@4.3.75': {}
 
   '@adguard/css-tokenizer@1.2.0': {}
 
@@ -9678,7 +9681,7 @@ snapshots:
       '@babel/runtime': 7.27.0
       js-yaml: 3.14.1
 
-  '@adguard/scriptlets@2.2.7':
+  '@adguard/scriptlets@2.2.8':
     dependencies:
       '@adguard/agtree': link:packages/agtree
       '@types/trusted-types': 2.0.7
@@ -10325,7 +10328,7 @@ snapshots:
 
   '@mdn/browser-compat-data@4.1.12': {}
 
-  '@mswjs/interceptors@0.37.6':
+  '@mswjs/interceptors@0.39.2':
     dependencies:
       '@open-draft/deferred-promise': 2.2.0
       '@open-draft/logger': 0.3.0
@@ -11147,9 +11150,9 @@ snapshots:
 
   '@types/lodash-es@4.17.12':
     dependencies:
-      '@types/lodash': 4.17.16
+      '@types/lodash': 4.17.20
 
-  '@types/lodash@4.17.16': {}
+  '@types/lodash@4.17.20': {}
 
   '@types/markdown-it@14.1.2':
     dependencies:
@@ -11506,7 +11509,7 @@ snapshots:
 
   '@ungap/structured-clone@1.3.0': {}
 
-  '@vitest/coverage-v8@2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))':
+  '@vitest/coverage-v8@2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))':
     dependencies:
       '@ampproject/remapping': 2.3.0
       '@bcoe/v8-coverage': 0.2.3
@@ -11520,17 +11523,17 @@ snapshots:
       std-env: 3.9.0
       test-exclude: 7.0.1
       tinyrainbow: 1.2.0
-      vitest: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+      vitest: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
     transitivePeerDependencies:
       - supports-color
 
-  '@vitest/eslint-plugin@1.1.39(@typescript-eslint/utils@8.32.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))':
+  '@vitest/eslint-plugin@1.1.39(@typescript-eslint/utils@8.32.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))':
     dependencies:
       '@typescript-eslint/utils': 8.32.1(eslint@8.57.1)(typescript@5.8.3)
       eslint: 8.57.1
     optionalDependencies:
       typescript: 5.8.3
-      vitest: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+      vitest: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
 
   '@vitest/expect@2.1.9':
     dependencies:
@@ -11539,13 +11542,13 @@ snapshots:
       chai: 5.2.0
       tinyrainbow: 1.2.0
 
-  '@vitest/mocker@2.1.9(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))':
+  '@vitest/mocker@2.1.9(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))':
     dependencies:
       '@vitest/spy': 2.1.9
       estree-walker: 3.0.3
       magic-string: 0.30.17
     optionalDependencies:
-      msw: 2.7.3(@types/node@22.14.0)(typescript@5.8.3)
+      msw: 2.10.3(@types/node@22.14.0)(typescript@5.8.3)
       vite: 5.4.17(@types/node@22.14.0)(terser@5.39.0)
 
   '@vitest/pretty-format@2.1.9':
@@ -15955,13 +15958,13 @@ snapshots:
 
   ms@2.1.3: {}
 
-  msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3):
+  msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3):
     dependencies:
       '@bundled-es-modules/cookie': 2.0.1
       '@bundled-es-modules/statuses': 1.0.1
       '@bundled-es-modules/tough-cookie': 0.1.6
       '@inquirer/confirm': 5.1.9(@types/node@22.14.0)
-      '@mswjs/interceptors': 0.37.6
+      '@mswjs/interceptors': 0.39.2
       '@open-draft/deferred-promise': 2.2.0
       '@open-draft/until': 2.1.0
       '@types/cookie': 0.6.0
@@ -17838,7 +17841,7 @@ snapshots:
 
   tldts-core@5.7.112: {}
 
-  tldts-core@6.1.85: {}
+  tldts-core@6.1.86: {}
 
   tldts@5.6.45:
     dependencies:
@@ -18210,10 +18213,10 @@ snapshots:
       fsevents: 2.3.3
       terser: 5.39.0
 
-  vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0):
+  vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0):
     dependencies:
       '@vitest/expect': 2.1.9
-      '@vitest/mocker': 2.1.9(msw@2.7.3(@types/node@22.14.0)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))
+      '@vitest/mocker': 2.1.9(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(vite@5.4.17(@types/node@22.14.0)(terser@5.39.0))
       '@vitest/pretty-format': 2.1.9
       '@vitest/runner': 2.1.9
       '@vitest/snapshot': 2.1.9
@@ -18596,7 +18599,7 @@ snapshots:
       compress-commons: 6.0.2
       readable-stream: 4.7.0
 
-  zod-validation-error@3.4.0(zod@3.24.4):
+  zod-validation-error@3.5.2(zod@3.24.4):
     dependencies:
       zod: 3.24.4
 

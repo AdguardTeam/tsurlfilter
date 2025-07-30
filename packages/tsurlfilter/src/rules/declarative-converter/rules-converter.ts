@@ -90,7 +90,9 @@
  */
 /* eslint-enable jsdoc/require-description-complete-sentence */
 
-import { RuleActionType, type DeclarativeRule } from './declarative-rule';
+import { isSafeRule } from '../declarative-converter-utils/is-safe-dnr-rule';
+
+import { type DeclarativeRule } from './declarative-rule';
 import { type ConvertedRules } from './converted-result';
 import { RegularRulesConverter } from './grouped-rules-converters/regular-converter';
 import { RemoveParamRulesConverter } from './grouped-rules-converters/remove-param-converter';
@@ -119,8 +121,10 @@ type FiltersIdsWithGroupedRules = [number, GroupedRules][];
 export class DeclarativeRulesConverter {
     /**
      * The declarative identifier of a rule must be a natural number.
+     *
+     * 1 is reserved for the metadata rule.
      */
-    static readonly MIN_DECLARATIVE_RULE_ID = 1;
+    static readonly MIN_DECLARATIVE_RULE_ID = 2;
 
     /**
      * The declarative identifier of a rule must be less than signed 32-bit
@@ -128,18 +132,6 @@ export class DeclarativeRulesConverter {
      * @see {@link https://groups.google.com/a/chromium.org/g/chromium-extensions/c/yVb56u5Vf0s?}
      */
     static readonly MAX_DECLARATIVE_RULE_ID = 2 ** 31 - 1;
-
-    /**
-     * List of declarative rule actions which are considered safe.
-     *
-     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#safe_rules}
-     */
-    static readonly SAFE_RULE_ACTIONS: ReadonlySet<RuleActionType> = new Set([
-        RuleActionType.BLOCK,
-        RuleActionType.ALLOW,
-        RuleActionType.ALLOW_ALL_REQUESTS,
-        RuleActionType.UPGRADE_SCHEME,
-    ]);
 
     /**
      * Describes for which group of rules which converter should be used.
@@ -315,19 +307,6 @@ export class DeclarativeRulesConverter {
     }
 
     /**
-     * Checks whether the declarative rule is safe.
-     *
-     * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#safe_rules}
-     *
-     * @param rule Declarative rule to check.
-     *
-     * @returns True if the rule is safe, otherwise false.
-     */
-    public static isSafeRule(rule: DeclarativeRule): boolean {
-        return this.SAFE_RULE_ACTIONS.has(rule.action.type);
-    }
-
-    /**
      * Checks whether the declarative rule is regex.
      *
      * @see {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-regexFilter}
@@ -442,7 +421,7 @@ export class DeclarativeRulesConverter {
             for (let i = 0; i < declarativeRules.length; i += 1) {
                 const rule = declarativeRules[i];
 
-                if (maxNumberOfUnsafeRules && !this.isSafeRule(rule)) {
+                if (maxNumberOfUnsafeRules && !isSafeRule(rule)) {
                     unsafeRulesCounter += 1;
 
                     if (unsafeRulesCounter > maxNumberOfUnsafeRules) {

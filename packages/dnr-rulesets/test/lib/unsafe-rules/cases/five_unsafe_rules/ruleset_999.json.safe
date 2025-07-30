@@ -1,0 +1,98 @@
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "dummy.rule.adguard.com",
+			"resourceTypes": [
+				"xmlhttprequest"
+			]
+		},
+		"metadata": {
+			"metadata": {
+				"regexpRulesCount": 0,
+				"unsafeRulesCount": 5,
+				"rulesCount": 0,
+				"ruleSetHashMapRaw": "[[889197870,[[999,4]]],[889159821,[[999,55]]],[889265644,[[999,106]]],[889227339,[[999,157]]],[889332906,[[999,208]]]]",
+				"badFilterRulesRaw": [],
+				"unsafeRules": [
+					{
+						"id": 767653162,
+						"action": {
+							"type": "redirect",
+							"redirect": {
+								"extensionPath": "/web-accessible-resources/redirects/noopjs.js"
+							}
+						},
+						"condition": {
+							"urlFilter": "||example.com/ad1.js"
+						},
+						"priority": 1001
+					},
+					{
+						"id": 1240553737,
+						"action": {
+							"type": "redirect",
+							"redirect": {
+								"extensionPath": "/web-accessible-resources/redirects/noopjs.js"
+							}
+						},
+						"condition": {
+							"urlFilter": "||example.com/ad2.js"
+						},
+						"priority": 1001
+					},
+					{
+						"id": 1413041128,
+						"action": {
+							"type": "redirect",
+							"redirect": {
+								"extensionPath": "/web-accessible-resources/redirects/noopjs.js"
+							}
+						},
+						"condition": {
+							"urlFilter": "||example.com/ad3.js"
+						},
+						"priority": 1001
+					},
+					{
+						"id": 68128719,
+						"action": {
+							"type": "redirect",
+							"redirect": {
+								"extensionPath": "/web-accessible-resources/redirects/noopjs.js"
+							}
+						},
+						"condition": {
+							"urlFilter": "||example.com/ad4.js"
+						},
+						"priority": 1001
+					},
+					{
+						"id": 1177536174,
+						"action": {
+							"type": "redirect",
+							"redirect": {
+								"extensionPath": "/web-accessible-resources/redirects/noopjs.js"
+							}
+						},
+						"condition": {
+							"urlFilter": "||example.com/ad5.js"
+						},
+						"priority": 1001
+					}
+				]
+			},
+			"lazyMetadata": {
+				"sourceMapRaw": "[[767653162,4,999],[1240553737,55,999],[1413041128,106,999],[68128719,157,999],[1177536174,208,999]]",
+				"filterIds": [
+					999
+				]
+			},
+			"conversionMap": {},
+			"rawFilterList": "||example.com/ad1.js$redirect=noopjs\n||example.com/ad2.js$redirect=noopjs\n||example.com/ad3.js$redirect=noopjs\n||example.com/ad4.js$redirect=noopjs\n||example.com/ad5.js$redirect=noopjs"
+		}
+	}
+]
