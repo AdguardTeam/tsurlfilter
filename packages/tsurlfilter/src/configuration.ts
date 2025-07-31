@@ -70,6 +70,11 @@ class Configuration implements IConfiguration {
      */
     public compatibility: CompatibilityTypes | null = CompatibilityTypes.Extension;
 
+    /**
+     * Configuration constructor.
+     *
+     * @param inputConfig Input configuration.
+     */
     constructor(inputConfig?: Partial<IConfiguration>) {
         const config = { ...this.defaultConfig, ...inputConfig };
         this.engine = config.engine;

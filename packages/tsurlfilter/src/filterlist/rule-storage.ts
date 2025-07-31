@@ -1,13 +1,15 @@
 import { type AnyRule } from '@adguard/agtree';
-import { type IRuleList } from './rule-list';
-import { RuleStorageScanner } from './scanner/rule-storage-scanner';
-import { type IRule } from '../rules/rule';
-import { type RuleScanner } from './scanner/rule-scanner';
-import { NetworkRule } from '../rules/network-rule';
+
 import { HostRule } from '../rules/host-rule';
-import { type ScannerType } from './scanner/scanner-type';
+import { NetworkRule } from '../rules/network-rule';
+import { type IRule } from '../rules/rule';
 import { RuleFactory } from '../rules/rule-factory';
 import { logger } from '../utils/logger';
+
+import { type IRuleList } from './rule-list';
+import { type RuleScanner } from './scanner/rule-scanner';
+import { RuleStorageScanner } from './scanner/rule-storage-scanner';
+import { type ScannerType } from './scanner/scanner-type';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists
@@ -92,7 +94,7 @@ export class RuleStorage {
      *
      * @returns Scanner instance.
      */
-    createRuleStorageScanner(scannerType: ScannerType): RuleStorageScanner {
+    public createRuleStorageScanner(scannerType: ScannerType): RuleStorageScanner {
         const scanners: RuleScanner[] = this.lists.map((list) => list.newScanner(scannerType));
         this.scanner = new RuleStorageScanner(scanners);
         return this.scanner;
@@ -106,7 +108,7 @@ export class RuleStorage {
      *
      * @returns The rule or null if not found or an error occurs.
      */
-    retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
+    public retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
         const rule = this.cache.get(storageIdx);
         if (rule) {
             return rule;
@@ -146,7 +148,7 @@ export class RuleStorage {
      *
      * @returns The rule or nil in any other case (not found or error).
      */
-    retrieveNetworkRule(storageIdx: number): NetworkRule | null {
+    public retrieveNetworkRule(storageIdx: number): NetworkRule | null {
         const rule = this.retrieveRule(storageIdx);
         if (!rule) {
             return null;
@@ -166,7 +168,7 @@ export class RuleStorage {
      *
      * @returns The rule or nil in any other case (not found or error).
      */
-    retrieveHostRule(storageIdx: number): HostRule | null {
+    public retrieveHostRule(storageIdx: number): HostRule | null {
         const rule = this.retrieveRule(storageIdx, false);
         if (!rule) {
             return null;
@@ -184,7 +186,7 @@ export class RuleStorage {
      *
      * @returns The size of the cache.
      */
-    getCacheSize(): number {
+    public getCacheSize(): number {
         return this.cache.size;
     }
 }

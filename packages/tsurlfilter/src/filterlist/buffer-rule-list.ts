@@ -1,11 +1,12 @@
 import { type AnyRule } from '@adguard/agtree';
-import { InputByteBuffer } from '@adguard/agtree/utils';
 import { RuleDeserializer } from '@adguard/agtree/deserializer';
-import { type FilterListSourceMap, getRuleSourceIndex } from './source-map';
+import { InputByteBuffer } from '@adguard/agtree/utils';
+
 import { BufferReader } from './reader/buffer-reader';
 import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
 import { RuleScanner } from './scanner/rule-scanner';
 import { type ScannerType } from './scanner/scanner-type';
+import { type FilterListSourceMap, getRuleSourceIndex } from './source-map';
 
 /**
  * BufferRuleList represents a string-based rule list. It keeps the original
@@ -89,9 +90,11 @@ export class BufferRuleList implements IRuleList {
     }
 
     /**
+     * Gets the rule list identifier.
+     *
      * @returns The rule list identifier.
      */
-    getId(): number {
+    public getId(): number {
         return this.id;
     }
 
@@ -102,7 +105,7 @@ export class BufferRuleList implements IRuleList {
      *
      * @returns Scanner object.
      */
-    newScanner(scannerType: ScannerType): RuleScanner {
+    public newScanner(scannerType: ScannerType): RuleScanner {
         const reader = new BufferReader(this.rulesBuffer.createCopyWithOffset(0));
 
         return new RuleScanner(reader, this.id, {
@@ -123,7 +126,7 @@ export class BufferRuleList implements IRuleList {
      *
      * @returns Rule node or `null`.
      */
-    retrieveRuleNode(ruleIdx: number): AnyRule | null {
+    public retrieveRuleNode(ruleIdx: number): AnyRule | null {
         try {
             const ruleNode: AnyRule = {} as AnyRule;
             const copy = this.rulesBuffer.createCopyWithOffset(ruleIdx);
@@ -139,7 +142,7 @@ export class BufferRuleList implements IRuleList {
     /**
      * @inheritdoc
      */
-    retrieveRuleSourceIndex(ruleIdx: number): number {
+    public retrieveRuleSourceIndex(ruleIdx: number): number {
         return getRuleSourceIndex(ruleIdx, this.sourceMap);
     }
 }

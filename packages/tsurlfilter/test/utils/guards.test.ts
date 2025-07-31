@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
-    isUndefined,
-    isNull,
     isArray,
     isNonEmptyArray,
+    isNull,
+    isUndefined,
 } from '../../src/utils/guards';
 
 describe('Type Guards', () => {

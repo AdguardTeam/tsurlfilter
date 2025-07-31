@@ -1,10 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import {
-    MatchingResult,
-    CosmeticOption,
-    StealthOptionName,
-    type NetworkRule,
-} from '../../src';
+import { describe, expect, it } from 'vitest';
+
+import { CosmeticOption } from '../../src/engine/cosmetic-option';
+import { MatchingResult } from '../../src/engine/matching-result';
+import { StealthOptionName } from '../../src/modifiers/stealth-modifier';
+import { type NetworkRule } from '../../src/rules/network-rule';
 import { createNetworkRule } from '../helpers/rule-creator';
 
 describe('MatchingResult constructor', () => {

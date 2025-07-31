@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { Request } from '../src/request';
 import { RequestType } from '../src/request-type';

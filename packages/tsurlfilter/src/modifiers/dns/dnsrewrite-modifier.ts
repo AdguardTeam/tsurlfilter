@@ -28,7 +28,7 @@ export class DnsRewriteModifier implements IAdvancedModifier {
      *
      * @returns The value of the modifier.
      */
-    getValue(): string {
+    public getValue(): string {
         return this.value;
     }
 }

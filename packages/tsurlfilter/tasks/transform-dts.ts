@@ -26,9 +26,9 @@
  */
 
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { Project, SyntaxKind } from 'ts-morph';
-import path from 'node:path';
 import fs from 'node:fs';
+import path from 'node:path';
+import { Project, SyntaxKind } from 'ts-morph';
 
 const RELATIVE_PATH_MARKER = '.';
 const EXT_JS = '.js';

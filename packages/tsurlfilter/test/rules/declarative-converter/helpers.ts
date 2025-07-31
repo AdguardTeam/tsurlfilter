@@ -1,7 +1,8 @@
 import type { ScannedFilter } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { FilterScanner } from '../../../src/rules/declarative-converter/filter-scanner';
-import { FilterListPreprocessor, NetworkRule, NetworkRuleOption } from '../../../src';
 import { Filter, type IFilter } from '../../../src/rules/declarative-converter/filter';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
+import { NetworkRule, NetworkRuleOption } from '../../../src/rules/network-rule';
 
 export const createFilter = (
     rules: string[],

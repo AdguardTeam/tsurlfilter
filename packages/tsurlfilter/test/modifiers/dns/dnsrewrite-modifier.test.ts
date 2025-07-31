@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { DnsRewriteModifier } from '../../../src/modifiers/dns/dnsrewrite-modifier';
 import { createNetworkRule } from '../../helpers/rule-creator';

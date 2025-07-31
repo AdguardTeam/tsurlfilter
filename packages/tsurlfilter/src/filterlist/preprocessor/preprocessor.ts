@@ -1,14 +1,16 @@
 // TODO: Consider moving this file to the `@adguard/agtree` package
 import { OutputByteBuffer, RuleCategory } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
-import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
 import { RuleGenerator } from '@adguard/agtree/generator';
+import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
 import { RuleSerializer } from '@adguard/agtree/serializer';
-import { type FilterListConversionMap, type PreprocessedFilterList } from './schema';
-import { logger } from '../../utils/logger';
-import { type FilterListSourceMap } from '../source-map/schema';
-import { findNextLineBreakIndex } from '../../utils/string-utils';
+
 import { EMPTY_STRING, LF } from '../../common/constants';
+import { logger } from '../../utils/logger';
+import { findNextLineBreakIndex } from '../../utils/string-utils';
+import { type FilterListSourceMap } from '../source-map/schema';
+
+import { type FilterListConversionMap, type PreprocessedFilterList } from './schema';
 
 /**
  * AGTree parser options for the preprocessor.

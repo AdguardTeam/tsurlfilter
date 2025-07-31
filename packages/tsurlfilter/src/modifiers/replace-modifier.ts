@@ -1,6 +1,7 @@
-import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
-import { type IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
+import { splitByDelimiterWithEscapeCharacter } from '../utils/string-utils';
+
+import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
  * Replace modifier class.
@@ -69,7 +70,7 @@ export class ReplaceModifier implements IAdvancedModifier {
      *
      * @returns The replace option value.
      */
-    getValue(): string {
+    public getValue(): string {
         return this.replaceOption;
     }
 
@@ -78,7 +79,7 @@ export class ReplaceModifier implements IAdvancedModifier {
      *
      * @returns The function to apply the replacement.
      */
-    getApplyFunc(): (input: string) => string {
+    public getApplyFunc(): (input: string) => string {
         return this.replaceApply;
     }
 }

@@ -1,10 +1,10 @@
+import { type AnyRule } from '@adguard/agtree';
 import { getHostname } from 'tldts';
 
-import { type AnyRule } from '@adguard/agtree';
-import { RuleFactory } from '../rules/rule-factory';
-import { type NetworkRule } from '../rules/network-rule';
-import { type CosmeticRule } from '../rules/cosmetic-rule';
 import { DomainModifier } from '../modifiers/domain-modifier';
+import { type CosmeticRule } from '../rules/cosmetic-rule';
+import { type NetworkRule } from '../rules/network-rule';
+import { RuleFactory } from '../rules/rule-factory';
 
 type RulesUnion = NetworkRule | CosmeticRule;
 

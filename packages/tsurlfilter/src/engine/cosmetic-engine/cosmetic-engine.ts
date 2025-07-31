@@ -1,13 +1,14 @@
 import { CosmeticRuleType } from '@adguard/agtree';
 
 import { type RuleStorage } from '../../filterlist/rule-storage';
-import { CosmeticLookupTable } from './cosmetic-lookup-table';
-import { CosmeticRule } from '../../rules/cosmetic-rule';
-import { CosmeticResult } from './cosmetic-result';
-import { type CosmeticContentResult } from './cosmetic-content-result';
-import { CosmeticOption } from '../cosmetic-option';
 import { ScannerType } from '../../filterlist/scanner/scanner-type';
 import { type Request } from '../../request';
+import { CosmeticRule } from '../../rules/cosmetic-rule';
+import { CosmeticOption } from '../cosmetic-option';
+
+import { type CosmeticContentResult } from './cosmetic-content-result';
+import { CosmeticLookupTable } from './cosmetic-lookup-table';
+import { CosmeticResult } from './cosmetic-result';
 
 /**
  * @typedef {import('../engine').Engine} Engine
@@ -123,7 +124,7 @@ export class CosmeticEngine {
      *
      * @returns True if option matches targetOption.
      */
-    static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean {
+    public static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean {
         return (option & targetOption) === targetOption;
     }
 
@@ -135,7 +136,7 @@ export class CosmeticEngine {
      *
      * @returns CosmeticResult.
      */
-    match(request: Request, option: CosmeticOption): CosmeticResult {
+    public match(request: Request, option: CosmeticOption): CosmeticResult {
         const includeGeneric = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionGenericCSS);
         const includeSpecific = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionSpecificCSS);
 

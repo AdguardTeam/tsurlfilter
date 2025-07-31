@@ -1,21 +1,22 @@
 /* eslint-disable no-console */
-import path from 'node:path';
 import fs from 'node:fs';
+import path from 'node:path';
 
-import {
-    type ConversionResult,
-    type IRuleSet,
-    DeclarativeFilterConverter,
-    Filter,
-} from '../src/rules/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
 import { FilterListPreprocessor } from '../src/filterlist/preprocessor';
-import { getIdFromFilterName } from '../src/utils/resource-names';
+import {
+    type ConversionResult,
+    DeclarativeFilterConverter,
+    Filter,
+    type IRuleSet,
+} from '../src/rules/declarative-converter';
+import { MetadataRuleSet } from '../src/rules/declarative-converter/metadata-ruleset';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
-import { generateMD5Hash } from '../src/utils/checksum';
-import { MetadataRuleSet } from '../src/rules/declarative-converter/metadata-ruleset';
 import { getRuleSetId, getRuleSetPath } from '../src/rules/declarative-converter-utils';
+import { generateMD5Hash } from '../src/utils/checksum';
+import { getIdFromFilterName } from '../src/utils/resource-names';
+
 import { ensureDirSync } from './utils';
 
 export const LOCAL_METADATA_FILE_NAME = 'filters.json';
