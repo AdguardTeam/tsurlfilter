@@ -24,7 +24,7 @@ class Re2Validator {
      *
      * @param validator - The custom validator function to use.
      */
-    setValidator(validator: ValidatorFunction): void {
+    public setValidator(validator: ValidatorFunction): void {
         this.validator = validator;
     }
 
@@ -34,7 +34,7 @@ class Re2Validator {
      * @param regexFilter - The regex pattern to validate.
      * @returns A promise that resolves to true if the regex is supported, false otherwise.
      */
-    async isRegexSupported(regexFilter: string): Promise<boolean> {
+    public async isRegexSupported(regexFilter: string): Promise<boolean> {
         return this.validator(regexFilter);
     }
 }

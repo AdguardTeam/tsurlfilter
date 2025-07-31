@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
 import { RuleParser } from '@adguard/agtree';
 import { InputByteBuffer } from '@adguard/agtree/utils';
-import { FilterListPreprocessor, PREPROCESSOR_AGTREE_OPTIONS } from '../../../src';
+import { describe, expect, it } from 'vitest';
+
+import { FilterListPreprocessor, PREPROCESSOR_AGTREE_OPTIONS } from '../../../src/filterlist/preprocessor';
 import { BufferReader } from '../../../src/filterlist/reader/buffer-reader';
 
 describe('BufferReader Test', () => {

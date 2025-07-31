@@ -1,7 +1,7 @@
 import { type CookieModifier } from '../modifiers/cookie-modifier';
 import { type HttpHeadersItem } from '../modifiers/header-modifier';
 import { type RedirectModifier } from '../modifiers/redirect-modifier';
-import { StealthOptionName, STEALTH_MODE_FILTER_ID } from '../modifiers/stealth-modifier';
+import { STEALTH_MODE_FILTER_ID, StealthOptionName } from '../modifiers/stealth-modifier';
 import { RequestType } from '../request-type';
 import { type NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { logger } from '../utils/logger';
@@ -252,7 +252,7 @@ export class MatchingResult {
      *
      * @returns Basic result rule.
      */
-    getBasicResult(): NetworkRule | null {
+    public getBasicResult(): NetworkRule | null {
         let basic = this.basicRule;
 
         // e.g. @@||example.com^$generichide
@@ -309,7 +309,7 @@ export class MatchingResult {
      *
      * @returns Document blocking rule if any, null otherwise.
      */
-    getDocumentBlockingResult(): NetworkRule | null {
+    public getDocumentBlockingResult(): NetworkRule | null {
         if (!this.basicRule || this.basicRule.isDocumentLevelAllowlistRule()) {
             return null;
         }
@@ -330,7 +330,7 @@ export class MatchingResult {
      *
      * @returns Stealth rule or null.
      */
-    getStealthRule(stealthOption?: StealthOptionName): NetworkRule | null {
+    public getStealthRule(stealthOption?: StealthOptionName): NetworkRule | null {
         if (!this.stealthRules) {
             return null;
         }
@@ -365,7 +365,7 @@ export class MatchingResult {
      *
      * @returns Header result rule or null.
      */
-    getResponseHeadersResult(responseHeaders: HttpHeadersItem[] | undefined): NetworkRule | null {
+    public getResponseHeadersResult(responseHeaders: HttpHeadersItem[] | undefined): NetworkRule | null {
         if (!responseHeaders || responseHeaders.length === 0) {
             return null;
         }
@@ -407,7 +407,7 @@ export class MatchingResult {
      *
      * @returns Cosmetic option mask.
      */
-    getCosmeticOption(): CosmeticOption {
+    public getCosmeticOption(): CosmeticOption {
         const { basicRule, documentRule, cosmeticExceptionRule } = this;
 
         let rule = cosmeticExceptionRule || basicRule;
@@ -453,7 +453,7 @@ export class MatchingResult {
      *
      * @returns An array of replace rules.
      */
-    getReplaceRules(): NetworkRule[] {
+    public getReplaceRules(): NetworkRule[] {
         if (!this.replaceRules) {
             return [];
         }
@@ -534,7 +534,7 @@ export class MatchingResult {
      *
      * @returns An array of csp rules.
      */
-    getCspRules(): NetworkRule[] {
+    public getCspRules(): NetworkRule[] {
         if (!this.cspRules) {
             return [];
         }
@@ -594,7 +594,7 @@ export class MatchingResult {
      *
      * @returns An array of permission policy rules.
      */
-    getPermissionsPolicyRules(): NetworkRule[] {
+    public getPermissionsPolicyRules(): NetworkRule[] {
         if (!this.permissionsRules) {
             return [];
         }
@@ -704,7 +704,7 @@ export class MatchingResult {
      *
      * @returns An array of cookie rules.
      */
-    getCookieRules(): NetworkRule[] {
+    public getCookieRules(): NetworkRule[] {
         if (!this.cookieRules) {
             return [];
         }
@@ -756,7 +756,7 @@ export class MatchingResult {
      *
      * @returns Array of removeparam rules.
      */
-    getRemoveParamRules(): NetworkRule[] {
+    public getRemoveParamRules(): NetworkRule[] {
         if (!this.removeParamRules) {
             return [];
         }
@@ -775,7 +775,7 @@ export class MatchingResult {
      *
      * @returns An array of removeheader rules.
      */
-    getRemoveHeaderRules(): NetworkRule[] {
+    public getRemoveHeaderRules(): NetworkRule[] {
         if (!this.removeHeaderRules) {
             return [];
         }
@@ -825,7 +825,7 @@ export class MatchingResult {
      *
      * @returns Filtered rules.
      */
-    static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
+    public static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
         const badfilterRules: NetworkRule[] = [];
         for (const rule of rules) {
             if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
@@ -855,7 +855,7 @@ export class MatchingResult {
      *
      * @returns Hightest priority rule or null if the array is empty.
      */
-    static getHighestPriorityRule(rules: NetworkRule[]): NetworkRule | null {
+    public static getHighestPriorityRule(rules: NetworkRule[]): NetworkRule | null {
         if (rules.length === 0) {
             return null;
         }

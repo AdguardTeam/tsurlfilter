@@ -1,16 +1,17 @@
 /* eslint-disable max-len */
+import { CosmeticRuleType } from '@adguard/agtree';
+import { type Source } from '@adguard/scriptlets';
 import {
     describe,
-    it,
     expect,
+    it,
     vi,
 } from 'vitest';
-import { type Source } from '@adguard/scriptlets';
-import { CosmeticRuleType } from '@adguard/agtree';
 
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
-import { type CosmeticRule, RULE_INDEX_NONE } from '../../src';
+import { type CosmeticRule } from '../../src/rules/cosmetic-rule';
+import { RULE_INDEX_NONE } from '../../src/rules/rule';
 import { createCosmeticRule } from '../helpers/rule-creator';
 
 const parseParamsFromScript = (script: string): Source | null => {

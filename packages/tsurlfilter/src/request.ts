@@ -1,9 +1,9 @@
 import { parse } from 'tldts';
 import type { IResult } from 'tldts-core';
 
-import { isHttpOrWsRequest } from './utils/url';
-import { type RequestType } from './request-type';
 import { type HTTPMethod } from './modifiers/method-modifier';
+import { type RequestType } from './request-type';
+import { isHttpOrWsRequest } from './utils/url';
 
 /**
  * Request represents a web request with all it's necessary properties.

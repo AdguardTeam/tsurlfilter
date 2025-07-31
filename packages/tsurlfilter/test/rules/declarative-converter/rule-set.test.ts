@@ -1,15 +1,15 @@
 import {
     describe,
-    it,
     expect,
+    it,
     type MockInstance,
     vi,
 } from 'vitest';
 import { RuleParser } from '@adguard/agtree';
 
 import {
-    type IFilter,
     type Filter,
+    type IFilter,
     IndexedNetworkRuleWithHash,
     RuleSet,
     type RuleSetContentProvider,
@@ -22,7 +22,7 @@ import {
     type ScannedFilter,
 } from '../../../src/rules/declarative-converter/network-rules-scanner';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
-import { PREPROCESSOR_AGTREE_OPTIONS } from '../../../src';
+import { PREPROCESSOR_AGTREE_OPTIONS } from '../../../src/filterlist/preprocessor';
 
 import { createFilter } from './helpers';
 

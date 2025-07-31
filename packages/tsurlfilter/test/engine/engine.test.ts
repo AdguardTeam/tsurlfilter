@@ -1,16 +1,16 @@
-import { describe, it, expect } from 'vitest';
-import escapeStringRegexp from 'escape-string-regexp';
 import { type AnyRule, RuleGenerator } from '@adguard/agtree';
+import escapeStringRegexp from 'escape-string-regexp';
+import { describe, expect, it } from 'vitest';
 
-import { Engine } from '../../src/engine/engine';
-import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
-import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { config, setConfiguration } from '../../src/configuration';
 import { CosmeticOption } from '../../src/engine/cosmetic-option';
-import { RequestType } from '../../src/request-type';
-import { Request } from '../../src/request';
+import { Engine } from '../../src/engine/engine';
+import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { FilterListPreprocessor, type PreprocessedFilterList } from '../../src/filterlist/preprocessor';
+import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { getRuleSourceIndex } from '../../src/filterlist/source-map';
+import { Request } from '../../src/request';
+import { RequestType } from '../../src/request-type';
 import { createCosmeticRule, createNetworkRule } from '../helpers/rule-creator';
 
 const createRequest = (url: string): Request => new Request(url, null, RequestType.Document);

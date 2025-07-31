@@ -50,7 +50,7 @@ export class FilterScanner implements IFilterScanner {
      *
      * @returns New FilterScanner.
      */
-    static async createNew(filter: IFilter): Promise<FilterScanner> {
+    public static async createNew(filter: IFilter): Promise<FilterScanner> {
         const content = await filter.getContent();
 
         return new FilterScanner(content, filter.getId());
