@@ -75,5 +75,12 @@ export class MethodModifier implements IValueListModifier<HTTPMethod> {
         this.permittedValues = permittedMethods.length > 0 ? permittedMethods : null;
     }
 
+    /**
+     * Checks if the value is a valid HTTP method.
+     *
+     * @param value Value to check.
+     *
+     * @returns True if the value is a valid HTTP method, otherwise false.
+     */
     public static isHTTPMethod = (value: string): value is HTTPMethod => value in HTTPMethod;
 }

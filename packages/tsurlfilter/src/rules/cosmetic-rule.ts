@@ -66,6 +66,9 @@ export type ScriptletsProps = {
  * Represents scriptlet properties parsed from the rule content.
  */
 class ScriptletParams {
+    /**
+     * Scriptlet properties.
+     */
     private props: ScriptletsProps | null = null;
 
     /**
@@ -208,16 +211,34 @@ interface ProcessedModifiers {
  * `example.org$$div[id="test"]` -- HTML filtering rule
  */
 export class CosmeticRule implements IRule {
+    /**
+     * Rule index.
+     */
     private readonly ruleIndex: number;
 
+    /**
+     * Filter list ID.
+     */
     private readonly filterListId: number;
 
+    /**
+     * Rule content.
+     */
     private readonly content: string;
 
+    /**
+     * Rule type.
+     */
     private readonly type: CosmeticRuleType;
 
+    /**
+     * Allowlist flag.
+     */
     private allowlist = false;
 
+    /**
+     * Extended CSS flag.
+     */
     private extendedCss = false;
 
     /**
