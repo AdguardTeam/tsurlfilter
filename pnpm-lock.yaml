@@ -1956,9 +1956,6 @@ packages:
   '@adguard/scriptlets@2.2.8':
     resolution: {integrity: sha512-V6d6akdFgRTHu6m6Q4E/j3v54xjRIntOUcoNLY+Wd/ch2BOGb6cmXGig/T767aoR5c5S1HkJq8LC6KDe9HqHGA==}
 
-  '@adguard/scriptlets@2.2.8':
-    resolution: {integrity: sha512-V6d6akdFgRTHu6m6Q4E/j3v54xjRIntOUcoNLY+Wd/ch2BOGb6cmXGig/T767aoR5c5S1HkJq8LC6KDe9HqHGA==}
-
   '@adguard/text-encoding@0.8.3':
     resolution: {integrity: sha512-LA0bsY+YYnQqItGaYMoVL0l55JDi/uwvUca53V6M6mvKNHtaYDTlf3yAeW2PafsTfWvoYH7gObGu8eCvPh69tg==}
 
@@ -9706,12 +9703,6 @@ snapshots:
       '@types/trusted-types': 2.0.7
       js-yaml: 3.14.1
 
-  '@adguard/scriptlets@2.2.8':
-    dependencies:
-      '@adguard/agtree': link:packages/agtree
-      '@types/trusted-types': 2.0.7
-      js-yaml: 3.14.1
-
   '@adguard/text-encoding@0.8.3': {}
 
   '@adguard/tsurlfilter@1.0.81':
@@ -9755,7 +9746,7 @@ snapshots:
       punycode: 2.3.1
       tldts: 5.7.112
       zod: 3.24.4
-      zod-validation-error: 3.4.0(zod@3.24.4)
+      zod-validation-error: 3.5.2(zod@3.24.4)
 
   '@ampproject/remapping@2.3.0':
     dependencies:
