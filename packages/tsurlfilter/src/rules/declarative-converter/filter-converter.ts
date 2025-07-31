@@ -102,18 +102,18 @@ import { isSafeRule } from '../declarative-converter-utils/is-safe-dnr-rule';
 
 import {
     type IRuleSet,
-    type RuleSetContentProvider,
     RuleSet,
-    type UpdateStaticRulesOptions,
+    type RuleSetContentProvider,
     type SourceRuleAndFilterId,
+    type UpdateStaticRulesOptions,
 } from './rule-set';
 import { SourceMap, type SourceRuleIdxAndFilterId } from './source-map';
 import type { IFilter } from './filter';
 import { DeclarativeRulesConverter } from './rules-converter';
 import {
-    ResourcesPathError,
     EmptyOrNegativeNumberOfRulesError,
     NegativeNumberOfRulesError,
+    ResourcesPathError,
 } from './errors/converter-options-errors';
 import type { ConversionResult } from './conversion-result';
 import type { DeclarativeConverterOptions } from './declarative-converter-options';

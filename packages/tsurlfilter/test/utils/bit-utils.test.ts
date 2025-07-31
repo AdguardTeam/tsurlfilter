@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { getBitCount, countEnabledBits } from '../../src/utils/bit-utils';
+import { describe, expect, it } from 'vitest';
+
+import { countEnabledBits, getBitCount } from '../../src/utils/bit-utils';
 
 describe('getBitCount', () => {
     it('should return 0 for 0', () => {

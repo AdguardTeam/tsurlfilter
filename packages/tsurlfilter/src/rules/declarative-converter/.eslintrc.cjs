@@ -10,11 +10,11 @@ module.exports = {
             'error',
             {
                 groups: [
-                    "builtin",
-                    "external",
-                    "internal",
-                    "parent",
-                    "index",
+                    'builtin',
+                    'external',
+                    'internal',
+                    'parent',
+                    'index',
                 ],
                 'newlines-between': 'always',
                 warnOnUnassignedImports: false,
@@ -28,9 +28,9 @@ module.exports = {
                     'ClassDeclaration',
                     'ClassProperty',
                     'FunctionDeclaration',
-                    'MethodDefinition'
-                ]
-            }
+                    'MethodDefinition',
+                ],
+            },
         ],
         'jsdoc/require-throws': 'error',
         'jsdoc/require-description': [
@@ -40,9 +40,9 @@ module.exports = {
                     'ClassDeclaration',
                     'ClassProperty',
                     'FunctionDeclaration',
-                    'MethodDefinition'
-                ]
-            }
+                    'MethodDefinition',
+                ],
+            },
         ],
         'jsdoc/require-description-complete-sentence': [
             'error',
@@ -55,6 +55,6 @@ module.exports = {
         'jsdoc/require-returns-type': 'off',
         'jsdoc/tag-lines': 'off',
 
-        '@typescript-eslint/explicit-function-return-type': 'error'
-    }
-}
+        '@typescript-eslint/explicit-function-return-type': 'error',
+    },
+};

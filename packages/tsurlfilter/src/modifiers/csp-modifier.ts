@@ -36,7 +36,7 @@ export class CspModifier implements IAdvancedModifier {
      *
      * @returns The CSP directive.
      */
-    getValue(): string {
+    public getValue(): string {
         return this.cspDirective;
     }
 

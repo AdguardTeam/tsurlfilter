@@ -3,14 +3,16 @@
  */
 
 import { decodeIdent, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
+
+import { getErrorMessage } from '../../common/error';
+
+import { type CssValidationResult } from './css-validation-result';
 import {
     EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX,
     SUPPORTED_CSS_PSEUDO_CLASSES,
     SUPPORTED_EXT_CSS_ATTRIBUTE_SELECTORS,
     SUPPORTED_EXT_CSS_PSEUDO_CLASSES,
 } from './known-elements';
-import { getErrorMessage } from '../../common/error';
-import { type CssValidationResult } from './css-validation-result';
 
 /**
  * Does a basic validation of a selector list.

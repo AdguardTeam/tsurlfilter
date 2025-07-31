@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { RequestType } from '../../../src';
-import { Request } from '../../../src/request';
-import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { SeqScanLookupTable } from '../../../src/engine/lookup-tables/seq-scan-lookup-table';
+import { Request } from '../../../src/request';
+import { RequestType } from '../../../src/request-type';
 import { createNetworkRule } from '../../helpers/rule-creator';
+
+import { createRuleStorage, fillLookupTable } from './lookup-table';
 
 describe('Sequence-scan Lookup Table Tests', () => {
     it('adds rule to look up table', () => {

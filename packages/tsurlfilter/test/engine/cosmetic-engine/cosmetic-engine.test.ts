@@ -1,18 +1,14 @@
-import { describe, it, expect } from 'vitest';
-
 import escapeStringRegexp from 'escape-string-regexp';
+import { describe, expect, it } from 'vitest';
 
 import { CosmeticEngine } from '../../../src/engine/cosmetic-engine/cosmetic-engine';
-import { RuleStorage } from '../../../src/filterlist/rule-storage';
+import { CosmeticOption } from '../../../src/engine/cosmetic-option';
 import { BufferRuleList } from '../../../src/filterlist/buffer-rule-list';
-import {
-    CosmeticOption,
-    FilterListPreprocessor,
-    type PreprocessedFilterList,
-    Request,
-    RequestType,
-    getRuleSourceIndex,
-} from '../../../src';
+import { FilterListPreprocessor, type PreprocessedFilterList } from '../../../src/filterlist/preprocessor';
+import { RuleStorage } from '../../../src/filterlist/rule-storage';
+import { getRuleSourceIndex } from '../../../src/filterlist/source-map';
+import { Request } from '../../../src/request';
+import { RequestType } from '../../../src/request-type';
 
 /**
  * Helper function creates rule storage.

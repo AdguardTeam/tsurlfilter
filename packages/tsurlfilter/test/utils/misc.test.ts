@@ -1,16 +1,16 @@
 // @vitest-environment node
 
 import {
-    describe,
-    it,
-    expect,
-    beforeEach,
     afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
     vi,
 } from 'vitest';
 
 import { TAB } from '../../src/common/constants';
-import { uint8ArrayToBase64, base64ToUint8Array, serializeJson } from '../../src/utils/misc';
+import { base64ToUint8Array, serializeJson, uint8ArrayToBase64 } from '../../src/utils/misc';
 
 describe('Utility Functions', () => {
     const originalWindow = global.window;

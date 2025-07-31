@@ -1,21 +1,18 @@
 /* eslint-disable max-len */
 import {
-    describe,
-    it,
-    expect,
-    vi,
     afterAll,
     afterEach,
+    describe,
+    expect,
+    it,
+    vi,
 } from 'vitest';
-import {
-    NetworkRuleOption,
-    Request,
-    RequestType,
-    HTTPMethod,
-    StealthOptionName,
-    NetworkRuleGroupOptions,
-    type NetworkRule,
-} from '../../src';
+
+import { HTTPMethod } from '../../src/modifiers/method-modifier';
+import { StealthOptionName } from '../../src/modifiers/stealth-modifier';
+import { Request } from '../../src/request';
+import { RequestType } from '../../src/request-type';
+import { type NetworkRule, NetworkRuleGroupOptions, NetworkRuleOption } from '../../src/rules/network-rule';
 import { createNetworkRule } from '../helpers/rule-creator';
 
 describe('NetworkRule constructor', () => {

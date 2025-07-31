@@ -1,11 +1,10 @@
-import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import nodePolyfills from 'rollup-plugin-polyfill-node';
-import { nodeExternals } from 'rollup-plugin-node-externals';
-
-import typescript from '@rollup/plugin-typescript';
 import json from '@rollup/plugin-json';
+import resolve from '@rollup/plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
 import cleanup from 'rollup-plugin-cleanup';
+import { nodeExternals } from 'rollup-plugin-node-externals';
+import nodePolyfills from 'rollup-plugin-polyfill-node';
 
 const DEFAULT_OUTPUT_PATH = 'dist';
 

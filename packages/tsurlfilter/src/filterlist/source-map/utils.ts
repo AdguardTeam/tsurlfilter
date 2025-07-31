@@ -1,5 +1,6 @@
 import { RULE_INDEX_NONE } from '../../rules/rule';
 import { findNextLineBreakIndex } from '../../utils/string-utils';
+
 import { type FilterListSourceMap } from './schema';
 
 /**
