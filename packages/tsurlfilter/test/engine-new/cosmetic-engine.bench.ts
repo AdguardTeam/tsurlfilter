@@ -2,7 +2,7 @@
 /* eslint-disable max-len */
 // pnpm vitest bench cosmetic-engine
 import { readFileSync } from 'node:fs';
-import * as TsUrlFilterOld from 'tsurlfilter-old';
+import * as TsUrlFilterOld from 'tsurlfilter-v3';
 import { bench, describe } from 'vitest';
 
 import { CosmeticEngine } from '../../src/engine-new/cosmetic-engine/cosmetic-engine';

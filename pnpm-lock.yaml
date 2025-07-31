@@ -1698,7 +1698,7 @@ importers:
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
-      tsurlfilter-old:
+      tsurlfilter-v3:
         specifier: npm:@adguard/tsurlfilter@^3.3.3
         version: '@adguard/tsurlfilter@3.4.5(@adguard/re2-wasm@1.2.0)'
       tsx:
