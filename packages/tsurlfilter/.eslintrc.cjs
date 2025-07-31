@@ -146,6 +146,7 @@ const JSDOC_PLUGIN_RULES = {
             contexts: [
                 'ClassDeclaration',
                 'ClassProperty',
+                'PropertyDefinition',
                 'FunctionDeclaration',
                 'MethodDefinition',
             ],
@@ -157,6 +158,7 @@ const JSDOC_PLUGIN_RULES = {
             contexts: [
                 'ClassDeclaration',
                 'ClassProperty',
+                'PropertyDefinition',
                 'FunctionDeclaration',
                 'MethodDefinition',
             ],
@@ -291,6 +293,7 @@ module.exports = {
         'airbnb-typescript/base',
         'plugin:@typescript-eslint/eslint-recommended',
         'plugin:jsdoc/recommended',
+        'plugin:jsdoc/recommended-typescript',
         'plugin:n/recommended',
     ],
     ignorePatterns: [

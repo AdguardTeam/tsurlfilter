@@ -23,14 +23,29 @@ import { type IRule, RULE_INDEX_NONE } from './rule';
  * @returns True if this rule can be used on the specified hostname.
  */
 export class HostRule implements IRule {
+    /**
+     * Rule index.
+     */
     private readonly ruleIndex: number;
 
+    /**
+     * Filter list ID.
+     */
     private readonly filterListId: number;
 
+    /**
+     * Hostnames.
+     */
     private readonly hostnames: string[] = [];
 
+    /**
+     * IP address.
+     */
     private readonly ip: string = '';
 
+    /**
+     * Invalid flag.
+     */
     private readonly invalid: boolean = false;
 
     /**

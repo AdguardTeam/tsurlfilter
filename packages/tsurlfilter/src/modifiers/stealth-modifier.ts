@@ -67,8 +67,14 @@ export const STEALTH_MODE_FILTER_ID = -1;
  * @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#stealth-modifier}
  */
 export class StealthModifier {
+    /**
+     * Pipe separator.
+     */
     private readonly PIPE_SEPARATOR = '|';
 
+    /**
+     * Options.
+     */
     public readonly options = StealthOption.NotSet;
 
     /**

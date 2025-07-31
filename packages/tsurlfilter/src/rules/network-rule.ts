@@ -231,10 +231,10 @@ export enum NetworkRuleGroupOptions {
      * Cosmetic option modifiers.
      */
     CosmeticOption = NetworkRuleOption.Elemhide
-    | NetworkRuleOption.Generichide
-    | NetworkRuleOption.Specifichide
-    | NetworkRuleOption.Jsinject
-    | NetworkRuleOption.Content,
+        | NetworkRuleOption.Generichide
+        | NetworkRuleOption.Specifichide
+        | NetworkRuleOption.Jsinject
+        | NetworkRuleOption.Content,
 
     /**
      * Removeparam compatible modifiers.
@@ -298,12 +298,24 @@ export enum NetworkRuleGroupOptions {
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
  */
 export class NetworkRule implements IRule {
+    /**
+     * Rule index.
+     */
     private readonly ruleIndex: number;
 
+    /**
+     * Filter list ID.
+     */
     private readonly filterListId: number;
 
+    /**
+     * Allowlist flag.
+     */
     private readonly allowlist: boolean;
 
+    /**
+     * Rule pattern.
+     */
     private readonly pattern: Pattern;
 
     /**
