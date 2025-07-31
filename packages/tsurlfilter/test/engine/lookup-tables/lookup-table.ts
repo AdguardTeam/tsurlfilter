@@ -1,11 +1,9 @@
-import {
-    BufferRuleList,
-    FilterListPreprocessor,
-    NetworkRule,
-    RuleStorage,
-} from '../../../src';
-import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 import { type ILookupTable } from '../../../src/engine/lookup-tables/lookup-table';
+import { BufferRuleList } from '../../../src/filterlist/buffer-rule-list';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
+import { RuleStorage } from '../../../src/filterlist/rule-storage';
+import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
+import { NetworkRule } from '../../../src/rules/network-rule';
 
 /**
  * Creates rule storage from the given rules.

@@ -96,7 +96,7 @@ export class CookieModifier implements IAdvancedModifier {
      *
      * @returns Modifier value.
      */
-    getValue(): string {
+    public getValue(): string {
         return this.optionValue;
     }
 
@@ -105,7 +105,7 @@ export class CookieModifier implements IAdvancedModifier {
      *
      * @returns The first cookie name.
      */
-    getCookieName(): string | null {
+    public getCookieName(): string | null {
         return this.cookieName;
     }
 
@@ -114,7 +114,7 @@ export class CookieModifier implements IAdvancedModifier {
      *
      * @returns The max age cookie value.
      */
-    getMaxAge(): number | null {
+    public getMaxAge(): number | null {
         return this.maxAge;
     }
 
@@ -123,7 +123,7 @@ export class CookieModifier implements IAdvancedModifier {
      *
      * @returns The same site cookie value.
      */
-    getSameSite(): string | null {
+    public getSameSite(): string | null {
         return this.sameSite;
     }
 
@@ -134,7 +134,7 @@ export class CookieModifier implements IAdvancedModifier {
      *
      * @returns True if matches, false otherwise.
      */
-    matches(name: string | null): boolean {
+    public matches(name: string | null): boolean {
         if (!name) {
             return false;
         }
@@ -154,7 +154,7 @@ export class CookieModifier implements IAdvancedModifier {
      *
      * @returns True if $cookie option is empty.
      */
-    isEmpty(): boolean {
+    public isEmpty(): boolean {
         return !this.regex && !this.cookieName;
     }
 

@@ -1,12 +1,12 @@
 /* eslint-disable no-console, no-plusplus */
-import { describe, it, expect } from 'vitest';
-import fs from 'fs';
-import path from 'path';
-import console from 'console';
 import { NetworkRuleParser } from '@adguard/agtree';
+import console from 'node:console';
+import fs from 'node:fs';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
-import { SimpleRegex } from '../../src/rules/simple-regex';
 import { EMPTY_STRING } from '../../src/common/constants';
+import { SimpleRegex } from '../../src/rules/simple-regex';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = new URL('.', import.meta.url).pathname;

@@ -1,5 +1,6 @@
 import { type NetworkRule, NetworkRuleType, RuleCategory } from '@adguard/agtree';
 import { AdblockSyntax } from '@adguard/agtree/utils';
+
 import { SimpleRegex } from './simple-regex';
 
 /**

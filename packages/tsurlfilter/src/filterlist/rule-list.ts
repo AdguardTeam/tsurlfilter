@@ -1,4 +1,5 @@
 import { type AnyRule } from '@adguard/agtree';
+
 import { type RuleScanner } from './scanner/rule-scanner';
 import { type ScannerType } from './scanner/scanner-type';
 

@@ -1,5 +1,6 @@
 import { type AnyRule, type InputByteBuffer } from '@adguard/agtree';
 import { RuleDeserializer } from '@adguard/agtree/deserializer';
+
 import { type IReader } from './reader';
 
 /**

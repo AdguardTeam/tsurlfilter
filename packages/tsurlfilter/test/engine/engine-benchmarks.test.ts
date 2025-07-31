@@ -1,28 +1,27 @@
 /* eslint-disable max-len */
+import console from 'node:console';
+import fs from 'node:fs';
+import { performance } from 'node:perf_hooks';
+import zlib from 'node:zlib';
 import {
-    describe,
-    it,
-    expect,
     afterAll,
-    beforeEach,
     afterEach,
+    beforeEach,
+    describe,
+    expect,
+    it,
     vi,
 } from 'vitest';
-import fs from 'fs';
-import zlib from 'zlib';
-import console from 'console';
-import { performance } from 'perf_hooks';
-import {
-    CosmeticOption,
-    Engine,
-    Request,
-    RequestType,
-    BufferRuleList,
-    RuleStorage,
-    DnsEngine,
-    CosmeticEngine,
-    FilterListPreprocessor,
-} from '../../src';
+
+import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
+import { CosmeticOption } from '../../src/engine/cosmetic-option';
+import { DnsEngine } from '../../src/engine/dns-engine';
+import { Engine } from '../../src/engine/engine';
+import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
+import { FilterListPreprocessor } from '../../src/filterlist/preprocessor';
+import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { Request } from '../../src/request';
+import { RequestType } from '../../src/request-type';
 
 /* eslint-disable jsdoc/require-description-complete-sentence */
 /**

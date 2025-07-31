@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
 

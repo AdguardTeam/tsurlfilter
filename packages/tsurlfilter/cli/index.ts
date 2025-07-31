@@ -1,12 +1,13 @@
 /* eslint-disable no-console */
 import { program } from 'commander';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { version } from '../package.json';
+import { generateMD5Hash } from '../src/utils/checksum';
 
 import { convertFilters, LOCAL_METADATA_FILE_NAME } from './convertFilters';
-import { version } from '../package.json';
 import { Extractor } from './extractFilters';
-import { generateMD5Hash } from '../src/utils/checksum';
 
 export const DEFAULT_DEST_RULE_SETS_DIR = './build/rulesets';
 

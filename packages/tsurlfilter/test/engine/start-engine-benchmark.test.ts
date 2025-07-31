@@ -1,23 +1,22 @@
+import console from 'node:console';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {
-    describe,
-    it,
-    expect,
-    beforeAll,
     afterAll,
+    beforeAll,
+    describe,
+    expect,
+    it,
     vi,
 } from 'vitest';
-import console from 'console';
-import fs from 'fs';
-import os from 'os';
-import path from 'path';
-import {
-    BufferRuleList,
-    DnsEngine,
-    Engine,
-    FilterListPreprocessor,
-    NetworkEngine,
-    RuleStorage,
-} from '../../src';
+
+import { DnsEngine } from '../../src/engine/dns-engine';
+import { Engine } from '../../src/engine/engine';
+import { NetworkEngine } from '../../src/engine/network-engine';
+import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
+import { FilterListPreprocessor } from '../../src/filterlist/preprocessor';
+import { RuleStorage } from '../../src/filterlist/rule-storage';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = new URL('.', import.meta.url).pathname;

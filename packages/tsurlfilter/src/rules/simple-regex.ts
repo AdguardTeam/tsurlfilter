@@ -140,7 +140,7 @@ export class SimpleRegex {
      *
      * @returns The shortcut or the empty string if we could not extract any.
      */
-    static extractShortcut(pattern: string): string {
+    public static extractShortcut(pattern: string): string {
         if (pattern.startsWith(this.MASK_REGEX_RULE) && pattern.endsWith(this.MASK_REGEX_RULE)) {
             return this.extractRegexpShortcut(pattern);
         }
@@ -446,7 +446,7 @@ export class SimpleRegex {
      *
      * @returns Regular expression.
      */
-    static patternToRegexp(pattern: string): string {
+    public static patternToRegexp(pattern: string): string {
         if (
             pattern === this.MASK_START_URL
             || pattern === this.MASK_PIPE

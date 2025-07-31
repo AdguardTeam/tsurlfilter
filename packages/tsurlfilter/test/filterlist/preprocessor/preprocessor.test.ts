@@ -1,21 +1,21 @@
 import {
-    describe,
-    it,
-    expect,
-    beforeAll,
-    afterAll,
-    vi,
-} from 'vitest';
-import {
     type AnyRule,
     InputByteBuffer,
     OutputByteBuffer,
     RuleDeserializer,
 } from '@adguard/agtree';
-import { RuleParser, defaultParserOptions } from '@adguard/agtree/parser';
+import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
 import { RuleSerializer } from '@adguard/agtree/serializer';
-import { readFile } from 'node:fs/promises';
 import { omit } from 'lodash-es';
+import { readFile } from 'node:fs/promises';
+import {
+    afterAll,
+    beforeAll,
+    describe,
+    expect,
+    it,
+    vi,
+} from 'vitest';
 
 import {
     FilterListPreprocessor,
