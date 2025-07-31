@@ -1,9 +1,10 @@
 import {
-    describe,
-    it,
-    expect,
     beforeEach,
+    describe,
+    expect,
+    it,
 } from 'vitest';
+
 import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
 
 describe('StringLineReader', () => {

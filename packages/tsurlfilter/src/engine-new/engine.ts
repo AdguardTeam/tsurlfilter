@@ -2,18 +2,19 @@
 /* eslint-disable no-promise-executor-return */
 import { LRUCache } from 'lru-cache';
 
-import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
-import { NetworkEngine } from './network-engine';
-import { Request } from '../request';
-import { MatchingResult } from './matching-result';
-import { type NetworkRule } from '../rules/network-rule';
+import { RuleCategory } from '../filterlist/rule-parts';
 import { type RuleStorage } from '../filterlist/rule-storage-new';
+import { ScannerType } from '../filterlist/scanner-new/scanner-type';
+import { Request } from '../request';
+import { RequestType } from '../request-type';
+import { type NetworkRule } from '../rules/network-rule';
+import { type IndexedStorageRule } from '../rules/rule-new';
+
+import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { type CosmeticResult } from './cosmetic-engine/cosmetic-result';
 import { type CosmeticOption } from './cosmetic-option';
-import { ScannerType } from '../filterlist/scanner-new/scanner-type';
-import { type IndexedStorageRule } from '../rules/rule-new';
-import { RequestType } from '../request-type';
-import { RuleCategory } from '../filterlist/rule-parts';
+import { MatchingResult } from './matching-result';
+import { NetworkEngine } from './network-engine';
 
 /**
  * Engine represents the filtering engine with all the loaded rules.
@@ -65,7 +66,7 @@ export class Engine {
     /**
      * Loads rules to engine.
      */
-    loadRules(): void {
+    public loadRules(): void {
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
 
         while (scanner.scan()) {
@@ -78,7 +79,7 @@ export class Engine {
      *
      * @param chunkSize Size of rules chunk to load at a time.
      */
-    async loadRulesAsync(chunkSize: number): Promise<void> {
+    public async loadRulesAsync(chunkSize: number): Promise<void> {
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
 
         let counter = 0;
@@ -109,7 +110,7 @@ export class Engine {
      *
      * @returns Matching result.
      */
-    matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult {
+    public matchRequest(request: Request, frameRule: NetworkRule | null = null): MatchingResult {
         let cacheKey = `${request.url}#${request.sourceHostname}#${request.requestType}`;
 
         if (request.method) {
@@ -143,7 +144,7 @@ export class Engine {
      * @returns Document-level allowlist rule if found, otherwise null.
      */
     // TODO: Find a better name for this method
-    matchFrame(frameUrl: string): NetworkRule | null {
+    public matchFrame(frameUrl: string): NetworkRule | null {
         const sourceRequest = new Request(frameUrl, '', RequestType.Document);
         let sourceRules = this.networkEngine.matchAll(sourceRequest);
 
@@ -169,7 +170,7 @@ export class Engine {
      *
      * @returns Cosmetic result.
      */
-    getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult {
+    public getCosmeticResult(request: Request, option: CosmeticOption): CosmeticResult {
         return this.cosmeticEngine.match(request, option);
     }
 
@@ -178,7 +179,7 @@ export class Engine {
      *
      * @returns The total number of rules.
      */
-    getRulesCount(): number {
+    public getRulesCount(): number {
         return this.networkEngine.rulesCount + this.cosmeticEngine.rulesCount;
     }
 

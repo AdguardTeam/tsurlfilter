@@ -1,4 +1,5 @@
 import { CR, LF } from '../../common/constants';
+
 import { type ILineReader } from './line-reader';
 
 /**

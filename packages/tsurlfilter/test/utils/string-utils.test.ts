@@ -3,14 +3,14 @@ import { describe, expect, it } from 'vitest';
 import {
     fastHash,
     fastHash31,
+    findNextNonWhitespace,
+    findNextWhitespace,
+    findPrevNonWhitespace,
     hasUnquotedSubstring,
+    hasWhitespace,
     replaceAll,
     splitByDelimiterWithEscapeCharacter,
     startsAtIndexWith,
-    hasWhitespace,
-    findNextNonWhitespace,
-    findPrevNonWhitespace,
-    findNextWhitespace,
 } from '../../src/utils/string-utils';
 
 describe('splitByDelimiterWithEscapeCharacter', () => {

@@ -1,12 +1,12 @@
 // FIXME: fix getText cases
-import { describe, it, expect } from 'vitest';
 import escapeStringRegexp from 'escape-string-regexp';
+import { describe, expect, it } from 'vitest';
 
 import { config, setConfiguration } from '../../src/configuration';
 import { CosmeticOption } from '../../src/engine-new/cosmetic-option';
-import { RequestType } from '../../src/request-type';
-import { Request } from '../../src/request';
 import { EngineFactory } from '../../src/engine-new/engine-factory';
+import { Request } from '../../src/request';
+import { RequestType } from '../../src/request-type';
 
 const createRequest = (url: string): Request => new Request(url, null, RequestType.Document);
 
@@ -750,7 +750,7 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(
             engine.retrieveRuleText(result.getPopupRule()!.getFilterListId(), result.getPopupRule()!.getIndex()),
         ).toEqual(popupBlockingRuleText);
-        expect(result.getDocumentBlockingResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
 
         // Tests matching a script request; expects to match the all-encompassing blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Script);
@@ -762,7 +762,13 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(
             engine.retrieveRuleText(result.getPopupRule()!.getFilterListId(), result.getPopupRule()!.getIndex()),
         ).toEqual(popupBlockingRuleText);
-        expect(result.getDocumentBlockingResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(
+            engine.retrieveRuleText(
+                result.getDocumentBlockingResult()!.getFilterListId(),
+                result.getDocumentBlockingResult()!.getIndex(),
+            ),
+        ).toBe(blockingAllRuleText);
 
         // Tests matching an image request; expects to match the all-encompassing blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Image);
@@ -774,7 +780,13 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(
             engine.retrieveRuleText(result.getPopupRule()!.getFilterListId(), result.getPopupRule()!.getIndex()),
         ).toEqual(popupBlockingRuleText);
-        expect(result.getDocumentBlockingResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(
+            engine.retrieveRuleText(
+                result.getDocumentBlockingResult()!.getFilterListId(),
+                result.getDocumentBlockingResult()!.getIndex(),
+            ),
+        ).toBe(blockingAllRuleText);
 
         // Tests matching a document request; expects to match the popup blocking rule
         request = new Request('http://example.org/', 'http://example.com/', RequestType.Document);
@@ -786,7 +798,13 @@ describe('TestEngineMatchRequest - popup modifier', () => {
         expect(
             engine.retrieveRuleText(result.getPopupRule()!.getFilterListId(), result.getPopupRule()!.getIndex()),
         ).toBe(popupBlockingRuleText);
-        expect(result.getDocumentBlockingResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).not.toBeNull();
+        expect(
+            engine.retrieveRuleText(
+                result.getDocumentBlockingResult()!.getFilterListId(),
+                result.getDocumentBlockingResult()!.getIndex(),
+            ),
+        ).toBe(blockingAllRuleText);
     });
 });
 

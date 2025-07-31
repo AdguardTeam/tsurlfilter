@@ -1,13 +1,12 @@
-import { describe, it, expect } from 'vitest';
-
 import escapeStringRegexp from 'escape-string-regexp';
+import { describe, expect, it } from 'vitest';
 
 import { CosmeticEngine } from '../../../src/engine-new/cosmetic-engine/cosmetic-engine';
 import { CosmeticOption } from '../../../src/engine-new/cosmetic-option';
-import { Request } from '../../../src/request';
-import { RequestType } from '../../../src/request-type';
 import { RuleStorage } from '../../../src/filterlist/rule-storage-new';
 import { StringRuleList } from '../../../src/filterlist/string-rule-list';
+import { Request } from '../../../src/request';
+import { RequestType } from '../../../src/request-type';
 
 /**
  * Helper function to get the rule index from the raw filter list by the rule text.

@@ -1,5 +1,6 @@
 import { RuleStorage } from '../filterlist/rule-storage-new';
 import { StringRuleList } from '../filterlist/string-rule-list';
+
 import { Engine } from './engine';
 
 /**

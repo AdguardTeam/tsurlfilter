@@ -1,11 +1,12 @@
-import { describe, test, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
+
 import {
-    getRuleParts,
-    RuleCategory,
-    CosmeticRuleType,
     type CosmeticRuleParts,
-    type NetworkRuleParts,
+    CosmeticRuleType,
+    getRuleParts,
     type HostRuleParts,
+    type NetworkRuleParts,
+    RuleCategory,
 } from '../../src/filterlist/rule-parts';
 
 describe('getRuleParts', () => {

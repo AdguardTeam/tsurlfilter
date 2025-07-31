@@ -1,7 +1,8 @@
-import { CosmeticStylesResult } from './cosmetic-styles-result';
-import { CosmeticScriptsResult } from './cosmetic-scripts-result';
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
+
 import { CosmeticHtmlResult } from './cosmetic-html-result';
+import { CosmeticScriptsResult } from './cosmetic-scripts-result';
+import { CosmeticStylesResult } from './cosmetic-styles-result';
 
 /**
  * @typedef {import('./cosmetic-engine').CosmeticEngine} CosmeticEngine
