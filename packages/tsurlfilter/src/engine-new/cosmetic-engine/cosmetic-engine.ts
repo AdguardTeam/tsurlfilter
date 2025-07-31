@@ -5,7 +5,7 @@ import { type CosmeticContentResult } from './cosmetic-content-result';
 import { CosmeticOption } from '../cosmetic-option';
 import { ScannerType } from '../../filterlist/scanner-new/scanner-type';
 import { type Request } from '../../request';
-import { type CosmeticRuleParts, CosmeticRuleType } from '../../filterlist/rule-parts';
+import { type CosmeticRuleParts, CosmeticRuleType, RuleCategory } from '../../filterlist/rule-parts';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
@@ -66,14 +66,23 @@ export class CosmeticEngine {
 
         while (scanner.scan()) {
             const indexedRule = scanner.getRule();
-            if (indexedRule) {
-                // We can cast here, because scanner is created with `ScannerType.CosmeticRules`
-                const ruleParts = indexedRule.rule as CosmeticRuleParts;
-                // FIXME (David): do we need this check?
-                if (ruleParts) {
-                    this.addRule(ruleParts, indexedRule.index);
-                }
+
+            if (!indexedRule) {
+                continue;
             }
+
+            const ruleParts = indexedRule.rule;
+
+            // FIXME (David): Probably we have a possible optimization step here.
+            // When initial scan is enabled, the core engine passes it to its network and cosmetic engines,
+            // and they creates their own scanners.
+            // However, `list.newScanner` using the list own `ignoreCosmetic` etc props,
+            // so we need to filter out cosmetic rules here now.
+            if (ruleParts.category !== RuleCategory.Cosmetic) {
+                continue;
+            }
+
+            this.addRule(ruleParts, indexedRule.index);
         }
     }
 
