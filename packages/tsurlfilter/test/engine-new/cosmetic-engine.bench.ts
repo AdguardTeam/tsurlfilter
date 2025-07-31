@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
 /* eslint-disable max-len */
 // pnpm vitest bench cosmetic-engine
-import { bench, describe } from 'vitest';
 import { readFileSync } from 'node:fs';
 import * as TsUrlFilterOld from 'tsurlfilter-old';
+import { bench, describe } from 'vitest';
 
+import { CosmeticEngine } from '../../src/engine-new/cosmetic-engine/cosmetic-engine';
 import { RuleStorage } from '../../src/filterlist/rule-storage-new';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
-import { CosmeticEngine } from '../../src/engine-new/cosmetic-engine/cosmetic-engine';
 
 describe('Build engine', () => {
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');

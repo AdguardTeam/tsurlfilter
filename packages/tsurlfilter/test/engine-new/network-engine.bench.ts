@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 /* eslint-disable max-len */
 // pnpm vitest bench network-engine
-import { bench, describe } from 'vitest';
 import { readFileSync } from 'node:fs';
 import * as TsUrlFilterOld from 'tsurlfilter-old';
+import { bench, describe } from 'vitest';
 
-import { RuleStorage } from '../../src/filterlist/rule-storage-new';
 import { NetworkEngine } from '../../src/engine-new/network-engine';
+import { RuleStorage } from '../../src/filterlist/rule-storage-new';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
 
 describe('Build engine', () => {

@@ -1,9 +1,9 @@
 /* eslint-disable no-console */
 /* eslint-disable max-len */
 // pnpm vitest bench engine
-import { bench, describe } from 'vitest';
 import { readFileSync } from 'node:fs';
 import * as TsUrlFilterOld from 'tsurlfilter-old';
+import { bench, describe } from 'vitest';
 
 import { EngineFactory } from '../../src/engine-new/engine-factory';
 
