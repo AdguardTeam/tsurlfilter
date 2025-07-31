@@ -1,10 +1,12 @@
-import { describe, it, expect } from 'vitest';
 import escapeStringRegexp from 'escape-string-regexp';
+import { describe, expect, it } from 'vitest';
 
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
+import { FilterListPreprocessor } from '../../src/filterlist/preprocessor';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
-import { FilterListPreprocessor, NetworkRule, getRuleSourceIndex } from '../../src';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
+import { getRuleSourceIndex } from '../../src/filterlist/source-map';
+import { NetworkRule } from '../../src/rules/network-rule';
 import { createNetworkRule } from '../helpers/rule-creator';
 
 describe('Test RuleStorage', () => {

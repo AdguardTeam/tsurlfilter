@@ -1,6 +1,7 @@
 import { type SyncExpectationResult } from '@vitest/expect';
-import { expect } from 'vitest';
 import { omit } from 'lodash-es';
+import { expect } from 'vitest';
+
 import { type CosmeticRule } from '../../../src/rules/cosmetic-rule';
 
 const normalizeCosmeticRule = (rule: CosmeticRule): Partial<CosmeticRule> => {

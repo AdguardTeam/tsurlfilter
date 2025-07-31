@@ -1,12 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
+    fastHash,
+    fastHash31,
+    hasUnquotedSubstring,
+    replaceAll,
     splitByDelimiterWithEscapeCharacter,
     startsAtIndexWith,
-    hasUnquotedSubstring,
-    fastHash,
-    replaceAll,
-    fastHash31,
     hasWhitespace,
     findNextNonWhitespace,
     findPrevNonWhitespace,

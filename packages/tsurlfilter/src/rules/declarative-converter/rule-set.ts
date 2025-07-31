@@ -343,7 +343,7 @@ export class RuleSet implements IRuleSet {
     }
 
     /** @inheritdoc */
-    getUnsafeRules(): Promise<DeclarativeRule[]> {
+    public getUnsafeRules(): Promise<DeclarativeRule[]> {
         return Promise.resolve(this.unsafeRules || []);
     }
 

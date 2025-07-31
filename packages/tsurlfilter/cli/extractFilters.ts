@@ -1,12 +1,14 @@
 /* eslint-disable no-console */
 /* eslint-disable no-await-in-loop */
-import { promises as fs } from 'fs';
-import path from 'path';
-import { ensureDirSync, findFiles } from './utils';
-import { METADATA_RULESET_ID, MetadataRuleSet } from '../src/rules/declarative-converter';
-import { LOCAL_METADATA_FILE_NAME } from './convertFilters';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+
 import { FilterListPreprocessor } from '../src/filterlist/preprocessor/preprocessor';
+import { METADATA_RULESET_ID, MetadataRuleSet } from '../src/rules/declarative-converter';
 import { extractRuleSetId, RULESET_FILE_EXT } from '../src/rules/declarative-converter-utils/rule-set-path';
+
+import { LOCAL_METADATA_FILE_NAME } from './convertFilters';
+import { ensureDirSync, findFiles } from './utils';
 
 /**
  * Extractor class for extracting text filters from rulesets.

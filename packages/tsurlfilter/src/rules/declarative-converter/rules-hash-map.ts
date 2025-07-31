@@ -85,7 +85,7 @@ export class RulesHashMap implements IRulesHashMap {
     }
 
     /** @inheritdoc */
-    findRules(hash: number): SourceRuleIdxAndFilterId[] {
+    public findRules(hash: number): SourceRuleIdxAndFilterId[] {
         return this.map.get(hash) || [];
     }
 
@@ -96,7 +96,7 @@ export class RulesHashMap implements IRulesHashMap {
      *
      * @returns Deserialized dictionary.
      */
-    static deserializeSources(rawString: string): HashWithSource[] {
+    public static deserializeSources(rawString: string): HashWithSource[] {
         const plainArray: SerializedHashWithSource[] = JSON.parse(rawString);
 
         const allPairs = plainArray
@@ -117,7 +117,7 @@ export class RulesHashMap implements IRulesHashMap {
     }
 
     /** @inheritdoc */
-    serialize(): string {
+    public serialize(): string {
         const arr = Array.from(this.map);
 
         const serializedValues: SerializedHashWithSource[] = arr

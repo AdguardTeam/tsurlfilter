@@ -1,5 +1,6 @@
-import { type RuleScanner } from './rule-scanner';
 import { IndexedStorageRule } from '../../rules/rule';
+
+import { type RuleScanner } from './rule-scanner';
 
 /**
  * RuleStorageScanner scans multiple RuleScanner instances.

@@ -1,13 +1,14 @@
-import { describe, it, expect } from 'vitest';
 import { InputByteBuffer } from '@adguard/agtree';
 import escapeStringRegexp from 'escape-string-regexp';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
 
-import { readFile } from 'fs/promises';
-import path from 'path';
-import { FilterListPreprocessor, getRuleSourceIndex } from '../../../src';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
 import { BufferReader } from '../../../src/filterlist/reader/buffer-reader';
 import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
 import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
+import { getRuleSourceIndex } from '../../../src/filterlist/source-map';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = new URL('.', import.meta.url).pathname;

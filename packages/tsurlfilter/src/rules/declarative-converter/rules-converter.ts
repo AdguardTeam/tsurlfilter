@@ -102,8 +102,8 @@ import { type Source } from './source-map';
 import type { IndexedNetworkRuleWithHash } from './network-indexed-rule-with-hash';
 import {
     type LimitationError,
-    TooManyRulesError,
     TooManyRegexpRulesError,
+    TooManyRulesError,
     TooManyUnsafeRulesError,
 } from './errors/limitation-errors';
 import { BadFilterRulesConverter } from './grouped-rules-converters/bad-filter-converter';

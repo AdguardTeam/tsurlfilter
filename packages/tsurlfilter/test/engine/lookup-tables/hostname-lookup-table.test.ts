@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { RequestType } from '../../../src';
-import { Request } from '../../../src/request';
-import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { HostnameLookupTable } from '../../../src/engine/lookup-tables/hostname-lookup-table';
+import { Request } from '../../../src/request';
+import { RequestType } from '../../../src/request-type';
 import { createNetworkRule } from '../../helpers/rule-creator';
+
+import { createRuleStorage, fillLookupTable } from './lookup-table';
 
 describe('Hostname Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
