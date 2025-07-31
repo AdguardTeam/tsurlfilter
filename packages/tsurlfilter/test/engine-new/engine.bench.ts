@@ -8,7 +8,7 @@ import * as TsUrlFilterOld from 'tsurlfilter-old';
 import { EngineFactory } from '../../src/engine-new/engine-factory';
 
 describe('Build engine', () => {
-    const ignoreCosmetic = true;
+    const ignoreCosmetic = false;
 
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
     const preprocessedFilter = TsUrlFilterOld.FilterListPreprocessor.preprocess(rawFilter);
