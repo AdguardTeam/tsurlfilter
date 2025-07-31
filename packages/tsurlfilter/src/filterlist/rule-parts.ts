@@ -1,10 +1,5 @@
 import isIp from 'is-ip';
-import {
-    findNextNonWhitespace,
-    findNextWhitespace,
-    findPrevNonWhitespace,
-    hasWhitespace,
-} from '../utils/string-utils';
+
 import {
     CLOSE_SQUARE,
     COMMA,
@@ -13,6 +8,12 @@ import {
     SPACE,
     TAB,
 } from '../common/constants';
+import {
+    findNextNonWhitespace,
+    findNextWhitespace,
+    findPrevNonWhitespace,
+    hasWhitespace,
+} from '../utils/string-utils';
 
 /**
  * Rule category.

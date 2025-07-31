@@ -1,11 +1,12 @@
+import * as fs from 'node:fs';
 import {
-    describe,
-    it,
-    expect,
     beforeEach,
+    describe,
+    expect,
+    it,
     vi,
 } from 'vitest';
-import * as fs from 'node:fs';
+
 import { FileLineReader } from '../../../src/filterlist/reader/file-line-reader';
 
 const encode = (str: string) => Buffer.from(new TextEncoder().encode(str));

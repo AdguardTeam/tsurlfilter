@@ -1,5 +1,5 @@
-import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { type Request } from '../../request';
+import { type CosmeticRule } from '../../rules/cosmetic-rule';
 
 /**
  * Cosmetic results interface.

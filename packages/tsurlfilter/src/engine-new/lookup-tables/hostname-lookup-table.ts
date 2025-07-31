@@ -1,11 +1,12 @@
-import { type ILookupTable } from './lookup-table';
+import { type NetworkRuleParts } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage-new';
 import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
-import { fastHash } from '../../utils/string-utils';
 import { SimpleRegex } from '../../rules/simple-regex';
-import { type NetworkRuleParts } from '../../filterlist/rule-parts';
+import { fastHash } from '../../utils/string-utils';
 import { CachedFastHash } from '../cached-fast-hash';
+
+import { type ILookupTable } from './lookup-table';
 
 /**
  * Hostname lookup table.

@@ -1,16 +1,16 @@
-import {
-    describe,
-    it,
-    expect,
-    beforeEach,
-} from 'vitest';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import {
+    beforeEach,
+    describe,
+    expect,
+    it,
+} from 'vitest';
 
+import { type ILineReader } from '../../../src/filterlist/reader/line-reader';
+import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
 import { RuleScanner } from '../../../src/filterlist/scanner-new/rule-scanner';
 import { ScannerType } from '../../../src/filterlist/scanner-new/scanner-type';
-import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
-import { type ILineReader } from '../../../src/filterlist/reader/line-reader';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = new URL('.', import.meta.url).pathname;

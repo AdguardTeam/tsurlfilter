@@ -1,6 +1,6 @@
+import { type RuleParts } from '../../filterlist/rule-parts';
 import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
-import { type RuleParts } from '../../filterlist/rule-parts';
 
 /**
  * Lookup table interface.

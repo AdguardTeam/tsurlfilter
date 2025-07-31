@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-loop-func */
 import { RawRuleConverter } from '@adguard/agtree';
 
-import { findNextLineBreakIndex } from '../utils/string-utils';
 import { EMPTY_STRING, LF } from '../common/constants';
+import { findNextLineBreakIndex } from '../utils/string-utils';
 
 /**
  * Conversion data.
@@ -25,6 +25,10 @@ export type ConversionData = {
     conversions: Record<number, number>;
 };
 
+/**
+ * ConvertedFilterList is a class that represents a converted filter list.
+ * It is designed to provide O(1) access to the original filtering rules.
+ */
 export class ConvertedFilterList {
     /**
      * Content of the converted filter list.

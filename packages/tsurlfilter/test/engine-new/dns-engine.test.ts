@@ -1,6 +1,5 @@
-import { describe, it, expect } from 'vitest';
-
 import escapeStringRegexp from 'escape-string-regexp';
+import { describe, expect, it } from 'vitest';
 
 import { DnsEngine } from '../../src/engine-new/dns-engine';
 import { RuleStorage } from '../../src/filterlist/rule-storage-new';

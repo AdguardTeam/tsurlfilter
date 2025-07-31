@@ -1,11 +1,11 @@
-import { parse } from 'tldts';
 import { ADG_SCRIPTLET_MASK, QuoteType, QuoteUtils } from '@adguard/agtree';
+import { parse } from 'tldts';
 
-import { type CosmeticRule } from '../../rules/cosmetic-rule';
-import { DomainModifier } from '../../modifiers/domain-modifier';
-import { type RuleStorage } from '../../filterlist/rule-storage-new';
-import { type Request } from '../../request';
 import { type CosmeticRuleParts, CosmeticRuleType } from '../../filterlist/rule-parts';
+import { type RuleStorage } from '../../filterlist/rule-storage-new';
+import { DomainModifier } from '../../modifiers/domain-modifier';
+import { type Request } from '../../request';
+import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { CachedFastHash } from '../cached-fast-hash';
 
 /**
@@ -63,7 +63,7 @@ export class CosmeticLookupTable {
      * @param key Can be used any string, but here we use ruleContent, scriptlet content, or scriptlet name.
      * @param storageIdx Index of the rule.
      */
-    addAllowlistRule(key: string, storageIdx: number): void {
+    public addAllowlistRule(key: string, storageIdx: number): void {
         const existingRules = this.allowlist.get(key);
         if (!existingRules) {
             this.allowlist.set(key, [storageIdx]);
@@ -91,7 +91,7 @@ export class CosmeticLookupTable {
      * @param rule Rule to add.
      * @param storageIdx Index of the rule in the storage.
      */
-    addRule(rule: CosmeticRuleParts, storageIdx: number): void {
+    public addRule(rule: CosmeticRuleParts, storageIdx: number): void {
         if (rule.allowlist) {
             if (!CosmeticLookupTable.isScriptletRule(rule)) {
                 // Store all non-scriptlet rules by their content.
@@ -196,7 +196,7 @@ export class CosmeticLookupTable {
      *
      * @returns Array of matching cosmetic rules.
      */
-    findByHostname(request: Request): CosmeticRule[] {
+    public findByHostname(request: Request): CosmeticRule[] {
         const result: CosmeticRule[] = [];
         const { subdomains } = request;
 
@@ -264,7 +264,7 @@ export class CosmeticLookupTable {
      *
      * @returns True if the rule is disabled on the specified hostname.
      */
-    isAllowlisted(request: Request, rule: CosmeticRule): boolean {
+    public isAllowlisted(request: Request, rule: CosmeticRule): boolean {
         if (rule.isScriptlet) {
             // Empty string '' is a special case for scriptlet when the allowlist scriptlet has no name
             // e.g. #@%#//scriptlet(); example.org#@%#//scriptlet();

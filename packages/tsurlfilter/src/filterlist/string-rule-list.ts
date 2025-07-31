@@ -1,4 +1,5 @@
 import { findNextLineBreakIndex } from '../utils/string-utils';
+
 import { StringLineReader } from './reader/string-line-reader';
 import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list-new';
 import { RuleScanner } from './scanner-new/rule-scanner';
@@ -71,9 +72,11 @@ export class StringRuleList implements IRuleList {
     }
 
     /**
+     * Gets the rule list identifier.
+     *
      * @returns The rule list identifier.
      */
-    getId(): number {
+    public getId(): number {
         return this.id;
     }
 
@@ -84,7 +87,7 @@ export class StringRuleList implements IRuleList {
      *
      * @returns Scanner object.
      */
-    newScanner(scannerType: ScannerType): RuleScanner {
+    public newScanner(scannerType: ScannerType): RuleScanner {
         const reader = new StringLineReader(this.rulesText);
         return new RuleScanner(reader, this.id, {
             scannerType,
@@ -102,7 +105,7 @@ export class StringRuleList implements IRuleList {
      *
      * @returns Rule text or null.
      */
-    retrieveRuleText(ruleIdx: number): string | null {
+    public retrieveRuleText(ruleIdx: number): string | null {
         if (ruleIdx < 0 || ruleIdx >= this.rulesText.length) {
             return null;
         }

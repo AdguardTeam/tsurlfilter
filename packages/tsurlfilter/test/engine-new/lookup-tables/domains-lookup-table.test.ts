@@ -1,10 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { Request } from '../../../src/request';
-import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { DomainsLookupTable } from '../../../src/engine-new/lookup-tables/domains-lookup-table';
-import { RequestType } from '../../../src/request-type';
 import { getRuleParts, type NetworkRuleParts } from '../../../src/filterlist/rule-parts';
+import { Request } from '../../../src/request';
+import { RequestType } from '../../../src/request-type';
+
+import { createRuleStorage, fillLookupTable } from './lookup-table';
 
 describe('Domains Lookup Table Tests', () => {
     it('adds rule to look up table', () => {

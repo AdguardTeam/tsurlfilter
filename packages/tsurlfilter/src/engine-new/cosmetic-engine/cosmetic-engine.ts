@@ -1,11 +1,12 @@
+import { type CosmeticRuleParts, CosmeticRuleType, RuleCategory } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage-new';
-import { CosmeticLookupTable } from './cosmetic-lookup-table';
-import { CosmeticResult } from './cosmetic-result';
-import { type CosmeticContentResult } from './cosmetic-content-result';
-import { CosmeticOption } from '../cosmetic-option';
 import { ScannerType } from '../../filterlist/scanner-new/scanner-type';
 import { type Request } from '../../request';
-import { type CosmeticRuleParts, CosmeticRuleType, RuleCategory } from '../../filterlist/rule-parts';
+import { CosmeticOption } from '../cosmetic-option';
+
+import { type CosmeticContentResult } from './cosmetic-content-result';
+import { CosmeticLookupTable } from './cosmetic-lookup-table';
+import { CosmeticResult } from './cosmetic-result';
 
 /**
  * CosmeticEngine combines all the cosmetic rules and allows to quickly
@@ -126,7 +127,7 @@ export class CosmeticEngine {
      *
      * @returns True if option matches targetOption.
      */
-    static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean {
+    public static matchOption(option: CosmeticOption, targetOption: CosmeticOption): boolean {
         return (option & targetOption) === targetOption;
     }
 
@@ -138,7 +139,7 @@ export class CosmeticEngine {
      *
      * @returns CosmeticResult.
      */
-    match(request: Request, option: CosmeticOption): CosmeticResult {
+    public match(request: Request, option: CosmeticOption): CosmeticResult {
         const includeGeneric = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionGenericCSS);
         const includeSpecific = CosmeticEngine.matchOption(option, CosmeticOption.CosmeticOptionSpecificCSS);
 

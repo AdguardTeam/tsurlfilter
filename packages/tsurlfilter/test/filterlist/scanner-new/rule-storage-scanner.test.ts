@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
 import { RuleScanner } from '../../../src/filterlist/scanner-new/rule-scanner';
 import { RuleStorageScanner } from '../../../src/filterlist/scanner-new/rule-storage-scanner';
 import { ScannerType } from '../../../src/filterlist/scanner-new/scanner-type';
-import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
 
 describe('Empty Scanners Test', () => {
     const storageScanner = new RuleStorageScanner([]);

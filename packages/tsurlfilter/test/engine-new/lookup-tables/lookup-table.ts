@@ -1,7 +1,7 @@
-import { ScannerType } from '../../../src/filterlist/scanner-new/scanner-type';
 import { type ILookupTable } from '../../../src/engine-new/lookup-tables/lookup-table';
-import { StringRuleList } from '../../../src/filterlist/string-rule-list';
 import { RuleStorage } from '../../../src/filterlist/rule-storage-new';
+import { ScannerType } from '../../../src/filterlist/scanner-new/scanner-type';
+import { StringRuleList } from '../../../src/filterlist/string-rule-list';
 
 /**
  * Creates rule storage from the given rules.

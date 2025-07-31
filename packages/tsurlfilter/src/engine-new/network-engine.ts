@@ -1,14 +1,15 @@
-import { type Request } from '../request';
-import { type NetworkRule } from '../rules/network-rule';
 import { MatchingResult } from '../engine/matching-result';
+import { type NetworkRuleParts, RuleCategory } from '../filterlist/rule-parts';
 import { type RuleStorage } from '../filterlist/rule-storage-new';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
-import { type ILookupTable } from './lookup-tables/lookup-table';
-import { TrieLookupTable } from './lookup-tables/trie-lookup-table';
+import { type Request } from '../request';
+import { type NetworkRule } from '../rules/network-rule';
+
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
+import { type ILookupTable } from './lookup-tables/lookup-table';
 import { SeqScanLookupTable } from './lookup-tables/seq-scan-lookup-table';
-import { RuleCategory, type NetworkRuleParts } from '../filterlist/rule-parts';
+import { TrieLookupTable } from './lookup-tables/trie-lookup-table';
 
 /**
  * NetworkEngine is the engine that supports quick search over network rules.
@@ -140,6 +141,11 @@ export class NetworkEngine {
         this.seqScanLookupTable.addRule(rule, storageIdx);
     }
 
+    /**
+     * Returns the total number of rules in the engine.
+     *
+     * @returns The total number of rules.
+     */
     public get rulesCount(): number {
         return this.domainsLookupTable.getRulesCount()
             + this.hostnameLookupTable.getRulesCount()

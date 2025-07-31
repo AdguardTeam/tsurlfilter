@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { RequestType } from '../../../src/request-type';
-import { Request } from '../../../src/request';
-import { createRuleStorage, fillLookupTable } from './lookup-table';
 import { SeqScanLookupTable } from '../../../src/engine-new/lookup-tables/seq-scan-lookup-table';
 import { RuleStorage } from '../../../src/filterlist/rule-storage-new';
 import { StringRuleList } from '../../../src/filterlist/string-rule-list';
+import { Request } from '../../../src/request';
+import { RequestType } from '../../../src/request-type';
+
+import { createRuleStorage, fillLookupTable } from './lookup-table';
 
 describe('Sequence-scan Lookup Table Tests', () => {
     it('adds rule to look up table', () => {

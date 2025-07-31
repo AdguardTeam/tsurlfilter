@@ -1,12 +1,13 @@
 import { NetworkRuleParser } from '@adguard/agtree';
 import { getErrorMessage } from '@adguard/logger';
 
-import { type ILookupTable } from './lookup-table';
-import { type Request } from '../../request';
-import { NetworkRule } from '../../rules/network-rule';
 import { type NetworkRuleParts } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage-new';
+import { type Request } from '../../request';
+import { NetworkRule } from '../../rules/network-rule';
 import { logger } from '../../utils/logger';
+
+import { type ILookupTable } from './lookup-table';
 
 /**
  * Sequence scan lookup table of rules for which we could not find a shortcut
