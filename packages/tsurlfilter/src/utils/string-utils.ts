@@ -237,7 +237,7 @@ export function replaceAll(str: string, find: string, replace: string): string {
  * @param left Array.
  * @param right Array.
  *
- * @returns {boolean} True on equality.
+ * @returns True on equality.
  */
 export function stringArraysEquals(left: string[] | null, right: string[] | null): boolean {
     if (!left || !right) {
@@ -263,7 +263,7 @@ export function stringArraysEquals(left: string[] | null, right: string[] | null
  * @param left Array.
  * @param right Array.
  *
- * @returns {boolean} True on equality.
+ * @returns True on intersection.
  */
 export function stringArraysHaveIntersection(left: string[] | null, right: string[] | null): boolean {
     if (!left || !right) {

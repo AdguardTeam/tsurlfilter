@@ -43,6 +43,9 @@ export interface IConfiguration {
  * Application configuration class.
  */
 class Configuration implements IConfiguration {
+    /**
+     * Default configuration.
+     */
     private defaultConfig: IConfiguration = {
         engine: null,
         version: null,
