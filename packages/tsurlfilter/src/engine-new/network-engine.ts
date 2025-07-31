@@ -8,7 +8,7 @@ import { TrieLookupTable } from './lookup-tables/trie-lookup-table';
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
 import { SeqScanLookupTable } from './lookup-tables/seq-scan-lookup-table';
-import { type NetworkRuleParts } from '../filterlist/rule-parts';
+import { RuleCategory, type NetworkRuleParts } from '../filterlist/rule-parts';
 
 /**
  * NetworkEngine is the engine that supports quick search over network rules.
@@ -61,14 +61,23 @@ export class NetworkEngine {
 
         while (scanner.scan()) {
             const indexedRule = scanner.getRule();
-            if (indexedRule) {
-                // We can cast here, because scanner is created with `ScannerType.NetworkRules`
-                const ruleParts = indexedRule.rule as NetworkRuleParts;
-                // FIXME (David): do we need this check?
-                if (ruleParts) {
-                    this.addRule(ruleParts, indexedRule.index);
-                }
+
+            if (!indexedRule) {
+                continue;
             }
+
+            const ruleParts = indexedRule.rule;
+
+            // FIXME (David): Probably we have a possible optimization step here.
+            // When initial scan is enabled, the core engine passes it to its network and cosmetic engines,
+            // and they creates their own scanners.
+            // However, `list.newScanner` using the list own `ignoreCosmetic` etc props,
+            // so we need to filter out cosmetic rules here now.
+            if (ruleParts.category !== RuleCategory.Network) {
+                continue;
+            }
+
+            this.addRule(ruleParts, indexedRule.index);
         }
     }
 

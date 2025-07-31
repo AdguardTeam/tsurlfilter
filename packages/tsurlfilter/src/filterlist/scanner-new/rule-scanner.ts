@@ -121,7 +121,7 @@ export class RuleScanner {
         let line = this.readNextLine();
 
         while (line !== null) {
-            const ruleParts = getRuleParts(line, this.ignoreCosmetic);
+            const ruleParts = getRuleParts(line, this.ignoreCosmetic, this.ignoreHost);
             if (ruleParts && !this.isIgnored(ruleParts)) {
                 this.currentRule = ruleParts;
                 this.currentRuleIndex = lineIndex;
@@ -190,6 +190,14 @@ export class RuleScanner {
     private isIgnored(rule: RuleParts): boolean {
         if (!this.ignoreCosmetic && !this.ignoreJS && !this.ignoreUnsafe) {
             return false;
+        }
+
+        if (rule.category === RuleCategory.Network && this.ignoreNetwork) {
+            return true;
+        }
+
+        if (rule.category === RuleCategory.Host && this.ignoreHost) {
+            return true;
         }
 
         if (rule.category === RuleCategory.Cosmetic) {
