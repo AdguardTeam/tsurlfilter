@@ -12,6 +12,9 @@ type RulesUnion = NetworkRule | CosmeticRule;
  * Module with miscellaneous syntax utils exposed in API.
  */
 export class RuleSyntaxUtils {
+    /**
+     * Dummy filter ID.
+     */
     private static DUMMY_FILTER_ID = 0;
 
     /**

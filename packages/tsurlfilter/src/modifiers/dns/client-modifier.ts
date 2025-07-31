@@ -9,8 +9,14 @@ import { BaseValuesModifier } from '../values-modifier';
  * Netmasks class.
  */
 class NetmasksCollection {
+    /**
+     * IPv4 masks.
+     */
     ipv4Masks: string[] = [];
 
+    /**
+     * IPv6 masks.
+     */
     ipv6Masks: string[] = [];
 
     /**
@@ -34,8 +40,14 @@ class NetmasksCollection {
  * It accepts client names (not ClientIDs), IP addresses, or CIDR ranges.
  */
 export class ClientModifier extends BaseValuesModifier {
+    /**
+     * Permitted netmasks.
+     */
     private readonly permittedNetmasks: NetmasksCollection | undefined;
 
+    /**
+     * Restricted netmasks.
+     */
     private readonly restrictedNetmasks: NetmasksCollection | undefined;
 
     /**
