@@ -1,10 +1,10 @@
 import {
-    describe,
-    it,
-    expect,
-    vi,
-    afterEach,
     afterAll,
+    afterEach,
+    describe,
+    expect,
+    it,
+    vi,
 } from 'vitest';
 
 import { DomainModifier } from '../../src/modifiers/domain-modifier';

@@ -1,10 +1,11 @@
-import { type ILookupTable } from './lookup-table';
-import { type RuleStorage } from '../../filterlist/rule-storage-new';
-import { type Request } from '../../request';
-import { DomainModifier } from '../../modifiers/domain-modifier';
-import { type NetworkRule } from '../../rules/network-rule';
 import { type NetworkRuleParts } from '../../filterlist/rule-parts';
+import { type RuleStorage } from '../../filterlist/rule-storage-new';
+import { DomainModifier } from '../../modifiers/domain-modifier';
+import { type Request } from '../../request';
+import { type NetworkRule } from '../../rules/network-rule';
 import { CachedFastHash } from '../cached-fast-hash';
+
+import { type ILookupTable } from './lookup-table';
 
 /**
  * Domain lookup table.

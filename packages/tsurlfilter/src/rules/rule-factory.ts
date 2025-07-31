@@ -1,13 +1,14 @@
 import { type AnyRule, NetworkRuleType, RuleCategory } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
 
-import { CosmeticRule } from './cosmetic-rule';
-import { NetworkRule } from './network-rule';
-import { RULE_INDEX_NONE, type IRule } from './rule';
-import { HostRule } from './host-rule';
-import { logger } from '../utils/logger';
 import { getErrorMessage } from '../common/error';
+import { logger } from '../utils/logger';
+
 import { createAllowlistRuleNode } from './allowlist';
+import { CosmeticRule } from './cosmetic-rule';
+import { HostRule } from './host-rule';
+import { NetworkRule } from './network-rule';
+import { type IRule, RULE_INDEX_NONE } from './rule';
 
 /**
  * Rule builder class.

@@ -1,6 +1,7 @@
-import { cleanUrlParamByRegExp } from '../utils/url';
-import { type IAdvancedModifier } from './advanced-modifier';
 import { SimpleRegex } from '../rules/simple-regex';
+import { cleanUrlParamByRegExp } from '../utils/url';
+
+import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
  * Query parameters filtering modifier class.

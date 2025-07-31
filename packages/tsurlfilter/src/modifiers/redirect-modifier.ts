@@ -1,4 +1,5 @@
 import { isRedirectResourceCompatibleWithAdg } from '@adguard/scriptlets/validators';
+
 import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
@@ -35,7 +36,7 @@ export class RedirectModifier implements IAdvancedModifier {
      *
      * @returns The redirect title.
      */
-    getValue(): string {
+    public getValue(): string {
         return this.redirectTitle;
     }
 

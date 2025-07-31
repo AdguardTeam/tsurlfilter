@@ -23,12 +23,12 @@ export class NetworkRuleWithNode implements IRule {
     }
 
     /** @inheritdoc */
-    getIndex(): number {
+    public getIndex(): number {
         return this.rule.getIndex();
     }
 
     /** @inheritdoc */
-    getFilterListId(): number {
+    public getFilterListId(): number {
         return this.rule.getFilterListId();
     }
 }

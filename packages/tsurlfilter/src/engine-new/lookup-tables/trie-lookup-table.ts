@@ -1,10 +1,11 @@
+import { type NetworkRuleParts } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage-new';
 import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
-import { TrieNode } from '../../utils/trie';
-import { type ILookupTable } from './lookup-table';
 import { SimpleRegex } from '../../rules/simple-regex';
-import { type NetworkRuleParts } from '../../filterlist/rule-parts';
+import { TrieNode } from '../../utils/trie';
+
+import { type ILookupTable } from './lookup-table';
 
 /**
  * Look up table with underlying prefix tree.

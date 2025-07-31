@@ -1,4 +1,5 @@
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
+
 import { type CosmeticContentResult } from './cosmetic-content-result';
 
 /**
@@ -33,7 +34,7 @@ export class CosmeticHtmlResult implements CosmeticContentResult {
      *
      * @param rule Rule to process.
      */
-    append(rule: CosmeticRule): void {
+    public append(rule: CosmeticRule): void {
         if (rule.isGeneric()) {
             this.generic.push(rule);
         } else {
@@ -46,7 +47,7 @@ export class CosmeticHtmlResult implements CosmeticContentResult {
      *
      * @returns Array of collected rules.
      */
-    getRules(): CosmeticRule[] {
+    public getRules(): CosmeticRule[] {
         return [...this.generic, ...this.specific];
     }
 }

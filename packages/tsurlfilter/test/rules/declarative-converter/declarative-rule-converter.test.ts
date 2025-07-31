@@ -1,8 +1,8 @@
 import {
-    describe,
-    it,
-    expect,
     beforeAll,
+    describe,
+    expect,
+    it,
 } from 'vitest';
 
 import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';

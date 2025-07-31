@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { FilterListPreprocessor } from '../../../src';
+import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
 import { Filter } from '../../../src/rules/declarative-converter';
 
 describe('Filter', () => {

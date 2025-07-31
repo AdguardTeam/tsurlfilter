@@ -1,4 +1,5 @@
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
+
 import { type CosmeticContentResult } from './cosmetic-content-result';
 
 /**
@@ -49,7 +50,7 @@ export class CosmeticStylesResult implements CosmeticContentResult {
      *
      * @param rule Cosmetic rule.
      */
-    append(rule: CosmeticRule): void {
+    public append(rule: CosmeticRule): void {
         if (rule.isGeneric()) {
             if (rule.isExtendedCss()) {
                 this.genericExtCss.push(rule);

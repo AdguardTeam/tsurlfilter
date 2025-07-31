@@ -1,10 +1,20 @@
-import { describe, it, expect } from 'vitest';
-import { HostRuleParser, type HostRule as HostRuleNode } from '@adguard/agtree';
+import { type HostRule as HostRuleNode, HostRuleParser } from '@adguard/agtree';
 import { isString } from 'lodash-es';
+import { describe, expect, it } from 'vitest';
 
 import { HostRule as HostRuleOriginal } from '../../src/rules/host-rule';
 
+/**
+ * Host rule class.
+ */
 class HostRule extends HostRuleOriginal {
+    /**
+     * HostRule constructor.
+     *
+     * @param rule Rule.
+     * @param filterListId Filter list id.
+     * @param ruleIndex Rule index.
+     */
     constructor(rule: string | HostRuleNode, filterListId: number, ruleIndex?: number) {
         let node: HostRuleNode;
 

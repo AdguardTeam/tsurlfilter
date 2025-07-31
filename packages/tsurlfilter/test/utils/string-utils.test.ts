@@ -1,16 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import {
+    fastHash,
+    fastHash31,
+    findNextNonWhitespace,
+    findNextWhitespace,
+    findPrevNonWhitespace,
+    hasUnquotedSubstring,
+    hasWhitespace,
+    replaceAll,
     splitByDelimiterWithEscapeCharacter,
     startsAtIndexWith,
-    hasUnquotedSubstring,
-    fastHash,
-    replaceAll,
-    fastHash31,
-    hasWhitespace,
-    findNextNonWhitespace,
-    findPrevNonWhitespace,
-    findNextWhitespace,
 } from '../../src/utils/string-utils';
 
 describe('splitByDelimiterWithEscapeCharacter', () => {

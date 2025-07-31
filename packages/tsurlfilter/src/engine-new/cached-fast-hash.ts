@@ -1,4 +1,5 @@
 import { LRUCache } from 'lru-cache';
+
 import { fastHash } from '../utils/string-utils';
 
 /**
@@ -32,7 +33,7 @@ export class CachedFastHash {
      *
      * @returns Cached hash value.
      */
-    static get(hostname: string): number {
+    public static get(hostname: string): number {
         const cached = this.cache.get(hostname);
         if (cached !== undefined) {
             return cached;
@@ -46,7 +47,7 @@ export class CachedFastHash {
     /**
      * Clears the cache, useful for testing or resetting state.
      */
-    static clear(): void {
+    public static clear(): void {
         this.cache.clear();
     }
 }

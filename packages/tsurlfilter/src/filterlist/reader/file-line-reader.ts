@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
-import { type ILineReader } from './line-reader';
 import { BufferLineReader } from './buffer-line-reader';
+import { type ILineReader } from './line-reader';
 
 /**
  * FileLineReader is a class responsible for reading file contents line by line.

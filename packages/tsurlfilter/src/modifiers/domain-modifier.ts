@@ -1,11 +1,11 @@
-import { getPublicSuffix } from 'tldts';
 import { type DomainList } from '@adguard/agtree';
 import { defaultParserOptions, DomainListParser } from '@adguard/agtree/parser';
+import { getPublicSuffix } from 'tldts';
 
-import { logger } from '../utils/logger';
-import { SimpleRegex } from '../rules/simple-regex';
-import { isString, unescapeChar } from '../utils/string-utils';
 import { WILDCARD } from '../common/constants';
+import { SimpleRegex } from '../rules/simple-regex';
+import { logger } from '../utils/logger';
+import { isString, unescapeChar } from '../utils/string-utils';
 
 /**
  * Comma separator.

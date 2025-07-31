@@ -1,13 +1,14 @@
-import { type RuleStorage } from '../filterlist/rule-storage-new';
-import { NetworkRule } from '../rules/network-rule';
-import { HostRule } from '../rules/host-rule';
-import { fastHash } from '../utils/string-utils';
-import { NetworkEngine } from './network-engine';
-import { Request } from '../request';
-import { DnsResult } from './dns-result';
-import { ScannerType } from '../filterlist/scanner-new/scanner-type';
-import { RequestType } from '../request-type';
 import { type NetworkRuleParts } from '../filterlist/rule-parts';
+import { type RuleStorage } from '../filterlist/rule-storage-new';
+import { ScannerType } from '../filterlist/scanner-new/scanner-type';
+import { Request } from '../request';
+import { RequestType } from '../request-type';
+import { HostRule } from '../rules/host-rule';
+import { NetworkRule } from '../rules/network-rule';
+import { fastHash } from '../utils/string-utils';
+
+import { DnsResult } from './dns-result';
+import { NetworkEngine } from './network-engine';
 
 /**
  * DNSEngine combines host rules and network rules and is supposed to quickly find

@@ -1,15 +1,17 @@
 import { RuleParser } from '@adguard/agtree';
 import { defaultParserOptions } from '@adguard/agtree/parser';
-import { type IRuleList } from './rule-list-new';
-import { RuleStorageScanner } from './scanner-new/rule-storage-scanner';
-import { type IRule } from '../rules/rule-new';
-import { type RuleScanner } from './scanner-new/rule-scanner';
-import { NetworkRule } from '../rules/network-rule';
-import { HostRule } from '../rules/host-rule';
-import { type ScannerType } from './scanner-new/scanner-type';
-import { RuleFactory } from '../rules/rule-factory';
-import { logger } from '../utils/logger';
+
 import { CosmeticRule } from '../rules/cosmetic-rule';
+import { HostRule } from '../rules/host-rule';
+import { NetworkRule } from '../rules/network-rule';
+import { RuleFactory } from '../rules/rule-factory';
+import { type IRule } from '../rules/rule-new';
+import { logger } from '../utils/logger';
+
+import { type IRuleList } from './rule-list-new';
+import { type RuleScanner } from './scanner-new/rule-scanner';
+import { RuleStorageScanner } from './scanner-new/rule-storage-scanner';
+import { type ScannerType } from './scanner-new/scanner-type';
 
 /**
  * RuleStorage is an abstraction that combines several rule lists.

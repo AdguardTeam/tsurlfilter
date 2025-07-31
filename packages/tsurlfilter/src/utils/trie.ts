@@ -35,7 +35,7 @@ export class TrieNode {
      *
      * @param data The data to attach to this TrieNode.
      */
-    attach(data: number): void {
+    public attach(data: number): void {
         if (!this.data) {
             this.data = [];
         }
@@ -75,7 +75,7 @@ export class TrieNode {
      *
      * @returns An array of numbers collected from the trie nodes.
      */
-    traverse(str: string, start: number): number[] {
+    public traverse(str: string, start: number): number[] {
         const result: number[] = [];
 
         // eslint-disable-next-line @typescript-eslint/no-this-alias
