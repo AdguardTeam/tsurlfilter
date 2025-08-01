@@ -345,23 +345,27 @@ Example of usage: [adguard-api-mv3](../examples/adguard-api-mv3)
 
 ## Included filter lists
 
-### Ad Blocking
+### Chromium MV3 filters
 
-#### AdGuard Base filter
+These filter lists are used in Chromium MV3 browsers
+
+#### Ad blocking
+
+##### AdGuard Base filter
 
 EasyList + AdGuard English filter. This filter is necessary for quality ad blocking.
 
 - Filter ID: **2**
 - Path: `<filters-directory>/declarative/ruleset_2/ruleset_2.json`
 
-#### AdGuard Mobile Ads filter
+##### AdGuard Mobile Ads filter
 
 Filter for all known mobile ad networks. Useful for mobile devices.
 
 - Filter ID: **11**
 - Path: `<filters-directory>/declarative/ruleset_11/ruleset_11.json`
 
-#### AdGuard Quick Fixes filter
+##### AdGuard Quick Fixes filter
 
 **IMPORTANT:** This filter is not convertible (excluded from build), but it is still included in the metadata. It should be downloaded from the server on the client and applied dynamically.
 
@@ -369,334 +373,940 @@ Filter to quickly resolve content filtering issues on popular websites without u
 
 - Filter ID: **24**
 
-### Privacy
+#### Privacy
 
-#### AdGuard Tracking Protection filter
+##### AdGuard Tracking Protection filter
 
 The most comprehensive list of various online counters and web analytics tools. Use this filter if you do not want your actions on the Internet to be tracked.
 
 - Filter ID: **3**
 - Path: `<filters-directory>/declarative/ruleset_3/ruleset_3.json`
 
-#### AdGuard URL Tracking filter
+##### AdGuard URL Tracking filter
 
 Filter that enhances privacy by removing tracking parameters from URLs.
 
 - Filter ID: **17**
 - Path: `<filters-directory>/declarative/ruleset_17/ruleset_17.json`
 
-### Social Widgets
+#### Social widgets
 
-#### AdGuard Social Media filter
+##### AdGuard Social Media filter
 
 Filter for social media widgets such as 'Like' and 'Share' buttons and more.
 
 - Filter ID: **4**
 - Path: `<filters-directory>/declarative/ruleset_4/ruleset_4.json`
 
-### Annoyances
+#### Annoyances
 
-#### AdGuard Cookie Notices filter
+##### AdGuard Cookie Notices filter
 
 Blocks cookie notices on web pages.
 
 - Filter ID: **18**
 - Path: `<filters-directory>/declarative/ruleset_18/ruleset_18.json`
 
-#### AdGuard Popups filter
+##### AdGuard Popups filter
 
 Blocks all kinds of pop-ups that are not necessary for websites' operation according to our Filter policy.
 
 - Filter ID: **19**
 - Path: `<filters-directory>/declarative/ruleset_19/ruleset_19.json`
 
-#### AdGuard Mobile App Banners filter
+##### AdGuard Mobile App Banners filter
 
 Blocks irritating banners that promote mobile apps of websites.
 
 - Filter ID: **20**
 - Path: `<filters-directory>/declarative/ruleset_20/ruleset_20.json`
 
-#### AdGuard Other Annoyances filter
+##### AdGuard Other Annoyances filter
 
 Blocks irritating elements on web pages that do not fall under the popular categories of annoyances.
 
 - Filter ID: **21**
 - Path: `<filters-directory>/declarative/ruleset_21/ruleset_21.json`
 
-#### AdGuard Widgets filter
+##### AdGuard Widgets filter
 
 Blocks annoying third-party widgets: online assistants, live support chats, etc.
 
 - Filter ID: **22**
 - Path: `<filters-directory>/declarative/ruleset_22/ruleset_22.json`
 
-### Security
+#### Security
 
-#### Online Malicious URL Blocklist
+##### Online Malicious URL Blocklist
 
 Blocks domains that are known to be used to propagate malware and spyware.
 
 - Filter ID: **208**
 - Path: `<filters-directory>/declarative/ruleset_208/ruleset_208.json`
 
-#### Phishing URL Blocklist
+##### Phishing URL Blocklist
 
 Phishing URL blocklist for uBlock Origin (uBO), AdGuard, Vivaldi, Pi-hole, Hosts file, Dnsmasq, BIND, Unbound, Snort and Suricata.
 
 - Filter ID: **255**
 - Path: `<filters-directory>/declarative/ruleset_255/ruleset_255.json`
 
-#### Scam Blocklist by DurableNapkin
+##### Scam Blocklist by DurableNapkin
 
 List for blocking untrustworthy websites.
 
 - Filter ID: **256**
 - Path: `<filters-directory>/declarative/ruleset_256/ruleset_256.json`
 
-#### uBlock Origin – Badware risks
+##### uBlock Origin – Badware risks
 
 Filter for risky sites, warning users of potential threats.
 
 - Filter ID: **257**
 - Path: `<filters-directory>/declarative/ruleset_257/ruleset_257.json`
 
-### Other
+#### Other
 
-#### AdGuard Experimental filter
+##### AdGuard Experimental filter
 
 Filter designed to test certain hazardous filtering rules before they are added to the basic filters.
 
 - Filter ID: **5**
 - Path: `<filters-directory>/declarative/ruleset_5/ruleset_5.json`
 
-#### Filter unblocking search ads and self-promotion
+##### Filter unblocking search ads and self-promotion
 
 Filter that unblocks search ads in Google, DuckDuckGo, Bing, or Yahoo and self-promotion on websites.
 
 - Filter ID: **10**
 - Path: `<filters-directory>/declarative/ruleset_10/ruleset_10.json`
 
-### Language-specific
+#### Language-specific
 
-#### AdGuard Russian filter
+##### AdGuard Russian filter
 
 Filter that enables ad blocking on websites in Russian language.
 
 - Filter ID: **1**
 - Path: `<filters-directory>/declarative/ruleset_1/ruleset_1.json`
 
-#### AdGuard German filter
+##### AdGuard German filter
 
 EasyList Germany + AdGuard German filter. Filter list that specifically removes ads on websites in German language.
 
 - Filter ID: **6**
 - Path: `<filters-directory>/declarative/ruleset_6/ruleset_6.json`
 
-#### AdGuard Japanese filter
+##### AdGuard Japanese filter
 
 Filter that enables ad blocking on websites in Japanese language.
 
 - Filter ID: **7**
 - Path: `<filters-directory>/declarative/ruleset_7/ruleset_7.json`
 
-#### AdGuard Dutch filter
+##### AdGuard Dutch filter
 
 EasyList Dutch + AdGuard Dutch filter. Filter list that specifically removes ads on websites in Dutch language.
 
 - Filter ID: **8**
 - Path: `<filters-directory>/declarative/ruleset_8/ruleset_8.json`
 
-#### AdGuard Spanish/Portuguese filter
+##### AdGuard Spanish/Portuguese filter
 
 Filter list that specifically removes ads on websites in Spanish, Portuguese, and Brazilian Portuguese languages.
 
 - Filter ID: **9**
 - Path: `<filters-directory>/declarative/ruleset_9/ruleset_9.json`
 
-#### AdGuard Turkish filter
+##### AdGuard Turkish filter
 
 Filter list that specifically removes ads on websites in Turkish language.
 
 - Filter ID: **13**
 - Path: `<filters-directory>/declarative/ruleset_13/ruleset_13.json`
 
-#### AdGuard French filter
+##### AdGuard French filter
 
 Liste FR + AdGuard French filter. Filter list that specifically removes ads on websites in French language.
 
 - Filter ID: **16**
 - Path: `<filters-directory>/declarative/ruleset_16/ruleset_16.json`
 
-#### AdGuard Ukrainian filter
+##### AdGuard Ukrainian filter
 
 Filter that enables ad blocking on websites in Ukrainian language.
 
 - Filter ID: **23**
 - Path: `<filters-directory>/declarative/ruleset_23/ruleset_23.json`
 
-#### Bulgarian list
+##### Bulgarian list
 
 Additional filter list for websites in Bulgarian.
 
 - Filter ID: **103**
 - Path: `<filters-directory>/declarative/ruleset_103/ruleset_103.json`
 
-#### EasyList Czech and Slovak
+##### EasyList Czech and Slovak
 
 Additional filter list for websites in Czech and Slovak.
 
 - Filter ID: **105**
 - Path: `<filters-directory>/declarative/ruleset_105/ruleset_105.json`
 
-#### EasyList Hebrew
+##### EasyList Hebrew
 
 Additional filter list for websites in Hebrew.
 
 - Filter ID: **108**
 - Path: `<filters-directory>/declarative/ruleset_108/ruleset_108.json`
 
-#### EasyList Italy
+##### EasyList Italy
 
 Additional filter list for websites in Italian.
 
 - Filter ID: **109**
 - Path: `<filters-directory>/declarative/ruleset_109/ruleset_109.json`
 
-#### EasyList Lithuania
+##### EasyList Lithuania
 
 Additional filter list for websites in Lithuanian.
 
 - Filter ID: **110**
 - Path: `<filters-directory>/declarative/ruleset_110/ruleset_110.json`
 
-#### Latvian List
+##### Latvian List
 
 Additional filter list for websites in Latvian.
 
 - Filter ID: **111**
 - Path: `<filters-directory>/declarative/ruleset_111/ruleset_111.json`
 
-#### Liste AR
+##### Liste AR
 
 Additional filter list for websites in Arabic.
 
 - Filter ID: **112**
 - Path: `<filters-directory>/declarative/ruleset_112/ruleset_112.json`
 
-#### AdBlockID
+##### AdBlockID
 
 Additional filter list for websites in Indonesian.
 
 - Filter ID: **120**
 - Path: `<filters-directory>/declarative/ruleset_120/ruleset_120.json`
 
-#### EasyList Thailand
+##### EasyList Thailand
 
 Filter that blocks ads on Thai sites.
 
 - Filter ID: **202**
 - Path: `<filters-directory>/declarative/ruleset_202/ruleset_202.json`
 
-#### Hungarian filter
+##### Hungarian filter
 
 Hufilter. Filter list that specifically removes ads on websites in the Hungarian language.
 
 - Filter ID: **203**
 - Path: `<filters-directory>/declarative/ruleset_203/ruleset_203.json`
 
-#### ABPVN List
+##### ABPVN List
 
 Vietnamese adblock filter list.
 
 - Filter ID: **214**
 - Path: `<filters-directory>/declarative/ruleset_214/ruleset_214.json`
 
-#### Official Polish filters for AdBlock, uBlock Origin & AdGuard
+##### Official Polish filters for AdBlock, uBlock Origin & AdGuard
 
 Additional filter list for websites in Polish.
 
 - Filter ID: **216**
 - Path: `<filters-directory>/declarative/ruleset_216/ruleset_216.json`
 
-#### Polish GDPR-Cookies Filters
+##### Polish GDPR-Cookies Filters
 
 Polish filter list for cookies blocking.
 
 - Filter ID: **217**
 - Path: `<filters-directory>/declarative/ruleset_217/ruleset_217.json`
 
-#### Estonian List
+##### Estonian List
 
 Filter for ad blocking on Estonian sites.
 
 - Filter ID: **218**
 - Path: `<filters-directory>/declarative/ruleset_218/ruleset_218.json`
 
-#### AdGuard Chinese filter
+##### AdGuard Chinese filter
 
 EasyList China + AdGuard Chinese filter. Filter list that specifically removes ads on websites in Chinese language.
 
 - Filter ID: **224**
 - Path: `<filters-directory>/declarative/ruleset_224/ruleset_224.json`
 
-#### List-KR
+##### List-KR
 
 Filter that removes ads and various scripts from websites with Korean content. Combined and augmented with AdGuard-specific rules for enhanced filtering. This filter is expected to be used alongside with AdGuard Base filter.
 
 - Filter ID: **227**
 - Path: `<filters-directory>/declarative/ruleset_227/ruleset_227.json`
 
-#### Adblock List for Finland
+##### Adblock List for Finland
 
 Finnish ad blocking filter list.
 
 - Filter ID: **233**
 - Path: `<filters-directory>/declarative/ruleset_233/ruleset_233.json`
 
-#### Persian Blocker
+##### Persian Blocker
 
 Filter list for blocking ads and trackers on websites in Persian.
 
 - Filter ID: **235**
 - Path: `<filters-directory>/declarative/ruleset_235/ruleset_235.json`
 
-#### Polish Anti Adblock Filters
+##### Polish Anti Adblock Filters
 
 Official Polish filters against Adblock alerts.
 
 - Filter ID: **238**
 - Path: `<filters-directory>/declarative/ruleset_238/ruleset_238.json`
 
-#### Frellwit's Swedish Filter
+##### Frellwit's Swedish Filter
 
 Filter that aims to remove regional Swedish ads, tracking, social media, annoyances, sponsored articles etc.
 
 - Filter ID: **243**
 - Path: `<filters-directory>/declarative/ruleset_243/ruleset_243.json`
 
-#### Dandelion Sprout's Nordic Filters
+##### Dandelion Sprout's Nordic Filters
 
 This list covers websites for Norway, Denmark, Iceland, Danish territories, and the Sami indigenous population.
 
 - Filter ID: **249**
 - Path: `<filters-directory>/declarative/ruleset_249/ruleset_249.json`
 
-#### Dandelion Sprout's Serbo-Croatian List
+##### Dandelion Sprout's Serbo-Croatian List
 
 A filter list for websites in Serbian, Montenegrin, Croatian, and Bosnian.
 
 - Filter ID: **252**
 - Path: `<filters-directory>/declarative/ruleset_252/ruleset_252.json`
 
-#### IndianList
+##### IndianList
 
 Additional filter list for websites in Hindi, Tamil and other Dravidian and Indic languages.
 
 - Filter ID: **253**
 - Path: `<filters-directory>/declarative/ruleset_253/ruleset_253.json`
 
-#### Macedonian adBlock Filters
+##### Macedonian adBlock Filters
+
+Blocks ads and trackers on various Macedonian websites.
+
+- Filter ID: **254**
+- Path: `<filters-directory>/declarative/ruleset_254/ruleset_254.json`
+
+### Opera filters
+
+These filter lists are used in Opera browser
+
+#### Ad blocking
+
+##### AdGuard Base filter
+
+EasyList + AdGuard English filter. This filter is necessary for quality ad blocking.
+
+- Filter ID: **2**
+- Path: `<filters-directory>/declarative/ruleset_2/ruleset_2.json`
+
+##### AdGuard Mobile Ads filter
+
+Filter for all known mobile ad networks. Useful for mobile devices.
+
+- Filter ID: **11**
+- Path: `<filters-directory>/declarative/ruleset_11/ruleset_11.json`
+
+##### EasyList
+
+EasyList is the primary subscription that removes adverts from web pages in English. Already included in AdGuard Base filter.
+
+- Filter ID: **101**
+- Path: `<filters-directory>/declarative/ruleset_101/ruleset_101.json`
+
+#### Privacy
+
+##### AdGuard Tracking Protection filter
+
+The most comprehensive list of various online counters and web analytics tools. Use this filter if you do not want your actions on the Internet to be tracked.
+
+- Filter ID: **3**
+- Path: `<filters-directory>/declarative/ruleset_3/ruleset_3.json`
+
+##### AdGuard URL Tracking filter
+
+Filter that enhances privacy by removing tracking parameters from URLs.
+
+- Filter ID: **17**
+- Path: `<filters-directory>/declarative/ruleset_17/ruleset_17.json`
+
+##### EasyPrivacy
+
+Privacy protection supplement for EasyList.
+
+- Filter ID: **118**
+- Path: `<filters-directory>/declarative/ruleset_118/ruleset_118.json`
+
+##### Peter Lowe's Blocklist
+
+Filter that blocks ads, trackers, and other nasty things.
+
+- Filter ID: **204**
+- Path: `<filters-directory>/declarative/ruleset_204/ruleset_204.json`
+
+##### Fanboy's Anti-Facebook List
+
+Warning, it will break Facebook-based comments on some websites and may also break some Facebook apps or games.
+
+- Filter ID: **225**
+- Path: `<filters-directory>/declarative/ruleset_225/ruleset_225.json`
+
+##### Legitimate URL Shortener
+
+Automatically removes unnecessary '$' and '&' values from URLs, making them easier to copy from the URL bar and pasting elsewhere as links. Already included in Dandelion Sprout's Annoyances List.
+
+- Filter ID: **251**
+- Path: `<filters-directory>/declarative/ruleset_251/ruleset_251.json`
+
+##### uBlock Origin – Block Outsider Intrusion into LAN
+
+Prevents public Internet sites from digging into your LAN files.
+
+- Filter ID: **258**
+- Path: `<filters-directory>/declarative/ruleset_258/ruleset_258.json`
+
+#### Social widgets
+
+##### AdGuard Social Media filter
+
+Filter for social media widgets such as 'Like' and 'Share' buttons and more.
+
+- Filter ID: **4**
+- Path: `<filters-directory>/declarative/ruleset_4/ruleset_4.json`
+
+##### Fanboy's Social Blocking List
+
+Hides and blocks social content, social widgets, social scripts and social icons. Already included in Fanboy's Annoyances list.
+
+- Filter ID: **123**
+- Path: `<filters-directory>/declarative/ruleset_123/ruleset_123.json`
+
+#### Annoyances
+
+##### AdGuard Annoyances filter
+
+Blocks irritating elements on web pages including cookie notices, third-party widgets and in-page pop-ups. Contains the following AdGuard filters: Cookie Notices, Popups, Mobile App Banners, Other Annoyances and Widgets.
+
+- Filter ID: **14**
+- Path: `<filters-directory>/declarative/ruleset_14/ruleset_14.json`
+
+##### AdGuard Cookie Notices filter
+
+Blocks cookie notices on web pages.
+
+- Filter ID: **18**
+- Path: `<filters-directory>/declarative/ruleset_18/ruleset_18.json`
+
+##### AdGuard Popups filter
+
+Blocks all kinds of pop-ups that are not necessary for websites' operation according to our Filter policy.
+
+- Filter ID: **19**
+- Path: `<filters-directory>/declarative/ruleset_19/ruleset_19.json`
+
+##### AdGuard Mobile App Banners filter
+
+Blocks irritating banners that promote mobile apps of websites.
+
+- Filter ID: **20**
+- Path: `<filters-directory>/declarative/ruleset_20/ruleset_20.json`
+
+##### AdGuard Other Annoyances filter
+
+Blocks irritating elements on web pages that do not fall under the popular categories of annoyances.
+
+- Filter ID: **21**
+- Path: `<filters-directory>/declarative/ruleset_21/ruleset_21.json`
+
+##### AdGuard Widgets filter
+
+Blocks annoying third-party widgets: online assistants, live support chats, etc.
+
+- Filter ID: **22**
+- Path: `<filters-directory>/declarative/ruleset_22/ruleset_22.json`
+
+##### Fanboy's Annoyances
+
+Removes in-page pop-ups and other annoyances. Includes Fanboy's Social Blocking & EasyList Cookie Lists.
+
+- Filter ID: **122**
+- Path: `<filters-directory>/declarative/ruleset_122/ruleset_122.json`
+
+##### Adblock Warning Removal List
+
+Removes anti-adblock warnings and other obtrusive messages.
+
+- Filter ID: **207**
+- Path: `<filters-directory>/declarative/ruleset_207/ruleset_207.json`
+
+##### EasyList Cookie List
+
+Removes cookie and privacy warnings. Already included in Fanboy's Annoyances list.
+
+- Filter ID: **241**
+- Path: `<filters-directory>/declarative/ruleset_241/ruleset_241.json`
+
+##### Dandelion Sprout's Annoyances List
+
+This list is made in the style of AdGuard's and Fanboy's annoyances lists. It combines many of Dandelion Sprout's proudest and most frequently maintained international lists, as a curated compilation for simplicity's sake.
+
+- Filter ID: **250**
+- Path: `<filters-directory>/declarative/ruleset_250/ruleset_250.json`
+
+#### Security
+
+##### Online Malicious URL Blocklist
+
+Blocks domains that are known to be used to propagate malware and spyware.
+
+- Filter ID: **208**
+- Path: `<filters-directory>/declarative/ruleset_208/ruleset_208.json`
+
+##### Phishing URL Blocklist
+
+Phishing URL blocklist for uBlock Origin (uBO), AdGuard, Vivaldi, Pi-hole, Hosts file, Dnsmasq, BIND, Unbound, Snort and Suricata.
+
+- Filter ID: **255**
+- Path: `<filters-directory>/declarative/ruleset_255/ruleset_255.json`
+
+##### Scam Blocklist by DurableNapkin
+
+List for blocking untrustworthy websites.
+
+- Filter ID: **256**
+- Path: `<filters-directory>/declarative/ruleset_256/ruleset_256.json`
+
+##### uBlock Origin – Badware risks
+
+Filter for risky sites, warning users of potential threats.
+
+- Filter ID: **257**
+- Path: `<filters-directory>/declarative/ruleset_257/ruleset_257.json`
+
+#### Other
+
+##### AdGuard Experimental filter
+
+Filter designed to test certain hazardous filtering rules before they are added to the basic filters.
+
+- Filter ID: **5**
+- Path: `<filters-directory>/declarative/ruleset_5/ruleset_5.json`
+
+##### Filter unblocking search ads and self-promotion
+
+Filter that unblocks search ads in Google, DuckDuckGo, Bing, or Yahoo and self-promotion on websites.
+
+- Filter ID: **10**
+- Path: `<filters-directory>/declarative/ruleset_10/ruleset_10.json`
+
+##### AdGuard DNS filter
+
+Filter composed of several other filters (AdGuard Base filter, Social Media filter, Tracking Protection filter, Mobile Ads filter, EasyList and EasyPrivacy) and simplified specifically to be better compatible with DNS-level ad blocking.
+
+- Filter ID: **15**
+- Path: `<filters-directory>/declarative/ruleset_15/ruleset_15.json`
+
+##### Fanboy's Anti-thirdparty Fonts
+
+A filter that blocks third-party fonts. It may break the look and design of some websites.
+
+- Filter ID: **239**
+- Path: `<filters-directory>/declarative/ruleset_239/ruleset_239.json`
+
+#### Language-specific
+
+##### AdGuard Russian filter
+
+Filter that enables ad blocking on websites in Russian language.
+
+- Filter ID: **1**
+- Path: `<filters-directory>/declarative/ruleset_1/ruleset_1.json`
+
+##### AdGuard German filter
+
+EasyList Germany + AdGuard German filter. Filter list that specifically removes ads on websites in German language.
+
+- Filter ID: **6**
+- Path: `<filters-directory>/declarative/ruleset_6/ruleset_6.json`
+
+##### AdGuard Japanese filter
+
+Filter that enables ad blocking on websites in Japanese language.
+
+- Filter ID: **7**
+- Path: `<filters-directory>/declarative/ruleset_7/ruleset_7.json`
+
+##### AdGuard Dutch filter
+
+EasyList Dutch + AdGuard Dutch filter. Filter list that specifically removes ads on websites in Dutch language.
+
+- Filter ID: **8**
+- Path: `<filters-directory>/declarative/ruleset_8/ruleset_8.json`
+
+##### AdGuard Spanish/Portuguese filter
+
+Filter list that specifically removes ads on websites in Spanish, Portuguese, and Brazilian Portuguese languages.
+
+- Filter ID: **9**
+- Path: `<filters-directory>/declarative/ruleset_9/ruleset_9.json`
+
+##### AdGuard Turkish filter
+
+Filter list that specifically removes ads on websites in Turkish language.
+
+- Filter ID: **13**
+- Path: `<filters-directory>/declarative/ruleset_13/ruleset_13.json`
+
+##### AdGuard French filter
+
+Liste FR + AdGuard French filter. Filter list that specifically removes ads on websites in French language.
+
+- Filter ID: **16**
+- Path: `<filters-directory>/declarative/ruleset_16/ruleset_16.json`
+
+##### AdGuard Ukrainian filter
+
+Filter that enables ad blocking on websites in Ukrainian language.
+
+- Filter ID: **23**
+- Path: `<filters-directory>/declarative/ruleset_23/ruleset_23.json`
+
+##### ABPindo
+
+Additional filter list for websites in Indonesian.
+
+- Filter ID: **102**
+- Path: `<filters-directory>/declarative/ruleset_102/ruleset_102.json`
+
+##### Bulgarian list
+
+Additional filter list for websites in Bulgarian.
+
+- Filter ID: **103**
+- Path: `<filters-directory>/declarative/ruleset_103/ruleset_103.json`
+
+##### EasyList China
+
+Additional filter list for websites in Chinese. Already included in AdGuard Chinese filter.
+
+- Filter ID: **104**
+- Path: `<filters-directory>/declarative/ruleset_104/ruleset_104.json`
+
+##### EasyList Czech and Slovak
+
+Additional filter list for websites in Czech and Slovak.
+
+- Filter ID: **105**
+- Path: `<filters-directory>/declarative/ruleset_105/ruleset_105.json`
+
+##### EasyList Dutch
+
+Additional filter list for websites in Dutch. Already included in AdGuard Dutch filter.
+
+- Filter ID: **106**
+- Path: `<filters-directory>/declarative/ruleset_106/ruleset_106.json`
+
+##### EasyList Germany
+
+Additional filter list for websites in German. Already included in AdGuard German filter.
+
+- Filter ID: **107**
+- Path: `<filters-directory>/declarative/ruleset_107/ruleset_107.json`
+
+##### EasyList Hebrew
+
+Additional filter list for websites in Hebrew.
+
+- Filter ID: **108**
+- Path: `<filters-directory>/declarative/ruleset_108/ruleset_108.json`
+
+##### EasyList Italy
+
+Additional filter list for websites in Italian.
+
+- Filter ID: **109**
+- Path: `<filters-directory>/declarative/ruleset_109/ruleset_109.json`
+
+##### EasyList Lithuania
+
+Additional filter list for websites in Lithuanian.
+
+- Filter ID: **110**
+- Path: `<filters-directory>/declarative/ruleset_110/ruleset_110.json`
+
+##### Latvian List
+
+Additional filter list for websites in Latvian.
+
+- Filter ID: **111**
+- Path: `<filters-directory>/declarative/ruleset_111/ruleset_111.json`
+
+##### Liste AR
+
+Additional filter list for websites in Arabic.
+
+- Filter ID: **112**
+- Path: `<filters-directory>/declarative/ruleset_112/ruleset_112.json`
+
+##### Liste FR
+
+Additional filter list for websites in French. Already included in AdGuard French filter.
+
+- Filter ID: **113**
+- Path: `<filters-directory>/declarative/ruleset_113/ruleset_113.json`
+
+##### ROList
+
+Additional filter list for websites in Romanian.
+
+- Filter ID: **114**
+- Path: `<filters-directory>/declarative/ruleset_114/ruleset_114.json`
+
+##### Icelandic ABP List
+
+Additional filter list for websites in Icelandic.
+
+- Filter ID: **119**
+- Path: `<filters-directory>/declarative/ruleset_119/ruleset_119.json`
+
+##### AdBlockID
+
+Additional filter list for websites in Indonesian.
+
+- Filter ID: **120**
+- Path: `<filters-directory>/declarative/ruleset_120/ruleset_120.json`
+
+##### Greek AdBlock Filter
+
+Additional filter list for websites in Greek.
+
+- Filter ID: **121**
+- Path: `<filters-directory>/declarative/ruleset_121/ruleset_121.json`
+
+##### EasyList Portuguese
+
+Additional filter list for websites in Spanish and Portuguese.
+
+- Filter ID: **124**
+- Path: `<filters-directory>/declarative/ruleset_124/ruleset_124.json`
+
+##### EasyList Thailand
+
+Filter that blocks ads on Thai sites.
+
+- Filter ID: **202**
+- Path: `<filters-directory>/declarative/ruleset_202/ruleset_202.json`
+
+##### Hungarian filter
+
+Hufilter. Filter list that specifically removes ads on websites in the Hungarian language.
+
+- Filter ID: **203**
+- Path: `<filters-directory>/declarative/ruleset_203/ruleset_203.json`
+
+##### Xfiles
+
+Italian adblock filter list.
+
+- Filter ID: **206**
+- Path: `<filters-directory>/declarative/ruleset_206/ruleset_206.json`
+
+##### RU AdList: Counters
+
+RU AdList supplement for trackers blocking.
+
+- Filter ID: **212**
+- Path: `<filters-directory>/declarative/ruleset_212/ruleset_212.json`
+
+##### ABPVN List
+
+Vietnamese adblock filter list.
+
+- Filter ID: **214**
+- Path: `<filters-directory>/declarative/ruleset_214/ruleset_214.json`
+
+##### Official Polish filters for AdBlock, uBlock Origin & AdGuard
+
+Additional filter list for websites in Polish.
+
+- Filter ID: **216**
+- Path: `<filters-directory>/declarative/ruleset_216/ruleset_216.json`
+
+##### Polish GDPR-Cookies Filters
+
+Polish filter list for cookies blocking.
+
+- Filter ID: **217**
+- Path: `<filters-directory>/declarative/ruleset_217/ruleset_217.json`
+
+##### Estonian List
+
+Filter for ad blocking on Estonian sites.
+
+- Filter ID: **218**
+- Path: `<filters-directory>/declarative/ruleset_218/ruleset_218.json`
+
+##### CJX's Annoyances List
+
+Supplement for EasyList China+EasyList and EasyPrivacy.
+
+- Filter ID: **220**
+- Path: `<filters-directory>/declarative/ruleset_220/ruleset_220.json`
+
+##### Polish Social Filters
+
+Polish filter list for social widgets, popups, etc.
+
+- Filter ID: **221**
+- Path: `<filters-directory>/declarative/ruleset_221/ruleset_221.json`
+
+##### AdGuard Chinese filter
+
+EasyList China + AdGuard Chinese filter. Filter list that specifically removes ads on websites in Chinese language.
+
+- Filter ID: **224**
+- Path: `<filters-directory>/declarative/ruleset_224/ruleset_224.json`
+
+##### List-KR
+
+Filter that removes ads and various scripts from websites with Korean content. Combined and augmented with AdGuard-specific rules for enhanced filtering. This filter is expected to be used alongside with AdGuard Base filter.
+
+- Filter ID: **227**
+- Path: `<filters-directory>/declarative/ruleset_227/ruleset_227.json`
+
+##### xinggsf
+
+Blocks ads on the Chinese video platforms (MangoTV, DouYu and others).
+
+- Filter ID: **228**
+- Path: `<filters-directory>/declarative/ruleset_228/ruleset_228.json`
+
+##### EasyList Spanish
+
+Additional filter list for websites in Spanish.
+
+- Filter ID: **231**
+- Path: `<filters-directory>/declarative/ruleset_231/ruleset_231.json`
+
+##### KAD - Anti-Scam
+
+Filter that protects against various types of scams in the Polish network, such as mass text messaging, fake online stores, etc.
+
+- Filter ID: **232**
+- Path: `<filters-directory>/declarative/ruleset_232/ruleset_232.json`
+
+##### Adblock List for Finland
+
+Finnish ad blocking filter list.
+
+- Filter ID: **233**
+- Path: `<filters-directory>/declarative/ruleset_233/ruleset_233.json`
+
+##### ROLIST2
+
+This is a complementary list for ROList with annoyances that are not necessarily banners. It is a very aggressive list and not recommended for beginners.
+
+- Filter ID: **234**
+- Path: `<filters-directory>/declarative/ruleset_234/ruleset_234.json`
+
+##### Persian Blocker
+
+Filter list for blocking ads and trackers on websites in Persian.
+
+- Filter ID: **235**
+- Path: `<filters-directory>/declarative/ruleset_235/ruleset_235.json`
+
+##### road-block light
+
+Romanian ad blocking filter subscription.
+
+- Filter ID: **236**
+- Path: `<filters-directory>/declarative/ruleset_236/ruleset_236.json`
+
+##### Polish Annoyances Filters
+
+Filter list that hides and blocks pop-ups, widgets, newsletters, push notifications, arrows, tagged internal links that are off-topic, and other irritating elements. Polish GDPR-Cookies Filters is already in it.
+
+- Filter ID: **237**
+- Path: `<filters-directory>/declarative/ruleset_237/ruleset_237.json`
+
+##### Polish Anti Adblock Filters
+
+Official Polish filters against Adblock alerts.
+
+- Filter ID: **238**
+- Path: `<filters-directory>/declarative/ruleset_238/ruleset_238.json`
+
+##### Frellwit's Swedish Filter
+
+Filter that aims to remove regional Swedish ads, tracking, social media, annoyances, sponsored articles etc.
+
+- Filter ID: **243**
+- Path: `<filters-directory>/declarative/ruleset_243/ruleset_243.json`
+
+##### YousList
+
+Filter that blocks ads on Korean sites.
+
+- Filter ID: **244**
+- Path: `<filters-directory>/declarative/ruleset_244/ruleset_244.json`
+
+##### EasyList Polish
+
+Additional filter list for websites in Polish.
+
+- Filter ID: **246**
+- Path: `<filters-directory>/declarative/ruleset_246/ruleset_246.json`
+
+##### Polish Anti-Annoying Special Supplement
+
+Filters that block and hide RSS elements and remnants of hidden newsletters combined with social elements on Polish websites.
+
+- Filter ID: **247**
+- Path: `<filters-directory>/declarative/ruleset_247/ruleset_247.json`
+
+##### Dandelion Sprout's Nordic Filters
+
+This list covers websites for Norway, Denmark, Iceland, Danish territories, and the Sami indigenous population.
+
+- Filter ID: **249**
+- Path: `<filters-directory>/declarative/ruleset_249/ruleset_249.json`
+
+##### Dandelion Sprout's Serbo-Croatian List
+
+A filter list for websites in Serbian, Montenegrin, Croatian, and Bosnian.
+
+- Filter ID: **252**
+- Path: `<filters-directory>/declarative/ruleset_252/ruleset_252.json`
+
+##### IndianList
+
+Additional filter list for websites in Hindi, Tamil and other Dravidian and Indic languages.
+
+- Filter ID: **253**
+- Path: `<filters-directory>/declarative/ruleset_253/ruleset_253.json`
+
+##### Macedonian adBlock Filters
 
 Blocks ads and trackers on various Macedonian websites.
 

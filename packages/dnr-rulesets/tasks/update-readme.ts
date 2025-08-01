@@ -1,16 +1,56 @@
 import fs from 'fs';
 
-import { QUICK_FIXES_FILTER_ID, README_PATH } from '../common/constants';
+import { BrowserFilters, QUICK_FIXES_FILTER_ID, README_PATH } from '../common/constants';
 import { downloadMetadata, type Metadata } from '../common/metadata';
+
+/**
+ * Metadata section for browser.
+ */
+interface MetadataSection {
+    /**
+     * Title of the section.
+     */
+    title: string;
+
+    /**
+     * Description of the section.
+     */
+    description: string;
+
+    /**
+     * Section metadata.
+     */
+    metadata: Metadata;
+}
+
+/**
+ * Downloads metadata for all browsers and returns an array of metadata sections.
+ *
+ * @returns Array of metadata for each browser (including "Common").
+ */
+async function getMetadataSections(): Promise<MetadataSection[]> {
+    return [
+        {
+            title: 'Chromium MV3 filters',
+            description: 'These filter lists are used in Chromium MV3 browsers.',
+            metadata: await downloadMetadata(undefined, BrowserFilters.ChromiumMV3),
+        },
+        {
+            title: 'Opera filters',
+            description: 'These filter lists are used in Opera browser.',
+            metadata: await downloadMetadata(undefined, BrowserFilters.Opera),
+        },
+    ];
+}
 
 /**
  * Creates actual rulesets list and update existed README.md.
  *
- * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`.
+ * @param sections Array of metadata sections to include in the README.
  *
  * TODO (v.zhelvis): generate docs in CI pipeline.
  */
-async function updateReadme(metadata: Metadata): Promise<void> {
+async function updateReadme(sections: MetadataSection[]): Promise<void> {
     const readme = await fs.promises.readFile(README_PATH, { encoding: 'utf-8' });
 
     const title = '## Included filter lists\n';
@@ -21,25 +61,30 @@ async function updateReadme(metadata: Metadata): Promise<void> {
 
     let desc = '';
 
-    for (const group of metadata.groups) {
-        desc += `### ${group.groupName}\n\n`;
+    for (const section of sections) {
+        desc += `### ${section.title}\n\n`;
+        desc += `${section.description}\n\n`;
 
-        const groupFilters = metadata.filters.filter((f) => f.groupId === group.groupId);
+        for (const group of section.metadata.groups) {
+            desc += `#### ${group.groupName}\n\n`;
 
-        for (const filter of groupFilters) {
-            desc += `#### ${filter.name}\n\n`;
-            if (filter.filterId === QUICK_FIXES_FILTER_ID) {
+            const groupFilters = section.metadata.filters.filter((f) => f.groupId === group.groupId);
+
+            for (const filter of groupFilters) {
+                desc += `##### ${filter.name}\n\n`;
+                if (filter.filterId === QUICK_FIXES_FILTER_ID) {
+                    // eslint-disable-next-line max-len
+                    desc += `**IMPORTANT:** This filter is not convertible (excluded from build), but it is still included in the metadata. It should be downloaded from the server on the client and applied dynamically.\n\n`;
+                }
+                desc += `${filter.description}\n\n`;
+                desc += `- Filter ID: **${filter.filterId}**\n`;
+                if (filter.filterId === QUICK_FIXES_FILTER_ID) {
+                    desc += `\n`;
+                    continue;
+                }
                 // eslint-disable-next-line max-len
-                desc += `**IMPORTANT:** This filter is not convertible (excluded from build), but it is still included in the metadata. It should be downloaded from the server on the client and applied dynamically.\n\n`;
+                desc += `- Path: \`<filters-directory>/declarative/ruleset_${filter.filterId}/ruleset_${filter.filterId}.json\`\n\n`;
             }
-            desc += `${filter.description}\n\n`;
-            desc += `- Filter ID: **${filter.filterId}**\n`;
-            if (filter.filterId === QUICK_FIXES_FILTER_ID) {
-                desc += `\n`;
-                continue;
-            }
-            // eslint-disable-next-line max-len
-            desc += `- Path: \`<filters-directory>/declarative/ruleset_${filter.filterId}/ruleset_${filter.filterId}.json\`\n\n`;
         }
     }
 
@@ -48,6 +93,6 @@ async function updateReadme(metadata: Metadata): Promise<void> {
     await fs.promises.writeFile(README_PATH, newReadme);
 }
 
-downloadMetadata()
+getMetadataSections()
     .then(updateReadme)
     .catch(console.error);
