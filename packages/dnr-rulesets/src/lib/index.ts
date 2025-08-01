@@ -1,3 +1,4 @@
+export { BrowserFilters } from '../../common/constants';
 export { AssetsLoader } from './assets/loader';
 export { RulesetsInjector } from './manifest/injector';
 export {

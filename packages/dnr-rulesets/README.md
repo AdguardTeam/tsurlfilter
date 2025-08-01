@@ -2,7 +2,9 @@
 
 Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.
 
-The list of available filters can be found by `filters` in [the metadata](https://filters.adtidy.org/extension/chromium-mv3/filters.json).
+The list of available filters can be found by `filters` in the metadata of:
+- [Chromium MV3 filters](https://filters.adtidy.org/extension/chromium-mv3/filters.json),
+- [Opera filters](https://filters.adtidy.org/extension/opera/filters.json).
 
 - [Dnr-rulesets](#dnr-rulesets)
     - [Basic usage](#basic-usage)
@@ -114,6 +116,7 @@ dnr-rulesets load <path-to-output>
 **Options for `load` command:**
 
 - `-l, --latest-filters` - download latest text filters instead of DNR rulesets (default: false)
+- `-b, --browser <browser>` - specify browser to load filters for (default: "chromium-mv3"). Available browsers: `chromium-mv3`, `opera`.
 
 #### `manifest` command
 
@@ -157,6 +160,7 @@ dnr-rulesets watch <path-to-manifest> <path-to-resources> [options]
 - `-r, --ruleset-prefix <prefix>` - prefix for filters ids (default: "ruleset_")
 - `-m, --filters-match <match>` - filters files match glob pattern (default: "filter_+([0-9]).txt")
 - `-l, --latest-filters` - download latest text filters on first start before watch (default: false)
+- `-b, --browser <browser>` - specify browser to download latest filters for (default: "chromium-mv3"). See `--latest-filters` option. Available browsers: `chromium-mv3`, `opera`.
 - `-d, --debug` - enable extended logging during conversion (default: false)
 - `-j, --prettify-json` - prettify JSON output (default: true)
 
@@ -207,10 +211,27 @@ You can also integrate functions for downloading and updating the manifest into 
 1. Load DNR rulesets.
 
     ```ts
-    import { AssetsLoader } from '@adguard/dnr-rulesets';
+    import { AssetsLoader, BrowserFilters } from '@adguard/dnr-rulesets';
 
     const loader = new AssetsLoader();
-    await loader.load('<path-to-output>');
+    await loader.load('<path-to-output>', options);
+    ```
+
+    where `options` is an object with the following properties:
+
+    ```ts
+    export type AssetsLoaderOptions = {
+        /**
+         * Whether to download latest text filters instead of DNR rulesets.
+        */
+        latestFilters?: boolean;
+
+        /**
+         * For which browser load assets for.
+        * Default value: `BrowserFilters.ChromiumMV3`.
+        */
+        browser?: BrowserFilters;
+    };
     ```
 
 2. Patch extension manifest.
@@ -220,9 +241,9 @@ You can also integrate functions for downloading and updating the manifest into 
 
     const patcher = new ManifestPatcher();
 
-    patcher.path(
+    patcher.patch(
         '<path-to-manifest>',
-        '<path-to-output>',
+        '<path-to-filters>',
         {
             // Optional: specify filter IDs to include
             ids: ['2', '3'],
@@ -243,16 +264,22 @@ You can also integrate functions for downloading and updating the manifest into 
 ```bash
 /
 |
-|declarative
-|   |
-|   |ruleset_<id>
-|       |
-|       |ruleset_<id>.json // DNR ruleset converted from filter_<id>.txt
-|       |metadata.json // Ruleset metadata with source mapping
-|       |lazy_Metadata.json // Additional ruleset metadata for lazy loading
-|
-|filter_<id>.txt // Original filter rules with specified id
+|filters
+    |
+    |<browser>
+        |
+        |declarative
+        |   |
+        |   |ruleset_<id>
+        |       |
+        |       |ruleset_<id>.json // DNR ruleset converted from filter_<id>.txt
+        |       |metadata.json // Ruleset metadata with source mapping
+        |       |lazy_Metadata.json // Additional ruleset metadata for lazy loading
+        |
+        |filter_<id>.txt // Original filter rules with specified id
 ```
+
+Where `<browser>` is the browser for which the rulesets are built, e.g. `chromium-mv3` or `opera`.
 
 ### Utils
 

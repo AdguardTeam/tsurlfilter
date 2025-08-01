@@ -1,7 +1,8 @@
 import path from 'node:path';
 
-import { program } from 'commander';
+import { Option, program } from 'commander';
 
+import { BrowserFilters } from '../common/constants';
 import { version } from '../package.json';
 import { AssetsLoader, ManifestPatcher, type PatchManifestOptions } from './lib';
 import { AssetsLoaderOptions } from './lib/assets/loader';
@@ -57,6 +58,10 @@ type WatchOptionsCli = WatchOptions & {
     outputPathForRulesets: string;
 };
 
+const browserOption = new Option('-b, --browser <browser>', 'Browser for which to load rulesets')
+    .default(BrowserFilters.ChromiumMV3)
+    .choices(Object.values(BrowserFilters));
+
 program
     .name('dnr-rulesets CLI')
     .version(version);
@@ -82,6 +87,7 @@ program
     .description('Downloads rulesets for MV3 extension')
     .argument('<path-to-output>', 'rulesets download path')
     .option('-l, --latest-filters', 'download latest text filters instead of DNR rulesets', false)
+    .addOption(browserOption)
     .action(async (dest: string, options?: AssetsLoaderOptions) => {
         const loader = new AssetsLoader();
 
@@ -135,6 +141,7 @@ program
     .option('-r, --ruleset-prefix <prefix>', 'prefix for filters ids', 'ruleset_')
     .option('-m, --filters-match <match>', 'filters files match glob pattern', ManifestPatcher.DEFAULT_FILTERS_MATCH_GLOB)
     .option('-l, --latest-filters', 'download latest text filters on first start before watch', false)
+    .addOption(browserOption)
     .option('-d, --debug', 'enable extended logging during conversion or not', false)
     .option('-j, --prettify-json <bool>', 'Prettify JSON output for human readability', false)
     /* eslint-enable max-len */
