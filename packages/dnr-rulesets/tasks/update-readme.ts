@@ -23,24 +23,32 @@ interface MetadataSection {
     metadata: Metadata;
 }
 
+const SECTION_TEXTS: Record<BrowserFilters, Omit<MetadataSection, 'metadata'>> = {
+    [BrowserFilters.ChromiumMV3]: {
+        title: 'Chromium MV3 filters',
+        description: 'These filter lists are used in Chromium MV3 browsers.',
+    },
+    [BrowserFilters.Opera]: {
+        title: 'Opera filters',
+        description: 'These filter lists are used in Opera browser.',
+    },
+};
+
 /**
  * Downloads metadata for all browsers and returns an array of metadata sections.
  *
  * @returns Array of metadata for each browser (including "Common").
  */
 async function getMetadataSections(): Promise<MetadataSection[]> {
-    return [
-        {
-            title: 'Chromium MV3 filters',
-            description: 'These filter lists are used in Chromium MV3 browsers.',
-            metadata: await downloadMetadata(undefined, BrowserFilters.ChromiumMV3),
-        },
-        {
-            title: 'Opera filters',
-            description: 'These filter lists are used in Opera browser.',
-            metadata: await downloadMetadata(undefined, BrowserFilters.Opera),
-        },
-    ];
+    return Promise.all(
+        Object.values(BrowserFilters).map(async (browser) => {
+            const metadata = await downloadMetadata(undefined, browser);
+            return {
+                ...SECTION_TEXTS[browser],
+                metadata,
+            };
+        }),
+    );
 }
 
 /**
