@@ -5,7 +5,8 @@ import axios from 'axios';
 import { ensureDir } from 'fs-extra';
 
 import {
-    FILTERS_DIR,
+    BrowserFilters,
+    FILTERS_BROWSER_STUB,
     FILTERS_URL,
     LOCAL_I18N_METADATA_FILE_NAME,
     LOCAL_METADATA_FILE_NAME,
@@ -26,12 +27,14 @@ type FilterDTO = {
  * Gets {@link FilterDTO} array from filter metadata.
  * AdGuard Quick Fixes filter is excluded from downloading and conversion.
  *
- * @param metadata Filters metadata downloaded from `FILTERS_METADATA_URL`.
+ * @param metadata Filters metadata downloaded for given `browser`.
+ * @param browser Browser to get URL of filters for. Defaults to `BrowserFilters.ChromiumMV3`.
  *
  * @returns Array of filter data.
  */
 const getUrlsOfFiltersResources = async (
     metadata: Metadata,
+    browser: BrowserFilters = BrowserFilters.ChromiumMV3,
 ): Promise<FilterDTO[]> => {
     return metadata.filters
         // We exclude this filter from downloading and conversion,
@@ -40,7 +43,7 @@ const getUrlsOfFiltersResources = async (
         .filter(({ filterId }) => filterId !== QUICK_FIXES_FILTER_ID)
         .map(({ filterId }) => ({
             id: filterId,
-            url: `${FILTERS_URL}/${filterId}.txt`,
+            url: `${FILTERS_URL.replace(FILTERS_BROWSER_STUB, browser)}/${filterId}.txt`,
             file: `filter_${filterId}.txt`,
         }));
 };
@@ -66,12 +69,14 @@ const downloadFilter = async (filter: FilterDTO, filtersDir: string) => {
 /**
  * Downloads filters from the server and saves them to the specified directory.
  *
- * @param filtersDir Directory to save filters to. Defaults to `FILTERS_DIR`.
+ * @param filtersDir Directory to save filters to.
+ * @param browser Browser to download filters for. Defaults to `BrowserFilters.ChromiumMV3`.
  *
  * @returns Promise that resolves the filters metadata.
  */
 export const startDownload = async (
-    filtersDir: string = FILTERS_DIR,
+    filtersDir: string,
+    browser: BrowserFilters = BrowserFilters.ChromiumMV3,
 ): Promise<void> => {
     console.log(`Starting filters download to ${filtersDir}...`);
 
@@ -80,13 +85,13 @@ export const startDownload = async (
     console.log(`Downloading filters metadata files...`);
 
     const metadataPathToSave = path.join(filtersDir, LOCAL_METADATA_FILE_NAME);
-    const metadata = await downloadMetadata(metadataPathToSave);
+    const metadata = await downloadMetadata(metadataPathToSave, browser);
 
     const i18nMetadataPathToSave = path.join(filtersDir, LOCAL_I18N_METADATA_FILE_NAME);
-    await downloadI18nMetadata(i18nMetadataPathToSave);
+    await downloadI18nMetadata(i18nMetadataPathToSave, browser);
 
     console.log(`Downloading filters resources to ${filtersDir}...`);
 
-    const filters = await getUrlsOfFiltersResources(metadata);
+    const filters = await getUrlsOfFiltersResources(metadata, browser);
     await Promise.all(filters.map((filter) => downloadFilter(filter, filtersDir)));
 };

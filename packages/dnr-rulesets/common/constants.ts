@@ -1,7 +1,13 @@
-const FILTERS_SERVER_URL = 'https://filters.adtidy.org/extension/chromium-mv3';
+export enum BrowserFilters {
+    ChromiumMV3 = 'chromium-mv3',
+    Opera = 'opera',
+}
+
+export const FILTERS_BROWSER_STUB = '%browser';
+const FILTERS_SERVER_URL = `https://filters.adtidy.org/extension/${FILTERS_BROWSER_STUB}`;
 
 export const BASE_DIR = './dist';
-export const COMMON_FILTERS_DIR = `${BASE_DIR}/filters`;
+export const COMMON_FILTERS_DIR = `${BASE_DIR}/filters/${FILTERS_BROWSER_STUB}`;
 export const FILTERS_DIR = COMMON_FILTERS_DIR;
 export const DEST_RULESETS_DIR = `${COMMON_FILTERS_DIR}/declarative`;
 export const RESOURCES_DIR = '/web-accessible-resources/redirects';
