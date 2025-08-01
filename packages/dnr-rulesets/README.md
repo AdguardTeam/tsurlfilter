@@ -347,7 +347,7 @@ Example of usage: [adguard-api-mv3](../examples/adguard-api-mv3)
 
 ### Chromium MV3 filters
 
-These filter lists are used in Chromium MV3 browsers
+These filter lists are used in Chromium MV3 browsers.
 
 #### Ad blocking
 
@@ -709,7 +709,7 @@ Blocks ads and trackers on various Macedonian websites.
 
 ### Opera filters
 
-These filter lists are used in Opera browser
+These filter lists are used in Opera browser.
 
 #### Ad blocking
 
