@@ -262,21 +262,19 @@ You can also integrate functions for downloading and updating the manifest into 
 ### Output structure
 
 ```bash
-/
-|
-|filters
+/<dnr-rulesets-dir>/dist
     |
-    |<browser>
+    |filters
         |
-        |declarative
-        |   |
-        |   |ruleset_<id>
-        |       |
-        |       |ruleset_<id>.json // DNR ruleset converted from filter_<id>.txt
-        |       |metadata.json // Ruleset metadata with source mapping
-        |       |lazy_Metadata.json // Additional ruleset metadata for lazy loading
-        |
-        |filter_<id>.txt // Original filter rules with specified id
+        |<browser>
+            |
+            |declarative
+            |   |
+            |   |ruleset_<id>
+            |       |
+            |       |ruleset_<id>.json # DNR ruleset converted from filter_<id>.txt
+            |
+            |filter_i18n.json # i18n metadata (name, description, etc.) for filters
 ```
 
 Where `<browser>` is the browser for which the rulesets are built, e.g. `chromium-mv3` or `opera`.

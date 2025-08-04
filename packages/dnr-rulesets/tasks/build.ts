@@ -109,6 +109,7 @@ const build = async (browser: BrowserFilters): Promise<void> => {
  * Builds all filters for all browsers.
  */
 const buildAll = async (): Promise<void> => {
+    // This tasks can be done in parallel, but we do it sequentially to keep logging order
     await build(BrowserFilters.ChromiumMV3);
     await build(BrowserFilters.Opera);
     await createVersionTxt();
