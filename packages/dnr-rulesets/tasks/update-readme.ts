@@ -8,6 +8,11 @@ import { downloadMetadata, type Metadata } from '../common/metadata';
  */
 interface MetadataSection {
     /**
+     * Browser for which the metadata is applicable.
+     */
+    browser: BrowserFilters;
+
+    /**
      * Title of the section.
      */
     title: string;
@@ -23,7 +28,7 @@ interface MetadataSection {
     metadata: Metadata;
 }
 
-const SECTION_TEXTS: Record<BrowserFilters, Omit<MetadataSection, 'metadata'>> = {
+const SECTION_TEXTS: Record<BrowserFilters, Pick<MetadataSection, 'title' | 'description'>> = {
     [BrowserFilters.ChromiumMV3]: {
         title: 'Chromium MV3 filters',
         description: 'These filter lists are used in Chromium MV3 browsers.',
@@ -45,6 +50,7 @@ async function getMetadataSections(): Promise<MetadataSection[]> {
             const metadata = await downloadMetadata(undefined, browser);
             return {
                 ...SECTION_TEXTS[browser],
+                browser,
                 metadata,
             };
         }),
@@ -91,7 +97,7 @@ async function updateReadme(sections: MetadataSection[]): Promise<void> {
                     continue;
                 }
                 // eslint-disable-next-line max-len
-                desc += `- Path: \`<filters-directory>/declarative/ruleset_${filter.filterId}/ruleset_${filter.filterId}.json\`\n\n`;
+                desc += `- Path: \`dist/filters/${section.browser}/declarative/ruleset_${filter.filterId}/ruleset_${filter.filterId}.json\`\n\n`;
             }
         }
     }
