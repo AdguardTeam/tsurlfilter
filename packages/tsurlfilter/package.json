@@ -137,6 +137,7 @@
         "zod-validation-error": "^3.4.0"
     },
     "devDependencies": {
+        "tsurlfilter-v3": "npm:@adguard/tsurlfilter@^3.3.3",
         "@adguard/eslint-plugin-logger-context": "^1.0.1",
         "@rollup/plugin-alias": "catalog:",
         "@rollup/plugin-commonjs": "catalog:",
