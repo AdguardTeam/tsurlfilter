@@ -107,8 +107,8 @@ branch-overrides:
 
                   BRANCH="${bamboo.planRepository.branchName}"
 
-                  # Deploy package from "stable/dnr-rulesets-3.0" branch only
-                  if [ $BRANCH != "stable/dnr-rulesets-3.0" ]
+                  # Deploy package from "stable/dnr-rulesets-3.0" or "stable/dnr-rulesets-3.2" branches only.
+                  if [ $BRANCH != "stable/dnr-rulesets-3.0" ] && [ $BRANCH != "stable/dnr-rulesets-3.2" ];
                   then
                     echo "deployment is not supported on branch ${BRANCH}, skipping"
                     exit 0;
