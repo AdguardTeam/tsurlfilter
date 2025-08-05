@@ -355,13 +355,17 @@ You can also integrate functions for downloading and updating the manifest into 
 ### Output structure
 
 ```bash
-/<dnr-rulesets-dir>/dist
+/
     |
     |filters
         |
         |<browser>
             |
             |declarative
+            |   |
+            |   |ruleset_0
+            |   |   |
+            |   |   |ruleset_0.json # This is special ruleset which stores metadata about all other rulesets
             |   |
             |   |ruleset_<id>
             |       |
