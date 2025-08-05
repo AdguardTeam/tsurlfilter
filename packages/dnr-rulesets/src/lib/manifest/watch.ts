@@ -145,7 +145,7 @@ export class Watcher {
             let browser = options?.browser;
             if (!browser) {
                 browser = BrowserFilters.ChromiumMV3;
-                console.warn(`Browser option is not specified, using default browser: ${browser}`);
+                console.log(`Browser option is not specified, using default browser: ${browser}`);
             }
 
             await startDownload(filtersPath, browser);

@@ -37,7 +37,12 @@ export class AssetsLoader {
      */
     public async load(dest: string, options?: AssetsLoaderOptions): Promise<void> {
         const to = path.resolve(process.cwd(), dest);
-        const browser = options?.browser ?? BrowserFilters.ChromiumMV3;
+
+        let browser = options?.browser;
+        if (!browser) {
+            browser = BrowserFilters.ChromiumMV3;
+            console.warn(`Browser option is not specified, using default browser: ${browser}`);
+        }
 
         if (options?.latestFilters) {
             await startDownload(to, browser);
