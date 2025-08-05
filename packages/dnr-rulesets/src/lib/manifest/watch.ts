@@ -141,7 +141,15 @@ export class Watcher {
 
         if (options?.latestFilters) {
             console.log(`Downloading filters from the server to ${filtersPath}...`);
-            await startDownload(filtersPath, options?.browser ?? BrowserFilters.ChromiumMV3);
+
+            let browser = options?.browser;
+            if (!browser) {
+                browser = BrowserFilters.ChromiumMV3;
+                console.warn(`Browser option is not specified, using default browser: ${browser}`);
+            }
+
+            await startDownload(filtersPath, browser);
+
             console.log(`Downloading filters from the server to ${filtersPath} is done.`);
         }
 
