@@ -15,7 +15,9 @@ stages:
         - DoNothing
 
 # Since auto-build is being run only for a stable branches now:
-# 'stable/dnr-rulesets-3.0'
+# 'stable/dnr-rulesets-3.0' for release v5.1,
+# 'stable/dnr-rulesets-3.2' for beta v5.2.
+# TODO: Fix this comment when we will release v5.2.
 # we should skip the build stage for other branches.
 DoNothing:
   key: NOTHING
@@ -69,13 +71,14 @@ notifications: &notifications
           name: Build webhook
           url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
-# Run plan only for 'stable/dnr-rulesets-3.0' branch.
+# Run plan only for 'stable/dnr-rulesets-3.0' (release v5.1) OR
+# 'stable/dnr-rulesets-3.2' (beta v5.2) branches.
 # Override is needed to skip the build stage for other branches,
 # because even if branches are not supposed to be run for PRs (due to 'create: manually' above),
 # build was triggered by 'cron' anyway.
 branch-overrides:
-  -
-    stable/dnr-rulesets-3.0:
+  # TODO: Remove this override when we will release v5.2.
+  - '^stable\/dnr-rulesets-3\.[02]$':
       stages:
         - Build:
             - Build
