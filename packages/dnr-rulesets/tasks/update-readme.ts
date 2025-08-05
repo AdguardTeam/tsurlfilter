@@ -62,7 +62,7 @@ async function getMetadataSections(): Promise<MetadataSection[]> {
  *
  * @param sections Array of metadata sections to include in the README.
  *
- * TODO (v.zhelvis): generate docs in CI pipeline.
+ * TODO: generate docs in CI pipeline.
  */
 async function updateReadme(sections: MetadataSection[]): Promise<void> {
     const readme = await fs.promises.readFile(README_PATH, { encoding: 'utf-8' });
