@@ -120,15 +120,16 @@ branch-overrides:
                   # Install dependencies
                   pnpm install
 
-                  # Test dnr rulesets
-                  npx lerna run test --scope @adguard/dnr-rulesets
-
-                  # Set date to package version
+                  # Set date to package version before build to ensure that
+                  # the build number is always incremented.
                   npx lerna run increment:auto-deploy --scope @adguard/dnr-rulesets
 
-                  # Build dnr rulesets
-                  # since updated tgz file should not be committed
+                  # Build dnr rulesets before tests to correct import
+                  # dependencies from sibling packages.
                   npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
+
+                  # Test dnr rulesets
+                  npx lerna run test --scope @adguard/dnr-rulesets
 
                   # Move to package folder
                   cd packages/dnr-rulesets
