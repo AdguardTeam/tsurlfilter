@@ -14,3 +14,9 @@ environment-permissions:
         permissions:
           - view
           - deploy
+  - npmjs 3.2.X:
+      - groups:
+          - extensions-developers
+        permissions:
+          - view
+          - deploy
