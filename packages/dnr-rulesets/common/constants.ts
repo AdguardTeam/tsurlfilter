@@ -2,8 +2,8 @@
  * List of browsers for which DNR rulesets are built.
  */
 export enum BrowserFilters {
-    ChromiumMV3 = 'chromium-mv3',
-    Opera = 'opera',
+    ChromiumMv3 = 'chromium-mv3',
+    OperaMv3 = 'opera',
 }
 
 /**

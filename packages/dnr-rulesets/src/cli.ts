@@ -59,7 +59,7 @@ type WatchOptionsCli = WatchOptions & {
 };
 
 const browserOption = new Option('-b, --browser <browser>', 'Browser for which to load rulesets')
-    .default(BrowserFilters.ChromiumMV3)
+    .default(BrowserFilters.ChromiumMv3)
     .choices(Object.values(BrowserFilters));
 
 program

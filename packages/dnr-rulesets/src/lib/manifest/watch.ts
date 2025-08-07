@@ -144,7 +144,7 @@ export class Watcher {
 
             let browser = options?.browser;
             if (!browser) {
-                browser = BrowserFilters.ChromiumMV3;
+                browser = BrowserFilters.ChromiumMv3;
                 console.log(`Browser option is not specified, using default browser: ${browser}`);
             }
 

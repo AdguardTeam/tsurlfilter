@@ -34,7 +34,7 @@ type FilterDTO = {
  */
 const getUrlsOfFiltersResources = async (
     metadata: Metadata,
-    browser: BrowserFilters = BrowserFilters.ChromiumMV3,
+    browser: BrowserFilters = BrowserFilters.ChromiumMv3,
 ): Promise<FilterDTO[]> => {
     return metadata.filters
         // We exclude this filter from downloading and conversion,
@@ -76,7 +76,7 @@ const downloadFilter = async (filter: FilterDTO, filtersDir: string) => {
  */
 export const startDownload = async (
     filtersDir: string,
-    browser: BrowserFilters = BrowserFilters.ChromiumMV3,
+    browser: BrowserFilters = BrowserFilters.ChromiumMv3,
 ): Promise<void> => {
     console.log(`Starting filters download to ${filtersDir}...`);
 
