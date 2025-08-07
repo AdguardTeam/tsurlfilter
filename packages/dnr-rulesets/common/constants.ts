@@ -3,7 +3,7 @@
  */
 export enum BrowserFilters {
     ChromiumMv3 = 'chromium-mv3',
-    OperaMv3 = 'opera',
+    OperaMv3 = 'opera-mv3',
 }
 
 /**
