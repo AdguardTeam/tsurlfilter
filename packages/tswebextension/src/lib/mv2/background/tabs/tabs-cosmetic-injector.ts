@@ -136,8 +136,8 @@ export class TabsCosmeticInjector {
                 return;
             }
 
-            CosmeticApi.applyJsByTabAndFrame(tabId, frameId);
-            CosmeticApi.applyCssByTabAndFrame(tabId, frameId);
+            CosmeticApi.applyJs(tabId, frameId);
+            CosmeticApi.applyCss(tabId, frameId);
 
             const frameContext = this.tabsApi.getFrameContext(tabId, frameId);
             if (!frameContext?.cosmeticResult) {

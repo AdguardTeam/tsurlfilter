@@ -82,3 +82,4 @@ export type { MessageHandler } from '../../common/app';
 export type { LocalScriptFunctionData } from './services/local-script-rules-service';
 
 export { TSWEBEXTENSION_VERSION, EXTENDED_CSS_VERSION } from '../../common/configuration';
+export { isUserScriptsApiSupported } from './user-scripts-api';

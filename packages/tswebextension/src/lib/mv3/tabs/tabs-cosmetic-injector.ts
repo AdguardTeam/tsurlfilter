@@ -108,14 +108,14 @@ export class TabsCosmeticInjector {
             }
 
             const tasks = [
-                CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+                CosmeticApi.applyCss(tabId, frameId),
             ];
 
             if (UserScriptsApi.isSupported) {
-                tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
+                tasks.push(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi(tabId, frameId));
             } else {
-                tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));
-                tasks.push(CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId));
+                tasks.push(CosmeticApi.applyJsFuncs(tabId, frameId));
+                tasks.push(CosmeticApi.applyScriptlets(tabId, frameId));
             }
 
             // TODO: Can be moved to CosmeticApi.injectCosmetic() like in MV2

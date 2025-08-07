@@ -424,10 +424,10 @@ export class WebRequestApi {
         }
 
         if (UserScriptsApi.isSupported) {
-            CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId);
+            CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi(tabId, frameId);
         } else {
-            CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
-            CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
+            CosmeticApi.applyJsFuncs(tabId, frameId);
+            CosmeticApi.applyScriptlets(tabId, frameId);
         }
     }
 
@@ -778,14 +778,14 @@ export class WebRequestApi {
         }
 
         const tasks = [
-            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+            CosmeticApi.applyCss(tabId, frameId),
         ];
 
         if (UserScriptsApi.isSupported) {
-            tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
+            tasks.push(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi(tabId, frameId));
         } else {
-            tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));
-            tasks.push(CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId));
+            tasks.push(CosmeticApi.applyJsFuncs(tabId, frameId));
+            tasks.push(CosmeticApi.applyScriptlets(tabId, frameId));
         }
 
         // Note: this is an async function, but we will not await it because

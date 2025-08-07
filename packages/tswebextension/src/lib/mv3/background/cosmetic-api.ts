@@ -223,7 +223,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    public static async applyJsFuncsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+    public static async applyJsFuncs(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         const scriptTexts = frameContext?.preparedCosmeticResult?.scriptTexts;
@@ -306,7 +306,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 });
             }));
         } catch (e) {
-            logger.info('[tsweb.CosmeticApi.applyJsFuncsByTabAndFrame]: error occurred during injection: ', e);
+            logger.info('[tsweb.CosmeticApi.applyJsFuncs]: error occurred during injection: ', e);
         }
     }
 
@@ -316,7 +316,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    public static async applyScriptletsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+    public static async applyScriptlets(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         if (!frameContext) {
@@ -340,7 +340,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 });
             }));
         } catch (e) {
-            logger.info('[tsweb.CosmeticApi.applyScriptletsByTabAndFrame]: error occurred during injection: ', e);
+            logger.info('[tsweb.CosmeticApi.applyScriptlets]: error occurred during injection: ', e);
         }
     }
 
@@ -368,7 +368,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    public static async applyCssByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+    public static async applyCss(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         const cssText = frameContext?.preparedCosmeticResult?.cssText;
@@ -383,17 +383,18 @@ export class CosmeticApi extends CosmeticApiCommon {
                 frameId,
             });
         } catch (e) {
-            logger.info('[tsweb.CosmeticApi.applyCssByTabAndFrame]: error occurred during injection: ', e, 'with frame context:', frameContext);
+            logger.info('[tsweb.CosmeticApi.applyCss]: error occurred during injection: ', e, 'with frame context:', frameContext);
         }
     }
 
     /**
-     * Injects js functions and scriptlets to specified tab and frame.
+     * Injects JS functions and scriptlets to specified tab and frame via using
+     * UserScripts API.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    public static async applyJsFuncsAndScriptletsByTabAndFrame(
+    public static async applyJsFuncsAndScriptletsViaUserScriptsApi(
         tabId: number,
         frameId: number,
     ): Promise<void> {
@@ -416,7 +417,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 scriptText,
             });
         } catch (e) {
-            logger.info('[tsweb.CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame]: error occurred during injection: ', e);
+            logger.info('[tsweb.CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi]: error occurred during injection: ', e);
         }
     }
 
