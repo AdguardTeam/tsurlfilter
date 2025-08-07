@@ -60,7 +60,7 @@ export type Metadata = {
  */
 export async function downloadMetadata(
     pathToSave?: string,
-    browser: BrowserFilters = BrowserFilters.ChromiumMV3,
+    browser: BrowserFilters = BrowserFilters.ChromiumMv3,
 ): Promise<Metadata> {
     const metadataUrl = FILTERS_METADATA_URL.replace(FILTERS_BROWSER_STUB, browser);
 
@@ -90,7 +90,7 @@ export async function downloadMetadata(
  */
 export async function downloadI18nMetadata(
     pathToSave: string,
-    browser: BrowserFilters = BrowserFilters.ChromiumMV3,
+    browser: BrowserFilters = BrowserFilters.ChromiumMv3,
 ): Promise<unknown> {
     const i18nMetadataUrl = FILTERS_METADATA_I18N_URL.replace(FILTERS_BROWSER_STUB, browser);
 

@@ -57,11 +57,11 @@ interface MetadataSection {
 }
 
 const SECTION_TEXTS: Record<BrowserFilters, Pick<MetadataSection, 'title' | 'description'>> = {
-    [BrowserFilters.ChromiumMV3]: {
+    [BrowserFilters.ChromiumMv3]: {
         title: 'Chromium MV3 filters',
         description: 'These filter lists are used in Chromium MV3 browsers.',
     },
-    [BrowserFilters.Opera]: {
+    [BrowserFilters.OperaMv3]: {
         title: 'Opera filters',
         description: 'These filter lists are used in Opera browser.',
     },

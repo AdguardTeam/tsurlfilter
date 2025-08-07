@@ -40,7 +40,7 @@ export class AssetsLoader {
 
         let browser = options?.browser;
         if (!browser) {
-            browser = BrowserFilters.ChromiumMV3;
+            browser = BrowserFilters.ChromiumMv3;
             console.warn(`Browser option is not specified, using default browser: ${browser}`);
         }
 

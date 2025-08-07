@@ -110,8 +110,8 @@ const build = async (browser: BrowserFilters): Promise<void> => {
  */
 const buildAll = async (): Promise<void> => {
     // This tasks can be done in parallel, but we do it sequentially to keep logging order
-    await build(BrowserFilters.ChromiumMV3);
-    await build(BrowserFilters.Opera);
+    await build(BrowserFilters.ChromiumMv3);
+    await build(BrowserFilters.OperaMv3);
     await createVersionTxt();
 };
 
