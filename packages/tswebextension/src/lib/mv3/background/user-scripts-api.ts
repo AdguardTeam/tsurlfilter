@@ -1,37 +1,8 @@
 import { logger } from '../../common/utils/logger';
+import { isUserScriptsApiSupported } from '../utils/is-user-scripts-api-supported';
 
 import { appContext } from './app-context';
 import { type ExecuteCombinedScriptParams } from './scripting-api';
-
-/**
- * Indicates whether user scripts API is supported in the current browser.
- *
- * Separate function to avoid exporting the whole UserScriptsApi class and
- * export only the necessary functionality.
- *
- * @returns `true` if user scripts API is supported, `false` otherwise.
- */
-export const isUserScriptsApiSupported = (): boolean => {
-    /**
-     * Double calls to API is needed to unsure that Chrome userScripts API
-     * is available and that it has the execute method defined.
-     */
-    try {
-        /**
-         * Just check if the API is available.
-         * If it is not available, this will throw an error.
-         */
-        chrome.userScripts.getScripts();
-
-        /**
-         * If the API is available, check if execute method is defined,
-         * because it is available only from Chrome 135+.
-         */
-        return chrome.userScripts?.execute !== undefined;
-    } catch (e) {
-        return false;
-    }
-};
 
 /**
  * Api for executing user scripts.
@@ -43,10 +14,9 @@ export const isUserScriptsApiSupported = (): boolean => {
  * @see {@link https://developer.chrome.com/docs/extensions/reference/api/userScripts}
  */
 export class UserScriptsApi {
+    // eslint-disable-next-line jsdoc/require-description, jsdoc/require-returns
     /**
-     * Indicates whether user scripts API is supported in the current browser.
-     *
-     * @returns `true` if user scripts API is supported, `false` otherwise.
+     * @see {@link isUserScriptsApiSupported}.
      */
     public static get isSupported(): boolean {
         return isUserScriptsApiSupported();
