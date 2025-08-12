@@ -41,18 +41,18 @@ const setupMocks = (userScriptsAvailable: boolean): void => {
         };
     }
 
-    vi.spyOn(CosmeticApi, 'applyCssByTabAndFrame');
+    vi.spyOn(CosmeticApi, 'applyCss');
     vi.spyOn(CosmeticApi, 'logScriptRules');
     vi.spyOn(ScriptingApi, 'insertCSS');
     // TODO (Slava): add tests for executeScriptText. AG-39122
 
     // These methods will be used if userScripts available.
-    vi.spyOn(CosmeticApi, 'applyJsFuncsAndScriptletsByTabAndFrame');
+    vi.spyOn(CosmeticApi, 'applyJsFuncsAndScriptletsViaUserScriptsApi');
     vi.spyOn(ScriptingApi, 'executeScriptsViaUserScripts');
 
     // These methods will be used if userScripts are not available.
-    vi.spyOn(CosmeticApi, 'applyJsFuncsByTabAndFrame');
-    vi.spyOn(CosmeticApi, 'applyScriptletsByTabAndFrame');
+    vi.spyOn(CosmeticApi, 'applyJsFuncs');
+    vi.spyOn(CosmeticApi, 'applyScriptlets');
     vi.spyOn(ScriptingApi, 'executeScriptFunc');
     vi.spyOn(ScriptingApi, 'executeScriptlet');
 };
@@ -113,16 +113,19 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyCss).toHaveBeenCalledWith(tabId, frameId);
 
             if (userScriptsAvailable) {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-                expect(CosmeticApi.applyJsFuncsByTabAndFrame).not.toBeCalled();
-                expect(CosmeticApi.applyScriptletsByTabAndFrame).not.toBeCalled();
+                expect(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi).toHaveBeenCalledWith(
+                    tabId,
+                    frameId,
+                );
+                expect(CosmeticApi.applyJsFuncs).not.toBeCalled();
+                expect(CosmeticApi.applyScriptlets).not.toBeCalled();
             } else {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame).not.toBeCalled();
-                expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-                expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+                expect(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi).not.toBeCalled();
+                expect(CosmeticApi.applyJsFuncs).toHaveBeenCalledWith(tabId, frameId);
+                expect(CosmeticApi.applyScriptlets).toHaveBeenCalledWith(tabId, frameId);
             }
 
             const expectedLogParams = {
@@ -142,10 +145,10 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
-            expect(CosmeticApi.applyJsFuncsByTabAndFrame).not.toBeCalled();
-            expect(CosmeticApi.applyScriptletsByTabAndFrame).not.toBeCalled();
-            expect(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame).not.toBeCalled();
+            expect(CosmeticApi.applyCss).not.toBeCalled();
+            expect(CosmeticApi.applyJsFuncs).not.toBeCalled();
+            expect(CosmeticApi.applyScriptlets).not.toBeCalled();
+            expect(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi).not.toBeCalled();
 
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
@@ -162,16 +165,19 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyCss).toHaveBeenCalledWith(tabId, frameId);
 
             if (userScriptsAvailable) {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-                expect(CosmeticApi.applyJsFuncsByTabAndFrame).not.toBeCalled();
-                expect(CosmeticApi.applyScriptletsByTabAndFrame).not.toBeCalled();
+                expect(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi).toHaveBeenCalledWith(
+                    tabId,
+                    frameId,
+                );
+                expect(CosmeticApi.applyJsFuncs).not.toBeCalled();
+                expect(CosmeticApi.applyScriptlets).not.toBeCalled();
             } else {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame).not.toBeCalled();
-                expect(CosmeticApi.applyJsFuncsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-                expect(CosmeticApi.applyScriptletsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+                expect(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi).not.toBeCalled();
+                expect(CosmeticApi.applyJsFuncs).toHaveBeenCalledWith(tabId, frameId);
+                expect(CosmeticApi.applyScriptlets).toHaveBeenCalledWith(tabId, frameId);
             }
 
             expect(ScriptingApi.insertCSS).not.toBeCalled();
