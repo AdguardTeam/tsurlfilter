@@ -37,7 +37,7 @@ const entryPoints = {
     'index.mv3': 'src/lib/mv3/background/index.ts',
     'css-hits-counter': 'src/lib/common/content-script/css-hits-counter.ts',
     cli: 'src/cli/index.ts',
-    'mv3-utils': 'src/lib/mv3/utils/get-filter-name.ts',
+    'mv3-utils': 'src/lib/mv3/utils/index.ts',
     'filters-storage': 'src/lib/common/storage/public-filters.ts',
 };
 
