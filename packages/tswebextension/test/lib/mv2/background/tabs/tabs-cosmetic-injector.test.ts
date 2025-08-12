@@ -76,8 +76,8 @@ describe('TabsCosmeticInjector', () => {
 
             await tabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCssByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
-            expect(CosmeticApi.applyJsByTabAndFrame).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyCss).toHaveBeenCalledWith(tabId, frameId);
+            expect(CosmeticApi.applyJs).toHaveBeenCalledWith(tabId, frameId);
 
             const expectedLogParams = {
                 url,
@@ -96,8 +96,8 @@ describe('TabsCosmeticInjector', () => {
 
             await tabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
-            expect(CosmeticApi.applyJsByTabAndFrame).not.toBeCalled();
+            expect(CosmeticApi.applyCss).not.toBeCalled();
+            expect(CosmeticApi.applyJs).not.toBeCalled();
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
 
@@ -111,8 +111,8 @@ describe('TabsCosmeticInjector', () => {
 
             await tabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCssByTabAndFrame).not.toBeCalled();
-            expect(CosmeticApi.applyJsByTabAndFrame).not.toBeCalled();
+            expect(CosmeticApi.applyCss).not.toBeCalled();
+            expect(CosmeticApi.applyJs).not.toBeCalled();
             expect(CosmeticApi.logScriptRules).not.toBeCalled();
         });
     });

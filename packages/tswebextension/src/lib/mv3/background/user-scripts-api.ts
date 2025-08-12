@@ -1,4 +1,5 @@
 import { logger } from '../../common/utils/logger';
+import { isUserScriptsApiSupported } from '../utils/is-user-scripts-api-supported';
 
 import { appContext } from './app-context';
 import { type ExecuteCombinedScriptParams } from './scripting-api';
@@ -13,17 +14,12 @@ import { type ExecuteCombinedScriptParams } from './scripting-api';
  * @see {@link https://developer.chrome.com/docs/extensions/reference/api/userScripts}
  */
 export class UserScriptsApi {
+    // eslint-disable-next-line jsdoc/require-description, jsdoc/require-returns
     /**
-     * Indicates whether user scripts API is supported in the current browser.
-     *
-     * @returns `true` if user scripts API is supported, `false` otherwise.
+     * @see {@link isUserScriptsApiSupported}.
      */
     public static get isSupported(): boolean {
-        try {
-            return chrome.userScripts?.execute !== undefined;
-        } catch (e) {
-            return false;
-        }
+        return isUserScriptsApiSupported();
     }
 
     /**
