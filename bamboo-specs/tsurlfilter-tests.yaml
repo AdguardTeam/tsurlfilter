@@ -261,6 +261,7 @@ Cleanup:
               echo "node_modules directory does not exist, skipping pnpm clean"
             fi
 
+            rm -rf .git
             echo "Size after cleanup:" && du -h | tail -n 1
   requirements: *requirements
 
