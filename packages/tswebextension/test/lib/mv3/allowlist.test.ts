@@ -63,6 +63,11 @@ describe('Allowlist Api', () => {
                 inverted: false,
                 expected: '',
             },
+            {
+                input: [],
+                inverted: true,
+                expected: '@@$document,important',
+            },
         ];
 
         it.each(cases)('should combine $input rules to $expected for MV2', ({ input, inverted, expected }) => {

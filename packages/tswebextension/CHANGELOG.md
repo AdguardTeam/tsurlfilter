@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased <!-- release/browser-extension-v5.3 -->
 
+### Fixed
+
+- Network rules with $important modifier are applied even if protection is disabled [AdguardBrowserExtension#3227].
+- Some requests are blocked in 'Inverted allowlist' mode even though there're no websites added to the Allowlist [AdguardBrowserExtension#3193].
+
+[AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
+[AdguardBrowserExtension#3193]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3193
+
 ### Added
 
 - Export `isUserScriptsApiSupported` function to check if the current browser
@@ -62,10 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Network rules with $important modifier are applied even if protection is disabled [AdGuardBrowserExtension#3227].
 - CLI was not worked since switch to ESM builds.
 
-[AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
 [3.2.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.3
 
 ## [3.2.2] - 2025-06-30

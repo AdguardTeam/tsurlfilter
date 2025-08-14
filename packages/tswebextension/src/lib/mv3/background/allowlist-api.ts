@@ -81,6 +81,13 @@ export class AllowlistApi extends CommonAllowlist {
      * @returns Combined rule in AG format.
      */
     public combineAllowListRulesForDNR(): string {
+        // In inverted allowlist mode with an empty list, we must not block anything anywhere.
+        // To ensure that browser DNR does not block requests, generate a global allowlist
+        // rule that applies to all documents.
+        if (this.inverted && this.domains.length === 0) {
+            return '@@$document,important';
+        }
+
         const allDomains = this.domains.map((domain) => {
             // Map subdomain masks to upper domains records, because masks itself
             // will be ignored by DNR. Transforming masks to upper domains will
