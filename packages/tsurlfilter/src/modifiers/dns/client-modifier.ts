@@ -1,15 +1,22 @@
 // eslint-disable-next-line max-classes-per-file
+import { contains } from 'cidr-tools';
 import isCidr from 'is-cidr';
 import isIp from 'is-ip';
-import { contains } from 'cidr-tools';
+
 import { BaseValuesModifier } from '../values-modifier';
 
 /**
  * Netmasks class.
  */
 class NetmasksCollection {
+    /**
+     * IPv4 masks.
+     */
     ipv4Masks: string[] = [];
 
+    /**
+     * IPv6 masks.
+     */
     ipv6Masks: string[] = [];
 
     /**
@@ -19,7 +26,7 @@ class NetmasksCollection {
      *
      * @returns True if any of the containing masks contains provided value.
      */
-    contains(value: string): boolean {
+    public contains(value: string): boolean {
         if (isIp.v4(value)) {
             return this.ipv4Masks.some((x) => contains(x, value));
         }
@@ -33,8 +40,14 @@ class NetmasksCollection {
  * It accepts client names (not ClientIDs), IP addresses, or CIDR ranges.
  */
 export class ClientModifier extends BaseValuesModifier {
+    /**
+     * Permitted netmasks.
+     */
     private readonly permittedNetmasks: NetmasksCollection | undefined;
 
+    /**
+     * Restricted netmasks.
+     */
     private readonly restrictedNetmasks: NetmasksCollection | undefined;
 
     /**
@@ -85,7 +98,7 @@ export class ClientModifier extends BaseValuesModifier {
      *
      * @returns True if this modifier matches provided params.
      */
-    matchAny(clientName: string | undefined, clientIP: string | undefined): boolean {
+    public matchAny(clientName: string | undefined, clientIP: string | undefined): boolean {
         if (this.restricted) {
             if (clientName && this.restricted.includes(clientName)) {
                 return false;

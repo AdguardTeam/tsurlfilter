@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { DeclarativeFilterConverter } from '../../../src/rules/declarative-converter/filter-converter';
 import {
@@ -1311,6 +1311,34 @@ describe('DeclarativeConverter', () => {
             };
 
             expect(() => checkForUniqueRule(declarativeRules)).not.toThrow();
+        });
+
+        it('blocking document rule and non-convertible exception generichide', async () => {
+            const documentBlockingRule = '||example.org^$document';
+            const generichideRule = '@@||example.org^$generichide';
+
+            const filter = createFilter([
+                documentBlockingRule,
+                generichideRule,
+            ]);
+
+            const { ruleSet, declarativeRulesToCancel } = await converter.convertStaticRuleSet(filter);
+
+            const declarativeRules = await ruleSet.getDeclarativeRules();
+            expect(declarativeRules).toHaveLength(1);
+            expect(declarativeRules[0]).toStrictEqual({
+                id: expect.any(Number),
+                priority: 101,
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    resourceTypes: ['main_frame'],
+                    urlFilter: '||example.org^',
+                },
+            });
+
+            expect(declarativeRulesToCancel).toBeUndefined();
         });
     });
 });

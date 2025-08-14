@@ -1,7 +1,7 @@
 import { type CookieModifier } from '../modifiers/cookie-modifier';
 import { type HttpHeadersItem } from '../modifiers/header-modifier';
 import { type RedirectModifier } from '../modifiers/redirect-modifier';
-import { StealthOptionName, STEALTH_MODE_FILTER_ID } from '../modifiers/stealth-modifier';
+import { STEALTH_MODE_FILTER_ID, StealthOptionName } from '../modifiers/stealth-modifier';
 import { RequestType } from '../request-type';
 import { type NetworkRule, NetworkRuleOption } from '../rules/network-rule';
 import { logger } from '../utils/logger';
@@ -211,7 +211,7 @@ export class MatchingResult {
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
                 // This check needed to split $all rules from $popup rules
-                && (rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
+                && !MatchingResult.isDocumentRule(rule)) {
                 this.popupRule = rule;
                 continue;
             }
@@ -252,7 +252,7 @@ export class MatchingResult {
      *
      * @returns Basic result rule.
      */
-    getBasicResult(): NetworkRule | null {
+    public getBasicResult(): NetworkRule | null {
         let basic = this.basicRule;
 
         // e.g. @@||example.com^$generichide
@@ -305,6 +305,24 @@ export class MatchingResult {
     }
 
     /**
+     * Returns a rule that should block a document request.
+     *
+     * @returns Document blocking rule if any, null otherwise.
+     */
+    public getDocumentBlockingResult(): NetworkRule | null {
+        if (!this.basicRule || this.basicRule.isDocumentLevelAllowlistRule()) {
+            return null;
+        }
+
+        // Document-level blocking rules are the only ones that can block 'document' requests
+        if (MatchingResult.isDocumentRule(this.basicRule)) {
+            return this.basicRule;
+        }
+
+        return null;
+    }
+
+    /**
      * Returns a single stealth rule, that is corresponding to the given option.
      * If no option is given, returns a rule that disables stealth completely if any.
      *
@@ -312,7 +330,7 @@ export class MatchingResult {
      *
      * @returns Stealth rule or null.
      */
-    getStealthRule(stealthOption?: StealthOptionName): NetworkRule | null {
+    public getStealthRule(stealthOption?: StealthOptionName): NetworkRule | null {
         if (!this.stealthRules) {
             return null;
         }
@@ -347,7 +365,7 @@ export class MatchingResult {
      *
      * @returns Header result rule or null.
      */
-    getResponseHeadersResult(responseHeaders: HttpHeadersItem[] | undefined): NetworkRule | null {
+    public getResponseHeadersResult(responseHeaders: HttpHeadersItem[] | undefined): NetworkRule | null {
         if (!responseHeaders || responseHeaders.length === 0) {
             return null;
         }
@@ -389,7 +407,7 @@ export class MatchingResult {
      *
      * @returns Cosmetic option mask.
      */
-    getCosmeticOption(): CosmeticOption {
+    public getCosmeticOption(): CosmeticOption {
         const { basicRule, documentRule, cosmeticExceptionRule } = this;
 
         let rule = cosmeticExceptionRule || basicRule;
@@ -435,7 +453,7 @@ export class MatchingResult {
      *
      * @returns An array of replace rules.
      */
-    getReplaceRules(): NetworkRule[] {
+    public getReplaceRules(): NetworkRule[] {
         if (!this.replaceRules) {
             return [];
         }
@@ -516,7 +534,7 @@ export class MatchingResult {
      *
      * @returns An array of csp rules.
      */
-    getCspRules(): NetworkRule[] {
+    public getCspRules(): NetworkRule[] {
         if (!this.cspRules) {
             return [];
         }
@@ -561,11 +579,22 @@ export class MatchingResult {
     }
 
     /**
+     * Checks if a network rule is document rule.
+     *
+     * @param rule Rule to check.
+     *
+     * @returns True if the rule is document rule, false otherwise.
+     */
+    private static isDocumentRule(rule: NetworkRule): boolean {
+        return (rule.getPermittedRequestTypes() & RequestType.Document) === RequestType.Document;
+    }
+
+    /**
      * Returns an array of permission policy rules.
      *
      * @returns An array of permission policy rules.
      */
-    getPermissionsPolicyRules(): NetworkRule[] {
+    public getPermissionsPolicyRules(): NetworkRule[] {
         if (!this.permissionsRules) {
             return [];
         }
@@ -675,7 +704,7 @@ export class MatchingResult {
      *
      * @returns An array of cookie rules.
      */
-    getCookieRules(): NetworkRule[] {
+    public getCookieRules(): NetworkRule[] {
         if (!this.cookieRules) {
             return [];
         }
@@ -727,7 +756,7 @@ export class MatchingResult {
      *
      * @returns Array of removeparam rules.
      */
-    getRemoveParamRules(): NetworkRule[] {
+    public getRemoveParamRules(): NetworkRule[] {
         if (!this.removeParamRules) {
             return [];
         }
@@ -746,7 +775,7 @@ export class MatchingResult {
      *
      * @returns An array of removeheader rules.
      */
-    getRemoveHeaderRules(): NetworkRule[] {
+    public getRemoveHeaderRules(): NetworkRule[] {
         if (!this.removeHeaderRules) {
             return [];
         }
@@ -796,7 +825,7 @@ export class MatchingResult {
      *
      * @returns Filtered rules.
      */
-    static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
+    public static removeBadfilterRules(rules: NetworkRule[]): NetworkRule[] {
         const badfilterRules: NetworkRule[] = [];
         for (const rule of rules) {
             if (rule.isOptionEnabled(NetworkRuleOption.Badfilter)) {
@@ -826,7 +855,7 @@ export class MatchingResult {
      *
      * @returns Hightest priority rule or null if the array is empty.
      */
-    static getHighestPriorityRule(rules: NetworkRule[]): NetworkRule | null {
+    public static getHighestPriorityRule(rules: NetworkRule[]): NetworkRule | null {
         if (rules.length === 0) {
             return null;
         }

@@ -1,5 +1,5 @@
-import path from 'path';
-import fs from 'fs';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * Ensures that the directory exists, creating it if it does not.

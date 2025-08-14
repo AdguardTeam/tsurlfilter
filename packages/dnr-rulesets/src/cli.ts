@@ -6,6 +6,7 @@ import { version } from '../package.json';
 import { AssetsLoader, ManifestPatcher, type PatchManifestOptions } from './lib';
 import { AssetsLoaderOptions } from './lib/assets/loader';
 import { Watcher, WatchOptions } from './lib/manifest/watch';
+import { excludeUnsafeRules } from './lib/unsafe-rules/exclude-unsafe-rules';
 
 const DEFAULT_PATH_TO_FILTERS = './filters';
 const DEFAULT_OUTPUT_PATH_FOR_RULESETS = './filters/declarative';
@@ -59,6 +60,22 @@ type WatchOptionsCli = WatchOptions & {
 program
     .name('dnr-rulesets CLI')
     .version(version);
+
+program
+    .command('exclude-unsafe-rules')
+    .description('Exclude unsafe rules from rulesets and save them to metadata of rulesets')
+    .argument('<dir>', 'Path to rulesets folder')
+    .option('-j, --prettify-json <bool>', 'Prettify JSON output', false)
+    .option('-l, --limit <number>', 'Limit the number of unsafe rules to exclude, on overflow will throw an error')
+    .action(async (dir, options) => {
+        try {
+            console.log(`Excluding unsafe rules from: ${dir}`);
+            await excludeUnsafeRules({ dir, ...options });
+        } catch (e) {
+            console.error(e);
+            process.exit(1);
+        }
+    });
 
 program
     .command('load')

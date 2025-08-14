@@ -17,9 +17,11 @@ export class ListCache {
     }
 
     /**
+     * Gets rule for the specified key.
+     *
      * @param key Cache key.
      *
-     * @returns - Rule found for specified key or undefined if nothing found.
+     * @returns Rule found for specified key or undefined if nothing found.
      */
     public get(key: number): IRule | undefined {
         return this.cache.get(key);
@@ -36,7 +38,9 @@ export class ListCache {
     }
 
     /**
-     * @returns - The list cache size.
+     * Gets the list cache size.
+     *
+     * @returns The list cache size.
      */
     public getSize() {
         return this.cache.size;

@@ -1,9 +1,10 @@
 import { parse } from 'tldts';
-import { type CosmeticRule } from '../../rules/cosmetic-rule';
-import { DomainModifier } from '../../modifiers/domain-modifier';
-import { fastHash } from '../../utils/string-utils';
+
 import { type RuleStorage } from '../../filterlist/rule-storage';
+import { DomainModifier } from '../../modifiers/domain-modifier';
 import { type Request } from '../../request';
+import { type CosmeticRule } from '../../rules/cosmetic-rule';
+import { fastHash } from '../../utils/string-utils';
 
 /**
  * @typedef {import('./cosmetic-engine').CosmeticEngine} CosmeticEngine
@@ -63,7 +64,7 @@ export class CosmeticLookupTable {
      * @param key Can be used any string, but here we use ruleContent, scriptlet content, or scriptlet name.
      * @param storageIdx Index of the rule.
      */
-    addAllowlistRule(key: string, storageIdx: number): void {
+    public addAllowlistRule(key: string, storageIdx: number): void {
         const existingRules = this.allowlist.get(key);
         if (!existingRules) {
             this.allowlist.set(key, [storageIdx]);
@@ -78,7 +79,7 @@ export class CosmeticLookupTable {
      * @param rule Rule to add.
      * @param storageIdx Index of the rule in the storage.
      */
-    addRule(rule: CosmeticRule, storageIdx: number): void {
+    public addRule(rule: CosmeticRule, storageIdx: number): void {
         if (rule.isAllowlist()) {
             if (rule.isScriptlet) {
                 // Store scriptlet rules by name to enable the possibility of allowlisting them.
@@ -128,7 +129,7 @@ export class CosmeticLookupTable {
      *
      * @returns Array of matching cosmetic rules.
      */
-    findByHostname(request: Request): CosmeticRule[] {
+    public findByHostname(request: Request): CosmeticRule[] {
         const result = [] as CosmeticRule[];
         const { subdomains } = request;
         // Iterate over all sub-domains
@@ -196,7 +197,7 @@ export class CosmeticLookupTable {
      *
      * @returns True if the rule is disabled on the specified hostname.
      */
-    isAllowlisted(request: Request, rule: CosmeticRule): boolean {
+    public isAllowlisted(request: Request, rule: CosmeticRule): boolean {
         if (rule.isScriptlet) {
             // Empty string '' is a special case for scriptlet when the allowlist scriptlet has no name
             // e.g. #@%#//scriptlet(); example.org#@%#//scriptlet();

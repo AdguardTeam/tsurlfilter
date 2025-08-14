@@ -1,40 +1,41 @@
 import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
 
-import { type IRule, RULE_INDEX_NONE } from './rule';
-import { SimpleRegex } from './simple-regex';
-import { type Request } from '../request';
-import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
-import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
-import { type IAdvancedModifier } from '../modifiers/advanced-modifier';
-import { type IValueListModifier } from '../modifiers/value-list-modifier';
-import { ReplaceModifier } from '../modifiers/replace-modifier';
-import { CspModifier } from '../modifiers/csp-modifier';
-import { CookieModifier } from '../modifiers/cookie-modifier';
-import { StealthModifier } from '../modifiers/stealth-modifier';
-import { RedirectModifier } from '../modifiers/redirect-modifier';
-import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
-import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
-import { AppModifier, type IAppModifier } from '../modifiers/app-modifier';
-import { type HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
-import { HeaderModifier, type HttpHeadersItem, type HttpHeaderMatcher } from '../modifiers/header-modifier';
-import { ToModifier } from '../modifiers/to-modifier';
-import { PermissionsModifier } from '../modifiers/permissions-modifier';
+import { EMPTY_STRING } from '../common/constants';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
+import { type IAdvancedModifier } from '../modifiers/advanced-modifier';
+import { AppModifier, type IAppModifier } from '../modifiers/app-modifier';
+import { CookieModifier } from '../modifiers/cookie-modifier';
+import { CspModifier } from '../modifiers/csp-modifier';
+import { ClientModifier } from '../modifiers/dns/client-modifier';
+import { CtagModifier } from '../modifiers/dns/ctag-modifier';
+import { DnsRewriteModifier } from '../modifiers/dns/dnsrewrite-modifier';
+import { DnsTypeModifier } from '../modifiers/dns/dnstype-modifier';
+import { DomainModifier, PIPE_SEPARATOR } from '../modifiers/domain-modifier';
+import { HeaderModifier, type HttpHeaderMatcher, type HttpHeadersItem } from '../modifiers/header-modifier';
+import { type HTTPMethod, MethodModifier } from '../modifiers/method-modifier';
+import { PermissionsModifier } from '../modifiers/permissions-modifier';
+import { RedirectModifier } from '../modifiers/redirect-modifier';
+import { RemoveHeaderModifier } from '../modifiers/remove-header-modifier';
+import { RemoveParamModifier } from '../modifiers/remove-param-modifier';
+import { ReplaceModifier } from '../modifiers/replace-modifier';
+import { StealthModifier } from '../modifiers/stealth-modifier';
+import { ToModifier } from '../modifiers/to-modifier';
+import { type IValueListModifier } from '../modifiers/value-list-modifier';
+import { type Request } from '../request';
+import { RequestType } from '../request-type';
+import { countEnabledBits, getBitCount } from '../utils/bit-utils';
+import { hasSpaces, stringArraysEquals, stringArraysHaveIntersection } from '../utils/string-utils';
+
 import {
     MASK_ALLOWLIST,
     NETWORK_RULE_OPTIONS,
     NOT_MARK,
     OPTIONS_DELIMITER,
 } from './network-rule-options';
-import { RequestType } from '../request-type';
-import { ClientModifier } from '../modifiers/dns/client-modifier';
-import { DnsRewriteModifier } from '../modifiers/dns/dnsrewrite-modifier';
-import { DnsTypeModifier } from '../modifiers/dns/dnstype-modifier';
-import { CtagModifier } from '../modifiers/dns/ctag-modifier';
 import { Pattern } from './pattern';
-import { countEnabledBits, getBitCount } from '../utils/bit-utils';
-import { EMPTY_STRING } from '../common/constants';
+import { type IRule, RULE_INDEX_NONE } from './rule';
+import { SimpleRegex } from './simple-regex';
 
 /**
  * NetworkRuleOption is the enumeration of various rule options.
@@ -230,10 +231,10 @@ export enum NetworkRuleGroupOptions {
      * Cosmetic option modifiers.
      */
     CosmeticOption = NetworkRuleOption.Elemhide
-    | NetworkRuleOption.Generichide
-    | NetworkRuleOption.Specifichide
-    | NetworkRuleOption.Jsinject
-    | NetworkRuleOption.Content,
+        | NetworkRuleOption.Generichide
+        | NetworkRuleOption.Specifichide
+        | NetworkRuleOption.Jsinject
+        | NetworkRuleOption.Content,
 
     /**
      * Removeparam compatible modifiers.
@@ -297,12 +298,24 @@ export enum NetworkRuleGroupOptions {
  * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#basic-rules}
  */
 export class NetworkRule implements IRule {
+    /**
+     * Rule index.
+     */
     private readonly ruleIndex: number;
 
+    /**
+     * Filter list ID.
+     */
     private readonly filterListId: number;
 
+    /**
+     * Allowlist flag.
+     */
     private readonly allowlist: boolean;
 
+    /**
+     * Rule pattern.
+     */
     private readonly pattern: Pattern;
 
     /**
@@ -538,7 +551,7 @@ export class NetworkRule implements IRule {
      *
      * @returns Rule index.
      */
-    getIndex(): number {
+    public getIndex(): number {
         return this.ruleIndex;
     }
 
@@ -547,7 +560,7 @@ export class NetworkRule implements IRule {
      *
      * @returns Identifier of the filter from which the rule was received.
      */
-    getFilterListId(): number {
+    public getFilterListId(): number {
         return this.filterListId;
     }
 
@@ -560,7 +573,7 @@ export class NetworkRule implements IRule {
      *
      * @returns Rule priority.
      */
-    getPriorityWeight(): number {
+    public getPriorityWeight(): number {
         return this.priorityWeight;
     }
 
@@ -570,7 +583,7 @@ export class NetworkRule implements IRule {
      *
      * @returns Rule pattern.
      */
-    getPattern(): string {
+    public getPattern(): string {
         return this.pattern.pattern;
     }
 
@@ -580,7 +593,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the rule is an allowlist rule.
      */
-    isAllowlist(): boolean {
+    public isAllowlist(): boolean {
         return this.allowlist;
     }
 
@@ -593,7 +606,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the rule is a document-level allowlist rule with specific modifiers.
      */
-    isDocumentLevelAllowlistRule(): boolean {
+    public isDocumentLevelAllowlistRule(): boolean {
         if (!this.isAllowlist()) {
             return false;
         }
@@ -608,7 +621,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the rule completely disables filtering.
      */
-    isFilteringDisabled(): boolean {
+    public isFilteringDisabled(): boolean {
         if (!this.isAllowlist()) {
             return false;
         }
@@ -625,7 +638,7 @@ export class NetworkRule implements IRule {
      *
      * @returns The longest part of the pattern without any special characters.
      */
-    getShortcut(): string {
+    public getShortcut(): string {
         return this.pattern.shortcut;
     }
 
@@ -636,7 +649,7 @@ export class NetworkRule implements IRule {
      *
      * @returns List of permitted domains or null if none.
      */
-    getPermittedDomains(): string[] | null {
+    public getPermittedDomains(): string[] | null {
         if (this.domainModifier) {
             return this.domainModifier.getPermittedDomains();
         }
@@ -650,7 +663,7 @@ export class NetworkRule implements IRule {
      *
      * @returns List of restricted domains or null if none.
      */
-    getRestrictedDomains(): string[] | null {
+    public getRestrictedDomains(): string[] | null {
         if (this.domainModifier) {
             return this.domainModifier.getRestrictedDomains();
         }
@@ -664,7 +677,7 @@ export class NetworkRule implements IRule {
      *
      * @returns List of denyAllow domains or null if none.
      */
-    getDenyAllowDomains(): string[] | null {
+    public getDenyAllowDomains(): string[] | null {
         return this.denyAllowDomains;
     }
 
@@ -675,7 +688,7 @@ export class NetworkRule implements IRule {
      *
      * @returns List of permitted $to domains or null if none.
      */
-    getPermittedToDomains(): string[] | null {
+    public getPermittedToDomains(): string[] | null {
         if (this.toModifier) {
             return this.toModifier.permittedValues;
         }
@@ -689,7 +702,7 @@ export class NetworkRule implements IRule {
      *
      * @returns List of restricted $to domains or null if none.
      */
-    getRestrictedToDomains(): string[] | null {
+    public getRestrictedToDomains(): string[] | null {
         if (this.toModifier) {
             return this.toModifier.restrictedValues;
         }
@@ -703,7 +716,7 @@ export class NetworkRule implements IRule {
      *
      * @returns List of permitted domains or null if none.
      */
-    getPermittedApps(): string[] | null {
+    public getPermittedApps(): string[] | null {
         if (this.appModifier) {
             return this.appModifier.permittedApps;
         }
@@ -717,7 +730,7 @@ export class NetworkRule implements IRule {
      *
      * @returns List of restricted domains or null if none.
      */
-    getRestrictedApps(): string[] | null {
+    public getRestrictedApps(): string[] | null {
         if (this.appModifier) {
             return this.appModifier.restrictedApps;
         }
@@ -731,7 +744,7 @@ export class NetworkRule implements IRule {
      *
      * @returns List of permitted methods or null if none.
      */
-    getRestrictedMethods(): HTTPMethod[] | null {
+    public getRestrictedMethods(): HTTPMethod[] | null {
         if (this.methodModifier) {
             return this.methodModifier.restrictedValues;
         }
@@ -745,7 +758,7 @@ export class NetworkRule implements IRule {
      *
      * @returns List of restricted methods or null if none.
      */
-    getPermittedMethods(): HTTPMethod[] | null {
+    public getPermittedMethods(): HTTPMethod[] | null {
         if (this.methodModifier) {
             return this.methodModifier.permittedValues;
         }
@@ -758,7 +771,7 @@ export class NetworkRule implements IRule {
      *
      * @returns The flag with all permitted request types.
      */
-    getPermittedRequestTypes(): RequestType {
+    public getPermittedRequestTypes(): RequestType {
         return this.permittedRequestTypes;
     }
 
@@ -768,7 +781,7 @@ export class NetworkRule implements IRule {
      *
      * @returns The flag with all restricted request types.
      */
-    getRestrictedRequestTypes(): RequestType {
+    public getRestrictedRequestTypes(): RequestType {
         return this.restrictedRequestTypes;
     }
 
@@ -777,7 +790,7 @@ export class NetworkRule implements IRule {
      *
      * @returns The advanced modifier or null if none.
      */
-    getAdvancedModifier(): IAdvancedModifier | null {
+    public getAdvancedModifier(): IAdvancedModifier | null {
         return this.advancedModifier;
     }
 
@@ -786,7 +799,7 @@ export class NetworkRule implements IRule {
      *
      * @returns The stealth modifier or null if none.
      */
-    getStealthModifier(): StealthModifier | null {
+    public getStealthModifier(): StealthModifier | null {
         return this.stealthModifier;
     }
 
@@ -795,7 +808,7 @@ export class NetworkRule implements IRule {
      *
      * @returns The advanced modifier value or null if none.
      */
-    getAdvancedModifierValue(): string | null {
+    public getAdvancedModifierValue(): string | null {
         return this.advancedModifier && this.advancedModifier.getValue();
     }
 
@@ -804,7 +817,7 @@ export class NetworkRule implements IRule {
      *
      * @returns The header modifier value or null if none.
      */
-    getHeaderModifierValue(): HttpHeaderMatcher | null {
+    public getHeaderModifierValue(): HttpHeaderMatcher | null {
         if (!this.headerModifier) {
             return null;
         }
@@ -818,7 +831,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the rule pattern is a regular expression.
      */
-    isRegexRule(): boolean {
+    public isRegexRule(): boolean {
         return (
             this.getPattern().startsWith(SimpleRegex.MASK_REGEX_RULE)
             && this.getPattern().endsWith(SimpleRegex.MASK_REGEX_RULE)
@@ -836,7 +849,7 @@ export class NetworkRule implements IRule {
      * In case we use Trie in lookup table, we don't need to use shortcut cause we already check if request's url
      * includes full rule shortcut.
      */
-    match(request: Request, useShortcut = true): boolean {
+    public match(request: Request, useShortcut = true): boolean {
         // Regex rules should not be tested by shortcut
         if (useShortcut && !this.matchShortcut(request)) {
             return false;
@@ -924,7 +937,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the rule matches the domain modifier.
      */
-    matchDomainModifier(request: Request): boolean {
+    public matchDomainModifier(request: Request): boolean {
         if (!this.domainModifier) {
             return true;
         }
@@ -1138,7 +1151,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True, if rule must be applied to the request.
      */
-    matchResponseHeaders(responseHeadersItems: HttpHeadersItem[] | undefined): boolean {
+    public matchResponseHeaders(responseHeadersItems: HttpHeadersItem[] | undefined): boolean {
         if (!responseHeadersItems || responseHeadersItems.length === 0) {
             return false;
         }
@@ -1260,7 +1273,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if rule contains (enabled or disabled) specified option.
      */
-    hasOption(option: NetworkRuleOption): boolean {
+    public hasOption(option: NetworkRuleOption): boolean {
         return this.isOptionEnabled(option) || this.isOptionDisabled(option);
     }
 
@@ -1269,7 +1282,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the rule has at least one cosmetic option enabled.
      */
-    hasCosmeticOption(): boolean {
+    public hasCosmeticOption(): boolean {
         return (this.enabledOptions & NetworkRuleGroupOptions.CosmeticOption) !== 0;
     }
 
@@ -1281,7 +1294,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the specified option is enabled.
      */
-    isOptionEnabled(option: NetworkRuleOption): boolean {
+    public isOptionEnabled(option: NetworkRuleOption): boolean {
         return (this.enabledOptions & option) === option;
     }
 
@@ -1292,7 +1305,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the specified option is enabled.
      */
-    isSingleOptionEnabled(option: NetworkRuleOption): boolean {
+    public isSingleOptionEnabled(option: NetworkRuleOption): boolean {
         return this.enabledOptions === option;
     }
 
@@ -1304,7 +1317,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the specified option is disabled.
      */
-    isOptionDisabled(option: NetworkRuleOption): boolean {
+    public isOptionDisabled(option: NetworkRuleOption): boolean {
         return (this.disabledOptions & option) === option;
     }
 
@@ -1316,7 +1329,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the rule has higher priority than `r`.
      */
-    isHigherPriority(r: NetworkRule): boolean {
+    public isHigherPriority(r: NetworkRule): boolean {
         return this.priorityWeight > r.priorityWeight;
     }
 
@@ -1327,7 +1340,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the rule is considered "generic".
      */
-    isGeneric(): boolean {
+    public isGeneric(): boolean {
         return !this.domainModifier?.hasPermittedDomains();
     }
 
@@ -1339,7 +1352,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if this rule negates the specified rule.
      */
-    negatesBadfilter(specifiedRule: NetworkRule): boolean {
+    public negatesBadfilter(specifiedRule: NetworkRule): boolean {
         if (!this.isOptionEnabled(NetworkRuleOption.Badfilter)) {
             return false;
         }
@@ -1384,7 +1397,7 @@ export class NetworkRule implements IRule {
      *
      * @returns True if the rule can be used for hosts-level blocking.
      */
-    isHostLevelNetworkRule(): boolean {
+    public isHostLevelNetworkRule(): boolean {
         if (this.domainModifier?.hasPermittedDomains() || this.domainModifier?.hasRestrictedDomains()) {
             return false;
         }

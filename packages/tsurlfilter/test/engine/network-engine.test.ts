@@ -1,16 +1,13 @@
-import { describe, it, expect } from 'vitest';
 import escapeStringRegexp from 'escape-string-regexp';
+import { describe, expect, it } from 'vitest';
 
 import { NetworkEngine } from '../../src/engine/network-engine';
-import {
-    Request,
-    HTTPMethod,
-    type PreprocessedFilterList,
-    FilterListPreprocessor,
-    getRuleSourceIndex,
-} from '../../src';
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
+import { FilterListPreprocessor, type PreprocessedFilterList } from '../../src/filterlist/preprocessor';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { getRuleSourceIndex } from '../../src/filterlist/source-map';
+import { HTTPMethod } from '../../src/modifiers/method-modifier';
+import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
 
 /**

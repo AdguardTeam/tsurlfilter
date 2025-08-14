@@ -23,13 +23,18 @@ describe('DynamicRulesApi', () => {
             const mockDeclarativeNetRequest = {
                 getDynamicRules: vi.fn().mockResolvedValue([]),
                 updateDynamicRules: vi.fn().mockResolvedValue({}),
+                MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES: 0,
                 MAX_NUMBER_OF_DYNAMIC_RULES: 1,
                 MAX_NUMBER_OF_REGEX_RULES: 0,
             };
 
             // Override the browser object with the mock
-            // @ts-ignore
+            // @ts-expect-error(2540)
             browser.declarativeNetRequest = mockDeclarativeNetRequest;
+            // MAX_NUMBER_OF_UNSAFE_DYNAMIC_RULES is used directly from chrome
+            // namespace.
+            // @ts-expect-error(2740)
+            chrome.declarativeNetRequest = mockDeclarativeNetRequest;
 
             const quickFixesRule = '@@example.com$document';
             const userRule = 'example.org';

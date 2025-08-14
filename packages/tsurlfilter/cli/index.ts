@@ -1,10 +1,12 @@
 /* eslint-disable no-console */
 import { program } from 'commander';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { version } from '../package.json';
+import { generateMD5Hash } from '../src/utils/checksum';
 
 import { convertFilters, LOCAL_METADATA_FILE_NAME } from './convertFilters';
-import { version } from '../package.json';
 import { Extractor } from './extractFilters';
 
 export const DEFAULT_DEST_RULE_SETS_DIR = './build/rulesets';
@@ -32,10 +34,13 @@ async function main() {
         .option('--debug', 'Enable debug mode', false)
         // parseBool is needed since commander.js treats boolean options as strings
         .option('--prettify-json <bool>', 'Prettify JSON output', parseBool, true)
+        // eslint-disable-next-line max-len
+        .option('--additional-properties <json>', 'Additional properties to include in metadata ruleset as JSON string', '{}')
         .action(async (filtersAndMetadataDir, resourcesDir, destRulesetsDir, options) => {
             await convertFilters(filtersAndMetadataDir, resourcesDir, destRulesetsDir, {
                 debug: options.debug,
                 prettifyJson: options.prettifyJson,
+                additionalProperties: JSON.parse(options.additionalProperties),
             });
         });
 
@@ -88,4 +93,4 @@ if (isRunningViaCli) {
 }
 
 // For API-like usage, we export the convertFilters function.
-export { convertFilters };
+export { convertFilters, generateMD5Hash };

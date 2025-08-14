@@ -1,8 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
+import { CompatibilityTypes, setConfiguration } from '../../src/configuration';
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
-import { NetworkRule } from '../../src/rules/network-rule';
 import { HostRule } from '../../src/rules/host-rule';
-import { CompatibilityTypes, RULE_INDEX_NONE, setConfiguration } from '../../src';
+import { NetworkRule } from '../../src/rules/network-rule';
+import { RULE_INDEX_NONE } from '../../src/rules/rule';
 import { createRule } from '../helpers/rule-creator';
 
 describe('RuleFactory Builder Test', () => {

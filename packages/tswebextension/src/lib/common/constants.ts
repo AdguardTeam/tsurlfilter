@@ -11,7 +11,7 @@ export const ALLOWLIST_FILTER_ID = 100;
 /**
  * Custom filters identifiers starts from this number.
  */
-export const CUSTOM_FILTERS_START_ID = 1000;
+export const CUSTOM_FILTERS_START_ID = 1000 as const;
 
 /**
  * Filter ID for AdGuard Quick Fixes filter.

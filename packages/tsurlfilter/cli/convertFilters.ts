@@ -1,21 +1,22 @@
 /* eslint-disable no-console */
-import path from 'node:path';
 import fs from 'node:fs';
+import path from 'node:path';
 
-import {
-    type ConversionResult,
-    type IRuleSet,
-    DeclarativeFilterConverter,
-    Filter,
-} from '../src/rules/declarative-converter';
 import { CompatibilityTypes, setConfiguration } from '../src/configuration';
 import { FilterListPreprocessor } from '../src/filterlist/preprocessor';
-import { getIdFromFilterName } from '../src/utils/resource-names';
+import {
+    type ConversionResult,
+    DeclarativeFilterConverter,
+    Filter,
+    type IRuleSet,
+} from '../src/rules/declarative-converter';
+import { MetadataRuleSet } from '../src/rules/declarative-converter/metadata-ruleset';
 import { re2Validator } from '../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../src/rules/declarative-converter/re2-regexp/regex-validator-node';
-import { generateMD5Hash } from '../src/utils/checksum';
-import { MetadataRuleSet } from '../src/rules/declarative-converter/metadata-ruleset';
 import { getRuleSetId, getRuleSetPath } from '../src/rules/declarative-converter-utils';
+import { generateMD5Hash } from '../src/utils/checksum';
+import { getIdFromFilterName } from '../src/utils/resource-names';
+
 import { ensureDirSync } from './utils';
 
 export const LOCAL_METADATA_FILE_NAME = 'filters.json';
@@ -44,6 +45,14 @@ interface ConvertFiltersOptions {
      * Default value specified here {@link CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson}.
      */
     prettifyJson?: boolean;
+
+    /**
+     * Additional properties that can be passed to the converter to record
+     * inside metadata ruleset.
+     * This field is not validated, but it must be JSON serializable.
+     * Validation should be performed by users.
+     */
+    additionalProperties?: Record<string, unknown>;
 }
 
 /**
@@ -65,6 +74,7 @@ export const convertFilters = async (
     const {
         debug = CONVERT_FILTER_DEFAULT_OPTIONS.debug,
         prettifyJson = CONVERT_FILTER_DEFAULT_OPTIONS.prettifyJson,
+        additionalProperties,
     } = options;
 
     const filtersWithMetadataPath = path.resolve(process.cwd(), filtersAndMetadataDir);
@@ -226,7 +236,10 @@ export const convertFilters = async (
 
     const metadataRuleSet = new MetadataRuleSet(
         checksums,
-        { metadata },
+        {
+            metadata,
+            ...additionalProperties,
+        },
     );
 
     const metadataRulesetId = metadataRuleSet.getId();

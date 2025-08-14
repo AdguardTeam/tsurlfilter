@@ -1,0 +1,21 @@
+[
+	{
+		"id": 1,
+		"action": {
+			"type": "block"
+		},
+		"condition": {
+			"urlFilter": "dummy.rule.adguard.com",
+			"resourceTypes": [
+				"xmlhttprequest"
+			]
+		},
+		"metadata": {
+			"byteRangeMapsCollection": {},
+			"checksums": {
+				"ruleset_999": "24dec169c9a1907bf90197a94138e9b6"
+			},
+			"additionalProperties": {}
+		}
+	}
+]

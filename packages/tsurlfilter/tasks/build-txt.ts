@@ -3,9 +3,9 @@ import {
     mkdirSync,
     readFileSync,
     writeFileSync,
-} from 'fs';
-import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
+} from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention, no-underscore-dangle
 const __dirname = dirname(fileURLToPath(import.meta.url));

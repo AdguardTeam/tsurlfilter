@@ -28,7 +28,7 @@ The following packages are available in this repository:
 | [`dnr-rulesets`][dnrrulesetsreadme]            | Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.                    |
 | [`examples/manifest-v2`][manifestv2]           | Example using Manifest V2.                                                           |
 | [`examples/manifest-v3`][manifestv3]           | Example using Manifest V3.                                                           |
-| [`examples/tswebextension-example`][tswebextensionexample] | Example for [`tswebextension`][tswebextensionreadme].                    |
+| [`examples/tswebextension-mv2`][tswebextensionmv2] | Example for [`tswebextension`][tswebextensionreadme] using Manifest V2.            |
 | [`examples/tswebextension-mv3`][tswebextensionmv3] | Example for [`tswebextension`][tswebextensionreadme] using Manifest V3.          |
 
 Detailed information on each package is available in the [`./packages`][packages-dir] directory.
@@ -43,7 +43,7 @@ Detailed information on each package is available in the [`./packages`][packages
 [manifestv3]: /packages/examples/manifest-v3
 [packages-dir]: /packages
 [tsurlfilterreadme]: /packages/tsurlfilter/README.md
-[tswebextensionexample]: /packages/examples/tswebextension-example
+[tswebextensionmv2]: /packages/examples/tswebextension-mv2
 [tswebextensionmv3]: /packages/examples/tswebextension-mv3
 [tswebextensionreadme]: /packages/tswebextension/README.md
 
