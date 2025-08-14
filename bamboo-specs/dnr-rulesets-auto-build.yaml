@@ -164,6 +164,7 @@ branch-overrides:
                   pnpm --filter @adguard/dnr-rulesets clear
 
                   pnpm clean
+                  rm -rf .git
 
                   echo "Size after cleanup:" && du -h | tail -n 1
         artifacts: *artifacts
