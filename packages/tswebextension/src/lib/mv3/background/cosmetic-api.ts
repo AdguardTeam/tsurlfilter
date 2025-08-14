@@ -5,7 +5,7 @@ import { createFrameMatchQuery } from '../../common/utils/create-frame-match-que
 import { logger } from '../../common/utils/logger';
 import { getDomain, isExtensionUrl } from '../../common/utils/url';
 import { tabsApi } from '../tabs/tabs-api';
-import { BACKGROUND_TAB_ID, USER_FILTER_ID } from '../../common/constants';
+import { BACKGROUND_TAB_ID, CUSTOM_FILTERS_START_ID, USER_FILTER_ID } from '../../common/constants';
 
 import { appContext } from './app-context';
 import { engineApi } from './engine-api';
@@ -34,11 +34,55 @@ type ScriptsAndScriptletsDataMv3 = {
  */
 export class CosmeticApi extends CosmeticApiCommon {
     /**
-     * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
-     *
      * This is STEP 3: All previously matched script rules are processed and filtered:
-     * - JS and Scriptlet rules from pre-built filters (previously collected, pre-built and passed to the engine)
-     *   are going to be executed as functions via chrome.scripting API.
+     * Scriptlet and JS rules from pre-built filters (previously collected, pre-built and passed to the engine)
+     * are going to be executed as functions via chrome.scripting API,
+     * or userScripts API if User scripts API permission is explicitly granted.
+     *
+     * The whole process is explained below.
+     *
+     * To fully comply with Chrome Web Store policies regarding remote code execution,
+     * we implement a strict security-focused approach for Scriptlet and JavaScript rules execution.
+     *
+     * 1. Default - regular users that did not grant User scripts API permission explicitly:
+     *    - We collect and pre-build script rules from the filters and statically bundle
+     *      them into the extension - STEP 1. See 'updateLocalResourcesForChromiumMv3' in our build tools.
+     *      IMPORTANT: all scripts and their arguments are local and bundled within the extension.
+     *    - These pre-verified local scripts are passed to the engine - STEP 2.
+     *    - At runtime before the execution, we check if each script rule is included
+     *      in our local scripts list (STEP 3).
+     *    - Only pre-verified local scripts are executed via chrome.scripting API (STEP 4.1 and 4.2).
+     *      All other scripts are discarded.
+     *    - Custom filters are NOT allowed for regular users to prevent any possibility
+     *      of remote code execution, regardless of rule interpretation.
+     *
+     * 2. For advanced users that explicitly granted User scripts API permission -
+     *    via enabling the Developer mode or Allow user scripts in the extension details:
+     *    - Custom filters are allowed and may contain Scriptlet and JS rules
+     *      that can be executed using the browser's built-in userScripts API (STEP 4.3),
+     *      which provides a secure sandbox.
+     *    - This execution bypasses the local script verification process but remains
+     *      isolated and secure through Chrome's native sandboxing.
+     *    - This mode requires explicit user activation and is intended for advanced users only.
+     *
+     * IMPORTANT:
+     * Custom filters are ONLY supported when User scripts API permission is explicitly enabled.
+     * This strict policy prevents Chrome Web Store rejection due to potential remote script execution.
+     * When custom filters are allowed, they may contain:
+     * 1. Network rules – converted to DNR rules and applied via dynamic rules.
+     * 2. Cosmetic rules – interpreted directly in the extension code.
+     * 3. Scriptlet and JS rules – executed via the browser's userScripts API (userScripts.execute)
+     *    with Chrome's native sandboxing providing security isolation.
+     *
+     * For regular users without User scripts API permission (default case):
+     * - Only pre-bundled filters with statically verified scripts are supported.
+     * - Downloading custom filters or any rules from remote sources is blocked entirely
+     *   to ensure compliance with the store policies.
+     *
+     * This implementation ensures perfect compliance with Chrome Web Store policies
+     * by preventing any possibility of remote code execution for regular users.
+     *
+     * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
      */
     /**
      * Generates data for scriptlets and local scripts:
@@ -64,6 +108,14 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         for (let i = 0; i < rules.length; i += 1) {
             const rule = rules[i];
+
+            if (rule.getFilterListId() >= CUSTOM_FILTERS_START_ID) {
+                // Skip script and scriptlet rules from custom filters as they
+                // are unsafe in terms of Chrome Web Store policies, because
+                // they became from remote sources.
+                continue;
+            }
+
             if (rule.isScriptlet) {
                 const scriptletData = rule.getScriptletData();
 
@@ -179,7 +231,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    public static async applyJsFuncsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+    public static async applyJsFuncs(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         const scriptTexts = frameContext?.preparedCosmeticResult?.scriptTexts;
@@ -191,11 +243,53 @@ export class CosmeticApi extends CosmeticApiCommon {
         try {
             await Promise.all(scriptTexts.map((scriptText) => {
                 /**
-                 * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
-                 *
                  * This is STEP 4.1: Selecting only local script functions which were pre-built into the extension.
+                 *
+                 * The whole process is explained below.
+                 *
+                 * To fully comply with Chrome Web Store policies regarding remote code execution,
+                 * we implement a strict security-focused approach for Scriptlet and JavaScript rules execution.
+                 *
+                 * 1. Default - regular users that did not grant User scripts API permission explicitly:
+                 *    - We collect and pre-build script rules from the filters and statically bundle
+                 *      them into the extension - STEP 1. See 'updateLocalResourcesForChromiumMv3' in our build tools.
+                 *      IMPORTANT: all scripts and their arguments are local and bundled within the extension.
+                 *    - These pre-verified local scripts are passed to the engine - STEP 2.
+                 *    - At runtime before the execution, we check if each script rule is included
+                 *      in our local scripts list (STEP 3).
+                 *    - Only pre-verified local scripts are executed via chrome.scripting API (STEP 4.1 and 4.2).
+                 *      All other scripts are discarded.
+                 *    - Custom filters are NOT allowed for regular users to prevent any possibility
+                 *      of remote code execution, regardless of rule interpretation.
+                 *
+                 * 2. For advanced users that explicitly granted User scripts API permission -
+                 *    via enabling the Developer mode or Allow user scripts in the extension details:
+                 *    - Custom filters are allowed and may contain Scriptlet and JS rules
+                 *      that can be executed using the browser's built-in userScripts API (STEP 4.3),
+                 *      which provides a secure sandbox.
+                 *    - This execution bypasses the local script verification process but remains
+                 *      isolated and secure through Chrome's native sandboxing.
+                 *    - This mode requires explicit user activation and is intended for advanced users only.
+                 *
+                 * IMPORTANT:
+                 * Custom filters are ONLY supported when User scripts API permission is explicitly enabled.
+                 * This strict policy prevents Chrome Web Store rejection due to potential remote script execution.
+                 * When custom filters are allowed, they may contain:
+                 * 1. Network rules – converted to DNR rules and applied via dynamic rules.
+                 * 2. Cosmetic rules – interpreted directly in the extension code.
+                 * 3. Scriptlet and JS rules – executed via the browser's userScripts API (userScripts.execute)
+                 *    with Chrome's native sandboxing providing security isolation.
+                 *
+                 * For regular users without User scripts API permission (default case):
+                 * - Only pre-bundled filters with statically verified scripts are supported.
+                 * - Downloading custom filters or any rules from remote sources is blocked entirely
+                 *   to ensure compliance with the store policies.
+                 *
+                 * This implementation ensures perfect compliance with Chrome Web Store policies
+                 * by preventing any possibility of remote code execution for regular users.
+                 *
+                 * It is possible to follow all places using this logic by searching JS_RULES_EXECUTION.
                  */
-
                 /**
                  * Here we check if the script text is local to guarantee that we do not execute remote code.
                  */
@@ -220,7 +314,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 });
             }));
         } catch (e) {
-            logger.info('[tsweb.CosmeticApi.applyJsFuncsByTabAndFrame]: error occurred during injection: ', e);
+            logger.info('[tsweb.CosmeticApi.applyJsFuncs]: error occurred during injection: ', e);
         }
     }
 
@@ -230,7 +324,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    public static async applyScriptletsByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+    public static async applyScriptlets(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         if (!frameContext) {
@@ -254,7 +348,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 });
             }));
         } catch (e) {
-            logger.info('[tsweb.CosmeticApi.applyScriptletsByTabAndFrame]: error occurred during injection: ', e);
+            logger.info('[tsweb.CosmeticApi.applyScriptlets]: error occurred during injection: ', e);
         }
     }
 
@@ -282,7 +376,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    public static async applyCssByTabAndFrame(tabId: number, frameId: number): Promise<void> {
+    public static async applyCss(tabId: number, frameId: number): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         const cssText = frameContext?.preparedCosmeticResult?.cssText;
@@ -297,17 +391,18 @@ export class CosmeticApi extends CosmeticApiCommon {
                 frameId,
             });
         } catch (e) {
-            logger.info('[tsweb.CosmeticApi.applyCssByTabAndFrame]: error occurred during injection: ', e, 'with frame context:', frameContext);
+            logger.info('[tsweb.CosmeticApi.applyCss]: error occurred during injection: ', e, 'with frame context:', frameContext);
         }
     }
 
     /**
-     * Injects js functions and scriptlets to specified tab and frame.
+     * Injects JS functions and scriptlets to specified tab and frame via using
+     * UserScripts API.
      *
      * @param tabId Tab id.
      * @param frameId Frame id.
      */
-    public static async applyJsFuncsAndScriptletsByTabAndFrame(
+    public static async applyJsFuncsAndScriptletsViaUserScriptsApi(
         tabId: number,
         frameId: number,
     ): Promise<void> {
@@ -330,7 +425,7 @@ export class CosmeticApi extends CosmeticApiCommon {
                 scriptText,
             });
         } catch (e) {
-            logger.info('[tsweb.CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame]: error occurred during injection: ', e);
+            logger.info('[tsweb.CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi]: error occurred during injection: ', e);
         }
     }
 

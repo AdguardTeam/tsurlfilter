@@ -7,12 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased <!-- release/browser-extension-v5.3 -->
 
+### Added
+
+- Export `isUserScriptsApiSupported` function to check if the current browser
+  supports User Scripts API.
+
+## [3.2.7] - 2025-07-30
+
+### Changed
+
+- Updated [@adguard/assistant] to `v4.3.75`.
+
+[3.2.7]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.7
+
+## [3.2.6] - 2025-07-25
+
+### Fixed
+
+- Declarative filtering log errors while new configuration applying in MV3.
+
+[3.2.6]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.6
+
+## [3.2.5] - 2025-07-10
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.4.5`.
+
+### Fixed
+
+- Wrong rule is displayed for page blocked by `$document` rule in MV3 [AdguardBrowserExtension#3260].
+
+[3.2.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.5
+[AdguardBrowserExtension#3260]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3260
+
+## [3.2.4] - 2025-07-03
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.4.2`.
+
+[3.2.4]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.4
+
+## [3.2.3] - 2025-07-02
+
+### Added
+
+- Using unsafe rules from rulesets metadata in MV3 to allow "skip review"
+  feature in CWS.
+
+### Changed
+
+- Updated [@adguard/tsurlfilter] to `v3.4.1`.
+
 ### Fixed
 
 - Network rules with $important modifier are applied even if protection is disabled [AdGuardBrowserExtension#3227].
 - CLI was not worked since switch to ESM builds.
 
 [AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
+[3.2.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.3
+
+## [3.2.2] - 2025-06-30
+
+### Changed
+
+- Updated [@adguard/assistant] to `v4.3.74`.
+
+[3.2.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tswebextension-v3.2.2
 
 ## [3.2.1] - 2025-06-11
 
@@ -1449,5 +1511,6 @@ its setting [AdguardBrowserExtension#2584].
 [@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/tsurlfilter]: ../tsurlfilter/CHANGELOG.md
 
+[@adguard/assistant]: https://github.com/AdguardTeam/AdguardAssistant/blob/master/CHANGELOG.md
 [@adguard/extended-css]: https://github.com/AdguardTeam/ExtendedCss/blob/master/CHANGELOG.md
 [@adguard/scriptlets]: https://github.com/AdguardTeam/Scriptlets/blob/master/CHANGELOG.md

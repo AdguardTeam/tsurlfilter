@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import escapeStringRegexp from 'escape-string-regexp';
-
 import { RuleParser } from '@adguard/agtree';
+import escapeStringRegexp from 'escape-string-regexp';
+import { describe, expect, it } from 'vitest';
+
+import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
+import { FilterListPreprocessor, PREPROCESSOR_AGTREE_OPTIONS } from '../../src/filterlist/preprocessor';
 import { LIST_ID_MAX_VALUE } from '../../src/filterlist/rule-list';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
-import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
-import { FilterListPreprocessor, PREPROCESSOR_AGTREE_OPTIONS, getRuleSourceIndex } from '../../src';
+import { getRuleSourceIndex } from '../../src/filterlist/source-map';
 
 describe('RuleScanner tests', () => {
     describe('BufferRuleList', () => {

@@ -5,13 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [3.2.0] - 2025-07-09
 
-## Added
+### Changed
+
+- Version of DNR rulesets is now packed into metadata ruleset.
+
+[3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.2.0
+
+## [3.1.3] - 2025-07-03
+
+### Updated
+
+- Updated [@adguard/tsurlfilter] to `v3.4.2`.
+
+[3.1.3]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.3
+
+## [3.1.2] - 2025-07-02
+
+### Removed
+
+- `filters.json` after build.
+
+[3.1.2]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.2
+
+## [3.1.1] - 2025-07-02
+
+### Added
+
+- New `exclude-unsafe-rules` CLI command to exclude unsafe rules from rulesets
+  and save them to the metadata of rulesets for use "skip review" feature in CWS.
 - New `watch` command to watch for changes in the filters
   and automatically rebuild DNR.
 - New option `--latest-filters` for `load` command to load fresh text filters
   instead of DNR rulesets and save them to the specified directory.
+
+### Updated
+
+- Updated [@adguard/tsurlfilter] to `v3.4.1`.
+
+[3.1.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.1
 
 ## [3.1.0] - 2025-06-06
 
@@ -22,6 +55,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated [@adguard/logger] to `v2.0.0`.
+- Updated [@adguard/tsurlfilter] to `v3.4.0`.
+
+[3.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.1.0
 
 ## [3.0.0-alpha.12] - 2025-05-28
 

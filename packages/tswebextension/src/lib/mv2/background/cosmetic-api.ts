@@ -231,8 +231,8 @@ export class CosmeticApi extends CosmeticApiCommon {
         // Note: this is an async function, but we will not await it
         // because events (where it is used) do not support async listeners.
         Promise.all([
-            CosmeticApi.applyJsByTabAndFrame(tabId, frameId),
-            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+            CosmeticApi.applyJs(tabId, frameId),
+            CosmeticApi.applyCss(tabId, frameId),
         ]).catch((e) => {
             logger.error('[tsweb.CosmeticApi.injectCosmetic]: error occurred during injection: ', e);
         });
@@ -248,7 +248,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameId Frame id.
      * @param tries Number of tries for the injection in case of failure.
      */
-    public static async applyJsByTabAndFrame(tabId: number, frameId: number, tries = 0): Promise<void> {
+    public static async applyJs(tabId: number, frameId: number, tries = 0): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         const scriptText = frameContext?.preparedCosmeticResult?.scriptText;
@@ -263,10 +263,10 @@ export class CosmeticApi extends CosmeticApiCommon {
             // Retry injection if it fails
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
                 setTimeout(() => {
-                    CosmeticApi.applyJsByTabAndFrame(tabId, frameId, tries + 1);
+                    CosmeticApi.applyJs(tabId, frameId, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
-                logger.debug('[tsweb.CosmeticApi.applyJsByTabAndFrame]: error occurred during injection', e);
+                logger.debug('[tsweb.CosmeticApi.applyJs]: error occurred during injection', e);
             }
         }
     }
@@ -314,7 +314,7 @@ export class CosmeticApi extends CosmeticApiCommon {
      * @param frameId Frame id.
      * @param tries Number of tries for the injection in case of failure.
      */
-    public static async applyCssByTabAndFrame(tabId: number, frameId: number, tries = 0): Promise<void> {
+    public static async applyCss(tabId: number, frameId: number, tries = 0): Promise<void> {
         const frameContext = tabsApi.getFrameContext(tabId, frameId);
 
         const cssText = frameContext?.preparedCosmeticResult?.cssText;
@@ -328,10 +328,10 @@ export class CosmeticApi extends CosmeticApiCommon {
             // Retry injection if it fails
             if (tries < CosmeticApi.INJECTION_MAX_TRIES) {
                 setTimeout(() => {
-                    CosmeticApi.applyCssByTabAndFrame(tabId, frameId, tries + 1);
+                    CosmeticApi.applyCss(tabId, frameId, tries + 1);
                 }, CosmeticApi.INJECTION_RETRY_TIMEOUT_MS);
             } else {
-                logger.debug('[tsweb.CosmeticApi.applyCssByTabAndFrame]: error occurred during injection', e);
+                logger.debug('[tsweb.CosmeticApi.applyCss]: error occurred during injection', e);
             }
         }
     }

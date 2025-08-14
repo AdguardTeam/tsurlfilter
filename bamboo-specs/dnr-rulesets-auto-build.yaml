@@ -15,7 +15,9 @@ stages:
         - DoNothing
 
 # Since auto-build is being run only for a stable branches now:
-# 'stable/dnr-rulesets-3.0'
+# 'stable/dnr-rulesets-3.0' for release v5.1,
+# 'stable/dnr-rulesets-3.2' for beta v5.2.
+# TODO: Fix this comment when we will release v5.2.
 # we should skip the build stage for other branches.
 DoNothing:
   key: NOTHING
@@ -69,13 +71,14 @@ notifications: &notifications
           name: Build webhook
           url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
 
-# Run plan only for 'stable/dnr-rulesets-3.0' branch.
+# Run plan only for 'stable/dnr-rulesets-3.0' (release v5.1) OR
+# 'stable/dnr-rulesets-3.2' (beta v5.2) branches.
 # Override is needed to skip the build stage for other branches,
 # because even if branches are not supposed to be run for PRs (due to 'create: manually' above),
 # build was triggered by 'cron' anyway.
 branch-overrides:
-  -
-    stable/dnr-rulesets-3.0:
+  # TODO: Remove this override when we will release v5.2.
+  - '^stable\/dnr-rulesets-3\.[02]$':
       stages:
         - Build:
             - Build
@@ -104,8 +107,8 @@ branch-overrides:
 
                   BRANCH="${bamboo.planRepository.branchName}"
 
-                  # Deploy package from "stable/dnr-rulesets-3.0" branch only
-                  if [ $BRANCH != "stable/dnr-rulesets-3.0" ]
+                  # Deploy package from "stable/dnr-rulesets-3.0" or "stable/dnr-rulesets-3.2" branches only.
+                  if [ $BRANCH != "stable/dnr-rulesets-3.0" ] && [ $BRANCH != "stable/dnr-rulesets-3.2" ];
                   then
                     echo "deployment is not supported on branch ${BRANCH}, skipping"
                     exit 0;
@@ -117,15 +120,16 @@ branch-overrides:
                   # Install dependencies
                   pnpm install
 
-                  # Test dnr rulesets
-                  npx lerna run test --scope @adguard/dnr-rulesets
-
-                  # Set date to package version
+                  # Set date to package version before build to ensure that
+                  # the build number is always incremented.
                   npx lerna run increment:auto-deploy --scope @adguard/dnr-rulesets
 
-                  # Build dnr rulesets
-                  # since updated tgz file should not be committed
+                  # Build dnr rulesets before tests to correct import
+                  # dependencies from sibling packages.
                   npx lerna run build --scope @adguard/dnr-rulesets --include-dependencies
+
+                  # Test dnr rulesets
+                  npx lerna run test --scope @adguard/dnr-rulesets
 
                   # Move to package folder
                   cd packages/dnr-rulesets
@@ -169,10 +173,10 @@ branch-overrides:
         artifacts: *artifacts
         requirements: *requirements
 
-      # runs plan every 3 hours
+      # runs plan every 1 hour since our filters are updated every hour.
       triggers:
         - cron:
-            expression: 0 0 */3 * * ?
+            expression: 0 0 */1 * * ?
 
       branches: *branches
 

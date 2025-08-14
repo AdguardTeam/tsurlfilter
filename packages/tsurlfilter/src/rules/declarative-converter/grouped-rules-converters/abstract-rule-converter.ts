@@ -1025,7 +1025,7 @@ export abstract class DeclarativeRuleConverter {
      * @returns Object of {@link ConvertedRules} which containing declarative
      * rules, source rule identifiers, errors and counter of regexp rules.
      */
-    abstract convert(
+    public abstract convert(
         filterId: number,
         rules: IndexedNetworkRuleWithHash[],
         usedIds: Set<number>,

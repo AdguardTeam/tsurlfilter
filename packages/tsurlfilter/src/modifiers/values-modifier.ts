@@ -1,4 +1,5 @@
 import { SEPARATOR } from '../common/constants';
+
 import { type IAdvancedModifier } from './advanced-modifier';
 
 /**
@@ -83,19 +84,41 @@ export class BaseValuesModifier implements IValuesModifier {
         this.permitted = permittedValues.length > 0 ? permittedValues : null;
     }
 
-    getPermitted(): string[] | null {
+    /**
+     * Gets list of permitted values.
+     *
+     * @returns List of permitted values or null if none.
+     */
+    public getPermitted(): string[] | null {
         return this.permitted;
     }
 
-    getRestricted(): string[] | null {
+    /**
+     * Gets list of restricted values.
+     *
+     * @returns List of restricted values or null if none.
+     */
+    public getRestricted(): string[] | null {
         return this.restricted;
     }
 
-    getValue(): string {
+    /**
+     * Gets value.
+     *
+     * @returns Value.
+     */
+    public getValue(): string {
         return this.value;
     }
 
-    match(value: string): boolean {
+    /**
+     * Checks if value matches this modifier.
+     *
+     * @param value Value to check.
+     *
+     * @returns True if value matches this modifier, false otherwise.
+     */
+    public match(value: string): boolean {
         if (!this.restricted && !this.permitted) {
             return true;
         }

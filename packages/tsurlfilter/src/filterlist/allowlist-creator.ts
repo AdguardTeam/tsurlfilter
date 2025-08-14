@@ -1,7 +1,9 @@
 import { OutputByteBuffer } from '@adguard/agtree';
 import { RuleSerializer } from '@adguard/agtree/serializer';
-import { BufferRuleList } from './buffer-rule-list';
+
 import { createAllowlistRuleNode } from '../rules/allowlist';
+
+import { BufferRuleList } from './buffer-rule-list';
 
 /**
  * Creates a list of allowlist rules for a given list ID and domains.

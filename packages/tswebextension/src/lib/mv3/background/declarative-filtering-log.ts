@@ -13,6 +13,11 @@ import { requestContextStorage } from './request';
  */
 class DeclarativeFilteringLog {
     /**
+     * Maximum wait time for rulesets to be loaded.
+     */
+    private MAX_WAIT_TIME_MS = 30 * 1000;
+
+    /**
      * Stores list of rule sets.
      */
     private ruleSets: IRuleSet[] = [];
@@ -49,10 +54,11 @@ class DeclarativeFilteringLog {
      * Used to prevent getting rule info during rule set updates.
      *
      * @param timeoutMs The maximum time to wait (in milliseconds) to acquire the lock.
+     * Defaults to {@link DeclarativeFilteringLog.MAX_WAIT_TIME_MS}.
      *
      * @throws {TimeoutError} If the lock is not acquired within the specified time.
      */
-    public async startUpdate(timeoutMs = 30000): Promise<void> {
+    public async startUpdate(timeoutMs = this.MAX_WAIT_TIME_MS): Promise<void> {
         await this.mutex.lock(timeoutMs);
     }
 
@@ -94,9 +100,13 @@ class DeclarativeFilteringLog {
             await this.mutex.waitUntilUnlocked();
         }
 
+        if (this.ruleSets.length === 0) {
+            throw new Error('No rulesets loaded yet');
+        }
+
         const ruleSet = this.ruleSets.find((r) => r.getId() === ruleSetId);
         if (!ruleSet) {
-            throw new Error(`Cannot find ruleset with id ${ruleSet}`);
+            throw new Error(`Cannot find ruleset with id ${ruleSetId}`);
         }
 
         const sourceRules = await ruleSet.getRulesById(ruleId);
@@ -104,7 +114,7 @@ class DeclarativeFilteringLog {
         const declarativeRule = declarativeRules.find((r) => r.id === ruleId);
 
         if (!declarativeRule) {
-            throw new Error(`Cannot find rule with id ${ruleId} in ruleset ${ruleSet}`);
+            throw new Error(`Cannot find rule with id ${ruleId} in ruleset ${ruleSetId}`);
         }
 
         return {
@@ -138,7 +148,11 @@ class DeclarativeFilteringLog {
 
         /**
          * Session rules are used for Tracking protection (formerly stealth mode)
-         * and the rules should not be logged as they are not logged for MV2 as well.
+         * with unsafe rules from static rulesets.
+         * Rules from Tracking protection should not be logged as they are not
+         * logged for MV2 as well.
+         *
+         * TODO: Add processing for unsafe rules from static rulesets.
          *
          * For more details see tswebextension/src/lib/mv3/background/services/stealth-service.ts.
          */

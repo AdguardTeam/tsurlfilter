@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { Pattern } from '../../src/rules/pattern';
+import { describe, expect, it } from 'vitest';
+
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
+import { Pattern } from '../../src/rules/pattern';
 
 describe('Pattern Tests', () => {
     it('matches shortcut simple cases', () => {

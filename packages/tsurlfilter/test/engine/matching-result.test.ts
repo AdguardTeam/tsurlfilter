@@ -1,10 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import {
-    MatchingResult,
-    CosmeticOption,
-    StealthOptionName,
-    type NetworkRule,
-} from '../../src';
+import { describe, expect, it } from 'vitest';
+
+import { CosmeticOption } from '../../src/engine/cosmetic-option';
+import { MatchingResult } from '../../src/engine/matching-result';
+import { StealthOptionName } from '../../src/modifiers/stealth-modifier';
+import { type NetworkRule } from '../../src/rules/network-rule';
 import { createNetworkRule } from '../helpers/rule-creator';
 
 describe('MatchingResult constructor', () => {
@@ -24,6 +23,9 @@ describe('MatchingResult constructor', () => {
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
         expect(basicResult).toMatchNetworkRule(createNetworkRule(ruleText, 0));
+
+        const documentBlockingResult = result.getDocumentBlockingResult();
+        expect(documentBlockingResult).toBeNull();
     });
 
     it('works if allowlist rule is found', () => {
@@ -42,6 +44,9 @@ describe('MatchingResult constructor', () => {
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
         expect(basicResult).toMatchNetworkRule(createNetworkRule(sourceRuleText, 0));
+
+        const documentBlockingResult = result.getDocumentBlockingResult();
+        expect(documentBlockingResult).toBeNull();
     });
 
     it('works if document-level rule has lower priority than basic rule', () => {
@@ -59,6 +64,9 @@ describe('MatchingResult constructor', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toMatchNetworkRule(createNetworkRule(ruleText, 0));
+
+        const documentBlockingResult = result.getDocumentBlockingResult();
+        expect(documentBlockingResult).toBeNull();
     });
 
     it('works if allowlist document-level rule is found', () => {
@@ -77,6 +85,9 @@ describe('MatchingResult constructor', () => {
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
         expect(basicResult).toMatchNetworkRule(createNetworkRule(sourceRuleText, 0));
+
+        const documentBlockingResult = result.getDocumentBlockingResult();
+        expect(documentBlockingResult).toBeNull();
     });
 
     it('works if allowlist non-document-level rule is not found', () => {
@@ -92,6 +103,9 @@ describe('MatchingResult constructor', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeNull();
+
+        const documentBlockingResult = result.getDocumentBlockingResult();
+        expect(documentBlockingResult).toBeNull();
     });
 });
 
@@ -227,9 +241,12 @@ describe('TestGetCosmeticOption', () => {
     });
 
     it('works with $all modifier and specifichide allowlist rule', () => {
+        const allBlockingRule = createNetworkRule('||example.org^$all', 0);
+        const specifichideAllowlistRule = createNetworkRule('@@||example.org^$specifichide', 0);
+
         rules = [
-            createNetworkRule('||example.org^$all', 0),
-            createNetworkRule('@@||example.org^$specifichide', 0),
+            allBlockingRule,
+            specifichideAllowlistRule,
         ];
 
         const result = new MatchingResult(rules, sourceRule);
@@ -239,6 +256,30 @@ describe('TestGetCosmeticOption', () => {
         expect(result.getCosmeticOption()).toEqual(
             CosmeticOption.CosmeticOptionAll ^ CosmeticOption.CosmeticOptionSpecificCSS,
         );
+
+        expect(result.getBasicResult()).toMatchNetworkRule(specifichideAllowlistRule);
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(allBlockingRule);
+    });
+
+    it('blocking $document modifier and generichide exception rule', () => {
+        const documentBlockingRule = createNetworkRule('||example.org^$document', 0);
+        const generichideAllowlistRule = createNetworkRule('@@||example.org^$generichide', 0);
+
+        rules = [
+            documentBlockingRule,
+            generichideAllowlistRule,
+        ];
+
+        const result = new MatchingResult(rules, sourceRule);
+
+        expect(result).toBeTruthy();
+        expect(result.getCosmeticOption()).toBeDefined();
+        expect(result.getCosmeticOption()).toEqual(
+            CosmeticOption.CosmeticOptionAll ^ CosmeticOption.CosmeticOptionGenericCSS,
+        );
+
+        expect(result.getBasicResult()).toMatchNetworkRule(generichideAllowlistRule);
+        expect(result.getDocumentBlockingResult()).toMatchNetworkRule(documentBlockingRule);
     });
 
     it('works if document-level rule has lower priority than basic rule', () => {
@@ -286,6 +327,9 @@ describe('MatchingResult constructor handling badfilter modifier', () => {
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
         expect(basicResult).toMatchNetworkRule(createNetworkRule('||example.org^', 0));
+
+        const documentBlockingResult = result.getDocumentBlockingResult();
+        expect(documentBlockingResult).toBeNull();
     });
 
     it('checks badfilter for a distinct domain', () => {
@@ -481,6 +525,9 @@ describe('MatchingResult constructor handling replace rules', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeNull();
+
+        const documentBlockingResult = result.getDocumentBlockingResult();
+        expect(documentBlockingResult).toBeNull();
     });
 
     it('works if allowlisted replace filter with same option is omitted', () => {
@@ -502,6 +549,9 @@ describe('MatchingResult constructor handling replace rules', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeNull();
+
+        const documentBlockingResult = result.getDocumentBlockingResult();
+        expect(documentBlockingResult).toBeNull();
     });
 
     it('work if @@||example.org^$replace will disable all $replace rules matching ||example.org^.', () => {
@@ -520,6 +570,9 @@ describe('MatchingResult constructor handling replace rules', () => {
 
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeNull();
+
+        const documentBlockingResult = result.getDocumentBlockingResult();
+        expect(documentBlockingResult).toBeNull();
     });
 
     it('work if @@||example.org^$content will be found', () => {
@@ -539,6 +592,9 @@ describe('MatchingResult constructor handling replace rules', () => {
         const basicResult = result.getBasicResult();
         expect(basicResult).toBeTruthy();
         expect(basicResult).toMatchNetworkRule(createNetworkRule(ruleTexts[1], 0));
+
+        const documentBlockingResult = result.getDocumentBlockingResult();
+        expect(documentBlockingResult).toBeNull();
     });
 
     it('work if @@||example.org^$document will be found', () => {
@@ -559,6 +615,8 @@ describe('MatchingResult constructor handling replace rules', () => {
         expect(basicResult).toBeTruthy();
         expect(basicResult).toMatchNetworkRule(createNetworkRule(ruleTexts[1], 0));
         expect(result.cosmeticExceptionRule).toMatchNetworkRule(createNetworkRule(ruleTexts[1], 0));
+
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks only $document and $content rules disable $replace', () => {
@@ -573,6 +631,7 @@ describe('MatchingResult constructor handling replace rules', () => {
 
         expect(result.getReplaceRules()).toHaveLength(1);
         expect(result.getBasicResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 });
 
@@ -813,6 +872,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const resultRule = result.getBasicResult();
         expect(resultRule).toBeTruthy();
         expect(resultRule).toMatchNetworkRule(createNetworkRule('||8s8.eu^*fa.js$script,redirect=noopjs', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('works if allowlisted redirect rule with same option is omitted', () => {
@@ -828,6 +888,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const resultRule = result.getBasicResult();
         expect(resultRule).toBeTruthy();
         expect(resultRule).toMatchNetworkRule(createNetworkRule('||ya.ru$redirect=2x2-transparent.png,image', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('works if allowlist rule omit all resource types', () => {
@@ -841,6 +902,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks that unrelated exception does not exclude other blocking rules', () => {
@@ -855,6 +917,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         const resultRule = result.getBasicResult();
         expect(resultRule).toBeTruthy();
         expect(resultRule).toMatchNetworkRule(createNetworkRule('||ya.ru$redirect=1x1-transparent.gif', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks that it is possible to exclude all redirects with `@@$redirect` rule', () => {
@@ -869,6 +932,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     // eslint-disable-next-line max-len
@@ -884,6 +948,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule('@@||ya.ru$document', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks that it is possible to exclude all redirects with important allowlist rule', () => {
@@ -898,6 +963,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule('@@||ya.ru$document,important', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks that important redirect rule negates allowlist rule', () => {
@@ -914,6 +980,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         expect(result.getBasicResult()).toMatchNetworkRule(
             createNetworkRule('||ya.ru$redirect=2x2-transparent.png,important', 0),
         );
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks that important allowlist rule negates important redirect rule', () => {
@@ -928,6 +995,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule('@@||ya.ru$document,important', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks that common allowlist rule negates redirect rule without $important', () => {
@@ -940,6 +1008,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toMatchNetworkRule(createNetworkRule('@@||*/redirect-exception-test.js', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks that common allowlist rule not negates redirect rule with $important', () => {
@@ -954,6 +1023,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         expect(result.getBasicResult()).toEqual(
             createNetworkRule('||*/redirect-exception-test.js$redirect=noopjs,important', 0),
         );
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks that common allowlist rule with $important negates redirect rule', () => {
@@ -968,6 +1038,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
         expect(result.getBasicResult()).toMatchNetworkRule(
             createNetworkRule('@@||*/redirect-exception-test.js$important', 0),
         );
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks that redirect allowlist rule negates redirect rule', () => {
@@ -980,6 +1051,7 @@ describe('MatchingResult constructor handling redirect rules', () => {
 
         const result = new MatchingResult(rules, null);
         expect(result.getBasicResult()).toBeNull();
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 });
 
@@ -994,6 +1066,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
         const resultRule = result.getBasicResult();
         expect(resultRule).toBeTruthy();
         expect(resultRule).toMatchNetworkRule(createNetworkRule('*$script,redirect-rule=noopjs,domain=example.org', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks if redirect and redirect-rule modifiers are ok together', () => {
@@ -1008,6 +1081,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
         const found = result.getBasicResult();
         expect(found).not.toBeNull();
         expect(found).toMatchNetworkRule(createNetworkRule('||example.org^$redirect=noopjs', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks if redirect and redirect-rule modifiers are ok together with blocking rule', () => {
@@ -1023,6 +1097,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
         const found = result.getBasicResult();
         expect(found).not.toBeNull();
         expect(found).toMatchNetworkRule(createNetworkRule('||example.org^$redirect=noopjs', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('checks if redirect and redirect-rule modifiers are ok together with different priorities', () => {
@@ -1042,6 +1117,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
         const found = result.getBasicResult();
         expect(found).not.toBeNull();
         expect(found).toMatchNetworkRule(createNetworkRule('||ya.ru$redirect=nooptext,image', 0));
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 
     it('returns redirect-rule if there is blocking rule', () => {
@@ -1058,6 +1134,7 @@ describe('MatchingResult constructor handling redirect-rule rules', () => {
         const result = new MatchingResult(rules, null);
         const resultRule = result.getBasicResult();
         expect(resultRule).toBe(redirectRuleRule);
+        expect(result.getDocumentBlockingResult()).toBeNull();
     });
 });
 

@@ -424,10 +424,10 @@ export class WebRequestApi {
         }
 
         if (UserScriptsApi.isSupported) {
-            CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId);
+            CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi(tabId, frameId);
         } else {
-            CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId);
-            CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId);
+            CosmeticApi.applyJsFuncs(tabId, frameId);
+            CosmeticApi.applyScriptlets(tabId, frameId);
         }
     }
 
@@ -650,7 +650,23 @@ export class WebRequestApi {
             return;
         }
 
-        const rule = matchingResult.getBasicResult();
+        /**
+         * When handling document blocking, we need to retrieve the rule responsible for the blocking.
+         *
+         * MatchingResult.getBasicResult() is not good enough, because it may return an exception rule,
+         * while a blocking rule is still applied in MV3. For example, if there are two rules:
+         * `||example.com^$document` and
+         * `@@||example.com^$generichide`,
+         * the first rule is converted and applied as DNR rule by browser (so here we are handling the error),
+         * the second one is not related to the blocking and error handling.
+         *
+         * This behaviour is expected, correct, and consistent with the CoreLibs apps:
+         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3260.
+         *
+         * TODO: fix incorrect logic for the MV2 extension:
+         * https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3262.
+         */
+        const rule = matchingResult.getDocumentBlockingResult();
         if (!rule) {
             return;
         }
@@ -762,14 +778,14 @@ export class WebRequestApi {
         }
 
         const tasks = [
-            CosmeticApi.applyCssByTabAndFrame(tabId, frameId),
+            CosmeticApi.applyCss(tabId, frameId),
         ];
 
         if (UserScriptsApi.isSupported) {
-            tasks.push(CosmeticApi.applyJsFuncsAndScriptletsByTabAndFrame(tabId, frameId));
+            tasks.push(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi(tabId, frameId));
         } else {
-            tasks.push(CosmeticApi.applyJsFuncsByTabAndFrame(tabId, frameId));
-            tasks.push(CosmeticApi.applyScriptletsByTabAndFrame(tabId, frameId));
+            tasks.push(CosmeticApi.applyJsFuncs(tabId, frameId));
+            tasks.push(CosmeticApi.applyScriptlets(tabId, frameId));
         }
 
         // Note: this is an async function, but we will not await it because

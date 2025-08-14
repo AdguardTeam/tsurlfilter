@@ -80,7 +80,7 @@ export class SourceMap implements ISourceMap {
      *
      * @returns Unique key for dictionary.
      */
-    static getKeyFromSource(source: SourceRuleIdxAndFilterId): string {
+    public static getKeyFromSource(source: SourceRuleIdxAndFilterId): string {
         return `${source.filterId}_${source.sourceRuleIndex}`;
     }
 
@@ -92,7 +92,7 @@ export class SourceMap implements ISourceMap {
      *
      * @returns List of pairs: source filter id and source rule id.
      */
-    getByDeclarativeRuleId(ruleId: number): SourceRuleIdxAndFilterId[] {
+    public getByDeclarativeRuleId(ruleId: number): SourceRuleIdxAndFilterId[] {
         return this.ruleIdMap.get(ruleId) || [];
     }
 
@@ -104,7 +104,7 @@ export class SourceMap implements ISourceMap {
      *
      * @returns List of ids of converted declarative rules.
      */
-    getBySourceRuleIndex(source: SourceRuleIdxAndFilterId): number[] {
+    public getBySourceRuleIndex(source: SourceRuleIdxAndFilterId): number[] {
         const key = SourceMap.getKeyFromSource(source);
 
         return this.declarativeIdMap.get(key) || [];
@@ -117,7 +117,7 @@ export class SourceMap implements ISourceMap {
      *
      * @returns List of sources.
      */
-    static deserializeSources(sourceString: string): Source[] {
+    public static deserializeSources(sourceString: string): Source[] {
         // TODO: Add validation
         const arr: number[][] = JSON.parse(sourceString);
 
@@ -135,7 +135,7 @@ export class SourceMap implements ISourceMap {
      *
      * @returns JSON string.
      */
-    serialize(): string {
+    public serialize(): string {
         // Remove fields names to reduce size of serialized string
         const plainArray = this.sources.map(({
             declarativeRuleId,

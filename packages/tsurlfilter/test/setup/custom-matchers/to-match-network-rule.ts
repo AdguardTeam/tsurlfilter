@@ -1,6 +1,7 @@
-import { expect } from 'vitest';
-import { omit } from 'lodash-es';
 import { type SyncExpectationResult } from '@vitest/expect';
+import { omit } from 'lodash-es';
+import { expect } from 'vitest';
+
 import { type NetworkRule } from '../../../src/rules/network-rule';
 
 const normalizeNetworkRule = (rule: NetworkRule): Partial<NetworkRule> => {

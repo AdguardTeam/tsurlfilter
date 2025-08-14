@@ -6,17 +6,19 @@ import {
     BASE_DIR,
     DEST_RULESETS_DIR,
     FILTERS_DIR,
+    LOCAL_METADATA_FILE_NAME,
     RESOURCES_DIR,
 } from '../common/constants';
 import { startDownload } from '../common/filters-downloader';
 import { version } from '../package.json';
+import { getVersion, getVersionTimestampMs } from '../src/utils/version-utils';
 
 /**
  * Creates build.txt file with package version.
  *
  * @returns Promise that resolves when build.txt is created.
  */
-const createTxt = async (): Promise<void> => {
+const createVersionTxt = async (): Promise<void> => {
     return fs.promises.writeFile(
         path.join(BASE_DIR, 'build.txt'),
         `version=${version}`,
@@ -38,6 +40,21 @@ const removeTxtFiles = async (dir: string): Promise<void> => {
     await Promise.all(
         txtFiles.map((file) => fs.promises.unlink(path.join(dir, file))),
     );
+};
+
+/**
+ * Removes filters metadata file from the specified directory.
+ * This file is generated during the conversion process and is not needed
+ * after that.
+ *
+ * @param dir Directory where the filters metadata file is located.
+ */
+const removeFiltersMetadata = async (dir: string): Promise<void> => {
+    const filtersMetadataPath = path.join(dir, LOCAL_METADATA_FILE_NAME);
+
+    if (fs.existsSync(filtersMetadataPath)) {
+        await fs.promises.unlink(filtersMetadataPath);
+    }
 };
 
 /**
@@ -65,12 +82,20 @@ const build = async (): Promise<void> => {
         {
             debug: true,
             prettifyJson: false,
+            additionalProperties: {
+                version: getVersion(),
+                versionTimestampMs: getVersionTimestampMs(),
+            },
         },
     );
 
     await removeTxtFiles(FILTERS_DIR);
 
-    await createTxt();
+    // After single conversion, do not forget to remove filters.json file,
+    // since it is packed inside metadata ruleset.
+    await removeFiltersMetadata(FILTERS_DIR);
+
+    await createVersionTxt();
 };
 
 build();

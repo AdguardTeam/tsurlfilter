@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { getRelativeUrl, cleanUrlParamByRegExp } from '../../src/utils/url';
+import { cleanUrlParamByRegExp, getRelativeUrl } from '../../src/utils/url';
 
 describe('Url utils', () => {
     it('parses url relative part', () => {

@@ -1,20 +1,17 @@
 import { type AnyCosmeticRule, type AnyRule, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import {
-    defaultParserOptions,
-    RuleParser,
     CosmeticRuleParser,
+    defaultParserOptions,
     NetworkRuleParser,
+    RuleParser,
 } from '@adguard/agtree/parser';
 import { isString } from 'lodash-es';
 
-import {
-    CosmeticRule,
-    type IRule,
-    NetworkRule,
-    RULE_INDEX_NONE,
-    RuleFactory,
-} from '../../src';
+import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { NetworkRuleWithNode } from '../../src/rules/declarative-converter/network-rule-with-node';
+import { NetworkRule } from '../../src/rules/network-rule';
+import { type IRule, RULE_INDEX_NONE } from '../../src/rules/rule';
+import { RuleFactory } from '../../src/rules/rule-factory';
 
 /**
  * Helper function to create a network rule from a string or a parsed node.

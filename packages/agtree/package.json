@@ -1,6 +1,6 @@
 {
     "name": "@adguard/agtree",
-    "version": "3.2.1",
+    "version": "3.2.2",
     "description": "Tool set for working with adblock filter lists",
     "keywords": [
         "adblock",
@@ -81,7 +81,7 @@
         "lint:types": "tsc",
         "lint:md": "markdownlint .",
         "precommit": "pnpm lint:types && pnpm lint && pnpm test",
-        "test": "vitest run -- --no-cache",
+        "test": "vitest run --no-cache",
         "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
         "tgz": "pnpm pack --out agtree.tgz"
     },
