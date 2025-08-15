@@ -6,20 +6,24 @@ import { type IRule } from '../rule';
 /**
  * Network rule with node.
  */
-export class NetworkRuleWithNode implements IRule {
+export class NetworkRuleWithNodeAndText implements IRule {
     public rule: NetworkRule;
 
     public node: NetworkRuleNode;
+
+    public text: string;
 
     /**
      * Creates an instance of NetworkRuleWithNode.
      *
      * @param rule Network rule.
      * @param node Network rule node.
+     * @param text Network rule text.
      */
-    constructor(rule: NetworkRule, node: NetworkRuleNode) {
+    constructor(rule: NetworkRule, node: NetworkRuleNode, text: string) {
         this.rule = rule;
         this.node = node;
+        this.text = text;
     }
 
     /** @inheritdoc */

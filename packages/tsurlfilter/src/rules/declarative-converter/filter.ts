@@ -1,6 +1,5 @@
 import { EMPTY_STRING } from '../../common/constants';
-import { type PreprocessedFilterList } from '../../filterlist/preprocessor';
-import { getRuleSourceIndex, getRuleSourceText } from '../../filterlist/source-map';
+import { type ConvertedFilterList } from '../../filterlist/converted-filter-list';
 
 import { UnavailableFilterSourceError } from './errors/unavailable-sources-errors';
 
@@ -11,7 +10,7 @@ type IStringSourceProvider = {
     /**
      * Returns filter content.
      */
-    getContent: () => Promise<PreprocessedFilterList>;
+    getContent: () => Promise<ConvertedFilterList>;
 };
 
 /**
@@ -43,7 +42,7 @@ export interface IFilter {
      *
      * @throws Error {@link UnavailableFilterSourceError} if content is not available.
      */
-    getContent(): Promise<PreprocessedFilterList>;
+    getContent(): Promise<ConvertedFilterList>;
 
     /**
      * Unload filter content.
@@ -72,12 +71,12 @@ export class Filter implements IFilter {
     /**
      * Content of filter (lazy loading).
      */
-    private content: PreprocessedFilterList | null = null;
+    private content: ConvertedFilterList | null = null;
 
     /**
      * Promise for content loading.
      */
-    private contentLoadingPromise: Promise<PreprocessedFilterList> | null = null;
+    private contentLoadingPromise: Promise<ConvertedFilterList> | null = null;
 
     /**
      * Provider of filter content.
@@ -112,7 +111,7 @@ export class Filter implements IFilter {
     }
 
     /** @inheritdoc */
-    public async getContent(): Promise<PreprocessedFilterList> {
+    public async getContent(): Promise<ConvertedFilterList> {
         // If content is already loaded, return it
         if (this.content) {
             return this.content;
@@ -124,11 +123,11 @@ export class Filter implements IFilter {
         }
 
         // Assign the promise immediately to avoid race conditions
-        this.contentLoadingPromise = (async (): Promise<PreprocessedFilterList> => {
+        this.contentLoadingPromise = (async (): Promise<ConvertedFilterList> => {
             try {
                 const content = await this.source.getContent();
 
-                if (!content || content.rawFilterList.length === 0 || content.filterList.length === 0) {
+                if (!content.getContent()) {
                     throw new Error('Loaded empty content');
                 }
 
@@ -149,11 +148,9 @@ export class Filter implements IFilter {
     /** @inheritdoc */
     public async getRuleByIndex(index: number): Promise<string> {
         const content = await this.getContent();
+        const rule = content.getOriginalRuleText(index);
 
-        const lineIndex = getRuleSourceIndex(index, content.sourceMap);
-        const sourceRule = getRuleSourceText(lineIndex, content.rawFilterList) ?? EMPTY_STRING;
-
-        return sourceRule;
+        return rule ?? EMPTY_STRING;
     }
 
     /** @inheritdoc */

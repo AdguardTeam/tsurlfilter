@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { findNextLineBreakIndex } from 'tsurlfilter-v3';
 
-import { FilterListPreprocessor } from '../../../src/filterlist/preprocessor';
 import { Filter } from '../../../src/rules/declarative-converter';
+import { ConvertedFilterList } from '../../../src/filterlist/converted-filter-list';
 
 describe('Filter', () => {
     // NOTE: Testing filter SHOULD contain some of convertible while
     // preprocessing rules.
-    const rawContent = [
+    const rules = [
         '||example.com^$document',
         '||example.net^',
         '@@||example.io^',
@@ -17,43 +18,52 @@ describe('Filter', () => {
         'samnytt.se#@#div[class=""], a, .sticky > div[style="display:grid"], .post-content > div.mx-auto:has-text(/annons/i)',
         'wolt.com##button:has(> div > div > div > span:has-text(Sponsored))',
         '4wank.com#?#.video-holder > center > :-abp-contains(/^Advertisement$/)',
-    ].join('\r\n');
+    ];
+    const text = rules.join('\r\n');
 
     it('loads content from string source provider', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
+            { getContent: async () => new ConvertedFilterList(text) },
             true,
         );
 
         const loadedContent = await filter.getContent();
 
-        expect(FilterListPreprocessor.getOriginalFilterListText(loadedContent)).toStrictEqual(rawContent);
+        expect(loadedContent.getOriginalContent()).toStrictEqual(text);
     });
 
     it('returns original rule by index', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
+            { getContent: async () => new ConvertedFilterList(text) },
             true,
         );
 
-        const preprocessedFilter = await filter.getContent();
+        const convertedFilter = await filter.getContent();
+        const content = convertedFilter.getContent();
+        const { length } = content;
+        const indices: number[] = [];
 
-        const indexes = Object.keys(preprocessedFilter.sourceMap).map(Number);
-        const rules = await Promise.all(indexes.map(async (index) => filter.getRuleByIndex(index)));
+        let i = 0;
 
-        // TODO: It looks like poor design: it is not obvious that we should save
-        // and operate preprocessed filter content, but not raw original one. AG-37306
-        const preprocessedContent = preprocessedFilter.rawFilterList.split('\r\n');
+        while (i < length) {
+            indices.push(i);
+            const [nextLineBreakIndex, nextLineBreakLength] = findNextLineBreakIndex(content, i);
+            i = nextLineBreakIndex + nextLineBreakLength;
+        }
 
-        expect(rules).toStrictEqual(preprocessedContent);
+        const retrievedRules = await Promise.all(
+            indices.map(async (index) => convertedFilter.getOriginalRuleText(index)),
+        );
+
+        expect(retrievedRules).toStrictEqual(rules);
     });
 
     it('unloads content correctly', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
+            { getContent: async () => new ConvertedFilterList(text) },
             true,
         );
 
@@ -70,7 +80,7 @@ describe('Filter', () => {
     it('does not return stale content after unload', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
+            { getContent: async () => new ConvertedFilterList(text) },
             true,
         );
 
@@ -85,7 +95,7 @@ describe('Filter', () => {
 
         // Reload content after unloading
         const newContent = await filter.getContent();
-        expect(FilterListPreprocessor.getOriginalFilterListText(newContent)).toStrictEqual(rawContent);
+        expect(newContent.getOriginalContent()).toStrictEqual(text);
     });
 
     it('waits for content to load before unloading', async () => {
@@ -108,7 +118,7 @@ describe('Filter', () => {
         filter.unloadContent();
 
         // Resolve content fetch
-        resolveFetch!(FilterListPreprocessor.preprocess(rawContent));
+        resolveFetch!(new ConvertedFilterList(text));
 
         // Ensure content is still correctly unloaded after the fetch completes
         await contentPromise;
@@ -119,7 +129,7 @@ describe('Filter', () => {
     it('prevents memory leaks by resetting contentLoadingPromise', async () => {
         const filter = new Filter(
             1,
-            { getContent: async () => FilterListPreprocessor.preprocess(rawContent) },
+            { getContent: async () => new ConvertedFilterList(text) },
             true,
         );
 

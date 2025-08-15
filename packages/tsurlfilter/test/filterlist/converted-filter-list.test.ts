@@ -173,15 +173,17 @@ describe('ConvertedFilterList', () => {
         ].join('');
         const list = new ConvertedFilterList(original);
 
-        expect(list.getOriginalRuleText(2)).toBeNull();
-        expect(list.getOriginalRuleText(3)).toBe('##+js(bar)');
+        expect(list.getOriginalRuleText(0)).toBe('||example.com^');
+        expect(list.getOriginalRuleText(
+            list.getContent().indexOf("#%#//scriptlet('ubo-bar')"),
+        )).toBe('##+js(bar)');
     });
 
     it('should not return original rule if the line index is not a line start', () => {
         const original = '##+js(bar)';
         const list = new ConvertedFilterList(original);
 
-        expect(list.getOriginalRuleText(1)).toEqual('##+js(bar)'); // not line start, fallback
+        expect(list.getOriginalRuleText(0)).toEqual('##+js(bar)'); // not line start, fallback
     });
 
     it('should return null for out-of-bound index', () => {

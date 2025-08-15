@@ -17,9 +17,9 @@ export type ConversionData = {
 
     /**
      * Conversion map.
-     * Maps line numbers in the converted content to indexes in the `originals` array.
+     * Maps line start offsets in the converted content to indexes in the `originals` array.
      *
-     * Keys are 1-based line numbers in the converted content.
+     * Keys are 0-based line start offsets in the converted content.
      * Values are 0-based indexes in the `originals` array.
      */
     conversions: Record<number, number>;
@@ -95,7 +95,7 @@ export class ConvertedFilterList {
         }
 
         const { length } = original;
-        const convertedBuffer: string[] = [];
+        let convertedBuffer = EMPTY_STRING;
         const data: ConversionData = {
             originals: [],
             conversions: {},
@@ -115,33 +115,33 @@ export class ConvertedFilterList {
                     data.originals.push(line);
 
                     for (let i = 0; i < conversionResult.result.length; i += 1) {
+                        const conversionIndex = convertedBuffer.length;
                         const convertedLine = conversionResult.result[i];
 
                         if (lineBreak.length > 0) {
-                            convertedBuffer.push(convertedLine + lineBreak);
+                            convertedBuffer += convertedLine + lineBreak;
                         } else if (i < conversionResult.result.length - 1) {
                             // If the file has no final line break, but we converted the last rule into multiple lines,
                             // we need to add a line break after each converted line, except the last one
-                            convertedBuffer.push(`${convertedLine}${LF}`);
+                            convertedBuffer += `${convertedLine}${LF}`;
                         } else {
-                            convertedBuffer.push(convertedLine);
+                            convertedBuffer += convertedLine;
                         }
 
-                        const conversionIndex = convertedBuffer.length;
                         data.conversions[conversionIndex] = originalIndex;
                     }
                 } else {
-                    convertedBuffer.push(line + lineBreak);
+                    convertedBuffer += line + lineBreak;
                 }
             } catch {
-                convertedBuffer.push(line + lineBreak);
+                convertedBuffer += line + lineBreak;
             }
 
             offset = lineBreakIndex + lineBreakLen;
         }
 
         this.data = data;
-        this.content = convertedBuffer.join('');
+        this.content = convertedBuffer;
 
         this.prepared = true;
     }
@@ -149,20 +149,25 @@ export class ConvertedFilterList {
     /**
      * Returns the original rule text for a given converted line number.
      *
-     * @param lineNumber Line number in the converted content (1-based).
+     * @param offset Line start offset in the converted content.
      *
      * @returns Original rule as string, or null if not found.
      * Please note that this function also returns null for valid line numbers,
      * if they do not have a corresponding original rule in the conversion data.
      */
-    public getOriginalRuleText(lineNumber: number): string | null {
-        const originalRuleIndex = this.data.conversions[lineNumber];
-
-        if (originalRuleIndex === undefined) {
+    public getOriginalRuleText(offset: number): string | null {
+        if (offset < 0 || offset >= this.content.length) {
             return null;
         }
 
-        return this.data.originals[originalRuleIndex] ?? null;
+        const originalRuleIndex = this.data.conversions[offset];
+
+        if (originalRuleIndex !== undefined) {
+            return this.data.originals[originalRuleIndex];
+        }
+
+        const [lineBreakStartIndex] = findNextLineBreakIndex(this.content, offset);
+        return this.content.slice(offset, lineBreakStartIndex);
     }
 
     /**
@@ -176,39 +181,40 @@ export class ConvertedFilterList {
             return this.content;
         }
 
-        const originalBuffer: string[] = [];
+        let originalBuffer = EMPTY_STRING;
         const { length } = this.content;
 
         let offset = 0;
-        let lineNumber = 1;
 
         while (offset < length) {
             let [nextLineBreakIndex, nextLineBreakLength] = findNextLineBreakIndex(this.content, offset);
 
             const currentLine = this.content.slice(offset, nextLineBreakIndex);
-            const firstOriginalRuleIndex = this.data.conversions[lineNumber];
+            const firstOriginalRuleIndex = this.data.conversions[offset]; // use char offset as key
 
             if (firstOriginalRuleIndex !== undefined) {
-                originalBuffer.push(this.data.originals[firstOriginalRuleIndex]);
+                // Write original rule
+                originalBuffer += this.data.originals[firstOriginalRuleIndex];
 
-                // Maybe a single original rule is converted to multiple rules
-                // In this case we should skip the next lines
-                while (this.data.conversions[lineNumber + 1] === firstOriginalRuleIndex) {
-                    lineNumber += 1;
-                    offset = nextLineBreakIndex + nextLineBreakLength;
-                    [nextLineBreakIndex, nextLineBreakLength] = findNextLineBreakIndex(this.content, offset);
+                // Skip any subsequent converted lines that came from the same original rule
+                let nextOffset = nextLineBreakIndex + nextLineBreakLength;
+                while (this.data.conversions[nextOffset] === firstOriginalRuleIndex) {
+                    [nextLineBreakIndex, nextLineBreakLength] = findNextLineBreakIndex(this.content, nextOffset);
+                    nextOffset = nextLineBreakIndex + nextLineBreakLength;
                 }
+
+                // Update offset to the end of this group
+                offset = nextLineBreakIndex + nextLineBreakLength;
             } else {
-                originalBuffer.push(currentLine);
+                // No mapping, just copy the line
+                originalBuffer += currentLine;
+                offset = nextLineBreakIndex + nextLineBreakLength;
             }
 
-            // Preserve original line breaks, including final line break, if any
-            originalBuffer.push(this.content.slice(nextLineBreakIndex, nextLineBreakIndex + nextLineBreakLength));
-
-            offset = nextLineBreakIndex + nextLineBreakLength;
-            lineNumber += 1;
+            // Preserve original line breaks, including final break if present
+            originalBuffer += this.content.slice(nextLineBreakIndex, nextLineBreakIndex + nextLineBreakLength);
         }
 
-        return originalBuffer.join(EMPTY_STRING);
+        return originalBuffer;
     }
 }

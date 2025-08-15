@@ -1,6 +1,5 @@
-import { type AnyRule, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
+import { type AnyRule, type NetworkRule as NetworkRuleNode, RuleParser } from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
-import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { getErrorMessage } from '../../common/error';
 import { fastHash, fastHash31 } from '../../utils/string-utils';
@@ -8,7 +7,7 @@ import { NetworkRule } from '../network-rule';
 import { IndexedRule, type IRule } from '../rule';
 import { RuleFactory } from '../rule-factory';
 
-import { NetworkRuleWithNode } from './network-rule-with-node';
+import { NetworkRuleWithNodeAndText } from './network-rule-with-node-and-text';
 
 /**
  * Network rule with index and hashes for pattern and rule's text.
@@ -38,7 +37,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      *
      * @see {@link https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier}
      */
-    public declare rule: NetworkRuleWithNode;
+    public declare rule: NetworkRuleWithNodeAndText;
 
     /**
      * Constructor.
@@ -47,10 +46,11 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      * @param index Rule's index.
      * @param hash Hash of the rule.
      */
-    constructor(rule: NetworkRuleWithNode, index: number, hash: number) {
+    constructor(rule: NetworkRuleWithNodeAndText, index: number, hash: number) {
         super(rule, index);
 
         this.hash = hash;
+        this.rule = rule;
     }
 
     /**
@@ -82,10 +82,8 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      * @returns Hash for pattern part of the network rule.
      */
     public getRuleTextHash(salt?: number): number {
-        const textOfNetworkRule = RuleGenerator.generate(this.rule.node);
-
         // Append a null-char to not collide with legitimate rule text.
-        const trialText = salt === undefined ? textOfNetworkRule : `${textOfNetworkRule}\0${salt}`;
+        const trialText = salt === undefined ? this.rule.text : `${this.rule.text}\0${salt}`;
 
         return fastHash31(trialText);
     }
@@ -97,6 +95,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      * @param filterId Filter id.
      * @param index Rule's buffer index in that filter.
      * @param ruleConvertedToAGSyntax Rule which was converted to AG syntax.
+     * @param text Rule text.
      *
      * @throws Error when conversion failed.
      *
@@ -106,6 +105,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
         filterId: number,
         index: number,
         ruleConvertedToAGSyntax: AnyRule,
+        text: string,
     ): IndexedNetworkRuleWithHash | null {
         // Create indexed network rule from AG rule. These rules will be used in
         // declarative rules, that's why we ignore cosmetic and host rules.
@@ -125,7 +125,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
             );
         } catch (e) {
             // eslint-disable-next-line max-len
-            throw new Error(`Cannot create IRule from filter "${filterId}" and byte offset "${index}": ${getErrorMessage(e)}`);
+            throw new Error(`Cannot create IRule from filter "${filterId}" and rule index "${index}": ${getErrorMessage(e)}`);
         }
 
         /**
@@ -143,12 +143,11 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
 
         const patternHash = IndexedNetworkRuleWithHash.createRulePatternHash(networkRule);
 
-        const networkRuleWithNode = new NetworkRuleWithNode(networkRule, ruleConvertedToAGSyntax as NetworkRuleNode);
-
         // If rule is not empty - pack to IndexedNetworkRuleWithHash and add it
         // to the result array.
         const indexedNetworkRuleWithHash = new IndexedNetworkRuleWithHash(
-            networkRuleWithNode,
+            // Its safe to cast here, because we already checked that ruleConvertedToAGSyntax is a network rule
+            new NetworkRuleWithNodeAndText(networkRule, ruleConvertedToAGSyntax as NetworkRuleNode, text),
             index,
             patternHash,
         );
@@ -166,7 +165,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      *
      * @param filterId Filter's id from which rule was extracted.
      * @param ruleIndex Buffer index of rule in that filter.
-     * @param node Rule node.
+     * @param text Rule text.
      *
      * @throws Error when rule cannot be converted to AG syntax or when indexed
      * rule cannot be created from the rule which is already converted to AG
@@ -174,14 +173,15 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      *
      * @returns Item of {@link IndexedNetworkRuleWithHash}.
      */
-    public static createFromNode(
+    public static createFromText(
         filterId: number,
         ruleIndex: number,
-        node: AnyRule,
+        text: string,
     ): IndexedNetworkRuleWithHash[] {
         // Converts a raw string rule to AG syntax (apply aliases, etc.)
         let rulesConvertedToAGSyntax: AnyRule[];
         try {
+            const node = RuleParser.parse(text);
             const conversionResult = RuleConverter.convertToAdg(node);
             if (conversionResult.isConverted) {
                 rulesConvertedToAGSyntax = conversionResult.result;
@@ -205,6 +205,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
                     filterId,
                     ruleIndex,
                     ruleConvertedToAGSyntax,
+                    text,
                 );
 
                 if (networkIndexedRuleWithHash) {
