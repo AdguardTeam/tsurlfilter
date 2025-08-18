@@ -95,8 +95,8 @@
         "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",
         "report-coverage": "cat ./coverage/lcov.info | coveralls",
         "precommit": "lint-staged",
-        "prepublishOnly": "pnpm build",
-        "tgz": "pnpm pack --out tswebextension.tgz"
+        "prepare": "pnpm build",
+        "prepublishOnly": "pnpm build"
     },
     "lint-staged": {
         "{src,test}/**/*.ts": [
