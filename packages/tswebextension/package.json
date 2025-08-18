@@ -95,7 +95,7 @@
         "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",
         "report-coverage": "cat ./coverage/lcov.info | coveralls",
         "precommit": "lint-staged",
-        "prepare": "pnpm build",
+        "prepare": "npx lerna run --scope @adguard/tswebextension build",
         "prepublishOnly": "pnpm build"
     },
     "lint-staged": {
