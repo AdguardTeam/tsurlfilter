@@ -1,4 +1,4 @@
-import { RequestType } from '@adguard/tsurlfilter';
+import { type CosmeticRule, RequestType } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils/url';
 import { MAIN_FRAME_ID } from '../../common/constants';
@@ -15,7 +15,19 @@ import { appContext } from './app-context';
 import { DocumentApi } from './document-api';
 import { engineApi } from './engine-api';
 import { CosmeticApi } from './cosmetic-api';
-import { UserScriptsApi } from './user-scripts-api';
+
+type SplitLocalRemoteScriptRulesResult = {
+    /**
+     * Rules which should be injected with scripting API in any case.
+     */
+    localRules: CosmeticRule[];
+
+    /**
+     * Rules which should be injected with user scripts API only if the user
+     * scripts permission is granted.
+     */
+    remoteRules: CosmeticRule[];
+};
 
 /**
  * Cosmetic frame processor.
@@ -121,25 +133,37 @@ export class CosmeticFrameProcessor {
 
         const cosmeticResult = engineApi.getCosmeticResult(url, result.getCosmeticOption());
 
+        const scriptRules = cosmeticResult.getScriptRules();
+
         const {
-            scriptTexts,
-            scriptletDataList,
-        } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
+            localRules,
+            remoteRules,
+        } = CosmeticFrameProcessor.splitLocalRemoteScriptRules(scriptRules);
 
-        const { configuration } = appContext;
-        const areHitsStatsCollected = configuration?.settings.collectStats || false;
+        const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
 
-        const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
+        const preparedCosmeticResult = {
+            cssText: CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected),
+            // Local script rules should be processed separately
+            // because they will be injected with two different calls
+            // to scripting API.
+            localRules: {
+                ...CosmeticApi.getScriptsAndScriptletsData(localRules),
+                rawRules: localRules,
+            },
+            // Remote script rules should be combined into one script text
+            // for the user scripts API.
+            remoteRules: {
+                scriptText: CosmeticApi.getScriptText(remoteRules),
+                rawRules: remoteRules,
+            },
+        };
 
         tabsApi.updateFrameContext(tabId, frameId, {
             mainFrameUrl,
             matchingResult: result,
             cosmeticResult,
-            preparedCosmeticResult: {
-                scriptTexts,
-                scriptletDataList,
-                cssText,
-            },
+            preparedCosmeticResult,
         });
     }
 
@@ -178,43 +202,37 @@ export class CosmeticFrameProcessor {
 
         const cosmeticResult = engineApi.getCosmeticResult(url, matchingResult.getCosmeticOption());
 
-        const { configuration } = appContext;
-        const areHitsStatsCollected = configuration?.settings.collectStats || false;
+        const scriptRules = cosmeticResult.getScriptRules();
 
-        const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
+        const {
+            localRules,
+            remoteRules,
+        } = CosmeticFrameProcessor.splitLocalRemoteScriptRules(scriptRules);
 
-        const partialFrameContext: Partial<FrameMV3> = { matchingResult, cosmeticResult };
+        const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
 
-        /**
-         * If user scripts API is supported, we should store one combined script
-         * text, because it will be injected once and it is more efficient.
-         */
-        if (UserScriptsApi.isSupported) {
-            const scriptText = CosmeticApi.getScriptText(cosmeticResult.getScriptRules());
+        const preparedCosmeticResult = {
+            cssText: CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected),
+            // Local script rules should be processed separately
+            // because they will be injected with two different calls
+            // to scripting API.
+            localRules: {
+                ...CosmeticApi.getScriptsAndScriptletsData(localRules),
+                rawRules: localRules,
+            },
+            // Remote script rules should be combined into one script text
+            // for the user scripts API.
+            remoteRules: {
+                scriptText: CosmeticApi.getScriptText(remoteRules),
+                rawRules: remoteRules,
+            },
+        };
 
-            partialFrameContext.preparedCosmeticResult = {
-                cssText,
-                scriptText,
-            };
-        } else {
-            /**
-             * Otherwise, we should store separate script texts and scriptlet
-             * data, because they will be injected separately with different
-             * params.
-             */
-            const {
-                scriptTexts,
-                scriptletDataList,
-            } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult);
-
-            partialFrameContext.preparedCosmeticResult = {
-                cssText,
-                scriptTexts,
-                scriptletDataList,
-            };
-        }
-
-        tabsApi.updateFrameContext(tabId, frameId, partialFrameContext);
+        tabsApi.updateFrameContext(tabId, frameId, {
+            matchingResult,
+            cosmeticResult,
+            preparedCosmeticResult,
+        });
     }
 
     /**
@@ -240,7 +258,7 @@ export class CosmeticFrameProcessor {
             });
         } else {
             const mainFrame = tabsApi.getFrameContext(tabId, MAIN_FRAME_ID);
-            const mainFrameRule = mainFrame?.frameRule;
+            const mainFrameRule = mainFrame?.frameRule || null;
             const mainFrameUrl = mainFrame?.url;
 
             if (!isHttpRequest(url)) {
@@ -260,6 +278,41 @@ export class CosmeticFrameProcessor {
                 });
             }
         }
+    }
+
+    /**
+     * Split local and remote script rules, it is required to achieve
+     * transparency for the security model of the MV3.
+     *
+     * @param scriptRules Script rules to split.
+     *
+     * @returns Object with split local and remote rules.
+     */
+    private static splitLocalRemoteScriptRules(
+        scriptRules: CosmeticRule[],
+    ): SplitLocalRemoteScriptRulesResult {
+        const res: SplitLocalRemoteScriptRulesResult = {
+            localRules: [],
+            remoteRules: [],
+        };
+
+        for (const rule of scriptRules) {
+            const filterId = rule.getFilterListId();
+
+            const isBuiltInRule = engineApi.localRulesFiltersIds.includes(filterId);
+
+            /**
+             * Rule will be marked as local if it is rule from static filter list
+             * or it is user script rule and the user scripts permission is granted.
+             */
+            if (isBuiltInRule) {
+                res.localRules.push(rule);
+            } else {
+                res.remoteRules.push(rule);
+            }
+        }
+
+        return res;
     }
 
     /**

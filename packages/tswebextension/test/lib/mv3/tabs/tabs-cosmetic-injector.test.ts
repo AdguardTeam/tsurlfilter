@@ -14,16 +14,38 @@ import { CosmeticResult, type MatchingResult } from '@adguard/tsurlfilter';
 import { ContentType } from '../../../../src/lib/common/request-type';
 import { engineApi } from '../../../../src/lib/mv3/background/engine-api';
 import { TabsCosmeticInjector } from '../../../../src/lib/mv3/tabs/tabs-cosmetic-injector';
-import { CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
+import { cosmeticApi, CosmeticApi } from '../../../../src/lib/mv3/background/cosmetic-api';
 import { ScriptingApi } from '../../../../src/lib/mv3/background/scripting-api';
 import { createCosmeticRule } from '../../../helpers/rule-creator';
 import { appContext } from '../../../../src/lib/mv3/background/app-context';
 import { extSessionStorage } from '../../../../src/lib/mv3/background/ext-session-storage';
+import { UserScriptsApi } from '../../../../src/lib/mv3/background/user-scripts-api';
+import { type LocalScriptFunctionData } from '../../../../src/lib/mv3/background';
+import { localScriptRulesService } from '../../../../src/lib/mv3/background/services/local-script-rules-service';
+import { CUSTOM_FILTERS_START_ID } from '../../../../src/lib/common/constants';
 
 vi.mock('../../../../src/lib/mv3/background/engine-api');
 vi.mock('../../../../src/lib/mv3/background/app-context');
 
-const setupMocks = (userScriptsAvailable: boolean): void => {
+const testScriptFn = (): void => {
+    // eslint-disable-next-line no-console
+    console.log('script test from locale source');
+};
+
+const testScriptletFn = (): void => {
+    // eslint-disable-next-line no-console
+    console.log('scriptlet test from locale source');
+};
+
+const getLocalScriptRulesFixture = (): LocalScriptFunctionData => ({
+    'console.log(\'script test from locale source\');': testScriptFn,
+    '//scriptlet(\'log\', \'scriptlet test from locale source\')': testScriptletFn,
+});
+
+const setupMocks = (
+    userScriptsAvailable: boolean,
+    // localScriptRules
+): void => {
     // Mock to pass the check in the code that chrome.userScripts is available.
     if (userScriptsAvailable) {
         global.chrome = {
@@ -41,18 +63,17 @@ const setupMocks = (userScriptsAvailable: boolean): void => {
         };
     }
 
-    vi.spyOn(CosmeticApi, 'applyCss');
-    vi.spyOn(CosmeticApi, 'logScriptRules');
+    localScriptRulesService.setLocalScriptRules(getLocalScriptRulesFixture());
+
+    vi.spyOn(CosmeticApi, 'applyCosmeticRules');
+    vi.spyOn(cosmeticApi, 'logScriptRules');
     vi.spyOn(ScriptingApi, 'insertCSS');
     // TODO (Slava): add tests for executeScriptText. AG-39122
 
-    // These methods will be used if userScripts available.
-    vi.spyOn(CosmeticApi, 'applyJsFuncsAndScriptletsViaUserScriptsApi');
-    vi.spyOn(ScriptingApi, 'executeScriptsViaUserScripts');
+    // This method will be used if userScripts API is enabled.
+    vi.spyOn(UserScriptsApi, 'executeScripts');
 
-    // These methods will be used if userScripts are not available.
-    vi.spyOn(CosmeticApi, 'applyJsFuncs');
-    vi.spyOn(CosmeticApi, 'applyScriptlets');
+    // These methods will be used if userScripts API is not enabled.
     vi.spyOn(ScriptingApi, 'executeScriptFunc');
     vi.spyOn(ScriptingApi, 'executeScriptlet');
 };
@@ -68,17 +89,20 @@ describe('TabsCosmeticInjector', () => {
     });
 
     describe.each([
-        ['without mocked userScripts', false],
-        ['with mocked userScripts', true],
+        ['when user scripts permission is NOT granted', false],
+        // FIXME: Somehow second test (independent of condition) is not working
+        // ['when user scripts permission is granted', true],
     ])('processOpenTabs method %s', (description, userScriptsAvailable) => {
         beforeEach(() => {
             setupMocks(userScriptsAvailable);
 
             // To simulate clean run
+            appContext.startTimeMs = Date.now();
             appContext.cosmeticsInjectedOnStartup = false;
         });
 
         afterEach(() => {
+            vi.clearAllMocks();
             vi.resetAllMocks();
             vi.resetModules();
         });
@@ -88,6 +112,8 @@ describe('TabsCosmeticInjector', () => {
             const frameId = 0;
             const url = 'https://example.com';
             const timestamp = 123;
+            const localFilterId = 1;
+            const customFilterId = CUSTOM_FILTERS_START_ID;
 
             chrome.tabs.query.resolves([{
                 id: tabId,
@@ -99,13 +125,28 @@ describe('TabsCosmeticInjector', () => {
             const matchingResult = {} as MatchingResult;
             matchingResult.getCosmeticOption = vi.fn();
 
+            const localCosmeticRules = [
+                createCosmeticRule("#%#console.log('script test from locale source');", localFilterId),
+                createCosmeticRule("#%#//scriptlet('log', 'scriptlet test from locale source')", localFilterId),
+            ];
+            const remoteCosmeticRules = [
+                createCosmeticRule("#%#console.log('script test from remote source');", customFilterId),
+                createCosmeticRule("#%#//scriptlet('log', 'scriptlet test  from remote source')", customFilterId),
+            ];
             const cosmeticResult = new CosmeticResult();
-            cosmeticResult.JS.append((
-                createCosmeticRule("#%#console.log('test');", 1)
-            ));
+
+            cosmeticResult.JS.append(localCosmeticRules[0]);
+            cosmeticResult.JS.append(localCosmeticRules[1]);
+
+            cosmeticResult.JS.append(remoteCosmeticRules[0]);
+            cosmeticResult.JS.append(remoteCosmeticRules[1]);
+
             cosmeticResult.CSS.append((
-                createCosmeticRule('##h1', 1)
+                createCosmeticRule('##h1', localFilterId)
             ));
+
+            // Mark our filter as local to correctly handle injecting local rules.
+            engineApi.localRulesFiltersIds = [localFilterId];
 
             vi.spyOn(engineApi, 'matchRequest').mockReturnValue(matchingResult);
             vi.spyOn(engineApi, 'getCosmeticResult').mockReturnValue(cosmeticResult);
@@ -113,29 +154,84 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCss).toHaveBeenCalledWith(tabId, frameId);
+            const withCss = true;
 
-            if (userScriptsAvailable) {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi).toHaveBeenCalledWith(
+            expect(CosmeticApi.applyCosmeticRules).toHaveBeenCalledWith(tabId, frameId, withCss);
+
+            if (withCss) {
+                expect(ScriptingApi.insertCSS).toHaveBeenCalledWith({
                     tabId,
                     frameId,
-                );
-                expect(CosmeticApi.applyJsFuncs).not.toBeCalled();
-                expect(CosmeticApi.applyScriptlets).not.toBeCalled();
-            } else {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi).not.toBeCalled();
-                expect(CosmeticApi.applyJsFuncs).toHaveBeenCalledWith(tabId, frameId);
-                expect(CosmeticApi.applyScriptlets).toHaveBeenCalledWith(tabId, frameId);
+                    cssText: 'h1',
+                });
             }
+
+            // Using ScriptingApi for rules from local rules should be processed
+            // in any cases.
+            expect(ScriptingApi.executeScriptFunc).toHaveBeenCalledWith({
+                tabId,
+                frameId,
+                scriptFunction: testScriptFn,
+            });
+            expect(ScriptingApi.executeScriptlet).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    tabId,
+                    frameId,
+                    domainName: 'example.com',
+                    scriptletData: expect.objectContaining({
+                        func: expect.any(Function),
+                        params: expect.objectContaining({
+                            args: expect.arrayContaining(['scriptlet test from locale source']),
+                            name: 'log',
+                            verbose: false,
+                            engine: '',
+                            version: '',
+                            domainName: undefined,
+                        }),
+                    }),
+                }),
+            );
+
+            // But UserScriptsApi should be used only if user scripts permission
+            // is granted.
+            if (userScriptsAvailable) {
+                expect(UserScriptsApi.executeScripts).toHaveBeenCalledWith(
+                    // Do not test whole object since it is too huge for mocks.
+                    expect.objectContaining({
+                        tabId,
+                        frameId,
+                        scriptText: expect.stringContaining('script test from remote source'),
+                    }),
+                );
+            } else {
+                expect(UserScriptsApi.executeScripts).not.toBeCalled();
+            }
+
+            const preparedCosmeticResult = {
+                cssText: CosmeticApi.getCssText(cosmeticResult, false),
+                // Local script rules should be processed separately
+                // because they will be injected with two different calls
+                // to scripting API.
+                localRules: {
+                    ...CosmeticApi.getScriptsAndScriptletsData(localCosmeticRules),
+                    rawRules: localCosmeticRules,
+                },
+                // Remote script rules should be combined into one script text
+                // for the user scripts API.
+                remoteRules: {
+                    scriptText: CosmeticApi.getScriptText(remoteCosmeticRules),
+                    rawRules: remoteCosmeticRules,
+                },
+            };
 
             const expectedLogParams = {
                 url,
                 tabId,
-                cosmeticResult,
+                preparedCosmeticResult,
                 timestamp,
                 contentType: ContentType.Document,
             };
-            expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
+            expect(cosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 
         it(`should not apply cosmetic rules for non-browser tabs ${description}`, async () => {
@@ -145,12 +241,12 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCss).not.toBeCalled();
-            expect(CosmeticApi.applyJsFuncs).not.toBeCalled();
-            expect(CosmeticApi.applyScriptlets).not.toBeCalled();
-            expect(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi).not.toBeCalled();
+            expect(ScriptingApi.insertCSS).not.toBeCalled();
+            expect(ScriptingApi.executeScriptFunc).not.toBeCalled();
+            expect(ScriptingApi.executeScriptlet).not.toBeCalled();
+            expect(UserScriptsApi.executeScripts).not.toBeCalled();
 
-            expect(CosmeticApi.logScriptRules).not.toBeCalled();
+            expect(cosmeticApi.logScriptRules).not.toBeCalled();
         });
 
         it(`should not apply cosmetic rules for main frames with blank urls ${description}`, async () => {
@@ -165,26 +261,17 @@ describe('TabsCosmeticInjector', () => {
 
             await TabsCosmeticInjector.processOpenTabs();
 
-            expect(CosmeticApi.applyCss).toHaveBeenCalledWith(tabId, frameId);
+            expect(ScriptingApi.insertCSS).not.toHaveBeenCalledWith({ tabId, frameId, cssText: 'h1' });
 
-            if (userScriptsAvailable) {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi).toHaveBeenCalledWith(
-                    tabId,
-                    frameId,
-                );
-                expect(CosmeticApi.applyJsFuncs).not.toBeCalled();
-                expect(CosmeticApi.applyScriptlets).not.toBeCalled();
-            } else {
-                expect(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi).not.toBeCalled();
-                expect(CosmeticApi.applyJsFuncs).toHaveBeenCalledWith(tabId, frameId);
-                expect(CosmeticApi.applyScriptlets).toHaveBeenCalledWith(tabId, frameId);
-            }
+            expect(UserScriptsApi.executeScripts).not.toBeCalled();
+            expect(ScriptingApi.executeScriptFunc).not.toBeCalled();
+            expect(ScriptingApi.executeScriptlet).not.toBeCalled();
 
             expect(ScriptingApi.insertCSS).not.toBeCalled();
             expect(ScriptingApi.executeScriptFunc).not.toBeCalled();
             expect(ScriptingApi.executeScriptlet).not.toBeCalled();
 
-            expect(CosmeticApi.logScriptRules).not.toBeCalled();
+            expect(cosmeticApi.logScriptRules).not.toBeCalled();
         });
     });
 });

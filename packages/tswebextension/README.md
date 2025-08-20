@@ -28,11 +28,6 @@ Table of content:
             - [filtersPath (MV3 only)](#filterspath-mv3-only)
             - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
             - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
-            - [quickFixesRules (MV3 only)](#quickfixesrules-mv3-only)
-                - [rawFilterList](#rawfilterlist-1)
-                - [sourceMap](#sourcemap-1)
-                - [conversionMap](#conversionmap-1)
-                - [content](#content-2)
             - [allowlist](#allowlist)
             - [trustedDomains](#trusteddomains)
             - [userrules (MV2)](#userrules-mv2)
@@ -96,7 +91,9 @@ Table of content:
                 - [setBlockWebRTC() (MV2 only)](#setblockwebrtc-mv2-only)
                 - [getRawFilterList() (MV3 only)](#getrawfilterlist-mv3-only)
                 - [getPreprocessedFilterList() (MV3 only)](#getpreprocessedfilterlist-mv3-only)
-                - [isUserScriptsApiSupported](#isuserscriptsapisupported)
+        - [utilities](#utilities)
+            - [getFilterName](#getfiltername)
+            - [isUserScriptsApiEnabled](#isuserscriptsapienabled)
     - [Filtering Log API (MV2 only)](#filtering-log-api-mv2-only)
         - [events](#events)
             - [sendRequest](#sendrequest)
@@ -316,37 +313,6 @@ Path to directory with converted rule sets.
 type: `boolean`
 
 Enables matching declarative rules for filtering log.
-
-#### quickFixesRules (MV3 only)
-
-type: `preprocessedFilterList`
-
-Contains rules from AdGuard Quick Fixes rules which will applied in the dynamic
-rules between all other dynamic rules: allowlist, userrules and custom filters.
-
-##### rawFilterList
-
-type: `string`
-
-Raw filter list.
-
-##### sourceMap
-
-type: `Record<string, number>`
-
-Source map, where key is the rule start index in the byte buffer `content` and value is the line start index in the raw filter list.
-
-##### conversionMap
-
-type: `Record<string, string>`
-
-Conversion map, where key is the line start index in the raw filter list and value is the rule text.
-
-##### content
-
-type: `Uint8Array[]`
-
-AGTree byte buffer chunks.
 
 #### allowlist
 
@@ -758,12 +724,21 @@ Throws error if rule sets path is not set.
 
 [tsurlfilter-preprocessed-filter-list]: https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/tsurlfilter#preprocessedfilterlist-interface
 
-##### isUserScriptsApiSupported
+## Utilities
 
-type: `static get property`
-return type: `boolean`
+Separate entry point for utilities that can be used in the extension.
 
-Indicates whether user scripts API is supported in the current browser. Returns `true` if the user scripts API is supported, `false` otherwise.
+### getFilterName
+
+type: `(filterId: number) => string`
+
+For the specified filter identifier the filter file name is generated with an extension, in which the text filter rules should be saved.
+
+### isUserScriptsApiEnabled
+
+type: `() => boolean`
+
+Returns `true` if user scripts API is available and enabled, `false` otherwise.
 
 ## Filtering Log API (MV2 only)
 

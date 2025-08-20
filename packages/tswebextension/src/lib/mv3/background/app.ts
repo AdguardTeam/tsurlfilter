@@ -11,12 +11,7 @@ import { type AnyRule } from '@adguard/agtree';
 import { getRuleSetId } from '@adguard/tsurlfilter/es/declarative-converter-utils';
 
 import { type MessageHandler, type AppInterface } from '../../common/app';
-import {
-    ALLOWLIST_FILTER_ID,
-    BLOCKING_TRUSTED_FILTER_ID,
-    QUICK_FIXES_FILTER_ID,
-    USER_FILTER_ID,
-} from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, BLOCKING_TRUSTED_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { defaultFilteringLog } from '../../common/filtering-log';
 import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
@@ -39,7 +34,6 @@ import { type LocalScriptFunctionData, localScriptRulesService } from './service
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
-import { UserScriptsApi } from './user-scripts-api';
 import { SessionRulesApi } from './session-rules-api';
 
 type ConfigurationResult = {
@@ -384,16 +378,6 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
-            const quickFixesFilter = new Filter(
-                QUICK_FIXES_FILTER_ID,
-                {
-                    getContent: (): Promise<PreprocessedFilterList> => {
-                        return Promise.resolve(configuration.quickFixesRules);
-                    },
-                },
-                true,
-            );
-
             const trustedDomainsExceptionRule = AllowlistApi.getAllowlistRule(configuration.trustedDomains);
 
             const blockingPageTrustedFilter = new Filter(
@@ -409,7 +393,6 @@ export class TsWebExtension implements AppInterface<
             // Convert quick fixes rules, allowlist, custom filters and user
             // rules into one rule set and apply it.
             res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
-                quickFixesFilter,
                 allowlistFilter,
                 blockingPageTrustedFilter,
                 userRulesFilter,
@@ -426,11 +409,14 @@ export class TsWebExtension implements AppInterface<
             // Reload engine for cosmetic rules
             engineApi.waitingForEngine = engineApi.startEngine({
                 filters: [
+                    // local source
                     ...staticFilters,
+                    // remote source
                     ...customFilters,
                 ],
+                // remote source
                 userrules: configuration.userrules,
-                quickFixesRules: configuration.quickFixesRules,
+                localRulesFiltersIds: configuration.staticFiltersIds,
             });
             await engineApi.waitingForEngine;
 
@@ -807,14 +793,5 @@ export class TsWebExtension implements AppInterface<
     // eslint-disable-next-line class-methods-use-this
     public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
         return engineApi.retrieveRuleNode(filterId, ruleIndex);
-    }
-
-    /**
-     * Indicates whether user scripts API is supported in the current browser.
-     *
-     * @returns `true` if user scripts API is supported, `false` otherwise.
-     */
-    public static get isUserScriptsApiSupported(): boolean {
-        return UserScriptsApi.isSupported;
     }
 }

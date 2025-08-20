@@ -195,7 +195,7 @@ import {
     engineApi,
     tabsApi,
 } from './api';
-import { CosmeticApi } from './cosmetic-api';
+import { cosmeticApi, CosmeticApi } from './cosmetic-api';
 import { ContentFiltering } from './services/content-filtering/content-filtering';
 import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { cspService } from './services/csp-service';
@@ -733,7 +733,7 @@ export class WebRequestApi {
                 return;
             }
 
-            CosmeticApi.logScriptRules({
+            cosmeticApi.logScriptRules({
                 tabId,
                 cosmeticResult: frameContext.cosmeticResult,
                 url: requestUrl,

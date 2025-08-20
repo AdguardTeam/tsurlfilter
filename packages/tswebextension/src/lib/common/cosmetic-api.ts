@@ -17,11 +17,6 @@ export type LogJsRulesParams = {
     tabId: number;
 
     /**
-     * Cosmetic result.
-     */
-    cosmeticResult: CosmeticResult;
-
-    /**
      * Url.
      */
     url: string;
@@ -60,7 +55,7 @@ export type ContentScriptCosmeticData = {
 /**
  * CosmeticApiCommon contains common logic about building css for hiding elements.
  */
-export class CosmeticApiCommon {
+export class CosmeticApiCommon<T extends LogJsRulesParams> {
     protected static readonly LINE_BREAK = '\r\n';
 
     /**
@@ -362,23 +357,21 @@ export class CosmeticApiCommon {
      * Logs js rules applied to a specific frame.
      *
      * @param params Data for js rule logging.
-     * @param predicate Function to filter script rules before logging, e.g. check if the script rule is local.
+     * @param filterScriptRulesForLog Predicate that filters script rules for logging.
      */
-    protected static logScriptRules(
-        params: LogJsRulesParams,
-        predicate: (cosmeticResult: CosmeticRule) => boolean,
+    // eslint-disable-next-line class-methods-use-this
+    protected logScriptRules(
+        params: T,
+        filterScriptRulesForLog: (params: T) => CosmeticRule[],
     ): void {
         const {
             tabId,
-            cosmeticResult,
             url,
             contentType,
             timestamp,
         } = params;
 
-        const filteredScriptRules = cosmeticResult
-            .getScriptRules()
-            .filter(predicate);
+        const filteredScriptRules = filterScriptRulesForLog(params);
 
         for (const scriptRule of filteredScriptRules) {
             if (scriptRule.isGeneric()) {

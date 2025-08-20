@@ -169,11 +169,6 @@ export class AdguardApi {
             Object.assign(userrules, FilterListPreprocessor.preprocess(this.configuration.rules.join(LF)));
         }
 
-        const quickFixesRules: TsWebExtensionConfiguration['quickFixesRules'] = Object.assign(
-            FilterListPreprocessor.createEmptyPreprocessedFilterList(),
-            { trusted: true },
-        );
-
         return {
             filtersPath: this.configuration.assetsPath,
             ruleSetsPath: `${this.configuration.assetsPath}${AdguardApi.DECLARATIVE_RULES_PATH}`,
@@ -184,7 +179,6 @@ export class AdguardApi {
             staticFiltersIds: this.configuration.filters,
             allowlist,
             userrules,
-            quickFixesRules,
             settings: {
                 assistantUrl: 'adguard-assistant.js',
                 // Related stealth option is disabled

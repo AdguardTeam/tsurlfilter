@@ -17,7 +17,7 @@ import browser from 'webextension-polyfill';
 import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type AnyRule } from '@adguard/agtree';
 
-import { QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
+import { USER_FILTER_ID } from '../../common/constants';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, isHttpRequest, getHost } from '../../common/utils/url';
 
@@ -26,8 +26,9 @@ import { type ConfigurationMV3 } from './configuration';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 
-type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'quickFixesRules' | 'verbose'> & {
+type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'verbose'> & {
     filters: IFilter[];
+    localRulesFiltersIds: number[];
 };
 
 /**
@@ -59,6 +60,12 @@ export class EngineApi {
     waitingForEngine: Promise<void> | undefined;
 
     /**
+     * List of filter ids for local rules.
+     * It is used to split local and remote rules.
+     */
+    public localRulesFiltersIds: number[] = [];
+
+    /**
      * Starts the engine with the provided bunch of rules,
      * wrapped in filters or custom rules.
      *
@@ -69,7 +76,6 @@ export class EngineApi {
         const {
             filters,
             userrules,
-            quickFixesRules,
             verbose,
         } = config;
 
@@ -108,20 +114,6 @@ export class EngineApi {
                     false,
                     false,
                     userrules.sourceMap,
-                ),
-            );
-        }
-
-        if (quickFixesRules.filterList.length > 0) {
-            // Note: rules are already converted at the extension side
-            lists.push(
-                new BufferRuleList(
-                    QUICK_FIXES_FILTER_ID,
-                    quickFixesRules.filterList,
-                    false,
-                    false,
-                    false,
-                    quickFixesRules.sourceMap,
                 ),
             );
         }

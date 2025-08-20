@@ -21,11 +21,18 @@ type ScriptsAndScriptletsDataMv2 = {
     scriptText: string;
 };
 
+type LogJsRulesParamsMv2 = LogJsRulesParams & {
+    /**
+     * Cosmetic result.
+     */
+    cosmeticResult: CosmeticResult;
+};
+
 /**
  * Cosmetic api class.
  * Used to prepare and inject javascript and css into pages.
  */
-export class CosmeticApi extends CosmeticApiCommon {
+export class CosmeticApi extends CosmeticApiCommon<LogJsRulesParamsMv2> {
     /**
      * Timeout for cosmetic injection retry on failure.
      */
@@ -212,12 +219,16 @@ export class CosmeticApi extends CosmeticApiCommon {
      *
      * See {@link WebRequestApi.onBeforeRequest} for details.
      *
+     * TODO: Since injection and logging are happened in different places,
+     * we do not track was injection successful or not - we log all rules which
+     * expected to be applied. We should to track injection result.
+     *
      * @param params Data for js rule logging.
      */
-    public static logScriptRules(params: LogJsRulesParams): void {
+    public logScriptRules(params: LogJsRulesParamsMv2): void {
         super.logScriptRules(
             params,
-            CosmeticApi.shouldSanitizeScriptRule,
+            CosmeticApi.filterScriptRulesForLog,
         );
     }
 
@@ -269,6 +280,21 @@ export class CosmeticApi extends CosmeticApiCommon {
                 logger.debug('[tsweb.CosmeticApi.applyJs]: error occurred during injection', e);
             }
         }
+    }
+
+    /**
+     * Filters script rules for logging.
+     *
+     * @param params Data for JS rule logging.
+     *
+     * @returns Script rules which expected to be applied and logged.
+     */
+    private static filterScriptRulesForLog(
+        params: LogJsRulesParamsMv2,
+    ): CosmeticRule[] {
+        const scriptRules = params.cosmeticResult.getScriptRules();
+
+        return CosmeticApi.sanitizeScriptRules(scriptRules);
     }
 
     /**
@@ -336,3 +362,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         }
     }
 }
+
+const cosmeticApi = new CosmeticApi();
+
+export { cosmeticApi };

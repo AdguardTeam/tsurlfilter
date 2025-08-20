@@ -18,7 +18,7 @@ import { Allowlist } from '../../../../../src/lib/mv2/background/allowlist';
 import { appContext } from '../../../../../src/lib/mv2/background/app-context';
 import { stealthApi } from '../../../../../src/lib/mv2/background/stealth-api';
 import { DocumentApi } from '../../../../../src/lib/mv2/background/document-api';
-import { CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';
+import { cosmeticApi, CosmeticApi } from '../../../../../src/lib/mv2/background/cosmetic-api';
 import { ContentType } from '../../../../../src/lib/common/request-type';
 
 vi.mock('../../../../../src/lib/mv2/background/engine-api');
@@ -86,7 +86,7 @@ describe('TabsCosmeticInjector', () => {
                 timestamp,
                 contentType: ContentType.Document,
             };
-            expect(CosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
+            expect(cosmeticApi.logScriptRules).toBeCalledWith(expectedLogParams);
         });
 
         it('should not apply cosmetic rules for non-browser tabs', async () => {
@@ -98,7 +98,7 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticApi.applyCss).not.toBeCalled();
             expect(CosmeticApi.applyJs).not.toBeCalled();
-            expect(CosmeticApi.logScriptRules).not.toBeCalled();
+            expect(cosmeticApi.logScriptRules).not.toBeCalled();
         });
 
         it('should not apply cosmetic rules for frames without src', async () => {
@@ -113,7 +113,7 @@ describe('TabsCosmeticInjector', () => {
 
             expect(CosmeticApi.applyCss).not.toBeCalled();
             expect(CosmeticApi.applyJs).not.toBeCalled();
-            expect(CosmeticApi.logScriptRules).not.toBeCalled();
+            expect(cosmeticApi.logScriptRules).not.toBeCalled();
         });
     });
 });

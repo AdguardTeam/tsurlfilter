@@ -4,7 +4,7 @@ import { MAIN_FRAME_ID } from '../../../common/constants';
 import { logger } from '../../../common/utils/logger';
 import { ContentType } from '../../../common/request-type';
 import { appContext } from '../app-context';
-import { CosmeticApi } from '../cosmetic-api';
+import { cosmeticApi, CosmeticApi } from '../cosmetic-api';
 import { CosmeticFrameProcessor } from '../cosmetic-frame-processor';
 import { type DocumentApi } from '../document-api';
 import { type EngineApi } from '../engine-api';
@@ -146,7 +146,7 @@ export class TabsCosmeticInjector {
             }
 
             const isMainFrame = frameId === MAIN_FRAME_ID;
-            CosmeticApi.logScriptRules({
+            cosmeticApi.logScriptRules({
                 url,
                 tabId,
                 cosmeticResult: frameContext.cosmeticResult,
