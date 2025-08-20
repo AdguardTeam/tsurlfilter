@@ -8,9 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Removed
-- `quickFixesRules` property from MV3 configuration.
-- Static getter `isUserScriptsApiSupported`
 
+- Static getter `isUserScriptsApiSupported`
 
 ### Added
 

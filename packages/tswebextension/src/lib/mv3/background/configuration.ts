@@ -79,6 +79,11 @@ export const configurationMV3Validator = configurationValidator.extend({
      */
     declarativeLogEnabled: zod.boolean(),
 
+    /**
+     * List of hotfix rules which should applied dynamically.
+     */
+    quickFixesRules: customFilterMV3Validator.omit({ filterId: true }),
+
     settings: settingsConfigMV3,
 
     /**
@@ -99,5 +104,5 @@ export type ConfigurationMV3 = zod.infer<typeof configurationMV3Validator>;
  * It is used to reduce memory consumption when storing configuration data in memory.
  */
 export type ConfigurationMV3Context =
-    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'trustedDomains'>
+    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'quickFixesRules' | 'trustedDomains'>
     & { customFilters: number[] };
