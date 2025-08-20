@@ -301,10 +301,7 @@ export class CosmeticFrameProcessor {
 
             const isBuiltInRule = engineApi.localRulesFiltersIds.includes(filterId);
 
-            /**
-             * Rule will be marked as local if it is rule from static filter list
-             * or it is user script rule and the user scripts permission is granted.
-             */
+            // Rule will be marked as local if it is rule from static filter list.
             if (isBuiltInRule) {
                 res.localRules.push(rule);
             } else {
