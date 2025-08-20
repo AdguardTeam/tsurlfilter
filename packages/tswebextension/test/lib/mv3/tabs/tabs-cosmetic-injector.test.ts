@@ -90,8 +90,7 @@ describe('TabsCosmeticInjector', () => {
 
     describe.each([
         ['when user scripts permission is NOT granted', false],
-        // FIXME: Somehow second test (independent of condition) is not working
-        // ['when user scripts permission is granted', true],
+        ['when user scripts permission is granted', true],
     ])('processOpenTabs method %s', (description, userScriptsAvailable) => {
         beforeEach(() => {
             setupMocks(userScriptsAvailable);
@@ -105,6 +104,7 @@ describe('TabsCosmeticInjector', () => {
             vi.clearAllMocks();
             vi.resetAllMocks();
             vi.resetModules();
+            vi.restoreAllMocks();
         });
 
         it(`should apply cosmetic rules for each tab ${description}`, async () => {
