@@ -28,7 +28,6 @@ describe('TestRuleScannerOfBufferReader', () => {
             scannerType: ScannerType.All,
             ignoreCosmetic: false,
             ignoreJS: false,
-            ignoreUnsafe: false,
         });
 
         expect(scanner.getRule()).toBeFalsy();
@@ -108,7 +107,6 @@ describe('Rule Scanner Flags', () => {
             scannerType: ScannerType.All,
             ignoreCosmetic: true,
             ignoreJS: true,
-            ignoreUnsafe: false,
         });
 
         expect(scanner.getRule()).toBeFalsy();
@@ -133,37 +131,4 @@ describe('Rule Scanner Flags', () => {
         expect(scanner.scan()).toBeFalsy();
         expect(scanner.scan()).toBeFalsy();
     });
-
-    // FIXME (David): AG-43064, ignore unsafe rules, e.g. removeheader
-    // it('works if scanner respects ignoreUnsafe flag', () => {
-    //     const scanner = new RuleScanner(reader, 1, {
-    //         scannerType: ScannerType.All,
-    //         ignoreCosmetic: false,
-    //         ignoreJS: false,
-    //         ignoreUnsafe: true,
-    //     });
-
-    //     expect(scanner.getRule()).toBeFalsy();
-    //     expect(scanner.scan()).toBeTruthy();
-
-    //     let indexedRule = scanner.getRule();
-    //     expect(indexedRule!.rule).toBeTruthy();
-    //     expect(indexedRule!.rule).toBeTruthy();
-    //     expect(indexedRule!.rule!.text).toBe('||one.org');
-
-    //     expect(scanner.scan()).toBeTruthy();
-
-    //     indexedRule = scanner.getRule();
-    //     expect(indexedRule!.rule).toBeTruthy();
-    //     expect(indexedRule!.rule!.text).toBe('example.org#%#window.__gaq=undefined;');
-
-    //     expect(scanner.scan()).toBeTruthy();
-
-    //     indexedRule = scanner.getRule();
-    //     expect(indexedRule!.rule).toBeTruthy();
-    //     expect(indexedRule!.rule!.text).toBe('||two.org');
-
-    //     expect(scanner.scan()).toBeFalsy();
-    //     expect(scanner.scan()).toBeFalsy();
-    // });
 });

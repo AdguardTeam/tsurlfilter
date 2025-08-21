@@ -86,14 +86,24 @@ export class TrieLookupTable implements ILookupTable {
 
         for (let j = 0; j < rulesIndexes.length; j += 1) {
             let rule: NetworkRule | null = null;
+            let shouldRemove: boolean = false;
 
             try {
                 rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
+
+                if (!rule) {
+                    shouldRemove = true;
+                }
             } catch (e) {
+                shouldRemove = true;
+            }
+
+            if (shouldRemove) {
                 // Fast tokenizing possibly allowed invalid rules
                 // Remove the rule index from the lookup table but keep the same array reference
                 rulesIndexes.splice(j, 1);
                 j -= 1;
+                continue;
             }
 
             if (rule && rule.match(request, false)) {

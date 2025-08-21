@@ -1592,6 +1592,29 @@ describe('NetworkRule.isFilteringDisabled', () => {
     });
 });
 
+describe('NetworkRule.isUnsafe', () => {
+    const cases = [
+        { rule: '||example.org^$csp=test', expected: true },
+        { rule: '||example.org^$replace=/a/b/', expected: true },
+        { rule: '||example.org^$cookie=test', expected: true },
+        { rule: '||example.org^$redirect=noop.js', expected: true },
+        { rule: '||example.org^$redirect-rule=noop.js', expected: true },
+        { rule: '||example.org^$removeparam=test', expected: true },
+        { rule: '||example.org^$removeheader=test', expected: true },
+        { rule: '||example.org^$permissions=test', expected: true },
+        { rule: '||example.org^$client=127.0.0.1', expected: true },
+        { rule: '||example.org^$dnsrewrite=REFUSED', expected: true },
+        { rule: '||example.org^$dnstype=A', expected: true },
+        { rule: '||example.org^$ctag=device_audio', expected: true },
+
+        { rule: '||example.com^', expected: false },
+    ];
+
+    it.each(cases)('should return $expected for rule $rule', ({ rule, expected }) => {
+        expect((createNetworkRule(rule, 0)).isUnsafe()).toBe(expected);
+    });
+});
+
 describe('Misc', () => {
     it('checks isHostLevelNetworkRule', () => {
         let rule;

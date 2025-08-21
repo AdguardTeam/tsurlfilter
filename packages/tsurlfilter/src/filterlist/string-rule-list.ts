@@ -34,7 +34,7 @@ export class StringRuleList implements IRuleList {
     /**
      * Whether to ignore unsafe rules or not.
      */
-    private readonly ignoreUnsafe: boolean;
+    public readonly ignoreUnsafe: boolean;
 
     /**
      * Constructor.
@@ -93,7 +93,6 @@ export class StringRuleList implements IRuleList {
             scannerType,
             ignoreCosmetic: this.ignoreCosmetic,
             ignoreJS: this.ignoreJS,
-            ignoreUnsafe: this.ignoreUnsafe,
         });
     }
 

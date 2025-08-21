@@ -2075,4 +2075,13 @@ export class NetworkRule implements IRule {
             throw new SyntaxError('modifier $to is not compatible with $denyallow modifier');
         }
     }
+
+    /**
+     * Checks if the rule is unsafe.
+     *
+     * @returns True if the rule is unsafe, false otherwise.
+     */
+    public isUnsafe(): boolean {
+        return this.getAdvancedModifier() !== null;
+    }
 }

@@ -1,10 +1,9 @@
-import { NetworkRuleParser } from '@adguard/agtree';
 import { getErrorMessage } from '@adguard/logger';
 
 import { type NetworkRuleParts } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage-new';
 import { type Request } from '../../request';
-import { NetworkRule } from '../../rules/network-rule';
+import { type NetworkRule } from '../../rules/network-rule';
 import { logger } from '../../utils/logger';
 
 import { type ILookupTable } from './lookup-table';
@@ -40,27 +39,28 @@ export class SeqScanLookupTable implements ILookupTable {
     }
 
     /** @inheritdoc */
-    public addRule(rule: NetworkRuleParts, storageIdx: number): boolean {
+    public addRule(parts: NetworkRuleParts, storageIdx: number): boolean {
         if (this.rules.has(storageIdx)) {
             return false;
         }
 
         try {
-            // FIXME (David): double check this, probably there is a better way
+            const rule = this.ruleStorage.retrieveNetworkRule(storageIdx);
+
+            if (!rule) {
+                return false;
+            }
+
             this.rules.set(
                 storageIdx,
-                new NetworkRule(
-                    NetworkRuleParser.parse(rule.text),
-                    this.ruleStorage.getFilterListId(storageIdx),
-                    storageIdx,
-                ),
+                rule,
             );
             this.rulesCount += 1;
             return true;
         } catch (e) {
             // If we failed to parse the rule, we just skip it.
             logger.debug(
-                `[tsurl.SeqScanLookupTable.addRule]: failed to create rule from '${rule.text}', got error:`,
+                `[tsurl.SeqScanLookupTable.addRule]: failed to create rule from '${parts.text}', got error:`,
                 getErrorMessage(e),
             );
 
