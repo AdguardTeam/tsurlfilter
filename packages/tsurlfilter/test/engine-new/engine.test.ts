@@ -1389,3 +1389,41 @@ describe('Stealth cookie rules', () => {
         ).toBe(allowlistRule);
     });
 });
+
+describe('Unsafe rules can be ignored', () => {
+    it('allowlists stealth cookie rules', () => {
+        const rule = '||example.org^$removeparam=foo';
+        const rules = [rule];
+        const text = rules.join('\n');
+        let engine = EngineFactory.createEngine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                    ignoreUnsafe: true,
+                },
+            ],
+        });
+        let request = new Request('http://example.org', '', RequestType.Document);
+        let result = engine.matchRequest(request);
+        let removeParamRules = result.getRemoveParamRules();
+        expect(removeParamRules).toHaveLength(0);
+
+        engine = EngineFactory.createEngine({
+            filters: [
+                {
+                    id: 1,
+                    text,
+                    ignoreUnsafe: false,
+                },
+            ],
+        });
+        request = new Request('http://example.org', '', RequestType.Document);
+        result = engine.matchRequest(request);
+        removeParamRules = result.getRemoveParamRules();
+        expect(removeParamRules).toHaveLength(1);
+        expect(
+            engine.retrieveRuleText(removeParamRules[0].getFilterListId(), removeParamRules[0].getIndex()),
+        ).toEqual(rule);
+    });
+});

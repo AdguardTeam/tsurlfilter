@@ -27,14 +27,6 @@ export interface RuleScannerConfiguration {
      * If true, javascript cosmetic rules will be ignored.
      */
     ignoreJS?: boolean;
-
-    /**
-     * If true, some `unsafe` rules will be ignored, $removeheader rules as an
-     * example.
-     *
-     * TODO(ameshkov): Reconsider how "unsafe" works (does not include JS now).
-     */
-    ignoreUnsafe?: boolean;
 }
 
 /**
@@ -55,11 +47,6 @@ export class RuleScanner {
      * True if we should ignore javascript cosmetic rules.
      */
     private readonly ignoreJS: boolean;
-
-    /**
-     * True if we should ignore unsafe rules, like $removeheader.
-     */
-    private readonly ignoreUnsafe: boolean;
 
     /**
      * True if we should ignore network rules.
@@ -107,7 +94,6 @@ export class RuleScanner {
         this.ignoreHost = (configuration.scannerType & ScannerType.HostRules) !== ScannerType.HostRules;
 
         this.ignoreJS = !!configuration.ignoreJS;
-        this.ignoreUnsafe = !!configuration.ignoreUnsafe;
     }
 
     /**
@@ -192,7 +178,7 @@ export class RuleScanner {
      * @returns - True if the rule should be ignored.
      */
     private isIgnored(rule: RuleParts): boolean {
-        if (!this.ignoreCosmetic && !this.ignoreJS && !this.ignoreUnsafe) {
+        if (!this.ignoreCosmetic && !this.ignoreJS) {
             return false;
         }
 
@@ -219,18 +205,6 @@ export class RuleScanner {
                 return true;
             }
         }
-
-        // FIXME (David): Handle in AG-43064
-        // if (this.ignoreUnsafe) {
-        //     if (rule.category === RuleCategory.Network && rule.type === NetworkRuleType.NetworkRule) {
-        //         if (
-        // eslint-disable-next-line max-len
-        //             rule.modifiers?.children?.some((modifier) => NetworkRule.ADVANCED_OPTIONS.has(modifier.name.value))
-        //         ) {
-        //             return true;
-        //         }
-        //     }
-        // }
 
         return false;
     }

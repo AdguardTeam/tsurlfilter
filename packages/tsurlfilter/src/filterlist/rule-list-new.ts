@@ -15,6 +15,11 @@ export const LIST_ID_MAX_VALUE = 10 ** 6;
  */
 export interface IRuleList {
     /**
+     * Whether to ignore unsafe rules or not.
+     */
+    readonly ignoreUnsafe: boolean;
+
+    /**
      * Returns the rule list identifier.
      */
     getId(): number;

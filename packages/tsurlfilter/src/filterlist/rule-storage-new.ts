@@ -122,6 +122,8 @@ export class RuleStorage {
      * @param ignoreHost Whether to ignore host rules.
      *
      * @returns The rule or null if not found or an error occurs.
+     *
+     * @note It returns `null` for rules that are ignored in the rule list.
      */
     public retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
         const rule = this.cache.get(storageIdx);
@@ -152,7 +154,16 @@ export class RuleStorage {
             ...defaultParserOptions,
             parseHostRules: !ignoreHost,
         });
+
         const result = RuleFactory.createRule(node, listId, ruleId, false, false, ignoreHost);
+
+        if (list.ignoreUnsafe) {
+            if (result instanceof NetworkRule && result.isUnsafe()) {
+                return null;
+            }
+
+            // TODO: Add support for more rule types, if needed
+        }
 
         if (result) {
             this.cache.set(storageIdx, result);
