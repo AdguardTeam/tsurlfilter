@@ -4,6 +4,7 @@ import { type RuleStorage } from '../filterlist/rule-storage-new';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { type Request } from '../request';
 import { type NetworkRule } from '../rules/network-rule';
+import { type IndexedStorageRule } from '../rules/rule-new';
 
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
@@ -41,12 +42,72 @@ export class NetworkEngine {
     private readonly seqScanLookupTable: ILookupTable;
 
     /**
+     * Creates an instance of the network engine in sync mode.
+     *
+     * @param storage An object for a rules storage.
+     * @param rules Array of rules to add.
+     *
+     * @returns An instance of the network engine.
+     */
+    public static createSync(storage: RuleStorage, rules: IndexedStorageRule[]): NetworkEngine {
+        const engine = new NetworkEngine(storage, true);
+
+        for (const rule of rules) {
+            if (rule.rule.category !== RuleCategory.Network) {
+                continue;
+            }
+
+            engine.addRule(rule.rule, rule.index);
+        }
+
+        return engine;
+    }
+
+    /**
+     * Creates an instance of the network engine in async mode.
+     *
+     * @param storage An object for a rules storage.
+     * @param rules Array of rules to add.
+     * @param chunkSize Size of rules chunk to load at a time.
+     *
+     * @returns An instance of the network engine.
+     */
+    public static async createAsync(
+        storage: RuleStorage,
+        rules: IndexedStorageRule[],
+        chunkSize: number,
+    ): Promise<NetworkEngine> {
+        const engine = new NetworkEngine(storage, true);
+
+        let counter = 0;
+
+        for (const rule of rules) {
+            counter += 1;
+
+            if (counter >= chunkSize) {
+                counter = 0;
+
+                // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
+                await new Promise((resolve) => setTimeout(resolve, 1));
+            }
+
+            if (rule.rule.category !== RuleCategory.Network) {
+                continue;
+            }
+
+            engine.addRule(rule.rule, rule.index);
+        }
+
+        return engine;
+    }
+
+    /**
      * Builds an instance of the network engine.
      *
      * @param storage An object for a rules storage.
      * @param skipStorageScan Create an instance without storage scanning.
      */
-    constructor(storage: RuleStorage, skipStorageScan = false) {
+    private constructor(storage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = storage;
 
         this.domainsLookupTable = new DomainsLookupTable(storage);
