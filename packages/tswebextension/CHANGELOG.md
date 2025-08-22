@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased <!-- release/browser-extension-v5.3 -->
 
+### Removed
+
+- `quickFixesRules` property from MV3 configuration.
+
 ### Fixed
 
 - Network rules with $important modifier are applied even if protection is disabled [AdguardBrowserExtension#3227].

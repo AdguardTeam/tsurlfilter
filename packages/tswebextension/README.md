@@ -28,11 +28,6 @@ Table of content:
             - [filtersPath (MV3 only)](#filterspath-mv3-only)
             - [ruleSetsPath (MV3 only)](#rulesetspath-mv3-only)
             - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
-            - [quickFixesRules (MV3 only)](#quickfixesrules-mv3-only)
-                - [rawFilterList](#rawfilterlist-1)
-                - [sourceMap](#sourcemap-1)
-                - [conversionMap](#conversionmap-1)
-                - [content](#content-2)
             - [allowlist](#allowlist)
             - [trustedDomains](#trusteddomains)
             - [userrules (MV2)](#userrules-mv2)
@@ -317,36 +312,6 @@ type: `boolean`
 
 Enables matching declarative rules for filtering log.
 
-#### quickFixesRules (MV3 only)
-
-type: `preprocessedFilterList`
-
-Contains rules from AdGuard Quick Fixes rules which will applied in the dynamic
-rules between all other dynamic rules: allowlist, userrules and custom filters.
-
-##### rawFilterList
-
-type: `string`
-
-Raw filter list.
-
-##### sourceMap
-
-type: `Record<string, number>`
-
-Source map, where key is the rule start index in the byte buffer `content` and value is the line start index in the raw filter list.
-
-##### conversionMap
-
-type: `Record<string, string>`
-
-Conversion map, where key is the line start index in the raw filter list and value is the rule text.
-
-##### content
-
-type: `Uint8Array[]`
-
-AGTree byte buffer chunks.
 
 #### allowlist
 
