@@ -60,13 +60,11 @@ export default class DynamicRulesApi {
      * rule set and applies it via the declarativeNetRequest API.
      *
      * Filters will combine into one in following order:
-     * - quickFixesFilter - they are most important and should be applied first,
      * - allowlistRules,
      * - blockingPageTrustedFilter - created on the blocking page by user,
      * - userRules,
      * - customFilters.
      *
-     * @param quickFixesFilter Filter with hotfix rules.
      * @param allowlistRules Filter with allowlist rules.
      * @param blockingPageTrustedFilter Filter with blocking page trusted domains rules (badfiltered rules).
      * @param userRules Filter with user rules.
@@ -84,7 +82,6 @@ export default class DynamicRulesApi {
      * Details: {@link https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#property-RuleCondition-urlFilter}.
      */
     public static async updateDynamicFiltering(
-        quickFixesFilter: IFilter,
         allowlistRules: IFilter,
         blockingPageTrustedFilter: IFilter,
         userRules: IFilter,
@@ -93,7 +90,6 @@ export default class DynamicRulesApi {
         resourcesPath?: string,
     ): Promise<ConversionResult> {
         const filterList = [
-            quickFixesFilter,
             allowlistRules,
             blockingPageTrustedFilter,
             userRules,

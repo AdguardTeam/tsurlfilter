@@ -17,10 +17,6 @@ export const DEFAULT_EXTENSION_CONFIG: Configuration = {
         FilterListPreprocessor.createEmptyPreprocessedFilterList(),
         { trusted: true },
     ),
-    quickFixesRules: Object.assign(
-        FilterListPreprocessor.createEmptyPreprocessedFilterList(),
-        { trusted: true },
-    ),
     verbose: true,
     filtersPath: 'filters',
     ruleSetsPath: 'filters/declarative',

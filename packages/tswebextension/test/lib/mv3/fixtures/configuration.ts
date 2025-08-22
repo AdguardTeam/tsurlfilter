@@ -7,10 +7,6 @@ const preprocessedUserRules = FilterListPreprocessor.preprocess(
     ['||example.org^', 'example.com##h1', 'baddomain.org$document'].join(LF),
 );
 
-const preprocessedQuickFixes = FilterListPreprocessor.preprocess(
-    ['@@baddomain.org$document'].join(LF),
-);
-
 export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     staticFiltersIds: [1, 2],
     customFilters: [],
@@ -19,10 +15,6 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     allowlist: ['example.com'],
     userrules: {
         ...preprocessedUserRules,
-        trusted: true,
-    },
-    quickFixesRules: {
-        ...preprocessedQuickFixes,
         trusted: true,
     },
     verbose: false,
