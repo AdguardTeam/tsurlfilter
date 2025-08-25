@@ -7,3 +7,4 @@ test/resources/requests.json
 .idea
 dist
 docs
+*.tgz
