@@ -212,7 +212,6 @@ export class TsWebExtension implements AppInterface<
      * @returns Promise resolved with result of configuration {@link ConfigurationResult}.
      */
     public async start(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        console.log('we are testing how works prepare, first commit');
         // Update log level before first log message.
         TsWebExtension.updateLogLevel(config.logLevel);
 

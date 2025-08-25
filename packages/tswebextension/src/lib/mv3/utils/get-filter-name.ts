@@ -6,7 +6,4 @@
  *
  * @returns Filter file name.
  */
-export const getFilterName = (filterId: number): string => {
-    console.log('fix/AG-45315');
-    return `filter_${filterId}.txt`;
-};
+export const getFilterName = (filterId: number): string => `filter_${filterId}.txt`;
