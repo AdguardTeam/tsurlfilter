@@ -218,7 +218,7 @@ Update TSUrlFilter Docs MV3:
   docker: *docker
   tasks:
     - checkout:
-      force-clean-build: true
+        force-clean-build: true
     - script: *setup-script
     - script:
         interpreter: SHELL
