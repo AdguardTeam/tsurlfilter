@@ -2,11 +2,14 @@ import escapeStringRegexp from 'escape-string-regexp';
 import { describe, expect, it } from 'vitest';
 
 import { NetworkEngine } from '../../src/engine-new/network-engine';
+import { type IRuleList } from '../../src/filterlist/rule-list-new';
 import { RuleStorage } from '../../src/filterlist/rule-storage-new';
+import { ScannerType } from '../../src/filterlist/scanner-new/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
 import { HTTPMethod } from '../../src/modifiers/method-modifier';
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
+import { type IndexedStorageRule } from '../../src/rules/rule-new';
 
 /**
  * Helper function to get the rule index from the raw filter list by the rule text.
@@ -20,9 +23,22 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
     return rawFilterList.search(new RegExp(`^${escapeStringRegexp(rule)}$`, 'm'));
 };
 
+const createNetworkEngine = (lists: IRuleList[]): NetworkEngine => {
+    const storage = new RuleStorage(lists);
+    const rules: IndexedStorageRule[] = [];
+
+    const scanner = storage.createRuleStorageScanner(ScannerType.NetworkRules);
+
+    while (scanner.scan()) {
+        rules.push(scanner.getRule()!);
+    }
+
+    return NetworkEngine.createSync(storage, rules);
+};
+
 describe('TestEmptyNetworkEngine', () => {
     it('works if empty engine is ok', () => {
-        const engine = new NetworkEngine(new RuleStorage([new StringRuleList(1, '', false, false, false)]));
+        const engine = createNetworkEngine([new StringRuleList(1, '', false, false, false)]);
         const request = new Request('http://example.org/', '', RequestType.Other);
         const result = engine.match(request);
 
@@ -37,9 +53,9 @@ describe('TestMatchAllowlistRule', () => {
         const rules = [rule, exceptionRule];
         const rawFilterList = rules.join('\n');
 
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rawFilterList, false, false, false),
-        ]));
+        ]);
         const request = new Request('http://example.org/', '', RequestType.Script);
         const result = engine.match(request);
 
@@ -57,9 +73,9 @@ describe('TestMatchAllowlistRule', () => {
         const rules = [rule, exceptionRule];
         const rawFilterList = rules.join('\n');
 
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rawFilterList, false, false, false),
-        ]));
+        ]);
         const request = new Request('http://example.org/', '', RequestType.Script, HTTPMethod.POST);
         let result = engine.match(request);
 
@@ -87,9 +103,9 @@ describe('TestMatchAllowlistRule', () => {
         const rules = [rule, exceptionRule];
         const rawFilterList = rules.join('\n');
 
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rawFilterList, false, false, false),
-        ]));
+        ]);
         const request = new Request('http://evil.com/', '', RequestType.Script);
         const result = engine.match(request);
 
@@ -109,9 +125,9 @@ describe('TestMatchImportantRule', () => {
     const rules = [r1, r2, r3];
     const rawFilterList = rules.join('\n');
 
-    const engine = new NetworkEngine(new RuleStorage([
+    const engine = createNetworkEngine([
         new StringRuleList(1, rawFilterList, false, false, false),
-    ]));
+    ]);
     let request;
     let result;
 
@@ -157,9 +173,9 @@ describe('TestMatchSourceRule', () => {
         // eslint-disable-next-line max-len
         const rule = '|https://$image,media,script,third-party,domain=~feedback.pornhub.com|pornhub.com|redtube.com|redtube.com.br|tube8.com|tube8.es|tube8.fr|youporn.com|youporngay.com';
         const rawFilterList = rule;
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rawFilterList, false, false, false),
-        ]));
+        ]);
 
         const url = 'https://ci.phncdn.com/videos/201809/25/184777011/original/(m=ecuKGgaaaa)(mh=VSmV9L_iouBcWJJ)4.jpg';
         const sourceURL = 'https://www.pornhub.com/view_video.php?viewkey=ph5be89d11de4b0';
@@ -178,9 +194,9 @@ describe('TestMatchSourceRule', () => {
 
 describe('Test $domain modifier semantics', () => {
     const rule = 'path$domain=example.org|check.com';
-    const engine = new NetworkEngine(new RuleStorage([
+    const engine = createNetworkEngine([
         new StringRuleList(1, rule, false, false, false),
-    ]));
+    ]);
 
     it('will match document url host', () => {
         const request = new Request('http://check.com/path', 'http://www.example.org/', RequestType.Document);
@@ -224,9 +240,9 @@ describe('Test $domain modifier semantics', () => {
 describe('TestMatchSimplePattern', () => {
     it('works if it finds rule matching pattern', () => {
         const rule = '_prebid_';
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rule, false, false, false),
-        ]));
+        ]);
 
         const url = 'https://ap.lijit.com/rtb/bid?src=prebid_prebid_1.35.0';
         const sourceURL = 'https://www.drudgereport.com/';
@@ -246,9 +262,9 @@ describe('TestMatchSimplePattern', () => {
 describe('Test match simple domain rules', () => {
     it('works if it finds rule with domain', () => {
         const rule = '||example.org';
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rule, false, false, false),
-        ]));
+        ]);
 
         const url = 'https://example.org/rtb/bid?src=prebid_prebid_1.35.0';
         const sourceURL = 'https://www.test.com/';
@@ -266,9 +282,9 @@ describe('Test match simple domain rules', () => {
 
     it('works if it finds rule with naked domain', () => {
         const rule = 'example.org';
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rule, false, false, false),
-        ]));
+        ]);
 
         const url = 'https://example.org/rtb/bid?src=prebid_prebid_1.35.0';
         const sourceURL = 'https://www.test.com/';
@@ -288,9 +304,9 @@ describe('Test match simple domain rules', () => {
 describe('Test Match Wildcard domain', () => {
     it('works if it finds rule matching wildcard domain', () => {
         const rule = '||*/te/^$domain=~negative.*|example.*,third-party';
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rule, false, false, false),
-        ]));
+        ]);
 
         const request = new Request('https://test.ru/te/', 'https://example.com/', RequestType.Image);
         const result = engine.match(request);
@@ -310,9 +326,9 @@ describe('Test Match Wildcard domain', () => {
 
     it('works if it finds rule matching wildcard domain - shortcuts', () => {
         const rule = '||*/tests/^$domain=~negative.*|example.*,third-party';
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rule, false, false, false),
-        ]));
+        ]);
 
         const request = new Request('https://test.ru/tests/', 'https://example.com/', RequestType.Image);
         const result = engine.match(request);
@@ -329,9 +345,9 @@ describe('Test Match Wildcard domain', () => {
 describe('Test match denyallow rules', () => {
     it('works if it finds denyallow rule', () => {
         const rule = '*$script,domain=a.com|b.com,denyallow=x.com|y.com';
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rule, false, false, false),
-        ]));
+        ]);
 
         const result = engine.match(new Request(
             'https://z.com/',
@@ -373,9 +389,9 @@ describe('Test match denyallow rules', () => {
 
     it('works if it finds corresponding regex rule', () => {
         const rule = '/^(?!.*(x.com|y.com)).*$/$script,domain=a.com|b.com';
-        const engine = new NetworkEngine(new RuleStorage([
+        const engine = createNetworkEngine([
             new StringRuleList(1, rule, false, false, false),
-        ]));
+        ]);
 
         const result = engine.match(new Request(
             'https://z.com/',

@@ -347,7 +347,7 @@ const findHashmarkBasedCosmeticSeparator = (rule: string): number | null => {
 
         if (rule[i + 1] === '?' && rule[i + 2] === '#') {
             // #?#
-            return encodeSeparator(i, 3, CosmeticRuleType.CssInjectionRule, false);
+            return encodeSeparator(i, 3, CosmeticRuleType.ElementHidingRule, false);
         }
 
         if (rule[i + 1] === '%' && rule[i + 2] === '#') {

@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { config, setConfiguration } from '../../src/configuration';
 import { CosmeticOption } from '../../src/engine-new/cosmetic-option';
-import { EngineFactory } from '../../src/engine-new/engine-factory';
+import { Engine } from '../../src/engine-new/engine';
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
 
@@ -26,7 +26,7 @@ describe('Engine Tests', () => {
     it('works if request matches rule', () => {
         const rules = ['||example.org^$third-party'];
         const text = rules.join('\n');
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -62,7 +62,7 @@ describe('Engine Tests', () => {
         const ruleText = '@@||example.org$document';
         const rules = [ruleText];
         const text = rules.join('\n');
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -102,7 +102,7 @@ describe('Engine Tests', () => {
         ];
         const list2 = rules2.join('\n');
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -148,37 +148,27 @@ describe('TestEngine - postponed load rules', () => {
     const rules = ['||example.org^$third-party', 'example.org##banner'];
 
     it('works rules are loaded', () => {
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
                     text: rules.join('\n'),
                 },
             ],
-            skipInitialScan: true,
         });
-
-        expect(engine.getRulesCount()).toBe(0);
-
-        engine.loadRules();
 
         expect(engine.getRulesCount()).toBe(2);
     });
 
     it('works rules are loaded async', async () => {
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
                     text: rules.join('\r\n'),
                 },
             ],
-            skipInitialScan: true,
         });
-
-        expect(engine.getRulesCount()).toBe(0);
-
-        await engine.loadRulesAsync(1);
 
         expect(engine.getRulesCount()).toBe(2);
     });
@@ -192,7 +182,7 @@ it('TestEngine - configuration', () => {
         verbose: true,
     });
 
-    EngineFactory.createEngine({
+    Engine.createSync({
         filters: [
             {
                 id: 1,
@@ -214,7 +204,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
         const removeParamRule = '||example.org^$removeparam=p1';
         const rules = [cspRule, replaceRule, cookieRule, removeParamRule];
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -265,7 +255,7 @@ describe('TestEngineMatchRequest - advanced modifiers', () => {
             allowlistBadfilterRule,
         ].join('\n');
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -296,7 +286,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             '@@||ya.ru$redirect=1x1-transparent.gif',
         ].join('\n');
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -322,7 +312,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             '@@||ya.ru$redirect=1x1-transparent.gif,image',
         ].join('\n');
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -352,7 +342,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             '@@||ya.ru$redirect=2x2-transparent.png',
         ].join('\n');
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -381,7 +371,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             '@@||ya.ru$redirect',
         ].join('\n');
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -413,7 +403,7 @@ describe('TestEngineMatchRequest - redirect modifier', () => {
             '@@||ya.ru$redirect,image',
         ].join('\n');
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -445,7 +435,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
             '||example.org^$redirect-rule=noopjs',
         ].join('\n');
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -483,7 +473,7 @@ describe('TestEngineMatchRequest - redirect-rule modifier', () => {
 
         const text = rules.join('\n');
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -532,7 +522,7 @@ describe('TestEngineMatchRequest - document modifier', () => {
     it('respects document modifier request type in blocking rules', () => {
         const documentBlockingRuleText = '||example.org^$document';
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -569,7 +559,7 @@ describe('TestEngineMatchRequest - document modifier', () => {
     it('respects document modifier request type in blocking rules - other request types', () => {
         const documentBlockingRuleText = '||example.org^$document,script';
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -616,7 +606,7 @@ describe('TestEngineMatchRequest - document modifier', () => {
 describe('TestEngineMatchRequest - all modifier', () => {
     it('respects $all modifier with all request types in blocking rules', () => {
         const allBlockingRuleText = '||example.org^$all';
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -663,7 +653,7 @@ describe('TestEngineMatchRequest - popup modifier', () => {
     it('match requests against basic and popup blocking rules', () => {
         const blockingRuleText = '||example.org^';
         const popupBlockingRuleText = '||example.org^$popup';
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -727,7 +717,7 @@ describe('TestEngineMatchRequest - popup modifier', () => {
     it('match requests against all and popup blocking rules', () => {
         const blockingAllRuleText = '||example.org^$all';
         const popupBlockingRuleText = '||example.org^$popup';
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -833,7 +823,7 @@ describe('TestEngineCosmeticResult - elemhide', () => {
         extCssGenericRule,
     ];
 
-    const engine = EngineFactory.createEngine({
+    const engine = Engine.createSync({
         filters: [
             {
                 id: 1,
@@ -895,7 +885,7 @@ describe('TestEngineCosmeticResult - cosmetic css', () => {
         extCssGenericCssRule,
     ];
 
-    const engine = EngineFactory.createEngine({
+    const engine = Engine.createSync({
         filters: [
             {
                 id: 1,
@@ -956,7 +946,7 @@ describe('TestEngineCosmeticResult - js', () => {
         const hidingRule = 'flightradar24.*##body';
         const jsRule = 'flightradar24.*#%#alert(1);';
         const rawFilterList = [hidingRule, jsRule].join('\n');
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -985,7 +975,7 @@ describe('TestEngineCosmeticResult - js', () => {
     });
 
     it('works if returns correct cosmetic js result', () => {
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1011,7 +1001,7 @@ describe('TestEngineCosmeticResult - js', () => {
     });
 
     it('works javascript rules are ignored with filter list setting', () => {
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1043,7 +1033,7 @@ describe('$urlblock modifier', () => {
         const important = '||example.com$important';
         const urlblock = '@@||example.org$urlblock';
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1075,7 +1065,7 @@ describe('$badfilter modifier', () => {
             '$script,domain=example.com|example.org',
             '$script,domain=example.com,badfilter',
         ];
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1102,7 +1092,7 @@ describe('$genericblock modifier', () => {
         const networkGenericRule = '||example.org^';
         const networkNegatedGenericRule = '||domain.com^$domain=~example.com';
 
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1143,7 +1133,7 @@ describe('Match subdomains', () => {
             specificHidingRuleSubdomain,
         ];
         const text = rules.join('\n');
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1187,7 +1177,7 @@ describe('Match subdomains', () => {
             specificHidingRuleWithoutWww,
         ];
         const text = rules.join('\n');
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1228,7 +1218,7 @@ describe('Match subdomains', () => {
             otherSubDomainScriptletRule,
         ];
         const text = rules.join('\n');
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1265,7 +1255,7 @@ describe('Match subdomains', () => {
         const hidingRule = 'org##body';
         const rules = [hidingRule];
         const text = rules.join('\n');
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1308,7 +1298,7 @@ describe('$specifichide modifier', () => {
             genericCssRuleWithExclusion,
             specifichideRule,
         ].join('\n');
-        const engine = EngineFactory.createEngine({
+        const engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1355,7 +1345,7 @@ describe('Stealth cookie rules', () => {
         const stealthCookieRule = '$cookie=/.+/;maxAge=60';
         let rules = [stealthCookieRule];
         let text = rules.join('\n');
-        let engine = EngineFactory.createEngine({
+        let engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1373,7 +1363,7 @@ describe('Stealth cookie rules', () => {
         const allowlistRule = '@@||example.org^$stealth,removeparam,cookie';
         rules = [stealthCookieRule, allowlistRule];
         text = rules.join('\n');
-        engine = EngineFactory.createEngine({
+        engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1395,7 +1385,7 @@ describe('Unsafe rules can be ignored', () => {
         const rule = '||example.org^$removeparam=foo';
         const rules = [rule];
         const text = rules.join('\n');
-        let engine = EngineFactory.createEngine({
+        let engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1409,7 +1399,7 @@ describe('Unsafe rules can be ignored', () => {
         let removeParamRules = result.getRemoveParamRules();
         expect(removeParamRules).toHaveLength(0);
 
-        engine = EngineFactory.createEngine({
+        engine = Engine.createSync({
             filters: [
                 {
                     id: 1,
@@ -1425,5 +1415,21 @@ describe('Unsafe rules can be ignored', () => {
         expect(
             engine.retrieveRuleText(removeParamRules[0].getFilterListId(), removeParamRules[0].getIndex()),
         ).toEqual(rule);
+    });
+});
+
+describe('Async engine creation', () => {
+    it('should create engine', async () => {
+        const engine = await Engine.createAsync({
+            filters: [
+                {
+                    id: 1,
+                    text: '||example.org^',
+                },
+            ],
+        });
+        const request = new Request('http://example.org', '', RequestType.Document);
+        const result = engine.matchRequest(request);
+        expect(result.getBasicResult()).not.toBeNull();
     });
 });

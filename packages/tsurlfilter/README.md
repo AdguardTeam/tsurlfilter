@@ -17,7 +17,9 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
     - [`TSURLFILTER_VERSION`](#tsurlfilter_version)
   - [Public classes](#public-classes)
     - [Engine](#engine)
-      - [**Constructor**](#constructor)
+      - [**Factory**](#factory)
+        - [Sync mode](#sync-mode)
+        - [Async mode](#async-mode)
       - [**matchRequest**](#matchrequest)
       - [**matchFrame**](#matchframe)
       - [Starting engine](#starting-engine)
@@ -89,19 +91,54 @@ Version of the library.
 
 Engine is a main class of this library. It represents the filtering functionality for loaded rules
 
-##### **Constructor**
+##### **Factory**
+
+You can create engine via factories. There are two modes: sync and async.
+
+###### **Sync mode**
+
+Create engine synchronously. It converts all rules before creating the engine.
 
 ```ts
 /**
- * Creates an instance of Engine
- * Parses filtering rules and creates a filtering engine of them
+ * Creates an instance of the network engine in sync mode.
+ * Sync mode converts all rules before creating the engine.
  *
- * @param ruleStorage storage
- * @param configuration optional configuration
+ * @param options Engine factory options.
  *
- * @throws
+ * @returns An instance of the network engine.
  */
-constructor(ruleStorage: RuleStorage, configuration?: IConfiguration | undefined);
+public static createSync(options: EngineFactoryOptions): Engine;
+```
+
+###### **Async mode**
+
+Create engine asynchronously. We use this approach in AdGuard browser extension to avoid UI lags.
+It does not convert rules before creating the engine, in this case, library user should handle conversion process.
+
+```ts
+/**
+ * Creates an instance of the network engine in async mode.
+ * Async mode does not convert rules before creating the engine.
+ *
+ * @param options Engine factory options.
+ *
+ * @returns An instance of the network engine.
+ */
+public static createAsync(options: EngineFactoryOptions): Promise<Engine>;
+```
+
+###### Example
+
+```ts
+const engine = await Engine.createAsync({
+    filters: [
+        {
+            id: 1,
+            text: '||example.com^',
+        },
+    ],
+});
 ```
 
 ##### **matchRequest**

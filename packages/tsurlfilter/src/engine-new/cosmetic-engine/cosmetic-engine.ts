@@ -2,6 +2,8 @@ import { type CosmeticRuleParts, CosmeticRuleType, RuleCategory } from '../../fi
 import { type RuleStorage } from '../../filterlist/rule-storage-new';
 import { ScannerType } from '../../filterlist/scanner-new/scanner-type';
 import { type Request } from '../../request';
+import { type IndexedStorageRule } from '../../rules/rule-new';
+import { CHUNK_SIZE } from '../constants';
 import { CosmeticOption } from '../cosmetic-option';
 
 import { type CosmeticContentResult } from './cosmetic-content-result';
@@ -45,12 +47,70 @@ export class CosmeticEngine {
     private htmlLookupTable: CosmeticLookupTable;
 
     /**
+     * Creates an instance of the network engine in sync mode.
+     *
+     * @param storage An object for a rules storage.
+     * @param rules Array of rules to add.
+     *
+     * @returns An instance of the network engine.
+     */
+    public static createSync(storage: RuleStorage, rules: IndexedStorageRule[]): CosmeticEngine {
+        const engine = new CosmeticEngine(storage, true);
+
+        for (const rule of rules) {
+            if (rule.rule.category !== RuleCategory.Cosmetic) {
+                continue;
+            }
+
+            engine.addRule(rule.rule, rule.index);
+        }
+
+        return engine;
+    }
+
+    /**
+     * Creates an instance of the network engine in async mode.
+     *
+     * @param storage An object for a rules storage.
+     * @param rules Array of rules to add.
+     *
+     * @returns An instance of the network engine.
+     */
+    public static async createAsync(
+        storage: RuleStorage,
+        rules: IndexedStorageRule[],
+    ): Promise<CosmeticEngine> {
+        const engine = new CosmeticEngine(storage, true);
+
+        let counter = 0;
+
+        for (const rule of rules) {
+            counter += 1;
+
+            if (counter >= CHUNK_SIZE) {
+                counter = 0;
+
+                // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
+                await new Promise((resolve) => setTimeout(resolve, 1));
+            }
+
+            if (rule.rule.category !== RuleCategory.Cosmetic) {
+                continue;
+            }
+
+            engine.addRule(rule.rule, rule.index);
+        }
+
+        return engine;
+    }
+
+    /**
      * Builds instance of cosmetic engine.
      *
      * @param ruleStorage Rule storage.
      * @param skipStorageScan Create an instance without storage scanning.
      */
-    constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
+    private constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
         this.ruleStorage = ruleStorage;
         this.rulesCount = 0;
 
@@ -93,7 +153,7 @@ export class CosmeticEngine {
      * @param rule Rule to add.
      * @param storageIdx Index of the rule in the storage.
      */
-    public addRule(rule: CosmeticRuleParts, storageIdx: number): void {
+    private addRule(rule: CosmeticRuleParts, storageIdx: number): void {
         switch (rule.type) {
             case CosmeticRuleType.ElementHidingRule: {
                 this.elementHidingLookupTable.addRule(rule, storageIdx);

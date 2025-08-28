@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
 import { bench, describe } from 'vitest';
 
-import { EngineFactory } from '../../src/engine-new/engine-factory';
+import { Engine } from '../../src/engine-new/engine';
 
 describe('Build engine', () => {
     const ignoreCosmetic = false;
@@ -28,13 +28,12 @@ describe('Build engine', () => {
     };
 
     const createNewEngine = () => {
-        return EngineFactory.createEngine({
+        return Engine.createSync({
             filters: [{
                 id: 2,
                 text: rawFilter,
                 ignoreCosmetic,
             }],
-            skipInitialScan: true,
         });
     };
 
@@ -42,7 +41,6 @@ describe('Build engine', () => {
     const newEngine = createNewEngine();
 
     oldEngine.loadRules();
-    newEngine.loadRules();
 
     console.log('Old rules count:', oldEngine.getRulesCount());
     console.log('New rules count:', newEngine.getRulesCount());
@@ -52,8 +50,17 @@ describe('Build engine', () => {
         engine.loadRules();
     });
 
-    bench('new engine', () => {
-        const engine = createNewEngine();
-        engine.loadRules();
+    bench('new engine (sync)', () => {
+        createNewEngine();
+    });
+
+    bench('new engine (async)', async () => {
+        await Engine.createAsync({
+            filters: [{
+                id: 2,
+                text: rawFilter,
+                ignoreCosmetic,
+            }],
+        });
     });
 });

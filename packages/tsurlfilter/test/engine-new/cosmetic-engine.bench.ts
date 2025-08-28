@@ -7,7 +7,9 @@ import { bench, describe } from 'vitest';
 
 import { CosmeticEngine } from '../../src/engine-new/cosmetic-engine/cosmetic-engine';
 import { RuleStorage } from '../../src/filterlist/rule-storage-new';
+import { ScannerType } from '../../src/filterlist/scanner-new/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
+import { type IndexedStorageRule } from '../../src/rules/rule-new';
 
 describe('Build engine', () => {
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
@@ -36,7 +38,14 @@ describe('Build engine', () => {
             false,
         );
         const storage = new RuleStorage([list]);
-        const engine = new CosmeticEngine(storage, false);
+        const scanner = list.newScanner(ScannerType.CosmeticRules);
+        const rules: IndexedStorageRule[] = [];
+
+        while (scanner.scan()) {
+            rules.push(scanner.getRule()!);
+        }
+
+        const engine = CosmeticEngine.createSync(storage, rules);
         return engine;
     };
 
