@@ -6,7 +6,6 @@ import { CosmeticApi } from '../background/cosmetic-api';
 import { CosmeticFrameProcessor } from '../background/cosmetic-frame-processor';
 import { ContentType } from '../../common/request-type';
 import { appContext } from '../background/app-context';
-import { UserScriptsApi } from '../background/user-scripts-api';
 
 import { FrameMV3 } from './frame';
 import { tabsApi } from './tabs-api';
@@ -61,7 +60,7 @@ export class TabsCosmeticInjector {
 
         const currentTime = Date.now();
 
-        frames.forEach((frameDetails) => {
+        const tasks = frames.map(async (frameDetails) => {
             const {
                 url,
                 frameId,
@@ -107,29 +106,15 @@ export class TabsCosmeticInjector {
                 return;
             }
 
-            const tasks = [
-                CosmeticApi.applyCss(tabId, frameId),
-            ];
-
-            if (UserScriptsApi.isSupported) {
-                tasks.push(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi(tabId, frameId));
-            } else {
-                tasks.push(CosmeticApi.applyJsFuncs(tabId, frameId));
-                tasks.push(CosmeticApi.applyScriptlets(tabId, frameId));
+            try {
+                await CosmeticApi.applyCosmeticRules(tabId, frameId, true);
+            } catch (e) {
+                logger.error(`[tsweb.TabsCosmeticInjector.processOpenTab]: error applying cosmetic rules for tabId ${tabId} and frameId ${frameId}`, e);
             }
 
-            // TODO: Can be moved to CosmeticApi.injectCosmetic() like in MV2
-            // since it is used not only here.
-            // Note: this is an async function, but we will not await it because
-            // events do not support async listeners.
-            Promise.all(tasks).catch((e) => {
-                logger.error('[tsweb.TabsCosmeticInjector.processOpenTab]: cannot apply cosmetic rules: ', e);
-            });
-
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
-            if (!frameContext?.cosmeticResult) {
-                // eslint-disable-next-line max-len
-                logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTab]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+            if (!frameContext?.preparedCosmeticResult) {
+                logger.debug(`[tsweb.TabsCosmeticInjector.processOpenTab]: cannot log script rules due to not having prepared cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
                 return;
             }
 
@@ -137,10 +122,12 @@ export class TabsCosmeticInjector {
             CosmeticApi.logScriptRules({
                 url,
                 tabId,
-                cosmeticResult: frameContext.cosmeticResult,
+                preparedCosmeticResult: frameContext.preparedCosmeticResult,
                 timestamp: currentTime,
                 contentType: isMainFrame ? ContentType.Document : ContentType.Subdocument,
             });
         });
+
+        await Promise.allSettled(tasks);
     }
 }

@@ -1,12 +1,14 @@
 /**
- * Indicates whether user scripts API is supported in the current browser.
+ * Indicates whether user scripts API is available and enabled in the current
+ * browser.
  *
  * Separate function to avoid exporting the whole UserScriptsApi class and
  * export only the necessary functionality.
  *
- * @returns `true` if user scripts API is supported, `false` otherwise.
+ * @returns `true` if user scripts API is enabled and available,
+ * `false` otherwise.
  */
-export const isUserScriptsApiSupported = (): boolean => {
+export const isUserScriptsApiEnabled = (): boolean => {
     /**
      * Double calls to API is needed to unsure that Chrome userScripts API
      * is available and that it has the execute method defined.

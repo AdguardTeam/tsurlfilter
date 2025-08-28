@@ -17,11 +17,6 @@ export type LogJsRulesParams = {
     tabId: number;
 
     /**
-     * Cosmetic result.
-     */
-    cosmeticResult: CosmeticResult;
-
-    /**
      * Url.
      */
     url: string;
@@ -362,25 +357,20 @@ export class CosmeticApiCommon {
      * Logs js rules applied to a specific frame.
      *
      * @param params Data for js rule logging.
-     * @param predicate Function to filter script rules before logging, e.g. check if the script rule is local.
+     * @param appliedScriptRules Script rules applied to the frame.
      */
     protected static logScriptRules(
         params: LogJsRulesParams,
-        predicate: (cosmeticResult: CosmeticRule) => boolean,
+        appliedScriptRules: CosmeticRule[],
     ): void {
         const {
             tabId,
-            cosmeticResult,
             url,
             contentType,
             timestamp,
         } = params;
 
-        const filteredScriptRules = cosmeticResult
-            .getScriptRules()
-            .filter(predicate);
-
-        for (const scriptRule of filteredScriptRules) {
+        for (const scriptRule of appliedScriptRules) {
             if (scriptRule.isGeneric()) {
                 continue;
             }

@@ -1,3 +1,5 @@
+import { type NetworkRule } from '@adguard/tsurlfilter';
+
 import { type DocumentLifecycle } from './interfaces';
 
 /**
@@ -101,7 +103,7 @@ export type HandleSubFrameWithUrlProps = {
     /**
      * Main frame rule.
      */
-    mainFrameRule: any;
+    mainFrameRule: NetworkRule | null;
 };
 
 /**

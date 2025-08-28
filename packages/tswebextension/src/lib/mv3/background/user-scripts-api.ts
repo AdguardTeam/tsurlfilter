@@ -1,5 +1,5 @@
 import { logger } from '../../common/utils/logger';
-import { isUserScriptsApiSupported } from '../utils/is-user-scripts-api-supported';
+import { isUserScriptsApiEnabled } from '../utils/is-user-scripts-api-enabled';
 
 import { appContext } from './app-context';
 import { type ExecuteCombinedScriptParams } from './scripting-api';
@@ -18,8 +18,8 @@ export class UserScriptsApi {
     /**
      * @see {@link isUserScriptsApiSupported}.
      */
-    public static get isSupported(): boolean {
-        return isUserScriptsApiSupported();
+    public static get isEnabled(): boolean {
+        return isUserScriptsApiEnabled();
     }
 
     /**

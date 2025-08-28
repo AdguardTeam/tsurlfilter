@@ -169,7 +169,6 @@ import { cookieFiltering } from './services/cookie-filtering/cookie-filtering';
 import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { StealthService } from './services/stealth-service';
-import { UserScriptsApi } from './user-scripts-api';
 import { documentBlockingService } from './services/document-blocking-service';
 
 /**
@@ -423,12 +422,11 @@ export class WebRequestApi {
             return;
         }
 
-        if (UserScriptsApi.isSupported) {
-            CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi(tabId, frameId);
-        } else {
-            CosmeticApi.applyJsFuncs(tabId, frameId);
-            CosmeticApi.applyScriptlets(tabId, frameId);
-        }
+        // Note: this is an async function, but we will not await it because
+        // events do not support async listeners.
+        CosmeticApi.applyCosmeticRules(tabId, frameId, false).catch((e) => {
+            logger.error(`[tsweb.WebRequestApi.onResponseStarted]: error applying cosmetic rules for tabId ${tabId} and frameId ${frameId}`, e);
+        });
     }
 
     /**
@@ -705,14 +703,14 @@ export class WebRequestApi {
 
         if (requestType === RequestType.Document || requestType === RequestType.SubDocument) {
             const frameContext = tabsApi.getFrameContext(tabId, frameId);
-            if (!frameContext?.cosmeticResult) {
-                logger.debug(`[tsweb.WebRequestApi.onCompleted]: cannot log script rules due to not having cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
+            if (!frameContext?.preparedCosmeticResult) {
+                logger.debug(`[tsweb.WebRequestApi.onCompleted]: cannot log script rules due to not having prepared cosmetic result for tabId: ${tabId}, frameId: ${frameId}.`);
                 return;
             }
 
             CosmeticApi.logScriptRules({
                 tabId,
-                cosmeticResult: frameContext.cosmeticResult,
+                preparedCosmeticResult: frameContext.preparedCosmeticResult,
                 url: requestUrl,
                 contentType,
                 timestamp,
@@ -777,20 +775,9 @@ export class WebRequestApi {
             return;
         }
 
-        const tasks = [
-            CosmeticApi.applyCss(tabId, frameId),
-        ];
-
-        if (UserScriptsApi.isSupported) {
-            tasks.push(CosmeticApi.applyJsFuncsAndScriptletsViaUserScriptsApi(tabId, frameId));
-        } else {
-            tasks.push(CosmeticApi.applyJsFuncs(tabId, frameId));
-            tasks.push(CosmeticApi.applyScriptlets(tabId, frameId));
-        }
-
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
-        Promise.all(tasks).catch((e) => {
+        CosmeticApi.applyCosmeticRules(tabId, frameId, true).catch((e) => {
             logger.error('[tsweb.WebRequestApi.onCommitted]: error on cosmetics injection: ', e);
         });
     }

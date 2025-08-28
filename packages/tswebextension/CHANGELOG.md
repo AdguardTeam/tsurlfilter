@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Renamed `isUserScriptsApiSupported` to `isUserScriptsApiEnabled` in `utils`.
+
+### Removed
+
+- Static getter `isUserScriptsApiSupported`
+
 ### Added
 
 - Export `isUserScriptsApiSupported` function to check if the current browser
