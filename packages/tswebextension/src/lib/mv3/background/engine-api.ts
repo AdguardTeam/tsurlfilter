@@ -171,9 +171,9 @@ export class EngineApi {
                 && e.cause.message.includes('Loaded empty content')) {
                 // User rules can be empty, so just log a trace message and continue.
                 logger.trace(`[tsweb.EngineApi.startEngine]: user rules filter ${filterId} is empty: `, e);
+            } else {
+                logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for user rules filter ${filterId} due to: `, e);
             }
-
-            logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for user rules filter ${filterId} due to: `, e);
         }
 
         if (quickFixesRules.filterList.length > 0) {
