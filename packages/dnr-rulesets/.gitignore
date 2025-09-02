@@ -1,6 +1,3 @@
 dist
 coverage
-
-# IMPORTANT: This file should be ignored in stable/ branches, since we build new
-# release every hour and we need only to update filters on npm registry.
-dnr-rulesets.tgz
+*.tgz
