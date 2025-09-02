@@ -16,7 +16,7 @@ import { type ExecuteCombinedScriptParams } from './scripting-api';
 export class UserScriptsApi {
     // eslint-disable-next-line jsdoc/require-description, jsdoc/require-returns
     /**
-     * @see {@link isUserScriptsApiSupported}.
+     * @see {@link isUserScriptsApiEnabled}.
      */
     public static get isEnabled(): boolean {
         return isUserScriptsApiEnabled();
