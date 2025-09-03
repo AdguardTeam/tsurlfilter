@@ -258,6 +258,7 @@ export class RuleSetsLoaderApi {
 
                 const checksum = await this.getChecksum(ruleSetId);
                 if (!checksum) {
+                    logger.error(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Failed to get checksum for rule set: ${ruleSetId}`);
                     return;
                 }
 

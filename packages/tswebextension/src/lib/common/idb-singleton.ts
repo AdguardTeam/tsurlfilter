@@ -19,7 +19,7 @@ export class IdbSingleton {
     /**
      * In‑flight promise used as a mutex to avoid races.
      */
-    private static dbGetterPromise: Promise<IDBPDatabase> | null = null;
+    private static getterPromise: Promise<IDBPDatabase> | null = null;
 
     /**
      * Global upgrade lock to ensure all database operations wait for upgrades to complete.
@@ -41,10 +41,10 @@ export class IdbSingleton {
         onUpgrade?: (oldVersion: number, newVersion: number | null) => void,
     ): Promise<IDBPDatabase> {
         // Wait for any pending operations to complete first (single await for atomicity)
-        if (IdbSingleton.upgradePromise || IdbSingleton.dbGetterPromise) {
+        if (IdbSingleton.upgradePromise || IdbSingleton.getterPromise) {
             const locks = [
                 IdbSingleton.upgradePromise,
-                IdbSingleton.dbGetterPromise,
+                IdbSingleton.getterPromise,
             ].filter((lock) => lock !== null);
 
             await Promise.all(locks);
@@ -56,11 +56,11 @@ export class IdbSingleton {
         }
 
         // If no operation is in progress, start a new one
-        if (!IdbSingleton.dbGetterPromise) {
-            IdbSingleton.dbGetterPromise = IdbSingleton.openDatabase(store, onUpgrade);
+        if (!IdbSingleton.getterPromise) {
+            IdbSingleton.getterPromise = IdbSingleton.openDatabase(store, onUpgrade);
         }
 
-        return IdbSingleton.dbGetterPromise;
+        return IdbSingleton.getterPromise;
     }
 
     /**
@@ -87,6 +87,8 @@ export class IdbSingleton {
                     logger.debug('[tsweb.IdbSingleton.openDatabase]: Upgrade IDB version from', oldVersion, 'to', newVersion);
                 },
                 blocked() {
+                    // In normal situation we expected that this will not happen
+                    // since we have mutex promise for upgrade.
                     logger.warn('[tsweb.IdbSingleton.openDatabase]: IDB upgrade blocked');
                 },
             });
@@ -97,9 +99,10 @@ export class IdbSingleton {
             }
 
             IdbSingleton.db = db;
+
             return db;
         } finally {
-            IdbSingleton.dbGetterPromise = null;
+            IdbSingleton.getterPromise = null;
         }
     }
 
@@ -120,11 +123,20 @@ export class IdbSingleton {
     ): Promise<IDBPDatabase> {
         // If an upgrade is already in progress, wait for it
         if (IdbSingleton.upgradePromise) {
-            await IdbSingleton.upgradePromise;
-            // After waiting, check if our store was created by the other upgrade
-            if (IdbSingleton.db?.objectStoreNames.contains(store)) {
-                return IdbSingleton.db;
+            const upgradedDb = await IdbSingleton.upgradePromise;
+
+            // Update currentDb reference to the result of the previous upgrade
+            if (!upgradedDb) {
+                throw new Error('Previous upgrade returned null database');
             }
+
+            // After waiting, check if our store was created by the other upgrade.
+            // Otherwise, if the store still doesn't exist, we need to do our own upgrade
+            if (upgradedDb?.objectStoreNames.contains(store)) {
+                return upgradedDb;
+            }
+
+            currentDb = upgradedDb;
         }
 
         const currentVersion = currentDb.version;
@@ -136,9 +148,6 @@ export class IdbSingleton {
         // Create upgrade promise to block other operations
         const upgradeTask = async (): Promise<IDBPDatabase> => {
             try {
-                // Call upgrade callback before database upgrade
-                onUpgrade?.(currentVersion, newVersion);
-
                 // Upgrade: bump version by +1, add missing store
                 const upgradedDb = await openDB(IdbSingleton.DB_NAME, newVersion, {
                     upgrade(database, oldVersion, upgradeNewVersion) {
@@ -147,9 +156,16 @@ export class IdbSingleton {
                         if (!database.objectStoreNames.contains(store)) {
                             database.createObjectStore(store);
                         }
+
+                        // Call upgrade callback after database upgrade.
+                        if (onUpgrade) {
+                            onUpgrade(currentVersion, newVersion);
+                        }
                     },
                     blocked() {
-                        logger.warn('[tsweb.IdbSingleton.upgradeDatabase]: IDB upgrade blocked');
+                        // In normal situation we expected that this will not happen
+                        // since we have mutex promise for upgrade.
+                        logger.warn('[tsweb.IdbSingleton.upgradeDatabase]: IDB upgrade blocked - another upgrade in progress');
                     },
                 });
                 return upgradedDb;
@@ -159,6 +175,7 @@ export class IdbSingleton {
         };
 
         IdbSingleton.upgradePromise = upgradeTask();
-        return upgradeTask();
+
+        return IdbSingleton.upgradePromise;
     }
 }
