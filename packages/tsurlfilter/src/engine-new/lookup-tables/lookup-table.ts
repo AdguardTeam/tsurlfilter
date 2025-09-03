@@ -19,12 +19,12 @@ export interface ILookupTable {
      * Tries to add the rule to the lookup table.
      * Returns true if it was added.
      *
-     * @param rule Parts of rule to add.
+     * @param ruleParts Parts of rule to add.
      * @param storageIdx Index of the rule in the storage.
      *
      * @returns True if the rule was added.
      */
-    addRule(rule: RuleParts, storageIdx: number): boolean;
+    addRule(ruleParts: RuleParts, storageIdx: number): boolean;
 
     /**
      * @returns Total rules count.

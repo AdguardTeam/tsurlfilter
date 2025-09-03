@@ -66,7 +66,7 @@ export class RuleScanner {
     /**
      * Current rule.
      */
-    private currentRule: RuleParts | null = null;
+    private currentRuleParts: RuleParts | null = null;
 
     /**
      * Index of the beginning of the current rule (basically, a line number).
@@ -110,7 +110,7 @@ export class RuleScanner {
         while (line !== null) {
             const ruleParts = getRuleParts(line, this.ignoreCosmetic, this.ignoreHost);
             if (ruleParts && !this.isIgnored(ruleParts)) {
-                this.currentRule = ruleParts;
+                this.currentRuleParts = ruleParts;
                 this.currentRuleIndex = lineIndex;
                 return true;
             }
@@ -130,8 +130,8 @@ export class RuleScanner {
      * index of this rule's text.
      */
     public getRule(): IndexedRule | null {
-        if (this.currentRule) {
-            return new IndexedRule(this.currentRule, this.currentRuleIndex, this.listId);
+        if (this.currentRuleParts) {
+            return new IndexedRule(this.currentRuleParts, this.currentRuleIndex, this.listId);
         }
 
         return null;

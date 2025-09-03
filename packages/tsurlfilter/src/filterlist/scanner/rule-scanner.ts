@@ -123,12 +123,12 @@ export class RuleScanner {
      */
     public scan(): boolean {
         let lineIndex = this.reader.getCurrentPos();
-        let line = this.readNext();
+        let node = this.readNext();
 
-        while (line) {
-            if (!this.isIgnored(line)) {
+        while (node) {
+            if (!this.isIgnored(node)) {
                 const rule = RuleFactory.createRule(
-                    line,
+                    node,
                     this.listId,
                     lineIndex,
                     this.ignoreNetwork,
@@ -142,7 +142,7 @@ export class RuleScanner {
             }
 
             lineIndex = this.reader.getCurrentPos();
-            line = this.readNext();
+            node = this.readNext();
         }
 
         return false;

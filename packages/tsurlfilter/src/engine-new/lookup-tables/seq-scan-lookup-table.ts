@@ -39,7 +39,7 @@ export class SeqScanLookupTable implements ILookupTable {
     }
 
     /** @inheritdoc */
-    public addRule(parts: NetworkRuleParts, storageIdx: number): boolean {
+    public addRule(ruleParts: NetworkRuleParts, storageIdx: number): boolean {
         if (this.rules.has(storageIdx)) {
             return false;
         }
@@ -60,7 +60,7 @@ export class SeqScanLookupTable implements ILookupTable {
         } catch (e) {
             // If we failed to parse the rule, we just skip it.
             logger.debug(
-                `[tsurl.SeqScanLookupTable.addRule]: failed to create rule from '${parts.text}', got error:`,
+                `[tsurl.SeqScanLookupTable.addRule]: failed to create rule from '${ruleParts.text}', got error:`,
                 getErrorMessage(e),
             );
 

@@ -40,9 +40,9 @@ export class HostnameLookupTable implements ILookupTable {
     }
 
     /** @inheritdoc */
-    public addRule(rule: NetworkRuleParts, storageIdx: number): boolean {
-        const { patternStart, patternEnd } = rule;
-        const pattern = rule.text.slice(patternStart, patternEnd);
+    public addRule(ruleParts: NetworkRuleParts, storageIdx: number): boolean {
+        const { patternStart, patternEnd } = ruleParts;
+        const pattern = ruleParts.text.slice(patternStart, patternEnd);
 
         if (!pattern) {
             return false;

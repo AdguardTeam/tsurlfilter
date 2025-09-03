@@ -75,27 +75,27 @@ export class CosmeticLookupTable {
     /**
      * Checks if the rule is a scriptlet rule.
      *
-     * @param rule Rule to check.
+     * @param ruleParts Rule to check.
      *
      * @returns True if the rule is a scriptlet rule.
      */
-    private static isScriptletRule(rule: CosmeticRuleParts): boolean {
-        return rule.type === CosmeticRuleType.JsInjectionRule
-            && rule.text.startsWith(`${ADG_SCRIPTLET_MASK}(`, rule.contentStart)
-            && rule.text.endsWith(')', rule.contentEnd);
+    private static isScriptletRule(ruleParts: CosmeticRuleParts): boolean {
+        return ruleParts.type === CosmeticRuleType.JsInjectionRule
+            && ruleParts.text.startsWith(`${ADG_SCRIPTLET_MASK}(`, ruleParts.contentStart)
+            && ruleParts.text.endsWith(')', ruleParts.contentEnd);
     }
 
     /**
      * Adds rule to the appropriate collection.
      *
-     * @param rule Rule to add.
+     * @param ruleParts Rule to add.
      * @param storageIdx Index of the rule in the storage.
      */
-    public addRule(rule: CosmeticRuleParts, storageIdx: number): void {
-        if (rule.allowlist) {
-            if (!CosmeticLookupTable.isScriptletRule(rule)) {
+    public addRule(ruleParts: CosmeticRuleParts, storageIdx: number): void {
+        if (ruleParts.allowlist) {
+            if (!CosmeticLookupTable.isScriptletRule(ruleParts)) {
                 // Store all non-scriptlet rules by their content.
-                this.addAllowlistRule(rule.text.slice(rule.contentStart, rule.contentEnd), storageIdx);
+                this.addAllowlistRule(ruleParts.text.slice(ruleParts.contentStart, ruleParts.contentEnd), storageIdx);
             }
 
             /*
@@ -105,12 +105,12 @@ export class CosmeticLookupTable {
              * - //scriptlet('')           -> ['']
              * - //scriptlet()             -> ['']
              */
-            const params = rule.text
+            const params = ruleParts.text
                 .slice(
                     // +1 to skip the space after the scriptlet mask
-                    rule.contentStart + ADG_SCRIPTLET_MASK.length + 1,
+                    ruleParts.contentStart + ADG_SCRIPTLET_MASK.length + 1,
                     // -1 to skip the closing parenthesis
-                    rule.contentEnd - 1,
+                    ruleParts.contentEnd - 1,
                 )
                 .split(',')
                 .map((p) => QuoteUtils.removeQuotesAndUnescape(p.trim()));
@@ -148,7 +148,7 @@ export class CosmeticLookupTable {
             return;
         }
 
-        if (rule.domainsStart === undefined || rule.domainsEnd === undefined) {
+        if (ruleParts.domainsStart === undefined || ruleParts.domainsEnd === undefined) {
             const cosmeticRule = this.ruleStorage.retrieveCosmeticRule(storageIdx);
             if (cosmeticRule) {
                 this.genericRules.push(cosmeticRule);
@@ -156,8 +156,8 @@ export class CosmeticLookupTable {
             return;
         }
 
-        const domains = rule.text
-            .slice(rule.domainsStart, rule.domainsEnd)
+        const domains = ruleParts.text
+            .slice(ruleParts.domainsStart, ruleParts.domainsEnd)
             .split(',')
             .map((d) => d.trim());
 

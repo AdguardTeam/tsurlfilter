@@ -38,14 +38,14 @@ export class DomainsLookupTable implements ILookupTable {
     }
 
     /** @inheritdoc */
-    public addRule(rule: NetworkRuleParts, storageIdx: number): boolean {
-        if (rule.domainsStart === undefined || rule.domainsEnd === undefined) {
+    public addRule(ruleParts: NetworkRuleParts, storageIdx: number): boolean {
+        if (ruleParts.domainsStart === undefined || ruleParts.domainsEnd === undefined) {
             return false;
         }
 
         const filteredDomains: string[] = [];
 
-        const domains = rule.text.slice(rule.domainsStart, rule.domainsEnd).split('|');
+        const domains = ruleParts.text.slice(ruleParts.domainsStart, ruleParts.domainsEnd).split('|');
         if (domains.length === 0) {
             return false;
         }

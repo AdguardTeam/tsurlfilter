@@ -89,13 +89,13 @@ export class IndexedStorageRule {
     /**
      * Constructor.
      *
-     * @param rule Rule.
+     * @param ruleParts Rule.
      * @param index Index of the rule.
      * @param listId ID of the filter list this rule belongs to.
      */
-    constructor(rule: RuleParts, index: number, listId: number) {
+    constructor(ruleParts: RuleParts, index: number, listId: number) {
         this.listId = listId;
-        this.rule = rule;
+        this.rule = ruleParts;
         this.index = index;
     }
 }

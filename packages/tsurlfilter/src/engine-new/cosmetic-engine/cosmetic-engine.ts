@@ -132,7 +132,7 @@ export class CosmeticEngine {
                 continue;
             }
 
-            const ruleParts = indexedRule.rule;
+            const { rule: ruleParts } = indexedRule;
 
             // FIXME (David): Probably we have a possible optimization step here.
             // When initial scan is enabled, the core engine passes it to its network and cosmetic engines,
