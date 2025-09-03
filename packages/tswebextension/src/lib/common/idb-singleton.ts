@@ -22,9 +22,14 @@ export class IdbSingleton {
     private static dbGetterPromise: Promise<IDBPDatabase> | null = null;
 
     /**
+     * Global upgrade lock to ensure all database operations wait for upgrades to complete.
+     */
+    private static upgradePromise: Promise<IDBPDatabase> | null = null;
+
+    /**
      * Returns an opened database containing the requested store. The method
-     * upgrades the database (and clears all existing stores) when the requested
-     * store is missing.
+     * upgrades the database when the requested store is missing, preserving
+     * existing data in other stores.
      *
      * @param store Name of the object store that must be present.
      * @param onUpgrade Optional callback to be called when the database is upgraded.
@@ -35,62 +40,125 @@ export class IdbSingleton {
         store: string,
         onUpgrade?: (oldVersion: number, newVersion: number | null) => void,
     ): Promise<IDBPDatabase> {
+        // Wait for any pending operations to complete first (single await for atomicity)
+        if (IdbSingleton.upgradePromise || IdbSingleton.dbGetterPromise) {
+            const locks = [
+                IdbSingleton.upgradePromise,
+                IdbSingleton.dbGetterPromise,
+            ].filter((lock) => lock !== null);
+
+            await Promise.all(locks);
+        }
+
         // Fast path when we already have an open DB containing the store.
         if (IdbSingleton.db?.objectStoreNames.contains(store)) {
             return IdbSingleton.db;
         }
 
-        // If someone is already opening/upgrading, just wait for them.
-        if (IdbSingleton.dbGetterPromise) {
-            return IdbSingleton.dbGetterPromise;
+        // If no operation is in progress, start a new one
+        if (!IdbSingleton.dbGetterPromise) {
+            IdbSingleton.dbGetterPromise = IdbSingleton.openDatabase(store, onUpgrade);
         }
 
-        IdbSingleton.dbGetterPromise = (async (): Promise<IDBPDatabase> => {
-            try {
-                if (IdbSingleton.db) {
-                    IdbSingleton.db.close();
-                    IdbSingleton.db = null;
-                }
+        return IdbSingleton.dbGetterPromise;
+    }
 
-                // Probe: open with undefined version, which opens the current version.
-                let db = await openDB(IdbSingleton.DB_NAME, undefined, {
-                    upgrade(_database, oldVersion, newVersion) {
-                        logger.debug('[tsweb.IdbSingleton.getOpenedDb]: Upgrade IDB version from', oldVersion, 'to', newVersion);
+    /**
+     * Opens the database and ensures the required store exists.
+     *
+     * @param store Name of the object store that must be present.
+     * @param onUpgrade Optional callback to be called when the database is upgraded.
+     *
+     * @returns Promise resolved with opened database.
+     */
+    private static async openDatabase(
+        store: string,
+        onUpgrade?: (oldVersion: number, newVersion: number | null) => void,
+    ): Promise<IDBPDatabase> {
+        try {
+            if (IdbSingleton.db) {
+                IdbSingleton.db.close();
+                IdbSingleton.db = null;
+            }
+
+            // Probe: open with undefined version, which opens the current version.
+            let db = await openDB(IdbSingleton.DB_NAME, undefined, {
+                upgrade(_database, oldVersion, newVersion) {
+                    logger.debug('[tsweb.IdbSingleton.openDatabase]: Upgrade IDB version from', oldVersion, 'to', newVersion);
+                },
+                blocked() {
+                    logger.warn('[tsweb.IdbSingleton.openDatabase]: IDB upgrade blocked');
+                },
+            });
+
+            // Check if we need to upgrade for missing store
+            if (!db.objectStoreNames.contains(store)) {
+                db = await IdbSingleton.upgradeDatabase(db, store, onUpgrade);
+            }
+
+            IdbSingleton.db = db;
+            return db;
+        } finally {
+            IdbSingleton.dbGetterPromise = null;
+        }
+    }
+
+    /**
+     * Upgrades the database to create a missing store.
+     * Preserves existing data in all other stores.
+     *
+     * @param currentDb Current database instance to upgrade.
+     * @param store Name of the store to create.
+     * @param onUpgrade Optional callback to be called when the database is upgraded.
+     *
+     * @returns Promise resolved with upgraded database.
+     */
+    private static async upgradeDatabase(
+        currentDb: IDBPDatabase,
+        store: string,
+        onUpgrade?: (oldVersion: number, newVersion: number | null) => void,
+    ): Promise<IDBPDatabase> {
+        // If an upgrade is already in progress, wait for it
+        if (IdbSingleton.upgradePromise) {
+            await IdbSingleton.upgradePromise;
+            // After waiting, check if our store was created by the other upgrade
+            if (IdbSingleton.db?.objectStoreNames.contains(store)) {
+                return IdbSingleton.db;
+            }
+        }
+
+        const currentVersion = currentDb.version;
+        const newVersion = currentVersion + 1;
+
+        // Close the database before upgrading
+        currentDb.close();
+
+        // Create upgrade promise to block other operations
+        const upgradeTask = async (): Promise<IDBPDatabase> => {
+            try {
+                // Call upgrade callback before database upgrade
+                onUpgrade?.(currentVersion, newVersion);
+
+                // Upgrade: bump version by +1, add missing store
+                const upgradedDb = await openDB(IdbSingleton.DB_NAME, newVersion, {
+                    upgrade(database, oldVersion, upgradeNewVersion) {
+                        logger.debug('[tsweb.IdbSingleton.upgradeDatabase]: Upgrade IDB version from', oldVersion, 'to', upgradeNewVersion);
+                        // Create the missing store without affecting existing stores
+                        if (!database.objectStoreNames.contains(store)) {
+                            database.createObjectStore(store);
+                        }
                     },
                     blocked() {
-                        logger.warn('[tsweb.IdbSingleton.getOpenedDb]: IDB upgrade blocked');
+                        logger.warn('[tsweb.IdbSingleton.upgradeDatabase]: IDB upgrade blocked');
                     },
                 });
-
-                if (!db.objectStoreNames.contains(store)) {
-                    const currentVersion = db.version;
-                    // Close the database before upgrading.
-                    db.close();
-                    // Upgrade: bump version by +1, clear stores, add missing store
-                    db = await openDB(IdbSingleton.DB_NAME, currentVersion + 1, {
-                        upgrade(database, oldVersion, newVersion, tx) {
-                            onUpgrade?.(oldVersion, newVersion);
-                            logger.debug('[tsweb.IdbSingleton.getOpenedDb]: Upgrade IDB version from', oldVersion, 'to', newVersion);
-                            for (const name of Array.from(database.objectStoreNames)) {
-                                tx.objectStore(name).clear();
-                            }
-                            if (!database.objectStoreNames.contains(store)) {
-                                database.createObjectStore(store);
-                            }
-                        },
-                        blocked() {
-                            logger.warn('[tsweb.IdbSingleton.getOpenedDb]: IDB upgrade blocked');
-                        },
-                    });
-                }
-
-                IdbSingleton.db = db;
-                return db;
+                return upgradedDb;
             } finally {
-                IdbSingleton.dbGetterPromise = null;
+                IdbSingleton.upgradePromise = null;
             }
-        })();
+        };
 
-        return IdbSingleton.dbGetterPromise;
+        IdbSingleton.upgradePromise = upgradeTask();
+        return upgradeTask();
     }
 }

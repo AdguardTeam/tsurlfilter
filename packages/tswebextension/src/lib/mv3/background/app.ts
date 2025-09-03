@@ -2,6 +2,7 @@ import browser from 'webextension-polyfill';
 import {
     Filter,
     METADATA_RULESET_ID,
+    RULESET_NAME_PREFIX,
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
@@ -193,12 +194,25 @@ export class TsWebExtension implements AppInterface<
     /**
      * Synchronize rule set with IDB.
      *
-     * @param ruleSetId Rule set identifier.
+     * @param staticFilterId Static filter id.
      * @param ruleSetsPath Path to rule sets.
+     *
+     * TODO: Find a way to exclude usage of this method, since we trying to keep
+     * only one way to configure tswebextension and all its parts, including
+     * rulesets: via passing single configuration file. And this method creates
+     * a "dirty" flow, when tswebextension is not received log level from
+     * extension and forces us to use static locks for IDB in RuleSetsLoaderApi
+     * to prevent concurrent access issues between multiple instances.
      */
-    public static async syncRuleSetWithIdb(ruleSetId: number, ruleSetsPath: string): Promise<void> {
+    public static async syncRuleSetWithIdbByFilterId(
+        staticFilterId: number,
+        ruleSetsPath: string,
+    ): Promise<void> {
         const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
-        await ruleSetsLoaderApi.syncRuleSetWithIdb(String(ruleSetId));
+
+        const ruleSetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
+
+        await ruleSetsLoaderApi.syncRuleSetWithIdb(ruleSetId);
     }
 
     /**
@@ -290,14 +304,19 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
+        // IMPORTANT: This call should always be made before any other operations for
+        // proper logging and error handling.
+        TsWebExtension.updateLogLevel(config.logLevel);
+
         const loader = new RuleSetsLoaderApi(config.ruleSetsPath);
 
-        await Promise.all(
-            config.staticFiltersIds.map((staticFilterId) => loader.syncRuleSetWithIdb(String(staticFilterId))),
-        );
+        const syncTasks = config.staticFiltersIds.map((staticFilterId) => {
+            const ruleSetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
 
-        // Update log level before first log message.
-        TsWebExtension.updateLogLevel(config.logLevel);
+            return loader.syncRuleSetWithIdb(ruleSetId);
+        });
+
+        await Promise.all(syncTasks);
 
         // Exclude binary fields from logged config.
         const binaryFields = [

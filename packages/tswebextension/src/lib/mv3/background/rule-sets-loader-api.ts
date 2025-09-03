@@ -102,13 +102,16 @@ export class RuleSetsLoaderApi {
 
     /**
      * Cache of checksums of rule sets.
+     * Only stores actual checksum values found in IDB.
+     * It is static to share across all instances of the class.
      */
-    private static idbChecksumsCache = new Map<string, string | undefined>();
+    private static idbChecksumsCache = new Map<string, string>();
 
     /**
      * Race condition lock map per ruleSetId.
+     * Made static to prevent concurrent syncs across different instances.
      */
-    private syncLocks: Map<string, Promise<void>>;
+    private static syncLocks = new Map<string, Promise<void>>();
 
     /**
      * Creates new {@link RuleSetsLoaderApi}.
@@ -118,7 +121,6 @@ export class RuleSetsLoaderApi {
     constructor(ruleSetsPath: string) {
         this.ruleSetsPath = ruleSetsPath;
         this.isInitialized = false;
-        this.syncLocks = new Map();
 
         if (RuleSetsLoaderApi.ruleSetsCachePath !== ruleSetsPath) {
             RuleSetsLoaderApi.ruleSetsCachePath = ruleSetsPath;
@@ -242,7 +244,7 @@ export class RuleSetsLoaderApi {
      */
     public async syncRuleSetWithIdb(ruleSetId: string): Promise<void> {
         // Use a per-ruleSet lock to avoid parallel syncs
-        const existingLock = this.syncLocks.get(ruleSetId);
+        const existingLock = RuleSetsLoaderApi.syncLocks.get(ruleSetId);
         if (existingLock) {
             await existingLock;
             return;
@@ -263,13 +265,18 @@ export class RuleSetsLoaderApi {
 
                 const cacheKey = `${this.ruleSetsPath}_${ruleSetId}`;
 
+                // Check cache first
                 if (RuleSetsLoaderApi.idbChecksumsCache.has(cacheKey)) {
                     idbChecksum = RuleSetsLoaderApi.idbChecksumsCache.get(cacheKey);
                 } else {
+                    // Not in cache - go to database
                     idbChecksum = await RuleSetsLoaderApi.getValueFromIdb(
                         RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_CHECKSUM, ruleSetId),
                     );
-                    RuleSetsLoaderApi.idbChecksumsCache.set(cacheKey, idbChecksum);
+                    // Only cache if we found a value
+                    if (idbChecksum) {
+                        RuleSetsLoaderApi.idbChecksumsCache.set(cacheKey, idbChecksum);
+                    }
                 }
 
                 if (idbChecksum === checksum) {
@@ -330,16 +337,16 @@ export class RuleSetsLoaderApi {
                     },
                 });
 
-                logger.info(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Synced rule set with IDB: ${ruleSetId}`);
+                logger.info(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Synced rule set with IDB: ${ruleSetId}, checksum: ${checksum}`);
             } catch (err) {
                 logger.error(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Failed to sync rule set ${ruleSetId}:`, err);
                 throw err;
             } finally {
-                this.syncLocks.delete(ruleSetId);
+                RuleSetsLoaderApi.syncLocks.delete(ruleSetId);
             }
         })();
 
-        this.syncLocks.set(ruleSetId, syncPromise);
+        RuleSetsLoaderApi.syncLocks.set(ruleSetId, syncPromise);
         await syncPromise;
     }
 
