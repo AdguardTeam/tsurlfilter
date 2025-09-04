@@ -14,5 +14,6 @@ export const loggerMocks = {
 vi.mock('@adguard/logger', () => {
     return {
         Logger: vi.fn().mockImplementation(() => loggerMocks),
+        getErrorMessage: vi.fn(),
     };
 });

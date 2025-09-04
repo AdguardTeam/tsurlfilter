@@ -1,4 +1,10 @@
-import { type AnyRule, type NetworkRule as NetworkRuleNode, RuleParser } from '@adguard/agtree';
+import {
+    type AnyRule,
+    type NetworkRule as NetworkRuleNode,
+    NetworkRuleType,
+    RuleCategory,
+    RuleParser,
+} from '@adguard/agtree';
 import { RuleConverter } from '@adguard/agtree/converter';
 
 import { getErrorMessage } from '../../common/error';
@@ -111,6 +117,17 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
         // declarative rules, that's why we ignore cosmetic and host rules.
         let networkRule: IRule | null;
         try {
+            if (ruleConvertedToAGSyntax.category === RuleCategory.Cosmetic) {
+                return null;
+            }
+
+            if (
+                ruleConvertedToAGSyntax.category === RuleCategory.Network
+                && ruleConvertedToAGSyntax.type === NetworkRuleType.HostRule
+            ) {
+                return null;
+            }
+
             // Note: for correct throwing error it is important to use setConfiguration(),
             // because it will set compatibility type and future parsing options
             // for network rules will take it into account.
@@ -118,14 +135,10 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
                 ruleConvertedToAGSyntax,
                 filterId,
                 index,
-                false, // convert only network rules
-                true, // ignore cosmetic rules
-                true, // ignore host rules
-                false, // do not use a logger and throw an exception on rule creation error
             );
         } catch (e) {
             // eslint-disable-next-line max-len
-            throw new Error(`Cannot create IRule from filter "${filterId}" and rule index "${index}": ${getErrorMessage(e)}`);
+            throw new Error(`Cannot create IRule from filter "${filterId}" and rule "${text}": ${getErrorMessage(e)}`);
         }
 
         /**

@@ -1,5 +1,11 @@
-import { RuleParser } from '@adguard/agtree';
+import {
+    NetworkRuleType,
+    RuleCategory,
+    RuleGenerator,
+    RuleParser,
+} from '@adguard/agtree';
 import { defaultParserOptions } from '@adguard/agtree/parser';
+import { getErrorMessage } from '@adguard/logger';
 
 import { CosmeticRule } from '../rules/cosmetic-rule';
 import { HostRule } from '../rules/host-rule';
@@ -155,21 +161,39 @@ export class RuleStorage {
             parseHostRules: !ignoreHost,
         });
 
-        const result = RuleFactory.createRule(node, listId, ruleId, false, false, ignoreHost);
+        if (ignoreHost && node.category === RuleCategory.Network && node.type === NetworkRuleType.HostRule) {
+            return null;
+        }
+
+        let createdRule: IRule | null = null;
+
+        try {
+            createdRule = RuleFactory.createRule(node, listId, ruleId);
+        } catch (e) {
+            let msg = `"${getErrorMessage(e)}" in the rule: `;
+
+            try {
+                msg += `"${RuleGenerator.generate(node)}"`;
+            } catch (generateError) {
+                msg += `"${JSON.stringify(node)}" (generate error: ${getErrorMessage(generateError)})`;
+            }
+
+            logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: ${msg}`);
+        }
 
         if (list.ignoreUnsafe) {
-            if (result instanceof NetworkRule && result.isUnsafe()) {
+            if (createdRule instanceof NetworkRule && createdRule.isUnsafe()) {
                 return null;
             }
 
             // TODO: Add support for more rule types, if needed
         }
 
-        if (result) {
-            this.cache.set(storageIdx, result);
+        if (createdRule) {
+            this.cache.set(storageIdx, createdRule);
         }
 
-        return result;
+        return createdRule;
     }
 
     /**

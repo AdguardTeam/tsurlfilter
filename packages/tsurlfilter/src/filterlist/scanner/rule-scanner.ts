@@ -3,11 +3,14 @@ import {
     CosmeticRuleType,
     NetworkRuleType,
     RuleCategory,
+    RuleGenerator,
 } from '@adguard/agtree';
+import { getErrorMessage } from '@adguard/logger';
 
 import { NetworkRule } from '../../rules/network-rule';
 import { IndexedRule, type IRule } from '../../rules/rule';
 import { RuleFactory } from '../../rules/rule-factory';
+import { logger } from '../../utils/logger';
 import { type IReader } from '../reader/reader';
 
 import { ScannerType } from './scanner-type';
@@ -122,26 +125,37 @@ export class RuleScanner {
      * input or an error. If there's a rule available, returns true.
      */
     public scan(): boolean {
-        let lineIndex = this.reader.getCurrentPos();
+        let ruleIndex = this.reader.getCurrentPos();
         let node = this.readNext();
 
         while (node) {
             if (!this.isIgnored(node)) {
-                const rule = RuleFactory.createRule(
-                    node,
-                    this.listId,
-                    lineIndex,
-                    this.ignoreNetwork,
-                    this.ignoreCosmetic,
-                    this.ignoreHost,
-                );
+                let rule: IRule | null = null;
+
+                try {
+                    rule = RuleFactory.createRule(
+                        node,
+                        this.listId,
+                        ruleIndex,
+                    );
+                } catch (e) {
+                    let msg = `"${getErrorMessage(e)}" in the rule: `;
+
+                    try {
+                        msg += `"${RuleGenerator.generate(node)}"`;
+                    } catch (generateError) {
+                        msg += `"${JSON.stringify(node)}" (generate error: ${getErrorMessage(generateError)})`;
+                    }
+
+                    logger.debug(`[tsurl.RuleScanner.scan]: error: ${msg}`);
+                }
 
                 this.currentRule = rule;
-                this.currentRuleIndex = lineIndex;
+                this.currentRuleIndex = ruleIndex;
                 return true;
             }
 
-            lineIndex = this.reader.getCurrentPos();
+            ruleIndex = this.reader.getCurrentPos();
             node = this.readNext();
         }
 
@@ -198,8 +212,25 @@ export class RuleScanner {
      * @returns - True if the rule should be ignored.
      */
     private isIgnored(rule: AnyRule): boolean {
-        if (!this.ignoreCosmetic && !this.ignoreJS && !this.ignoreUnsafe) {
+        if (
+            !this.ignoreCosmetic
+            && !this.ignoreJS
+            && !this.ignoreUnsafe
+            && !this.ignoreHost
+            && !this.ignoreNetwork
+        ) {
             return false;
+        }
+
+        if (
+            (this.ignoreNetwork && rule.category === RuleCategory.Network)
+            || (
+                this.ignoreHost
+                && rule.category === RuleCategory.Network
+                && rule.type === NetworkRuleType.HostRule
+            )
+        ) {
+            return true;
         }
 
         if (rule.category === RuleCategory.Cosmetic) {

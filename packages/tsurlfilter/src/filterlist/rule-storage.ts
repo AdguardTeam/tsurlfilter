@@ -1,4 +1,10 @@
-import { type AnyRule } from '@adguard/agtree';
+import {
+    type AnyRule,
+    NetworkRuleType,
+    RuleCategory,
+    RuleGenerator,
+} from '@adguard/agtree';
+import { getErrorMessage } from '@adguard/logger';
 
 import { HostRule } from '../rules/host-rule';
 import { NetworkRule } from '../rules/network-rule';
@@ -132,13 +138,31 @@ export class RuleStorage {
             return null;
         }
 
-        const result = RuleFactory.createRule(ruleNode, listId, ruleId, false, false, ignoreHost);
-
-        if (result) {
-            this.cache.set(storageIdx, result);
+        if (ignoreHost && ruleNode.category === RuleCategory.Network && ruleNode.type === NetworkRuleType.HostRule) {
+            return null;
         }
 
-        return result;
+        let createdRule: IRule | null = null;
+
+        try {
+            createdRule = RuleFactory.createRule(ruleNode, listId, ruleId);
+        } catch (e) {
+            let msg = `"${getErrorMessage(e)}" in the rule: `;
+
+            try {
+                msg += `"${RuleGenerator.generate(ruleNode)}"`;
+            } catch (generateError) {
+                msg += `"${JSON.stringify(ruleNode)}" (generate error: ${getErrorMessage(generateError)})`;
+            }
+
+            logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: ${msg}`);
+        }
+
+        if (createdRule) {
+            this.cache.set(storageIdx, createdRule);
+        }
+
+        return createdRule;
     }
 
     /**
