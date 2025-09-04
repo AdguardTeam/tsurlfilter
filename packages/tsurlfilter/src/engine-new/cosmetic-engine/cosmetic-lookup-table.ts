@@ -6,7 +6,7 @@ import { type RuleStorage } from '../../filterlist/rule-storage-new';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { type Request } from '../../request';
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
-import { CachedFastHash } from '../cached-fast-hash';
+import { fastHash } from '../../utils/string-utils';
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
@@ -182,7 +182,7 @@ export class CosmeticLookupTable {
             // tldResult.domain equals to eTLD domain,
             // e.g. sub.example.uk.org would result in example.uk.org
             const parsedDomain = tldResult.domain || domain;
-            const key = CachedFastHash.get(parsedDomain);
+            const key = fastHash(parsedDomain);
             const rules: number[] = this.byHostname.get(key) || [];
             rules.push(storageIdx);
             this.byHostname.set(key, rules);
@@ -202,7 +202,7 @@ export class CosmeticLookupTable {
 
         for (let i = 0; i < subdomains.length; i += 1) {
             const subdomain = subdomains[i];
-            const rulesIndexes = this.byHostname.get(CachedFastHash.get(subdomain));
+            const rulesIndexes = this.byHostname.get(fastHash(subdomain));
 
             if (!rulesIndexes || rulesIndexes.length === 0) {
                 continue;

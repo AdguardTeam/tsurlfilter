@@ -4,7 +4,6 @@ import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
 import { SimpleRegex } from '../../rules/simple-regex';
 import { fastHash } from '../../utils/string-utils';
-import { CachedFastHash } from '../cached-fast-hash';
 
 import { type ILookupTable } from './lookup-table';
 
@@ -68,7 +67,7 @@ export class HostnameLookupTable implements ILookupTable {
             return false;
         }
 
-        const hash = CachedFastHash.get(hostname);
+        const hash = fastHash(hostname);
         let rulesIndexes = this.hostnameLookupTable.get(hash);
         if (!rulesIndexes) {
             rulesIndexes = [];

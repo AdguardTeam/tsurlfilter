@@ -3,7 +3,7 @@ import { type RuleStorage } from '../../filterlist/rule-storage-new';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
-import { CachedFastHash } from '../cached-fast-hash';
+import { fastHash } from '../../utils/string-utils';
 
 import { type ILookupTable } from './lookup-table';
 
@@ -65,7 +65,7 @@ export class DomainsLookupTable implements ILookupTable {
         }
 
         filteredDomains.forEach((domain) => {
-            const hash = CachedFastHash.get(domain);
+            const hash = fastHash(domain);
             let rulesIndexes = this.domainsLookupTable.get(hash);
             if (!rulesIndexes) {
                 rulesIndexes = [];
@@ -97,7 +97,7 @@ export class DomainsLookupTable implements ILookupTable {
         }
 
         for (let i = 0; i < domains.length; i += 1) {
-            const hash = CachedFastHash.get(domains[i]);
+            const hash = fastHash(domains[i]);
             const rulesIndexes = this.domainsLookupTable.get(hash);
             if (!rulesIndexes) {
                 continue;

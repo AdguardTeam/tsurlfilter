@@ -135,7 +135,9 @@ export class Engine {
         const networkEngine = NetworkEngine.createSync(storage, networkRules);
         const cosmeticEngine = CosmeticEngine.createSync(storage, cosmeticRules);
 
-        return new Engine(storage, networkEngine, cosmeticEngine);
+        const engine = new Engine(storage, networkEngine, cosmeticEngine);
+
+        return engine;
     }
 
     /**
@@ -197,7 +199,9 @@ export class Engine {
             CosmeticEngine.createAsync(storage, cosmeticRules),
         ]);
 
-        return new Engine(storage, networkEngine, cosmeticEngine);
+        const engine = new Engine(storage, networkEngine, cosmeticEngine);
+
+        return engine;
     }
 
     /**
