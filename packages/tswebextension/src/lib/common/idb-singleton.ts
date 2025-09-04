@@ -28,8 +28,8 @@ export class IdbSingleton {
 
     /**
      * Returns an opened database containing the requested store. The method
-     * upgrades the database when the requested store is missing, preserving
-     * existing data in other stores.
+     * upgrades the database when the requested store is missing, clearing
+     * all existing data in other stores during upgrade.
      *
      * @param store Name of the object store that must be present.
      * @param onUpgrade Optional callback to be called when the database is upgraded.
@@ -108,7 +108,7 @@ export class IdbSingleton {
 
     /**
      * Upgrades the database to create a missing store.
-     * Preserves existing data in all other stores.
+     * Clears all existing data in other stores during upgrade.
      *
      * @param currentDb Current database instance to upgrade.
      * @param store Name of the store to create.
@@ -150,8 +150,17 @@ export class IdbSingleton {
             try {
                 // Upgrade: bump version by +1, add missing store
                 const upgradedDb = await openDB(IdbSingleton.DB_NAME, newVersion, {
-                    upgrade(database, oldVersion, upgradeNewVersion) {
+                    upgrade(database, oldVersion, upgradeNewVersion, tx) {
                         logger.debug('[tsweb.IdbSingleton.upgradeDatabase]: Upgrade IDB version from', oldVersion, 'to', upgradeNewVersion);
+
+                        // Clear existing stores before creating new one
+                        if (tx) {
+                            for (const name of Array.from(database.objectStoreNames)) {
+                                logger.debug(`[tsweb.IdbSingleton.upgradeDatabase]: Clearing store '${name}'`);
+                                tx.objectStore(name).clear();
+                            }
+                        }
+
                         // Create the missing store without affecting existing stores
                         if (!database.objectStoreNames.contains(store)) {
                             database.createObjectStore(store);
