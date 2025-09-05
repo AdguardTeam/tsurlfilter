@@ -1,5 +1,10 @@
+import { getErrorMessage } from '@adguard/logger';
+
+import { type NetworkRuleParts } from '../../filterlist/rule-parts';
+import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
+import { logger } from '../../utils/logger';
 
 import { type ILookupTable } from './lookup-table';
 
@@ -17,46 +22,62 @@ export class SeqScanLookupTable implements ILookupTable {
     /**
      * Rules for which we could not find a shortcut and could not place it to the shortcuts lookup table.
      */
-    private rules: NetworkRule[] = [];
+    private rules: Map<number, NetworkRule> = new Map();
 
     /**
-     * Implements the ILookupTable interface for SeqScanLookupTable.
-     *
-     * @param rule Rule to add.
-     *
-     * @returns True if the rule was added.
+     * Storage for the network filtering rules.
      */
-    public addRule(rule: NetworkRule): boolean {
-        if (!this.rules.includes(rule)) {
-            this.rules.push(rule);
-            this.rulesCount += 1;
-            return true;
-        }
+    private readonly ruleStorage: RuleStorage;
 
-        return false;
+    /**
+     * Creates a new instance.
+     *
+     * @param storage Rules storage.
+     */
+    constructor(storage: RuleStorage) {
+        this.ruleStorage = storage;
     }
 
-    /**
-     * Implements the ILookupTable interface method.
-     *
-     * @returns Count of rules added to this lookup table.
-     */
+    /** @inheritdoc */
+    public addRule(ruleParts: NetworkRuleParts, storageIdx: number): boolean {
+        if (this.rules.has(storageIdx)) {
+            return false;
+        }
+
+        try {
+            const rule = this.ruleStorage.retrieveNetworkRule(storageIdx);
+
+            if (!rule) {
+                return false;
+            }
+
+            this.rules.set(
+                storageIdx,
+                rule,
+            );
+            this.rulesCount += 1;
+            return true;
+        } catch (e) {
+            // If we failed to parse the rule, we just skip it.
+            logger.debug(
+                `[tsurl.SeqScanLookupTable.addRule]: failed to create rule from '${ruleParts.text}', got error:`,
+                getErrorMessage(e),
+            );
+
+            return false;
+        }
+    }
+
+    /** @inheritdoc */
     public getRulesCount(): number {
         return this.rulesCount;
     }
 
-    /**
-     * Implements the ILookupTable interface method.
-     *
-     * @param request Request to check.
-     *
-     * @returns Array of matching rules.
-     */
+    /** @inheritdoc */
     public matchAll(request: Request): NetworkRule[] {
         const result = [];
 
-        for (let i = 0; i < this.rules.length; i += 1) {
-            const r = this.rules[i];
+        for (const r of this.rules.values()) {
             if (r.match(request)) {
                 result.push(r);
             }

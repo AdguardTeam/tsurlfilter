@@ -1,8 +1,10 @@
+import { type NetworkRuleParts, RuleCategory } from '../filterlist/rule-parts';
 import { type RuleStorage } from '../filterlist/rule-storage';
-import { ScannerType } from '../filterlist/scanner/scanner-type';
 import { type Request } from '../request';
-import { NetworkRule } from '../rules/network-rule';
+import { type NetworkRule } from '../rules/network-rule';
+import { type IndexedStorageRule } from '../rules/rule';
 
+import { CHUNK_SIZE } from './constants';
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
 import { HostnameLookupTable } from './lookup-tables/hostname-lookup-table';
 import { type ILookupTable } from './lookup-tables/lookup-table';
@@ -15,17 +17,12 @@ import { MatchingResult } from './matching-result';
  */
 export class NetworkEngine {
     /**
-     * Count of rules added to the engine.
-     */
-    public rulesCount: number;
-
-    /**
      * Storage for the network filtering rules.
      */
     private ruleStorage: RuleStorage;
 
     /**
-     * Domain lookup table. Key is the domain name hash.
+     * Domain lookup table.
      */
     private readonly domainsLookupTable: ILookupTable;
 
@@ -45,32 +42,75 @@ export class NetworkEngine {
     private readonly seqScanLookupTable: ILookupTable;
 
     /**
+     * Creates an instance of the network engine in sync mode.
+     *
+     * @param storage An object for a rules storage.
+     * @param rules Array of rules to add.
+     *
+     * @returns An instance of the network engine.
+     */
+    public static createSync(storage: RuleStorage, rules: IndexedStorageRule[]): NetworkEngine {
+        const engine = new NetworkEngine(storage);
+
+        for (const rule of rules) {
+            if (rule.rule.category !== RuleCategory.Network) {
+                continue;
+            }
+
+            engine.addRule(rule.rule, rule.index);
+        }
+
+        return engine;
+    }
+
+    /**
+     * Creates an instance of the network engine in async mode.
+     *
+     * @param storage An object for a rules storage.
+     * @param rules Array of rules to add.
+     *
+     * @returns An instance of the network engine.
+     */
+    public static async createAsync(
+        storage: RuleStorage,
+        rules: IndexedStorageRule[],
+    ): Promise<NetworkEngine> {
+        const engine = new NetworkEngine(storage);
+
+        let counter = 0;
+
+        for (const rule of rules) {
+            counter += 1;
+
+            if (counter >= CHUNK_SIZE) {
+                counter = 0;
+
+                // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
+                await new Promise((resolve) => setTimeout(resolve, 1));
+            }
+
+            if (rule.rule.category !== RuleCategory.Network) {
+                continue;
+            }
+
+            engine.addRule(rule.rule, rule.index);
+        }
+
+        return engine;
+    }
+
+    /**
      * Builds an instance of the network engine.
      *
      * @param storage An object for a rules storage.
-     * @param skipStorageScan Create an instance without storage scanning.
      */
-    constructor(storage: RuleStorage, skipStorageScan = false) {
+    private constructor(storage: RuleStorage) {
         this.ruleStorage = storage;
-        this.rulesCount = 0;
+
         this.domainsLookupTable = new DomainsLookupTable(storage);
         this.hostnameLookupTable = new HostnameLookupTable(storage);
         this.shortcutsLookupTable = new TrieLookupTable(storage);
-        this.seqScanLookupTable = new SeqScanLookupTable();
-
-        if (skipStorageScan) {
-            return;
-        }
-
-        const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules);
-
-        while (scanner.scan()) {
-            const indexedRule = scanner.getRule();
-            if (indexedRule
-                && indexedRule.rule instanceof NetworkRule) {
-                this.addRule(indexedRule.rule, indexedRule.index);
-            }
-        }
+        this.seqScanLookupTable = new SeqScanLookupTable(storage);
     }
 
     /**
@@ -113,18 +153,34 @@ export class NetworkEngine {
     /**
      * Adds rule to the network engine.
      *
-     * @param rule Rule to add.
+     * @param rule Parts of rule to add.
      * @param storageIdx Storage index of the rule.
      */
-    public addRule(rule: NetworkRule, storageIdx: number): void {
-        if (!this.hostnameLookupTable.addRule(rule, storageIdx)) {
-            if (!this.shortcutsLookupTable.addRule(rule, storageIdx)) {
-                if (!this.domainsLookupTable.addRule(rule, storageIdx)) {
-                    this.seqScanLookupTable.addRule(rule, storageIdx);
-                }
-            }
+    private addRule(rule: NetworkRuleParts, storageIdx: number): void {
+        if (this.hostnameLookupTable.addRule(rule, storageIdx)) {
+            return;
         }
 
-        this.rulesCount += 1;
+        if (this.shortcutsLookupTable.addRule(rule, storageIdx)) {
+            return;
+        }
+
+        if (this.domainsLookupTable.addRule(rule, storageIdx)) {
+            return;
+        }
+
+        this.seqScanLookupTable.addRule(rule, storageIdx);
+    }
+
+    /**
+     * Returns the total number of rules in the engine.
+     *
+     * @returns The total number of rules.
+     */
+    public get rulesCount(): number {
+        return this.domainsLookupTable.getRulesCount()
+            + this.hostnameLookupTable.getRulesCount()
+            + this.shortcutsLookupTable.getRulesCount()
+            + this.seqScanLookupTable.getRulesCount();
     }
 }

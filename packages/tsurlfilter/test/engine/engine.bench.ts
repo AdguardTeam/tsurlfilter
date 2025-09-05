@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
 import { bench, describe } from 'vitest';
 
-import { Engine } from '../../src/engine-new/engine';
+import { Engine } from '../../src/engine/engine';
 
 describe('Build engine', () => {
     const ignoreCosmetic = false;

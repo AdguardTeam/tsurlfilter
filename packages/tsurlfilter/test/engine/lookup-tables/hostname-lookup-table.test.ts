@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { HostnameLookupTable } from '../../../src/engine/lookup-tables/hostname-lookup-table';
+import { getRuleParts, type NetworkRuleParts } from '../../../src/filterlist/rule-parts';
 import { Request } from '../../../src/request';
 import { RequestType } from '../../../src/request-type';
-import { createNetworkRule } from '../../helpers/rule-creator';
 
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 
@@ -12,22 +12,22 @@ describe('Hostname Lookup Table Tests', () => {
         const ruleStorage = createRuleStorage([]);
         const table = new HostnameLookupTable(ruleStorage);
 
-        expect(table.addRule(createNetworkRule('path', 0), 0)).toBeFalsy();
+        expect(table.addRule(getRuleParts('path') as NetworkRuleParts, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('||*example.org^', 0), 0)).toBeFalsy();
+        expect(table.addRule(getRuleParts('||*example.org^') as NetworkRuleParts, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('||example^', 0), 0)).toBeFalsy();
+        expect(table.addRule(getRuleParts('||example^') as NetworkRuleParts, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('||example.^', 0), 0)).toBeFalsy();
+        expect(table.addRule(getRuleParts('||example.^') as NetworkRuleParts, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('||example.org^', 0), 0)).toBeTruthy();
+        expect(table.addRule(getRuleParts('||example.org^') as NetworkRuleParts, 0)).toBeTruthy();
         expect(table.getRulesCount()).toBe(1);
 
-        expect(table.addRule(createNetworkRule('||example.net/path', 0), 0)).toBeTruthy();
+        expect(table.addRule(getRuleParts('||example.net/path') as NetworkRuleParts, 0)).toBeTruthy();
         expect(table.getRulesCount()).toBe(2);
     });
 

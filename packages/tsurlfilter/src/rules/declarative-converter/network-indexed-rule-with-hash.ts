@@ -12,6 +12,7 @@ import { fastHash, fastHash31 } from '../../utils/string-utils';
 import { NetworkRule } from '../network-rule';
 import { IndexedRule, type IRule } from '../rule';
 import { RuleFactory } from '../rule-factory';
+import { NO_LIST_ID } from '../../filterlist/rule-list';
 
 import { NetworkRuleWithNodeAndText } from './network-rule-with-node-and-text';
 
@@ -23,7 +24,7 @@ import { NetworkRuleWithNodeAndText } from './network-rule-with-node-and-text';
  * while rule's text hash is needed to keep ID of the rule in the filter the same
  * between several runs. Thus is needed to be able to use "skip review" option in CWS.
  */
-export class IndexedNetworkRuleWithHash extends IndexedRule {
+export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeAndText> {
     /**
      * Rule's hash created with {@link fastHash}. Needed to quickly compare
      * two different network rules with the same pattern part for future
@@ -53,7 +54,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule {
      * @param hash Hash of the rule.
      */
     constructor(rule: NetworkRuleWithNodeAndText, index: number, hash: number) {
-        super(rule, index);
+        super(rule, index, NO_LIST_ID);
 
         this.hash = hash;
         this.rule = rule;
