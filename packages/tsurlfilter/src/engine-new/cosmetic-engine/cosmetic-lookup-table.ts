@@ -21,8 +21,10 @@ export class CosmeticLookupTable {
     /**
      * List of domain-specific rules that are not organized into any index structure.
      * These rules are sequentially scanned one by one.
+     * For performance reasons, we store only rule indexes here, and retrieve the rules from the storage
+     * on the first match.
      */
-    public seqScanRules: CosmeticRule[];
+    private seqScanRuleIndexes: number[];
 
     /**
      * Collection of generic rules.
@@ -51,7 +53,7 @@ export class CosmeticLookupTable {
      */
     constructor(storage: RuleStorage) {
         this.byHostname = new Map();
-        this.seqScanRules = [];
+        this.seqScanRuleIndexes = [];
         this.genericRules = [];
         this.allowlist = new Map();
         this.ruleStorage = storage;
@@ -170,10 +172,7 @@ export class CosmeticLookupTable {
         }
 
         if (domains.some(DomainModifier.isWildcardOrRegexDomain)) {
-            const cosmeticRule = this.ruleStorage.retrieveCosmeticRule(storageIdx);
-            if (cosmeticRule) {
-                this.seqScanRules.push(cosmeticRule);
-            }
+            this.seqScanRuleIndexes.push(storageIdx);
             return;
         }
 
@@ -208,7 +207,7 @@ export class CosmeticLookupTable {
                 continue;
             }
 
-            // FIXME (David): Double check, is it helps, if we handle 1-lenght case separately
+            // FIXME (David): Double check, is it helps, if we handle 1-length case separately
             const uniqueRulesIndexes = new Set(rulesIndexes);
             for (const ruleIndex of uniqueRulesIndexes) {
                 const rule = this.ruleStorage.retrieveRule(ruleIndex) as CosmeticRule;
@@ -218,7 +217,13 @@ export class CosmeticLookupTable {
             }
         }
 
-        result.push(...this.seqScanRules.filter((r) => !r.isAllowlist() && r.match(request)));
+        for (const ruleIndex of this.seqScanRuleIndexes) {
+            // Note: rule storage caches retrieved rules
+            const rule = this.ruleStorage.retrieveCosmeticRule(ruleIndex);
+            if (rule && !rule.isAllowlist() && rule.match(request)) {
+                result.push(rule);
+            }
+        }
 
         return result;
     }
