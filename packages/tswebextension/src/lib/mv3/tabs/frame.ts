@@ -1,57 +1,50 @@
-import { type ScriptletData } from '@adguard/tsurlfilter';
+import { type CosmeticRule, type ScriptletData } from '@adguard/tsurlfilter';
 
-import { type PreparedCosmeticResultCommon, FrameCommon } from '../../common/tabs/frame';
-
-/**
- * Prepared cosmetic result.
- * This type represents the processed cosmetic data extracted from the initial cosmetic result.
- */
-type GeneralPreparedCosmeticResultMV3 = PreparedCosmeticResultCommon & {
-    /**
-     * CSS styles extracted from the cosmetic result.
-     */
-    cssText?: string;
-};
+import { FrameCommon, type PreparedCosmeticResultCommon } from '../../common/tabs/frame';
 
 /**
- * Prepared cosmetic result for MV3 with scriptlets data and script texts.
+ * Prepared cosmetic result for MV3.
+ *
+ * This type represents the processed cosmetic data extracted from the initial
+ * cosmetic result.
  */
-type PreparedCosmeticResultMV3 = GeneralPreparedCosmeticResultMV3 & {
+export type PreparedCosmeticResultMV3 = PreparedCosmeticResultCommon & {
     /**
-     * Script texts extracted from the cosmetic result.
+     * Prepared cosmetic result for MV3 with scriptlets data and script texts.
      */
-    scriptTexts: string[];
+    localRules: {
+        /**
+         * Script texts extracted from rules to decrease injection time.
+         */
+        scriptTexts: string[];
+
+        /**
+         * A list of scriptlet data extracted from rules to decrease injection time.
+         */
+        scriptletDataList: ScriptletData[];
+
+        /**
+         * A list of raw script rules for log in filtering log.
+         */
+        rawRules: CosmeticRule[];
+    };
 
     /**
-     * A list of scriptlet data extracted from the cosmetic result.
+     * Prepared cosmetic result for MV3 for user scripts API with already
+     * combined scripts and scriptlets text into one script to decrease injection
+     * time.
      */
-    scriptletDataList: ScriptletData[];
+    remoteRules: {
+        /**
+         * Combined scripts and scriptlets text into one script.
+         */
+        scriptText: string;
 
-    /**
-     * Using never here ensures this type cannot have a scriptText property.
-     */
-    scriptText?: never;
-};
-
-/**
- * Prepared cosmetic result for MV3 for user scripts API with already combined
- * script text.
- */
-type PreparedCosmeticResultMV3ForUserScripts = GeneralPreparedCosmeticResultMV3 & {
-    /**
-     * Script text extracted from the cosmetic result.
-     */
-    scriptText: string;
-
-    /**
-     * Using never here ensures this type cannot have scriptTexts and scriptletDataList properties.
-     */
-    scriptTexts?: never;
-
-    /**
-     * Using never here ensures this type cannot have scriptTexts and scriptletDataList properties.
-     */
-    scriptletDataList?: never;
+        /**
+         * A list of raw script rules for log in filtering log.
+         */
+        rawRules: CosmeticRule[];
+    };
 };
 
 /**
@@ -63,7 +56,11 @@ export class FrameMV3 extends FrameCommon {
     /**
      * Prepared cosmetic result for the frame in MV3.
      *
-     * This data is saved in the frame because it is needed for injecting cosmetic rules into the frames.
+     * This data is saved in the frame because it is needed for injecting
+     * cosmetic rules into the frames.
+     *
+     * Optional, since this data will be computed after the frame is created
+     * and may not be available immediately, but it should be available.
      */
-    public preparedCosmeticResult?: PreparedCosmeticResultMV3 | PreparedCosmeticResultMV3ForUserScripts;
+    public preparedCosmeticResult?: PreparedCosmeticResultMV3;
 }

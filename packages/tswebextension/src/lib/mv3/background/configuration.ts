@@ -81,6 +81,9 @@ export const configurationMV3Validator = configurationValidator.extend({
 
     /**
      * List of hotfix rules which should applied dynamically.
+     *
+     * @deprecated
+     * This field is deprecated and will be removed in the future.
      */
     quickFixesRules: customFilterMV3Validator.omit({ filterId: true }),
 

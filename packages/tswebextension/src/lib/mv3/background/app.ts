@@ -39,7 +39,6 @@ import { type LocalScriptFunctionData, localScriptRulesService } from './service
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
-import { UserScriptsApi } from './user-scripts-api';
 import { SessionRulesApi } from './session-rules-api';
 
 type ConfigurationResult = {
@@ -423,14 +422,21 @@ export class TsWebExtension implements AppInterface<
                 res.dynamicRules.declarativeRulesToCancel,
             );
 
-            // Reload engine for cosmetic rules
+            // Reload engine for cosmetic rules: CSS, script and scriptlets.
             engineApi.waitingForEngine = engineApi.startEngine({
-                filters: [
-                    ...staticFilters,
-                    ...customFilters,
-                ],
-                userrules: configuration.userrules,
-                quickFixesRules: configuration.quickFixesRules,
+                // Built-in filters.
+                localFilters: staticFilters,
+                // Filters from remote sources.
+                remoteFilters: customFilters,
+                // Only rules from built-in filters are allowed to be executed
+                // from user rules.
+                userRulesFilter,
+                allowlistRulesList: allowlistApi.getAllowlistRules(),
+                // Deprecated.
+                quickFixesRules: {
+                    ...FilterListPreprocessor.createEmptyPreprocessedFilterList(),
+                    trusted: false,
+                },
             });
             await engineApi.waitingForEngine;
 
@@ -807,14 +813,5 @@ export class TsWebExtension implements AppInterface<
     // eslint-disable-next-line class-methods-use-this
     public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
         return engineApi.retrieveRuleNode(filterId, ruleIndex);
-    }
-
-    /**
-     * Indicates whether user scripts API is supported in the current browser.
-     *
-     * @returns `true` if user scripts API is supported, `false` otherwise.
-     */
-    public static get isUserScriptsApiSupported(): boolean {
-        return UserScriptsApi.isSupported;
     }
 }

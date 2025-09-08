@@ -689,7 +689,7 @@ export class WebRequestApi {
             return;
         }
 
-        CosmeticApi.applyJsByTabAndFrame(tabId, frameId);
+        CosmeticApi.applyJs(tabId, frameId);
     }
 
     /**

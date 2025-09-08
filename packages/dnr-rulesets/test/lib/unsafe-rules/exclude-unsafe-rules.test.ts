@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import { generateMD5Hash } from '@adguard/tsurlfilter/cli';
 import {
     afterAll,
     afterEach,
@@ -12,7 +13,7 @@ import {
 
 import { excludeUnsafeRules } from '../../../src/lib/unsafe-rules/exclude-unsafe-rules';
 
-// Counter for temporary directories to avoid conflicts in tests.
+// Counter for temporary directories to avoid conflicts in temp folders.
 let tempCounter = 0;
 
 /**
@@ -69,6 +70,8 @@ async function copyToTemp(
 describe('excludeUnsafeRules', () => {
     let tempDirs: string[] = [];
 
+    const RULESET_999 = 'ruleset_999';
+
     afterEach(async () => {
         for (const dir of tempDirs) {
             await fs.rm(dir, { recursive: true, force: true });
@@ -90,62 +93,111 @@ describe('excludeUnsafeRules', () => {
 
     const rulesets = [
         {
+            id: 1,
             dirWithCases: 'cases/zero_unsafe_rules/',
-            unsafe: 'ruleset_999/ruleset_999.json',
-            safe: 'ruleset_999.json.safe',
+            unsafe: `${RULESET_999}/${RULESET_999}.json`,
+            safe: `${RULESET_999}.json.safe`,
+            // Should changed because for saving backward compatibility, old
+            // ruleset can not contain "unsafeRules" field and if there are no
+            // unsafe rules, only this field will be added.
+            expectedChangedChecksum: true,
         },
         {
+            id: 2,
+            dirWithCases: 'cases/zero_unsafe_rules_2/',
+            unsafe: `${RULESET_999}/${RULESET_999}.json`,
+            safe: `${RULESET_999}.json.safe`,
+            // Should not change checksum since no unsafe rules were removed
+            // and ruleset already contains "unsafeRules" field.
+            expectedChangedChecksum: false,
+        },
+        {
+            id: 3,
             dirWithCases: 'cases/one_unsafe_rules/',
-            unsafe: 'ruleset_999/ruleset_999.json',
-            safe: 'ruleset_999.json.safe',
+            unsafe: `${RULESET_999}/${RULESET_999}.json`,
+            safe: `${RULESET_999}.json.safe`,
+            expectedChangedChecksum: true,
         },
         {
+            id: 4,
             dirWithCases: 'cases/five_unsafe_rules/',
-            unsafe: 'ruleset_999/ruleset_999.json',
-            safe: 'ruleset_999.json.safe',
+            unsafe: `${RULESET_999}/${RULESET_999}.json`,
+            safe: `${RULESET_999}.json.safe`,
+            expectedChangedChecksum: true,
         },
     ];
 
-    rulesets.forEach(async ({ unsafe, safe, dirWithCases }) => {
+    rulesets.forEach(async ({ unsafe, safe, dirWithCases, expectedChangedChecksum }) => {
         it(`case ${dirWithCases}`, async () => {
             // Move the unsafe ruleset to a temporary directory
             // to avoid modifying the original file.
             const tempDir = await copyToTemp(dirWithCases);
             tempDirs.push(tempDir);
 
+            // Read initial metadata to get the original checksum
+            const metadataPath = path.join(tempDir, 'ruleset_0/ruleset_0.json');
+            const initialMetadata = await fs.readFile(metadataPath, 'utf-8');
+            const parsedInitialMetadata = JSON.parse(initialMetadata);
+            const originalChecksum = parsedInitialMetadata[0].metadata.checksums[RULESET_999];
+
             await excludeUnsafeRules({ dir: tempDir });
 
             const rulesetBeforePath = path.join(tempDir, unsafe);
-            const extectedRulesetPath = path.join(tempDir, safe);
+            const expectedRulesetPath = path.join(tempDir, safe);
 
             const result = await fs.readFile(rulesetBeforePath, 'utf-8');
-            const expected = await fs.readFile(extectedRulesetPath, 'utf-8');
+            const expected = await fs.readFile(expectedRulesetPath, 'utf-8');
 
             expect(JSON.parse(result)).toEqual(JSON.parse(expected));
+
+            // Check that checksum has been updated and is valid MD5
+            const updatedMetadata = JSON.parse(await fs.readFile(metadataPath, 'utf-8'));
+            const newChecksum = updatedMetadata[0].metadata.checksums[RULESET_999];
+
+            // Verify that the new checksum matches the actual content of the processed ruleset
+            const expectedChecksum = generateMD5Hash(result);
+            expect(newChecksum).toBe(expectedChecksum);
+
+            // For cases with unsafe rules, verify that checksum has changed
+            if (expectedChangedChecksum) {
+                expect(newChecksum).not.toBe(originalChecksum);
+            } else {
+                expect(newChecksum).toBe(originalChecksum);
+            }
         });
     });
 
     it(`respects the limit - should convert without error if not overflowed`, async () => {
+        const ruleset = rulesets.find((r) => r.id === 3);
+        if (!ruleset) {
+            throw new Error('Test ruleset not found');
+        }
+
         // Move the unsafe ruleset to a temporary directory
         // to avoid modifying the original file.
-        const tempDir = await copyToTemp(rulesets[1].dirWithCases);
+        const tempDir = await copyToTemp(ruleset.dirWithCases);
         tempDirs.push(tempDir);
 
         await excludeUnsafeRules({ dir: tempDir, limit: 2 });
 
-        const rulesetBeforePath = path.join(tempDir, rulesets[1].unsafe);
-        const extectedRulesetPath = path.join(tempDir, rulesets[1].safe);
+        const rulesetBeforePath = path.join(tempDir, ruleset.unsafe);
+        const expectedRulesetPath = path.join(tempDir, ruleset.safe);
 
         const result = await fs.readFile(rulesetBeforePath, 'utf-8');
-        const expected = await fs.readFile(extectedRulesetPath, 'utf-8');
+        const expected = await fs.readFile(expectedRulesetPath, 'utf-8');
 
         expect(JSON.parse(result)).toEqual(JSON.parse(expected));
     });
 
     it(`respects the limit - should return an error if overflowed`, async () => {
+        const ruleset = rulesets.find((r) => r.id === 4);
+        if (!ruleset) {
+            throw new Error('Test ruleset not found');
+        }
+
         // Move the unsafe ruleset to a temporary directory
         // to avoid modifying the original file.
-        const tempDir = await copyToTemp(rulesets[2].dirWithCases);
+        const tempDir = await copyToTemp(ruleset.dirWithCases);
         tempDirs.push(tempDir);
 
         const promise = excludeUnsafeRules({ dir: tempDir, limit: 2 });

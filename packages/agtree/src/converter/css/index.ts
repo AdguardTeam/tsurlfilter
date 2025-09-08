@@ -13,6 +13,7 @@ import { ABP_EXT_CSS_PREFIX, LEGACY_EXT_CSS_ATTRIBUTE_PREFIX } from '../data/css
 import { BaseConverter } from '../base-interfaces/base-converter';
 import { type ConversionResult, createConversionResult } from '../base-interfaces/conversion-result';
 import { CssTokenStream } from '../../parser/css/css-token-stream';
+import { QuoteUtils } from '../../utils';
 
 export const ERROR_MESSAGES = {
     // eslint-disable-next-line max-len
@@ -215,7 +216,7 @@ export class CssSelectorConverter extends BaseConverter {
 
                 converted.push(COLON);
                 convertAndPushPseudo(attr);
-                let processedValue = value.slice(1, -1); // omit the quotes
+                let processedValue = QuoteUtils.removeQuotes(value);
 
                 if (attr === PseudoClasses.Has) {
                     // TODO: Optimize this to avoid double tokenization

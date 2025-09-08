@@ -688,6 +688,34 @@ describe('Converter integration tests', () => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
         });
+
+        describe('should convert legacy ExtCss', () => {
+            test.each([
+                {
+                    actual: '##[-ext-contains=foo]',
+                    expected: ['#?#:contains(foo)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '#?#[-ext-contains=foo]',
+                    expected: ['#?#:contains(foo)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '##[-ext-contains="foo"]',
+                    expected: ['#?#:contains(foo)'],
+                    shouldConvert: true,
+                },
+                {
+                    actual: '#?#[-ext-contains="foo"]',
+                    expected: ['#?#:contains(foo)'],
+                    shouldConvert: true,
+                },
+            ])('should convert \'$actual\' to \'$expected\'', (testData) => {
+                expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
+            });
+        });
+
         describe('should convert ExtCss separator to uBo', () => {
             test.each([
                 // change separator if selector contains an ExtCss element that
