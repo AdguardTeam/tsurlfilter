@@ -23,6 +23,7 @@ import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
+import { IdbSingleton } from '../../common/idb-singleton';
 
 import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
@@ -216,6 +217,28 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
+     * Synchronizes multiple rule sets with IDB.
+     * This method is used as an upgrade task to ensure all rule sets are properly cached.
+     *
+     * @param ruleSetsPath Path to rule sets.
+     * @param staticFiltersIds Array of static filter IDs to sync.
+     */
+    private static async syncRuleSetsWithIdb(
+        ruleSetsPath: string,
+        staticFiltersIds: number[],
+    ): Promise<void> {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+
+        const syncTasks = staticFiltersIds.map((staticFilterId) => {
+            const ruleSetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
+
+            return ruleSetsLoaderApi.syncRuleSetWithIdb(ruleSetId);
+        });
+
+        await Promise.all(syncTasks);
+    }
+
+    /**
      * Starts filtering along with launching the tab listener, which will record
      * tab urls to work correctly with domain blocking/allowing rules, for
      * example: cosmetic rules in iframes.
@@ -308,15 +331,7 @@ export class TsWebExtension implements AppInterface<
         // proper logging and error handling.
         TsWebExtension.updateLogLevel(config.logLevel);
 
-        const loader = new RuleSetsLoaderApi(config.ruleSetsPath);
-
-        const syncTasks = config.staticFiltersIds.map((staticFilterId) => {
-            const ruleSetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
-
-            return loader.syncRuleSetWithIdb(ruleSetId);
-        });
-
-        await Promise.all(syncTasks);
+        await TsWebExtension.syncRuleSetsWithIdb(config.ruleSetsPath, config.staticFiltersIds);
 
         // Exclude binary fields from logged config.
         const binaryFields = [
@@ -770,9 +785,15 @@ export class TsWebExtension implements AppInterface<
      * Initialize app persistent data.
      * This method called as soon as possible and allows access
      * to the actual context before the app is started.
+     * Also drops all data to bind the caching layer of filters and rulesets
+     * to the lifetime of service worker. This is intended solution to keep
+     * interface simple and predictable.
      */
     // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
+        // Drop all cached data to ensure clean state for each service worker lifecycle
+        await IdbSingleton.dropAllData();
+
         await extSessionStorage.init();
         appContext.isStorageInitialized = true;
     }

@@ -28,7 +28,7 @@ export class IdbSingleton {
 
     /**
      * Returns an opened database containing the requested store. The method
-     * upgrades the database when the requested store is missing, clearing
+     * upgrades the database when the requested store is missing, preserving
      * all existing data in other stores during upgrade.
      *
      * @param store Name of the object store that must be present.
@@ -81,17 +81,21 @@ export class IdbSingleton {
                 IdbSingleton.db = null;
             }
 
-            // Probe: open with undefined version, which opens the current version.
-            let db = await openDB(IdbSingleton.DB_NAME, undefined, {
-                upgrade(_database, oldVersion, newVersion) {
-                    logger.debug('[tsweb.IdbSingleton.openDatabase]: Upgrade IDB version from', oldVersion, 'to', newVersion);
-                },
-                blocked() {
+            let db = await openDB(
+                IdbSingleton.DB_NAME,
+                // Probe: open with undefined version, which opens the current version.
+                undefined,
+                {
+                    upgrade(_database, oldVersion, newVersion) {
+                        logger.debug('[tsweb.IdbSingleton.openDatabase]: Upgrade IDB version from', oldVersion, 'to', newVersion);
+                    },
+                    blocked() {
                     // In normal situation we expected that this will not happen
                     // since we have mutex promise for upgrade.
-                    logger.warn('[tsweb.IdbSingleton.openDatabase]: IDB upgrade blocked');
+                        logger.warn('[tsweb.IdbSingleton.openDatabase]: IDB upgrade blocked');
+                    },
                 },
-            });
+            );
 
             // Check if we need to upgrade for missing store
             if (!db.objectStoreNames.contains(store)) {
@@ -108,7 +112,7 @@ export class IdbSingleton {
 
     /**
      * Upgrades the database to create a missing store.
-     * Clears all existing data in other stores during upgrade.
+     * Preserves all existing data in other stores during upgrade.
      *
      * @param currentDb Current database instance to upgrade.
      * @param store Name of the store to create.
@@ -140,51 +144,110 @@ export class IdbSingleton {
         }
 
         const currentVersion = currentDb.version;
+        // Upgrade: bump version by +1, add missing store
         const newVersion = currentVersion + 1;
 
         // Close the database before upgrading
         currentDb.close();
 
         // Create upgrade promise to block other operations
-        const upgradeTask = async (): Promise<IDBPDatabase> => {
-            try {
-                // Upgrade: bump version by +1, add missing store
-                const upgradedDb = await openDB(IdbSingleton.DB_NAME, newVersion, {
-                    upgrade(database, oldVersion, upgradeNewVersion, tx) {
-                        logger.debug('[tsweb.IdbSingleton.upgradeDatabase]: Upgrade IDB version from', oldVersion, 'to', upgradeNewVersion);
+        try {
+            const upgradeTask = IdbSingleton.executeUpgradeTask(currentVersion, newVersion, store, onUpgrade);
 
-                        // Clear existing stores before creating new one
-                        if (tx) {
-                            for (const name of Array.from(database.objectStoreNames)) {
-                                logger.debug(`[tsweb.IdbSingleton.upgradeDatabase]: Clearing store '${name}'`);
-                                tx.objectStore(name).clear();
-                            }
-                        }
+            IdbSingleton.upgradePromise = upgradeTask;
 
-                        // Create the missing store without affecting existing stores
-                        if (!database.objectStoreNames.contains(store)) {
-                            database.createObjectStore(store);
-                        }
+            return await upgradeTask;
+        } catch (error) {
+            logger.error('[tsweb.IdbSingleton.upgradeDatabase]: Failed to upgrade database:', error);
+            throw error;
+        } finally {
+            IdbSingleton.upgradePromise = null;
+        }
+    }
 
-                        // Call upgrade callback after database upgrade.
-                        if (onUpgrade) {
-                            onUpgrade(currentVersion, newVersion);
-                        }
-                    },
-                    blocked() {
-                        // In normal situation we expected that this will not happen
-                        // since we have mutex promise for upgrade.
-                        logger.warn('[tsweb.IdbSingleton.upgradeDatabase]: IDB upgrade blocked - another upgrade in progress');
-                    },
-                });
-                return upgradedDb;
-            } finally {
-                IdbSingleton.upgradePromise = null;
+    /**
+     * Executes the database upgrade task.
+     *
+     * @param currentVersion Current database version.
+     * @param newVersion New database version.
+     * @param store Name of the store to create.
+     * @param onUpgrade Optional callback to be called when the database is upgraded.
+     *
+     * @returns Promise resolved with upgraded database.
+     */
+    private static async executeUpgradeTask(
+        currentVersion: number,
+        newVersion: number,
+        store: string,
+        onUpgrade?: (oldVersion: number, newVersion: number | null) => void,
+    ): Promise<IDBPDatabase> {
+        return openDB(
+            IdbSingleton.DB_NAME,
+            newVersion,
+            {
+                upgrade(database, oldVersion, upgradeNewVersion) {
+                    logger.debug('[tsweb.IdbSingleton.executeUpgradeTask]: Upgrade IDB version from', oldVersion, 'to', upgradeNewVersion);
+
+                    // Create the missing store without affecting existing stores
+                    if (!database.objectStoreNames.contains(store)) {
+                        database.createObjectStore(store);
+                    }
+
+                    // Call upgrade callback after database upgrade.
+                    if (onUpgrade) {
+                        onUpgrade(currentVersion, newVersion);
+                    }
+                },
+                blocked() {
+                    // In normal situation we expected that this will not happen
+                    // since we have mutex promise for upgrade.
+                    logger.warn('[tsweb.IdbSingleton.executeUpgradeTask]: IDB upgrade blocked - another upgrade in progress');
+                },
+            },
+        );
+    }
+
+    /**
+     * Drops all data by deleting and recreating the database.
+     * This method closes any existing connections and completely removes the database.
+     *
+     * @returns Promise that resolves when the database is successfully deleted.
+     */
+    public static async dropAllData(): Promise<void> {
+        try {
+            // Close existing database connection if open
+            if (IdbSingleton.db) {
+                IdbSingleton.db.close();
+                IdbSingleton.db = null;
             }
-        };
 
-        IdbSingleton.upgradePromise = upgradeTask();
+            // Reset all promises to ensure clean state
+            IdbSingleton.getterPromise = null;
+            IdbSingleton.upgradePromise = null;
 
-        return IdbSingleton.upgradePromise;
+            // Delete the entire database
+            await new Promise<void>((resolve, reject) => {
+                const deleteRequest = indexedDB.deleteDatabase(IdbSingleton.DB_NAME);
+
+                deleteRequest.onsuccess = (): void => {
+                    logger.debug('[tsweb.IdbSingleton.dropAllData]: Successfully deleted database:', IdbSingleton.DB_NAME);
+                    resolve();
+                };
+
+                deleteRequest.onerror = (): void => {
+                    logger.error('[tsweb.IdbSingleton.dropAllData]: Failed to delete database:', IdbSingleton.DB_NAME, deleteRequest.error);
+                    reject(deleteRequest.error);
+                };
+
+                deleteRequest.onblocked = (): void => {
+                    logger.warn('[tsweb.IdbSingleton.dropAllData]: Database deletion blocked for:', IdbSingleton.DB_NAME);
+                };
+            });
+
+            logger.info('[tsweb.IdbSingleton.dropAllData]: Successfully dropped all data from IndexedDB');
+        } catch (e) {
+            logger.error('[tsweb.IdbSingleton.dropAllData]: Failed to drop all data:', e);
+            throw e;
+        }
     }
 }

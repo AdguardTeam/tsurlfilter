@@ -20,13 +20,27 @@ import { logger } from '../../common/utils/logger';
 /**
  * RuleSetsLoaderApi is responsible for creating {@link IRuleSet} instances from provided rule set IDs and paths.
  * It supports lazy loading, meaning the rule set contents are loaded only upon request.
+ * This class implements a two-layer caching strategy to optimize performance:
+ * ## Caching Architecture:
+ * 1. **IDB (IndexedDB) Cache**: Temporary storage that is cleared on each service worker restart
+ *    - Stores checksums, metadata, lazy metadata, and declarative rules
+ *    - Keys format: `<prefix>_<ruleSetId>` (e.g., `checksum_123`).
+ *    - Cache lifetime is bound to service worker lifecycle for predictable behavior.
  *
- * This class also manages a cache of metadata rule sets to optimize performance and reduce redundant fetches.
+ * 2. **In-Memory Cache**: Fast access layer for frequently accessed data within a session
+ *    - `idbChecksumsCache`: Caches checksums from IDB with composite keys `<ruleSetsPath>_<ruleSetId>`
+ *    - `ruleSetsCache`: Caches fully created IRuleSet instances
+ *    - `metadataRulesetsCache`: Caches metadata rule sets by path
+ *
+ * ## Cache Synchronization:
+ * The source of truth for data freshness is the checksum extracted from files on disk.
+ * When checksums don't match, both cache layers are updated atomically.
+ * All cached data is dropped on service worker restart to ensure clean state.
  *
  * The main functionalities include:
  * - Initializing the rule sets loader to prepare it for fetching rule sets.
- * - Fetching checksums of rule sets.
- * - Fetching specific byte ranges of rule sets to minimize memory usage.
+ * - Fetching checksums of rule sets from disk (source of truth).
+ * - Synchronizing rule sets with IDB when checksums change.
  * - Creating new {@link IRuleSet} instances with lazy loading capabilities.
  *
  * @example
@@ -101,9 +115,10 @@ export class RuleSetsLoaderApi {
     private initializerPromise: Promise<void> | undefined;
 
     /**
-     * Cache of checksums of rule sets.
-     * Only stores actual checksum values found in IDB.
-     * It is static to share across all instances of the class.
+     * Cache of checksums retrieved from IDB to avoid repeated database queries.
+     * Key format: `<ruleSetsPath>_<ruleSetId>` (e.g., `/path/to/rules_123`)
+     * Only stores actual checksum values found in IDB, never undefined.
+     * This cache is shared across all instances of the class.
      */
     private static idbChecksumsCache = new Map<string, string>();
 
@@ -194,11 +209,10 @@ export class RuleSetsLoaderApi {
 
     /**
      * Initializes the rule sets loader.
-     * It is needed to be called before any other method, because it loads byte range maps collection,
-     * which is used to fetch certain parts of the rule set files instead of the whole files
-     * and makes possible to use less memory.
+     * It loads the metadata ruleset which contains checksums and other metadata
+     * needed for rule set management and caching.
      *
-     * @throws Error if the byte range maps collection file is not found or its content is invalid.
+     * @throws Error if the metadata ruleset file is not found or its content is invalid.
      */
     private async initialize(): Promise<void> {
         if (this.isInitialized) {
@@ -274,7 +288,7 @@ export class RuleSetsLoaderApi {
                     idbChecksum = await RuleSetsLoaderApi.getValueFromIdb(
                         RuleSetsLoaderApi.getKey(RuleSetsLoaderApi.KEY_PREFIX_CHECKSUM, ruleSetId),
                     );
-                    // Only cache if we found a value
+                    // Only cache if we found a value to avoid storing undefined
                     if (idbChecksum) {
                         RuleSetsLoaderApi.idbChecksumsCache.set(cacheKey, idbChecksum);
                     }
@@ -337,6 +351,12 @@ export class RuleSetsLoaderApi {
                         checksum,
                     },
                 });
+
+                // After updating cache in db we should update it in memory cache
+                RuleSetsLoaderApi.idbChecksumsCache.set(cacheKey, checksum);
+
+                // Invalidate the ruleset cache since the data has changed
+                RuleSetsLoaderApi.ruleSetsCache.delete(ruleSetId);
 
                 logger.info(`[tsweb.RuleSetsLoaderApi.syncRuleSetWithIdb]: Synced rule set with IDB: ${ruleSetId}, checksum: ${checksum}`);
             } catch (err) {
