@@ -2,6 +2,8 @@ import { type PreparedCosmeticResultCommon, FrameCommon } from '../../../common/
 
 /**
  * Prepared cosmetic result for MV2.
+ *
+ * This type represents the processed cosmetic data extracted from the initial cosmetic result.
  */
 type PreparedCosmeticResultMV2 = PreparedCosmeticResultCommon & {
     /**

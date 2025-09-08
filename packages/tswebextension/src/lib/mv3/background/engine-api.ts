@@ -14,20 +14,39 @@ import {
     CompatibilityTypes,
 } from '@adguard/tsurlfilter';
 import browser from 'webextension-polyfill';
-import { type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
+import { UnavailableFilterSourceError, type IFilter } from '@adguard/tsurlfilter/es/declarative-converter';
 import { type AnyRule } from '@adguard/agtree';
 
 import { QUICK_FIXES_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { logger } from '../../common/utils/logger';
 import { isHttpOrWsRequest, isHttpRequest, getHost } from '../../common/utils/url';
 
-import { allowlistApi } from './allowlist-api';
 import { type ConfigurationMV3 } from './configuration';
+import { UserScriptsApi } from './user-scripts-api';
 
 const ASYNC_LOAD_CHINK_SIZE = 5000;
 
-type EngineConfig = Pick<ConfigurationMV3, 'userrules' | 'quickFixesRules' | 'verbose'> & {
-    filters: IFilter[];
+type EngineConfig = Pick<ConfigurationMV3, 'quickFixesRules' | 'verbose'> & {
+    /**
+     * For filters which bundled with extension.
+     */
+    localFilters: IFilter[];
+
+    /**
+     * For filters which are downloaded by user from remote sources, e.g.
+     * custom filters.
+     */
+    remoteFilters: IFilter[];
+
+    /**
+     * Filter with user-defined rules.
+     */
+    userRulesFilter: IFilter;
+
+    /**
+     * Allowlist rules, user-defined.
+     */
+    allowlistRulesList: IRuleList | null;
 };
 
 /**
@@ -59,6 +78,18 @@ export class EngineApi {
     waitingForEngine: Promise<void> | undefined;
 
     /**
+     * List of filter ids for local rules.
+     * It is used to split local and remote rules.
+     */
+    private localRulesFiltersIds: number[] = [];
+
+    /**
+     * Id of user rules filter.
+     * It is used to split local and remote rules.
+     */
+    private userFilterId: number = USER_FILTER_ID;
+
+    /**
      * Starts the engine with the provided bunch of rules,
      * wrapped in filters or custom rules.
      *
@@ -67,13 +98,24 @@ export class EngineApi {
      */
     async startEngine(config: EngineConfig): Promise<void> {
         const {
-            filters,
-            userrules,
+            localFilters,
+            remoteFilters,
+            userRulesFilter,
+            allowlistRulesList,
             quickFixesRules,
             verbose,
         } = config;
 
         const lists: IRuleList[] = [];
+
+        /**
+         * If userScripts permission is not granted, custom filters are
+         * not allowed to be executed, because they are from remote source.
+         * Rules from built-in filters are always applied.
+         */
+        const filters = UserScriptsApi.isEnabled
+            ? localFilters.concat(remoteFilters)
+            : localFilters;
 
         for (let i = 0; i < filters.length; i += 1) {
             try {
@@ -98,18 +140,40 @@ export class EngineApi {
             }
         }
 
-        if (userrules.filterList.length > 0) {
-            // Note: rules are already converted at the extension side
-            lists.push(
-                new BufferRuleList(
-                    USER_FILTER_ID,
-                    userrules.filterList,
-                    false,
-                    false,
-                    false,
-                    userrules.sourceMap,
-                ),
-            );
+        /**
+         * Only rules from built-in filters are allowed to be executed
+         * from user rules.
+         *
+         * @see CosmeticFrameProcessor.splitLocalRemoteScriptRules
+         */
+        try {
+            const userrules = await userRulesFilter.getContent();
+            if (userrules.filterList.length > 0) {
+                // Note: rules are already converted at the extension side
+                lists.push(
+                    new BufferRuleList(
+                        USER_FILTER_ID,
+                        userrules.filterList,
+                        false,
+                        false,
+                        false,
+                        userrules.sourceMap,
+                    ),
+                );
+            }
+        } catch (e) {
+            const filterId = userRulesFilter.getId();
+
+            // This dirty hack is needed since Filter check inside itself
+            // for empty loaded content.
+            if (e instanceof UnavailableFilterSourceError
+                && e.cause instanceof Error
+                && e.cause.message.includes('Loaded empty content')) {
+                // User rules can be empty, so just log a trace message and continue.
+                logger.trace(`[tsweb.EngineApi.startEngine]: user rules filter ${filterId} is empty: `, e);
+            } else {
+                logger.error(`[tsweb.EngineApi.startEngine]: cannot create IRuleList for user rules filter ${filterId} due to: `, e);
+            }
         }
 
         if (quickFixesRules.filterList.length > 0) {
@@ -126,7 +190,6 @@ export class EngineApi {
             );
         }
 
-        const allowlistRulesList = allowlistApi.getAllowlistRules();
         if (allowlistRulesList) {
             lists.push(allowlistRulesList);
         }
@@ -143,6 +206,11 @@ export class EngineApi {
         const engine = new Engine(ruleStorage, true);
         await engine.loadRulesAsync(ASYNC_LOAD_CHINK_SIZE);
         this.engine = engine;
+
+        // Update IDs of loaded to engine filters for split local and remote
+        // scripts.
+        this.localRulesFiltersIds = localFilters.map((filter) => filter.getId());
+        this.userFilterId = userRulesFilter.getId();
 
         // Update configuration of engine.
         setConfiguration({
@@ -274,6 +342,29 @@ export class EngineApi {
         }
 
         return this.engine.retrieveRuleNode(filterId, ruleIndex);
+    }
+
+    /**
+     * Checks if the filter with the specified id is local (built-in).
+     *
+     * @param filterId Filter id to check.
+     *
+     * @returns `true` if the filter is local, `false` otherwise.
+     */
+    public isLocalFilter(filterId: number): boolean {
+        return this.localRulesFiltersIds.includes(filterId);
+    }
+
+    /**
+     * Checks if the filter with the specified id is defined by user,
+     * i.e. User rules.
+     *
+     * @param filterId Filter id to check.
+     *
+     * @returns `true` if the filter is defined by user, `false` otherwise.
+     */
+    public isUserRulesFilter(filterId: number): boolean {
+        return filterId === this.userFilterId;
     }
 }
 

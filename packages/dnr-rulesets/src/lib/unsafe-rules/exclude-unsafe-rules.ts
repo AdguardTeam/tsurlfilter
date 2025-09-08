@@ -19,8 +19,6 @@ import { ensureDir } from 'fs-extra';
 import { findFiles } from '../../utils/find-files';
 import { loadRulesetAndFilter } from './ruleset-deserialize';
 
-// TODO: Add some tests
-
 /**
  * Options for the build safe patch function.
  */
@@ -107,7 +105,7 @@ async function updateMetadataRuleset(
 
     // Update each checksum in the metadata ruleset instead of recreating whole
     // ruleset to keep all additional properties not touched by this operation.
-    Object.entries(checksums).forEach(([checksum, ruleSetId]) => {
+    Object.entries(checksums).forEach(([ruleSetId, checksum]) => {
         metadataRuleset.setChecksum(ruleSetId, checksum);
     });
 
