@@ -23,7 +23,6 @@ import { logger, stringifyObjectWithoutKeys } from '../../common/utils/logger';
 import { type FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { tabsApi } from '../tabs/tabs-api';
 import { TabsCosmeticInjector } from '../tabs/tabs-cosmetic-injector';
-import { IdbSingleton } from '../../common/idb-singleton';
 
 import { AllowlistApi, allowlistApi } from './allowlist-api';
 import { appContext } from './app-context';
@@ -198,12 +197,13 @@ export class TsWebExtension implements AppInterface<
      * @param staticFilterId Static filter id.
      * @param ruleSetsPath Path to rule sets.
      *
-     * TODO: Find a way to exclude usage of this method, since we trying to keep
-     * only one way to configure tswebextension and all its parts, including
-     * rulesets: via passing single configuration file. And this method creates
-     * a "dirty" flow, when tswebextension is not received log level from
-     * extension and forces us to use static locks for IDB in RuleSetsLoaderApi
-     * to prevent concurrent access issues between multiple instances.
+     * TODO: Find a way to exclude public usage of this method, since we trying
+     * to keep only one way to configure tswebextension and all its parts,
+     * including rulesets: via passing single configuration file. And this
+     * method creates a "dirty" flow, when tswebextension is not received log
+     * level from extension and forces us to use static locks for IDB in
+     * RuleSetsLoaderApi to prevent concurrent access issues between multiple
+     * instances.
      */
     public static async syncRuleSetWithIdbByFilterId(
         staticFilterId: number,
@@ -218,7 +218,8 @@ export class TsWebExtension implements AppInterface<
 
     /**
      * Synchronizes multiple rule sets with IDB.
-     * This method is used as an upgrade task to ensure all rule sets are properly cached.
+     * This method is used to ensure all rule sets are properly cached for
+     * future calls to configure method.
      *
      * @param ruleSetsPath Path to rule sets.
      * @param staticFiltersIds Array of static filter IDs to sync.
@@ -785,15 +786,9 @@ export class TsWebExtension implements AppInterface<
      * Initialize app persistent data.
      * This method called as soon as possible and allows access
      * to the actual context before the app is started.
-     * Also drops all data to bind the caching layer of filters and rulesets
-     * to the lifetime of service worker. This is intended solution to keep
-     * interface simple and predictable.
      */
     // eslint-disable-next-line class-methods-use-this
     public async initStorage(): Promise<void> {
-        // Drop all cached data to ensure clean state for each service worker lifecycle
-        await IdbSingleton.dropAllData();
-
         await extSessionStorage.init();
         appContext.isStorageInitialized = true;
     }

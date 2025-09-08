@@ -89,9 +89,9 @@ export class IdbSingleton {
                     upgrade(_database, oldVersion, newVersion) {
                         logger.debug('[tsweb.IdbSingleton.openDatabase]: Upgrade IDB version from', oldVersion, 'to', newVersion);
                     },
-                    blocked() {
                     // In normal situation we expected that this will not happen
                     // since we have mutex promise for upgrade.
+                    blocked() {
                         logger.warn('[tsweb.IdbSingleton.openDatabase]: IDB upgrade blocked');
                     },
                 },
@@ -205,49 +205,5 @@ export class IdbSingleton {
                 },
             },
         );
-    }
-
-    /**
-     * Drops all data by deleting and recreating the database.
-     * This method closes any existing connections and completely removes the database.
-     *
-     * @returns Promise that resolves when the database is successfully deleted.
-     */
-    public static async dropAllData(): Promise<void> {
-        try {
-            // Close existing database connection if open
-            if (IdbSingleton.db) {
-                IdbSingleton.db.close();
-                IdbSingleton.db = null;
-            }
-
-            // Reset all promises to ensure clean state
-            IdbSingleton.getterPromise = null;
-            IdbSingleton.upgradePromise = null;
-
-            // Delete the entire database
-            await new Promise<void>((resolve, reject) => {
-                const deleteRequest = indexedDB.deleteDatabase(IdbSingleton.DB_NAME);
-
-                deleteRequest.onsuccess = (): void => {
-                    logger.debug('[tsweb.IdbSingleton.dropAllData]: Successfully deleted database:', IdbSingleton.DB_NAME);
-                    resolve();
-                };
-
-                deleteRequest.onerror = (): void => {
-                    logger.error('[tsweb.IdbSingleton.dropAllData]: Failed to delete database:', IdbSingleton.DB_NAME, deleteRequest.error);
-                    reject(deleteRequest.error);
-                };
-
-                deleteRequest.onblocked = (): void => {
-                    logger.warn('[tsweb.IdbSingleton.dropAllData]: Database deletion blocked for:', IdbSingleton.DB_NAME);
-                };
-            });
-
-            logger.info('[tsweb.IdbSingleton.dropAllData]: Successfully dropped all data from IndexedDB');
-        } catch (e) {
-            logger.error('[tsweb.IdbSingleton.dropAllData]: Failed to drop all data:', e);
-            throw e;
-        }
     }
 }
