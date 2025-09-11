@@ -1,4 +1,4 @@
-import { fetchExtensionResourceText, FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { fetchExtensionResourceText } from '@adguard/tsurlfilter';
 import {
     type IFilter,
     type IRuleSet,
@@ -315,16 +315,12 @@ export class RuleSetsLoaderApi {
 
                 await tx.done;
 
-                const { conversionMap, rawFilterList } = metadata;
-
-                const preprocessedFilterList = FilterListPreprocessor.preprocessLightweight({
-                    rawFilterList,
-                    conversionMap,
-                });
+                const { rawFilterList, conversionData } = metadata;
 
                 await FiltersStorage.setMultiple({
                     [ruleSetIdNumber]: {
-                        ...preprocessedFilterList,
+                        rawFilterList,
+                        conversionData,
                         checksum,
                     },
                 });
