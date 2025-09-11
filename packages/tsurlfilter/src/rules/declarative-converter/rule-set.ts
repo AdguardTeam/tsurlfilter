@@ -724,6 +724,11 @@ export class RuleSet implements IRuleSet {
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
 
+        // TODO: Improve this code once we introduce multiple filters within a single rule set
+        // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array
+        const filter = this.filterList.values().next().value!;
+        const content = await filter.getContent();
+
         // To ensure that unsafe rules are provided and their count is correct,
         // we check if the length of the provided unsafe rules array is equal to
         // the `unsafeRulesCount` property of the rule set.
@@ -737,6 +742,8 @@ export class RuleSet implements IRuleSet {
         const metadataRule = createMetadataRule({
             metadata: this.getSerializedRuleSetData(unsafeRules),
             lazyMetadata: this.getSerializedRuleSetLazyData(),
+            rawFilterList: content.getContent(),
+            conversionData: content.getConversionData(),
         });
 
         let declarativeRules = await this.getDeclarativeRules();
