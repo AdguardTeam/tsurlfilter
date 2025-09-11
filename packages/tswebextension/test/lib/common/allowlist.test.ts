@@ -55,10 +55,7 @@ describe('Allowlist Api', () => {
                 title: 'should return filter list, when API is enabled and  not inverted',
                 enabled: true,
                 inverted: false,
-                expected: new StringRuleList(
-                    ALLOWLIST_FILTER_ID,
-                    '@@///(www\\.)?example\\.com/$document,important',
-                ),
+                expected: '@@///(www\\.)?example\\.com/$document,important',
             },
             {
                 title: 'should return null, when API is enabled and inverted',
