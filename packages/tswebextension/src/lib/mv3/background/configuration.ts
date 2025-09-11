@@ -83,15 +83,14 @@ export const configurationMV3Validator = configurationValidator.extend({
      * @deprecated
      * This field is deprecated and will be removed in the future.
      */
-    // FIXME: temp solution, should be removed?
-    quickFixesRules: customFilterMV3Validator,
+    quickFixesRules: customFilterMV3Validator.omit({ filterId: true }),
 
     settings: settingsConfigMV3,
 
     /**
      * List of rules added by user.
      */
-    userrules: basicFilterValidator,
+    userrules: customFilterMV3Validator.omit({ filterId: true, trusted: true }),
 });
 
 /**
@@ -106,5 +105,5 @@ export type ConfigurationMV3 = zod.infer<typeof configurationMV3Validator>;
  * It is used to reduce memory consumption when storing configuration data in memory.
  */
 export type ConfigurationMV3Context =
-    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'quickFixesRules'>
+    & Omit<ConfigurationMV3, 'customFilters' | 'allowlist' | 'userrules' | 'quickFixesRules' | 'trustedDomains'>
     & { customFilters: number[] };

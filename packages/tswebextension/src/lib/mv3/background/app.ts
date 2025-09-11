@@ -438,7 +438,6 @@ export class TsWebExtension implements AppInterface<
                 // Deprecated.
                 quickFixesRules: {
                     content: '',
-                    filterId: QUICK_FIXES_FILTER_ID,
                     trusted: false,
                     conversionData: ConvertedFilterList.createEmptyConversionData(),
                 },
@@ -662,7 +661,6 @@ export class TsWebExtension implements AppInterface<
             filtersPath,
             ruleSetsPath,
             declarativeLogEnabled,
-            trustedDomains,
         } = configuration;
 
         return {
@@ -673,7 +671,6 @@ export class TsWebExtension implements AppInterface<
             declarativeLogEnabled,
             verbose,
             settings,
-            trustedDomains,
         };
     }
 
