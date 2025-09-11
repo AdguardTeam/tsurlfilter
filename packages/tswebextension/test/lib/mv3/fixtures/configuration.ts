@@ -1,3 +1,5 @@
+import { ConvertedFilterList } from '@adguard/tsurlfilter';
+
 import { LF, QUICK_FIXES_FILTER_ID } from '../../../../src/lib/common/constants';
 import { type ConfigurationMV3 } from '../../../../src/lib/mv3/background/configuration';
 
@@ -12,6 +14,7 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
         content: ['@@baddomain.org$document'].join(LF),
         filterId: QUICK_FIXES_FILTER_ID,
         trusted: true,
+        conversionData: ConvertedFilterList.createEmptyConversionData(),
     },
     verbose: false,
     declarativeLogEnabled: false,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FilterListPreprocessor } from '@adguard/tsurlfilter';
+import { ConvertedFilterList } from '@adguard/tsurlfilter';
 
 import { IdbSingleton } from '../../../../src/lib/common/idb-singleton';
 import { FiltersStorage } from '../../../../src/lib/common/storage/filters';
@@ -7,10 +7,11 @@ import { FiltersStorage } from '../../../../src/lib/common/storage/filters';
 describe('FiltersStorage', () => {
     it('deletes content if the db version increases', async () => {
         // Insert data into storage
-        const preprocessed = FilterListPreprocessor.preprocess('@@||example.com^$document');
+        const converted = new ConvertedFilterList('@@||example.com^$document');
         await FiltersStorage.setMultiple({
             1: {
-                ...preprocessed,
+                rawFilterList: converted.getContent(),
+                conversionData: converted.getConversionData(),
                 checksum: 'foo',
             },
         });
@@ -26,42 +27,35 @@ describe('FiltersStorage', () => {
     });
 
     it('sets and gets data correctly', async () => {
-        const preprocessed = FilterListPreprocessor.preprocess('@@||example.com^$document');
+        const converted = new ConvertedFilterList('@@||example.com^$document');
         await FiltersStorage.setMultiple({
             1: {
-                ...preprocessed,
+                rawFilterList: converted.getContent(),
+                conversionData: converted.getConversionData(),
                 checksum: 'foo',
             },
             2: {
-                ...preprocessed,
+                rawFilterList: converted.getContent(),
+                conversionData: converted.getConversionData(),
                 checksum: 'bar',
             },
         });
 
         // Note: `get` method internally uses these methods:
         // - FiltersStorage.getRawFilterList
-        // - FiltersStorage.getFilterList
-        // - FiltersStorage.getConversionMap
-        // - FiltersStorage.getSourceMap
+        // - FiltersStorage.getConversionData
         // - FiltersStorage.getChecksum
         // So, we don't need to test them separately
         const data = await FiltersStorage.get(1);
 
         expect(data).not.toBeUndefined();
 
-        // Check that the data is correct
-        // Note: Under filterList key we have an Uint8Array, so we need to convert it before comparing
         expect({
-            ...{
-                ...data,
-                filterList: data!.filterList.map(Buffer.from),
-            },
+            ...data,
             checksum: 'foo',
         }).toEqual({
-            ...{
-                ...preprocessed,
-                filterList: preprocessed.filterList.map(Buffer.from),
-            },
+            rawFilterList: converted.getContent(),
+            conversionData: converted.getConversionData(),
             checksum: 'foo',
         });
 
