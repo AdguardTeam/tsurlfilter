@@ -1,7 +1,6 @@
 import { promises as fs } from 'node:fs';
 
-import { RuleParser } from '@adguard/agtree/parser';
-import { FilterListPreprocessor, PreprocessedFilterList } from '@adguard/tsurlfilter';
+import { ConvertedFilterList } from '@adguard/tsurlfilter';
 import {
     Filter,
     IndexedNetworkRuleWithHash,
@@ -32,19 +31,16 @@ export async function loadRulesetAndFilter(
     const {
         metadata,
         lazyMetadata,
-        conversionMap,
+        conversionData,
         rawFilterList,
     } = metadataRule.metadata;
 
-    const preprocessedFilterList = FilterListPreprocessor.preprocessLightweight({
-        rawFilterList,
-        conversionMap,
-    });
+    const convertedFilterList = new ConvertedFilterList(rawFilterList, conversionData);
 
     const filterId = Number(id);
     const filter = new Filter(
         filterId,
-        { getContent: (): Promise<PreprocessedFilterList> => Promise.resolve(preprocessedFilterList) },
+        { getContent: (): Promise<ConvertedFilterList> => Promise.resolve(convertedFilterList) },
         true,
     );
 
@@ -76,7 +72,7 @@ export async function loadRulesetAndFilter(
     const sources = RulesHashMap.deserializeSources(ruleSetHashMapRaw);
     const ruleSetHashMap = new RulesHashMap(sources);
     const badFilterRules = badFilterRulesRaw
-        .map((rawString: string) => IndexedNetworkRuleWithHash.createFromNode(0, 0, RuleParser.parse(rawString)))
+        .map((rawString: string) => IndexedNetworkRuleWithHash.createFromText(0, 0, rawString))
         .flat();
 
     const ruleSet = new RuleSet(
