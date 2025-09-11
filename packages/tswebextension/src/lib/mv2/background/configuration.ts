@@ -1,11 +1,11 @@
 import * as z from 'zod';
 
-import { configurationValidator } from '../../common/configuration';
+import { basicFilterValidator, configurationValidator } from '../../common/configuration';
 
 /**
  * Filter list configuration validator for MV2.
  */
-export const filterMV2Validator = z.object({
+export const filterMV2Validator = basicFilterValidator.extend({
     /**
      * Filter identifier.
      */
@@ -15,11 +15,6 @@ export const filterMV2Validator = z.object({
      * Filter trusted flag. If true, js rules from list can be executed.
      */
     trusted: z.boolean(),
-
-    /**
-     * Filter content.
-     */
-    content: z.string(),
 });
 
 /**

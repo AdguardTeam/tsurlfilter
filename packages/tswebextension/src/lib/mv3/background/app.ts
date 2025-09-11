@@ -364,7 +364,7 @@ export class TsWebExtension implements AppInterface<
                 {
                     getContent: (): Promise<ConvertedFilterList> => {
                         // FIXME: performance
-                        return Promise.resolve(new ConvertedFilterList(configuration.userrules));
+                        return Promise.resolve(new ConvertedFilterList(configuration.userrules.content));
                     },
                 },
                 true,

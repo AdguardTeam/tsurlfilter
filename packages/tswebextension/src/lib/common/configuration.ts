@@ -1,6 +1,7 @@
 import { z as zod } from 'zod';
 import { LogLevel } from '@adguard/logger';
 import { EXTENDED_CSS_VERSION } from '@adguard/extended-css/version';
+import { conversionDataValidator } from '@adguard/tsurlfilter';
 
 import packageJson from '../../../package.json';
 
@@ -85,6 +86,23 @@ export const stealthConfigValidator = zod.object({
 export type StealthConfig = zod.infer<typeof stealthConfigValidator>;
 
 /**
+ * Basic filter list configuration validator.
+ */
+export const basicFilterValidator = zod.object({
+    /**
+     * Filter list text content.
+     */
+    content: zod.string(),
+
+    /**
+     * Conversion data.
+     */
+    conversionData: zod.optional(conversionDataValidator),
+});
+
+export type BasicFilterValidator = zod.infer<typeof basicFilterValidator>;
+
+/**
  * Settings configuration schema.
  */
 export const settingsConfigValidator = zod.object({
@@ -123,7 +141,7 @@ export const settingsConfigValidator = zod.object({
     filteringEnabled: zod.boolean(),
 
     /**
-     * Redirect url for $document rules.
+     * Redirect url for blocking rules with `$document` modifier.
      */
     documentBlockingPageUrl: zod.string().optional(),
 
@@ -159,7 +177,7 @@ export const configurationValidator = zod.object({
     /**
      * List of rules added by user.
      */
-    userrules: zod.string(),
+    userrules: basicFilterValidator,
 
     /**
      * Flag responsible for logging.

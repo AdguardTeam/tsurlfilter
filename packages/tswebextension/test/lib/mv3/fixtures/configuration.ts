@@ -9,7 +9,7 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
     filtersPath: '',
     ruleSetsPath: '',
     allowlist: ['example.com'],
-    userrules: ['||example.org^', 'example.com##h1', 'baddomain.org$document'].join(LF),
+    userrules: { content: ['||example.org^', 'example.com##h1', 'baddomain.org$document'].join(LF) },
     quickFixesRules: {
         content: ['@@baddomain.org$document'].join(LF),
         filterId: QUICK_FIXES_FILTER_ID,

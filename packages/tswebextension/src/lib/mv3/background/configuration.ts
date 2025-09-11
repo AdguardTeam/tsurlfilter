@@ -1,16 +1,11 @@
 import { z as zod } from 'zod';
-import { conversionDataValidator } from '@adguard/tsurlfilter';
 
-import { configurationValidator, settingsConfigValidator } from '../../common/configuration';
+import { basicFilterValidator, configurationValidator, settingsConfigValidator } from '../../common/configuration';
 
 /**
  * Custom filter list configuration validator for MV3.
  */
-export const customFilterMV3Validator = zod.object({
-    content: zod.string(), // FIXME
-
-    conversionData: conversionDataValidator, // FIXME
-
+export const customFilterMV3Validator = basicFilterValidator.extend({
     /**
      * Filter identifier.
      */
@@ -96,7 +91,7 @@ export const configurationMV3Validator = configurationValidator.extend({
     /**
      * List of rules added by user.
      */
-    userrules: zod.string(),
+    userrules: basicFilterValidator,
 });
 
 /**

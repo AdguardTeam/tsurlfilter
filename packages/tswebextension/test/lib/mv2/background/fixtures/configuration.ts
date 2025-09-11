@@ -8,7 +8,7 @@ export const getConfigurationMv2Fixture = (): ConfigurationMV2 => ({
     ],
     allowlist: ['example.com'],
     trustedDomains: [],
-    userrules: ['||example.org^', 'example.com##h1'].join(LF),
+    userrules: { content: ['||example.org^', 'example.com##h1'].join(LF) },
     verbose: false,
     settings: {
         filteringEnabled: true,

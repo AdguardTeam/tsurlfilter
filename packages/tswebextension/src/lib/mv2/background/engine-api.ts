@@ -89,10 +89,10 @@ export class EngineApi {
             });
         }
 
-        if (userrules.length > 0) {
+        if (userrules.content.length > 0) {
             lists.push({
                 id: USER_FILTER_ID,
-                text: userrules,
+                text: userrules.content,
                 ignoreCosmetic: false,
                 ignoreJS: false,
                 ignoreUnsafe: false,
