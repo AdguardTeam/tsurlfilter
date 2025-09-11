@@ -3,7 +3,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-import { ConvertedFilterList } from '../src';
+import { ConvertedFilterList } from '../src/filterlist/converted-filter-list';
 import { METADATA_RULESET_ID, MetadataRuleSet } from '../src/rules/declarative-converter';
 import { extractRuleSetId, RULESET_FILE_EXT } from '../src/rules/declarative-converter-utils/rule-set-path';
 
