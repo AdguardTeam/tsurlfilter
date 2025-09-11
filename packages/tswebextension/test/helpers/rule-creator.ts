@@ -1,4 +1,10 @@
-import { type AnyCosmeticRule, type AnyRule, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
+import {
+    NetworkRuleType,
+    RuleCategory,
+    type AnyCosmeticRule,
+    type AnyRule,
+    type NetworkRule as NetworkRuleNode,
+} from '@adguard/agtree';
 import {
     defaultParserOptions,
     CosmeticRuleParser,
@@ -118,13 +124,21 @@ export const createRule = (
         node = rule;
     }
 
+    if (ignoreNetwork && node.category === RuleCategory.Network) {
+        return null;
+    }
+
+    if (ignoreHost && node.category === RuleCategory.Network && node.type === NetworkRuleType.HostRule) {
+        return null;
+    }
+
+    if (ignoreCosmetic && node.category === RuleCategory.Cosmetic) {
+        return null;
+    }
+
     return RuleFactory.createRule(
         node,
         filterListId,
         ruleIndex,
-        ignoreNetwork,
-        ignoreCosmetic,
-        ignoreHost,
-        silent,
     );
 };

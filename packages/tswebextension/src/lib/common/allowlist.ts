@@ -1,9 +1,5 @@
-import {
-    type NetworkRule,
-    type IRuleList,
-    RuleFactory,
-    createAllowlistRuleList,
-} from '@adguard/tsurlfilter';
+import { type NetworkRule, RuleFactory, createAllowlistRuleNode } from '@adguard/tsurlfilter';
+import { RuleGenerator } from '@adguard/agtree';
 
 import { ALLOWLIST_FILTER_ID } from './constants';
 import { type Configuration } from './configuration';
@@ -67,15 +63,17 @@ export abstract class Allowlist {
      *
      * @returns List of allowlist rules or null.
      */
-    public getAllowlistRules(): IRuleList | null {
+    public getAllowlistRules(): string | null {
         if (!this.enabled || this.inverted) {
             return null;
         }
 
-        return createAllowlistRuleList(
-            ALLOWLIST_FILTER_ID,
-            this.domains,
-        );
+        const rules = this.domains
+            .map((domain) => createAllowlistRuleNode(domain))
+            .filter((r) => r !== null)
+            .map(RuleGenerator.generate);
+
+        return rules.join('\n');
     }
 
     /**

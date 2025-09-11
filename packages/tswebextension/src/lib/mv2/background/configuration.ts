@@ -1,11 +1,11 @@
 import * as z from 'zod';
 
-import { basicFilterValidator, configurationValidator } from '../../common/configuration';
+import { configurationValidator } from '../../common/configuration';
 
 /**
  * Filter list configuration validator for MV2.
  */
-export const filterMV2Validator = basicFilterValidator.extend({
+export const filterMV2Validator = z.object({
     /**
      * Filter identifier.
      */
@@ -15,6 +15,11 @@ export const filterMV2Validator = basicFilterValidator.extend({
      * Filter trusted flag. If true, js rules from list can be executed.
      */
     trusted: z.boolean(),
+
+    /**
+     * Filter content.
+     */
+    content: z.string(),
 });
 
 /**
@@ -27,6 +32,11 @@ export type FilterMV2 = z.infer<typeof filterMV2Validator>;
  * Configuration validator for MV2.
  */
 export const configurationMV2Validator = configurationValidator.extend({
+    /**
+     * List of domain names of sites, which should be temporary excluded from document blocking.
+     */
+    trustedDomains: z.string().array(),
+
     filters: filterMV2Validator.array(),
 });
 

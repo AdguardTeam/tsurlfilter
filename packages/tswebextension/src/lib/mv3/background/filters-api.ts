@@ -1,7 +1,7 @@
 import zod from 'zod';
 import { Filter, type IFilter, RULESET_NAME_PREFIX } from '@adguard/tsurlfilter/es/declarative-converter';
 import browser from 'webextension-polyfill';
-import { type PreprocessedFilterList, preprocessedFilterListValidator } from '@adguard/tsurlfilter';
+import { ConvertedFilterList } from '@adguard/tsurlfilter';
 
 import { FailedEnableRuleSetsError } from '../errors/failed-enable-rule-sets-error';
 import { FiltersStorage } from '../../common/storage/filters';
@@ -16,7 +16,7 @@ const loadFilterContentValidator = zod.function()
     .args(zod.number())
     .returns(
         zod.promise(
-            preprocessedFilterListValidator,
+            zod.instanceof(ConvertedFilterList),
         ),
     );
 
@@ -25,7 +25,7 @@ const loadFilterContentValidator = zod.function()
  *
  * @param filterId Filter identifier to load content for.
  *
- * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
+ * @returns Promise that resolves to the filter content (see {@link ConvertedFilterList})
  * or null if the filter is not found.
  *
  * @throws Error if the filter content cannot be loaded.
@@ -112,7 +112,7 @@ export default class FiltersApi {
 
             const filter = new Filter(
                 filterId,
-                { getContent: (): Promise<PreprocessedFilterList> => loadFilterContent(filterId) },
+                { getContent: (): Promise<ConvertedFilterList> => loadFilterContent(filterId) },
                 /**
                  * Static filters are trusted.
                  */
@@ -147,12 +147,12 @@ export default class FiltersApi {
      *
      * @param filterId Filter identifier to load content for.
      *
-     * @returns Promise that resolves to the filter content (see {@link PreprocessedFilterList})
+     * @returns Promise that resolves to the filter content (see {@link ConvertedFilterList})
      * or null if the filter is not found.
      *
      * @throws Error if the filter content cannot be loaded.
      */
-    public static loadFilterContent = async (filterId: number): Promise<PreprocessedFilterList> => {
+    public static loadFilterContent = async (filterId: number): Promise<ConvertedFilterList> => {
         try {
             const result = await FiltersStorage.get(filterId);
 

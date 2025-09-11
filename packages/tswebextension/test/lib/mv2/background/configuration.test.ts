@@ -1,22 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 
-import { type ConfigurationMV2, configurationMV2Validator, FilterListPreprocessor } from '../../../../src/lib';
+import { type ConfigurationMV2, configurationMV2Validator } from '../../../../src/lib';
 import { LF } from '../../../../src/lib/common/constants';
 
 describe('configuration validator', () => {
     const validConfiguration: ConfigurationMV2 = {
         filters: [
-            { filterId: 1, content: FilterListPreprocessor.preprocess('').filterList, trusted: true },
-            { filterId: 2, content: FilterListPreprocessor.preprocess('').filterList, trusted: true },
+            { filterId: 1, content: '', trusted: true },
+            { filterId: 2, content: '', trusted: true },
         ],
         allowlist: ['example.com'],
         trustedDomains: [],
-        userrules: {
-            content: FilterListPreprocessor.preprocess(
-                ['||example.org^', 'example.com##h1'].join(LF),
-            ).filterList,
-        },
+        userrules: ['||example.org^', 'example.com##h1'].join(LF),
         verbose: false,
         settings: {
             filteringEnabled: true,

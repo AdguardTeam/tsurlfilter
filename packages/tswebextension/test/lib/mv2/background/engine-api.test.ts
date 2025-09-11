@@ -60,7 +60,7 @@ describe('Engine Api', () => {
 
             engineApi.startEngine(configuration);
 
-            expect(Engine.prototype.loadRulesAsync).toHaveBeenCalled();
+            expect(engineApi.getRulesCount()).not.toBe(0);
         });
     });
 

@@ -476,20 +476,6 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Retrieves a rule node by its filter list identifier and rule index.
-     *
-     * If there's no rule by that index or the rule structure is invalid, it will return null.
-     *
-     * @param filterId Filter list identifier.
-     * @param ruleIndex Rule index.
-     *
-     * @returns Rule node or `null`.
-     */
-    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        return this.engineApi.retrieveRuleNode(filterId, ruleIndex);
-    }
-
-    /**
      * Creates configuration context.
      *
      * @param configuration Configuration.

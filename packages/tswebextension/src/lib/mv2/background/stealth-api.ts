@@ -1,13 +1,5 @@
 import browser from 'webextension-polyfill';
-import {
-    type IRuleList,
-    BufferRuleList,
-    STEALTH_MODE_FILTER_ID,
-    StealthOptionName,
-    type NetworkRule,
-    type MatchingResult,
-    FilterListPreprocessor,
-} from '@adguard/tsurlfilter';
+import { StealthOptionName, type NetworkRule, type MatchingResult } from '@adguard/tsurlfilter';
 
 import { type StealthConfig } from '../../common/configuration';
 import { defaultFilteringLog, type FilteringLogInterface } from '../../common/filtering-log';
@@ -120,7 +112,7 @@ export class StealthApi {
      *
      * @returns String rule list or null.
      */
-    public getStealthModeRuleList(): IRuleList | null {
+    public getStealthModeRuleList(): string | null {
         if (!this.isStealthAllowed) {
             return null;
         }
@@ -128,12 +120,7 @@ export class StealthApi {
         // TODO (David): Change to AST generation
         const rulesTexts = this.stealthService.getCookieRulesTexts().join('\n');
 
-        return new BufferRuleList(
-            STEALTH_MODE_FILTER_ID,
-            FilterListPreprocessor.preprocess(rulesTexts).filterList,
-            false,
-            false,
-        );
+        return rulesTexts;
     }
 
     /**

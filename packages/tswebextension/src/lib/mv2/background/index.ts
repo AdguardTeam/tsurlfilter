@@ -5,7 +5,7 @@ export {
     CosmeticRule,
     NetworkRuleOption,
     FilterListPreprocessor,
-    type PreprocessedFilterList,
+    ConvertedFilterList,
     type FilterListConversionMap,
     type FilterListSourceMap,
     getRuleSourceIndex,
