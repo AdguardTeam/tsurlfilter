@@ -1,4 +1,5 @@
 import { z as zod } from 'zod';
+import { conversionDataValidator } from '@adguard/tsurlfilter';
 
 import { configurationValidator, settingsConfigValidator } from '../../common/configuration';
 
@@ -7,6 +8,8 @@ import { configurationValidator, settingsConfigValidator } from '../../common/co
  */
 export const customFilterMV3Validator = zod.object({
     content: zod.string(), // FIXME
+
+    conversionData: conversionDataValidator, // FIXME
 
     /**
      * Filter identifier.

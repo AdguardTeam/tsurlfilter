@@ -440,6 +440,7 @@ export class TsWebExtension implements AppInterface<
                     content: '',
                     filterId: QUICK_FIXES_FILTER_ID,
                     trusted: false,
+                    conversionData: ConvertedFilterList.createEmptyConversionData(),
                 },
             });
             await engineApi.waitingForEngine;
