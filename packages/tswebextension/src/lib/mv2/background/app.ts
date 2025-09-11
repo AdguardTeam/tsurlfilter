@@ -1,6 +1,5 @@
 /* eslint-disable class-methods-use-this */
 import { LogLevel } from '@adguard/logger';
-import { type AnyRule } from '@adguard/agtree';
 
 import { type MessageHandler, type AppInterface } from '../../common/app';
 import { type FilteringLog, type FilteringLogEvent } from '../../common/filtering-log';

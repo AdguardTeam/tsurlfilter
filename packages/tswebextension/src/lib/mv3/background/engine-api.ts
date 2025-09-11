@@ -338,6 +338,18 @@ export class EngineApi {
     public isUserRulesFilter(filterId: number): boolean {
         return filterId === this.userFilterId;
     }
+
+    /**
+     * Retrieves rule text by filter list id and rule index.
+     *
+     * @param filterListId Filter list id.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null` if rule is not found.
+     */
+    public retrieveRuleText(filterListId: number, ruleIndex: number): string | null {
+        return this.engine?.retrieveRuleText(filterListId, ruleIndex) ?? null;
+    }
 }
 
 export const engineApi = new EngineApi();
