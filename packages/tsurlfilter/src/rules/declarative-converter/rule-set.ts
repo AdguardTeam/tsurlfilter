@@ -724,9 +724,17 @@ export class RuleSet implements IRuleSet {
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
 
-        // TODO: Improve this code once we introduce multiple filters within a single rule set
-        // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array
-        const filter = this.filterList.values().next().value!;
+        // TODO: Improve this code once we introduce multiple filters within a single rule set.
+        // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array.
+        // Currently, we expect that there is only one filter within a single rule set.
+        const filter = this.filterList.values().next().value;
+
+        if (!filter) {
+            const id = this.getId();
+            const msg = `Cannot serialize ruleset '${id}' because of not available filter list`;
+            throw new UnavailableRuleSetSourceError(msg, id);
+        }
+
         const content = await filter.getContent();
 
         // To ensure that unsafe rules are provided and their count is correct,
