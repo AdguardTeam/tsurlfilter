@@ -54,6 +54,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
      * @param hash Hash of the rule.
      */
     constructor(rule: NetworkRuleWithNodeAndText, index: number, hash: number) {
+        // Note: we use NO_LIST_ID here, because we do not need list id for such indexed rules within DNR converter
         super(rule, index, NO_LIST_ID);
 
         this.hash = hash;
