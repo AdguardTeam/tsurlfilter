@@ -724,7 +724,7 @@ export class RuleSet implements IRuleSet {
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
 
-        // TODO: Improve this code once we introduce multiple filters within a single rule set.
+        // TODO: Improve this code once we introduce multiple filters within a single ruleset.
         // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array.
         // Currently, we expect that there is only one filter within a single rule set.
         const filter = this.filterList.values().next().value;
