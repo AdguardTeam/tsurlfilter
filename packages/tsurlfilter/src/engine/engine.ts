@@ -9,7 +9,7 @@ import { StringRuleList } from '../filterlist/string-rule-list';
 import { Request } from '../request';
 import { RequestType } from '../request-type';
 import { type NetworkRule } from '../rules/network-rule';
-import { type IndexedStorageRule } from '../rules/rule';
+import { type IndexedStorageCosmeticRule, type IndexedStorageNetworkRule } from '../rules/rule';
 
 import { CHUNK_SIZE } from './constants';
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
@@ -98,8 +98,8 @@ export class Engine {
      * @returns An instance of the network engine.
      */
     public static createSync(options: EngineFactoryOptions): Engine {
-        const networkRules: IndexedStorageRule[] = [];
-        const cosmeticRules: IndexedStorageRule[] = [];
+        const networkRules: IndexedStorageNetworkRule[] = [];
+        const cosmeticRules: IndexedStorageCosmeticRule[] = [];
 
         const lists: IRuleList[] = [];
 
@@ -126,9 +126,9 @@ export class Engine {
             }
 
             if (rule.rule.category === RuleCategory.Network) {
-                networkRules.push(rule);
+                networkRules.push(rule as IndexedStorageNetworkRule);
             } else if (rule.rule.category === RuleCategory.Cosmetic) {
-                cosmeticRules.push(rule);
+                cosmeticRules.push(rule as IndexedStorageCosmeticRule);
             }
         }
 
@@ -149,8 +149,8 @@ export class Engine {
      * @returns An instance of the network engine.
      */
     public static async createAsync(options: EngineFactoryOptions): Promise<Engine> {
-        const networkRules: IndexedStorageRule[] = [];
-        const cosmeticRules: IndexedStorageRule[] = [];
+        const networkRules: IndexedStorageNetworkRule[] = [];
+        const cosmeticRules: IndexedStorageCosmeticRule[] = [];
 
         const lists: IRuleList[] = [];
 
@@ -188,9 +188,9 @@ export class Engine {
             }
 
             if (rule.rule.category === RuleCategory.Network) {
-                networkRules.push(rule);
+                networkRules.push(rule as IndexedStorageNetworkRule);
             } else if (rule.rule.category === RuleCategory.Cosmetic) {
-                cosmeticRules.push(rule);
+                cosmeticRules.push(rule as IndexedStorageCosmeticRule);
             }
         }
 

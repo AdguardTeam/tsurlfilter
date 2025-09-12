@@ -4,7 +4,7 @@ import { Request } from '../request';
 import { RequestType } from '../request-type';
 import { HostRule } from '../rules/host-rule';
 import { NetworkRule } from '../rules/network-rule';
-import { type IndexedStorageRule } from '../rules/rule';
+import { type IndexedStorageNetworkRule } from '../rules/rule';
 import { fastHash } from '../utils/string-utils';
 
 import { DnsResult } from './dns-result';
@@ -48,7 +48,7 @@ export class DnsEngine {
         this.lookupTable = new Map<number, number[]>();
 
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.HostRules);
-        const networkRules: IndexedStorageRule[] = [];
+        const networkRules: IndexedStorageNetworkRule[] = [];
 
         while (scanner.scan()) {
             // FIXME (David): we do not use rule parts here, but tokenizer is always called
@@ -63,7 +63,7 @@ export class DnsEngine {
                 this.addRule(rule, indexedRule.index);
             } else if (rule instanceof NetworkRule && rule.isHostLevelNetworkRule()) {
                 // Note: it is safe to cast here, because we checked rule type
-                networkRules.push(indexedRule);
+                networkRules.push(indexedRule as IndexedStorageNetworkRule);
             }
         }
 

@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import { type RuleParts } from '../filterlist/rule-parts';
+import { type CosmeticRuleParts, type NetworkRuleParts, type RuleParts } from '../filterlist/rule-parts';
 
 /**
  * Default rule index for source mapping.
@@ -70,11 +70,11 @@ export class IndexedRule<T = RuleParts> {
 /**
  * Rule with storage index.
  */
-export class IndexedStorageRule {
+export class IndexedStorageRule<T extends RuleParts = RuleParts> {
     /**
      * Rule.
      */
-    public rule: RuleParts;
+    public rule: T;
 
     /**
      * Rule index.
@@ -93,9 +93,19 @@ export class IndexedStorageRule {
      * @param index Index of the rule.
      * @param listId ID of the filter list this rule belongs to.
      */
-    constructor(ruleParts: RuleParts, index: number, listId: number) {
+    constructor(ruleParts: T, index: number, listId: number) {
         this.listId = listId;
         this.rule = ruleParts;
         this.index = index;
     }
 }
+
+/**
+ * Indexed storage network rule.
+ */
+export type IndexedStorageNetworkRule = IndexedStorageRule<NetworkRuleParts>;
+
+/**
+ * Indexed storage cosmetic rule.
+ */
+export type IndexedStorageCosmeticRule = IndexedStorageRule<CosmeticRuleParts>;

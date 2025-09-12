@@ -9,7 +9,7 @@ import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../../src/filterlist/string-rule-list';
 import { Request } from '../../../src/request';
 import { RequestType } from '../../../src/request-type';
-import { type IndexedStorageRule } from '../../../src/rules/rule';
+import { type IndexedStorageCosmeticRule } from '../../../src/rules/rule';
 
 /**
  * Helper function to get the rule index from the raw filter list by the rule text.
@@ -33,13 +33,14 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
 const createRequest = (url: string) => new Request(url, null, RequestType.Document);
 
 const createCosmeticEngine = (lists: IRuleList[]): CosmeticEngine => {
-    const rules: IndexedStorageRule[] = [];
+    const rules: IndexedStorageCosmeticRule[] = [];
     const storage = new RuleStorage(lists);
 
     const scanner = storage.createRuleStorageScanner(ScannerType.CosmeticRules);
 
     while (scanner.scan()) {
-        rules.push(scanner.getRule()!);
+        // We can safely cast here, because we configured scanner to scan only cosmetic rules
+        rules.push(scanner.getRule()! as IndexedStorageCosmeticRule);
     }
 
     return CosmeticEngine.createSync(storage, rules);

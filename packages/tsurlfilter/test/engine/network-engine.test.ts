@@ -9,7 +9,7 @@ import { StringRuleList } from '../../src/filterlist/string-rule-list';
 import { HTTPMethod } from '../../src/modifiers/method-modifier';
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
-import { type IndexedStorageRule } from '../../src/rules/rule';
+import { type IndexedStorageNetworkRule } from '../../src/rules/rule';
 
 /**
  * Helper function to get the rule index from the raw filter list by the rule text.
@@ -25,12 +25,13 @@ const getRawRuleIndex = (rawFilterList: string, rule: string): number => {
 
 const createNetworkEngine = (lists: IRuleList[]): NetworkEngine => {
     const storage = new RuleStorage(lists);
-    const rules: IndexedStorageRule[] = [];
+    const rules: IndexedStorageNetworkRule[] = [];
 
     const scanner = storage.createRuleStorageScanner(ScannerType.NetworkRules);
 
     while (scanner.scan()) {
-        rules.push(scanner.getRule()!);
+        // We can safely cast here, because we configured scanner to scan only network rules
+        rules.push(scanner.getRule()! as IndexedStorageNetworkRule);
     }
 
     return NetworkEngine.createSync(storage, rules);

@@ -21,7 +21,7 @@ import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
-import { type IndexedStorageRule } from '../../src/rules/rule';
+import { type IndexedStorageCosmeticRule } from '../../src/rules/rule';
 
 /* eslint-disable jsdoc/require-description-complete-sentence */
 /**
@@ -234,13 +234,14 @@ function memoryUsage(base = { heapUsed: 0, heapTotal: 0 }) {
 }
 
 const createCosmeticEngine = (lists: IRuleList[]): CosmeticEngine => {
-    const rules: IndexedStorageRule[] = [];
+    const rules: IndexedStorageCosmeticRule[] = [];
     const storage = new RuleStorage(lists);
 
     const scanner = storage.createRuleStorageScanner(ScannerType.CosmeticRules);
 
     while (scanner.scan()) {
-        rules.push(scanner.getRule()!);
+        // We can safely cast here, because we configured scanner to scan only cosmetic rules
+        rules.push(scanner.getRule()! as IndexedStorageCosmeticRule);
     }
 
     return CosmeticEngine.createSync(storage, rules);

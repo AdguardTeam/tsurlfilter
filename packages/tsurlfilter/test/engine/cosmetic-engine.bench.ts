@@ -9,7 +9,7 @@ import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
-import { type IndexedStorageRule } from '../../src/rules/rule';
+import { type IndexedStorageCosmeticRule } from '../../src/rules/rule';
 
 describe('Build engine', () => {
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
@@ -39,10 +39,11 @@ describe('Build engine', () => {
         );
         const storage = new RuleStorage([list]);
         const scanner = list.newScanner(ScannerType.CosmeticRules);
-        const rules: IndexedStorageRule[] = [];
+        const rules: IndexedStorageCosmeticRule[] = [];
 
         while (scanner.scan()) {
-            rules.push(scanner.getRule()!);
+            // We can safely cast here, because we configured scanner to scan only cosmetic rules
+            rules.push(scanner.getRule()! as IndexedStorageCosmeticRule);
         }
 
         const engine = CosmeticEngine.createSync(storage, rules);

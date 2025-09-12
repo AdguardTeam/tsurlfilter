@@ -9,7 +9,7 @@ import { NetworkEngine } from '../../src/engine/network-engine';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
-import { type IndexedStorageRule } from '../../src/rules/rule';
+import { type IndexedStorageNetworkRule } from '../../src/rules/rule';
 
 describe('Build engine', () => {
     const ignoreCosmetic = true;
@@ -41,10 +41,11 @@ describe('Build engine', () => {
         );
         const storage = new RuleStorage([list]);
         const scanner = list.newScanner(ScannerType.NetworkRules);
-        const rules: IndexedStorageRule[] = [];
+        const rules: IndexedStorageNetworkRule[] = [];
 
         while (scanner.scan()) {
-            rules.push(scanner.getRule()!);
+            // We can safely cast here, because we configured scanner to scan only cosmetic rules
+            rules.push(scanner.getRule()! as IndexedStorageNetworkRule);
         }
 
         const engine = NetworkEngine.createSync(storage, rules);

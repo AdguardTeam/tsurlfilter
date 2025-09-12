@@ -1,8 +1,8 @@
-import { type NetworkRuleParts, RuleCategory } from '../filterlist/rule-parts';
+import { type NetworkRuleParts } from '../filterlist/rule-parts';
 import { type RuleStorage } from '../filterlist/rule-storage';
 import { type Request } from '../request';
 import { type NetworkRule } from '../rules/network-rule';
-import { type IndexedStorageRule } from '../rules/rule';
+import { type IndexedStorageNetworkRule } from '../rules/rule';
 
 import { CHUNK_SIZE } from './constants';
 import { DomainsLookupTable } from './lookup-tables/domains-lookup-table';
@@ -49,14 +49,10 @@ export class NetworkEngine {
      *
      * @returns An instance of the network engine.
      */
-    public static createSync(storage: RuleStorage, rules: IndexedStorageRule[]): NetworkEngine {
+    public static createSync(storage: RuleStorage, rules: IndexedStorageNetworkRule[]): NetworkEngine {
         const engine = new NetworkEngine(storage);
 
         for (const rule of rules) {
-            if (rule.rule.category !== RuleCategory.Network) {
-                continue;
-            }
-
             engine.addRule(rule.rule, rule.index);
         }
 
@@ -73,7 +69,7 @@ export class NetworkEngine {
      */
     public static async createAsync(
         storage: RuleStorage,
-        rules: IndexedStorageRule[],
+        rules: IndexedStorageNetworkRule[],
     ): Promise<NetworkEngine> {
         const engine = new NetworkEngine(storage);
 
@@ -87,10 +83,6 @@ export class NetworkEngine {
 
                 // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
                 await new Promise((resolve) => setTimeout(resolve, 1));
-            }
-
-            if (rule.rule.category !== RuleCategory.Network) {
-                continue;
             }
 
             engine.addRule(rule.rule, rule.index);

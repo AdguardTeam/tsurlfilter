@@ -1,7 +1,7 @@
-import { type CosmeticRuleParts, CosmeticRuleType, RuleCategory } from '../../filterlist/rule-parts';
+import { type CosmeticRuleParts, CosmeticRuleType } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
-import { type IndexedStorageRule } from '../../rules/rule';
+import { type IndexedStorageCosmeticRule } from '../../rules/rule';
 import { CHUNK_SIZE } from '../constants';
 import { CosmeticOption } from '../cosmetic-option';
 
@@ -53,14 +53,10 @@ export class CosmeticEngine {
      *
      * @returns An instance of the network engine.
      */
-    public static createSync(storage: RuleStorage, rules: IndexedStorageRule[]): CosmeticEngine {
+    public static createSync(storage: RuleStorage, rules: IndexedStorageCosmeticRule[]): CosmeticEngine {
         const engine = new CosmeticEngine(storage);
 
         for (const rule of rules) {
-            if (rule.rule.category !== RuleCategory.Cosmetic) {
-                continue;
-            }
-
             engine.addRule(rule.rule, rule.index);
         }
 
@@ -77,7 +73,7 @@ export class CosmeticEngine {
      */
     public static async createAsync(
         storage: RuleStorage,
-        rules: IndexedStorageRule[],
+        rules: IndexedStorageCosmeticRule[],
     ): Promise<CosmeticEngine> {
         const engine = new CosmeticEngine(storage);
 
@@ -91,10 +87,6 @@ export class CosmeticEngine {
 
                 // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
                 await new Promise((resolve) => setTimeout(resolve, 1));
-            }
-
-            if (rule.rule.category !== RuleCategory.Cosmetic) {
-                continue;
             }
 
             engine.addRule(rule.rule, rule.index);
