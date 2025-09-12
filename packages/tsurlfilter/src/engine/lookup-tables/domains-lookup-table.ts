@@ -10,6 +10,8 @@ import { type ILookupTable } from './lookup-table';
 /**
  * Domain lookup table.
  */
+// TODO: This lookup table has a lot of common code with HostnameLookupTable,
+// probably we can extract common code into a base class
 export class DomainsLookupTable implements ILookupTable {
     /**
      * Count of rules added to this lookup table.

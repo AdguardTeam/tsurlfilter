@@ -11,6 +11,8 @@ import { type ILookupTable } from './lookup-table';
  * Hostname lookup table.
  * For specific kind of rules like '||hostname^' and '||hostname/path' more simple algorithm with hashes is faster.
  */
+// TODO: This lookup table has a lot of common code with DomainsLookupTable,
+// probably we can extract common code into a base class
 export class HostnameLookupTable implements ILookupTable {
     /**
      * Count of rules added to this lookup table.
