@@ -9773,7 +9773,7 @@ snapshots:
       '@adguard/css-tokenizer': 1.2.0
       '@adguard/logger': 2.0.0
       '@adguard/re2-wasm': 1.2.0
-      '@adguard/scriptlets': 2.2.8
+      '@adguard/scriptlets': 2.2.10
       cidr-tools: 6.4.2
       commander: 12.1.0
       is-cidr: 4.0.2
