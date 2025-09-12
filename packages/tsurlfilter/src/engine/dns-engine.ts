@@ -48,11 +48,11 @@ export class DnsEngine {
         this.lookupTable = new Map<number, number[]>();
 
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.HostRules);
-        const networkRules: IndexedStorageNetworkRule[] = [];
+        const networkRulesParts: IndexedStorageNetworkRule[] = [];
 
         while (scanner.scan()) {
             // FIXME (David): we do not use rule parts here, but tokenizer is always called
-            const indexedRule = scanner.getRule();
+            const indexedRule = scanner.getRuleParts();
             if (!indexedRule) {
                 continue;
             }
@@ -63,11 +63,11 @@ export class DnsEngine {
                 this.addRule(rule, indexedRule.index);
             } else if (rule instanceof NetworkRule && rule.isHostLevelNetworkRule()) {
                 // Note: it is safe to cast here, because we checked rule type
-                networkRules.push(indexedRule as IndexedStorageNetworkRule);
+                networkRulesParts.push(indexedRule as IndexedStorageNetworkRule);
             }
         }
 
-        this.networkEngine = NetworkEngine.createSync(storage, networkRules);
+        this.networkEngine = NetworkEngine.createSync(storage, networkRulesParts);
     }
 
     /**

@@ -45,7 +45,7 @@ describe('Build engine', () => {
 
         while (scanner.scan()) {
             // We can safely cast here, because we configured scanner to scan only cosmetic rules
-            rules.push(scanner.getRule()! as IndexedStorageNetworkRule);
+            rules.push(scanner.getRuleParts()! as IndexedStorageNetworkRule);
         }
 
         const engine = NetworkEngine.createSync(storage, rules);

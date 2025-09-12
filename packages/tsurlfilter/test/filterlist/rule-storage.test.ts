@@ -64,55 +64,55 @@ describe('Test RuleStorage', () => {
 
         // scans rule 1 from list 1
         expect(scanner.scan()).toBeTruthy();
-        indexedRule = scanner.getRule();
+        indexedRule = scanner.getRuleParts();
 
         expect(indexedRule).toBeTruthy();
-        expect(indexedRule!.rule).toBeTruthy();
+        expect(indexedRule!.ruleParts).toBeTruthy();
         expect(indexedRule!.index).toBe(getRawRuleIndex(text1, '||example.org'));
         expect(indexedRule!.listId).toBe(1);
 
         // scans rule 2 from list 1
         expect(scanner.scan()).toBeTruthy();
-        indexedRule = scanner.getRule();
+        indexedRule = scanner.getRuleParts();
 
         expect(indexedRule).toBeTruthy();
-        expect(indexedRule!.rule).toBeTruthy();
+        expect(indexedRule!.ruleParts).toBeTruthy();
         expect(indexedRule!.index).toBe(getRawRuleIndex(text1, '##banner'));
         expect(indexedRule!.listId).toBe(1);
 
         // scans rule 1 from list 2
         expect(scanner.scan()).toBeTruthy();
-        indexedRule = scanner.getRule();
+        indexedRule = scanner.getRuleParts();
 
         expect(indexedRule).toBeTruthy();
-        expect(indexedRule!.rule).toBeTruthy();
+        expect(indexedRule!.ruleParts).toBeTruthy();
         expect(indexedRule!.index).toBe(text1.length + getRawRuleIndex(text2, '||example.com'));
         expect(indexedRule!.listId).toBe(2);
 
         // scans rule 2 from list 2
         expect(scanner.scan()).toBeTruthy();
-        indexedRule = scanner.getRule();
+        indexedRule = scanner.getRuleParts();
 
         expect(indexedRule).toBeTruthy();
-        expect(indexedRule!.rule).toBeTruthy();
+        expect(indexedRule!.ruleParts).toBeTruthy();
         expect(indexedRule!.index).toBe(text1.length + getRawRuleIndex(text2, '##advert'));
         expect(indexedRule!.listId).toBe(2);
 
         // scans rule 1 from list 3
         expect(scanner.scan()).toBeTruthy();
-        indexedRule = scanner.getRule();
+        indexedRule = scanner.getRuleParts();
 
         expect(indexedRule).toBeTruthy();
-        expect(indexedRule!.rule).toBeTruthy();
+        expect(indexedRule!.ruleParts).toBeTruthy();
         expect(indexedRule!.index).toBe(text1.length + text2.length + getRawRuleIndex(text3, '||example.net'));
         expect(indexedRule!.listId).toBe(1001);
 
         // scans rule 2 from list 3
         expect(scanner.scan()).toBeTruthy();
-        indexedRule = scanner.getRule();
+        indexedRule = scanner.getRuleParts();
 
         expect(indexedRule).toBeTruthy();
-        expect(indexedRule!.rule).toBeTruthy();
+        expect(indexedRule!.ruleParts).toBeTruthy();
         expect(indexedRule!.index).toBe(text1.length + text2.length + getRawRuleIndex(text3, '##advert'));
         expect(indexedRule!.listId).toBe(1001);
 

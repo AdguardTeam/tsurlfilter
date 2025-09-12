@@ -880,7 +880,7 @@ export abstract class DeclarativeRuleConverter {
         };
 
         await Promise.all(rules.map(async (r: IndexedNetworkRuleWithHash) => {
-            const { rule, index } = r;
+            const { ruleParts: rule, index } = r;
 
             const id = DeclarativeRuleConverter.generateUniqueId(r, usedIds);
 

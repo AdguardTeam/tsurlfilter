@@ -45,14 +45,14 @@ describe('RuleScanner tests', () => {
 
             expect(scanner.scan()).toBeTruthy();
 
-            let rule = scanner.getRule();
+            let rule = scanner.getRuleParts();
             expect(rule).toBeTruthy();
             expect(rule!.index).toEqual(getRawRuleIndex(text, '||example.org'));
             expect(rule!.listId).toBe(1);
 
             expect(scanner.scan()).toBeTruthy();
 
-            rule = scanner.getRule();
+            rule = scanner.getRuleParts();
             expect(rule).toBeTruthy();
             expect(rule!.index).toEqual(getRawRuleIndex(text, '##banner'));
             expect(rule!.listId).toBe(1);

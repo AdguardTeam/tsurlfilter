@@ -45,15 +45,15 @@ export class NetworkEngine {
      * Creates an instance of the network engine in sync mode.
      *
      * @param storage An object for a rules storage.
-     * @param rules Array of rules to add.
+     * @param rulesParts Array of indexed storage network rules.
      *
      * @returns An instance of the network engine.
      */
-    public static createSync(storage: RuleStorage, rules: IndexedStorageNetworkRule[]): NetworkEngine {
+    public static createSync(storage: RuleStorage, rulesParts: IndexedStorageNetworkRule[]): NetworkEngine {
         const engine = new NetworkEngine(storage);
 
-        for (const rule of rules) {
-            engine.addRule(rule.rule, rule.index);
+        for (const rule of rulesParts) {
+            engine.addRule(rule.ruleParts, rule.index);
         }
 
         return engine;
@@ -63,19 +63,19 @@ export class NetworkEngine {
      * Creates an instance of the network engine in async mode.
      *
      * @param storage An object for a rules storage.
-     * @param rules Array of rules to add.
+     * @param rulesParts Array of indexed storage network rules.
      *
      * @returns An instance of the network engine.
      */
     public static async createAsync(
         storage: RuleStorage,
-        rules: IndexedStorageNetworkRule[],
+        rulesParts: IndexedStorageNetworkRule[],
     ): Promise<NetworkEngine> {
         const engine = new NetworkEngine(storage);
 
         let counter = 0;
 
-        for (const rule of rules) {
+        for (const rule of rulesParts) {
             counter += 1;
 
             if (counter >= CHUNK_SIZE) {
@@ -85,7 +85,7 @@ export class NetworkEngine {
                 await Promise.resolve();
             }
 
-            engine.addRule(rule.rule, rule.index);
+            engine.addRule(rule.ruleParts, rule.index);
         }
 
         return engine;
@@ -145,23 +145,23 @@ export class NetworkEngine {
     /**
      * Adds rule to the network engine.
      *
-     * @param rule Parts of rule to add.
+     * @param ruleParts Parts of rule to add.
      * @param storageIdx Storage index of the rule.
      */
-    private addRule(rule: NetworkRuleParts, storageIdx: number): void {
-        if (this.hostnameLookupTable.addRule(rule, storageIdx)) {
+    private addRule(ruleParts: NetworkRuleParts, storageIdx: number): void {
+        if (this.hostnameLookupTable.addRule(ruleParts, storageIdx)) {
             return;
         }
 
-        if (this.shortcutsLookupTable.addRule(rule, storageIdx)) {
+        if (this.shortcutsLookupTable.addRule(ruleParts, storageIdx)) {
             return;
         }
 
-        if (this.domainsLookupTable.addRule(rule, storageIdx)) {
+        if (this.domainsLookupTable.addRule(ruleParts, storageIdx)) {
             return;
         }
 
-        this.seqScanLookupTable.addRule(rule, storageIdx);
+        this.seqScanLookupTable.addRule(ruleParts, storageIdx);
     }
 
     /**

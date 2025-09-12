@@ -25,7 +25,7 @@ export const createScannedFilter = async (
 
     const { rules } = scanner.getIndexedRules();
 
-    const badFilterRules = rules.filter(({ rule }) => {
+    const badFilterRules = rules.filter(({ ruleParts: rule }) => {
         return rule instanceof NetworkRule && rule.isOptionEnabled(NetworkRuleOption.Badfilter);
     });
 

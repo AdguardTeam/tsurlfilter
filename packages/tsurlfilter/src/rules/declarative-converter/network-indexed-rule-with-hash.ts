@@ -44,7 +44,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
      *
      * @see {@link https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier}
      */
-    public declare rule: NetworkRuleWithNodeAndText;
+    public declare ruleParts: NetworkRuleWithNodeAndText;
 
     /**
      * Constructor.
@@ -58,7 +58,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
         super(rule, index, NO_LIST_ID);
 
         this.hash = hash;
-        this.rule = rule;
+        this.ruleParts = rule;
     }
 
     /**
@@ -91,7 +91,7 @@ export class IndexedNetworkRuleWithHash extends IndexedRule<NetworkRuleWithNodeA
      */
     public getRuleTextHash(salt?: number): number {
         // Append a null-char to not collide with legitimate rule text.
-        const trialText = salt === undefined ? this.rule.text : `${this.rule.text}\0${salt}`;
+        const trialText = salt === undefined ? this.ruleParts.text : `${this.ruleParts.text}\0${salt}`;
 
         return fastHash31(trialText);
     }

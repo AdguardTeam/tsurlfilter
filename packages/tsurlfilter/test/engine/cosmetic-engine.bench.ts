@@ -43,7 +43,7 @@ describe('Build engine', () => {
 
         while (scanner.scan()) {
             // We can safely cast here, because we configured scanner to scan only cosmetic rules
-            rules.push(scanner.getRule()! as IndexedStorageCosmeticRule);
+            rules.push(scanner.getRuleParts()! as IndexedStorageCosmeticRule);
         }
 
         const engine = CosmeticEngine.createSync(storage, rules);

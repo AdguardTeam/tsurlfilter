@@ -39,9 +39,9 @@ export interface IRule {
  */
 export class IndexedRule<T = RuleParts> {
     /**
-     * Rule.
+     * Rule parts.
      */
-    public rule: T;
+    public ruleParts: T;
 
     /**
      * ID of the filter list this rule belongs to.
@@ -56,13 +56,13 @@ export class IndexedRule<T = RuleParts> {
     /**
      * Constructor.
      *
-     * @param rule Rule.
+     * @param ruleParts Rule parts.
      * @param index Index of the rule.
      * @param listId ID of the filter list this rule belongs to.
      */
-    constructor(rule: T, index: number, listId: number) {
+    constructor(ruleParts: T, index: number, listId: number) {
         this.listId = listId;
-        this.rule = rule;
+        this.ruleParts = ruleParts;
         this.index = index;
     }
 }
@@ -72,9 +72,9 @@ export class IndexedRule<T = RuleParts> {
  */
 export class IndexedStorageRule<T extends RuleParts = RuleParts> {
     /**
-     * Rule.
+     * Rule parts.
      */
-    public rule: T;
+    public ruleParts: T;
 
     /**
      * Rule index.
@@ -95,7 +95,7 @@ export class IndexedStorageRule<T extends RuleParts = RuleParts> {
      */
     constructor(ruleParts: T, index: number, listId: number) {
         this.listId = listId;
-        this.rule = ruleParts;
+        this.ruleParts = ruleParts;
         this.index = index;
     }
 }

@@ -98,8 +98,8 @@ export class Engine {
      * @returns An instance of the network engine.
      */
     public static createSync(options: EngineFactoryOptions): Engine {
-        const networkRules: IndexedStorageNetworkRule[] = [];
-        const cosmeticRules: IndexedStorageCosmeticRule[] = [];
+        const networkRulesParts: IndexedStorageNetworkRule[] = [];
+        const cosmeticRulesParts: IndexedStorageCosmeticRule[] = [];
 
         const lists: IRuleList[] = [];
 
@@ -119,23 +119,23 @@ export class Engine {
         const scanner = storage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
 
         while (scanner.scan()) {
-            const rule = scanner.getRule();
+            const rule = scanner.getRuleParts();
 
             if (!rule) {
                 continue;
             }
 
-            if (rule.rule.category === RuleCategory.Network) {
+            if (rule.ruleParts.category === RuleCategory.Network) {
                 // Note: it is safe to cast here, because we checked rule type
-                networkRules.push(rule as IndexedStorageNetworkRule);
-            } else if (rule.rule.category === RuleCategory.Cosmetic) {
+                networkRulesParts.push(rule as IndexedStorageNetworkRule);
+            } else if (rule.ruleParts.category === RuleCategory.Cosmetic) {
                 // Note: it is safe to cast here, because we checked rule type
-                cosmeticRules.push(rule as IndexedStorageCosmeticRule);
+                cosmeticRulesParts.push(rule as IndexedStorageCosmeticRule);
             }
         }
 
-        const networkEngine = NetworkEngine.createSync(storage, networkRules);
-        const cosmeticEngine = CosmeticEngine.createSync(storage, cosmeticRules);
+        const networkEngine = NetworkEngine.createSync(storage, networkRulesParts);
+        const cosmeticEngine = CosmeticEngine.createSync(storage, cosmeticRulesParts);
 
         const engine = new Engine(storage, networkEngine, cosmeticEngine);
 
@@ -151,8 +151,8 @@ export class Engine {
      * @returns An instance of the network engine.
      */
     public static async createAsync(options: EngineFactoryOptions): Promise<Engine> {
-        const networkRules: IndexedStorageNetworkRule[] = [];
-        const cosmeticRules: IndexedStorageCosmeticRule[] = [];
+        const networkRulesParts: IndexedStorageNetworkRule[] = [];
+        const cosmeticRulesParts: IndexedStorageCosmeticRule[] = [];
 
         const lists: IRuleList[] = [];
 
@@ -183,24 +183,24 @@ export class Engine {
                 await Promise.resolve();
             }
 
-            const rule = scanner.getRule();
+            const rule = scanner.getRuleParts();
 
             if (!rule) {
                 continue;
             }
 
-            if (rule.rule.category === RuleCategory.Network) {
+            if (rule.ruleParts.category === RuleCategory.Network) {
                 // Note: it is safe to cast here, because we checked rule type
-                networkRules.push(rule as IndexedStorageNetworkRule);
-            } else if (rule.rule.category === RuleCategory.Cosmetic) {
+                networkRulesParts.push(rule as IndexedStorageNetworkRule);
+            } else if (rule.ruleParts.category === RuleCategory.Cosmetic) {
                 // Note: it is safe to cast here, because we checked rule type
-                cosmeticRules.push(rule as IndexedStorageCosmeticRule);
+                cosmeticRulesParts.push(rule as IndexedStorageCosmeticRule);
             }
         }
 
         const [networkEngine, cosmeticEngine] = await Promise.all([
-            NetworkEngine.createAsync(storage, networkRules),
-            CosmeticEngine.createAsync(storage, cosmeticRules),
+            NetworkEngine.createAsync(storage, networkRulesParts),
+            CosmeticEngine.createAsync(storage, cosmeticRulesParts),
         ]);
 
         const engine = new Engine(storage, networkEngine, cosmeticEngine);

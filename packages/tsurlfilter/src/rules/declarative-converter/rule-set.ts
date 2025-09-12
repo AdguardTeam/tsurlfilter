@@ -546,7 +546,7 @@ export class RuleSet implements IRuleSet {
             return [];
         }
 
-        const networkRules = networkIndexedRulesWithHash.map(({ rule }) => rule.rule);
+        const networkRules = networkIndexedRulesWithHash.map(({ ruleParts: rule }) => rule.rule);
 
         return networkRules;
     }
@@ -673,7 +673,7 @@ export class RuleSet implements IRuleSet {
             unsafeRulesCount: this.unsafeRulesCount,
             rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
-            badFilterRulesRaw: this.badFilterRules.map((r) => r.rule.text),
+            badFilterRulesRaw: this.badFilterRules.map((r) => r.ruleParts.text),
             unsafeRules,
         };
     }

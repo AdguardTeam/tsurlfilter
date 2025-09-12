@@ -25,9 +25,9 @@ export function fillLookupTable(table: ILookupTable, ruleStorage: RuleStorage): 
     const scanner = ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules);
 
     while (scanner.scan()) {
-        const indexedRule = scanner.getRule();
+        const indexedRule = scanner.getRuleParts();
         if (indexedRule) {
-            table.addRule(indexedRule.rule, indexedRule.index);
+            table.addRule(indexedRule.ruleParts, indexedRule.index);
         }
     }
 }

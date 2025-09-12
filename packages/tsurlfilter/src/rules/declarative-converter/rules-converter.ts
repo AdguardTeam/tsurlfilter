@@ -566,9 +566,9 @@ export class DeclarativeRulesConverter {
 
         // Define filter function
         const filterByBadFilterFn = (ruleToTest: IndexedNetworkRuleWithHash): boolean => {
-            const networkRuleToTest = ruleToTest.rule;
+            const networkRuleToTest = ruleToTest.ruleParts;
 
-            for (const { rule } of allBadFilterRules) {
+            for (const { ruleParts: rule } of allBadFilterRules) {
                 if (rule.rule.negatesBadfilter(networkRuleToTest.rule)) {
                     return false;
                 }

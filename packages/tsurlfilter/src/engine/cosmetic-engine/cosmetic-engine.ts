@@ -49,15 +49,15 @@ export class CosmeticEngine {
      * Creates an instance of the network engine in sync mode.
      *
      * @param storage An object for a rules storage.
-     * @param rules Array of rules to add.
+     * @param rulesParts Array of indexed storage cosmetic rules.
      *
      * @returns An instance of the network engine.
      */
-    public static createSync(storage: RuleStorage, rules: IndexedStorageCosmeticRule[]): CosmeticEngine {
+    public static createSync(storage: RuleStorage, rulesParts: IndexedStorageCosmeticRule[]): CosmeticEngine {
         const engine = new CosmeticEngine(storage);
 
-        for (const rule of rules) {
-            engine.addRule(rule.rule, rule.index);
+        for (const rule of rulesParts) {
+            engine.addRule(rule.ruleParts, rule.index);
         }
 
         return engine;
@@ -67,19 +67,19 @@ export class CosmeticEngine {
      * Creates an instance of the network engine in async mode.
      *
      * @param storage An object for a rules storage.
-     * @param rules Array of rules to add.
+     * @param rulesParts Array of indexed storage cosmetic rules.
      *
      * @returns An instance of the network engine.
      */
     public static async createAsync(
         storage: RuleStorage,
-        rules: IndexedStorageCosmeticRule[],
+        rulesParts: IndexedStorageCosmeticRule[],
     ): Promise<CosmeticEngine> {
         const engine = new CosmeticEngine(storage);
 
         let counter = 0;
 
-        for (const rule of rules) {
+        for (const rule of rulesParts) {
             counter += 1;
 
             if (counter >= CHUNK_SIZE) {
@@ -89,7 +89,7 @@ export class CosmeticEngine {
                 await Promise.resolve();
             }
 
-            engine.addRule(rule.rule, rule.index);
+            engine.addRule(rule.ruleParts, rule.index);
         }
 
         return engine;
@@ -113,25 +113,25 @@ export class CosmeticEngine {
     /**
      * Adds rules into appropriate tables.
      *
-     * @param rule Rule to add.
+     * @param ruleParts Cosmetic rule parts to add.
      * @param storageIdx Index of the rule in the storage.
      */
-    private addRule(rule: CosmeticRuleParts, storageIdx: number): void {
-        switch (rule.type) {
+    private addRule(ruleParts: CosmeticRuleParts, storageIdx: number): void {
+        switch (ruleParts.type) {
             case CosmeticRuleType.ElementHidingRule: {
-                this.elementHidingLookupTable.addRule(rule, storageIdx);
+                this.elementHidingLookupTable.addRule(ruleParts, storageIdx);
                 break;
             }
             case CosmeticRuleType.CssInjectionRule: {
-                this.cssLookupTable.addRule(rule, storageIdx);
+                this.cssLookupTable.addRule(ruleParts, storageIdx);
                 break;
             }
             case CosmeticRuleType.JsInjectionRule: {
-                this.jsLookupTable.addRule(rule, storageIdx);
+                this.jsLookupTable.addRule(ruleParts, storageIdx);
                 break;
             }
             case CosmeticRuleType.HtmlFilteringRule: {
-                this.htmlLookupTable.addRule(rule, storageIdx);
+                this.htmlLookupTable.addRule(ruleParts, storageIdx);
                 break;
             }
             default: {

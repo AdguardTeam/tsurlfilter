@@ -30,25 +30,25 @@ describe('TestRuleScannerOfBufferReader', () => {
             ignoreJS: false,
         });
 
-        expect(scanner.getRule()).toBeFalsy();
+        expect(scanner.getRuleParts()).toBeFalsy();
         expect(scanner.scan()).toBeTruthy();
 
-        let indexedRule = scanner.getRule();
+        let indexedRule = scanner.getRuleParts();
         expect(indexedRule).toBeTruthy();
         expect(indexedRule && indexedRule.index).toBe(text.indexOf('||example.org'));
 
-        let rule = indexedRule && indexedRule.rule;
+        let rule = indexedRule && indexedRule.ruleParts;
         expect(rule).toBeTruthy();
         expect(rule?.text).toEqual('||example.org');
         // expect(rule!.listId).toEqual(1);
 
         expect(scanner.scan()).toBeTruthy();
 
-        indexedRule = scanner.getRule();
+        indexedRule = scanner.getRuleParts();
         expect(indexedRule).toBeTruthy();
         expect(indexedRule && indexedRule.index).toBe(text.indexOf('##banner'));
 
-        rule = indexedRule && indexedRule.rule;
+        rule = indexedRule && indexedRule.ruleParts;
         expect(rule).toBeTruthy();
         expect(rule?.text).toEqual('##banner');
         // expect(rule!.listId).toEqual(1);
@@ -73,9 +73,9 @@ describe('TestRuleScannerOfFileReader', () => {
 
         let rulesCount = 0;
         while (scanner.scan()) {
-            const indexedRule = scanner.getRule();
+            const indexedRule = scanner.getRuleParts();
             expect(indexedRule).toBeTruthy();
-            expect(indexedRule!.rule).toBeTruthy();
+            expect(indexedRule!.ruleParts).toBeTruthy();
             expect(indexedRule!.index).toBeTruthy();
 
             rulesCount += 1;
@@ -109,24 +109,24 @@ describe('Rule Scanner Flags', () => {
             ignoreJS: true,
         });
 
-        expect(scanner.getRule()).toBeFalsy();
+        expect(scanner.getRuleParts()).toBeFalsy();
         expect(scanner.scan()).toBeTruthy();
 
-        let indexedRule = scanner.getRule();
-        expect(indexedRule!.rule).toBeTruthy();
-        expect(indexedRule!.rule!.text).toBe('||one.org');
-
-        expect(scanner.scan()).toBeTruthy();
-
-        indexedRule = scanner.getRule();
-        expect(indexedRule!.rule).toBeTruthy();
-        expect(indexedRule!.rule!.text).toBe('||example.org^$removeheader=header-name');
+        let indexedRule = scanner.getRuleParts();
+        expect(indexedRule!.ruleParts).toBeTruthy();
+        expect(indexedRule!.ruleParts!.text).toBe('||one.org');
 
         expect(scanner.scan()).toBeTruthy();
 
-        indexedRule = scanner.getRule();
-        expect(indexedRule!.rule).toBeTruthy();
-        expect(indexedRule!.rule!.text).toBe('||two.org');
+        indexedRule = scanner.getRuleParts();
+        expect(indexedRule!.ruleParts).toBeTruthy();
+        expect(indexedRule!.ruleParts!.text).toBe('||example.org^$removeheader=header-name');
+
+        expect(scanner.scan()).toBeTruthy();
+
+        indexedRule = scanner.getRuleParts();
+        expect(indexedRule!.ruleParts).toBeTruthy();
+        expect(indexedRule!.ruleParts!.text).toBe('||two.org');
 
         expect(scanner.scan()).toBeFalsy();
         expect(scanner.scan()).toBeFalsy();

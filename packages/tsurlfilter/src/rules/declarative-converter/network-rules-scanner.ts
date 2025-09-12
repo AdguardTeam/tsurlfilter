@@ -61,7 +61,7 @@ export class NetworkRulesScanner {
 
             res.errors = res.errors.concat(errors);
 
-            const badFilterRules = rules.filter(({ rule }) => {
+            const badFilterRules = rules.filter(({ ruleParts: rule }) => {
                 return rule.rule.isOptionEnabled(NetworkRuleOption.Badfilter);
             });
 

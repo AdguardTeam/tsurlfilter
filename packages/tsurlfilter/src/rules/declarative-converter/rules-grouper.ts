@@ -26,7 +26,7 @@ export class DeclarativeRulesGrouper {
      * @returns Group of the indexed rule.
      */
     private static getRuleGroup(indexedNetworkRuleWithHash: IndexedNetworkRuleWithHash): RulesGroup {
-        const { rule } = indexedNetworkRuleWithHash;
+        const { ruleParts: rule } = indexedNetworkRuleWithHash;
 
         if (rule.rule.isOptionEnabled(NetworkRuleOption.RemoveParam)) {
             return RulesGroup.RemoveParam;

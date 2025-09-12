@@ -31,7 +31,7 @@ const createNetworkEngine = (lists: IRuleList[]): NetworkEngine => {
 
     while (scanner.scan()) {
         // We can safely cast here, because we configured scanner to scan only network rules
-        rules.push(scanner.getRule()! as IndexedStorageNetworkRule);
+        rules.push(scanner.getRuleParts()! as IndexedStorageNetworkRule);
     }
 
     return NetworkEngine.createSync(storage, rules);
