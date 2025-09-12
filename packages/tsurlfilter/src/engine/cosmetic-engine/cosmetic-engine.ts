@@ -86,7 +86,7 @@ export class CosmeticEngine {
                 counter = 0;
 
                 // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
-                await new Promise((resolve) => setTimeout(resolve, 1));
+                await Promise.resolve();
             }
 
             engine.addRule(rule.rule, rule.index);
