@@ -7,8 +7,19 @@ import { IdbSingleton } from '../idb-singleton';
  * Preprocessed filter list extended with checksum.
  */
 export type ConvertedFilterListWithChecksum = {
+    /**
+     * Checksum.
+     */
     checksum: string;
+
+    /**
+     * Raw filter list converted to AdGuard syntax.
+     */
     rawFilterList: string;
+
+    /**
+     * Conversion data.
+     */
     conversionData: ConversionData;
 };
 
