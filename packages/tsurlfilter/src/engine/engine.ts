@@ -211,8 +211,6 @@ export class Engine {
      * @param ruleStorage Storage.
      * @param networkEngine Network engine.
      * @param cosmeticEngine Cosmetic engine.
-     *
-     * @throws
      */
     private constructor(
         ruleStorage: RuleStorage,
