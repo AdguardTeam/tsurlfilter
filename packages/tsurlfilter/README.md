@@ -13,47 +13,47 @@ This is a TypeScript library that implements AdGuard's content blocking rules.
 - [Idea](#idea)
 - [Installation](#installation)
 - [API description](#api-description)
-  - [Public properties](#public-properties)
-    - [`TSURLFILTER_VERSION`](#tsurlfilter_version)
-  - [Public classes](#public-classes)
-    - [Engine](#engine)
-      - [**Factory**](#factory)
-        - [Sync mode](#sync-mode)
-        - [Async mode](#async-mode)
-      - [**matchRequest**](#matchrequest)
-      - [**matchFrame**](#matchframe)
-      - [Starting engine](#starting-engine)
-      - [Matching requests](#matching-requests)
-      - [Retrieving cosmetic data](#retrieving-cosmetic-data)
-    - [MatchingResult](#matchingresult)
-      - [**getBasicResult**](#getbasicresult)
-      - [**getDocumentBlockingResult**](#getdocumentblockingresult)
-      - [**getCosmeticOption**](#getcosmeticoption)
-      - [**Other rules**](#other-rules)
-    - [CosmeticResult](#cosmeticresult)
-      - [Applying cosmetic result - CSS](#applying-cosmetic-result---css)
-      - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
-    - [DnsEngine](#dnsengine)
-      - [**Constructor**](#constructor-1)
-      - [**match**](#match)
-      - [Matching hostname](#matching-hostname)
-    - [RuleSyntaxUtils](#rulesyntaxutils)
-      - [Public methods](#public-methods)
-    - [FilterListPreprocessor](#filterlistpreprocessor)
-      - [Understanding the data structure](#understanding-the-data-structure)
-        - [Requirements](#requirements)
-        - [`PreprocessedFilterList` interface](#preprocessedfilterlist-interface)
-        - [Example to illustrate the requirements](#example-to-illustrate-the-requirements)
-      - [Public methods](#public-methods-1)
-    - [DeclarativeFilterConverter](#declarativefilterconverter)
-      - [Public methods](#public-methods-2)
-      - [Example of use](#example-of-use)
-      - [Declarative converter documentation](#declarative-converter-documentation)
-      - [Problems](#problems)
-- [Development](#development)
-  - [NPM scripts](#npm-scripts)
-  - [Excluding peerDependencies](#excluding-peerdependencies)
-  - [Git Hooks](#git-hooks)
+    - [Public properties](#public-properties)
+        - [`TSURLFILTER_VERSION`](#tsurlfilter_version)
+    - [Public classes](#public-classes)
+        - [Engine](#engine)
+        - [**Factory**](#factory)
+            - [Sync mode](#sync-mode)
+            - [Async mode](#async-mode)
+        - [**matchRequest**](#matchrequest)
+        - [**matchFrame**](#matchframe)
+        - [Starting engine](#starting-engine)
+        - [Matching requests](#matching-requests)
+        - [Retrieving cosmetic data](#retrieving-cosmetic-data)
+        - [MatchingResult](#matchingresult)
+        - [**getBasicResult**](#getbasicresult)
+        - [**getDocumentBlockingResult**](#getdocumentblockingresult)
+        - [**getCosmeticOption**](#getcosmeticoption)
+        - [**Other rules**](#other-rules)
+        - [CosmeticResult](#cosmeticresult)
+        - [Applying cosmetic result - CSS](#applying-cosmetic-result---css)
+        - [Applying cosmetic result - scripts](#applying-cosmetic-result---scripts)
+        - [DnsEngine](#dnsengine)
+        - [**Constructor**](#constructor-1)
+        - [**match**](#match)
+        - [Matching hostname](#matching-hostname)
+        - [RuleSyntaxUtils](#rulesyntaxutils)
+        - [Public methods](#public-methods)
+        - [FilterListPreprocessor](#filterlistpreprocessor)
+        - [Understanding the data structure](#understanding-the-data-structure)
+            - [Requirements](#requirements)
+            - [`PreprocessedFilterList` interface](#preprocessedfilterlist-interface)
+            - [Example to illustrate the requirements](#example-to-illustrate-the-requirements)
+        - [Public methods](#public-methods-1)
+        - [DeclarativeFilterConverter](#declarativefilterconverter)
+        - [Public methods](#public-methods-2)
+        - [Example of use](#example-of-use)
+        - [Declarative converter documentation](#declarative-converter-documentation)
+        - [Problems](#problems)
+    - [Development](#development)
+    - [NPM scripts](#npm-scripts)
+    - [Excluding peerDependencies](#excluding-peerdependencies)
+    - [Git Hooks](#git-hooks)
 
 ## <a id="idea"></a>Idea
 
@@ -718,6 +718,7 @@ await convertFilters(
 ```
 
 **Parameters:**
+
 - `filtersAndMetadataDir` (string): Path to the directory with filter files and metadata (should contain e.g. `filters.json`).
 - `resourcesDir` (string): Path to web-accessible resources (used for ruleset generation).
 - `destRulesetsDir` (string): Output directory for the resulting declarative rulesets.
@@ -735,15 +736,18 @@ npx tsurlfilter convert <filtersAndMetadataDir> <resourcesDir> [destRulesetsDir]
 ```
 
 **Arguments:**
+
 - `<filtersAndMetadataDir>`: Path to directory with filter files and metadata (should contain e.g. `filters.json`).
 - `<resourcesDir>`: Path to web-accessible resources.
 - `[destRulesetsDir]`: (Optional) Output directory for the resulting declarative rulesets. Defaults to `./build/rulesets` if omitted.
 
 **Options:**
+
 - `--debug`           Enable debug mode (default: false)
 - `--prettify-json`   Prettify JSON output (default: true)
 
 **Example:**
+
 ```sh
 npx tsurlfilter convert ./filters ./resources ./build/rulesets --debug --prettify-json
 ```
@@ -759,10 +763,12 @@ npx tsurlfilter extract-filters <path-to-rulesets> <path-to-output>
 ```
 
 **Arguments:**
+
 - `<path-to-rulesets>`: Path to the directory containing the declarative rulesets (as generated by the `convert` command).
 - `<path-to-output>`: Path to the file or directory where the extracted filters will be saved.
 
 **Example:**
+
 ```sh
 npx tsurlfilter extract-filters ./build/rulesets ./filters
 ```
