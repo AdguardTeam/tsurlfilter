@@ -126,8 +126,10 @@ export class Engine {
             }
 
             if (rule.rule.category === RuleCategory.Network) {
+                // Note: it is safe to cast here, because we checked rule type
                 networkRules.push(rule as IndexedStorageNetworkRule);
             } else if (rule.rule.category === RuleCategory.Cosmetic) {
+                // Note: it is safe to cast here, because we checked rule type
                 cosmeticRules.push(rule as IndexedStorageCosmeticRule);
             }
         }
@@ -188,8 +190,10 @@ export class Engine {
             }
 
             if (rule.rule.category === RuleCategory.Network) {
+                // Note: it is safe to cast here, because we checked rule type
                 networkRules.push(rule as IndexedStorageNetworkRule);
             } else if (rule.rule.category === RuleCategory.Cosmetic) {
+                // Note: it is safe to cast here, because we checked rule type
                 cosmeticRules.push(rule as IndexedStorageCosmeticRule);
             }
         }
