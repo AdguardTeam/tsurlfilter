@@ -211,7 +211,7 @@ export class MatchingResult {
             }
             if (rule.isOptionEnabled(NetworkRuleOption.Popup)
                 // This check needed to split $all rules from $popup rules
-                && (rule.getPermittedRequestTypes() & RequestType.Document) !== RequestType.Document) {
+                && !MatchingResult.isDocumentRule(rule)) {
                 this.popupRule = rule;
                 continue;
             }
