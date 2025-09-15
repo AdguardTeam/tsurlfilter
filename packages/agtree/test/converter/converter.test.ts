@@ -21,6 +21,11 @@ describe('Converter integration tests', () => {
                     expected: ['! Comment'],
                     shouldConvert: false,
                 },
+                {
+                    actual: '!Comment',
+                    expected: ['!Comment'],
+                    shouldConvert: false,
+                },
                 // uBO-specific comment
                 {
                     actual: '# Comment',
