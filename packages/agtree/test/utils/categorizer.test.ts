@@ -14,7 +14,10 @@ describe('RuleCategorizer', () => {
                 actual: 'example.com#?#.class:has(.another)',
                 expected: CosmeticRuleType.ElementHidingRule,
             },
-
+            {
+                actual: 'example.com#?#.class:has(.something)',
+                expected: CosmeticRuleType.ElementHidingRule,
+            },
             {
                 actual: 'example.com#$#.selector { color: red; }',
                 expected: CosmeticRuleType.CssInjectionRule,
