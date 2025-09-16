@@ -212,6 +212,11 @@ describe('CssSelectorConverter', () => {
                 expected: 'div[style*="z-index:"]:has(>div[id$="_content"]>iframe#overlay_iframe)',
                 shouldConvert: true,
             },
+            {
+                actual: '.block[-ext-has=foo]',
+                expected: '.block:has(foo)',
+                shouldConvert: true,
+            },
 
             // contains
             {

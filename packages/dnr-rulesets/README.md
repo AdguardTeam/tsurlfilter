@@ -238,6 +238,18 @@ You can also integrate functions for downloading and updating the manifest into 
     )
     ```
 
+Also you can call to `excludeUnsafeRules` in your custom build flows or automation scripts.
+
+```ts
+import { excludeUnsafeRules } from '@adguard/dnr-rulesets';
+
+await excludeUnsafeRules('<path-to-rulesets-dir>', {
+    prettifyJson: true, // optional
+    limit: 100,         // optional
+});
+```
+
+
 ### Output structure
 
 ```bash
