@@ -4,3 +4,6 @@ export {
     ManifestPatcher,
     type PatchManifestOptions,
 } from './manifest/patcher';
+export {
+    excludeUnsafeRules,
+} from './unsafe-rules/exclude-unsafe-rules';

@@ -7,4 +7,4 @@
  */
 
 export { getFilterName } from './get-filter-name';
-export { isUserScriptsApiSupported } from './is-user-scripts-api-supported';
+export { isUserScriptsApiEnabled } from './is-user-scripts-api-enabled';

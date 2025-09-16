@@ -2,6 +2,7 @@ import browser from 'webextension-polyfill';
 import {
     Filter,
     METADATA_RULESET_ID,
+    RULESET_NAME_PREFIX,
     type IFilter,
     type IRuleSet,
 } from '@adguard/tsurlfilter/es/declarative-converter';
@@ -34,7 +35,6 @@ import { type LocalScriptFunctionData, localScriptRulesService } from './service
 import { type StealthConfigurationResult, StealthService } from './services/stealth-service';
 import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
-import { UserScriptsApi } from './user-scripts-api';
 import { SessionRulesApi } from './session-rules-api';
 
 type ConfigurationResult = {
@@ -189,12 +189,49 @@ export class TsWebExtension implements AppInterface<
     /**
      * Synchronize rule set with IDB.
      *
-     * @param ruleSetId Rule set identifier.
+     * @param staticFilterId Static filter id.
      * @param ruleSetsPath Path to rule sets.
+     *
+     * TODO: Find a way to exclude public usage of this method, since we trying
+     * to keep only one way to configure tswebextension and all its parts,
+     * including rulesets: via passing single configuration file. And this
+     * method creates a "dirty" flow, when tswebextension is not received log
+     * level from extension and forces us to use static locks for IDB in
+     * RuleSetsLoaderApi to prevent concurrent access issues between multiple
+     * instances.
      */
-    public static async syncRuleSetWithIdb(ruleSetId: number, ruleSetsPath: string): Promise<void> {
+    public static async syncRuleSetWithIdbByFilterId(
+        staticFilterId: number,
+        ruleSetsPath: string,
+    ): Promise<void> {
         const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
-        await ruleSetsLoaderApi.syncRuleSetWithIdb(String(ruleSetId));
+
+        const ruleSetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
+
+        await ruleSetsLoaderApi.syncRuleSetWithIdb(ruleSetId);
+    }
+
+    /**
+     * Synchronizes multiple rule sets with IDB.
+     * This method is used to ensure all rule sets are properly cached for
+     * future calls to configure method.
+     *
+     * @param ruleSetsPath Path to rule sets.
+     * @param staticFiltersIds Array of static filter IDs to sync.
+     */
+    private static async syncRuleSetsWithIdb(
+        ruleSetsPath: string,
+        staticFiltersIds: number[],
+    ): Promise<void> {
+        const ruleSetsLoaderApi = new RuleSetsLoaderApi(ruleSetsPath);
+
+        const syncTasks = staticFiltersIds.map((staticFilterId) => {
+            const ruleSetId = `${RULESET_NAME_PREFIX}${staticFilterId}`;
+
+            return ruleSetsLoaderApi.syncRuleSetWithIdb(ruleSetId);
+        });
+
+        await Promise.all(syncTasks);
     }
 
     /**
@@ -286,14 +323,11 @@ export class TsWebExtension implements AppInterface<
      * @throws Error if the filter content is not provided and not already set in the class instance.
      */
     public async configure(config: ConfigurationMV3): Promise<ConfigurationResult> {
-        const loader = new RuleSetsLoaderApi(config.ruleSetsPath);
-
-        await Promise.all(
-            config.staticFiltersIds.map((staticFilterId) => loader.syncRuleSetWithIdb(String(staticFilterId))),
-        );
-
-        // Update log level before first log message.
+        // IMPORTANT: This call should always be made before any other operations for
+        // proper logging and error handling.
         TsWebExtension.updateLogLevel(config.logLevel);
+
+        await TsWebExtension.syncRuleSetsWithIdb(config.ruleSetsPath, config.staticFiltersIds);
 
         // Exclude binary fields from logged config.
         const binaryFields = [
@@ -391,6 +425,18 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
+            const trustedDomainsExceptionRule = AllowlistApi.getAllowlistRule(configuration.trustedDomains);
+
+            const blockingPageTrustedFilter = new Filter(
+                BLOCKING_TRUSTED_FILTER_ID,
+                {
+                    getContent: (): Promise<PreprocessedFilterList> => {
+                        return Promise.resolve(FilterListPreprocessor.preprocess(trustedDomainsExceptionRule));
+                    },
+                },
+                true,
+            );
+
             // Convert quick fixes rules, allowlist, custom filters and user
             // rules into one rule set and apply it.
             res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
@@ -407,13 +453,21 @@ export class TsWebExtension implements AppInterface<
                 res.dynamicRules.declarativeRulesToCancel,
             );
 
-            // Reload engine for cosmetic rules
+            // Reload engine for cosmetic rules: CSS, script and scriptlets.
             engineApi.waitingForEngine = engineApi.startEngine({
-                filters: [
-                    ...staticFilters,
-                    ...customFilters,
-                ],
-                userrules: configuration.userrules,
+                // Built-in filters.
+                localFilters: staticFilters,
+                // Filters from remote sources.
+                remoteFilters: customFilters,
+                // Only rules from built-in filters are allowed to be executed
+                // from user rules.
+                userRulesFilter,
+                allowlistRulesList: allowlistApi.getAllowlistRules(),
+                // Deprecated.
+                quickFixesRules: {
+                    ...FilterListPreprocessor.createEmptyPreprocessedFilterList(),
+                    trusted: false,
+                },
             });
             await engineApi.waitingForEngine;
 

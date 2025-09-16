@@ -1,4 +1,4 @@
-import { RequestType } from '@adguard/tsurlfilter';
+import { type MatchingResult, type NetworkRule, RequestType } from '@adguard/tsurlfilter';
 
 import { isHttpRequest } from '../../common/utils/url';
 import { LF, MAIN_FRAME_ID } from '../../common/constants';
@@ -133,30 +133,20 @@ export class CosmeticFrameProcessor {
             return;
         }
 
-        const cosmeticResult = this.engineApi.getCosmeticResult(url, result.getCosmeticOption());
-
-        const { configuration } = appContext;
-        const areHitsStatsCollected = configuration?.settings.collectStats || false;
-
-        const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
-
-        const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
-        const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, result);
-
-        let combinedScriptText = '';
-        if (stealthScriptText.length > 0) {
-            combinedScriptText += `${stealthScriptText}${LF}`;
-        }
-        combinedScriptText += scriptText;
+        const {
+            cosmeticResult,
+            preparedCosmeticResult,
+        } = this.extractCosmeticRules(
+            url,
+            mainFrameRule,
+            result,
+        );
 
         this.tabsApi.updateFrameContext(tabId, frameId, {
             mainFrameUrl,
             matchingResult: result,
             cosmeticResult,
-            preparedCosmeticResult: {
-                scriptText: combinedScriptText,
-                cssText,
-            },
+            preparedCosmeticResult,
         });
     }
 
@@ -193,7 +183,37 @@ export class CosmeticFrameProcessor {
             return;
         }
 
-        const cosmeticResult = this.engineApi.getCosmeticResult(url, result.getCosmeticOption());
+        const {
+            cosmeticResult,
+            preparedCosmeticResult,
+        } = this.extractCosmeticRules(
+            url,
+            mainFrameRule,
+            result,
+        );
+
+        this.tabsApi.updateFrameContext(tabId, frameId, {
+            matchingResult: result,
+            cosmeticResult,
+            preparedCosmeticResult,
+        });
+    }
+
+    /**
+     * Extract cosmetic rules from the matching result.
+     *
+     * @param url Request URL.
+     * @param mainFrameRule Main frame rule.
+     * @param matchingResult Matching result.
+     *
+     * @returns Computed cosmetic and matching results for the frame context.
+     */
+    private extractCosmeticRules(
+        url: string,
+        mainFrameRule: NetworkRule | null,
+        matchingResult: MatchingResult,
+    ): Partial<FrameMV2> {
+        const cosmeticResult = this.engineApi.getCosmeticResult(url, matchingResult.getCosmeticOption());
 
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
@@ -201,7 +221,7 @@ export class CosmeticFrameProcessor {
         const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
         const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
-        const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, result);
+        const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, matchingResult);
 
         let combinedScriptText = '';
         if (stealthScriptText.length > 0) {
@@ -209,14 +229,14 @@ export class CosmeticFrameProcessor {
         }
         combinedScriptText += scriptText;
 
-        this.tabsApi.updateFrameContext(tabId, frameId, {
-            matchingResult: result,
+        return {
+            matchingResult,
             cosmeticResult,
             preparedCosmeticResult: {
                 scriptText: combinedScriptText,
                 cssText,
             },
-        });
+        };
     }
 
     /**
@@ -245,7 +265,7 @@ export class CosmeticFrameProcessor {
             });
         } else {
             const mainFrame = this.tabsApi.getFrameContext(tabId, MAIN_FRAME_ID);
-            const mainFrameRule = mainFrame?.frameRule;
+            const mainFrameRule = mainFrame?.frameRule || null;
             const mainFrameUrl = mainFrame?.url;
 
             if (!isHttpRequest(url)) {

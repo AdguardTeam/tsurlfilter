@@ -1,5 +1,5 @@
 import { logger } from '../../common/utils/logger';
-import { isUserScriptsApiSupported } from '../utils/is-user-scripts-api-supported';
+import { isUserScriptsApiEnabled } from '../utils/is-user-scripts-api-enabled';
 
 import { appContext } from './app-context';
 import { type ExecuteCombinedScriptParams } from './scripting-api';
@@ -16,10 +16,10 @@ import { type ExecuteCombinedScriptParams } from './scripting-api';
 export class UserScriptsApi {
     // eslint-disable-next-line jsdoc/require-description, jsdoc/require-returns
     /**
-     * @see {@link isUserScriptsApiSupported}.
+     * @see {@link isUserScriptsApiEnabled}.
      */
-    public static get isSupported(): boolean {
-        return isUserScriptsApiSupported();
+    public static get isEnabled(): boolean {
+        return isUserScriptsApiEnabled();
     }
 
     /**

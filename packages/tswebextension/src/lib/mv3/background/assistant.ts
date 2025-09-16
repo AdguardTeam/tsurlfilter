@@ -10,6 +10,11 @@ export class Assistant extends CommonAssistant {
      */
     // eslint-disable-next-line class-methods-use-this
     protected injectAssistant(tabId: number, fileUrl: string): Promise<unknown[]> {
+        /**
+         * Using `chrome.scripting.executeScript` here is safe since the fileUrl
+         * is a static file from the extension's directory, i.e. pre-built
+         * and verified.
+         */
         return chrome.scripting.executeScript({
             target: { tabId },
             files: [fileUrl],

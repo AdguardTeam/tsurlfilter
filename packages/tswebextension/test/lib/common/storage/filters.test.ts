@@ -5,7 +5,7 @@ import { IdbSingleton } from '../../../../src/lib/common/idb-singleton';
 import { FiltersStorage } from '../../../../src/lib/common/storage/filters';
 
 describe('FiltersStorage', () => {
-    it('deletes content if the db version increases', async () => {
+    it('does not delete content if the db version increases', async () => {
         // Insert data into storage
         const preprocessed = FilterListPreprocessor.preprocess('@@||example.com^$document');
         await FiltersStorage.setMultiple({
@@ -22,7 +22,7 @@ describe('FiltersStorage', () => {
         await IdbSingleton.getOpenedDb('foo');
 
         // Reopen the DB and check that the data is still present
-        await expect(FiltersStorage.get(1)).resolves.toBeUndefined();
+        await expect(FiltersStorage.get(1)).resolves.not.toBeUndefined();
     });
 
     it('sets and gets data correctly', async () => {
