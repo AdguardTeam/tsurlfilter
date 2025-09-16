@@ -380,24 +380,6 @@ export class CosmeticApi extends CosmeticApiCommon {
     }
 
     /**
-     * Checks if cosmetics should be applied —
-     * background page or extension pages do not need cosmetics applied.
-     *
-     * @param tabId Tab id.
-     * @param frameUrl Frame url.
-     *
-     * @returns True if cosmetics should be applied, false otherwise.
-     */
-    public static shouldApplyCosmetics(tabId: number, frameUrl: string): boolean {
-        // no need to apply cosmetic rules on background or extension pages
-        if (tabId === BACKGROUND_TAB_ID || isExtensionUrl(frameUrl)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
      * Injects css to specified tab id and frame id.
      *
      * @param tabId Tab id.

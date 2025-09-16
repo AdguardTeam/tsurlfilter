@@ -425,18 +425,6 @@ export class TsWebExtension implements AppInterface<
                 true,
             );
 
-            const trustedDomainsExceptionRule = AllowlistApi.getAllowlistRule(configuration.trustedDomains);
-
-            const blockingPageTrustedFilter = new Filter(
-                BLOCKING_TRUSTED_FILTER_ID,
-                {
-                    getContent: (): Promise<PreprocessedFilterList> => {
-                        return Promise.resolve(FilterListPreprocessor.preprocess(trustedDomainsExceptionRule));
-                    },
-                },
-                true,
-            );
-
             // Convert quick fixes rules, allowlist, custom filters and user
             // rules into one rule set and apply it.
             res.dynamicRules = await DynamicRulesApi.updateDynamicFiltering(
@@ -463,11 +451,7 @@ export class TsWebExtension implements AppInterface<
                 // from user rules.
                 userRulesFilter,
                 allowlistRulesList: allowlistApi.getAllowlistRules(),
-                // Deprecated.
-                quickFixesRules: {
-                    ...FilterListPreprocessor.createEmptyPreprocessedFilterList(),
-                    trusted: false,
-                },
+                verbose: configuration.verbose,
             });
             await engineApi.waitingForEngine;
 
@@ -844,14 +828,5 @@ export class TsWebExtension implements AppInterface<
     // eslint-disable-next-line class-methods-use-this
     public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
         return engineApi.retrieveRuleNode(filterId, ruleIndex);
-    }
-
-    /**
-     * Indicates whether user scripts API is supported in the current browser.
-     *
-     * @returns `true` if user scripts API is supported, `false` otherwise.
-     */
-    public static get isUserScriptsApiSupported(): boolean {
-        return UserScriptsApi.isSupported;
     }
 }
