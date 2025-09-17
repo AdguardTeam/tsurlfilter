@@ -85,6 +85,13 @@ stages:
 
 # NOTE: Each script is separate because, otherwise, Bamboo does not fail in the case of an error.
 
+# IMPORTANT: it has to be run for **each** job because
+# jobs run in separate directories and we want to clean up after each job
+cleanup-script: &cleanup-script
+  interpreter: SHELL
+  scripts:
+    - "./bamboo-specs/scripts/cleanup-stage.sh"
+
 Test Logger:
   key: TESTLOGGER
   docker: &docker
@@ -111,6 +118,7 @@ Test Logger:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh"
+    - script: *cleanup-script
   requirements: &requirements
     - adg-docker: 'true'
     - extension: 'true'
@@ -126,6 +134,7 @@ Test CSSTokenizer:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/css-tokenizer-tests.sh"
+    - script: *cleanup-script
   requirements: *requirements
 
 Test AGTree:
@@ -139,6 +148,7 @@ Test AGTree:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/agtree-tests.sh"
+    - script: *cleanup-script
   requirements: *requirements
 
 Test TSUrlFilter:
@@ -151,6 +161,7 @@ Test TSUrlFilter:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh"
+    - script: *cleanup-script
   requirements: *requirements
 
 Test TSWebExtension:
@@ -164,6 +175,7 @@ Test TSWebExtension:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh"
+    - script: *cleanup-script
   requirements: *requirements
 
 Test DNR-Rulesets:
@@ -177,6 +189,7 @@ Test DNR-Rulesets:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
+    - script: *cleanup-script
   requirements: *requirements
 
 Test Examples - APIs and TSWebExtensions:
@@ -202,6 +215,13 @@ Test Examples - APIs and TSWebExtensions:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            # Set flag to preserve artifacts before cleaning
+            export PRESERVE_ARTIFACTS=true
+            ./bamboo-specs/scripts/cleanup-stage.sh
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
@@ -231,8 +251,12 @@ Update TSUrlFilter Docs MV3:
         configuration:
           commitMessage: 'skipci: Automatic update tsurlfilter MV3 docs'
           selectedRepository: defaultRepository
+    - script: *cleanup-script
   requirements: *requirements
 
+# Since each stage cleans up after itself,
+# this job is kept as a global fallback cleanup mechanism
+# + .git directory is removed at the end of the pipeline
 Cleanup:
   key: CLEAN
   docker: *docker
@@ -242,31 +266,20 @@ Cleanup:
         interpreter: SHELL
         scripts:
           - |-
-            set -x
-            set -e
+            set -ex
 
             # Fix mixed logs
             exec 2>&1
 
+            echo "Running global cleanup as a safety net"
             ls -la
 
-            echo "Size before cleanup:" && du -h | tail -n 1
+            ./bamboo-specs/scripts/cleanup-stage.sh
 
-            du -h . | sort -hr | head -n 30
-
-            # Check if node_modules directory exists
-            if [ -d "node_modules" ]; then
-              # to run clean commands in the packages
-              pnpm -r clean
-
-              # to remove node_modules
-              pnpm clean
-            else
-              echo "node_modules directory does not exist, skipping pnpm clean"
-            fi
-
+            # Remove git directory at the end of the pipeline AG-46379
             rm -rf .git
-            echo "Size after cleanup:" && du -h | tail -n 1
+
+            echo "Size after final cleanup:" && du -h | tail -n 1
   requirements: *requirements
 
 branches:
