@@ -85,13 +85,6 @@ stages:
 
 # NOTE: Each script is separate because, otherwise, Bamboo does not fail in the case of an error.
 
-# IMPORTANT: it has to be run for **each** job because
-# jobs run in separate directories and we want to clean up after each job
-cleanup-script: &cleanup-script
-  interpreter: SHELL
-  scripts:
-    - "./bamboo-specs/scripts/cleanup-stage.sh"
-
 Test Logger:
   key: TESTLOGGER
   docker: &docker
@@ -118,7 +111,12 @@ Test Logger:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh"
-    - script: *cleanup-script
+    # IMPORTANT: it should be executed for **each** job because
+    # jobs run in separate directories and we want to clean up after each job
+    - script: &cleanup-script
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/cleanup-stage.sh"
   requirements: &requirements
     - adg-docker: 'true'
     - extension: 'true'
