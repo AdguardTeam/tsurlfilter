@@ -5,11 +5,11 @@ import { readFileSync } from 'node:fs';
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
 import { bench, describe } from 'vitest';
 
-import { CosmeticEngine } from '../../src/engine-new/cosmetic-engine/cosmetic-engine';
-import { RuleStorage } from '../../src/filterlist/rule-storage-new';
-import { ScannerType } from '../../src/filterlist/scanner-new/scanner-type';
+import { CosmeticEngine } from '../../src/engine/cosmetic-engine/cosmetic-engine';
+import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
-import { type IndexedStorageRule } from '../../src/rules/rule-new';
+import { type IndexedStorageCosmeticRuleParts } from '../../src/rules/rule';
 
 describe('Build engine', () => {
     const rawFilter = readFileSync('test/resources/adguard_base_filter.txt', 'utf-8');
@@ -39,13 +39,14 @@ describe('Build engine', () => {
         );
         const storage = new RuleStorage([list]);
         const scanner = list.newScanner(ScannerType.CosmeticRules);
-        const rules: IndexedStorageRule[] = [];
+        const rulesParts: IndexedStorageCosmeticRuleParts[] = [];
 
         while (scanner.scan()) {
-            rules.push(scanner.getRule()!);
+            // We can safely cast here, because we configured scanner to scan only cosmetic rules
+            rulesParts.push(scanner.getRuleParts()! as IndexedStorageCosmeticRuleParts);
         }
 
-        const engine = CosmeticEngine.createSync(storage, rules);
+        const engine = CosmeticEngine.createSync(rulesParts, storage);
         return engine;
     };
 

@@ -1,5 +1,4 @@
 import browser from 'webextension-polyfill';
-import { RuleGenerator } from '@adguard/agtree/generator';
 import { NetworkRuleOption, type NetworkRule } from '@adguard/tsurlfilter';
 
 import { type ConfigurationMV2 } from '../mv2/background/configuration';
@@ -186,25 +185,17 @@ export abstract class DocumentBlockingServiceCommon {
     }
 
     /**
-     * Returns rule text from the network rule.
-     *
-     * Note: The generated rule text is returned
-     * and it may differ slightly from the actually applied rule text.
+     * Returns rule text from the engine.
      *
      * @param rule Network rule.
      *
      * @returns Rule text or "no-rule" placeholder if rule is not found.
      */
     protected getRuleText(rule: NetworkRule): string {
-        const ruleNode = this.engineApi.retrieveRuleNode(rule.getFilterListId(), rule.getIndex());
+        const ruleText = this.engineApi.retrieveRuleText(rule.getFilterListId(), rule.getIndex());
 
-        // Generate rule text or use default text.
         // Practically, we should always have a rule text, but just in case we have a fallback.
-        const ruleText = ruleNode
-            ? RuleGenerator.generate(ruleNode)
-            : DocumentBlockingServiceCommon.UNKNOWN_RULE_TEXT;
-
-        return ruleText;
+        return ruleText ?? DocumentBlockingServiceCommon.UNKNOWN_RULE_TEXT;
     }
 
     /**

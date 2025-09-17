@@ -5,11 +5,11 @@ import { readFileSync } from 'node:fs';
 import * as TsUrlFilterOld from 'tsurlfilter-v3';
 import { bench, describe } from 'vitest';
 
-import { NetworkEngine } from '../../src/engine-new/network-engine';
-import { RuleStorage } from '../../src/filterlist/rule-storage-new';
-import { ScannerType } from '../../src/filterlist/scanner-new/scanner-type';
+import { NetworkEngine } from '../../src/engine/network-engine';
+import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { StringRuleList } from '../../src/filterlist/string-rule-list';
-import { type IndexedStorageRule } from '../../src/rules/rule-new';
+import { type IndexedStorageNetworkRuleParts } from '../../src/rules/rule';
 
 describe('Build engine', () => {
     const ignoreCosmetic = true;
@@ -41,13 +41,14 @@ describe('Build engine', () => {
         );
         const storage = new RuleStorage([list]);
         const scanner = list.newScanner(ScannerType.NetworkRules);
-        const rules: IndexedStorageRule[] = [];
+        const rulesParts: IndexedStorageNetworkRuleParts[] = [];
 
         while (scanner.scan()) {
-            rules.push(scanner.getRule()!);
+            // We can safely cast here, because we configured scanner to scan only cosmetic rules
+            rulesParts.push(scanner.getRuleParts()! as IndexedStorageNetworkRuleParts);
         }
 
-        const engine = NetworkEngine.createSync(storage, rules);
+        const engine = NetworkEngine.createSync(rulesParts, storage);
         return engine;
     };
 

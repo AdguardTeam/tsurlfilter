@@ -673,7 +673,7 @@ export class RuleSet implements IRuleSet {
             unsafeRulesCount: this.unsafeRulesCount,
             rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
-            badFilterRulesRaw: this.badFilterRules.map((r) => r.rule.text),
+            badFilterRulesRaw: this.badFilterRules.map((r) => r.ruleParts.text),
             unsafeRules,
         };
     }
@@ -724,6 +724,19 @@ export class RuleSet implements IRuleSet {
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
 
+        // TODO: Improve this code once we introduce multiple filters within a single ruleset.
+        // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array.
+        // Currently, we expect that there is only one filter within a single rule set.
+        const filter = this.filterList.values().next().value;
+
+        if (!filter) {
+            const id = this.getId();
+            const msg = `Cannot serialize ruleset '${id}' because of not available filter list`;
+            throw new UnavailableRuleSetSourceError(msg, id);
+        }
+
+        const content = await filter.getContent();
+
         // To ensure that unsafe rules are provided and their count is correct,
         // we check if the length of the provided unsafe rules array is equal to
         // the `unsafeRulesCount` property of the rule set.
@@ -737,6 +750,8 @@ export class RuleSet implements IRuleSet {
         const metadataRule = createMetadataRule({
             metadata: this.getSerializedRuleSetData(unsafeRules),
             lazyMetadata: this.getSerializedRuleSetLazyData(),
+            rawFilterList: content.getContent(),
+            conversionData: content.getConversionData(),
         });
 
         let declarativeRules = await this.getDeclarativeRules();

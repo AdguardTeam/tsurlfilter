@@ -1,22 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 
-import { type ConfigurationMV2, configurationMV2Validator, FilterListPreprocessor } from '../../../../src/lib';
+import { type ConfigurationMV2, configurationMV2Validator } from '../../../../src/lib';
 import { LF } from '../../../../src/lib/common/constants';
 
 describe('configuration validator', () => {
     const validConfiguration: ConfigurationMV2 = {
         filters: [
-            { filterId: 1, content: FilterListPreprocessor.preprocess('').filterList, trusted: true },
-            { filterId: 2, content: FilterListPreprocessor.preprocess('').filterList, trusted: true },
+            { filterId: 1, content: '', trusted: true },
+            { filterId: 2, content: '', trusted: true },
         ],
         allowlist: ['example.com'],
         trustedDomains: [],
-        userrules: {
-            content: FilterListPreprocessor.preprocess(
-                ['||example.org^', 'example.com##h1'].join(LF),
-            ).filterList,
-        },
+        userrules: { content: ['||example.org^', 'example.com##h1'].join(LF) },
         verbose: false,
         settings: {
             filteringEnabled: true,
@@ -62,12 +58,12 @@ describe('configuration validator', () => {
         }]));
     });
 
-    it('throws error on nested field missmatch', () => {
+    it('tests that content is a string', () => {
         const configuration = {
             ...validConfiguration,
             filters: [
                 { filterId: 1, content: false, trusted: true },
-                { filterId: 2, content: '', trusted: true },
+                { filterId: 2, content: [], trusted: true },
             ],
         };
 
@@ -76,25 +72,25 @@ describe('configuration validator', () => {
         }).toThrow(new ZodError([
             {
                 code: 'invalid_type',
-                expected: 'array',
+                expected: 'string',
                 received: 'boolean',
                 path: [
                     'filters',
                     0,
                     'content',
                 ],
-                message: 'Expected array, received boolean',
+                message: 'Expected string, received boolean',
             },
             {
                 code: 'invalid_type',
-                expected: 'array',
-                received: 'string',
+                expected: 'string',
+                received: 'array',
                 path: [
                     'filters',
                     1,
                     'content',
                 ],
-                message: 'Expected array, received string',
+                message: 'Expected string, received array',
             },
         ]));
     });

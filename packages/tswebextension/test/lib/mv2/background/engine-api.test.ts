@@ -7,6 +7,7 @@ import {
     afterEach,
     it,
     vi,
+    type MockInstance,
 } from 'vitest';
 import browser from 'sinon-chrome';
 import { type CosmeticOption, Engine, CosmeticResult } from '@adguard/tsurlfilter';
@@ -19,7 +20,6 @@ import { stealthApi } from '../../../../src/lib/mv2/background/stealth-api';
 
 import { getConfigurationMv2Fixture } from './fixtures/configuration';
 
-vi.mock('@adguard/tsurlfilter');
 vi.mock('../../../../src/lib/mv2/background/allowlist');
 vi.mock('../../../../src/lib/mv2/background/app-context');
 vi.mock('../../../../src/lib/mv2/background/stealth-api');
@@ -56,39 +56,65 @@ describe('Engine Api', () => {
 
     describe('startEngine method', () => {
         it('should run tsurlfilter engine', () => {
+            vi.spyOn(Engine, 'createAsync');
+
             const configuration = getConfigurationMv2Fixture();
 
             engineApi.startEngine(configuration);
-
-            expect(Engine.prototype.loadRulesAsync).toHaveBeenCalled();
+            expect(Engine.createAsync).toHaveBeenCalled();
         });
     });
 
     describe('matchRequest method', () => {
         it('should return tsurlfilter data when engine is started', async () => {
+            vi.spyOn(Engine.prototype, 'matchRequest');
+
             await startEngine();
             setFilteringEnabled(true);
 
-            engineApi.matchRequest({} as MatchQuery);
+            engineApi.matchRequest({
+                requestUrl: 'https://example.com',
+                frameUrl: 'https://example.com',
+            } as MatchQuery);
 
             expect(Engine.prototype.matchRequest).toHaveBeenCalled();
         });
 
         it('should return null when filtering is disabled', async () => {
+            vi.spyOn(Engine.prototype, 'matchRequest');
+
             await startEngine();
             setFilteringEnabled(false);
 
-            expect(engineApi.matchRequest({} as MatchQuery)).toBeNull();
+            expect(engineApi.matchRequest({
+                requestUrl: 'https://example.com',
+                frameUrl: 'https://example.com',
+            } as MatchQuery)).toBeNull();
             expect(Engine.prototype.matchRequest).not.toHaveBeenCalled();
         });
 
         it('should return null when engine is not started', () => {
-            expect(engineApi.matchRequest({} as MatchQuery)).toBeNull();
+            vi.spyOn(Engine.prototype, 'matchRequest');
+
+            expect(engineApi.matchRequest({
+                requestUrl: 'https://example.com',
+                frameUrl: 'https://example.com',
+            } as MatchQuery)).toBeNull();
             expect(Engine.prototype.matchRequest).not.toHaveBeenCalled();
         });
     });
 
     describe('matchFrame method', () => {
+        let matchFrameSpy: MockInstance<typeof Engine.prototype.matchFrame>;
+
+        beforeEach(() => {
+            matchFrameSpy = vi.spyOn(Engine.prototype, 'matchFrame');
+        });
+
+        afterEach(() => {
+            matchFrameSpy.mockClear();
+        });
+
         it('should return tsurlfilter data when engine is started', async () => {
             await startEngine();
             setFilteringEnabled(true);
@@ -113,6 +139,16 @@ describe('Engine Api', () => {
     });
 
     describe('getCosmeticResult method', () => {
+        let getCosmeticResultSpy: MockInstance<typeof Engine.prototype.getCosmeticResult>;
+
+        beforeEach(() => {
+            getCosmeticResultSpy = vi.spyOn(Engine.prototype, 'getCosmeticResult');
+        });
+
+        afterEach(() => {
+            getCosmeticResultSpy.mockClear();
+        });
+
         it('should return tsurlfilter data', async () => {
             await startEngine();
             setFilteringEnabled(true);
@@ -137,6 +173,16 @@ describe('Engine Api', () => {
     });
 
     describe('getRulesCount method', () => {
+        let getRulesCountSpy: MockInstance<typeof Engine.prototype.getRulesCount>;
+
+        beforeEach(() => {
+            getRulesCountSpy = vi.spyOn(Engine.prototype, 'getRulesCount');
+        });
+
+        afterEach(() => {
+            getRulesCountSpy.mockClear();
+        });
+
         it('should return tsurlfilter data when engine is started', async () => {
             await startEngine();
             setFilteringEnabled(true);

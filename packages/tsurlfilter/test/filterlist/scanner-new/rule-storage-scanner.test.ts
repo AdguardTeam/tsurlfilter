@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import { StringLineReader } from '../../../src/filterlist/reader/string-line-reader';
-import { RuleScanner } from '../../../src/filterlist/scanner-new/rule-scanner';
-import { RuleStorageScanner } from '../../../src/filterlist/scanner-new/rule-storage-scanner';
-import { ScannerType } from '../../../src/filterlist/scanner-new/scanner-type';
+import { RuleScanner } from '../../../src/filterlist/scanner/rule-scanner';
+import { RuleStorageScanner } from '../../../src/filterlist/scanner/rule-storage-scanner';
+import { ScannerType } from '../../../src/filterlist/scanner/scanner-type';
 
 describe('Empty Scanners Test', () => {
     const storageScanner = new RuleStorageScanner([]);
     it('checks incorrectly initialized storage', () => {
-        expect(storageScanner.getRule()).toBeNull();
+        expect(storageScanner.getRuleParts()).toBeNull();
         expect(storageScanner.scan()).toBeFalsy();
     });
 });
@@ -40,43 +40,43 @@ it('scanning', () => {
 
     const storageScanner = new RuleStorageScanner([scanner1, scanner2]);
 
-    let indexedRule;
+    let indexedRuleParts;
 
     // scans rule 1 from list 1'
     expect(storageScanner.scan()).toBeTruthy();
-    indexedRule = storageScanner.getRule();
+    indexedRuleParts = storageScanner.getRuleParts();
 
-    expect(indexedRule).toBeTruthy();
-    expect(indexedRule!.rule).toBeTruthy();
-    expect(indexedRule!.index).toEqual(text1.indexOf('||example.org'));
-    expect(indexedRule!.listId).toBe(1);
+    expect(indexedRuleParts).toBeTruthy();
+    expect(indexedRuleParts!.ruleParts).toBeTruthy();
+    expect(indexedRuleParts!.index).toEqual(text1.indexOf('||example.org'));
+    expect(indexedRuleParts!.listId).toBe(1);
 
     // scans rule 2 from list 1
     expect(storageScanner.scan()).toBeTruthy();
-    indexedRule = storageScanner.getRule();
+    indexedRuleParts = storageScanner.getRuleParts();
 
-    expect(indexedRule).toBeTruthy();
-    expect(indexedRule!.rule).toBeTruthy();
-    expect(indexedRule!.index).toEqual(text1.indexOf('##banner'));
-    expect(indexedRule!.listId).toBe(1);
+    expect(indexedRuleParts).toBeTruthy();
+    expect(indexedRuleParts!.ruleParts).toBeTruthy();
+    expect(indexedRuleParts!.index).toEqual(text1.indexOf('##banner'));
+    expect(indexedRuleParts!.listId).toBe(1);
 
     // scans rule 1 from list 2
     expect(storageScanner.scan()).toBeTruthy();
-    indexedRule = storageScanner.getRule();
+    indexedRuleParts = storageScanner.getRuleParts();
 
-    expect(indexedRule).toBeTruthy();
-    expect(indexedRule!.rule).toBeTruthy();
-    expect(indexedRule!.index).toEqual(text1.length + text2.indexOf('||example.com'));
-    expect(indexedRule!.listId).toBe(2);
+    expect(indexedRuleParts).toBeTruthy();
+    expect(indexedRuleParts!.ruleParts).toBeTruthy();
+    expect(indexedRuleParts!.index).toEqual(text1.length + text2.indexOf('||example.com'));
+    expect(indexedRuleParts!.listId).toBe(2);
 
     // scans rule 2 from list 2
     expect(storageScanner.scan()).toBeTruthy();
-    indexedRule = storageScanner.getRule();
+    indexedRuleParts = storageScanner.getRuleParts();
 
-    expect(indexedRule).toBeTruthy();
-    expect(indexedRule!.rule).toBeTruthy();
-    expect(indexedRule!.index).toEqual(text1.length + text2.indexOf('##advert'));
-    expect(indexedRule!.listId).toBe(2);
+    expect(indexedRuleParts).toBeTruthy();
+    expect(indexedRuleParts!.ruleParts).toBeTruthy();
+    expect(indexedRuleParts!.index).toEqual(text1.length + text2.indexOf('##advert'));
+    expect(indexedRuleParts!.listId).toBe(2);
 
     // checks that there is nothing more to read
     expect(storageScanner.scan()).toBeFalsy();
@@ -97,8 +97,8 @@ it('Check negative filter list ID', () => {
     const storageScanner = new RuleStorageScanner([scanner]);
 
     expect(storageScanner.scan()).toBeTruthy();
-    expect(storageScanner.getRule()).toBeTruthy();
-    expect(storageScanner.getRule()!.listId).toBe(-1);
+    expect(storageScanner.getRuleParts()).toBeTruthy();
+    expect(storageScanner.getRuleParts()!.listId).toBe(-1);
 
     expect(storageScanner.scan()).toBeFalsy();
 });

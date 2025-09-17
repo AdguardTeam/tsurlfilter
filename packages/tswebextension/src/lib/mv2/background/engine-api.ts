@@ -1,8 +1,5 @@
 import browser from 'webextension-polyfill';
 import {
-    type IRuleList,
-    BufferRuleList,
-    RuleStorage,
     Engine,
     setConfiguration,
     CompatibilityTypes,
@@ -12,10 +9,11 @@ import {
     Request,
     CosmeticResult,
     type CosmeticOption,
+    STEALTH_MODE_FILTER_ID,
+    type EngineFactoryFilterList,
 } from '@adguard/tsurlfilter';
-import { type AnyRule } from '@adguard/agtree';
 
-import { USER_FILTER_ID } from '../../common/constants';
+import { ALLOWLIST_FILTER_ID, USER_FILTER_ID } from '../../common/constants';
 import { getHost, isHttpRequest } from '../../common/utils/url';
 import { type MatchQuery } from '../../common/interfaces';
 
@@ -28,8 +26,6 @@ import { type AppContext } from './app-context';
  * TSUrlFilter Engine wrapper.
  */
 export class EngineApi {
-    private static readonly ASYNC_LOAD_CHINK_SIZE = 5000;
-
     private engine: Engine | undefined;
 
     /**
@@ -75,51 +71,52 @@ export class EngineApi {
 
         this.allowlist.configure(configuration);
 
-        const lists: IRuleList[] = [];
+        const lists: EngineFactoryFilterList[] = [];
 
         for (let i = 0; i < filters.length; i += 1) {
             const {
                 filterId,
                 content,
                 trusted,
-                sourceMap,
             } = filters[i];
 
-            lists.push(
-                new BufferRuleList(
-                    filterId,
-                    content,
-                    false,
-                    !trusted,
-                    !trusted,
-                    sourceMap,
-                ),
-            );
+            lists.push({
+                id: filterId,
+                text: content,
+                ignoreCosmetic: false,
+                ignoreJS: !trusted,
+                ignoreUnsafe: !trusted,
+            });
         }
 
         if (userrules.content.length > 0) {
-            lists.push(
-                new BufferRuleList(
-                    USER_FILTER_ID,
-                    userrules.content,
-                    false,
-                    false,
-                    false,
-                    userrules.sourceMap,
-                ),
-            );
+            lists.push({
+                id: USER_FILTER_ID,
+                text: userrules.content,
+                ignoreCosmetic: false,
+                ignoreJS: false,
+                ignoreUnsafe: false,
+            });
         }
+
         const allowlistRulesList = this.allowlist.getAllowlistRules();
         if (allowlistRulesList) {
-            lists.push(allowlistRulesList);
+            lists.push({
+                id: ALLOWLIST_FILTER_ID,
+                text: allowlistRulesList,
+                ignoreCosmetic: true,
+                ignoreUnsafe: false,
+            });
         }
 
         const stealthModeList = this.stealthApi.getStealthModeRuleList();
         if (stealthModeList) {
-            lists.push(stealthModeList);
+            lists.push({
+                id: STEALTH_MODE_FILTER_ID,
+                text: stealthModeList,
+                ignoreCosmetic: false,
+            });
         }
-
-        const ruleStorage = new RuleStorage(lists);
 
         setConfiguration({
             engine: 'extension',
@@ -134,9 +131,9 @@ export class EngineApi {
          * Request filter creation is rather slow operation so we should
          * use setTimeout calls to give UI thread some time.
         */
-        const engine = new Engine(ruleStorage, true);
-
-        await engine.loadRulesAsync(EngineApi.ASYNC_LOAD_CHINK_SIZE);
+        const engine = await Engine.createAsync({
+            filters: lists,
+        });
 
         this.engine = engine;
     }
@@ -234,29 +231,23 @@ export class EngineApi {
     }
 
     /**
-     * Retrieves a rule node by its filter list identifier and rule index.
-     *
-     * If there's no rule by that index or the rule structure is invalid, it will return null.
-     *
-     * @param filterId Filter list identifier.
-     * @param ruleIndex Rule index.
-     *
-     * @returns Rule node or `null`.
-     */
-    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        if (!this.engine) {
-            return null;
-        }
-
-        return this.engine.retrieveRuleNode(filterId, ruleIndex);
-    }
-
-    /**
      * Simple getter for rules count.
      *
      * @returns Number of rules in the engine.
      */
     public getRulesCount(): number {
         return this.engine ? this.engine.getRulesCount() : 0;
+    }
+
+    /**
+     * Retrieves rule text by filter list id and rule index.
+     *
+     * @param filterListId Filter list id.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null` if rule is not found.
+     */
+    public retrieveRuleText(filterListId: number, ruleIndex: number): string | null {
+        return this.engine?.retrieveRuleText(filterListId, ruleIndex) ?? null;
     }
 }

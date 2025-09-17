@@ -1,9 +1,9 @@
 import { findNextLineBreakIndex } from '../utils/string-utils';
 
 import { StringLineReader } from './reader/string-line-reader';
-import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list-new';
-import { RuleScanner } from './scanner-new/rule-scanner';
-import { type ScannerType } from './scanner-new/scanner-type';
+import { type IRuleList, LIST_ID_MAX_VALUE } from './rule-list';
+import { RuleScanner } from './scanner/rule-scanner';
+import { type ScannerType } from './scanner/scanner-type';
 
 /**
  * StringRuleList represents a string-based rule list. Consider it a reference

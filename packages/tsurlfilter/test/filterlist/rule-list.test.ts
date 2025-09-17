@@ -1,15 +1,12 @@
-import { RuleParser } from '@adguard/agtree';
 import escapeStringRegexp from 'escape-string-regexp';
 import { describe, expect, it } from 'vitest';
 
-import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
-import { FilterListPreprocessor, PREPROCESSOR_AGTREE_OPTIONS } from '../../src/filterlist/preprocessor';
 import { LIST_ID_MAX_VALUE } from '../../src/filterlist/rule-list';
 import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
-import { getRuleSourceIndex } from '../../src/filterlist/source-map';
+import { StringRuleList } from '../../src/filterlist/string-rule-list';
 
 describe('RuleScanner tests', () => {
-    describe('BufferRuleList', () => {
+    describe('StringRuleList', () => {
         /**
          * Helper function to get the rule index from the raw filter list by the rule text.
          *
@@ -23,73 +20,65 @@ describe('RuleScanner tests', () => {
         };
 
         // TODO: Add array of raw rules, and re-use them in tests
-        const rawFilterList = '||example.org\n! test\n##banner';
-        const prepared = FilterListPreprocessor.preprocess(rawFilterList);
-        const ruleList = new BufferRuleList(1, prepared.filterList, false, false, false, prepared.sourceMap);
+        const rules = [
+            '||example.org',
+            '! test',
+            '##banner',
+        ];
+        const text = rules.join('\n');
+        const list = new StringRuleList(1, text, false, false, false);
 
         it('checks common properties', () => {
-            expect(ruleList.getId()).toBe(1);
+            expect(list.getId()).toBe(1);
         });
 
         it('checks max list id', () => {
             expect(() => {
-                new BufferRuleList(LIST_ID_MAX_VALUE, prepared.filterList);
+                new StringRuleList(LIST_ID_MAX_VALUE, text, false, false, false);
             }).toThrowError();
         });
 
-        const scanner = ruleList.newScanner(ScannerType.All);
+        const scanner = list.newScanner(ScannerType.All);
 
         it('checks scanner', () => {
             expect(scanner).toBeTruthy();
 
             expect(scanner.scan()).toBeTruthy();
 
-            let rule = scanner.getRule();
-            expect(rule).toBeTruthy();
-            expect(
-                getRuleSourceIndex(rule!.rule.getIndex(), prepared.sourceMap),
-            ).toEqual(
-                getRawRuleIndex(prepared.rawFilterList, '||example.org'),
-            );
-            expect(rule!.rule.getFilterListId()).toBe(1);
-            // index of the rule within the byte buffer
-            // byte buffer starts from 4, because first 4 bytes are for schema version
-            expect(rule!.index).toBe(4);
+            let ruleParts = scanner.getRuleParts();
+            expect(ruleParts).toBeTruthy();
+            expect(ruleParts!.index).toEqual(getRawRuleIndex(text, '||example.org'));
+            expect(ruleParts!.listId).toBe(1);
 
             expect(scanner.scan()).toBeTruthy();
 
-            rule = scanner.getRule();
-            expect(rule).toBeTruthy();
-            expect(
-                getRuleSourceIndex(rule!.rule.getIndex(), prepared.sourceMap),
-            ).toEqual(
-                getRawRuleIndex(prepared.rawFilterList, '##banner'),
-            );
-            expect(rule!.rule.getFilterListId()).toBe(1);
-            expect(rule!.index).toBe(28);
+            ruleParts = scanner.getRuleParts();
+            expect(ruleParts).toBeTruthy();
+            expect(ruleParts!.index).toEqual(getRawRuleIndex(text, '##banner'));
+            expect(ruleParts!.listId).toBe(1);
 
             // Finish scanning
             expect(scanner.scan()).toBeFalsy();
         });
 
         it('retrieves rules by index', () => {
-            let rule = ruleList.retrieveRuleNode(0);
+            let rule = list.retrieveRuleText(text.indexOf('||example.org'));
 
             expect(rule).toBeTruthy();
-            expect(rule!).toStrictEqual(RuleParser.parse('||example.org', PREPROCESSOR_AGTREE_OPTIONS));
+            expect(rule).toBe('||example.org');
 
-            rule = ruleList.retrieveRuleNode(28);
+            rule = list.retrieveRuleText(text.indexOf('##banner'));
 
             expect(rule).toBeTruthy();
-            expect(rule!).toStrictEqual(RuleParser.parse('##banner', PREPROCESSOR_AGTREE_OPTIONS));
+            expect(rule).toBe('##banner');
 
-            rule = ruleList.retrieveRuleNode(-1);
+            rule = list.retrieveRuleText(-1);
             expect(rule).toBeNull();
 
-            rule = ruleList.retrieveRuleNode(999);
+            rule = list.retrieveRuleText(999);
             expect(rule).toBeNull();
         });
 
-        ruleList.close();
+        list.close();
     });
 });

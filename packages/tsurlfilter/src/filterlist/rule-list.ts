@@ -1,5 +1,3 @@
-import { type AnyRule } from '@adguard/agtree';
-
 import { type RuleScanner } from './scanner/rule-scanner';
 import { type ScannerType } from './scanner/scanner-type';
 
@@ -13,9 +11,19 @@ import { type ScannerType } from './scanner/scanner-type';
 export const LIST_ID_MAX_VALUE = 10 ** 6;
 
 /**
+ * No list id.
+ */
+export const NO_LIST_ID = -1;
+
+/**
  * RuleList represents a set of filtering rules.
  */
 export interface IRuleList {
+    /**
+     * Whether to ignore unsafe rules or not.
+     */
+    readonly ignoreUnsafe: boolean;
+
     /**
      * Returns the rule list identifier.
      */
@@ -34,18 +42,9 @@ export interface IRuleList {
      *
      * @param ruleIdx Rule index.
      *
-     * @returns Rule node or `null`.
+     * @returns Rule text or `null`.
      */
-    retrieveRuleNode(ruleIdx: number): AnyRule | null;
-
-    /**
-     * Finds the rule source index by its index.
-     *
-     * @param ruleIdx Rule index.
-     *
-     * @returns Rule source index or RULE_INDEX_NONE (-1).
-     */
-    retrieveRuleSourceIndex(ruleIdx: number): number;
+    retrieveRuleText(ruleIdx: number): string | null;
 
     /**
      * Closes the rules list.

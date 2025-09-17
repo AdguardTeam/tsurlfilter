@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/no-loop-func */
 import { RawRuleConverter } from '@adguard/agtree';
+import { z as zod } from 'zod';
 
 import { EMPTY_STRING, LF } from '../common/constants';
 import { findNextLineBreakIndex } from '../utils/string-utils';
 
 /**
- * Conversion data.
+ * Conversion data validator.
  * With this data we can revert the conversion and get the original filter list.
  * It is designed to provide O(1) access to the original filtering rules.
  */
-export type ConversionData = {
+export const conversionDataValidator = zod.object({
     /**
      * Original filter list rules.
      */
-    originals: string[];
-
+    originals: zod.string().array(),
     /**
      * Conversion map.
      * Maps line start offsets in the converted content to indexes in the `originals` array.
@@ -22,8 +22,10 @@ export type ConversionData = {
      * Keys are 0-based line start offsets in the converted content.
      * Values are 0-based indexes in the `originals` array.
      */
-    conversions: Record<number, number>;
-};
+    conversions: zod.record(zod.number(), zod.number()),
+});
+
+export type ConversionData = zod.infer<typeof conversionDataValidator>;
 
 /**
  * ConvertedFilterList is a class that represents a converted filter list.
@@ -64,6 +66,18 @@ export class ConvertedFilterList {
             this.content = content;
             this.prepare(content);
         }
+    }
+
+    /**
+     * Creates an empty conversion data.
+     *
+     * @returns Empty conversion data.
+     */
+    public static createEmptyConversionData(): ConversionData {
+        return {
+            originals: [],
+            conversions: {},
+        };
     }
 
     /**
