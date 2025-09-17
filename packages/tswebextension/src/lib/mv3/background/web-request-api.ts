@@ -775,11 +775,6 @@ export class WebRequestApi {
             return;
         }
 
-        if (!CosmeticApi.shouldApplyCosmetics(tabId, details.url)) {
-            logger.debug(`[tsweb.WebRequestApi.onCommitted]: Skipping cosmetics injection for background or extension page with tabId ${tabId}, frameId ${frameId} and url ${details.url}`);
-            return;
-        }
-
         // Note: this is an async function, but we will not await it because
         // events do not support async listeners.
         CosmeticApi.applyCosmeticRules(tabId, frameId, true).catch((e) => {
