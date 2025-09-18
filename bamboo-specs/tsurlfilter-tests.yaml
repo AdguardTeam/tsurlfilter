@@ -5,7 +5,7 @@ plan:
   key: TSURLFILTERTEST
   name: tsurlfilter - tests
 variables:
-  dockerContainer: adguard/node-ssh:22.14--0
+  dockerContainer: adguard/node-ssh:22.17--0
   testTimeout: 600s
 
 # Some packages are independent of each other so we can run them in parallel (different jobs on same stage)
@@ -77,11 +77,6 @@ stages:
       <<: *stage
       jobs:
         - Update TSUrlFilter Docs MV3
-  - Cleanup:
-      <<: *stage
-      final: true
-      jobs:
-        - Cleanup
 
 # NOTE: Each script is separate because, otherwise, Bamboo does not fail in the case of an error.
 
@@ -111,6 +106,21 @@ Test Logger:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh"
+    # IMPORTANT: run clean after each stage
+    # since each stage is run in a separate directory and we want to clean up after each stage
+  final-tasks:
+    - clean
+    - script: &check-size-script
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -ex
+
+            ls -alt
+
+            echo "Current size:" && du -h | tail -n 1
+
+            du -h . | sort -hr | head -n 30
   requirements: &requirements
     - adg-docker: 'true'
     - extension: 'true'
@@ -126,6 +136,9 @@ Test CSSTokenizer:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/css-tokenizer-tests.sh"
+  final-tasks:
+    - clean
+    - script: *check-size-script
   requirements: *requirements
 
 Test AGTree:
@@ -139,6 +152,9 @@ Test AGTree:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/agtree-tests.sh"
+  final-tasks:
+    - clean
+    - script: *check-size-script
   requirements: *requirements
 
 Test TSUrlFilter:
@@ -151,6 +167,9 @@ Test TSUrlFilter:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh"
+  final-tasks:
+    - clean
+    - script: *check-size-script
   requirements: *requirements
 
 Test TSWebExtension:
@@ -164,6 +183,9 @@ Test TSWebExtension:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh"
+  final-tasks:
+    - clean
+    - script: *check-size-script
   requirements: *requirements
 
 Test DNR-Rulesets:
@@ -177,6 +199,9 @@ Test DNR-Rulesets:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
+  final-tasks:
+    - clean
+    - script: *check-size-script
   requirements: *requirements
 
 Test Examples - APIs and TSWebExtensions:
@@ -202,6 +227,44 @@ Test Examples - APIs and TSWebExtensions:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/examples-adguard-api-mv3-tests.sh"
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -x
+            set -e
+
+            ls -alt
+
+            echo "Current size:" && du -h | tail -n 1
+
+            # Files to preserve (adjust as needed)
+            ARTIFACTS="
+            packages/examples/adguard-api/build/extension.zip
+            packages/examples/adguard-api-mv3/build/extension.zip
+            "
+
+            TMP="$(mktemp -d)"
+            trap 'rm -rf "$TMP"' EXIT
+
+            # Stash artifacts to /tmp
+            for f in $ARTIFACTS; do
+              [ -e "$f" ] || continue
+              mkdir -p "$TMP/$(dirname "$f")"
+              mv "$f" "$TMP/$f"
+            done
+
+            # Clean entire workspace (including dotfiles and .git)
+            find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+
+            # Restore artifacts
+            for f in $ARTIFACTS; do
+              [ -e "$TMP/$f" ] || continue
+              mkdir -p "$(dirname "$f")"
+              mv "$TMP/$f" "$f"
+            done
+    - script: *check-size-script
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
@@ -231,42 +294,9 @@ Update TSUrlFilter Docs MV3:
         configuration:
           commitMessage: 'skipci: Automatic update tsurlfilter MV3 docs'
           selectedRepository: defaultRepository
-  requirements: *requirements
-
-Cleanup:
-  key: CLEAN
-  docker: *docker
-  tasks:
-    - checkout
-    - script:
-        interpreter: SHELL
-        scripts:
-          - |-
-            set -x
-            set -e
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -la
-
-            echo "Size before cleanup:" && du -h | tail -n 1
-
-            du -h . | sort -hr | head -n 30
-
-            # Check if node_modules directory exists
-            if [ -d "node_modules" ]; then
-              # to run clean commands in the packages
-              pnpm -r clean
-
-              # to remove node_modules
-              pnpm clean
-            else
-              echo "node_modules directory does not exist, skipping pnpm clean"
-            fi
-
-            rm -rf .git
-            echo "Size after cleanup:" && du -h | tail -n 1
+  final-tasks:
+    - clean
+    - script: *check-size-script
   requirements: *requirements
 
 branches:
