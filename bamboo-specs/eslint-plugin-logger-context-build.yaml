@@ -23,6 +23,8 @@ Build:
     volumes:
       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
   tasks:
+    - checkout:
+        force-clean-build: 'true'
     - script:
         interpreter: SHELL
         scripts:
@@ -31,31 +33,17 @@ Build:
             set -x
 
             # Create dummy artifact for Bamboo check (needed for AG-40151)
-            mkdir -p packages/logger/eslint-plugin/
-            touch packages/logger/eslint-plugin/eslint-plugin-logger-context.tgz
-            echo "Dummy artifact generated at packages/logger/eslint-plugin/eslint-plugin-logger-context.tgz"
+            mkdir -p packages/eslint-plugin-logger-context/
+            touch packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz
+            echo "Dummy artifact generated at packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz"
   final-tasks:
     - script:
         interpreter: SHELL
         scripts:
-          - |-
-            set -x
-            set -e
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -la
-
-            echo "Size before cleanup:" && du -h | tail -n 1
-
-            pnpm clean
-            rm -rf .git
-
-            echo "Size after cleanup:" && du -h | tail -n 1
+          - "./bamboo-specs/scripts/cleanup.sh packages/eslint-plugin-logger-context/eslint-plugin-logger-context.tgz"
   artifacts:
     - name: eslint-plugin-logger-context.tgz
-      location: packages/logger/eslint-plugin/
+      location: packages/eslint-plugin-logger-context/
       pattern: eslint-plugin-logger-context.tgz
       shared: true
       required: true

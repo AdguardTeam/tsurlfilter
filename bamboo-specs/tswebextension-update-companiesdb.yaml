@@ -58,26 +58,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - |-
-            set -x
-            set -e
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -la
-
-            echo "Size before cleanup:" && du -h | tail -n 1
-
-            # Check if node_modules directory exists
-            if [ -d "node_modules" ]; then
-              pnpm clean
-            else
-              echo "node_modules directory does not exist, skipping pnpm clean"
-            fi
-
-            rm -rf .git
-            echo "Size after cleanup:" && du -h | tail -n 1
+          - "./bamboo-specs/scripts/cleanup.sh"
   requirements:
     - adg-docker: 'true'
     - extension: 'true'
