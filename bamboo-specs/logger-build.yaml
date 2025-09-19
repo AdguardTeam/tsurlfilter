@@ -62,21 +62,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - |-
-            set -x
-            set -e
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -la
-
-            echo "Size before cleanup:" && du -h | tail -n 1
-
-            pnpm clean
-            rm -rf .git
-
-            echo "Size after cleanup:" && du -h | tail -n 1
+          - "./bamboo-specs/scripts/cleanup.sh packages/logger/logger.tgz"
   # Store the logger package tarball as an artifact
   artifacts:
     - name: logger.tgz
