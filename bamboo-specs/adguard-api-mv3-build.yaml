@@ -76,23 +76,7 @@ Build:
     - script:
         interpreter: SHELL
         scripts:
-          - |-
-            set -x
-            set -e
-
-            # Fix mixed logs
-            exec 2>&1
-
-            ls -la
-
-            echo "Size before cleanup:" && du -h | tail -n 1
-
-            pnpm --filter @adguard/dnr-rulesets clear
-
-            pnpm clean
-            rm -rf .git
-
-            echo "Size after cleanup:" && du -h | tail -n 1
+          - "./bamboo-specs/scripts/cleanup.sh packages/adguard-api-mv3/adguard-api-mv3.tgz,packages/examples/adguard-api-mv3/build/extension.zip"
   artifacts:
     - name: adguard-api-mv3.tgz
       location: packages/adguard-api-mv3/
