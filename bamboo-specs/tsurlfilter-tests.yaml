@@ -109,18 +109,10 @@ Test Logger:
     # IMPORTANT: run clean after each stage
     # since each stage is run in a separate directory and we want to clean up after each stage
   final-tasks:
-    - clean
-    - script: &check-size-script
+    - script: &cleanup-script
         interpreter: SHELL
         scripts:
-          - |-
-            set -ex
-
-            ls -alt
-
-            echo "Current size:" && du -h | tail -n 1
-
-            du -h . | sort -hr | head -n 30
+          - "./bamboo-specs/scripts/cleanup.sh"
   requirements: &requirements
     - adg-docker: 'true'
     - extension: 'true'
@@ -137,8 +129,10 @@ Test CSSTokenizer:
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/css-tokenizer-tests.sh"
   final-tasks:
-    - clean
-    - script: *check-size-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/cleanup.sh"
   requirements: *requirements
 
 Test AGTree:
@@ -153,8 +147,7 @@ Test AGTree:
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/agtree-tests.sh"
   final-tasks:
-    - clean
-    - script: *check-size-script
+    - script: *cleanup-script
   requirements: *requirements
 
 Test TSUrlFilter:
@@ -168,8 +161,7 @@ Test TSUrlFilter:
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh"
   final-tasks:
-    - clean
-    - script: *check-size-script
+    - script: *cleanup-script
   requirements: *requirements
 
 Test TSWebExtension:
@@ -184,8 +176,7 @@ Test TSWebExtension:
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tswebextension-tests.sh"
   final-tasks:
-    - clean
-    - script: *check-size-script
+    - script: *cleanup-script
   requirements: *requirements
 
 Test DNR-Rulesets:
@@ -200,8 +191,7 @@ Test DNR-Rulesets:
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-rulesets-tests.sh"
   final-tasks:
-    - clean
-    - script: *check-size-script
+    - script: *cleanup-script
   requirements: *requirements
 
 Test Examples - APIs and TSWebExtensions:
@@ -231,40 +221,7 @@ Test Examples - APIs and TSWebExtensions:
     - script:
         interpreter: SHELL
         scripts:
-          - |-
-            set -x
-            set -e
-
-            ls -alt
-
-            echo "Current size:" && du -h | tail -n 1
-
-            # Files to preserve (adjust as needed)
-            ARTIFACTS="
-            packages/examples/adguard-api/build/extension.zip
-            packages/examples/adguard-api-mv3/build/extension.zip
-            "
-
-            TMP="$(mktemp -d)"
-            trap 'rm -rf "$TMP"' EXIT
-
-            # Stash artifacts to /tmp
-            for f in $ARTIFACTS; do
-              [ -e "$f" ] || continue
-              mkdir -p "$TMP/$(dirname "$f")"
-              mv "$f" "$TMP/$f"
-            done
-
-            # Clean entire workspace (including dotfiles and .git)
-            find . -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
-
-            # Restore artifacts
-            for f in $ARTIFACTS; do
-              [ -e "$TMP/$f" ] || continue
-              mkdir -p "$(dirname "$f")"
-              mv "$TMP/$f" "$f"
-            done
-    - script: *check-size-script
+          - "./bamboo-specs/scripts/cleanup.sh packages/examples/adguard-api/build/extension.zip,packages/examples/adguard-api-mv3/build/extension.zip"
   artifacts:
     - name: examples-adguard-api-extension.zip
       location: packages/examples/adguard-api/build
@@ -295,8 +252,7 @@ Update TSUrlFilter Docs MV3:
           commitMessage: 'skipci: Automatic update tsurlfilter MV3 docs'
           selectedRepository: defaultRepository
   final-tasks:
-    - clean
-    - script: *check-size-script
+    - script: *cleanup-script
   requirements: *requirements
 
 branches:

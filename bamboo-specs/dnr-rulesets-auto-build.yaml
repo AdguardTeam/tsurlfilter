@@ -45,6 +45,11 @@ DoNothing:
             BRANCH="${bamboo.planRepository.branchName}"
 
             echo "Build and deployment is not supported on branch ${BRANCH}, skipping"
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/cleanup.sh packages/dnr-rulesets/dnr-rulesets.tgz"
   # Since the artifact is being published from a non-master branch, it should still be available in the master branch
   artifacts: &artifacts
     - name: dnr-rulesets.tgz
@@ -154,23 +159,7 @@ branch-overrides:
           - script:
               interpreter: SHELL
               scripts:
-                - |-
-                  set -x
-                  set -e
-
-                  # Fix mixed logs
-                  exec 2>&1
-
-                  ls -la
-
-                  echo "Size before cleanup:" && du -h | tail -n 1
-
-                  pnpm --filter @adguard/dnr-rulesets clear
-
-                  pnpm clean
-                  rm -rf .git
-
-                  echo "Size after cleanup:" && du -h | tail -n 1
+                - "./bamboo-specs/scripts/cleanup.sh packages/dnr-rulesets/dnr-rulesets.tgz"
         artifacts: *artifacts
         requirements: *requirements
 
