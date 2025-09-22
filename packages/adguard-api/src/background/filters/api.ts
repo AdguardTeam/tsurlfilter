@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Adguard API. If not, see <http://www.gnu.org/licenses/>.
  */
-import { FilterListPreprocessor } from '@adguard/tswebextension';
+import { ConversionData, ConvertedFilterList } from '@adguard/tswebextension';
 import { Network } from '../network';
 import { Storage } from '../storage';
 import { MetadataApi } from './metadata';
@@ -74,8 +74,8 @@ export class FiltersApi {
      * @returns filters data for {@link TsWebExtension} configuration
      */
     public async getFilters(filterIds: number[]): Promise<{
-        content: Uint8Array[];
-        sourceMap: Record<string, number>;
+        content: string;
+        conversionData: ConversionData;
         filterId: number;
         trusted: boolean;
     }[]> {
@@ -94,8 +94,8 @@ export class FiltersApi {
      * @returns filters data item for {@link TsWebExtension} configuration
      */
     private async getFilter(filterId: number): Promise<{
-        content: Uint8Array[];
-        sourceMap: Record<string, number>;
+        content: string;
+        conversionData: ConversionData;
         filterId: number;
         trusted: boolean;
     }> {
@@ -106,12 +106,12 @@ export class FiltersApi {
         }
 
         // TODO: Modify how rules are stored and just read serialized data from storage
-        const processed = FilterListPreprocessor.preprocess(rules.join('\n'));
+        const processed = new ConvertedFilterList(rules.join('\n'));
 
         return {
             filterId,
-            content: processed.filterList,
-            sourceMap: processed.sourceMap,
+            content: processed.getContent(),
+            conversionData: processed.getConversionData(),
             trusted: true,
         };
     }

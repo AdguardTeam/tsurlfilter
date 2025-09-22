@@ -23,7 +23,7 @@ import {
     EventChannel,
     createTsWebExtension,
     BasicFilterValidator,
-    FilterListPreprocessor,
+    ConvertedFilterList,
 } from '@adguard/tswebextension';
 
 import { Network } from './network';
@@ -247,17 +247,18 @@ export class AdguardApi {
             allowlist = this.configuration.allowlist;
         }
 
-        const userrules: BasicFilterValidator = {
-            content: [],
-        };
+        let converted: ConvertedFilterList;
 
         if (this.configuration.rules) {
-            // TODO: Change the interface later
-            const convertedUserRules = FilterListPreprocessor.preprocess(this.configuration.rules.join(LF));
-
-            userrules.sourceMap = convertedUserRules.sourceMap;
-            userrules.content = convertedUserRules.filterList;
+            converted = new ConvertedFilterList(this.configuration.rules.join(LF));
+        } else {
+            converted = ConvertedFilterList.createEmpty();
         }
+
+        const userrules: BasicFilterValidator = {
+            content: converted.getContent(),
+            conversionData: converted.getConversionData(),
+        };
 
         const filters = await this.filtersApi.getFilters(this.configuration.filters);
 
