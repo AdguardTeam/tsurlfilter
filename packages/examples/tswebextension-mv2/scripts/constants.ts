@@ -27,7 +27,7 @@ export const TESTCASES_BASE_URL = 'https://testcases.agrd.dev';
 
 export const TESTCASES_DATA_PATH = '/data.json';
 
-const userrules = new ConvertedFilterList('');
+const userrules = ConvertedFilterList.createEmpty();
 
 export const DEFAULT_EXTENSION_CONFIG: ConfigurationMV2 = {
     filters: [],

@@ -31,11 +31,11 @@ export type SetTsWebExtensionConfigArg = [ defaultConfig: ConfigurationMV2, rule
 export const setTsWebExtensionConfig =  async (arg: SetTsWebExtensionConfigArg) => {
     const [ defaultConfig, rulesText ] = arg;
     const configuration: ConfigurationMV2 = defaultConfig;
-    const processed = new ConvertedFilterList(rulesText);
+    const converted = new ConvertedFilterList(rulesText);
     configuration.filters = [{
         filterId: 1,
-        content: processed.getContent(),
-        conversionData: processed.getConversionData(),
+        content: converted.getContent(),
+        conversionData: converted.getConversionData(),
         trusted: true,
     }];
     await window.tsWebExtension.configure(configuration);

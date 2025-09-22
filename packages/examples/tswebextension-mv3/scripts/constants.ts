@@ -7,7 +7,7 @@ export const TESTCASES_BASE_URL = 'https://testcases.agrd.dev';
 
 export const TESTCASES_DATA_PATH = '/data.json';
 
-const userrules = new ConvertedFilterList('');
+const userrules = ConvertedFilterList.createEmpty();
 
 export const DEFAULT_EXTENSION_CONFIG: Configuration = {
     staticFiltersIds: [1, 2, 3, 4, 9, 18, 19, 20, 21, 22],
