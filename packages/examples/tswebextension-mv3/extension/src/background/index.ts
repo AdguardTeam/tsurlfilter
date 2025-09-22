@@ -5,7 +5,7 @@ import {
     MESSAGE_HANDLER_NAME,
     defaultFilteringLog,
     FilteringEventType,
-    FilterListPreprocessor,
+    ConvertedFilterList,
 } from '@adguard/tswebextension/mv3';
 import browser from 'webextension-polyfill';
 
@@ -65,10 +65,10 @@ const messageHandler = async (message: IMessage) => {
             const res: ConfigResponse = {
                 status: isStarted || false,
                 filters: config.staticFiltersIds,
-                rules: FilterListPreprocessor.getOriginalFilterListText({
-                    rawFilterList: config.userrules.rawFilterList,
-                    conversionMap: config.userrules.conversionMap,
-                }),
+                rules: new ConvertedFilterList(
+                    config.userrules.content,
+                    config.userrules.conversionData,
+                ).getOriginalContent(),
             };
 
             return res;
@@ -109,11 +109,11 @@ const messageHandler = async (message: IMessage) => {
             return isStarted;
         }
         case Message.ApplyUserRules: {
-            const preprocessed = FilterListPreprocessor.preprocess(data as string);
+            const converted = new ConvertedFilterList(data as string);
 
             config.userrules = {
-                ...preprocessed,
-                trusted: true,
+                content: converted.getContent(),
+                conversionData: converted.getConversionData(),
             };
 
             await tsWebExtension.configure(config);
