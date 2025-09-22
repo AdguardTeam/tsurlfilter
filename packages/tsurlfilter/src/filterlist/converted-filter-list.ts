@@ -69,6 +69,15 @@ export class ConvertedFilterList {
     }
 
     /**
+     * Creates an empty converted filter list.
+     *
+     * @returns Empty converted filter list.
+     */
+    public static createEmpty(): ConvertedFilterList {
+        return new ConvertedFilterList(EMPTY_STRING, ConvertedFilterList.createEmptyConversionData());
+    }
+
+    /**
      * Creates an empty conversion data.
      *
      * @returns Empty conversion data.
@@ -161,6 +170,20 @@ export class ConvertedFilterList {
     }
 
     /**
+     * Returns the rule text for a given converted line number.
+     * This rule may be converted from an original rule.
+     * If you need the original rule, use `getOriginalRuleText`.
+     *
+     * @param offset Line start offset in the converted content.
+     *
+     * @returns Rule as string, or null if not found.
+     */
+    public getRuleText(offset: number): string | null {
+        const [lineBreakStartIndex] = findNextLineBreakIndex(this.content, offset);
+        return this.content.slice(offset, lineBreakStartIndex);
+    }
+
+    /**
      * Returns the original rule text for a given converted line number.
      *
      * @param offset Line start offset in the converted content.
@@ -180,8 +203,7 @@ export class ConvertedFilterList {
             return this.data.originals[originalRuleIndex];
         }
 
-        const [lineBreakStartIndex] = findNextLineBreakIndex(this.content, offset);
-        return this.content.slice(offset, lineBreakStartIndex);
+        return this.getRuleText(offset);
     }
 
     /**
