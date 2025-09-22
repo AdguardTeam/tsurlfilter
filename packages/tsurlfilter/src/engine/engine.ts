@@ -1,21 +1,62 @@
-/* eslint-disable no-await-in-loop */
-/* eslint-disable no-promise-executor-return */
-import { type AnyRule } from '@adguard/agtree';
+import { RawFilterListConverter } from '@adguard/agtree';
 import { LRUCache } from 'lru-cache';
 
-import { type RuleStorage } from '../filterlist/rule-storage';
+import { type IRuleList } from '../filterlist/rule-list';
+import { RuleCategory } from '../filterlist/rule-parts';
+import { RuleStorage } from '../filterlist/rule-storage';
 import { ScannerType } from '../filterlist/scanner/scanner-type';
+import { StringRuleList } from '../filterlist/string-rule-list';
 import { Request } from '../request';
 import { RequestType } from '../request-type';
-import { CosmeticRule } from '../rules/cosmetic-rule';
-import { NetworkRule } from '../rules/network-rule';
-import { type IndexedStorageRule } from '../rules/rule';
+import { type NetworkRule } from '../rules/network-rule';
+import { type IndexedStorageCosmeticRuleParts, type IndexedStorageNetworkRuleParts } from '../rules/rule';
 
+import { CHUNK_SIZE } from './constants';
 import { CosmeticEngine } from './cosmetic-engine/cosmetic-engine';
 import { type CosmeticResult } from './cosmetic-engine/cosmetic-result';
 import { type CosmeticOption } from './cosmetic-option';
 import { MatchingResult } from './matching-result';
 import { NetworkEngine } from './network-engine';
+
+/**
+ * Filter list for engine factory.
+ */
+export interface EngineFactoryFilterList {
+    /**
+     * Filter list identifier.
+     */
+    id: number;
+
+    /**
+     * Filter list text.
+     */
+    text: string;
+
+    /**
+     * Whether to ignore cosmetic rules from this filter list.
+     */
+    ignoreCosmetic?: boolean;
+
+    /**
+     * Whether to ignore javascript rules from this filter list.
+     */
+    ignoreJS?: boolean;
+
+    /**
+     * Whether to ignore unsafe rules from this filter list.
+     */
+    ignoreUnsafe?: boolean;
+}
+
+/**
+ * Engine factory options.
+ */
+export interface EngineFactoryOptions {
+    /**
+     * List of filters.
+     */
+    filters: EngineFactoryFilterList[];
+}
 
 /**
  * Engine represents the filtering engine with all the loaded rules.
@@ -26,7 +67,7 @@ export class Engine {
      * Used as both source rules and others limit.
      * The value is based on benchmark runs.
      */
-    private static REQUEST_CACHE_SIZE = 500;
+    private static readonly REQUEST_CACHE_SIZE = 500;
 
     /**
      * Basic filtering rules engine.
@@ -49,58 +90,141 @@ export class Engine {
     private readonly resultCache: LRUCache<string, MatchingResult>;
 
     /**
+     * Creates an instance of the network engine in sync mode.
+     * Sync mode converts all rules before creating the engine.
+     *
+     * @param options Engine factory options.
+     *
+     * @returns An instance of the network engine.
+     */
+    public static createSync(options: EngineFactoryOptions): Engine {
+        const networkRulesParts: IndexedStorageNetworkRuleParts[] = [];
+        const cosmeticRulesParts: IndexedStorageCosmeticRuleParts[] = [];
+
+        const lists: IRuleList[] = [];
+
+        for (const filter of options.filters) {
+            const list = new StringRuleList(
+                filter.id,
+                RawFilterListConverter.convertToAdg(filter.text).result,
+                filter.ignoreCosmetic ?? false,
+                filter.ignoreJS ?? false,
+                filter.ignoreUnsafe ?? false,
+            );
+
+            lists.push(list);
+        }
+
+        const storage = new RuleStorage(lists);
+        const scanner = storage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
+
+        while (scanner.scan()) {
+            const indexedRuleParts = scanner.getRuleParts();
+
+            if (!indexedRuleParts) {
+                continue;
+            }
+
+            if (indexedRuleParts.ruleParts.category === RuleCategory.Network) {
+                // Note: it is safe to cast here, because we checked rule type
+                networkRulesParts.push(indexedRuleParts as IndexedStorageNetworkRuleParts);
+            } else if (indexedRuleParts.ruleParts.category === RuleCategory.Cosmetic) {
+                // Note: it is safe to cast here, because we checked rule type
+                cosmeticRulesParts.push(indexedRuleParts as IndexedStorageCosmeticRuleParts);
+            }
+        }
+
+        const networkEngine = NetworkEngine.createSync(networkRulesParts, storage);
+        const cosmeticEngine = CosmeticEngine.createSync(cosmeticRulesParts, storage);
+
+        const engine = new Engine(storage, networkEngine, cosmeticEngine);
+
+        return engine;
+    }
+
+    /**
+     * Creates an instance of the network engine in async mode.
+     * Async mode does not convert rules before creating the engine.
+     *
+     * @param options Engine factory options.
+     *
+     * @returns An instance of the network engine.
+     */
+    public static async createAsync(options: EngineFactoryOptions): Promise<Engine> {
+        const networkRulesParts: IndexedStorageNetworkRuleParts[] = [];
+        const cosmeticRulesParts: IndexedStorageCosmeticRuleParts[] = [];
+
+        const lists: IRuleList[] = [];
+
+        for (const filter of options.filters) {
+            const list = new StringRuleList(
+                filter.id,
+                filter.text,
+                filter.ignoreCosmetic ?? false,
+                filter.ignoreJS ?? false,
+                filter.ignoreUnsafe ?? false,
+            );
+
+            lists.push(list);
+        }
+
+        const storage = new RuleStorage(lists);
+        const scanner = storage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
+
+        let counter = 0;
+
+        while (scanner.scan()) {
+            counter += 1;
+
+            if (counter >= CHUNK_SIZE) {
+                counter = 0;
+
+                // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
+                await Promise.resolve();
+            }
+
+            const ruleParts = scanner.getRuleParts();
+
+            if (!ruleParts) {
+                continue;
+            }
+
+            if (ruleParts.ruleParts.category === RuleCategory.Network) {
+                // Note: it is safe to cast here, because we checked rule type
+                networkRulesParts.push(ruleParts as IndexedStorageNetworkRuleParts);
+            } else if (ruleParts.ruleParts.category === RuleCategory.Cosmetic) {
+                // Note: it is safe to cast here, because we checked rule type
+                cosmeticRulesParts.push(ruleParts as IndexedStorageCosmeticRuleParts);
+            }
+        }
+
+        const [networkEngine, cosmeticEngine] = await Promise.all([
+            NetworkEngine.createAsync(networkRulesParts, storage),
+            CosmeticEngine.createAsync(cosmeticRulesParts, storage),
+        ]);
+
+        const engine = new Engine(storage, networkEngine, cosmeticEngine);
+
+        return engine;
+    }
+
+    /**
      * Creates an instance of an Engine
      * Parses the filtering rules and creates a filtering engine of them.
      *
      * @param ruleStorage Storage.
-     * @param skipStorageScan Create an instance without storage scanning.
-     *
-     * @throws
+     * @param networkEngine Network engine.
+     * @param cosmeticEngine Cosmetic engine.
      */
-    constructor(ruleStorage: RuleStorage, skipStorageScan = false) {
+    private constructor(
+        ruleStorage: RuleStorage,
+        networkEngine: NetworkEngine,
+        cosmeticEngine: CosmeticEngine,
+    ) {
         this.ruleStorage = ruleStorage;
-        this.networkEngine = new NetworkEngine(ruleStorage, skipStorageScan);
-        this.cosmeticEngine = new CosmeticEngine(ruleStorage, skipStorageScan);
+        this.networkEngine = networkEngine;
+        this.cosmeticEngine = cosmeticEngine;
         this.resultCache = new LRUCache({ max: Engine.REQUEST_CACHE_SIZE });
-    }
-
-    /**
-     * Loads rules to engine.
-     */
-    public loadRules(): void {
-        const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
-
-        while (scanner.scan()) {
-            this.addRule(scanner.getRule());
-        }
-    }
-
-    /**
-     * Async loads rules to engine.
-     *
-     * @param chunkSize Size of rules chunk to load at a time.
-     */
-    public async loadRulesAsync(chunkSize: number): Promise<void> {
-        const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.NetworkRules | ScannerType.CosmeticRules);
-
-        let counter = 0;
-        while (scanner.scan()) {
-            counter += 1;
-
-            if (counter >= chunkSize) {
-                counter = 0;
-
-                /**
-                 * In some cases UI thread becomes blocked while adding rules to engine,
-                 * that't why we create filter rules using chunks of the specified length
-                 * Rules creation is rather slow operation so we should
-                 * use setTimeout calls to give UI thread some time.
-                 */
-                await new Promise((resolve) => setTimeout(resolve, 1));
-            }
-
-            this.addRule(scanner.getRule());
-        }
     }
 
     /**
@@ -144,6 +268,7 @@ export class Engine {
      *
      * @returns Document-level allowlist rule if found, otherwise null.
      */
+    // TODO: Find a better name for this method
     public matchFrame(frameUrl: string): NetworkRule | null {
         const sourceRequest = new Request(frameUrl, '', RequestType.Document);
         let sourceRules = this.networkEngine.matchAll(sourceRequest);
@@ -184,31 +309,16 @@ export class Engine {
     }
 
     /**
-     * Adds rules to engines.
-     *
-     * @param indexedRule Rule to add.
-     */
-    private addRule(indexedRule: IndexedStorageRule | null): void {
-        if (indexedRule) {
-            if (indexedRule.rule instanceof NetworkRule) {
-                this.networkEngine.addRule(indexedRule.rule, indexedRule.index);
-            } else if (indexedRule.rule instanceof CosmeticRule) {
-                this.cosmeticEngine.addRule(indexedRule.rule, indexedRule.index);
-            }
-        }
-    }
-
-    /**
-     * Retrieves a rule node by its filter list identifier and rule index.
+     * Retrieves a rule text by its filter list identifier and rule index.
      *
      * If there's no rule by that index or the rule structure is invalid, it will return null.
      *
      * @param filterId Filter list identifier.
      * @param ruleIndex Rule index.
      *
-     * @returns Rule node or `null`.
+     * @returns Rule text or `null`.
      */
-    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        return this.ruleStorage.retrieveRuleNode(filterId, ruleIndex);
+    public retrieveRuleText(filterId: number, ruleIndex: number): string | null {
+        return this.ruleStorage.retrieveRuleText(filterId, ruleIndex);
     }
 }

@@ -4,6 +4,7 @@ import { Request } from '../request';
 import { RequestType } from '../request-type';
 import { HostRule } from '../rules/host-rule';
 import { NetworkRule } from '../rules/network-rule';
+import { type IndexedStorageNetworkRuleParts } from '../rules/rule';
 import { fastHash } from '../utils/string-utils';
 
 import { DnsResult } from './dns-result';
@@ -46,21 +47,26 @@ export class DnsEngine {
         this.rulesCount = 0;
         this.lookupTable = new Map<number, number[]>();
 
-        this.networkEngine = new NetworkEngine(storage, true);
-
         const scanner = this.ruleStorage.createRuleStorageScanner(ScannerType.HostRules);
+        const networkRulesParts: IndexedStorageNetworkRuleParts[] = [];
 
         while (scanner.scan()) {
-            const indexedRule = scanner.getRule();
-            if (indexedRule) {
-                if (indexedRule.rule instanceof HostRule) {
-                    this.addRule(indexedRule.rule, indexedRule.index);
-                } else if (indexedRule.rule instanceof NetworkRule
-                && indexedRule.rule.isHostLevelNetworkRule()) {
-                    this.networkEngine.addRule(indexedRule.rule, indexedRule.index);
-                }
+            // TODO (AG-46284): Avoid double tokenization
+            const indexedRule = scanner.getRuleParts();
+            if (!indexedRule) {
+                continue;
+            }
+
+            const rule = this.ruleStorage.retrieveRule(indexedRule.index, false);
+            if (rule instanceof HostRule) {
+                this.addRule(rule, indexedRule.index);
+            } else if (rule instanceof NetworkRule && rule.isHostLevelNetworkRule()) {
+                // Note: it is safe to cast here, because we checked rule type
+                networkRulesParts.push(indexedRule as IndexedStorageNetworkRuleParts);
             }
         }
+
+        this.networkEngine = NetworkEngine.createSync(networkRulesParts, storage);
     }
 
     /**
@@ -115,10 +121,9 @@ export class DnsEngine {
             let rulesIndexes = this.lookupTable.get(hash);
             if (!rulesIndexes) {
                 rulesIndexes = [];
+                this.lookupTable.set(hash, rulesIndexes);
             }
             rulesIndexes.push(storageIdx);
-
-            this.lookupTable.set(hash, rulesIndexes);
         });
 
         this.rulesCount += 1;

@@ -19,9 +19,25 @@ import { DnsEngine } from '../../src/engine/dns-engine';
 import { Engine } from '../../src/engine/engine';
 import { BufferRuleList } from '../../src/filterlist/buffer-rule-list';
 import { FilterListPreprocessor } from '../../src/filterlist/preprocessor';
+import { type IRuleList } from '../../src/filterlist/rule-list';
 import { RuleStorage } from '../../src/filterlist/rule-storage';
+import { ScannerType } from '../../src/filterlist/scanner/scanner-type';
 import { Request } from '../../src/request';
 import { RequestType } from '../../src/request-type';
+import { type IndexedStorageRule } from '../../src/rules/rule';
+
+const createCosmeticEngine = (lists: IRuleList[]): CosmeticEngine => {
+    const rules: IndexedStorageRule[] = [];
+    const storage = new RuleStorage(lists);
+
+    const scanner = storage.createRuleStorageScanner(ScannerType.CosmeticRules);
+
+    while (scanner.scan()) {
+        rules.push(scanner.getRule()!);
+    }
+
+    return CosmeticEngine.createSync(storage, rules);
+};
 
 /* eslint-disable jsdoc/require-description-complete-sentence */
 /**

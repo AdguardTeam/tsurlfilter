@@ -1,6 +1,4 @@
 import { z as zod } from 'zod';
-import { RuleParser } from '@adguard/agtree/parser';
-import { RuleGenerator } from '@adguard/agtree/generator';
 
 import type { NetworkRule } from '../network-rule';
 import { getErrorMessage } from '../../common/error';
@@ -537,12 +535,12 @@ export class RuleSet implements IRuleSet {
         let networkIndexedRulesWithHash: IndexedNetworkRuleWithHash[] = [];
 
         try {
-            networkIndexedRulesWithHash = IndexedNetworkRuleWithHash.createFromNode(
+            networkIndexedRulesWithHash = IndexedNetworkRuleWithHash.createFromText(
                 filterId,
                 // We don't need line index because this indexedNetworkRulesWithHash
                 // will be used only for matching $badfilter rules.
                 0,
-                RuleParser.parse(sourceRule),
+                sourceRule,
             );
         } catch (e) {
             return [];
@@ -675,7 +673,7 @@ export class RuleSet implements IRuleSet {
             unsafeRulesCount: this.unsafeRulesCount,
             rulesCount,
             ruleSetHashMapRaw: this.rulesHashMap.serialize(),
-            badFilterRulesRaw: this.badFilterRules.map((r) => RuleGenerator.generate(r.rule.node)),
+            badFilterRulesRaw: this.badFilterRules.map((r) => r.ruleParts.text),
             unsafeRules,
         };
     }
@@ -726,9 +724,17 @@ export class RuleSet implements IRuleSet {
             throw new UnavailableRuleSetSourceError(msg, id, e as Error);
         }
 
-        // TODO: Improve this code once we introduce multiple filters within a single rule set
-        // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array
-        const filter = this.filterList.values().next().value!;
+        // TODO: Improve this code once we introduce multiple filters within a single ruleset.
+        // Also, do not forget to change metadata rule's structure to store preprocessed filter lists in an array.
+        // Currently, we expect that there is only one filter within a single rule set.
+        const filter = this.filterList.values().next().value;
+
+        if (!filter) {
+            const id = this.getId();
+            const msg = `Cannot serialize ruleset '${id}' because of not available filter list`;
+            throw new UnavailableRuleSetSourceError(msg, id);
+        }
+
         const content = await filter.getContent();
 
         // To ensure that unsafe rules are provided and their count is correct,
@@ -744,8 +750,8 @@ export class RuleSet implements IRuleSet {
         const metadataRule = createMetadataRule({
             metadata: this.getSerializedRuleSetData(unsafeRules),
             lazyMetadata: this.getSerializedRuleSetLazyData(),
-            conversionMap: content.conversionMap,
-            rawFilterList: content.rawFilterList,
+            rawFilterList: content.getContent(),
+            conversionData: content.getConversionData(),
         });
 
         let declarativeRules = await this.getDeclarativeRules();

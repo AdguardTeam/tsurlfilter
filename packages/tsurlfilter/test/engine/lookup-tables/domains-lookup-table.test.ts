@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { DomainsLookupTable } from '../../../src/engine/lookup-tables/domains-lookup-table';
+import { getRuleParts, type NetworkRuleParts } from '../../../src/filterlist/rule-parts';
 import { Request } from '../../../src/request';
 import { RequestType } from '../../../src/request-type';
-import { createNetworkRule } from '../../helpers/rule-creator';
 
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 
@@ -12,22 +12,22 @@ describe('Domains Lookup Table Tests', () => {
         const ruleStorage = createRuleStorage([]);
         const table = new DomainsLookupTable(ruleStorage);
 
-        expect(table.addRule(createNetworkRule('path', 0), 0)).toBeFalsy();
+        expect(table.addRule(getRuleParts('path') as NetworkRuleParts, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('||example.org^', 0), 0)).toBeFalsy();
+        expect(table.addRule(getRuleParts('||example.org^') as NetworkRuleParts, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('path$domain=~example.com', 0), 0)).toBeFalsy();
+        expect(table.addRule(getRuleParts('path$domain=~example.com') as NetworkRuleParts, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('path$domain=example.*', 0), 0)).toBeFalsy();
+        expect(table.addRule(getRuleParts('path$domain=example.*') as NetworkRuleParts, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('example.com$domain=/example/', 0), 0)).toBeFalsy();
+        expect(table.addRule(getRuleParts('example.com$domain=/example/') as NetworkRuleParts, 0)).toBeFalsy();
         expect(table.getRulesCount()).toBe(0);
 
-        expect(table.addRule(createNetworkRule('path$domain=example.com', 0), 0)).toBeTruthy();
+        expect(table.addRule(getRuleParts('path$domain=example.com') as NetworkRuleParts, 0)).toBeTruthy();
         expect(table.getRulesCount()).toBe(1);
     });
 

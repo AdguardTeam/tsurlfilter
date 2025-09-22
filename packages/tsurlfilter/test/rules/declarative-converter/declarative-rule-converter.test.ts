@@ -420,42 +420,12 @@ describe('DeclarativeRuleConverter', () => {
         expect(declarativeRule).toEqual(undefined);
     });
 
-    it('checks more complex regex than allowed', async () => {
-        const filterId = 0;
+    it.each([
         // eslint-disable-next-line max-len
-        const regexpRuleText = '/www\\.oka\\.fm\\/.+\\/(yuzhnyj4.gif|cel.gif|tehnoplyus.jpg|na_chb_foto_250_250.jpg|ugzemli.gif|istorii.gif|advokat.jpg|odejda-shkola.gif|russkij-svet.jpg|dveri.gif|Festival_shlyapok_2.jpg)/';
-        const filter = await createScannedFilter(
-            filterId,
-            [regexpRuleText],
-        );
-
-        const {
-            errors,
-            declarativeRules,
-        } = await DeclarativeRulesConverter.convert([filter]);
-
-        const networkRule = createNetworkRuleWithNode(regexpRuleText, filterId);
-
-        const expectedError = new UnsupportedRegexpError(
-            `Regex is unsupported: "${regexpRuleText}"`,
-            networkRule,
-            // Note that the declarative rule will be "undefined" due to
-            // a conversion error, but this will not prevent error checking
-            declarativeRules[0],
-        );
-
-        const expectedErrorReason = 'pattern too large - compile failed';
-        expect(declarativeRules).toHaveLength(0);
-        expect(errors).toHaveLength(1);
-        const actualError = errors[0];
-        expect(actualError).toStrictEqual(expectedError);
-        expect((actualError as UnsupportedRegexpError).reason).toContain(expectedErrorReason);
-    });
-
-    it('checks more complex regex than allowed with re2', async () => {
+        '/www\\.oka\\.fm\\/.+\\/(yuzhnyj4.gif|cel.gif|tehnoplyus.jpg|na_chb_foto_250_250.jpg|ugzemli.gif|istorii.gif|advokat.jpg|odejda-shkola.gif|russkij-svet.jpg|dveri.gif|Festival_shlyapok_2.jpg)/',
+        '/^https?:\\/\\/[a-f0-9]{32}\\.[a-z]{7}\\.sbs\\b/',
+    ])('checks complex regex that should fail: %s', async (regexpRuleText) => {
         const filterId = 0;
-        // eslint-disable-next-line max-len
-        const regexpRuleText = '/www\\.oka\\.fm\\/.+\\/(yuzhnyj4.gif|cel.gif|tehnoplyus.jpg|na_chb_foto_250_250.jpg|ugzemli.gif|istorii.gif|advokat.jpg|odejda-shkola.gif|russkij-svet.jpg|dveri.gif|Festival_shlyapok_2.jpg)/';
         const filter = await createScannedFilter(
             filterId,
             [regexpRuleText],

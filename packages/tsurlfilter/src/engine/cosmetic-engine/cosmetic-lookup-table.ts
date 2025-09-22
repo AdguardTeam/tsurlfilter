@@ -1,14 +1,12 @@
+import { ADG_SCRIPTLET_MASK, QuoteType, QuoteUtils } from '@adguard/agtree';
 import { parse } from 'tldts';
 
+import { type CosmeticRuleParts, CosmeticRuleType } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { DomainModifier } from '../../modifiers/domain-modifier';
 import { type Request } from '../../request';
 import { type CosmeticRule } from '../../rules/cosmetic-rule';
 import { fastHash } from '../../utils/string-utils';
-
-/**
- * @typedef {import('./cosmetic-engine').CosmeticEngine} CosmeticEngine
- */
 
 /**
  * CosmeticLookupTable lets quickly lookup cosmetic rules for the specified hostname.
@@ -23,17 +21,20 @@ export class CosmeticLookupTable {
     /**
      * List of domain-specific rules that are not organized into any index structure.
      * These rules are sequentially scanned one by one.
+     * For performance reasons, we store only rule indexes here, and retrieve the rules from the storage
+     * on the first match.
      */
-    public seqScanRules: CosmeticRule[];
+    private seqScanRuleIndexes: number[];
 
     /**
      * Collection of generic rules.
-     * Generic means that the rule is not limited to particular websites and works (almost) everywhere.
+     * Generic rules essentially works on all websites, unless a specific exception rule is defined for them.
      */
     public genericRules: CosmeticRule[];
 
     /**
      * Map with allowlist rules indices. Key is the rule content.
+     * Values are rule indexes.
      *
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#element-hiding-rules-exceptions}
      */
@@ -52,8 +53,8 @@ export class CosmeticLookupTable {
      */
     constructor(storage: RuleStorage) {
         this.byHostname = new Map();
-        this.seqScanRules = [] as CosmeticRule[];
-        this.genericRules = [] as CosmeticRule[];
+        this.seqScanRuleIndexes = [];
+        this.genericRules = [];
         this.allowlist = new Map();
         this.ruleStorage = storage;
     }
@@ -74,51 +75,115 @@ export class CosmeticLookupTable {
     }
 
     /**
+     * Checks if the rule is a scriptlet rule.
+     *
+     * @param ruleParts Rule to check.
+     *
+     * @returns True if the rule is a scriptlet rule.
+     */
+    private static isScriptletRule(ruleParts: CosmeticRuleParts): boolean {
+        return ruleParts.type === CosmeticRuleType.JsInjectionRule
+            && ruleParts.text.startsWith(`${ADG_SCRIPTLET_MASK}(`, ruleParts.contentStart)
+            && ruleParts.text.endsWith(')', ruleParts.contentEnd);
+    }
+
+    /**
      * Adds rule to the appropriate collection.
      *
-     * @param rule Rule to add.
+     * @param ruleParts Rule to add.
      * @param storageIdx Index of the rule in the storage.
      */
-    public addRule(rule: CosmeticRule, storageIdx: number): void {
-        if (rule.isAllowlist()) {
-            if (rule.isScriptlet) {
-                // Store scriptlet rules by name to enable the possibility of allowlisting them.
-                // See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
-                if (rule.scriptletParams.name !== undefined
-                    && rule.scriptletParams.args.length === 0) {
-                    this.addAllowlistRule(rule.scriptletParams.name, storageIdx);
-                }
-                // Use normalized scriptlet content for better matching.
-                // For example, //scriptlet('log', 'arg') can be matched by //scriptlet("log", "arg").
-                this.addAllowlistRule(rule.scriptletParams.toString(), storageIdx);
-            } else {
-                // Store all other rules by their content.
-                this.addAllowlistRule(rule.getContent(), storageIdx);
+    public addRule(ruleParts: CosmeticRuleParts, storageIdx: number): void {
+        if (ruleParts.allowlist) {
+            if (!CosmeticLookupTable.isScriptletRule(ruleParts)) {
+                // Store all non-scriptlet rules by their content.
+                this.addAllowlistRule(ruleParts.text.slice(ruleParts.contentStart, ruleParts.contentEnd), storageIdx);
             }
-            return;
-        }
 
-        if (rule.isGeneric()) {
-            this.genericRules.push(rule);
-            return;
-        }
+            /*
+             * Get scriptlet name and arguments (if any).
+             * For example:
+             * - //scriptlet('log', 'arg') -> ['log', 'arg']
+             * - //scriptlet('')           -> ['']
+             * - //scriptlet()             -> ['']
+             */
+            const params = ruleParts.text
+                .slice(
+                    // +1 to skip the space after the scriptlet mask
+                    ruleParts.contentStart + ADG_SCRIPTLET_MASK.length + 1,
+                    // -1 to skip the closing parenthesis
+                    ruleParts.contentEnd - 1,
+                )
+                .split(',')
+                .map((p) => QuoteUtils.removeQuotesAndUnescape(p.trim()));
 
-        const permittedDomains = rule.getPermittedDomains();
-        if (permittedDomains) {
-            if (permittedDomains.some(DomainModifier.isWildcardOrRegexDomain)) {
-                this.seqScanRules.push(rule);
+            /*
+             * If only one parameter is specified, it means only scriptlet name is specified.
+             * In this case we can allowlist scriptlet by name. For example:
+             * - #@%#//scriptlet('set-cookie')
+             * Also, there are two special cases here:
+             * - #@%#//scriptlet('')
+             * - #@%#//scriptlet()
+             * See https://github.com/AdguardTeam/Scriptlets/issues/377 for more details.
+             */
+            if (params[0] !== undefined && params.length === 1) {
+                this.addAllowlistRule(params[0], storageIdx);
                 return;
             }
-            for (const domain of permittedDomains) {
-                const tldResult = parse(domain);
-                // tldResult.domain equals to eTLD domain,
-                // e.g. sub.example.uk.org would result in example.uk.org
-                const parsedDomain = tldResult.domain || domain;
-                const key = fastHash(parsedDomain);
-                const rules = this.byHostname.get(key) || [] as number[];
-                rules.push(storageIdx);
-                this.byHostname.set(key, rules);
+
+            /*
+             * If more than one parameter is specified, it means scriptlet name and arguments are specified.
+             * In this case we can allowlist scriptlet by content. For example:
+             * - #@%#//scriptlet('log', 'arg')
+             * But we should use normalized scriptlet content for better matching.
+             * For example, //scriptlet('log', 'arg') can be matched by //scriptlet("log", "arg").
+             * In other words, here we normalize //scriptlet("log", "arg") to //scriptlet('log', 'arg').
+             */
+            this.addAllowlistRule(
+                // TODO: Move ScriptletParams from cosmetic-rule.ts to a common file and reuse it here
+                // eslint-disable-next-line max-len
+                `${ADG_SCRIPTLET_MASK}(${params.map((p) => QuoteUtils.setStringQuoteType(p, QuoteType.Single)).join(', ')})`,
+                storageIdx,
+            );
+
+            return;
+        }
+
+        if (ruleParts.domainsStart === undefined || ruleParts.domainsEnd === undefined) {
+            const cosmeticRule = this.ruleStorage.retrieveCosmeticRule(storageIdx);
+            if (cosmeticRule) {
+                this.genericRules.push(cosmeticRule);
             }
+            return;
+        }
+
+        const domains = ruleParts.text
+            .slice(ruleParts.domainsStart, ruleParts.domainsEnd)
+            .split(',')
+            .map((d) => d.trim());
+
+        if (!domains.length || domains.every((d) => d.startsWith('~'))) {
+            const cosmeticRule = this.ruleStorage.retrieveCosmeticRule(storageIdx);
+            if (cosmeticRule) {
+                this.genericRules.push(cosmeticRule);
+            }
+            return;
+        }
+
+        if (domains.some(DomainModifier.isWildcardOrRegexDomain)) {
+            this.seqScanRuleIndexes.push(storageIdx);
+            return;
+        }
+
+        for (const domain of domains) {
+            const tldResult = parse(domain);
+            // tldResult.domain equals to eTLD domain,
+            // e.g. sub.example.uk.org would result in example.uk.org
+            const parsedDomain = tldResult.domain || domain;
+            const key = fastHash(parsedDomain);
+            const rules: number[] = this.byHostname.get(key) || [];
+            rules.push(storageIdx);
+            this.byHostname.set(key, rules);
         }
     }
 
@@ -130,25 +195,33 @@ export class CosmeticLookupTable {
      * @returns Array of matching cosmetic rules.
      */
     public findByHostname(request: Request): CosmeticRule[] {
-        const result = [] as CosmeticRule[];
+        const result: CosmeticRule[] = [];
         const { subdomains } = request;
-        // Iterate over all sub-domains
+
         for (let i = 0; i < subdomains.length; i += 1) {
             const subdomain = subdomains[i];
-            let rulesIndexes = this.byHostname.get(fastHash(subdomain));
-            if (rulesIndexes) {
-                // Filtering out duplicates
-                rulesIndexes = rulesIndexes.filter((v, index) => rulesIndexes!.indexOf(v) === index);
-                for (let j = 0; j < rulesIndexes.length; j += 1) {
-                    const rule = this.ruleStorage.retrieveRule(rulesIndexes[j]) as CosmeticRule;
-                    if (rule && !rule.isAllowlist() && rule.match(request)) {
-                        result.push(rule);
-                    }
+            const rulesIndexes = this.byHostname.get(fastHash(subdomain));
+
+            if (!rulesIndexes || rulesIndexes.length === 0) {
+                continue;
+            }
+
+            const uniqueRulesIndexes = new Set(rulesIndexes);
+            for (const ruleIndex of uniqueRulesIndexes) {
+                const rule = this.ruleStorage.retrieveRule(ruleIndex) as CosmeticRule;
+                if (rule && !rule.isAllowlist() && rule.match(request)) {
+                    result.push(rule);
                 }
             }
         }
 
-        result.push(...this.seqScanRules.filter((r) => !r.isAllowlist() && r.match(request)));
+        for (const ruleIndex of this.seqScanRuleIndexes) {
+            // Note: rule storage caches retrieved rules
+            const rule = this.ruleStorage.retrieveCosmeticRule(ruleIndex);
+            if (rule && !rule.isAllowlist() && rule.match(request)) {
+                result.push(rule);
+            }
+        }
 
         return result;
     }
@@ -169,14 +242,11 @@ export class CosmeticLookupTable {
         const allowlistScriptletRulesIndexes = this.allowlist.get(content);
         if (allowlistScriptletRulesIndexes) {
             const rules = allowlistScriptletRulesIndexes
-                .map((i) => {
-                    return this.ruleStorage.retrieveRule(i) as CosmeticRule;
-                })
-                .filter((r) => r);
+                .map((i) => this.ruleStorage.retrieveCosmeticRule(i))
+                .filter((r): r is CosmeticRule => r !== null);
+
             // here we check if there is at least one generic allowlist rule
-            const hasAllowlistGenericScriptlet = rules.some((r) => {
-                return r.isGeneric();
-            });
+            const hasAllowlistGenericScriptlet = rules.some((r) => r.isGeneric());
             if (hasAllowlistGenericScriptlet) {
                 return true;
             }

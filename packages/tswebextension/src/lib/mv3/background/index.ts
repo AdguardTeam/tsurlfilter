@@ -24,9 +24,8 @@ export {
 export {
     getRuleSourceIndex,
     getRuleSourceText,
-    type PreprocessedFilterList,
-    FilterListPreprocessor,
-    preprocessedFilterListValidator,
+    ConvertedFilterList,
+    type ConversionData,
     type NetworkRule,
     type CosmeticRule,
     type NetworkRuleOption,

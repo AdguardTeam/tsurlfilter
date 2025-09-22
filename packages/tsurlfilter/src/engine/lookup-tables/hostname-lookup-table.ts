@@ -1,3 +1,4 @@
+import { type NetworkRuleParts } from '../../filterlist/rule-parts';
 import { type RuleStorage } from '../../filterlist/rule-storage';
 import { type Request } from '../../request';
 import { type NetworkRule } from '../../rules/network-rule';
@@ -10,6 +11,8 @@ import { type ILookupTable } from './lookup-table';
  * Hostname lookup table.
  * For specific kind of rules like '||hostname^' and '||hostname/path' more simple algorithm with hashes is faster.
  */
+// TODO: This lookup table has a lot of common code with DomainsLookupTable,
+// probably we can extract common code into a base class
 export class HostnameLookupTable implements ILookupTable {
     /**
      * Count of rules added to this lookup table.
@@ -18,6 +21,7 @@ export class HostnameLookupTable implements ILookupTable {
 
     /**
      * Domain lookup table. Key is the domain name hash.
+     * Value is an array of rule indexes in the storage.
      */
     private readonly hostnameLookupTable = new Map<number, number[]>();
 
@@ -36,16 +40,15 @@ export class HostnameLookupTable implements ILookupTable {
         this.ruleStorage = storage;
     }
 
-    /**
-     * Implements the ILookupTable interface for DomainsLookupTable.
-     *
-     * @param rule Rule to add.
-     * @param storageIdx Index of the rule in the storage.
-     *
-     * @returns True if the rule was added.
-     */
-    public addRule(rule: NetworkRule, storageIdx: number): boolean {
-        const pattern = rule.getPattern();
+    /** @inheritdoc */
+    public addRule(ruleParts: NetworkRuleParts, storageIdx: number): boolean {
+        const { patternStart, patternEnd } = ruleParts;
+        const pattern = ruleParts.text.slice(patternStart, patternEnd);
+
+        if (!pattern) {
+            return false;
+        }
+
         let hostname = '';
 
         // Pattern: '||example.org^'
@@ -69,7 +72,7 @@ export class HostnameLookupTable implements ILookupTable {
         const hash = fastHash(hostname);
         let rulesIndexes = this.hostnameLookupTable.get(hash);
         if (!rulesIndexes) {
-            rulesIndexes = new Array<number>();
+            rulesIndexes = [];
             this.hostnameLookupTable.set(hash, rulesIndexes);
         }
         rulesIndexes.push(storageIdx);
@@ -77,34 +80,45 @@ export class HostnameLookupTable implements ILookupTable {
         return true;
     }
 
-    /**
-     * Implements the ILookupTable interface method.
-     *
-     * @returns The count of rules added to this lookup table.
-     */
+    /** @inheritdoc */
     public getRulesCount(): number {
         return this.rulesCount;
     }
 
-    /**
-     * Implements the ILookupTable interface method.
-     *
-     * @param request The request to match against.
-     *
-     * @returns An array of matching network rules.
-     */
+    /** @inheritdoc */
     public matchAll(request: Request): NetworkRule[] {
         const result: NetworkRule[] = [];
         const domains = request.subdomains;
         for (let i = 0; i < domains.length; i += 1) {
             const hash = fastHash(domains[i]);
             const rulesIndexes = this.hostnameLookupTable.get(hash);
-            if (rulesIndexes) {
-                for (let j = 0; j < rulesIndexes.length; j += 1) {
-                    const rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
-                    if (rule && rule.match(request)) {
-                        result.push(rule);
+            if (!rulesIndexes) {
+                continue;
+            }
+            for (let j = 0; j < rulesIndexes.length; j += 1) {
+                let rule: NetworkRule | null = null;
+                let shouldRemove: boolean = false;
+
+                try {
+                    rule = this.ruleStorage.retrieveNetworkRule(rulesIndexes[j]);
+
+                    if (!rule) {
+                        shouldRemove = true;
                     }
+                } catch (e) {
+                    shouldRemove = true;
+                }
+
+                if (shouldRemove) {
+                    // Fast tokenizing possibly allowed invalid rules
+                    // Remove the rule index from the lookup table but keep the same array reference
+                    rulesIndexes.splice(j, 1);
+                    j -= 1;
+                    continue;
+                }
+
+                if (rule && rule.match(request)) {
+                    result.push(rule);
                 }
             }
         }

@@ -1,26 +1,27 @@
 import { describe, expect, it } from 'vitest';
 
 import { SeqScanLookupTable } from '../../../src/engine/lookup-tables/seq-scan-lookup-table';
+import { RuleStorage } from '../../../src/filterlist/rule-storage';
+import { StringRuleList } from '../../../src/filterlist/string-rule-list';
 import { Request } from '../../../src/request';
 import { RequestType } from '../../../src/request-type';
-import { createNetworkRule } from '../../helpers/rule-creator';
 
 import { createRuleStorage, fillLookupTable } from './lookup-table';
 
 describe('Sequence-scan Lookup Table Tests', () => {
     it('adds rule to look up table', () => {
-        const table = new SeqScanLookupTable();
+        const storage = new RuleStorage([
+            new StringRuleList(0, [
+                'path',
+                '||*example.net^',
+                '||example.org^',
+                '||example.com/path',
+            ].join('\n'), false, false, false),
+        ]);
 
-        expect(table.addRule(createNetworkRule('path', 0))).toBeTruthy();
-        expect(table.getRulesCount()).toBe(1);
+        const table = new SeqScanLookupTable(storage);
 
-        expect(table.addRule(createNetworkRule('||*example.org^', 0))).toBeTruthy();
-        expect(table.getRulesCount()).toBe(2);
-
-        expect(table.addRule(createNetworkRule('||example.org^', 0))).toBeTruthy();
-        expect(table.getRulesCount()).toBe(3);
-
-        expect(table.addRule(createNetworkRule('||example.net/path', 0))).toBeTruthy();
+        fillLookupTable(table, storage);
         expect(table.getRulesCount()).toBe(4);
     });
 
@@ -33,7 +34,7 @@ describe('Sequence-scan Lookup Table Tests', () => {
         ];
 
         const ruleStorage = createRuleStorage(rules);
-        const table = new SeqScanLookupTable();
+        const table = new SeqScanLookupTable(ruleStorage);
 
         fillLookupTable(table, ruleStorage);
         expect(table.getRulesCount()).toBe(4);

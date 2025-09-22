@@ -3,7 +3,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-import { FilterListPreprocessor } from '../src/filterlist/preprocessor/preprocessor';
+import { ConvertedFilterList } from '../src/filterlist/converted-filter-list';
 import { METADATA_RULESET_ID, MetadataRuleSet } from '../src/rules/declarative-converter';
 import { extractRuleSetId, RULESET_FILE_EXT } from '../src/rules/declarative-converter-utils/rule-set-path';
 
@@ -87,14 +87,12 @@ export class Extractor {
                     console.log(`Ruleset ${jsonFilePath} is not contain metadata, skipping.`);
                 }
 
-                const { conversionMap, rawFilterList } = metadata;
+                const { conversionData, rawFilterList } = metadata;
 
                 const outputFileName = `filter_${filterId}.txt`;
                 const outputFilePath = path.join(outputPath, outputFileName);
-                const originalFilterListText = FilterListPreprocessor.getOriginalFilterListText({
-                    rawFilterList,
-                    conversionMap,
-                });
+                const convertedFilterList = new ConvertedFilterList(rawFilterList, conversionData);
+                const originalFilterListText = convertedFilterList.getOriginalContent();
                 await fs.writeFile(outputFilePath, originalFilterListText);
                 console.log(`Successfully extracted filter ${filterId} to ${outputFilePath}`);
             } catch (e) {

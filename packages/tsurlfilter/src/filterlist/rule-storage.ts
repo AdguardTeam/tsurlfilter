@@ -1,5 +1,13 @@
-import { type AnyRule } from '@adguard/agtree';
+import {
+    NetworkRuleType,
+    RuleCategory,
+    RuleGenerator,
+    RuleParser,
+} from '@adguard/agtree';
+import { defaultParserOptions } from '@adguard/agtree/parser';
+import { getErrorMessage } from '@adguard/logger';
 
+import { CosmeticRule } from '../rules/cosmetic-rule';
 import { HostRule } from '../rules/host-rule';
 import { NetworkRule } from '../rules/network-rule';
 import { type IRule } from '../rules/rule';
@@ -12,7 +20,7 @@ import { RuleStorageScanner } from './scanner/rule-storage-scanner';
 import { type ScannerType } from './scanner/scanner-type';
 
 /**
- * RuleStorage is an abstraction that combines several rule lists
+ * RuleStorage is an abstraction that combines several rule lists.
  * It can be scanned using RuleStorageScanner, and also it allows
  * retrieving rules by its index.
  *
@@ -37,7 +45,7 @@ export class RuleStorage {
     private readonly listsMap: Map<number, IRuleList>;
 
     /**
-     * Cache with the rules which are stored inside this cache instance..
+     * Cache with the rules which are stored inside this cache instance.
      */
     private readonly cache: Map<number, IRule>;
 
@@ -69,21 +77,23 @@ export class RuleStorage {
     }
 
     /**
-     * Retrieves a rule node by its filter list identifier and rule index.
+     * Retrieves a rule text by its filter list identifier and rule index.
      *
      * If there's no rule by that index or the rule structure is invalid, it will return null.
      *
      * @param filterId Filter list identifier.
      * @param ruleIndex Rule index.
      *
-     * @returns Rule node or `null`.
+     * @returns Rule text or `null`.
      */
-    public retrieveRuleNode(filterId: number, ruleIndex: number): AnyRule | null {
-        if (!this.listsMap.has(filterId)) {
+    public retrieveRuleText(filterId: number, ruleIndex: number): string | null {
+        const list = this.listsMap.get(filterId);
+
+        if (!list) {
             return null;
         }
 
-        return this.listsMap.get(filterId)!.retrieveRuleNode(ruleIndex);
+        return list.retrieveRuleText(ruleIndex);
     }
 
     /**
@@ -101,12 +111,25 @@ export class RuleStorage {
     }
 
     /**
+     * Retrieves the filter list identifier from the storage index.
+     *
+     * @param storageIdx Storage index of the rule.
+     *
+     * @returns The filter list identifier.
+     */
+    public getFilterListId(storageIdx: number): number {
+        return this.scanner.getIds(storageIdx)[0];
+    }
+
+    /**
      * Looks for the filtering rule in this storage.
      *
      * @param storageIdx The lookup index that you can get from the rule storage scanner.
-     * @param ignoreHost Rules could be retrieved as host rules.
+     * @param ignoreHost Whether to ignore host rules.
      *
      * @returns The rule or null if not found or an error occurs.
+     *
+     * @note It returns `null` for rules that are ignored in the rule list.
      */
     public retrieveRule(storageIdx: number, ignoreHost = true): IRule | null {
         const rule = this.cache.get(storageIdx);
@@ -119,26 +142,58 @@ export class RuleStorage {
         const list = this.listsMap.get(listId);
 
         if (!list) {
-            logger.warn(`[tsurl.RuleStorage.retrieveRule]: failed to retrieve list ${listId}, should not happen in normal operation`);
+            logger.warn(`[tsurl.RuleStorage.retrieveRule]: Failed to retrieve list ${listId}, should not happen in normal operation`);
 
             return null;
         }
 
-        const ruleNode = list.retrieveRuleNode(ruleId);
+        const ruleText = list.retrieveRuleText(ruleId);
 
-        if (!ruleNode) {
-            logger.warn(`[tsurl.RuleStorage.retrieveRule]: failed to retrieve rule ${ruleId}, should not happen in normal operation`);
+        if (!ruleText) {
+            logger.warn(`[tsurl.RuleStorage.retrieveRule]: Failed to retrieve rule ${ruleId}, should not happen in normal operation`);
 
             return null;
         }
 
-        const result = RuleFactory.createRule(ruleNode, listId, ruleId, false, false, ignoreHost);
+        // TODO: Consider improving API: currently we pass ignore host flag to the parser and then to the factory.
+        const node = RuleParser.parse(ruleText, {
+            ...defaultParserOptions,
+            parseHostRules: !ignoreHost,
+        });
 
-        if (result) {
-            this.cache.set(storageIdx, result);
+        if (ignoreHost && node.category === RuleCategory.Network && node.type === NetworkRuleType.HostRule) {
+            return null;
         }
 
-        return result;
+        let createdRule: IRule | null = null;
+
+        try {
+            createdRule = RuleFactory.createRule(node, listId, ruleId);
+        } catch (e) {
+            let msg = `"${getErrorMessage(e)}" in the rule: `;
+
+            try {
+                msg += `"${RuleGenerator.generate(node)}"`;
+            } catch (generateError) {
+                msg += `"${JSON.stringify(node)}" (generate error: ${getErrorMessage(generateError)})`;
+            }
+
+            logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: ${msg}`);
+        }
+
+        if (list.ignoreUnsafe) {
+            if (createdRule instanceof NetworkRule && createdRule.isUnsafe()) {
+                return null;
+            }
+
+            // TODO: Add support for more rule types, if needed
+        }
+
+        if (createdRule) {
+            this.cache.set(storageIdx, createdRule);
+        }
+
+        return createdRule;
     }
 
     /**
@@ -150,12 +205,9 @@ export class RuleStorage {
      */
     public retrieveNetworkRule(storageIdx: number): NetworkRule | null {
         const rule = this.retrieveRule(storageIdx);
-        if (!rule) {
-            return null;
-        }
 
         if (rule instanceof NetworkRule) {
-            return rule as NetworkRule;
+            return rule;
         }
 
         return null;
@@ -170,12 +222,26 @@ export class RuleStorage {
      */
     public retrieveHostRule(storageIdx: number): HostRule | null {
         const rule = this.retrieveRule(storageIdx, false);
-        if (!rule) {
-            return null;
-        }
 
         if (rule instanceof HostRule) {
-            return rule as HostRule;
+            return rule;
+        }
+
+        return null;
+    }
+
+    /**
+     * Retrieves a cosmetic rule from the storage.
+     *
+     * @param storageIdx Storage index of the rule.
+     *
+     * @returns The rule or nil in any other case (not found or error).
+     */
+    public retrieveCosmeticRule(storageIdx: number): CosmeticRule | null {
+        const rule = this.retrieveRule(storageIdx);
+
+        if (rule instanceof CosmeticRule) {
+            return rule;
         }
 
         return null;

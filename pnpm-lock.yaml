@@ -1698,6 +1698,9 @@ importers:
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
+      tsurlfilter-v3:
+        specifier: npm:@adguard/tsurlfilter@^3.3.3
+        version: '@adguard/tsurlfilter@3.4.6(@adguard/re2-wasm@1.2.0)'
       tsx:
         specifier: 'catalog:'
         version: 4.19.3
@@ -1945,6 +1948,10 @@ packages:
     resolution: {integrity: sha512-xe5C10VXIajq4sr66mb1r64UIlJ54qXZiFpQHe9E7j7LQqRG31b4KB+8TggIdT54Bm3WrKjqjfatKBNYAJcKGQ==}
     engines: {node: '>=18'}
 
+  '@adguard/logger@2.0.0':
+    resolution: {integrity: sha512-jOiL0gy+uhrezJwI5j1mzpXyta1AFOhpEgKrqRlLN6puArFmHDmLH06civQs12tFWjtUCX+uGgUd1i4x/PCU1g==}
+    engines: {node: '>=22'}
+
   '@adguard/re2-wasm@1.2.0':
     resolution: {integrity: sha512-yMtEJfThxN9rEYm2Zg3X8jUKaPYq5wByc90JbMspSWJo7MXw664gTvLD7/wijl6y79VSuAs77bXUIgBXutMp7A==}
     engines: {node: '>=10'}
@@ -1966,6 +1973,13 @@ packages:
     resolution: {integrity: sha512-DgNx6yG2fkcvAMSz6CuB1dQfUiB7mrJytA3fQWYkm335V7m89RMdsORwjL/TA2cBYtNDgV3DDDvwJsy/B+/kAQ==}
     engines: {node: '>=6.0.0'}
     hasBin: true
+
+  '@adguard/tsurlfilter@3.4.6':
+    resolution: {integrity: sha512-5v4Wu+kCW3C4jSUPIR0QT3164iGrzmJ8ZpIkag1QHyqV8QtaVpqUM7WVAcnogkXM71tKZ+ZRFF9HkUNojA6fxg==}
+    engines: {node: '>=22'}
+    hasBin: true
+    peerDependencies:
+      '@adguard/re2-wasm': 1.2.0
 
   '@ampproject/remapping@2.3.0':
     resolution: {integrity: sha512-30iZtAPgz+LTIYoeivqYo853f02jBYSd5uGnGpkFV0M3xOt9aN73erkgYAmZU43x4VfqcnLxW9Kpg3R5LC4YYw==}
@@ -9709,6 +9723,8 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
+  '@adguard/logger@2.0.0': {}
+
   '@adguard/re2-wasm@1.2.0': {}
 
   '@adguard/scriptlets@1.12.1':
@@ -9750,6 +9766,23 @@ snapshots:
       punycode: 2.1.1
       tldts: 5.6.45
       zod: 3.19.1
+
+  '@adguard/tsurlfilter@3.4.6(@adguard/re2-wasm@1.2.0)':
+    dependencies:
+      '@adguard/agtree': link:packages/agtree
+      '@adguard/css-tokenizer': 1.2.0
+      '@adguard/logger': 2.0.0
+      '@adguard/re2-wasm': 1.2.0
+      '@adguard/scriptlets': 2.2.10
+      cidr-tools: 6.4.2
+      commander: 12.1.0
+      is-cidr: 4.0.2
+      is-ip: 3.1.0
+      lru-cache: 11.1.0
+      punycode: 2.3.1
+      tldts: 5.7.112
+      zod: 3.24.4
+      zod-validation-error: 3.5.2(zod@3.24.4)
 
   '@ampproject/remapping@2.3.0':
     dependencies:

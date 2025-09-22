@@ -7,7 +7,7 @@ import { OPTIONS_DELIMITER } from '../network-rule-options';
 import type { RedirectModifier } from '../../modifiers/redirect-modifier';
 
 import { UnsupportedModifierError } from './errors/conversion-errors/unsupported-modifier-error';
-import { type NetworkRuleWithNode } from './network-rule-with-node';
+import { type NetworkRuleWithNodeAndText } from './network-rule-with-node-and-text';
 
 /**
  * @typedef {import('../../engine/matching-result').MatchingResult} MatchingResult
@@ -29,7 +29,7 @@ type NetworkOptionValidator = {
     /**
      * If rule partially supported with some additional checks.
      */
-    customChecks?: ((r: NetworkRuleWithNode, name: string) => UnsupportedModifierError | null)[];
+    customChecks?: ((r: NetworkRuleWithNodeAndText, name: string) => UnsupportedModifierError | null)[];
     /**
      * If rule is not supported at all.
      */
@@ -74,8 +74,11 @@ export class NetworkRuleDeclarativeValidator {
      *
      * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private static checkRemoveParamModifierFn(r: NetworkRuleWithNode, name: string): UnsupportedModifierError | null {
+    private static checkRemoveParamModifierFn(
+        r: NetworkRuleWithNodeAndText,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        name: string,
+    ): UnsupportedModifierError | null {
         const removeParam = r.rule.getAdvancedModifier();
 
         if (!removeParam) {
@@ -104,7 +107,7 @@ export class NetworkRuleDeclarativeValidator {
      *
      * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
      */
-    private static checkAllowRulesFn(r: NetworkRuleWithNode, name: string): UnsupportedModifierError | null {
+    private static checkAllowRulesFn(r: NetworkRuleWithNodeAndText, name: string): UnsupportedModifierError | null {
         if (r.rule.isAllowlist()) {
             return new UnsupportedModifierError(
                 `Network allowlist rule with ${name} modifier is not supported`,
@@ -123,7 +126,10 @@ export class NetworkRuleDeclarativeValidator {
      *
      * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
      */
-    private static checkHasModifierExplicitlyFn(r: NetworkRuleWithNode, name: string): UnsupportedModifierError | null {
+    private static checkHasModifierExplicitlyFn(
+        r: NetworkRuleWithNodeAndText,
+        name: string,
+    ): UnsupportedModifierError | null {
         let nameToCheck = name;
 
         // Remove leading dollar sign, if any
@@ -150,8 +156,11 @@ export class NetworkRuleDeclarativeValidator {
      *
      * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private static checkRemoveHeaderModifierFn(r: NetworkRuleWithNode, name: string): UnsupportedModifierError | null {
+    private static checkRemoveHeaderModifierFn(
+        r: NetworkRuleWithNodeAndText,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        name: string,
+    ): UnsupportedModifierError | null {
         const removeHeader = r.rule.getAdvancedModifier();
 
         if (!removeHeader) {
@@ -182,8 +191,11 @@ export class NetworkRuleDeclarativeValidator {
      *
      * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private static checkMethodModifierFn(r: NetworkRuleWithNode, name: string): UnsupportedModifierError | null {
+    private static checkMethodModifierFn(
+        r: NetworkRuleWithNodeAndText,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        name: string,
+    ): UnsupportedModifierError | null {
         const permittedMethods = r.rule.getPermittedMethods();
         const restrictedMethods = r.rule.getRestrictedMethods();
         if (
@@ -208,8 +220,11 @@ export class NetworkRuleDeclarativeValidator {
      *
      * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private static checkCookieModifierFn = (r: NetworkRuleWithNode, name: string): UnsupportedModifierError | null => {
+    private static checkCookieModifierFn = (
+        r: NetworkRuleWithNodeAndText,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        name: string,
+    ): UnsupportedModifierError | null => {
         const cookieModifier = r.rule.getAdvancedModifier();
 
         if (!cookieModifier) {
@@ -248,7 +263,7 @@ export class NetworkRuleDeclarativeValidator {
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     private static checkDocumentAllowlistFn = (
-        r: NetworkRuleWithNode,
+        r: NetworkRuleWithNodeAndText,
         name: string,
     ): UnsupportedModifierError | null => {
         if (r.rule.isFilteringDisabled()) {
@@ -271,7 +286,7 @@ export class NetworkRuleDeclarativeValidator {
      * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
      */
     private static checkRedirectModifierFn = (
-        r: NetworkRuleWithNode,
+        r: NetworkRuleWithNodeAndText,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         name: string,
     ): UnsupportedModifierError | null => {
@@ -400,7 +415,7 @@ export class NetworkRuleDeclarativeValidator {
      * @returns Boolean flag - `false` if the rule does not require conversion
      * and `true` if the rule is convertible.
      */
-    public static shouldConvertNetworkRule(rule: NetworkRuleWithNode): boolean {
+    public static shouldConvertNetworkRule(rule: NetworkRuleWithNodeAndText): boolean {
         // Filter NetworkRuleOption.NotSet because this is syntax sugar and
         // not a real valuable option.
         const options = Object.keys(NetworkRuleOption).filter((key) => key !== 'NotSet');

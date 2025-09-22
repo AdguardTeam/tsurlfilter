@@ -1,4 +1,10 @@
-import { type AnyCosmeticRule, type AnyRule, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
+import {
+    type AnyCosmeticRule,
+    type AnyRule,
+    type NetworkRule as NetworkRuleNode,
+    NetworkRuleType,
+    RuleCategory,
+} from '@adguard/agtree';
 import {
     CosmeticRuleParser,
     defaultParserOptions,
@@ -8,7 +14,7 @@ import {
 import { isString } from 'lodash-es';
 
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
-import { NetworkRuleWithNode } from '../../src/rules/declarative-converter/network-rule-with-node';
+import { NetworkRuleWithNodeAndText } from '../../src/rules/declarative-converter/network-rule-with-node-and-text';
 import { NetworkRule } from '../../src/rules/network-rule';
 import { type IRule, RULE_INDEX_NONE } from '../../src/rules/rule';
 import { RuleFactory } from '../../src/rules/rule-factory';
@@ -47,7 +53,7 @@ export const createNetworkRule = (
  * This is needed because the default API for creating a network rule only accepts nodes,
  * but it's more convenient to create rules from strings.
  *
- * @param rule Rule string or parsed node.
+ * @param text Rule text.
  * @param filterListId Filter list ID (optional, default is 0).
  * @param ruleIndex Rule index (optional, default is {@link RULE_INDEX_NONE}).
  *
@@ -56,21 +62,22 @@ export const createNetworkRule = (
  * @throws Error if the rule is not a valid network rule.
  */
 export const createNetworkRuleWithNode = (
-    rule: string | NetworkRuleNode,
+    text: string,
     filterListId = 0,
     ruleIndex = RULE_INDEX_NONE,
-): NetworkRuleWithNode => {
+): NetworkRuleWithNodeAndText => {
     let node: NetworkRuleNode;
 
-    if (isString(rule)) {
-        node = NetworkRuleParser.parse(rule.trim());
+    if (isString(text)) {
+        node = NetworkRuleParser.parse(text.trim());
     } else {
-        node = rule;
+        node = text;
     }
 
-    return new NetworkRuleWithNode(
+    return new NetworkRuleWithNodeAndText(
         new NetworkRule(node, filterListId, ruleIndex),
         node,
+        text,
     );
 };
 
@@ -123,7 +130,6 @@ export const createCosmeticRule = (
  * @param ignoreNetwork Ignore network rules (optional, default is false).
  * @param ignoreCosmetic Ignore cosmetic rules (optional, default is false).
  * @param ignoreHost Ignore host rules (optional, default is true).
- * @param silent Silent mode (optional, default is true).
  *
  * @returns Rule instance.
  *
@@ -136,7 +142,6 @@ export const createRule = (
     ignoreNetwork = false,
     ignoreCosmetic = false,
     ignoreHost = true,
-    silent = true,
 ): IRule | null => {
     let node: AnyRule;
 
@@ -149,13 +154,21 @@ export const createRule = (
         node = rule;
     }
 
+    if (ignoreNetwork && node.category === RuleCategory.Network) {
+        return null;
+    }
+
+    if (ignoreHost && node.category === RuleCategory.Network && node.type === NetworkRuleType.HostRule) {
+        return null;
+    }
+
+    if (ignoreCosmetic && node.category === RuleCategory.Cosmetic) {
+        return null;
+    }
+
     return RuleFactory.createRule(
         node,
         filterListId,
         ruleIndex,
-        ignoreNetwork,
-        ignoreCosmetic,
-        ignoreHost,
-        silent,
     );
 };

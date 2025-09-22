@@ -1,4 +1,4 @@
-import { type PreprocessedFilterList } from '@adguard/tsurlfilter';
+import { type ConversionData } from '@adguard/tsurlfilter';
 
 import { logger } from '../utils/logger';
 import { IdbSingleton } from '../idb-singleton';
@@ -6,7 +6,22 @@ import { IdbSingleton } from '../idb-singleton';
 /**
  * Preprocessed filter list extended with checksum.
  */
-export type PreprocessedFilterListWithChecksum = PreprocessedFilterList & { checksum: string };
+export type ConvertedFilterListWithChecksum = {
+    /**
+     * Checksum.
+     */
+    checksum: string;
+
+    /**
+     * Raw filter list converted to AdGuard syntax.
+     */
+    rawFilterList: string;
+
+    /**
+     * Conversion data.
+     */
+    conversionData: ConversionData;
+};
 
 /**
  * Provides a "synchronized storage" for filter lists.
@@ -25,24 +40,14 @@ export class FiltersStorage {
     private static readonly KEY_COMBINER = '_';
 
     /**
-     * Key prefix for byte serialized filter list.
-     */
-    private static readonly KEY_FILTER_LIST = 'filterList';
-
-    /**
      * Key prefix for raw filter list.
      */
     private static readonly KEY_RAW_FILTER_LIST = 'rawFilterList';
 
     /**
-     * Key prefix for conversion map.
+     * Key prefix for conversion data.
      */
-    private static readonly KEY_CONVERSION_MAP = 'conversionMap';
-
-    /**
-     * Key prefix for source map.
-     */
-    private static readonly KEY_SOURCE_MAP = 'sourceMap';
+    private static readonly KEY_CONVERSION_DATA = 'conversionData';
 
     /**
      * Key prefix for checksum.
@@ -69,7 +74,7 @@ export class FiltersStorage {
      *
      * @throws Error, if transaction failed.
      */
-    public static async setMultiple(filters: Record<number, PreprocessedFilterListWithChecksum>): Promise<void> {
+    public static async setMultiple(filters: Record<number, ConvertedFilterListWithChecksum>): Promise<void> {
         const data: Record<string, unknown> = {};
 
         for (const [filterId, filter] of Object.entries(filters)) {
@@ -119,38 +124,33 @@ export class FiltersStorage {
      *
      * @throws Error, if DB operation failed or returned data is not valid.
      */
-    static async get(filterId: number): Promise<PreprocessedFilterListWithChecksum | undefined> {
+    static async get(filterId: number): Promise<ConvertedFilterListWithChecksum | undefined> {
         try {
             const data = await Promise.all([
-                FiltersStorage.getFilterList(filterId),
                 FiltersStorage.getRawFilterList(filterId),
-                FiltersStorage.getConversionMap(filterId),
-                FiltersStorage.getSourceMap(filterId),
+                FiltersStorage.getConversionData(filterId),
                 FiltersStorage.getChecksum(filterId),
             ]);
 
             // eslint-disable-next-line prefer-const
-            let [filterList, rawFilterList, conversionMap, sourceMap, checksum] = data;
+            let [rawFilterList, conversionData, checksum] = data;
 
             // If any of the data is missing, return undefined
-            if (filterList === undefined || rawFilterList === undefined || checksum === undefined) {
+            if (rawFilterList === undefined || checksum === undefined) {
                 return undefined;
             }
 
-            // If conversionMap or sourceMap is missing, set it to empty object
-            if (conversionMap === undefined) {
-                conversionMap = {};
-            }
-
-            if (sourceMap === undefined) {
-                sourceMap = {};
+            // If conversionData is missing, set it to empty object
+            if (conversionData === undefined) {
+                conversionData = {
+                    originals: [],
+                    conversions: [],
+                };
             }
 
             return {
-                filterList,
                 rawFilterList,
-                conversionMap,
-                sourceMap,
+                conversionData,
                 checksum,
             };
         } catch (e) {
@@ -169,10 +169,8 @@ export class FiltersStorage {
     public static async removeMultiple(filterIds: number[]): Promise<void> {
         const keys = filterIds.map((filterId) => {
             return [
-                FiltersStorage.getKey(FiltersStorage.KEY_FILTER_LIST, filterId),
                 FiltersStorage.getKey(FiltersStorage.KEY_RAW_FILTER_LIST, filterId),
-                FiltersStorage.getKey(FiltersStorage.KEY_CONVERSION_MAP, filterId),
-                FiltersStorage.getKey(FiltersStorage.KEY_SOURCE_MAP, filterId),
+                FiltersStorage.getKey(FiltersStorage.KEY_CONVERSION_DATA, filterId),
                 FiltersStorage.getKey(FiltersStorage.KEY_CHECKSUM, filterId),
             ];
         }).flat();
@@ -199,29 +197,12 @@ export class FiltersStorage {
      */
     public static async getRawFilterList(
         filterId: number,
-    ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_RAW_FILTER_LIST] | undefined> {
+    ): Promise<string | undefined> {
         const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         return db.get(
             FiltersStorage.DB_STORE_NAME,
             FiltersStorage.getKey(FiltersStorage.KEY_RAW_FILTER_LIST, filterId),
-        ) as Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_RAW_FILTER_LIST] | undefined>;
-    }
-
-    /**
-     * Gets the byte array of the filter list for the specified filter ID.
-     *
-     * @param filterId Filter id.
-     *
-     * @returns Byte array of the filter list or `undefined` if the filter list does not exist.
-     */
-    public static async getFilterList(
-        filterId: number,
-    ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_FILTER_LIST] | undefined> {
-        const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
-        return db.get(
-            FiltersStorage.DB_STORE_NAME,
-            FiltersStorage.getKey(FiltersStorage.KEY_FILTER_LIST, filterId),
-        ) as Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_FILTER_LIST] | undefined>;
+        ) as Promise<string | undefined>;
     }
 
     /**
@@ -231,31 +212,14 @@ export class FiltersStorage {
      *
      * @returns Conversion map or `undefined` if the filter list does not exist.
      */
-    public static async getConversionMap(
+    public static async getConversionData(
         filterId: number,
-    ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_CONVERSION_MAP] | undefined> {
+    ): Promise<ConversionData | undefined> {
         const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
         return db.get(
             FiltersStorage.DB_STORE_NAME,
-            FiltersStorage.getKey(FiltersStorage.KEY_CONVERSION_MAP, filterId),
-        ) as Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_CONVERSION_MAP] | undefined>;
-    }
-
-    /**
-     * Gets the source map for the specified filter ID.
-     *
-     * @param filterId Filter id.
-     *
-     * @returns Source map or `undefined` if the filter list does not exist.
-     */
-    public static async getSourceMap(
-        filterId: number,
-    ): Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_SOURCE_MAP] | undefined> {
-        const db = await IdbSingleton.getOpenedDb(FiltersStorage.DB_STORE_NAME);
-        return db.get(
-            FiltersStorage.DB_STORE_NAME,
-            FiltersStorage.getKey(FiltersStorage.KEY_SOURCE_MAP, filterId),
-        ) as Promise<PreprocessedFilterList[typeof FiltersStorage.KEY_SOURCE_MAP] | undefined>;
+            FiltersStorage.getKey(FiltersStorage.KEY_CONVERSION_DATA, filterId),
+        ) as Promise<ConversionData | undefined>;
     }
 
     /**

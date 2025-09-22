@@ -66,19 +66,6 @@ describe('RuleFactory Builder Test', () => {
         expect(rule!).toBeInstanceOf(HostRule);
     });
 
-    it('respects ignore flags', () => {
-        let rule;
-
-        rule = createRule('##.banner', 1, RULE_INDEX_NONE, false, true);
-        expect(rule).toBeFalsy();
-
-        rule = createRule('||example.org^', 1, RULE_INDEX_NONE, true);
-        expect(rule).toBeFalsy();
-
-        rule = createRule('127.0.0.1 localhost', 1, RULE_INDEX_NONE, false, false, true);
-        expect(rule).toBeFalsy();
-    });
-
     // https://github.com/AdguardTeam/tsurlfilter/issues/56
     it('creates rules without domains or apps for dns compatible config', () => {
         const config = {
