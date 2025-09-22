@@ -830,4 +830,19 @@ export class TsWebExtension implements AppInterface<
             logger.currentLevel = LogLevel.Info;
         }
     }
+
+    /**
+     * Retrieves a rule text by its filter list identifier and rule index.
+     *
+     * If there's no rule by that index or the rule structure is invalid, it will return null.
+     *
+     * @param filterId Filter list identifier.
+     * @param ruleIndex Rule index.
+     *
+     * @returns Rule text or `null`.
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public retrieveRuleText(filterId: number, ruleIndex: number): string | null {
+        return engineApi.retrieveRuleText(filterId, ruleIndex);
+    }
 }
