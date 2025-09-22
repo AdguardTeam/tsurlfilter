@@ -106,12 +106,12 @@ export class FiltersApi {
         }
 
         // TODO: Modify how rules are stored and just read serialized data from storage
-        const processed = new ConvertedFilterList(rules.join('\n'));
+        const converted = new ConvertedFilterList(rules.join('\n'));
 
         return {
             filterId,
-            content: processed.getContent(),
-            conversionData: processed.getConversionData(),
+            content: converted.getContent(),
+            conversionData: converted.getConversionData(),
             trusted: true,
         };
     }
