@@ -103,8 +103,8 @@ Test Logger:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh"
-    # IMPORTANT: run clean after each stage
-    # since each stage is run in a separate directory and we want to clean up after each stage
+  # IMPORTANT: run clean after each stage
+  # since each stage is run in a separate directory and we want to clean up after each stage
   final-tasks:
     - script: &cleanup-script
         interpreter: SHELL
