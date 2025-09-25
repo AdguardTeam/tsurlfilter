@@ -38,6 +38,12 @@ Build:
             ls -alt
 
             # FIXME: Implement build
+  artifacts:
+    - name: dnr-converter.tgz
+      location: packages/dnr-converter/
+      pattern: dnr-converter.tgz
+      shared: true
+      required: true
   requirements:
     - adg-docker: 'true'
     - extension: 'true'
