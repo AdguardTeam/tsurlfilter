@@ -27,6 +27,16 @@ Increment:
         interpreter: SHELL
         scripts:
           - |-
+            branch="${bamboo.planRepository.branchName}"
+
+            # Throw error if current branch is not "master",
+            # because we do not deploy changes from other branches
+            if [ $branch != "master" ]
+            then
+              echo "increment is not supported on branch ${branch}"
+              exit 1;
+            fi
+
             set -e
             set -x
 
@@ -35,7 +45,22 @@ Increment:
 
             ls -alt
 
-            # FIXME: Implement increment
+            # Set cache directory
+            pnpm config set store-dir ${bamboo.cachePnpm}
+            pnpm install
+
+            # Increment @adguard/dnr-converter
+            pnpm run increment dnr-converter
+    - any-task:
+        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
+        configuration:
+          commitMessage: 'skipci: Automatic increment build number for DNR Converter'
+          selectedRepository: defaultRepository
+  final-tasks:
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/cleanup.sh"
   requirements:
     - adg-docker: 'true'
     - extension: 'true'

@@ -25,6 +25,7 @@ The following packages are available in this repository:
 | [`tswebextension`][tswebextensionreadme]       | Wraps the web extension API for use with [`tsurlfilter`][tsurlfilterreadme].         |
 | [`adguard-api`][adguardapireadme]              | Manages filter lists and ad filtering via [`tswebextension`][tswebextensionreadme].  |
 | [`adguard-api-mv3`][adguardapimv3readme]       | MV3 compatible version of [`adguard-api`][adguardapireadme].                         |
+| [`dnr-converter`][dnrconverterreadme]          | A converter that transforms adblock-style filtering rules into rules compatible with the Declarative Net Request (DNR) API. |
 | [`dnr-rulesets`][dnrrulesetsreadme]            | Utility to load prebuilt AdGuard DNR rulesets for mv3 extensions.                    |
 | [`examples/manifest-v2`][manifestv2]           | Example using Manifest V2.                                                           |
 | [`examples/manifest-v3`][manifestv3]           | Example using Manifest V3.                                                           |
@@ -35,6 +36,7 @@ Detailed information on each package is available in the [`./packages`][packages
 
 [adguardapireadme]: /packages/adguard-api/README.md
 [adguardapimv3readme]: /packages/adguard-api-mv3/README.md
+[dnrconverterreadme]: /packages/dnr-converter/README.md
 [dnrrulesetsreadme]: /packages/dnr-rulesets/README.md
 [agtreereadme]: /packages/agtree/README.md
 [loggerreadme]: /packages/logger/README.md
@@ -171,6 +173,7 @@ To do this, create a `tsurlfilter.code-workspace` file in the monorepo root dire
         { "path": "packages/agtree" },
         { "path": "packages/tsurlfilter" },
         { "path": "packages/tswebextension" },
+        { "path": "packages/dnr-converter" },
         { "path": "packages/dnr-rulesets" },
         { "path": "packages/adguard-api" },
         { "path": "packages/adguard-api-mv3" },
@@ -200,12 +203,19 @@ These packages do not depend on other monorepo packages:
 
 Below is the dependency relationship between packages:
 
+<!-- FIXME: Add dnr-converter consumers after fully migrating -->
+
 - `@adguard/agtree` depends on:
     - `@adguard/css-tokenizer`
+
+- `@adguard/dnr-converter` depends on:
+    - `@adguard/agtree`
+    - `@adguard/logger`
 
 - `@adguard/tsurlfilter` depends on:
     - `@adguard/agtree`
     - `@adguard/css-tokenizer`
+    - `@adguard/logger`
 
 - `@adguard/tswebextension` depends on:
     - `@adguard/agtree`
@@ -234,8 +244,13 @@ To summarize the dependency tree, here is a scheme of the dependency tree:
    ├──►│     agtree     ├───┐  │
    │   └────────────────┘   │  │
    │   ┌────────────────┐   │  │
-   └──►│                │   │  │
-       │  tsurlfilter   │◄──┤  │
+   │   │                │◄──┤  │
+   │   │ dnr-converter  │◄──┼──┤
+   │   │                │   │  │
+   │   └────────────────┘   │  │
+   │   ┌────────────────┐   │  │
+   └──►│                │◄──┤  │
+       │  tsurlfilter   │◄──┼──┤
    ┌───┤                │   │  │
    │   └────────────────┘   │  │
    │   ┌────────────────┐   │  │

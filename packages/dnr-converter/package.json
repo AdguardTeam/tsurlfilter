@@ -1,0 +1,97 @@
+{
+    "name": "@adguard/dnr-converter",
+    "version": "0.0.1",
+    "description": "A converter that transforms adblock-style filtering rules into rules compatible with the Declarative Net Request (DNR) API.",
+    "main": "dist/index.js",
+    "module": "dist/index.js",
+    "types": "dist/types/index.d.ts",
+    "type": "module",
+    "sideEffects": false,
+    "files": [
+        "dist",
+        "!dist/build.txt"
+    ],
+    "exports": {
+        ".": {
+            "import": "./dist/index.js",
+            "types": "./dist/types/index.d.ts"
+        }
+    },
+    "typesVersions": {
+        "*": {
+            "*": [
+                "dist/types/index.d.ts"
+            ]
+        }
+    },
+    "author": "Adguard Software Ltd.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/AdguardTeam/tsurlfilter.git",
+        "directory": "packages/dnr-converter"
+    },
+    "license": "GPL-3.0-only",
+    "engines": {
+        "node": ">=22"
+    },
+    "bugs": {
+        "url": "https://github.com/AdguardTeam/tsurlfilter/issues"
+    },
+    "homepage": "https://github.com/AdguardTeam/tsurlfilter/tree/master/packages/dnr-converter#readme",
+    "scripts": {
+        "lint": "pnpm lint:code && pnpm lint:types",
+        "lint:code": "eslint --cache --ignore-path .gitignore .",
+        "lint:types": "tsc",
+        "start": "rollup -c rollup.config.ts --configPlugin typescript -w",
+        "build": "rimraf dist && rollup -c rollup.config.ts --configPlugin typescript",
+        "postbuild": "tsx tasks/build-txt.ts",
+        "test": "vitest run",
+        "test:light": "vitest run --exclude \"**/*benchmark*.test.ts\"",
+        "test:watch": "vitest run --watch",
+        "test:coverage": "vitest run --coverage",
+        "test:smoke": "(cd test/smoke/esm && pnpm test) && (cd test/smoke/exports && pnpm test)",
+        "test:prod": "pnpm lint && pnpm test:smoke && pnpm test -- --no-cache",
+        "test:debug": "vitest run --inspect --no-file-parallelism --watch",
+        "precommit": "lint-staged",
+        "prepublishOnly": "pnpm build",
+        "tgz": "pnpm pack --out dnr-converter.tgz"
+    },
+    "lint-staged": {
+        "{src,test,tasks}/**/*.ts": [
+            "eslint"
+        ]
+    },
+    "dependencies": {
+        "@adguard/agtree": "workspace:^",
+        "@adguard/logger": "workspace:^"
+    },
+    "devDependencies": {
+        "@adguard/eslint-plugin-logger-context": "^1.0.1",
+        "@rollup/plugin-commonjs": "catalog:",
+        "@rollup/plugin-json": "catalog:",
+        "@rollup/plugin-node-resolve": "catalog:",
+        "@rollup/plugin-swc": "catalog:",
+        "@rollup/plugin-typescript": "catalog:",
+        "@types/node": "catalog:",
+        "@typescript-eslint/eslint-plugin": "catalog:",
+        "@typescript-eslint/parser": "catalog:",
+        "@vitest/coverage-v8": "catalog:",
+        "eslint": "catalog:",
+        "eslint-config-airbnb-base": "catalog:",
+        "eslint-config-airbnb-typescript": "catalog:",
+        "eslint-plugin-boundaries": "catalog:",
+        "eslint-plugin-import": "catalog:",
+        "eslint-plugin-import-newlines": "catalog:",
+        "eslint-plugin-jsdoc": "catalog:",
+        "eslint-plugin-n": "catalog:",
+        "lint-staged": "catalog:",
+        "rimraf": "catalog:",
+        "rollup": "catalog:",
+        "rollup-plugin-dts": "catalog:",
+        "rollup-plugin-node-externals": "catalog:",
+        "tsd": "catalog:",
+        "tsx": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:"
+    }
+}

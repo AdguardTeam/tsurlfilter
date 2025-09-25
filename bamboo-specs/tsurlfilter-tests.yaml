@@ -25,6 +25,7 @@ variables:
 #
 # Stage 3:
 # - TSUrlFilter test run;
+# - DNR-Converter test run;
 #
 # Stage 4:
 # - TSWebExtension test run.
@@ -61,6 +62,7 @@ stages:
       <<: *stage
       jobs:
         - Test TSUrlFilter
+        - Test DNR-Converter
   - Stage 4:
       <<: *stage
       jobs:
@@ -160,6 +162,21 @@ Test TSUrlFilter:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-tests.sh"
+  final-tasks:
+    - script: *cleanup-script
+  requirements: *requirements
+
+Test DNR-Converter:
+  key: TESTDNRCONVERTER
+  docker: *docker
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script: *setup-script
+    - script:
+        interpreter: SHELL
+        scripts:
+          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/dnr-converter-tests.sh"
   final-tasks:
     - script: *cleanup-script
   requirements: *requirements
