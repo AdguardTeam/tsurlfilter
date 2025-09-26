@@ -18,7 +18,9 @@ export class SessionRulesApi {
      * Use with {@link StealthRuleId} enum to freeze rule ids for Tracking
      * protection rules.
      */
-    public static readonly MIN_DECLARATIVE_RULE_ID = 4;
+    // FIXME extract all session predefined rule ids to the separate module, so that it can be used in stealh service
+    // and csp report blocking service
+    public static readonly MIN_DECLARATIVE_RULE_ID = 5;
 
     /**
      * Contains a mapping of session rule ids to their unsafe rules source:

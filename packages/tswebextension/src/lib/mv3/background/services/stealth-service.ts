@@ -22,7 +22,9 @@ export enum StealthRuleId {
     HideReferrer = 1,
     BlockChromeClientData = 2,
     SendDoNotTrack = 3,
-    HideSearchQueries = SessionRulesApi.MIN_DECLARATIVE_RULE_ID,
+    // FIXME extract all session predefined rule ids to the separate module, so that it can be used in stealh service
+    // and csp report blocking service
+    HideSearchQueries = 4,
 }
 
 /**

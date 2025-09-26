@@ -260,6 +260,8 @@ export class WebRequestApi {
 
         const { parentFrameId } = details;
 
+        // FIXME check filtering log for csp report
+
         const isDocumentRequest = requestType === RequestType.Document;
 
         /**
