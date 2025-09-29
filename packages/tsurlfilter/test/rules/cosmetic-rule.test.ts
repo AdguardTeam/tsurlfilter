@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { CosmeticRuleType } from '@adguard/agtree';
+import { AdblockSyntaxError, CosmeticRuleType } from '@adguard/agtree';
 import { type Source } from '@adguard/scriptlets';
 import {
     describe,
@@ -57,11 +57,11 @@ describe('Element hiding rules constructor', () => {
     it('works if it verifies rules properly', () => {
         expect(() => {
             createCosmeticRule('||example.org^', 0);
-        }).toThrow(new SyntaxError('Not a cosmetic rule'));
+        }).toThrow(new Error('Not a cosmetic rule'));
 
         expect(() => {
             createCosmeticRule('example.org## ', 0);
-        }).toThrow(new SyntaxError('Empty rule body'));
+        }).toThrow(new AdblockSyntaxError('Empty rule body', 0, 13));
 
         expect(() => {
             createCosmeticRule('example.org##body { background: red!important; }', 0);
@@ -111,7 +111,7 @@ describe('Element hiding rules constructor', () => {
     it('throws error if marker is not supported yet', () => {
         expect(() => {
             createCosmeticRule('example.org$@@$script[data-src="banner"]', 0);
-        }).toThrow(new SyntaxError('Not a cosmetic rule'));
+        }).toThrow(new Error('Not a cosmetic rule'));
     });
 
     it('works if it parses domain wildcard properly', () => {
@@ -211,7 +211,13 @@ describe('Element hiding rules constructor', () => {
 
         expect(() => {
             createCosmeticRule('[$path=page.html###banner', 0);
-        }).toThrow(new SyntaxError("Missing ']' at the end of the AdGuard modifier list in pattern '[$path=page.html'"));
+        }).toThrow(
+            new AdblockSyntaxError(
+                "Missing ']' at the end of the AdGuard modifier list in pattern '[$path=page.html'",
+                2,
+                16,
+            ),
+        );
 
         expect(() => {
             createCosmeticRule('[$domain,path=/page*.html]###banner', 0);
@@ -582,11 +588,11 @@ describe('CosmeticRule.CSS', () => {
     it('throws error when cosmetic rule does not contain css style', () => {
         expect(() => {
             createCosmeticRule('example.org#$#div', 0);
-        }).toThrow(new SyntaxError("Parsing 'AdblockPlus' syntax is disabled, but the rule uses it"));
+        }).toThrow(new AdblockSyntaxError("Parsing 'AdblockPlus' syntax is disabled, but the rule uses it", 14, 17));
 
         expect(() => {
             createCosmeticRule('example.org#$?#div', 0);
-        }).toThrow(new SyntaxError("Body 'div' is not valid for the '#$?#' cosmetic rule separator"));
+        }).toThrow(new AdblockSyntaxError("Body 'div' is not valid for the '#$?#' cosmetic rule separator", 15, 18));
     });
 
     it('throws error when cosmetic rule contains url', () => {
@@ -910,7 +916,7 @@ describe('Javascript rules', () => {
 
         expect(() => {
             createCosmeticRule(jsRule, 0);
-        }).toThrow(new SyntaxError("Invalid ADG scriptlet call, expected quote, got 'a'"));
+        }).toThrow(new AdblockSyntaxError("Invalid ADG scriptlet call, expected quote, got 'a'", 33, 38));
 
         jsRuleContent = "//scriptlet('foo', 'arg')";
         jsRule = `example.org#%#${jsRuleContent}`;

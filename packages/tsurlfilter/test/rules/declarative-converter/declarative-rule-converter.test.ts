@@ -8,14 +8,11 @@ import {
 import { CSP_HEADER_NAME } from '../../../src/modifiers/csp-modifier';
 import { PERMISSIONS_POLICY_HEADER_NAME } from '../../../src/modifiers/permissions-modifier';
 import { ResourceType } from '../../../src/rules/declarative-converter/declarative-rule';
-import {
-    UnsupportedModifierError,
-    UnsupportedRegexpError,
-} from '../../../src/rules/declarative-converter/errors/conversion-errors';
+import { type InvalidDeclarativeRuleError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
 import { DeclarativeRulesConverter } from '../../../src/rules/declarative-converter/rules-converter';
 import { re2Validator } from '../../../src/rules/declarative-converter/re2-regexp/re2-validator';
 import { regexValidatorNode } from '../../../src/rules/declarative-converter/re2-regexp/regex-validator-node';
-import { createNetworkRule, createNetworkRuleWithNode } from '../../helpers/rule-creator';
+import { createNetworkRuleWithNode } from '../../helpers/rule-creator';
 
 import { createScannedFilter } from './helpers';
 
@@ -436,23 +433,16 @@ describe('DeclarativeRuleConverter', () => {
             declarativeRules,
         } = await DeclarativeRulesConverter.convert([filter]);
 
-        const networkRule = createNetworkRuleWithNode(regexpRuleText, filterId);
-
-        const expectedError = new UnsupportedRegexpError(
-            `Regex is unsupported: "${regexpRuleText}"`,
-            networkRule,
-            // Note that the declarative rule will be "undefined" due to
-            // a conversion error, but this will not prevent error checking
-            declarativeRules[0],
-        );
+        const networkRule = createNetworkRuleWithNode(regexpRuleText, filterId, 4);
 
         expect(declarativeRules).toHaveLength(0);
         expect(errors).toHaveLength(1);
 
         const actualError = errors[0];
-        expect(errors[0]).toStrictEqual(expectedError);
-        const expectedErrorReason = 'pattern too large - compile failed';
-        expect((actualError as UnsupportedRegexpError).reason).toContain(expectedErrorReason);
+        expect(actualError.message).toStrictEqual(`Regex is unsupported: "${regexpRuleText}"`);
+        expect((actualError as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(
+            networkRule.getIndex(),
+        );
     });
 
     it('excludes regex negative lookahead', async () => {
@@ -886,15 +876,11 @@ describe('DeclarativeRuleConverter', () => {
             errors,
         } = await DeclarativeRulesConverter.convert([filter]);
 
-        const networkRule = createNetworkRule(rules[0], filterId);
-        const expectedError = new UnsupportedModifierError(
-            'Network rule with explicitly enabled $popup modifier is not supported',
-            networkRule,
-        );
-
         expect(errors).toHaveLength(2);
-        expect(errors[0]).toStrictEqual(expectedError);
-        expect(errors[1]).toStrictEqual(expectedError);
+        expect(errors[0].message).toEqual('Network rule with explicitly enabled $popup modifier is not supported');
+        expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(4);
+        expect(errors[1].message).toEqual('Network rule with explicitly enabled $popup modifier is not supported');
+        expect((errors[1] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(44);
         expect(declarativeRules).toHaveLength(0);
     });
 
@@ -1099,26 +1085,15 @@ describe('DeclarativeRuleConverter', () => {
                 },
             });
 
-            const networkRules = [
-                createNetworkRule(ruleWithUnsupportedHeaders[0], filterId),
-                createNetworkRule(ruleWithUnsupportedHeaders[1], filterId),
-            ];
-            const expectedErrors = [
-                new UnsupportedModifierError(
-                    // eslint-disable-next-line max-len
-                    'Network rule with $removeheader modifier contains some of the unsupported headers',
-                    networkRules[0],
-                ),
-                new UnsupportedModifierError(
-                    // eslint-disable-next-line max-len
-                    'Network rule with $removeheader modifier contains some of the unsupported headers',
-                    networkRules[1],
-                ),
-            ];
-
             expect(errors).toHaveLength(2);
-            expect(errors[0]).toStrictEqual(expectedErrors[0]);
-            expect(errors[1]).toStrictEqual(expectedErrors[1]);
+            expect(errors[0].message).toBe(
+                'Network rule with $removeheader modifier contains some of the unsupported headers',
+            );
+            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(4);
+            expect(errors[1].message).toBe(
+                'Network rule with $removeheader modifier contains some of the unsupported headers',
+            );
+            expect((errors[1] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(106);
         });
 
         it('converts removeheader rules for responseHeaders and skips general allowlist rule', async () => {
@@ -1201,7 +1176,6 @@ describe('DeclarativeRuleConverter', () => {
         });
 
         it('skips convert bad values', async () => {
-            const filterId = 0;
             const badRule = '||example.com$removeheader=dnt:1';
             const filter = await createScannedFilter(0, [badRule]);
 
@@ -1210,16 +1184,12 @@ describe('DeclarativeRuleConverter', () => {
                 errors,
             } = await DeclarativeRulesConverter.convert([filter]);
 
-            const networkRule = createNetworkRule(badRule, filterId);
-            const err = new UnsupportedModifierError(
-                // eslint-disable-next-line max-len
-                'Network rule with $removeheader modifier contains some of the unsupported headers',
-                networkRule,
-            );
-
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
-            expect(errors[0]).toStrictEqual(err);
+            expect(errors[0].message).toEqual(
+                'Network rule with $removeheader modifier contains some of the unsupported headers',
+            );
+            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(4);
         });
 
         it('combine several $removeheader rule', async () => {
@@ -1439,35 +1409,20 @@ describe('DeclarativeRuleConverter', () => {
             );
             expect(errors.length).toBe(3);
 
-            const networkRules = [
-                createNetworkRule(rulesText[0], filterId),
-                createNetworkRule(rulesText[1], filterId),
-                createNetworkRule(rulesText[2], filterId),
-            ];
-
-            const expectedErrors = [
-                new UnsupportedModifierError(
-                    // eslint-disable-next-line max-len
-                    'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
-                    networkRules[0],
-                ),
-                new UnsupportedModifierError(
-                    // eslint-disable-next-line max-len
-                    'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
-                    networkRules[1],
-                ),
-                new UnsupportedModifierError(
-                    // eslint-disable-next-line max-len
-                    'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
-                    networkRules[2],
-                ),
-            ];
-
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(3);
-            expect(errors[0]).toStrictEqual(expectedErrors[0]);
-            expect(errors[1]).toStrictEqual(expectedErrors[1]);
-            expect(errors[2]).toStrictEqual(expectedErrors[2]);
+            expect(errors[0].message).toBe(
+                'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
+            );
+            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(4);
+            expect(errors[1].message).toBe(
+                'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
+            );
+            expect((errors[1] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(52);
+            expect(errors[2].message).toBe(
+                'The use of additional parameters in $cookie (apart from $cookie itself) is not supported',
+            );
+            expect((errors[2] as InvalidDeclarativeRuleError).networkRule.getIndex()).toEqual(112);
         });
     });
 
@@ -1690,14 +1645,10 @@ describe('DeclarativeRuleConverter', () => {
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
 
-            const networkRule = createNetworkRule(ruleText, filterId);
-
-            const err = new UnsupportedModifierError(
-                // eslint-disable-next-line max-len
+            expect(errors[0].message).toBe(
                 'Network rule with $method modifier containing \'trace\' method is not supported',
-                networkRule,
             );
-            expect(errors[0]).toStrictEqual(err);
+            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toBe(4);
         });
     });
 
@@ -1797,13 +1748,8 @@ describe('DeclarativeRuleConverter', () => {
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
 
-            const networkRule = createNetworkRule(ruleText, filterId);
-
-            const err = new UnsupportedModifierError(
-                'Unsupported option "$genericblock"',
-                networkRule,
-            );
-            expect(errors[0]).toStrictEqual(err);
+            expect(errors[0].message).toBe('Unsupported option "$genericblock"');
+            expect((errors[0] as InvalidDeclarativeRuleError).networkRule.getIndex()).toBe(4);
         });
     });
 });
