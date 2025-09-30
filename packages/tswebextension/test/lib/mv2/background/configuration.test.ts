@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { ZodError } from 'zod';
 
 import { type ConfigurationMV2, configurationMV2Validator, FilterListPreprocessor } from '../../../../src/lib';
 import { LF } from '../../../../src/lib/common/constants';
@@ -51,7 +50,7 @@ describe('configuration validator', () => {
                 ...validConfiguration,
                 settings: undefined,
             });
-        }).toThrow(new ZodError([{
+        }).toThrow(JSON.stringify([{
             code: 'invalid_type',
             expected: 'object',
             received: 'undefined',
@@ -59,7 +58,7 @@ describe('configuration validator', () => {
                 'settings',
             ],
             message: 'Required',
-        }]));
+        }], null, 2));
     });
 
     it('throws error on nested field missmatch', () => {
@@ -73,7 +72,7 @@ describe('configuration validator', () => {
 
         expect(() => {
             configurationMV2Validator.parse(configuration);
-        }).toThrow(new ZodError([
+        }).toThrow(JSON.stringify([
             {
                 code: 'invalid_type',
                 expected: 'array',
@@ -96,7 +95,7 @@ describe('configuration validator', () => {
                 ],
                 message: 'Expected array, received string',
             },
-        ]));
+        ], null, 2));
     });
 
     it('throws error on unrecognized key detection', () => {
@@ -107,13 +106,13 @@ describe('configuration validator', () => {
 
         expect(() => {
             configurationMV2Validator.parse(configuration);
-        }).toThrow(new ZodError([{
+        }).toThrow(JSON.stringify([{
             code: 'unrecognized_keys',
             keys: [
                 'beep',
             ],
             path: [],
             message: "Unrecognized key(s) in object: 'beep'",
-        }]));
+        }], null, 2));
     });
 });
