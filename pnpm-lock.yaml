@@ -948,7 +948,7 @@ importers:
         version: 7.18.0(eslint@8.57.1)(typescript@5.8.3)
       '@vitest/coverage-v8':
         specifier: 'catalog:'
-        version: 2.1.9(vitest@2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
+        version: 3.2.4(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0))
       eslint:
         specifier: 'catalog:'
         version: 8.57.1
@@ -999,7 +999,7 @@ importers:
         version: 5.8.3
       vitest:
         specifier: 'catalog:'
-        version: 2.1.9(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.14.0)(jsdom@18.1.1)(msw@2.10.3(@types/node@22.14.0)(typescript@5.8.3))(terser@5.39.0)
 
   packages/dnr-rulesets:
     dependencies:
@@ -18499,7 +18499,7 @@ snapshots:
       expect-type: 1.2.1
       magic-string: 0.30.17
       pathe: 2.0.3
-      picomatch: 4.0.2
+      picomatch: 4.0.3
       std-env: 3.9.0
       tinybench: 2.9.0
       tinyexec: 0.3.2
