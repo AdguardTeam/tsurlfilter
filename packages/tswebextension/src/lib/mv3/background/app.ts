@@ -276,8 +276,7 @@ export class TsWebExtension implements AppInterface<
         await FiltersApi.updateFiltering(disableFiltersIds);
 
         await StealthService.clearAll();
-
-        // FIXME check whether we need to remove all csp report blocking rules
+        await SessionRulesApi.removeAllSessionRules();
 
         declarativeFilteringLog.startUpdate();
         declarativeFilteringLog.finishUpdate([], false);
@@ -444,7 +443,6 @@ export class TsWebExtension implements AppInterface<
                 res.dynamicRules.declarativeRulesToCancel,
             );
 
-            // FIXME check if this is right place
             await CspReportBlockingService.init();
 
             // Reload engine for cosmetic rules: CSS, script and scriptlets.

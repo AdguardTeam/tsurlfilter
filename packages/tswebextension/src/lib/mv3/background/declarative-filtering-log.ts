@@ -138,7 +138,6 @@ class DeclarativeFilteringLog {
             request: { requestId },
             rule: { rulesetId, ruleId },
         } = record;
-
         const context = requestContextStorage.get(requestId);
 
         if (!context) {

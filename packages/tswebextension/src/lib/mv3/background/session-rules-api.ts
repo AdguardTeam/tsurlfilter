@@ -6,6 +6,18 @@ import {
 import browser from 'webextension-polyfill';
 
 import { logger } from '../../common/utils/logger';
+import { getMaxEnumValue } from '../utils/getMaxEnumValue';
+
+/**
+ * Reserved stealth rule ids for the DNR.
+ */
+export enum SessionRuleId {
+    HideReferrer = 1,
+    BlockChromeClientData = 2,
+    SendDoNotTrack = 3,
+    HideSearchQueries = 4,
+    CSPReportBlocking = 5,
+}
 
 /**
  * SessionRulesApi knows how to handle sessions rules: apply rules from tracking
@@ -13,14 +25,13 @@ import { logger } from '../../common/utils/logger';
  */
 export class SessionRulesApi {
     /**
-     * To prevent conflicts we reserve rule ids for stealth rules.
+     * To prevent conflicts we reserve rule ids for predefined session rules.
+     * This value is calculated dynamically from SessionRuleId enum.
      *
-     * Use with {@link StealthRuleId} enum to freeze rule ids for Tracking
-     * protection rules.
+     * Use with {@link SessionRuleId} enum to freeze rule ids for predefined
+     * session rules (stealth + CSP blocking).
      */
-    // FIXME extract all session predefined rule ids to the separate module, so that it can be used in stealh service
-    // and csp report blocking service
-    public static readonly MIN_DECLARATIVE_RULE_ID = 5;
+    public static readonly MIN_DECLARATIVE_RULE_ID = getMaxEnumValue(SessionRuleId) + 1;
 
     /**
      * Contains a mapping of session rule ids to their unsafe rules source:
@@ -66,14 +77,14 @@ export class SessionRulesApi {
     }
 
     /**
-     * Set the stealth rule in the session ruleset.
+     * Set the stealth rule to the ruleset.
      * If the rule with the same id already exists, it will be replaced.
      *
      * @param rule Session rule to set.
      *
      * @returns Resolved promise when the rule is set.
      */
-    public static async setStealthRule(
+    public static async setSessionRule(
         rule: chrome.declarativeNetRequest.Rule,
     ): Promise<void> {
         // The rules with IDs listed in options.removeRuleIds are first removed,
@@ -85,26 +96,28 @@ export class SessionRulesApi {
     }
 
     /**
-     * Remove the stealth rule from the session ruleset.
+     * Remove the session rule from the ruleset.
      *
      * @param ruleId Session rule id.
      *
      * @returns Resolved promise when the rule is removed.
      */
-    public static async removeStealthRule(ruleId: number): Promise<void> {
+    public static async removeSessionRule(ruleId: number): Promise<void> {
         return chrome.declarativeNetRequest.updateSessionRules({
             removeRuleIds: [ruleId],
         });
     }
 
     /**
-     * Remove the stealth rules from the session ruleset.
-     *
-     * @param ruleIds Array of session rule ids to remove.
+     * Remove all session rules from the ruleset.
      *
      * @returns Resolved promise when the rules are removed.
      */
-    public static async removeStealthRules(ruleIds: number[]): Promise<void> {
+    public static async removeAllSessionRules(): Promise<void> {
+        const ruleIds = Object.keys(SessionRuleId)
+            .map((key) => Number(key))
+            .filter((keyNumber) => !Number.isNaN(keyNumber));
+
         return chrome.declarativeNetRequest.updateSessionRules({
             removeRuleIds: ruleIds,
         });
