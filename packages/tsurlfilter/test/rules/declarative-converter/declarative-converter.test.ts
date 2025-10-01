@@ -8,6 +8,7 @@ import {
 } from '../../../src/rules/declarative-converter/errors/limitation-errors';
 import {
     EmptyOrNegativeNumberOfRulesError,
+    NegativeNumberOfRulesError,
     ResourcesPathError,
 } from '../../../src/rules/declarative-converter/errors/converter-options-errors';
 import { UnsupportedModifierError } from '../../../src/rules/declarative-converter/errors/conversion-errors';
@@ -525,7 +526,7 @@ describe('DeclarativeConverter', () => {
 
             const msg = 'After conversion, too many declarative rules remain: '
                 + '3 exceeds the limit provided - 2';
-            const err = new TooManyRulesError(msg, [2], maxNumberOfRules, 1);
+            const err = new TooManyRulesError(msg, [54], maxNumberOfRules, 1);
 
             expect(limitations).toHaveLength(1);
             expect(limitations[0]).toStrictEqual(err);
@@ -603,7 +604,7 @@ describe('DeclarativeConverter', () => {
             expect(limitations).toHaveLength(1);
             const msg = 'After conversion, too many unsafe rules remain: '
                 + `2 exceeds the limit provided - ${maxNumberOfUnsafeRules}`;
-            const err = new TooManyUnsafeRulesError(msg, [2], maxNumberOfUnsafeRules, 1);
+            const err = new TooManyUnsafeRulesError(msg, [105], maxNumberOfUnsafeRules, 1);
             expect(limitations[0]).toStrictEqual(err);
         });
 
@@ -1022,7 +1023,7 @@ describe('DeclarativeConverter', () => {
             };
 
             const msg = 'Maximum number of regexp rules cannot be less than 0';
-            await expect(convert).rejects.toThrow(new EmptyOrNegativeNumberOfRulesError(msg));
+            await expect(convert).rejects.toThrow(new NegativeNumberOfRulesError(msg));
         });
 
         it('dynamic rules - error if the maximum number of unsafe rules less than 0', async () => {
@@ -1033,7 +1034,7 @@ describe('DeclarativeConverter', () => {
             };
 
             const msg = 'Maximum number of unsafe rules cannot be less than 0';
-            await expect(convert).rejects.toThrow(new EmptyOrNegativeNumberOfRulesError(msg));
+            await expect(convert).rejects.toThrow(new NegativeNumberOfRulesError(msg));
         });
 
         it('static ruleset - error if the maximum number of unsafe rules is set at all', async () => {
@@ -1123,16 +1124,15 @@ describe('DeclarativeConverter', () => {
 
             const declarativeRules = await ruleSet.getDeclarativeRules();
 
-            const networkRule = createNetworkRule(rule, 0);
-
-            const err = new UnsupportedModifierError(
-                `Unsupported option "${modifierName}"`,
-                networkRule,
-            );
+            const networkRule = createNetworkRule(rule, 0, 4);
 
             expect(declarativeRules).toHaveLength(0);
             expect(errors).toHaveLength(1);
-            expect(errors[0]).toStrictEqual(err);
+
+            expect(errors[0]).toBeInstanceOf(UnsupportedModifierError);
+            expect(errors[0].message).toStrictEqual(`Unsupported option "${modifierName}"`);
+            // eslint-disable-next-line max-len
+            expect((errors[0] as UnsupportedModifierError).networkRule.getIndex()).toStrictEqual(networkRule.getIndex());
         });
 
         it('return error for simultaneously used $to and $denyallow modifiers', async () => {

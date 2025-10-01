@@ -83,6 +83,18 @@
 !include 'adguard-api-mv3-permissions.yaml'
 
 ---
+!include 'dnr-converter-build.yaml'
+
+---
+!include 'dnr-converter-deploy.yaml'
+
+---
+!include 'dnr-converter-increment.yaml'
+
+---
+!include 'dnr-converter-permissions.yaml'
+
+---
 !include 'dnr-rulesets-build.yaml'
 
 ---

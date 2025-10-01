@@ -1,0 +1,69 @@
+---
+version: 2
+plan:
+  project-key: AJL
+  key: DNRCONVERTERBUILD
+  name: DNR Converter - build
+variables:
+  dockerContainer: adguard/node-ssh:22.17--0
+
+stages:
+  - Build:
+      manual: false
+      final: false
+      jobs:
+        - Build
+
+Build:
+  key: BUILD
+  other:
+    clean-working-dir: true
+  docker:
+    image: "${bamboo.dockerContainer}"
+    volumes:
+       ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            # FIXME: Implement build
+  artifacts:
+    - name: dnr-converter.tgz
+      location: packages/dnr-converter/
+      pattern: dnr-converter.tgz
+      shared: true
+      required: true
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+
+triggers: []
+
+branches:
+  create: manually
+  delete: never
+  link-to-jira: 'true'
+
+notifications:
+  - events:
+      - plan-status-changed
+    recipients:
+      - webhook:
+          name: Build webhook
+          url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo
+
+labels: []
+
+other:
+  concurrent-build-plugin: system-default
