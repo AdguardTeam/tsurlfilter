@@ -37,22 +37,20 @@ vi.mock('../../../../../src/lib/mv3/tabs/tabs-api', () => ({
 }));
 
 // Mock chrome API
-Object.defineProperty(global, 'chrome', {
-    value: {
-        declarativeNetRequest: {
-            RuleActionType: {
-                BLOCK: 'block',
-            },
-            ResourceType: {
-                CSP_REPORT: 'csp_report',
-            },
-            DomainType: {
-                THIRD_PARTY: 'thirdParty',
-            },
-        },
+const mockDeclarativeNetRequest = {
+    RuleActionType: {
+        BLOCK: 'block',
     },
-    writable: true,
-});
+    ResourceType: {
+        CSP_REPORT: 'csp_report',
+    },
+    DomainType: {
+        THIRD_PARTY: 'thirdParty',
+    },
+};
+
+// @ts-expect-error - Partial mock for testing
+chrome.declarativeNetRequest = mockDeclarativeNetRequest;
 
 describe('CspService', () => {
     beforeEach(() => {
