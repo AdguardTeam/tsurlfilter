@@ -36,7 +36,7 @@ import { type StealthConfigurationResult, StealthService } from './services/stea
 import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
 import { SessionRulesApi } from './session-rules-api';
-import { CspReportBlockingService } from './services/csp-report-blocking-service';
+import { CspService } from './services/csp-service';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
@@ -443,7 +443,7 @@ export class TsWebExtension implements AppInterface<
                 res.dynamicRules.declarativeRulesToCancel,
             );
 
-            await CspReportBlockingService.init();
+            await CspService.init();
 
             // Reload engine for cosmetic rules: CSS, script and scriptlets.
             engineApi.waitingForEngine = engineApi.startEngine({

@@ -170,7 +170,6 @@ import { CspService } from './services/csp-service';
 import { PermissionsPolicyService } from './services/permissions-policy-service';
 import { StealthService } from './services/stealth-service';
 import { documentBlockingService } from './services/document-blocking-service';
-import { CspReportBlockingService } from './services/csp-report-blocking-service';
 
 /**
  * API for applying rules from background service by handling
@@ -261,8 +260,6 @@ export class WebRequestApi {
 
         const { parentFrameId } = details;
 
-        // FIXME check filtering log for csp report
-
         const isDocumentRequest = requestType === RequestType.Document;
 
         /**
@@ -333,6 +330,8 @@ export class WebRequestApi {
                 method,
             },
         });
+
+        CspService.onBeforeRequest(context);
 
         let frameRule;
 
@@ -617,32 +616,27 @@ export class WebRequestApi {
 
         const companyCategoryName = companiesDbService.match(url);
 
-        // Check if this is a CSP report that was blocked
-        if (type === 'csp_report') {
-            CspReportBlockingService.onCspReportBlocked(context);
-        } else {
-            defaultFilteringLog.publishEvent({
-                type: FilteringEventType.ApplyBasicRule,
-                data: {
-                    tabId,
-                    eventId,
-                    requestType: contentType,
-                    frameUrl: referrerUrl,
-                    requestId,
-                    requestUrl: url,
-                    companyCategoryName,
-                    filterId: null,
-                    ruleIndex: null,
-                    isAllowlist: false,
-                    isImportant: false,
-                    isDocumentLevel: TabsApiCommon.isDocumentLevelFrame(parentFrameId),
-                    isCsp: false,
-                    isCookie: false,
-                    advancedModifier: null,
-                    isAssuredlyBlocked: true,
-                },
-            });
-        }
+        defaultFilteringLog.publishEvent({
+            type: FilteringEventType.ApplyBasicRule,
+            data: {
+                tabId,
+                eventId,
+                requestType: contentType,
+                frameUrl: referrerUrl,
+                requestId,
+                requestUrl: url,
+                companyCategoryName,
+                filterId: null,
+                ruleIndex: null,
+                isAllowlist: false,
+                isImportant: false,
+                isDocumentLevel: TabsApiCommon.isDocumentLevelFrame(parentFrameId),
+                isCsp: false,
+                isCookie: false,
+                advancedModifier: null,
+                isAssuredlyBlocked: true,
+            },
+        });
 
         WebRequestApi.deleteRequestContext(details.requestId);
 
