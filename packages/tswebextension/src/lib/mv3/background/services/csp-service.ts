@@ -19,9 +19,10 @@ import { tabsApi } from '../../tabs/tabs-api';
  *    - All session rules are cleared via `SessionRulesApi.removeAllSessionRules()`
  * 
  * @note **Does not work for allowlisted domains:**
- *    - Allowlist rules create DNR `allow` rules with high priority
- *    - Chrome DNR prioritizes `allow` rules over `block` rules
- *    - CSP blocking (session rule) has lower priority than allowlist (dynamic rule)
+ *    - Allowlist rules are created with `$important` modifier: `@@$document,important,to=domain.com`
+ *    - The `$important` modifier gives maximum priority in Chrome DNR API
+ *    - CSP blocking rules have no priority modifier (default low priority)
+ *    - High priority rules always override low priority rules in Chrome DNR
  *    - This is correct behavior - allowlist should disable ALL filtering for the domain
  */
 export class CspService {
