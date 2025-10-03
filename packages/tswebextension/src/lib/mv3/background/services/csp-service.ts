@@ -14,13 +14,11 @@ import { tabsApi } from '../../tabs/tabs-api';
  * 
  * This service blocks third-party CSP reports using Chrome's Declarative Net Request API.
  * 
- * **Important limitations:**
- * 
- * 1. **Does not work when filtering is disabled (paused):**
+ * @note **Does not work when filtering is disabled (paused):**
  *    - CSP blocking rule is removed when `filteringEnabled = false`
  *    - All session rules are cleared via `SessionRulesApi.removeAllSessionRules()`
  * 
- * 2. **Does not work for allowlisted domains:**
+ * @note **Does not work for allowlisted domains:**
  *    - Allowlist rules create DNR `allow` rules with high priority
  *    - Chrome DNR prioritizes `allow` rules over `block` rules
  *    - CSP blocking (session rule) has lower priority than allowlist (dynamic rule)
