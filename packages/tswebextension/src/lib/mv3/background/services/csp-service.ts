@@ -11,13 +11,12 @@ import { tabsApi } from '../../tabs/tabs-api';
 
 /**
  * Content Security Policy Headers filtering service module.
- * 
+ *
  * This service blocks third-party CSP reports using Chrome's Declarative Net Request API.
- * 
+ *
  * @note **Does not work when filtering is disabled (paused):**
  *    - CSP blocking rule is removed when `filteringEnabled = false`
  *    - All session rules are cleared via `SessionRulesApi.removeAllSessionRules()`
- * 
  * @note **Does not work for allowlisted domains:**
  *    - Allowlist rules are created with `$important` modifier: `@@$document,important,to=domain.com`
  *    - The `$important` modifier gives maximum priority in Chrome DNR API
