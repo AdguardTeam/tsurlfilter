@@ -6,7 +6,7 @@ import {
 import browser from 'webextension-polyfill';
 
 import { logger } from '../../common/utils/logger';
-import { getMaxEnumValue } from '../utils/getMaxEnumValue';
+import { getMaxEnumValue } from '../utils/get-max-enum-value';
 
 /**
  * Reserved stealth rule ids for the DNR.
