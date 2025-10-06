@@ -750,10 +750,10 @@ export class StealthService {
             await StealthService.removeContentScript(id);
         });
 
-        SessionRulesApi.removeSessionRule(SessionRuleId.BlockChromeClientData);
-        SessionRulesApi.removeSessionRule(SessionRuleId.HideReferrer);
-        SessionRulesApi.removeSessionRule(SessionRuleId.HideSearchQueries);
-        SessionRulesApi.removeSessionRule(SessionRuleId.SendDoNotTrack);
+        StealthService.removeSessionRule(SessionRuleId.BlockChromeClientData);
+        StealthService.removeSessionRule(SessionRuleId.HideReferrer);
+        StealthService.removeSessionRule(SessionRuleId.HideSearchQueries);
+        StealthService.removeSessionRule(SessionRuleId.SendDoNotTrack);
     }
 
     /**
