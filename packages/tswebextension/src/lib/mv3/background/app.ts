@@ -298,9 +298,6 @@ export class TsWebExtension implements AppInterface<
         // Stop handle request events.
         WebRequestApi.stop();
 
-        // Stop handle request events.
-        WebRequestApi.stop();
-
         // Remove tabs listeners and clear context storage
         tabsApi.stop();
 
