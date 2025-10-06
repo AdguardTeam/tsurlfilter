@@ -54,7 +54,6 @@ export class CspService {
             requestType, thirdParty, tabId, referrerUrl,
         } = context;
 
-        // Only process CSP reports
         if (requestType !== RequestType.CspReport) {
             return;
         }
