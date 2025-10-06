@@ -44,6 +44,9 @@ export class CspService {
      * Logs CSP report blocking events in onBeforeRequest.
      * Called for all requests to detect third-party CSP reports that will be blocked by DNR.
      *
+     * **IMPORTANT**: We EXPECT these requests to be blocked by DNR rules, but cannot know for certain
+     * in production mode. We mark them as "blocked" for convenience in filtering logs.
+     *
      * @param context Request context.
      */
     public static onBeforeRequest(context: RequestContext): void {
