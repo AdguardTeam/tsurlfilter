@@ -59,7 +59,7 @@ describe('CspService', () => {
 
     describe('init', () => {
         it('should add CSP report blocking rule', async () => {
-            await CspService.init();
+            await CspService.addCspReportBlockingRule();
 
             expect(vi.mocked(SessionRulesApi.setSessionRule)).toHaveBeenCalledWith({
                 id: SessionRuleId.CSPReportBlocking,
