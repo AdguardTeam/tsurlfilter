@@ -267,7 +267,7 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Removes all static and dynamic DNR rules and stops tsurlfilter engine.
+     * Removes all static, dynamic and session DNR rules and stops tsurlfilter engine.
      */
     private static async removeAllFilteringRules(): Promise<void> {
         await DynamicRulesApi.removeAllRules();
