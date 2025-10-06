@@ -37,7 +37,8 @@
  * for the request.                      └──────────────┬──────────────┘ │
  * If this is a frame request,                          │                │
  * also matches the                                     │                │
- * {@link CosmeticResult}                               │                │
+ * {@link CosmeticResult}.                              │                │
+ * Also logs CSP report blocking events.                │                │
  *                                                      │                │
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │

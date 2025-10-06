@@ -20,12 +20,6 @@ import { tabsApi } from '../../tabs/tabs-api';
  *    - @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#rule-priorities}
  */
 export class CspService {
-    /**
-     * Initializes the CSP report blocking service.
-     */
-    public static async init(): Promise<void> {
-        await CspService.addCspReportBlockingRule();
-    }
 
     /**
      * Adds a CSP report blocking rule to the declarative net request API.

@@ -443,7 +443,7 @@ export class TsWebExtension implements AppInterface<
                 res.dynamicRules.declarativeRulesToCancel,
             );
 
-            await CspService.init();
+            await CspService.addCspReportBlockingRule();
 
             // Reload engine for cosmetic rules: CSS, script and scriptlets.
             engineApi.waitingForEngine = engineApi.startEngine({
