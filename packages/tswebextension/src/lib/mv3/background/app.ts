@@ -276,7 +276,7 @@ export class TsWebExtension implements AppInterface<
         await FiltersApi.updateFiltering(disableFiltersIds);
 
         await StealthService.clearAll();
-        await SessionRulesApi.removeAllSessionRules();
+        await CspService.clearAll();
 
         declarativeFilteringLog.startUpdate();
         declarativeFilteringLog.finishUpdate([], false);

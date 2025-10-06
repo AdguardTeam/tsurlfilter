@@ -11,18 +11,13 @@ import { tabsApi } from '../../tabs/tabs-api';
 
 /**
  * Content Security Policy Headers filtering service module.
- *
+ * 
  * This service blocks third-party CSP reports using Chrome's Declarative Net Request API.
- *
- * @note **Does not work when filtering is disabled (paused):**
- *    - CSP blocking rule is removed when `filteringEnabled = false`
- *    - All session rules are cleared via `SessionRulesApi.removeAllSessionRules()`
+ * 
  * @note **Does not work for allowlisted domains:**
- *    - Allowlist rules are created with `$important` modifier: `@@$document,important,to=domain.com`
- *    - The `$important` modifier gives maximum priority in Chrome DNR API
- *    - CSP blocking rules have no priority modifier (default low priority)
- *    - High priority rules always override low priority rules in Chrome DNR
+ *    - Allowlist rules have higher priority than CSP blocking rules
  *    - This is correct behavior - allowlist should disable ALL filtering for the domain
+ *    - @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#rule-priorities}
  */
 export class CspService {
     /**
@@ -62,7 +57,12 @@ export class CspService {
             requestType, thirdParty, tabId, referrerUrl,
         } = context;
 
-        if (requestType === RequestType.CspReport && thirdParty) {
+        // Only process CSP reports
+        if (requestType !== RequestType.CspReport) {
+            return;
+        }
+
+        if (thirdParty) {
             defaultFilteringLog.publishEvent({
                 type: FilteringEventType.CspReportBlocked,
                 data: {
@@ -148,5 +148,12 @@ export class CspService {
                 responseHeaders: responseHeaders ? [...responseHeaders, ...cspHeaders] : cspHeaders,
             });
         }
+    }
+
+    /**
+     * Removes all CSP rules.
+     */
+    public static clearAll(): void {
+        SessionRulesApi.removeSessionRule(SessionRuleId.CSPReportBlocking);
     }
 }

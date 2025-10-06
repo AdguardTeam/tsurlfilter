@@ -749,6 +749,11 @@ export class StealthService {
         contentScriptIds.forEach(async (id) => {
             await StealthService.removeContentScript(id);
         });
+
+        SessionRulesApi.removeSessionRule(SessionRuleId.BlockChromeClientData);
+        SessionRulesApi.removeSessionRule(SessionRuleId.HideReferrer);
+        SessionRulesApi.removeSessionRule(SessionRuleId.HideSearchQueries);
+        SessionRulesApi.removeSessionRule(SessionRuleId.SendDoNotTrack);
     }
 
     /**

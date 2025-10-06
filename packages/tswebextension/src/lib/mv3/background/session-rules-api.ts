@@ -109,21 +109,6 @@ export class SessionRulesApi {
     }
 
     /**
-     * Remove all session rules from the ruleset.
-     *
-     * @returns Resolved promise when the rules are removed.
-     */
-    public static async removeAllSessionRules(): Promise<void> {
-        const ruleIds = Object.keys(SessionRuleId)
-            .map((key) => Number(key))
-            .filter((keyNumber) => !Number.isNaN(keyNumber));
-
-        return chrome.declarativeNetRequest.updateSessionRules({
-            removeRuleIds: ruleIds,
-        });
-    }
-
-    /**
      * Update session rules with unsafe rules from static filters. If we overflow
      * the limit of session rules, some rules will be ignored.
      *
