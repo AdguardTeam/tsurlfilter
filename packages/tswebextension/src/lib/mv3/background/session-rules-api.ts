@@ -6,7 +6,6 @@ import {
 import browser from 'webextension-polyfill';
 
 import { logger } from '../../common/utils/logger';
-import { getMaxEnumValue } from '../utils/get-max-enum-value';
 
 /**
  * Reserved stealth rule ids for the DNR.
@@ -17,6 +16,12 @@ export enum SessionRuleId {
     SendDoNotTrack = 3,
     HideSearchQueries = 4,
     CSPReportBlocking = 5,
+
+    /**
+     * Syntactic sugar for convenience - represents the last enum value.
+     * Used to calculate MIN_DECLARATIVE_RULE_ID without dynamic enum introspection.
+     */
+    LAST = 6,
 }
 
 /**
@@ -26,12 +31,12 @@ export enum SessionRuleId {
 export class SessionRulesApi {
     /**
      * To prevent conflicts we reserve rule ids for predefined session rules.
-     * This value is calculated dynamically from SessionRuleId enum.
+     * This value uses SessionRuleId.LAST for convenience instead of dynamic enum introspection.
      *
      * Use with {@link SessionRuleId} enum to freeze rule ids for predefined
      * session rules (stealth + CSP blocking).
      */
-    public static readonly MIN_DECLARATIVE_RULE_ID = getMaxEnumValue(SessionRuleId) + 1;
+    public static readonly MIN_DECLARATIVE_RULE_ID = SessionRuleId.LAST;
 
     /**
      * Contains a mapping of session rule ids to their unsafe rules source:
