@@ -271,6 +271,7 @@ export class TsWebExtension implements AppInterface<
      */
     private static async removeAllFilteringRules(): Promise<void> {
         await DynamicRulesApi.removeAllRules();
+        await SessionRulesApi.removeAllRules();
 
         const disableFiltersIds = await FiltersApi.getEnabledRuleSets();
         await FiltersApi.updateFiltering(disableFiltersIds);

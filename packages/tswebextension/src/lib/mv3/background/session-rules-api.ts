@@ -213,4 +213,19 @@ export class SessionRulesApi {
                 .filter((id) => id > SessionRulesApi.MIN_DECLARATIVE_RULE_ID),
         });
     }
+
+    /**
+     * Clears all session rules.
+     */
+    public static async removeAllRules(): Promise<void> {
+        const sessionRules = await chrome.declarativeNetRequest.getSessionRules();
+
+        if (sessionRules.length > 0) {
+            await chrome.declarativeNetRequest.updateSessionRules({
+                removeRuleIds: sessionRules.map((rule) => rule.id),
+            });
+        }
+
+        SessionRulesApi.sourceMapForUnsafeRules.clear();
+    }
 }
