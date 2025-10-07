@@ -11,16 +11,15 @@ import { tabsApi } from '../../tabs/tabs-api';
 
 /**
  * Content Security Policy Headers filtering service module.
- * 
+ *
  * This service blocks third-party CSP reports using Chrome's Declarative Net Request API.
- * 
+ *
  * @note **Does not work for allowlisted domains:**
  *    - Allowlist rules have higher priority than CSP blocking rules
  *    - This is correct behavior - allowlist should disable ALL filtering for the domain
  *    - @see {@link https://adguard.com/kb/general/ad-filtering/create-own-filters/#rule-priorities}
  */
 export class CspService {
-
     /**
      * Adds a CSP report blocking rule to the declarative net request API.
      */
