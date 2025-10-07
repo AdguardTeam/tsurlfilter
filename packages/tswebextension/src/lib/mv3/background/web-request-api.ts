@@ -332,6 +332,7 @@ export class WebRequestApi {
             },
         });
 
+        // Note: Must be called after SendRequest event to ensure proper event ordering in logs
         CspService.onBeforeRequest(context);
 
         let frameRule;
