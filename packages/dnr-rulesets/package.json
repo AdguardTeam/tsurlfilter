@@ -1,6 +1,6 @@
 {
     "name": "@adguard/dnr-rulesets",
-    "version": "3.2.20251014000043",
+    "version": "3.2.20251014010039",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
         "dist/**/*"
