@@ -139,6 +139,9 @@ const JSDOC_PLUGIN_RULES = {
         },
     ],
 
+    // Turned off because `@since` sometimes used with versions like `Chrome 123`
+    'jsdoc/check-values': 'off',
+
     'jsdoc/require-hyphen-before-param-description': ['error', 'never'],
     'jsdoc/require-jsdoc': [
         'error',

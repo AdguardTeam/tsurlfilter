@@ -63,7 +63,8 @@
     },
     "dependencies": {
         "@adguard/agtree": "workspace:^",
-        "@adguard/logger": "workspace:^"
+        "@adguard/logger": "workspace:^",
+        "valibot": "catalog:"
     },
     "devDependencies": {
         "@adguard/eslint-plugin-logger-context": "^1.0.1",
@@ -72,6 +73,7 @@
         "@rollup/plugin-node-resolve": "catalog:",
         "@rollup/plugin-swc": "catalog:",
         "@rollup/plugin-typescript": "catalog:",
+        "@types/chrome": "catalog:",
         "@types/node": "catalog:",
         "@typescript-eslint/eslint-plugin": "catalog:",
         "@typescript-eslint/parser": "catalog:",
