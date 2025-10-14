@@ -198,14 +198,34 @@ export class SessionRulesApi {
 
         const currentSessionRules = await chrome.declarativeNetRequest.getSessionRules();
 
+        const removeRuleIds = currentSessionRules
+            .map((rule) => rule.id)
+            // Ignore removing stealth rules.
+            .filter((id) => id > SessionRulesApi.MIN_DECLARATIVE_RULE_ID);
+
+        // Clear them from in-memory source map.
+        removeRuleIds.forEach((id) => {
+            SessionRulesApi.sourceMapForUnsafeRules.delete(id);
+        });
+
         // The rules with IDs listed in options.removeRuleIds are first removed,
         // and then the rules given in options.addRules are added
         return chrome.declarativeNetRequest.updateSessionRules({
             addRules: unsafeRulesFromEnabledRulesets as chrome.declarativeNetRequest.Rule[],
-            removeRuleIds: currentSessionRules
-                .map((rule) => rule.id)
-                // Ignore removing stealth rules.
-                .filter((id) => id > SessionRulesApi.MIN_DECLARATIVE_RULE_ID),
+            removeRuleIds,
         });
+    }
+
+    /**
+     * Clears all session rules from browser and in-memory source map.
+     */
+    public static async removeAllRules(): Promise<void> {
+        const sessionRules = await chrome.declarativeNetRequest.getSessionRules();
+
+        await chrome.declarativeNetRequest.updateSessionRules({
+            removeRuleIds: sessionRules.map((rule) => rule.id),
+        });
+
+        SessionRulesApi.sourceMapForUnsafeRules.clear();
     }
 }
