@@ -25,7 +25,7 @@ export class SessionRulesApi {
      * ruleset id and rule id inside this ruleset. It will be used to show
      * original applied rule in the UI.
      */
-    private static readonly sourceMapForUnsafeRules = new Map<number, [string, number]>();
+    public static readonly sourceMapForUnsafeRules = new Map<number, [string, number]>();
 
     /**
      * The maximum number of regular expression rules that an extension can add.
@@ -179,7 +179,7 @@ export class SessionRulesApi {
                 );
 
                 // Add the rule to the session rules.
-                unsafeRulesFromEnabledRulesets.push(Object.assign(rule, { id: availableId }));
+                unsafeRulesFromEnabledRulesets.push({ ...rule, id: availableId });
 
                 availableId += 1;
             });
