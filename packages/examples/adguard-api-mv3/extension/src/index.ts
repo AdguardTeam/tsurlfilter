@@ -28,8 +28,9 @@ import {
         ],
         filteringEnabled: true,
         allowlist: ['www.example.com'],
-        rules: ['example.org##h1'],
+        rules: ['example.org##h1', 'example.net$document'],
         assetsPath: 'filters',
+        documentBlockingPageUrl: browser.runtime.getURL('blocking-page.html'),
     };
 
     // console log current rules count, loaded in engine

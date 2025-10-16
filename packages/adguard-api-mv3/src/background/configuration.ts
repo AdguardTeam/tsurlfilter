@@ -63,6 +63,25 @@ export const configurationValidator = zod.object({
      * @see https://adguard.com/en/filterrules.html
      */
     rules: zod.string().array().optional(),
+
+    /**
+     * Optional redirect url for blocking rules with `$document` modifier.
+     * If not specified, default browser page will be shown.
+     *
+     * Page will receive following query parameters:
+     * - url - blocked url;
+     * - rule - blocking rule, that triggered on this url;
+     * - filterId - id of the filter, that contains this rule (0 for user rules).
+     *
+     * @example
+     * // Address format:
+     * `chrome-extension://<extension_id>/blocking-page.html`
+     *
+     * @example
+     * // Full URL example after redirect:
+     * `chrome-extension://<extension_id>/blocking-page.html?url=https%3A%2F%2Fexample.net%2F&rule=example.net%24document&filterId=0`
+     */
+    documentBlockingPageUrl: zod.string().optional(),
 });
 
 export type Configuration = zod.infer<typeof configurationValidator>;

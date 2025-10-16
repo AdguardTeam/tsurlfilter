@@ -192,6 +192,7 @@ export class AdguardApi {
                 // Related stealth option is disabled
                 hideDocumentReferrerScriptUrl: 'whatever',
                 filteringEnabled: this.configuration.filteringEnabled,
+                documentBlockingPageUrl: this.configuration.documentBlockingPageUrl,
                 debugScriptlets: false,
                 stealthModeEnabled: true,
                 collectStats: false,
