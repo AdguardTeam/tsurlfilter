@@ -25,7 +25,7 @@ AdGuard API is a filtering library that provides the following features:
     - [`adguardApi.closeAssistant`](#adguardapicloseassistant)
     - [`adguardApi.getRulesCount`](#adguardapigetrulescount)
     - [`adguardApi.onAssistantCreateRule`](#adguardapionassistantcreaterule)
-    - [`adguardApi.onRequestBlocking`](#adguardapionrequestblocking)
+    - [`adguardApi.onRequestBlocked`](#adguardapionrequestblocked)
 - [Usage](#usage)
 - [Minimum supported browser versions](#minimum-supported-browser-versions)
 - [Development](#development)
@@ -104,6 +104,7 @@ type Configuration = {
     allowlist?: string[] | undefined;
     blocklist?: string[] | undefined;
     rules?: string[] | undefined;
+    documentBlockingPageUrl?: string | undefined;
 };
 ```
 
@@ -127,6 +128,15 @@ type Configuration = {
 - `rules` (optional) - An array of custom filtering rules. Here is an
   [article][filter-rules] describing filtering rules syntax. These custom rules
   might be created by a user via AdGuard Assistant UI.
+
+- `documentBlockingPageUrl` (optional) - Redirect URL for blocking rules with
+  `$document` modifier. If not specified, default browser page will be shown.
+  Page will receive following query parameters:
+  - `url` - blocked URL
+  - `rule` - blocking rule that triggered on this URL
+  - `filterId` - ID of the filter that contains this rule (0 for user rules)
+
+  Example: `chrome-extension://<extension_id>/blocking-page.html?url=https%3A%2F%2Fexample.net%2F&rule=example.net%24document&filterId=0`
 
 [filter-rules]: https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters
 
@@ -380,7 +390,7 @@ adguardApi.onAssistantCreateRule.subscribe(applyRule);
 adguardApi.onAssistantCreateRule.unsubscribe(applyRule);
 ```
 
-### `adguardApi.onRequestBlocking`
+### `adguardApi.onRequestBlocked`
 
 API for adding and removing listeners for request blocking events.
 
@@ -433,7 +443,7 @@ type RequestBlockingEvent = {
     /**
      * Assumed Filtering rule index, which has blocked this request. May not be provided if request is blocked by DNR rule.
      */
-    assumedRuleIndex?: string;
+    assumedRuleIndex?: number;
 
     /**
      * Assumed rule's filter identifier. May not be provided if request is blocked by DNR rule.
