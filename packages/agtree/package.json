@@ -1,6 +1,6 @@
 {
     "name": "@adguard/agtree",
-    "version": "3.2.3",
+    "version": "3.2.4",
     "description": "Tool set for working with adblock filter lists",
     "keywords": [
         "adblock",
