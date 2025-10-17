@@ -281,6 +281,8 @@ export class TsWebExtension implements AppInterface<
 
         await StealthService.clearAll();
 
+        await SessionRulesApi.removeAllRules();
+
         declarativeFilteringLog.startUpdate();
         declarativeFilteringLog.finishUpdate([], false);
 
@@ -297,9 +299,6 @@ export class TsWebExtension implements AppInterface<
         declarativeFilteringLog.stop();
 
         await TsWebExtension.removeAllFilteringRules();
-
-        // Stop handle request events.
-        WebRequestApi.stop();
 
         // Stop handle request events.
         WebRequestApi.stop();

@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## Unreleased
+
+### Added
+
+- Support for `prevent-canvas` scriptlet in compatibility tables [FiltersCompiler#260].
+
+[FiltersCompiler#260]: https://github.com/AdguardTeam/FiltersCompiler/issues/260
+
 ## [3.2.3] - 2025-08-28
 
 ### Fixed

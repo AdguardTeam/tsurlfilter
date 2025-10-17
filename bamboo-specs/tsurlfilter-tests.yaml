@@ -39,13 +39,10 @@ variables:
 # Stage 7:
 # - Update TSUrlFilter Docs MV3.
 #
-# Final state:
-# - Cleanup.
-
-# Experiment:
-# Only jobs from Stage 1 use requires clean checkout.
-# Since later jobs rely on previous jobs, let's try this approach.
-# And default value for 'force-clean-build' is false.
+# Note: Cleanup is performed after each stage to prevent disk space issues
+# and ensure clean state for subsequent builds, as each stage runs in a separate
+# directory and accumulated build artifacts can consume significant disk space.
+# See AG-46440 for details.
 
 stages:
   - Stage 1: &stage
@@ -108,8 +105,8 @@ Test Logger:
         interpreter: SHELL
         scripts:
           - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/logger-tests.sh"
-    # IMPORTANT: run clean after each stage
-    # since each stage is run in a separate directory and we want to clean up after each stage
+  # IMPORTANT: run clean after each stage
+  # since each stage is run in a separate directory and we want to clean up after each stage
   final-tasks:
     - script: &cleanup-script
         interpreter: SHELL

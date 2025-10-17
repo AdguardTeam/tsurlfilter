@@ -376,7 +376,7 @@ export type StealthActionEventData = {
 } & WithEventId;
 
 /**
- * Dispatched by manifest v2 StealthApi on stealth action apply in onBeforeSendHeaders event handler.
+ * Dispatched by StealthApi on stealth action apply in onBeforeSendHeaders event handler.
  */
 export type StealthActionEvent = {
     type: FilteringEventType.StealthAction;
@@ -396,7 +396,7 @@ export type StealthAllowlistActionEventData = {
 } & WithEventId;
 
 /**
- * Dispatched by manifest v2 StealthApi on allowlist stealth rule matching in onBeforeSendHeaders event handler.
+ * Dispatched by StealthApi on allowlist stealth rule matching in onBeforeSendHeaders event handler.
  */
 export type StealthAllowlistActionEvent = {
     type: FilteringEventType.StealthAllowlistAction;
