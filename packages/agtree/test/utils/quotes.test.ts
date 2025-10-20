@@ -181,6 +181,14 @@ describe('Quote utils', () => {
                 actual: '`"\\`"`',
                 expected: QuoteType.Backtick,
             },
+            {
+                actual: '“a”',
+                expected: QuoteType.DoubleCurly,
+            },
+            {
+                actual: '‘a’',
+                expected: QuoteType.Curly,
+            },
         ])('should detect \'$actual\' quotes as \'$expected\'', ({ actual, expected }) => {
             expect(QuoteUtils.getStringQuoteType(actual)).toBe(expected);
         });

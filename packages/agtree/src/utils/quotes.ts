@@ -4,10 +4,14 @@
 
 import {
     BACKTICK_QUOTE,
+    CLOSE_CURLY_DOUBLE_QUOTE,
+    CLOSE_CURLY_QUOTE,
     COMMA,
     DOUBLE_QUOTE,
     EMPTY,
     ESCAPE_CHARACTER,
+    OPEN_CURLY_DOUBLE_QUOTE,
+    OPEN_CURLY_QUOTE,
     SINGLE_QUOTE,
     SPACE,
 } from './constants';
@@ -44,6 +48,16 @@ export const QuoteType = {
      * Backtick quotes (`` ` ``)
      */
     Backtick: 'backtick',
+
+    /**
+     * Curly quotes (`‘` `’`)
+     */
+    Curly: 'curly',
+
+    /**
+     * Double curly quotes (`“` `”`)
+     */
+    DoubleCurly: 'doublecurly',
 } as const;
 
 // intentionally naming the variable the same as the type
@@ -119,6 +133,14 @@ export class QuoteUtils {
 
             if (string.startsWith(BACKTICK_QUOTE) && string.endsWith(BACKTICK_QUOTE)) {
                 return QuoteType.Backtick;
+            }
+
+            if (string.startsWith(OPEN_CURLY_DOUBLE_QUOTE) && string.endsWith(CLOSE_CURLY_DOUBLE_QUOTE)) {
+                return QuoteType.DoubleCurly;
+            }
+
+            if (string.startsWith(OPEN_CURLY_QUOTE) && string.endsWith(CLOSE_CURLY_QUOTE)) {
+                return QuoteType.Curly;
             }
         }
 

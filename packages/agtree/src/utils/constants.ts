@@ -54,6 +54,10 @@ export const NEWLINE = LF;
 export const BACKTICK_QUOTE = '`';
 export const DOUBLE_QUOTE = '"';
 export const SINGLE_QUOTE = '\'';
+export const OPEN_CURLY_DOUBLE_QUOTE = '“';
+export const CLOSE_CURLY_DOUBLE_QUOTE = '”';
+export const OPEN_CURLY_QUOTE = '‘';
+export const CLOSE_CURLY_QUOTE = '’';
 
 // Brackets
 export const OPEN_PARENTHESIS = '(';
