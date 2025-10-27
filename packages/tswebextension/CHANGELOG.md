@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Network rules with $important modifier are applied even if protection is disabled [AdguardBrowserExtension#3227].
 - Some requests are blocked in 'Inverted allowlist' mode even though there're no websites added to the Allowlist [AdguardBrowserExtension#3193].
+- MV3 now also cheks if filtering enabled before applying stealth rules.
 
 [AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
 [AdguardBrowserExtension#3193]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3193
