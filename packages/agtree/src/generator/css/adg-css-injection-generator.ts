@@ -1,3 +1,4 @@
+import { REMOVE_PROPERTY, REMOVE_VALUE } from '../../converter/data/css';
 import type { CssInjectionRuleBody } from '../../nodes';
 import {
     CLOSE_CURLY_BRACKET,
@@ -9,7 +10,6 @@ import {
     SPACE,
 } from '../../utils/constants';
 import { BaseGenerator } from '../base-generator';
-import { REMOVE_PROPERTY, REMOVE_VALUE } from '../../parser/css/adg-css-injection-parser';
 
 /**
  * AdGuard CSS injection generator.

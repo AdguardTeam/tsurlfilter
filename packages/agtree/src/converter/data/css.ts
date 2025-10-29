@@ -25,6 +25,30 @@ export const LEGACY_EXT_CSS_ATTRIBUTE_PREFIX = '-ext-';
 export const ABP_EXT_CSS_PREFIX = '-abp';
 
 /**
+ * Known CSS pseudo-classes that are supported by all browsers natively,
+ * but can also be applied as extended.
+ */
+export const NATIVE_AND_EXT_CSS_PSEUDO_CLASSES = new Set([
+    /**
+     * https://developer.mozilla.org/en-US/docs/Web/CSS/:has
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-has
+     */
+    'has',
+
+    /**
+     * https://developer.mozilla.org/en-US/docs/Web/CSS/:is
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-is
+     */
+    'is',
+
+    /**
+     * https://developer.mozilla.org/en-US/docs/Web/CSS/:not
+     * https://github.com/AdguardTeam/ExtendedCss#extended-css-not
+     */
+    'not',
+]);
+
+/**
  * Known _strict_ Extended CSS pseudo-classes. Please, keep this list sorted.
  * Strict means that these pseudo-classes are not supported by any browser natively,
  * and they always require Extended CSS libraries to work.
@@ -65,16 +89,7 @@ export const EXT_CSS_PSEUDO_CLASSES_STRICT = new Set([
  */
 export const EXT_CSS_PSEUDO_CLASSES = new Set([
     ...EXT_CSS_PSEUDO_CLASSES_STRICT,
-
-    /**
-     * https://developer.mozilla.org/en-US/docs/Web/CSS/:has
-     */
-    'has',
-
-    /**
-     * https://developer.mozilla.org/en-US/docs/Web/CSS/:is
-     */
-    'is',
+    ...NATIVE_AND_EXT_CSS_PSEUDO_CLASSES,
 ]);
 
 /**
@@ -131,3 +146,7 @@ export const FORBIDDEN_CSS_FUNCTIONS = new Set([
     // https://developer.mozilla.org/en-US/docs/Web/CSS/url
     'url',
 ]);
+
+export const REMOVE_PROPERTY = 'remove';
+
+export const REMOVE_VALUE = 'true';

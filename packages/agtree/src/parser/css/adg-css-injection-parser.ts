@@ -4,15 +4,13 @@
 
 import { TokenType } from '@adguard/css-tokenizer';
 
+import { REMOVE_PROPERTY, REMOVE_VALUE } from '../../converter/data/css';
 import { AdblockSyntaxError } from '../../errors/adblock-syntax-error';
 import { CSS_MEDIA_MARKER, EMPTY } from '../../utils/constants';
 import { type Value, type CssInjectionRuleBody } from '../../nodes';
 import { CssTokenStream } from './css-token-stream';
 import { defaultParserOptions } from '../options';
 import { BaseParser } from '../base-parser';
-
-export const REMOVE_PROPERTY = 'remove';
-export const REMOVE_VALUE = 'true';
 
 export const ERROR_MESSAGES = {
     MEDIA_QUERY_LIST_IS_EMPTY: 'Media query list is empty',

@@ -138,7 +138,13 @@ export { decodeTextPolyfill } from './utils/text-decoder-polyfill';
 export { RuleCategorizer } from './utils/categorizer';
 
 // Constants
-export { EXT_CSS_PSEUDO_CLASSES, EXT_CSS_LEGACY_ATTRIBUTES, FORBIDDEN_CSS_FUNCTIONS } from './converter/data/css';
+export {
+    EXT_CSS_PSEUDO_CLASSES,
+    EXT_CSS_LEGACY_ATTRIBUTES,
+    FORBIDDEN_CSS_FUNCTIONS,
+    NATIVE_AND_EXT_CSS_PSEUDO_CLASSES,
+    REMOVE_PROPERTY,
+} from './converter/data/css';
 
 export {
     GenericPlatform,
