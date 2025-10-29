@@ -114,23 +114,3 @@ export const SUPPORTED_EXT_CSS_ATTRIBUTE_SELECTORS = new Set([
     `${EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX}matches-css-before`,
     `${EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX}matches-css-after`,
 ]);
-
-/**
- * Known CSS functions that aren't allowed in CSS injection rules, because they
- * able to load external resources. Please, keep this list sorted.
- */
-export const FORBIDDEN_CSS_FUNCTIONS = new Set([
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/cross-fade
-    '-webkit-cross-fade',
-    'cross-fade',
-
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/image
-    'image',
-
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/image-set
-    '-webkit-image-set',
-    'image-set',
-
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/url
-    'url',
-]);
