@@ -7,29 +7,23 @@
  *
  * These pseudo-classes are not supported by browsers natively, so we need Extended CSS library to support them.
  *
+ * Pseudo-classes `:has()`, `:is()`, and `:not()` are not listed here,
+ * because they may use native implementation.
+ * They should be considered as extended CSS if:
+ * - some other strictly extended CSS pseudo-classes are present in the selector, OR
+ * - `#?#` separator is used explicitly.
+ *
+ * @see {@link https://github.com/AdguardTeam/ExtendedCss#extended-css-has}
+ * @see {@link https://github.com/AdguardTeam/ExtendedCss#extended-css-is}
+ * @see {@link https://github.com/AdguardTeam/ExtendedCss#extended-css-not}
+ *
  * Please keep this list sorted alphabetically.
  */
 export const SUPPORTED_EXT_CSS_PSEUDO_CLASSES = new Set([
-    /**
-     * Pseudo-classes :is(), and :not() may use native implementation.
-     *
-     * @see {@link https://github.com/AdguardTeam/ExtendedCss#extended-css-is}
-     * @see {@link https://github.com/AdguardTeam/ExtendedCss#extended-css-not}
-     */
-    /**
-     * :has() should also be conditionally considered as extended and should not be in this list,
-     * for details check: https://github.com/AdguardTeam/ExtendedCss#extended-css-has,
-     * but there is a bug with content blocker in safari:
-     * for details check: https://bugs.webkit.org/show_bug.cgi?id=248868.
-     *
-     * TODO: remove 'has' later.
-     */
     '-abp-contains', // alias for 'contains'
-    '-abp-has', // alias for 'has'
+    '-abp-has', // alias for 'has' - always extended (ABP-specific syntax)
     'contains',
-    'has', // some browsers support 'has' natively
     'has-text', // alias for 'contains'
-    'if',
     'if-not',
     'matches-attr',
     'matches-css',

@@ -146,6 +146,9 @@ export {
     REMOVE_PROPERTY,
 } from './converter/data/css';
 
+// CSS utilities
+export { CssTokenStream } from './parser/css/css-token-stream';
+
 export {
     GenericPlatform,
     SpecificPlatform,

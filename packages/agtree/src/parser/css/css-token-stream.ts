@@ -14,6 +14,7 @@ import {
     EXT_CSS_PSEUDO_CLASSES,
     EXT_CSS_PSEUDO_CLASSES_STRICT,
     LEGACY_EXT_CSS_ATTRIBUTE_PREFIX,
+    NATIVE_AND_EXT_CSS_PSEUDO_CLASSES,
 } from '../../converter/data/css';
 
 /**
@@ -456,6 +457,7 @@ export class CssTokenStream {
 
     /**
      * Strictly checks whether the token stream contains any Extended CSS elements, such as `:contains()`.
+     *
      * Some Extended CSS elements are natively supported by browsers, like `:has()`.
      * This method is used to check for Extended CSS elements that are not natively supported by browsers,
      * this is why it called "strict", because it strictly checks for Extended CSS elements.
@@ -464,6 +466,17 @@ export class CssTokenStream {
      */
     public hasAnySelectorExtendedCssNodeStrict(): boolean {
         return this.hasAnySelectorExtendedCssNodeInternal(EXT_CSS_PSEUDO_CLASSES_STRICT);
+    }
+
+    /**
+     * Checks whether the token stream contains any Extended CSS elements
+     * that may also be natively supported by browsers, e.g. :not().
+     *
+     * @returns `true` if the stream contains any Extended CSS elements
+     * that may also be natively supported by browsers, otherwise `false`.
+     */
+    public hasAnySelectorNativeAndExtCssNode(): boolean {
+        return this.hasAnySelectorExtendedCssNodeInternal(NATIVE_AND_EXT_CSS_PSEUDO_CLASSES);
     }
 
     /**

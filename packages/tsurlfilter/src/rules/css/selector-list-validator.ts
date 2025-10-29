@@ -2,6 +2,7 @@
  * @file Selector list validator.
  */
 
+import { CssTokenStream, NATIVE_AND_EXT_CSS_PSEUDO_CLASSES } from '@adguard/agtree';
 import { decodeIdent, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 
 import { getErrorMessage } from '../../common/error';
@@ -33,6 +34,12 @@ export const validateSelectorList = (selectorList: string): CssValidationResult 
     };
 
     try {
+        // Check if selector contains strictly extended CSS (excludes natively supported :has(), :is(), :not())
+        const stream = new CssTokenStream(selectorList);
+        const hasStrictlyExtendedCss = stream.hasAnySelectorExtendedCssNodeStrict();
+        // Check if selector contains any pseudo-classes that can be both native and extended (:has, :is, :not)
+        const hasNativeAndExtCss = stream.hasAnySelectorNativeAndExtCssNode();
+
         let prevIsDoubleColon = false;
         let prevToken: TokenType | undefined;
         let prevNonWhitespaceToken: TokenType | undefined;
@@ -54,8 +61,12 @@ export const validateSelectorList = (selectorList: string): CssValidationResult 
                 const decodedName = decodeIdent(name);
 
                 if (SUPPORTED_EXT_CSS_PSEUDO_CLASSES.has(decodedName)) {
+                    // This is always extended CSS (includes -abp-has, contains, etc.)
                     result.isExtendedCss = true;
-                } else if (!SUPPORTED_CSS_PSEUDO_CLASSES.has(decodedName)) {
+                } else if (
+                    !SUPPORTED_CSS_PSEUDO_CLASSES.has(decodedName)
+                    && !NATIVE_AND_EXT_CSS_PSEUDO_CLASSES.has(decodedName)
+                ) {
                     throw new Error(`Unsupported pseudo-class: ':${decodedName}'`);
                 }
             } else if (token === TokenType.Ident && prevNonWhitespaceToken === TokenType.OpenSquareBracket) {
@@ -86,6 +97,15 @@ export const validateSelectorList = (selectorList: string): CssValidationResult 
                 prevNonWhitespaceToken = token;
             }
         });
+
+        // If selector contains pseudo-classes
+        // that can be native or extended (:has, :is, :not)
+        // AND it also contains strictly extended CSS,
+        // mark the whole thing as extended CSS.
+        // Otherwise, :has/:is/:not alone are treated as native CSS
+        if (hasNativeAndExtCss && hasStrictlyExtendedCss) {
+            result.isExtendedCss = true;
+        }
     } catch (error: unknown) {
         result.isValid = false;
         result.errorMessage = getErrorMessage(error);
