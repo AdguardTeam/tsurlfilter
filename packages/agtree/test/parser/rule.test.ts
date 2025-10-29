@@ -1007,6 +1007,8 @@ describe('RuleParser', () => {
         expect(parseAndGenerate('example.com,~example.net#@#.ad:-abp-has(.ad)')).toEqual(
             'example.com,~example.net#@#.ad:-abp-has(.ad)',
         );
+        expect(parseAndGenerate('##body:has(.ads)')).toEqual('##body:has(.ads)');
+        expect(parseAndGenerate('#?#body:has(.ads)')).toEqual('#?#body:has(.ads)');
 
         // CSS injections (AdGuard)
         expect(parseAndGenerate('#$#body { padding: 0; }')).toEqual('#$#body { padding: 0; }');
@@ -1042,6 +1044,7 @@ describe('RuleParser', () => {
         ).toEqual(
             'example.com,~example.net#@$#@media (min-height: 1024px) and (max-height: 1920px) { body { padding: 0; } }',
         );
+        expect(parseAndGenerate('#$#body:has(.ads) { padding: 0; }')).toEqual('#$#body:has(.ads) { padding: 0; }');
         expect(parseAndGenerate('#$?#body:has(.ads) { padding: 0; }')).toEqual('#$?#body:has(.ads) { padding: 0; }');
         expect(parseAndGenerate('example.com,~example.net#$?#body:has(.ads) { padding: 0; }')).toEqual(
             'example.com,~example.net#$?#body:has(.ads) { padding: 0; }',
