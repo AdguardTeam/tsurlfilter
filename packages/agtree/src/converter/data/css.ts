@@ -147,6 +147,16 @@ export const FORBIDDEN_CSS_FUNCTIONS = new Set([
     'url',
 ]);
 
+/**
+ * Known extended CSS property that is used to remove elements.
+ *
+ * @see {@link https://github.com/AdguardTeam/ExtendedCss#remove-pseudos}
+ */
 export const REMOVE_PROPERTY = 'remove';
 
+/**
+ * Known extended CSS value for {@link REMOVE_PROPERTY} property to remove elements.
+ *
+ * @see {@link https://github.com/AdguardTeam/ExtendedCss#remove-pseudos}
+ */
 export const REMOVE_VALUE = 'true';
