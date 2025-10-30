@@ -220,6 +220,8 @@ export class CosmeticFrameProcessor {
 
         const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
+        console.log({ cssText });
+
         const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, matchingResult);
 
