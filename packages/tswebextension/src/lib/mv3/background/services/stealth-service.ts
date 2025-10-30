@@ -50,6 +50,17 @@ export type StealthConfigurationResult = Pick<
  */
 export class StealthService {
     /**
+     * Checks if both stealth mode and filtering are enabled.
+     *
+     * @param settings Settings configuration.
+     *
+     * @returns True if stealth mode and filtering are enabled.
+     */
+    private static isStealthAllowed(settings: SettingsConfigMV3): boolean {
+        return settings.stealthModeEnabled && settings.filteringEnabled;
+    }
+
+    /**
      * Required permissions for the stealth options related to browser settings.
      */
     private static readonly REQUIRED_PERMISSIONS: chrome.runtime.ManifestPermissions[] = ['privacy'];
@@ -128,7 +139,11 @@ export class StealthService {
     public static onBeforeSendHeaders(context: RequestContext): void {
         const settings = appContext.configuration?.settings;
 
-        if (!settings || !settings.stealthModeEnabled) {
+        if (!settings) {
+            return;
+        }
+
+        if (!StealthService.isStealthAllowed(settings)) {
             return;
         }
 

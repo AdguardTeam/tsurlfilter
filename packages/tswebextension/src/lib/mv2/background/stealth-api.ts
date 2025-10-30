@@ -79,7 +79,7 @@ export class StealthApi {
      *
      * @returns True if stealth mode and filtering are enabled.
      */
-    private get isStealthAllowed():boolean {
+    private get isStealthAllowed(): boolean {
         return this.isStealthModeEnabled && this.isFilteringEnabled;
     }
 
