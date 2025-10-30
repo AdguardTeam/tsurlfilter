@@ -4,6 +4,7 @@ import { type CosmeticResult, type CosmeticRule } from '@adguard/tsurlfilter';
 import { LF, SEMICOLON } from './constants';
 import { defaultFilteringLog, FilteringEventType } from './filtering-log';
 import { type ContentType } from './request-type';
+import { selectorContainsNativeAndExtCss, supportsNativeAndExtCssPseudoClasses } from './utils/css-capabilities';
 import { getDomain } from './utils/url';
 import { nanoid } from './utils/nanoid';
 
@@ -62,6 +63,19 @@ export class CosmeticApiCommon {
      * Number of selectors in grouped selector list.
      */
     protected static readonly CSS_SELECTORS_PER_LINE = 50;
+
+    /**
+     * Cache for native-and-ext CSS pseudo-classes support detection (:has, :is, :not).
+     */
+    private static nativeAndExtCssSupport: boolean | null = null;
+
+    /**
+     * Resets the native-and-ext CSS support cache.
+     * This is primarily for testing purposes.
+     */
+    public static resetNativeAndExtCssCache(): void {
+        CosmeticApiCommon.nativeAndExtCssSupport = null;
+    }
 
     /**
      * Element hiding CSS style beginning.
@@ -242,6 +256,52 @@ export class CosmeticApiCommon {
     }
 
     /**
+     * Reclassifies rules containing native-and-ext pseudo-classes (:has, :is, :not)
+     * to extended CSS if the browser does not support them natively.
+     *
+     * @param nativeRules Rules that are marked as native CSS.
+     * @param extendedRules Rules that are marked as extended CSS.
+     *
+     * @returns Object with reclassified native and extended rules.
+     */
+    private static reclassifyNativeAndExtCssRules(
+        nativeRules: CosmeticRule[],
+        extendedRules: CosmeticRule[],
+    ): { native: CosmeticRule[]; extended: CosmeticRule[] } {
+        // Cache the support check result
+        if (CosmeticApiCommon.nativeAndExtCssSupport === null) {
+            CosmeticApiCommon.nativeAndExtCssSupport = supportsNativeAndExtCssPseudoClasses();
+        }
+
+        // If native-and-ext pseudo-classes are supported natively,
+        // no reclassification needed
+        if (CosmeticApiCommon.nativeAndExtCssSupport) {
+            return { native: nativeRules, extended: extendedRules };
+        }
+
+        // Browser doesn't support them,
+        // so move rules with :has/:is/:not to extended CSS
+        const reclassifiedNative: CosmeticRule[] = [];
+        const reclassifiedExtended: CosmeticRule[] = [...extendedRules];
+
+        for (const rule of nativeRules) {
+            const content = rule.getContent();
+            if (selectorContainsNativeAndExtCss(content)) {
+                // Move to extended CSS
+                reclassifiedExtended.push(rule);
+            } else {
+                // Keep as native CSS
+                reclassifiedNative.push(rule);
+            }
+        }
+
+        return {
+            native: reclassifiedNative,
+            extended: reclassifiedExtended,
+        };
+    }
+
+    /**
      * Builds extended css rules from cosmetic result.
      *
      * @param cosmeticResult Cosmetic result.
@@ -255,15 +315,31 @@ export class CosmeticApiCommon {
     ): string[] | null {
         const { elementHiding, CSS } = cosmeticResult;
 
-        const elemhideExtCss = elementHiding.genericExtCss.concat(elementHiding.specificExtCss);
-        const injectExtCss = CSS.genericExtCss.concat(CSS.specificExtCss);
+        // Reclassify element hiding rules if needed
+        const elemhideReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
+            elementHiding.generic.concat(elementHiding.specific),
+            elementHiding.genericExtCss.concat(elementHiding.specificExtCss),
+        );
+
+        // Reclassify CSS injection rules if needed
+        const cssReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
+            CSS.generic.concat(CSS.specific),
+            CSS.genericExtCss.concat(CSS.specificExtCss),
+        );
 
         let extCssRules: string[];
 
         if (collectingCosmeticRulesHits) {
-            extCssRules = CosmeticApiCommon.buildStyleSheetsWithHits(elemhideExtCss, injectExtCss);
+            extCssRules = CosmeticApiCommon.buildStyleSheetsWithHits(
+                elemhideReclassified.extended,
+                cssReclassified.extended,
+            );
         } else {
-            extCssRules = CosmeticApiCommon.buildStyleSheets(elemhideExtCss, injectExtCss, false);
+            extCssRules = CosmeticApiCommon.buildStyleSheets(
+                elemhideReclassified.extended,
+                cssReclassified.extended,
+                false,
+            );
         }
 
         return extCssRules.length > 0
@@ -285,15 +361,30 @@ export class CosmeticApiCommon {
     ): string | undefined {
         const { elementHiding, CSS } = cosmeticResult;
 
-        const elemhideCss = elementHiding.generic.concat(elementHiding.specific);
-        const injectCss = CSS.generic.concat(CSS.specific);
+        // Reclassify rules - only native CSS rules should be included in getCssText
+        const elemhideReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
+            elementHiding.generic.concat(elementHiding.specific),
+            elementHiding.genericExtCss.concat(elementHiding.specificExtCss),
+        );
+
+        const cssReclassified = CosmeticApiCommon.reclassifyNativeAndExtCssRules(
+            CSS.generic.concat(CSS.specific),
+            CSS.genericExtCss.concat(CSS.specificExtCss),
+        );
 
         let styles: string[];
 
         if (collectingCosmeticRulesHits) {
-            styles = CosmeticApiCommon.buildStyleSheetsWithHits(elemhideCss, injectCss);
+            styles = CosmeticApiCommon.buildStyleSheetsWithHits(
+                elemhideReclassified.native,
+                cssReclassified.native,
+            );
         } else {
-            styles = CosmeticApiCommon.buildStyleSheets(elemhideCss, injectCss, true);
+            styles = CosmeticApiCommon.buildStyleSheets(
+                elemhideReclassified.native,
+                cssReclassified.native,
+                true,
+            );
         }
 
         if (styles.length > 0) {
