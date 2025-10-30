@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 - Export of `CssTokenStream`.
 - `CssTokenStream.hasAnySelectorNativeAndExtCssNode()` for checking
   if there are any pseudo-classes that may be considered as extended
-  but also supported natively as standard CSS.
+  but also supported natively as standard CSS, i.e. `:has()`, `:is()`, `:not()`.
 
 ## [3.2.3] - 2025-08-28
 
