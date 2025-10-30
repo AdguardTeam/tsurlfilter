@@ -129,6 +129,11 @@ export class CosmeticFrameProcessor {
             },
         };
 
+        // FIXME: remove later
+        const { cssText } = preparedCosmeticResult;
+        console.log({ cosmeticResult });
+        console.log({ cssText });
+
         return preparedCosmeticResult;
     }
 

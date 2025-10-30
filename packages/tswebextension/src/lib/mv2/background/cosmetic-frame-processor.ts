@@ -220,6 +220,8 @@ export class CosmeticFrameProcessor {
 
         const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
 
+        // FIXME: remove later
+        console.log({ cosmeticResult });
         console.log({ cssText });
 
         const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
