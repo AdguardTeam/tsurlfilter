@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased <!-- release/browser-extension-v5.3 -->
+
+### Added
+
+- Support of `:has()` pseudo-class as standard CSS conditionally: if there are
+  no other extended pseudo-classes in the selector or if the `#?#` separator
+  is explicitly used in the rule [AdguardBrowserExtension#2587].
+
+### Changed
+
+<!-- TODO: update the version later -->
+- Updated [@adguard/agtree] to `vX.X.X`.
+
+[AdguardBrowserExtension#2587]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2587
+
 ## [3.4.6] - 2025-09-11
 
 ### Changed
