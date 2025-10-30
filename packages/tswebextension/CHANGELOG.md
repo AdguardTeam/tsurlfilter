@@ -7,22 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased <!-- release/browser-extension-v5.3 -->
 
+### Added
+
+- Export `isUserScriptsApiSupported` function to check if the current browser
+  supports User Scripts API.
+
 ### Removed
 
 - `quickFixesRules` property from MV3 configuration.
 
 ### Fixed
 
-- Network rules with $important modifier are applied even if protection is disabled [AdguardBrowserExtension#3227].
-- Some requests are blocked in 'Inverted allowlist' mode even though there're no websites added to the Allowlist [AdguardBrowserExtension#3193].
+- Network rules with $important modifier are applied
+  even if protection is disabled [AdguardBrowserExtension#3227].
+- Some requests are blocked in 'Inverted allowlist' mode even though
+  there're no websites added to the Allowlist [AdguardBrowserExtension#3193].
 
 [AdguardBrowserExtension#3227]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3227
 [AdguardBrowserExtension#3193]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3193
-
-### Added
-
-- Export `isUserScriptsApiSupported` function to check if the current browser
-  supports User Scripts API.
 
 ## [3.2.11] - 2025-09-11
 
