@@ -208,6 +208,9 @@ export class CosmeticApi extends CosmeticApiCommon {
 
         data.extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, areHitsStatsCollected);
 
+        // FIXME: remove later
+        console.log({ data });
+
         return data;
     }
 

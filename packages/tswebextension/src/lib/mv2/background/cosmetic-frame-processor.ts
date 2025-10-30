@@ -222,7 +222,6 @@ export class CosmeticFrameProcessor {
 
         // FIXME: remove later
         console.log({ cosmeticResult });
-        console.log({ cssText });
 
         const { scriptText } = CosmeticApi.getScriptsAndScriptletsData(cosmeticResult, url);
         const stealthScriptText = stealthApi.getStealthScript(mainFrameRule, matchingResult);
