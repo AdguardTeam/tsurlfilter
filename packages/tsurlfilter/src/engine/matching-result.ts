@@ -257,6 +257,11 @@ export class MatchingResult {
 
         // e.g. @@||example.com^$generichide
         if (this.cosmeticExceptionRule && (!basic || this.cosmeticExceptionRule.isHigherPriority(basic))) {
+            // special case: `||example.org^$document` should not be allowlisted by cosmetic exception rules
+            if (basic && !basic.isAllowlist() && MatchingResult.isDocumentRule(basic)) {
+                return basic;
+            }
+
             return this.cosmeticExceptionRule;
         }
 
