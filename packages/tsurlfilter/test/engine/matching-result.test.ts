@@ -257,7 +257,9 @@ describe('TestGetCosmeticOption', () => {
             CosmeticOption.CosmeticOptionAll ^ CosmeticOption.CosmeticOptionSpecificCSS,
         );
 
-        expect(result.getBasicResult()).toMatchNetworkRule(specifichideAllowlistRule);
+        // Fix for https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3260
+        // Blocking rule should be applied over cosmetic exception rules.
+        expect(result.getBasicResult()).toMatchNetworkRule(allBlockingRule);
         expect(result.getDocumentBlockingResult()).toMatchNetworkRule(allBlockingRule);
     });
 
@@ -278,7 +280,9 @@ describe('TestGetCosmeticOption', () => {
             CosmeticOption.CosmeticOptionAll ^ CosmeticOption.CosmeticOptionGenericCSS,
         );
 
-        expect(result.getBasicResult()).toMatchNetworkRule(generichideAllowlistRule);
+        // Fix for https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3260
+        // blocking rule should be applied over cosmetic exception rules
+        expect(result.getBasicResult()).toMatchNetworkRule(documentBlockingRule);
         expect(result.getDocumentBlockingResult()).toMatchNetworkRule(documentBlockingRule);
     });
 
