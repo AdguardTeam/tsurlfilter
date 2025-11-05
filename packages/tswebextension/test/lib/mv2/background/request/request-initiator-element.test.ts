@@ -92,8 +92,9 @@ describe('Request Initiator Element', () => {
                 false,
             );
 
-            // With Option 1, first-party requests now generate BOTH selectors
-            // Order: 1. Absolute URL (suffix), 2. Relative path (strict)
+            // First-party requests generate BOTH selectors for maximum compatibility:
+            // 1. Absolute URL with suffix matching: [src$="//domain/path"]
+            // 2. Relative path with strict matching: [src="/path"]
             const absoluteSrc = requestUrl.substring(requestUrl.indexOf('//'));
             const expectedCode = `${InitiatorTag.Image}[src$="${absoluteSrc}"] ${HIDING_STYLE}\n${
                 InitiatorTag.Image
@@ -120,8 +121,9 @@ describe('Request Initiator Element', () => {
 
         const expectedTags = [InitiatorTag.Iframe, InitiatorTag.Frame];
 
-        // With Option 1, we should generate BOTH selectors:
-        // Order: 1. Absolute URL (suffix), 2. Relative path (strict)
+        // First-party requests generate BOTH selectors for maximum compatibility:
+        // 1. Absolute URL with suffix matching: [src$="//domain/path"]
+        // 2. Relative path with strict matching: [src="/path"]
         let expectedCode = '';
 
         const relativePath = '/misopan_news/headline2.htm';
