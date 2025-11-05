@@ -68,7 +68,7 @@ describe('Request Initiator Element', () => {
         const tabId = 1;
         const frameId = 0;
 
-        // [requestUrl, documentUrl, expectedSrcAttribute]
+        // [requestUrl, documentUrl, expectedRelativeSrcAttribute]
         const cases = [
             ['https://example.org', 'https://example.org', '/'],
             ['https://example.org/image.png', 'https://example.org', '/image.png'],
@@ -82,7 +82,7 @@ describe('Request Initiator Element', () => {
             ['https://example.org/foo/bar/baz/image.png', 'https://example.org/foo/bar/baz#test', 'image.png'],
         ];
 
-        it.each(cases)('%s loaded at %s', (requestUrl, documentUrl, expectedSrcAttribute) => {
+        it.each(cases)('%s loaded at %s', (requestUrl, documentUrl, expectedRelativeSrcAttribute) => {
             hideRequestInitiatorElement(
                 tabId,
                 frameId,
@@ -92,12 +92,49 @@ describe('Request Initiator Element', () => {
                 false,
             );
 
-            const expectedCode = `${InitiatorTag.Image}[src="${
-                expectedSrcAttribute
-            }"] ${HIDING_STYLE}\n`;
+            // With Option 1, first-party requests now generate BOTH selectors
+            // Order: 1. Absolute URL (suffix), 2. Relative path (strict)
+            const absoluteSrc = requestUrl.substring(requestUrl.indexOf('//'));
+            const expectedCode = `${InitiatorTag.Image}[src$="${absoluteSrc}"] ${HIDING_STYLE}\n${
+                InitiatorTag.Image
+            }[src="${expectedRelativeSrcAttribute}"] ${HIDING_STYLE}\n`;
 
             expect(CosmeticApi.injectCss).toBeCalledWith(tabId, frameId, expectedCode);
         });
+    });
+
+    it('hides first party subdocument with absolute URL in src attribute', () => {
+        const tabId = 1;
+        const frameId = 0;
+
+        // Case: iframe on http://blog.livedoor.jp/some-page
+        // with src="http://blog.livedoor.jp/misopan_news/headline2.htm"
+        hideRequestInitiatorElement(
+            tabId,
+            frameId,
+            'http://blog.livedoor.jp/misopan_news/headline2.htm',
+            'http://blog.livedoor.jp/some-page',
+            RequestType.SubDocument,
+            false,
+        );
+
+        const expectedTags = [InitiatorTag.Iframe, InitiatorTag.Frame];
+
+        // With Option 1, we should generate BOTH selectors:
+        // Order: 1. Absolute URL (suffix), 2. Relative path (strict)
+        let expectedCode = '';
+
+        const relativePath = '/misopan_news/headline2.htm';
+        const absoluteUrl = '//blog.livedoor.jp/misopan_news/headline2.htm';
+
+        for (let i = 0; i < expectedTags.length; i += 1) {
+            // Absolute URL with suffix matching
+            expectedCode += `${expectedTags[i]}[src$="${absoluteUrl}"] ${HIDING_STYLE}\n`;
+            // Relative path with strict matching
+            expectedCode += `${expectedTags[i]}[src="${relativePath}"] ${HIDING_STYLE}\n`;
+        }
+
+        expect(CosmeticApi.injectCss).toBeCalledWith(tabId, frameId, expectedCode);
     });
 
     it('doesn`t inject css on background tab', () => {
