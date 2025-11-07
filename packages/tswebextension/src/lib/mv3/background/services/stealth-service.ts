@@ -11,19 +11,9 @@ import { getDomain } from '../../../common/utils/url';
 import { appContext } from '../app-context';
 import { type SettingsConfigMV3 } from '../configuration';
 import { requestContextStorage, type RequestContext } from '../request';
-import { SessionRulesApi } from '../session-rules-api';
+import { SessionRulesApi, SessionRuleId } from '../session-rules-api';
 
 import { searchEngineDomains } from './searchEngineDomains';
-
-/**
- * Reserved stealth rule ids for the DNR.
- */
-export enum StealthRuleId {
-    HideReferrer = 1,
-    BlockChromeClientData = 2,
-    SendDoNotTrack = 3,
-    HideSearchQueries = SessionRulesApi.MIN_DECLARATIVE_RULE_ID,
-}
 
 /**
  * Reserved stealth content script ids.
@@ -369,7 +359,7 @@ export class StealthService {
     public static async setHideReferrer(isReferrerHidden: boolean): Promise<boolean> {
         if (!isReferrerHidden) {
             try {
-                await StealthService.removeSessionRule(StealthRuleId.HideReferrer);
+                await StealthService.removeSessionRule(SessionRuleId.HideReferrer);
 
                 return isReferrerHidden;
             } catch (e) {
@@ -381,7 +371,7 @@ export class StealthService {
 
         try {
             await StealthService.setSessionRule({
-                id: StealthRuleId.HideReferrer,
+                id: SessionRuleId.HideReferrer,
                 action: {
                     type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
                     requestHeaders: [{
@@ -414,7 +404,7 @@ export class StealthService {
     public static async setBlockChromeClientData(isBlockChromeClientData: boolean): Promise<boolean> {
         if (!isBlockChromeClientData) {
             try {
-                await StealthService.removeSessionRule(StealthRuleId.BlockChromeClientData);
+                await StealthService.removeSessionRule(SessionRuleId.BlockChromeClientData);
 
                 return isBlockChromeClientData;
             } catch (e) {
@@ -426,7 +416,7 @@ export class StealthService {
 
         try {
             await StealthService.setSessionRule({
-                id: StealthRuleId.BlockChromeClientData,
+                id: SessionRuleId.BlockChromeClientData,
                 action: {
                     type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
                     requestHeaders: [{
@@ -464,7 +454,7 @@ export class StealthService {
         if (!isSendDoNotTrack) {
             try {
                 await Promise.all([
-                    StealthService.removeSessionRule(StealthRuleId.SendDoNotTrack),
+                    StealthService.removeSessionRule(SessionRuleId.SendDoNotTrack),
                     StealthService.removeContentScript(StealthContentScriptId.Gpc),
                 ]);
 
@@ -479,7 +469,7 @@ export class StealthService {
         try {
             await Promise.all([
                 StealthService.setSessionRule({
-                    id: StealthRuleId.SendDoNotTrack,
+                    id: SessionRuleId.SendDoNotTrack,
                     action: {
                         type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
                         requestHeaders: [{
@@ -534,7 +524,7 @@ export class StealthService {
         if (!isHideSearchQueries) {
             try {
                 await Promise.all([
-                    StealthService.removeSessionRule(StealthRuleId.HideSearchQueries),
+                    StealthService.removeSessionRule(SessionRuleId.HideSearchQueries),
                     StealthService.removeContentScript(StealthContentScriptId.DocumentReferrer),
                 ]);
 
@@ -549,7 +539,7 @@ export class StealthService {
         try {
             await Promise.all([
                 StealthService.setSessionRule({
-                    id: StealthRuleId.HideSearchQueries,
+                    id: SessionRuleId.HideSearchQueries,
                     action: {
                         type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
                         requestHeaders: [{
@@ -718,9 +708,9 @@ export class StealthService {
      * @returns Resolved promise when the rule is set.
      */
     private static async setSessionRule(
-        rule: chrome.declarativeNetRequest.Rule & { id: StealthRuleId },
+        rule: chrome.declarativeNetRequest.Rule & { id: SessionRuleId },
     ): Promise<void> {
-        return SessionRulesApi.setStealthRule(rule);
+        return SessionRulesApi.setSessionRule(rule);
     }
 
     /**
@@ -730,8 +720,8 @@ export class StealthService {
      *
      * @returns Resolved promise when the rule is removed.
      */
-    private static async removeSessionRule(ruleId: StealthRuleId): Promise<void> {
-        return SessionRulesApi.removeStealthRule(ruleId);
+    private static async removeSessionRule(ruleId: SessionRuleId): Promise<void> {
+        return SessionRulesApi.removeSessionRule(ruleId);
     }
 
     /**
@@ -770,15 +760,15 @@ export class StealthService {
      * Removes all stealth rules and content scripts.
      */
     public static async clearAll(): Promise<void> {
-        const ruleIds = Object.keys(StealthRuleId)
-            .map((key) => Number(key))
-            .filter((keyNumber) => !Number.isNaN(keyNumber));
-        await SessionRulesApi.removeStealthRules(ruleIds);
-
         const contentScriptIds = Object.values(StealthContentScriptId);
         contentScriptIds.forEach(async (id) => {
             await StealthService.removeContentScript(id);
         });
+
+        await StealthService.removeSessionRule(SessionRuleId.BlockChromeClientData);
+        await StealthService.removeSessionRule(SessionRuleId.HideReferrer);
+        await StealthService.removeSessionRule(SessionRuleId.HideSearchQueries);
+        await StealthService.removeSessionRule(SessionRuleId.SendDoNotTrack);
     }
 
     /**

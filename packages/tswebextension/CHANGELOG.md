@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Export `isUserScriptsApiSupported` function to check if the current browser
   supports User Scripts API.
+- CSP report blocking service for Manifest V3.
 
 ### Removed
 
