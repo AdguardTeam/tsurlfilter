@@ -78,6 +78,11 @@ export interface RuleAction {
 }
 
 /**
+ * Subset of {@link RuleAction} that contains only headers modification info.
+ */
+export type RuleActionHeaders = Pick<RuleAction, 'requestHeaders' | 'responseHeaders'>;
+
+/**
  * Validator for {@link RuleAction}.
  */
 export const RuleActionValidator = strictObjectByType<RuleAction>({

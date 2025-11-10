@@ -7,14 +7,21 @@
 
 export { type DeclarativeRule, DeclarativeRuleValidator } from './declarative-rule';
 
-export { HeaderOperation } from './modify-header-info';
+export { type ModifyHeaderInfo, HeaderOperation } from './modify-header-info';
 
-export { RuleActionType } from './rule-action';
-
-export { URLTransformScheme } from './url-transform';
+export { type Redirect } from './redirect';
 
 export {
+    type RuleAction,
+    type RuleActionHeaders,
+    RuleActionType,
+} from './rule-action';
+
+export {
+    type RuleCondition,
     DomainType,
     RequestMethod,
     ResourceType,
 } from './rule-condition';
+
+export { URLTransformScheme } from './url-transform';

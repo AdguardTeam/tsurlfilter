@@ -61,9 +61,14 @@
             "eslint"
         ]
     },
+    "peerDependencies": {
+        "@adguard/re2-wasm": "1.2.0"
+    },
     "dependencies": {
         "@adguard/agtree": "workspace:^",
         "@adguard/logger": "workspace:^",
+        "@adguard/scriptlets": "catalog:",
+        "punycode": "2.3.1",
         "valibot": "catalog:"
     },
     "devDependencies": {
@@ -75,6 +80,7 @@
         "@rollup/plugin-typescript": "catalog:",
         "@types/chrome": "catalog:",
         "@types/node": "catalog:",
+        "@types/punycode": "2.1.4",
         "@typescript-eslint/eslint-plugin": "catalog:",
         "@typescript-eslint/parser": "catalog:",
         "@vitest/coverage-v8": "catalog:",

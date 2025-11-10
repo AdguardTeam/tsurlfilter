@@ -921,6 +921,15 @@ importers:
       '@adguard/logger':
         specifier: workspace:^
         version: link:../logger
+      '@adguard/re2-wasm':
+        specifier: 1.2.0
+        version: 1.2.0
+      '@adguard/scriptlets':
+        specifier: 'catalog:'
+        version: 2.2.10
+      punycode:
+        specifier: 2.3.1
+        version: 2.3.1
       valibot:
         specifier: 'catalog:'
         version: 1.1.0(typescript@5.8.3)
@@ -949,6 +958,9 @@ importers:
       '@types/node':
         specifier: 'catalog:'
         version: 22.14.0
+      '@types/punycode':
+        specifier: 2.1.4
+        version: 2.1.4
       '@typescript-eslint/eslint-plugin':
         specifier: 'catalog:'
         version: 7.18.0(@typescript-eslint/parser@7.18.0(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)

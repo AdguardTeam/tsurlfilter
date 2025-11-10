@@ -13,6 +13,10 @@ export default defineConfig({
             exclude: [
                 // Index file contains only exports
                 'src/index.ts',
+                // Constants should not affect coverage
+                'src/constants.ts',
+                // Folder contains only valibot schemas
+                'src/declarative-rule/**/*.ts',
             ],
         },
     },
