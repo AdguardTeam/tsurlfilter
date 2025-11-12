@@ -1,0 +1,4 @@
+example.org#%#console.log('valid')
+example.org#%#invalid syntax {{{
+example.org#%#alert('another valid')
+
