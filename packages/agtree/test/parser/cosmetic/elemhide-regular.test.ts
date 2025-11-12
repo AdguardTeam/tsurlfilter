@@ -153,6 +153,33 @@ describe('CosmeticRuleParser', () => {
                 actual: 'example.com,~example.net#@#.ad',
                 expected: 'example.com,~example.net#@#.ad',
             },
+
+            // Single-letter HTML tag selectors:
+            // https://github.com/AdguardTeam/tsurlfilter/issues/172
+            {
+                actual: '##p',
+                expected: '##p',
+            },
+            {
+                actual: '##a',
+                expected: '##a',
+            },
+            {
+                actual: '##p > a',
+                expected: '##p > a',
+            },
+            {
+                actual: '##p > a[href^="/AllRes/Vlog"]',
+                expected: '##p > a[href^="/AllRes/Vlog"]',
+            },
+            {
+                actual: '##a > span',
+                expected: '##a > span',
+            },
+            {
+                actual: 'example.com##p > a',
+                expected: 'example.com##p > a',
+            },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = CosmeticRuleParser.parse(actual);
 

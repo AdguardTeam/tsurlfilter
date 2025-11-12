@@ -38,6 +38,15 @@ describe('CosmeticRuleParser - general tests', () => {
             ['##^script:has-text(antiadblock)', true],
             ['$$script[tag-content="antiadblock"]', true],
             ['$$div[custom_attr]', true],
+
+            // Single-letter HTML tag selectors:
+            // https://github.com/AdguardTeam/tsurlfilter/issues/172
+            ['##p', true],
+            ['##a', true],
+            ['##p > a', true],
+            ['##p > a[href^="/AllRes/Vlog"]', true],
+            ['##a > span', true],
+            ['example.com##p > a', true],
         ])("should return '%s' for '%s'", (rule, expected) => {
             expect(CosmeticRuleParser.isCosmeticRule(rule)).toEqual(expected);
         });

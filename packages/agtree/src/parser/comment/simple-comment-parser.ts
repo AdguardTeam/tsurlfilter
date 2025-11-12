@@ -55,9 +55,12 @@ export class SimpleCommentParser extends BaseParser {
 
             // No valid selector
             if (
-                !trimmed[end + 1]
-                || StringUtils.isWhitespace(trimmed[end + 1])
-                || (trimmed[end + 1] === CommentMarker.Hashmark && trimmed[end + 2] === CommentMarker.Hashmark)
+                !trimmed[end]
+                || StringUtils.isWhitespace(trimmed[end])
+                || (
+                    trimmed[end] === CommentMarker.Hashmark
+                    && trimmed[end + 1] === CommentMarker.Hashmark
+                )
             ) {
                 return true;
             }

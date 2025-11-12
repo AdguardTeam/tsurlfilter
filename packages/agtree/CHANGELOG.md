@@ -7,6 +7,15 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [3.2.5] - 2025-11-12
+
+### Fixed
+
+- Selector validation for single-letter HTML tags [#172].
+
+[3.2.5]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.2.5
+[#172]: https://github.com/AdguardTeam/tsurlfilter/issues/172
+
 ## [3.2.4] - 2025-10-17
 
 ### Added
