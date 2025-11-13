@@ -19,7 +19,7 @@ export class BufferReader implements IReader {
     private currentIndex = 0;
 
     /**
-     * Constructor of a BufferReader.
+     * Constructor.
      *
      * @param buffer Uint8Array that contains a UTF-8 encoded string.
      */
@@ -28,11 +28,7 @@ export class BufferReader implements IReader {
         this.currentIndex = this.buffer.currentOffset;
     }
 
-    /**
-     * Reads the next line in the buffer.
-     *
-     * @returns Text or null on end.
-     */
+    /** @inheritdoc */
     public readNext(): AnyRule | null {
         // If the next byte is 0, it means that there's nothing to read.
         if (this.buffer.peekUint8() === 0) {
@@ -51,12 +47,7 @@ export class BufferReader implements IReader {
         return null;
     }
 
-    /**
-     * Returns the current position of this reader or -1 if there's nothing to
-     * read.
-     *
-     * @returns - The current position or -1 if there's nothing to read.
-     */
+    /** @inheritdoc */
     public getCurrentPos(): number {
         return this.currentIndex;
     }

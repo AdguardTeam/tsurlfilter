@@ -12,12 +12,16 @@ export interface IReader<T = AnyRule> {
     readNext(): T | null;
 
     /**
-     * Returns the current position of this reader.
+     * Retrieves the current position of this reader or -1 if there's nothing to read.
+     *
+     * @returns The current position or -1 if there's nothing to read.
      */
     getCurrentPos(): number;
 
     /**
-     * Returns the length of the data.
+     * Retrieves the length of the data.
+     *
+     * @returns The length of the data.
      */
     getDataLength(): number;
 }
