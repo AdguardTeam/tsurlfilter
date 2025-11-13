@@ -10,6 +10,7 @@ import * as errorUtilsModule from '../../../src/utils/error';
 import {
     fastHash,
     fastHash31,
+    findNextLineBreakIndex,
     hasSpaces,
     isASCII,
     isRegexPattern,
@@ -236,6 +237,87 @@ describe('String utils', () => {
 
         it('returns false for empty string', () => {
             expect(hasSpaces('')).toBe(false);
+        });
+    });
+
+    describe('findNextLineBreakIndex', () => {
+        it('returns correct index and length for LF (\\n) line break', () => {
+            expect(findNextLineBreakIndex('hello\nworld')).toEqual([5, 1]);
+            expect(findNextLineBreakIndex('first line\nsecond line')).toEqual([10, 1]);
+        });
+
+        it('returns correct index and length for CR (\\r) line break', () => {
+            expect(findNextLineBreakIndex('hello\rworld')).toEqual([5, 1]);
+            expect(findNextLineBreakIndex('first line\rsecond line')).toEqual([10, 1]);
+        });
+
+        it('returns correct index and length for FF (\\f) form feed', () => {
+            expect(findNextLineBreakIndex('hello\fworld')).toEqual([5, 1]);
+            expect(findNextLineBreakIndex('first page\fsecond page')).toEqual([10, 1]);
+        });
+
+        it('returns correct index and length for CRLF (\\r\\n) line break', () => {
+            expect(findNextLineBreakIndex('hello\r\nworld')).toEqual([5, 2]);
+            expect(findNextLineBreakIndex('first line\r\nsecond line')).toEqual([10, 2]);
+        });
+
+        it('returns string length and 0 when no line break is found', () => {
+            expect(findNextLineBreakIndex('hello world')).toEqual([11, 0]);
+            expect(findNextLineBreakIndex('no breaks here')).toEqual([14, 0]);
+        });
+
+        it('returns string length and 0 for empty string', () => {
+            expect(findNextLineBreakIndex('')).toEqual([0, 0]);
+        });
+
+        it('finds line break at the beginning of string', () => {
+            expect(findNextLineBreakIndex('\nhello')).toEqual([0, 1]);
+            expect(findNextLineBreakIndex('\rhello')).toEqual([0, 1]);
+            expect(findNextLineBreakIndex('\fhello')).toEqual([0, 1]);
+            expect(findNextLineBreakIndex('\r\nhello')).toEqual([0, 2]);
+        });
+
+        it('finds line break at the end of string', () => {
+            expect(findNextLineBreakIndex('hello\n')).toEqual([5, 1]);
+            expect(findNextLineBreakIndex('hello\r')).toEqual([5, 1]);
+            expect(findNextLineBreakIndex('hello\f')).toEqual([5, 1]);
+            expect(findNextLineBreakIndex('hello\r\n')).toEqual([5, 2]);
+        });
+
+        it('respects custom start index parameter', () => {
+            const text = 'first\nsecond\nthird';
+            expect(findNextLineBreakIndex(text, 0)).toEqual([5, 1]);
+            expect(findNextLineBreakIndex(text, 6)).toEqual([12, 1]);
+            expect(findNextLineBreakIndex(text, 13)).toEqual([18, 0]);
+        });
+
+        it('finds first occurrence when multiple line breaks exist', () => {
+            expect(findNextLineBreakIndex('line1\nline2\rline3\fline4')).toEqual([5, 1]);
+            expect(findNextLineBreakIndex('mixed\r\nbreaks\nhere')).toEqual([5, 2]);
+        });
+
+        it('handles start index beyond string length', () => {
+            expect(findNextLineBreakIndex('hello', 10)).toEqual([5, 0]);
+        });
+
+        it('handles start index at string length', () => {
+            expect(findNextLineBreakIndex('hello', 5)).toEqual([5, 0]);
+        });
+
+        it('finds line break when start index is just before it', () => {
+            expect(findNextLineBreakIndex('hello\nworld', 4)).toEqual([5, 1]);
+            expect(findNextLineBreakIndex('hello\nworld', 5)).toEqual([5, 1]);
+        });
+
+        it('prioritizes CRLF over individual CR when both are present', () => {
+            expect(findNextLineBreakIndex('test\r\nmore')).toEqual([4, 2]);
+        });
+
+        it('handles single character strings', () => {
+            expect(findNextLineBreakIndex('\n')).toEqual([0, 1]);
+            expect(findNextLineBreakIndex('\r')).toEqual([0, 1]);
+            expect(findNextLineBreakIndex('\f')).toEqual([0, 1]);
+            expect(findNextLineBreakIndex('a')).toEqual([1, 0]);
         });
     });
 });
