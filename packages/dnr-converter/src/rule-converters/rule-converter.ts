@@ -262,8 +262,6 @@ export abstract class RuleConverter {
      *
      * @returns Modify headers action, which describes which
      * headers should be changed: added, set or deleted.
-     *
-     * FIXME: Why we can't include both response and request headers in one action here?
      */
     private static getModifyHeadersAction(rule: NetworkRule): RuleActionHeaders | null {
         if (!rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
@@ -403,7 +401,6 @@ export abstract class RuleConverter {
             }
         }
 
-        // FIXME: Why we can't include both response and request headers in one action here?
         if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
             const modifyHeadersAction = RuleConverter.getModifyHeadersAction(rule);
 

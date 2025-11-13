@@ -25,3 +25,14 @@ export const MASK_ANY_CHARACTER = '*';
  * Space character.
  */
 export const SPACE_CHARACTER = ' ';
+
+/**
+ * Default rule index for source mapping.
+ *
+ * It is -1, similar to `Array.indexOf()` return value when element is not found.
+ */
+export const RULE_INDEX_NONE = -1;
+
+export const LF = '\n';
+export const CR = '\r';
+export const FF = '\f';

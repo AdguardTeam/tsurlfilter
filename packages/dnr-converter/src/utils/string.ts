@@ -1,6 +1,12 @@
 import punycode from 'punycode/punycode.js';
 
-import { MASK_REGEX_RULE, SPACE_CHARACTER } from '../constants';
+import {
+    CR,
+    FF,
+    LF,
+    MASK_REGEX_RULE,
+    SPACE_CHARACTER,
+} from '../constants';
 
 import { getErrorMessage } from './error';
 
@@ -128,4 +134,35 @@ export function isRegexPattern(str: string): boolean {
  */
 export function hasSpaces(str: string): boolean {
     return str.includes(SPACE_CHARACTER);
+}
+
+/**
+ * Finds the next line break index in the string starting from the specified index.
+ * Supports LF, CR, FF and CRLF line breaks.
+ *
+ * @param str String to search in.
+ * @param startIndex  Start index. Default is 0.
+ *
+ * @returns A tuple with the line break index and the line break length.
+ * If the line break is not found, returns the string length and 0.
+ */
+export function findNextLineBreakIndex(str: string, startIndex = 0): [number, number] {
+    const { length } = str;
+    let offset = startIndex;
+
+    while (offset < length) {
+        const char = str[offset];
+
+        if (char === LF || char === FF) {
+            return [offset, 1];
+        }
+
+        if (char === CR) {
+            return str[offset + 1] === LF ? [offset, 2] : [offset, 1];
+        }
+
+        offset += 1;
+    }
+
+    return [length, 0];
 }
