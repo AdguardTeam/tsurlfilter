@@ -94,7 +94,7 @@ export class RulesScanner {
      *
      * @returns Result object of {@link ScannedFiltersWithErrors}.
      */
-    public static scanAllFilters(
+    public static scanFilters(
         filters: Filter[],
         filterFn?: (r: NetworkRule) => boolean,
         maxNumberOfScannedNetworkRules?: number,
@@ -107,7 +107,7 @@ export class RulesScanner {
         for (let i = 0; i < filters.length; i += 1) {
             const filter = filters[i];
 
-            const { errors, rules } = RulesScanner.scanFilter(
+            const { errors, rules } = RulesScanner.scanRules(
                 filter,
                 filterFn,
                 maxNumberOfScannedNetworkRules,
@@ -140,7 +140,7 @@ export class RulesScanner {
      *
      * @returns Result object of {@link ScannedRulesWithErrors}.
      */
-    private static scanFilter(
+    private static scanRules(
         filter: Filter,
         filterFn?: (r: NetworkRule) => boolean,
         maxNumberOfScannedNetworkRules?: number,
