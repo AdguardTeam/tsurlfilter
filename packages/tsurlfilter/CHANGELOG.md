@@ -18,7 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- TODO: update the version later -->
 - Updated [@adguard/agtree] to `vX.X.X`.
 
+### Fixed
+
+- Apply $document blocking rule even if specific exception rule is present [AdguardBrowserExtension#3262].
+
 [AdguardBrowserExtension#2587]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/2587
+[AdguardBrowserExtension#3262]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3262
 
 ## [3.4.6] - 2025-09-11
 

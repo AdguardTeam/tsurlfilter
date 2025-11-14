@@ -37,7 +37,8 @@
  * for the request.                      └──────────────┬──────────────┘ │
  * If this is a frame request,                          │                │
  * also matches the                                     │                │
- * {@link CosmeticResult}                               │                │
+ * {@link CosmeticResult}.                              │                │
+ * Also logs CSP report blocking events.                │                │
  *                                                      │                │
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │
@@ -330,6 +331,9 @@ export class WebRequestApi {
                 method,
             },
         });
+
+        // Note: Must be called after SendRequest event to ensure proper event ordering in logs
+        CspService.onBeforeRequest(context);
 
         let frameRule;
 

@@ -36,6 +36,7 @@ import { type StealthConfigurationResult, StealthService } from './services/stea
 import { WebRequestApi } from './web-request-api';
 import { assistant, Assistant } from './assistant';
 import { SessionRulesApi } from './session-rules-api';
+import { CspService } from './services/csp-service';
 
 type ConfigurationResult = {
     staticFiltersStatus: UpdateStaticFiltersResult;
@@ -266,7 +267,7 @@ export class TsWebExtension implements AppInterface<
     }
 
     /**
-     * Removes all static and dynamic DNR rules and stops tsurlfilter engine.
+     * Removes all static, dynamic and session DNR rules and stops tsurlfilter engine.
      */
     private static async removeAllFilteringRules(): Promise<void> {
         await DynamicRulesApi.removeAllRules();
@@ -275,6 +276,13 @@ export class TsWebExtension implements AppInterface<
         await FiltersApi.updateFiltering(disableFiltersIds);
 
         await StealthService.clearAll();
+        await CspService.clearAll();
+
+        const removedRules = await SessionRulesApi.removeAllRules();
+
+        if (removedRules.length > 0) {
+            logger.warn(`[tsweb.TsWebExtension.removeAllFilteringRules]: Found ${removedRules.length} session rule(s) not cleared by services. Rule IDs: [${removedRules.map((rule) => rule.id).join(', ')}]`);
+        }
 
         declarativeFilteringLog.startUpdate();
         declarativeFilteringLog.finishUpdate([], false);
@@ -292,9 +300,6 @@ export class TsWebExtension implements AppInterface<
         declarativeFilteringLog.stop();
 
         await TsWebExtension.removeAllFilteringRules();
-
-        // Stop handle request events.
-        WebRequestApi.stop();
 
         // Stop handle request events.
         WebRequestApi.stop();
@@ -440,6 +445,8 @@ export class TsWebExtension implements AppInterface<
                 enabledStaticRuleSets,
                 res.dynamicRules.declarativeRulesToCancel,
             );
+
+            await CspService.addCspReportBlockingRule();
 
             // Reload engine for cosmetic rules: CSS, script and scriptlets.
             engineApi.waitingForEngine = engineApi.startEngine({
