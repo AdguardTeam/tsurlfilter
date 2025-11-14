@@ -1,11 +1,8 @@
-import { InputByteBuffer } from '@adguard/agtree';
+import { FilterListParser, type ParserOptions } from '@adguard/agtree/parser';
 
 import { MaxScannedRulesError } from '../errors/limitation-errors';
-import { type IFilter, type PreprocessedFilterList } from '../filter';
+import { type Filter } from '../filter';
 import { NetworkRule } from '../network-rule';
-import { getRuleSourceIndex, getRuleSourceText } from '../utils/source-map';
-
-import { BufferReader } from './readers/buffer-reader';
 
 /**
  * Interface that represents scanned rules with errors.
@@ -27,42 +24,29 @@ export interface ScannedRulesWithErrors {
  */
 export class FilterScanner {
     /**
-     * The filter from which rules are scanned.
+     * Parser options for filter scanning.
      */
-    private readonly filter: PreprocessedFilterList;
-
-    /**
-     * The filter ID.
-     */
-    private readonly filterId: number;
-
-    /**
-     * Constructor.
-     *
-     * @param filter From which filter the rules should be scanned.
-     * @param filterId The filter ID.
-     */
-    private constructor(filter: PreprocessedFilterList, filterId: number) {
-        this.filter = filter;
-        this.filterId = filterId;
-    }
-
-    /**
-     * Creates new filter scanner.
-     *
-     * @param filter From which filter the rules should be scanned.
-     *
-     * @returns New FilterScanner.
-     */
-    public static async createNew(filter: IFilter): Promise<FilterScanner> {
-        const content = await filter.getContent();
-        return new FilterScanner(content, filter.getId());
-    }
+    private static readonly PARSER_OPTIONS: ParserOptions = {
+        // We don't want parser to throw errors, so we can collect them all in the result object
+        tolerant: true,
+        // Location info is needed for source mapping
+        isLocIncluded: true,
+        // All syntaxes (abp, ubo) should be parsed
+        parseAbpSpecificRules: true,
+        parseUboSpecificRules: true,
+        // Raw text is needed for error reporting
+        includeRaws: true,
+        // We don't need to process comments
+        ignoreComments: true,
+        // We only need to process network rules
+        parseHostRules: false,
+    };
 
     /**
      * Retrieves the entire contents of the filter, extracts only the network rules
      * (ignore cosmetic and host rules) and tries to convert each line into {@link NetworkRule}.
      *
+     * @param filter From which filter the rules should be scanned.
      * @param filterFn If this function is specified, it will be applied to each
      * rule after it has been parsed and transformed. This function is needed
      * for example to apply `$badfilter`: to exclude negated rules from the array
@@ -73,81 +57,71 @@ export class FilterScanner {
      *
      * @returns Result object of {@link ScannedRulesWithErrors}.
      */
-    public getNetworkRules(
+    public static getNetworkRules(
+        filter: Filter,
         filterFn?: (r: NetworkRule) => boolean,
         maxNumberOfScannedNetworkRules?: number,
     ): ScannedRulesWithErrors {
-        const {
-            filterList,
-            sourceMap,
-            rawFilterList,
-            conversionMap,
-        } = this.filter;
+        const { id, content } = filter;
 
+        // Parse filter content into AST
+        const ast = FilterListParser.parse(content, FilterScanner.PARSER_OPTIONS);
+
+        // Build result object
+        let curNumberOfScannedNetworkRules = 0;
         const result: ScannedRulesWithErrors = {
             errors: [],
             rules: [],
         };
 
-        const buffer = new InputByteBuffer(filterList);
-        const reader = new BufferReader(buffer);
+        for (let i = 0; i < ast.children.length; i += 1) {
+            /**
+             * We use `!` because location info and raw rule is always included in our parser options.
+             *
+             * @see {@link FilterScanner.PARSER_OPTIONS}
+             */
+            const node = ast.children[i];
+            const index = node.start!;
+            const raw = node.raws!.text!;
 
-        let ruleBufferIndex = reader.getCurrentPos();
-        let ruleNode = reader.readNext();
-        let curNumberOfScannedNetworkRules = 0;
-
-        while (ruleNode) {
-            let networkRules: NetworkRule[] = [];
+            if (node.type === 'InvalidRule') {
+                const { name, message } = node.error;
+                const msg = `[${name}] ${message}: filter id - ${id}, line index - ${index}, line - ${raw}`;
+                result.errors.push(new Error(msg));
+                continue;
+            }
 
             try {
-                networkRules = NetworkRule.parseFromNode(
-                    this.filterId,
-                    ruleBufferIndex,
-                    ruleNode,
-                );
+                const networkRules = NetworkRule.parseFromNode(id, index, node);
+
+                const filteredRules = filterFn
+                    ? networkRules.filter(filterFn)
+                    : networkRules;
+
+                result.rules.push(...filteredRules);
+
+                curNumberOfScannedNetworkRules += filteredRules.length;
+
+                if (
+                    maxNumberOfScannedNetworkRules !== undefined
+                    && curNumberOfScannedNetworkRules >= maxNumberOfScannedNetworkRules
+                ) {
+                    const lastRuleLineIndex = networkRules[networkRules.length - 1].getIndex();
+                    // This error needed for future improvements, for example
+                    // to show in the UI which rules were skipped.
+                    const msg = `Maximum number of scanned network rules reached at line index ${lastRuleLineIndex}.`;
+                    result.errors.push(new MaxScannedRulesError(msg, lastRuleLineIndex));
+                    break;
+                }
             } catch (e) {
                 if (e instanceof Error) {
                     result.errors.push(e);
                 } else {
-                    const lineIndex = getRuleSourceIndex(ruleBufferIndex, sourceMap);
-                    const rawRule = getRuleSourceText(lineIndex, rawFilterList);
-                    const originalRawRule = conversionMap[lineIndex];
                     // eslint-disable-next-line max-len
-                    let errorMessage = `Unknown error during creating indexed rule with hash from raw string: filter id - ${this.filterId}, line index - ${lineIndex}, line - ${rawRule}`;
-                    if (originalRawRule) {
-                        errorMessage += `, original line - ${originalRawRule}`;
-                    }
-                    const err = new Error(errorMessage);
-                    result.errors.push(err);
+                    const msg = `Unknown error during creating network rule from raw string: filter id - ${id}, line index - ${index}, line - ${raw}`;
+                    result.errors.push(new Error(msg));
                 }
                 continue;
-            } finally {
-                ruleBufferIndex = reader.getCurrentPos();
-                ruleNode = reader.readNext();
-            }
-
-            const filteredRules = filterFn
-                ? networkRules.filter(filterFn)
-                : networkRules;
-
-            result.rules.push(...filteredRules);
-
-            curNumberOfScannedNetworkRules += filteredRules.length;
-
-            if (
-                maxNumberOfScannedNetworkRules !== undefined
-                && curNumberOfScannedNetworkRules >= maxNumberOfScannedNetworkRules
-            ) {
-                const lastScannedRule = networkRules[networkRules.length - 1];
-                const lineIndex = getRuleSourceIndex(lastScannedRule.getIndex(), sourceMap);
-                // This error needed for future improvements, for example
-                // to show in the UI which rules were skipped.
-                const err = new MaxScannedRulesError(
-                    `Maximum number of scanned network rules reached at line index ${lineIndex}.`,
-                    lineIndex,
-                );
-                result.errors.push(err);
-                break;
             }
         }
 

@@ -1,4 +1,4 @@
-import { type IFilter } from '../filter';
+import { type Filter } from '../filter';
 import { type NetworkRule, NetworkRuleOption } from '../network-rule';
 
 import { FilterScanner } from './filter-scanner';
@@ -39,7 +39,7 @@ export interface ScannedFiltersWithErrors {
 }
 
 /**
- * Utility class to scan {@link NetworkRule} from a list of {@link IFilter}.
+ * Utility class to scan {@link NetworkRule} from a list of {@link Filter}.
  */
 export class NetworkRulesScanner {
     /**
@@ -56,7 +56,7 @@ export class NetworkRulesScanner {
     /**
      * Asynchronously scans the list of filters for network rules.
      *
-     * @param filters List of {@link IFilter}.
+     * @param filters List of {@link Filter}.
      * @param filterFn If this function is specified, it will be applied to each
      * rule after it has been parsed and transformed. This function is needed
      * for example to apply `$badfilter`: to exclude negated rules from the array
@@ -68,39 +68,32 @@ export class NetworkRulesScanner {
      *
      * @returns Result object of {@link ScannedFiltersWithErrors}.
      */
-    public static async scanRules(
-        filters: IFilter[],
+    public static scanRules(
+        filters: Filter[],
         filterFn?: (r: NetworkRule) => boolean,
         maxNumberOfScannedNetworkRules?: number,
-    ): Promise<ScannedFiltersWithErrors> {
+    ): ScannedFiltersWithErrors {
         const result: ScannedFiltersWithErrors = {
             errors: [],
             filters: [],
         };
 
-        const promises = filters.map(async (filter): Promise<ScannedFilter> => {
-            const scanner = await FilterScanner.createNew(filter);
+        for (let i = 0; i < filters.length; i += 1) {
+            const filter = filters[i];
 
-            const { errors, rules } = scanner.getNetworkRules(filterFn, maxNumberOfScannedNetworkRules);
+            const { errors, rules } = FilterScanner.getNetworkRules(
+                filter,
+                filterFn,
+                maxNumberOfScannedNetworkRules,
+            );
             const badFilterRules = rules.filter(NetworkRulesScanner.isBadFilterRule);
 
             result.errors = result.errors.concat(errors);
-
-            return {
-                id: filter.getId(),
+            result.filters.push({
+                id: filter.id,
                 rules,
                 badFilterRules,
-            };
-        });
-
-        const tasks = await Promise.allSettled(promises);
-        for (let i = 0; i < tasks.length; i += 1) {
-            const task = tasks[i];
-            if (task.status === 'rejected') {
-                result.errors.push(new Error(`Cannot scan rules from filter ${filters[i].getId()}: ${task.reason}`));
-            } else {
-                result.filters.push(task.value);
-            }
+            });
         }
 
         return result;
