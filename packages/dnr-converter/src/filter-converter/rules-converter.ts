@@ -29,7 +29,7 @@
  * └─────────────────────────┘   │  │    discarded during filter scanning.    │
  *                               │  │   ┌────────────────────────────────┐    │
  *                               │  └──►│                                │    │
- *                               │      │ NetworkRulesScanner.scanRules()│    │
+ *                               │      │    RulesScanner.scanRules()    │    │
  *                               │  ┌───┤                                │    │
  *                               │  │   └────────────────────────────────┘    │  Filter rules affected by $badfilter
  *                               │  │                                         │  within one filter, then group the rules
@@ -107,8 +107,8 @@ import {
 import { type Source } from '../source-map';
 import { isSafeRule } from '../utils/is-safe-rule';
 
-import { type ScannedFilter } from './network-rules-scanner';
 import { type GroupedRules, RulesGroup, RulesGrouper } from './rules-grouper';
+import { type ScannedFilter } from './rules-scanner';
 import { type ConverterOptions } from './types';
 
 /**

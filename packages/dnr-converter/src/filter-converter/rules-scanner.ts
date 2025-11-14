@@ -1,9 +1,45 @@
+import { RuleCategory } from '@adguard/agtree';
 import { FilterListParser, type ParserOptions } from '@adguard/agtree/parser';
 
 import { MaxScannedRulesError } from '../errors/limitation-errors';
-import { NetworkRule } from '../network-rule';
+import { NetworkRule, NetworkRuleOption } from '../network-rule';
 
 import { type Filter } from './types';
+
+/**
+ * Interface that represents a scanned filter.
+ */
+export interface ScannedFilter {
+    /**
+     * The filter ID.
+     */
+    id: number;
+
+    /**
+     * List of scanned network rules.
+     */
+    rules: NetworkRule[];
+
+    /**
+     * List of scanned network rules with `$badfilter` option.
+     */
+    badFilterRules: NetworkRule[];
+}
+
+/**
+ * Interface that represents result of scanning a list of filters.
+ */
+export interface ScannedFiltersWithErrors {
+    /**
+     * List of errors occurred during the scan.
+     */
+    errors: Error[];
+
+    /**
+     * List of scanned filters.
+     */
+    filters: ScannedFilter[];
+}
 
 /**
  * Interface that represents scanned rules with errors.
@@ -23,7 +59,7 @@ export interface ScannedRulesWithErrors {
 /**
  * Class that responsible for scanning filter rules and converting them into {@link NetworkRule}.
  */
-export class FilterScanner {
+export class RulesScanner {
     /**
      * Parser options for filter scanning.
      */
@@ -44,8 +80,54 @@ export class FilterScanner {
     };
 
     /**
-     * Retrieves the entire contents of the filter, extracts only the network rules
-     * (ignore cosmetic and host rules) and tries to convert each line into {@link NetworkRule}.
+     * Scans the list of filters for network rules.
+     *
+     * @param filters List of {@link Filter}.
+     * @param filterFn If this function is specified, it will be applied to each
+     * rule after it has been parsed and transformed. This function is needed
+     * for example to apply `$badfilter`: to exclude negated rules from the array
+     * of rules that will be returned.
+     * @param maxNumberOfScannedNetworkRules Maximum number of network rules to
+     * scan, all other rules will be ignored. It will be applied to each filter
+     * separately, not for cumulative scope of rules from all filters, because
+     * it looks simpler and more predictable solution to prevent too long scan.
+     *
+     * @returns Result object of {@link ScannedFiltersWithErrors}.
+     */
+    public static scanAllFilters(
+        filters: Filter[],
+        filterFn?: (r: NetworkRule) => boolean,
+        maxNumberOfScannedNetworkRules?: number,
+    ): ScannedFiltersWithErrors {
+        const result: ScannedFiltersWithErrors = {
+            errors: [],
+            filters: [],
+        };
+
+        for (let i = 0; i < filters.length; i += 1) {
+            const filter = filters[i];
+
+            const { errors, rules } = RulesScanner.scanFilter(
+                filter,
+                filterFn,
+                maxNumberOfScannedNetworkRules,
+            );
+            const badFilterRules = rules.filter(RulesScanner.isBadFilterRule);
+
+            result.errors = result.errors.concat(errors);
+            result.filters.push({
+                id: filter.id,
+                rules,
+                badFilterRules,
+            });
+        }
+
+        return result;
+    }
+
+    /**
+     * Extracts only the network rules (ignore cosmetic and host rules)
+     * and tries to convert each line into {@link NetworkRule}.
      *
      * @param filter From which filter the rules should be scanned.
      * @param filterFn If this function is specified, it will be applied to each
@@ -58,7 +140,7 @@ export class FilterScanner {
      *
      * @returns Result object of {@link ScannedRulesWithErrors}.
      */
-    public static getNetworkRules(
+    private static scanFilter(
         filter: Filter,
         filterFn?: (r: NetworkRule) => boolean,
         maxNumberOfScannedNetworkRules?: number,
@@ -66,7 +148,7 @@ export class FilterScanner {
         const { id, content } = filter;
 
         // Parse filter content into AST
-        const ast = FilterListParser.parse(content, FilterScanner.PARSER_OPTIONS);
+        const ast = FilterListParser.parse(content, RulesScanner.PARSER_OPTIONS);
 
         // Build result object
         let curNumberOfScannedNetworkRules = 0;
@@ -79,13 +161,13 @@ export class FilterScanner {
             /**
              * We use `!` because location info and raw rule is always included in our parser options.
              *
-             * @see {@link FilterScanner.PARSER_OPTIONS}
+             * @see {@link RulesScanner.PARSER_OPTIONS}
              */
             const node = ast.children[i];
             const index = node.start!;
             const raw = node.raws!.text!;
 
-            if (node.type === 'InvalidRule') {
+            if (node.category === RuleCategory.Invalid) {
                 const { name, message } = node.error;
                 const msg = `[${name}] ${message}: filter id - ${id}, line index - ${index}, line - ${raw}`;
                 result.errors.push(new Error(msg));
@@ -127,5 +209,16 @@ export class FilterScanner {
         }
 
         return result;
+    }
+
+    /**
+     * Checks whether the given rule is a bad filter rule.
+     *
+     * @param rule {@link NetworkRule} to check.
+     *
+     * @returns `true` if the rule is a bad filter rule, `false` otherwise.
+     */
+    private static isBadFilterRule(rule: NetworkRule): boolean {
+        return rule.isOptionEnabled(NetworkRuleOption.Badfilter);
     }
 }
