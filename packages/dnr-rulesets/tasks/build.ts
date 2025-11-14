@@ -12,6 +12,7 @@ import {
 import { startDownload } from '../common/filters-downloader';
 import { version } from '../package.json';
 import { getVersion, getVersionTimestampMs } from '../src/utils/version-utils';
+import { createLocalScriptRulesJs, createLocalScriptRulesJson } from './local-scripts';
 
 /**
  * Creates build.txt file with package version.
@@ -88,6 +89,9 @@ const build = async (): Promise<void> => {
             },
         },
     );
+
+    await createLocalScriptRulesJs(FILTERS_DIR);
+    await createLocalScriptRulesJson(FILTERS_DIR);
 
     await removeTxtFiles(FILTERS_DIR);
 

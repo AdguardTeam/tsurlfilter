@@ -1,6 +1,6 @@
 {
     "name": "@adguard/dnr-rulesets",
-    "version": "3.2.20250716115023",
+    "version": "3.3.0",
     "description": "Utility to create AdGuard DNR rulesets for mv3 extensions",
     "files": [
         "dist/**/*"
@@ -68,6 +68,7 @@
         "@types/fs-extra": "catalog:",
         "@types/node": "catalog:",
         "@vitest/coverage-v8": "catalog:",
+        "acorn": "^8.15.0",
         "eslint": "catalog:eslint9",
         "eslint-plugin-import-newlines": "catalog:",
         "eslint-plugin-jsdoc": "catalog:",
@@ -77,6 +78,7 @@
         "rollup-plugin-copy": "^3.5.0",
         "rollup-plugin-dts": "catalog:",
         "rollup-plugin-node-externals": "catalog:",
+        "terser": "catalog:",
         "ts-morph": "catalog:",
         "tsd": "catalog:",
         "tsx": "catalog:",
