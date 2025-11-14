@@ -1,7 +1,7 @@
-import { type Filter } from '../filter';
 import { type NetworkRule, NetworkRuleOption } from '../network-rule';
 
 import { FilterScanner } from './filter-scanner';
+import { type Filter } from './types';
 
 /**
  * Interface that represents a scanned filter.

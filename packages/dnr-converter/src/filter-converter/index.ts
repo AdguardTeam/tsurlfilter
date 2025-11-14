@@ -1,1 +1,1 @@
-export { type ConverterOptions } from './converter-options';
+export { type ConverterOptions, type Filter } from './types';

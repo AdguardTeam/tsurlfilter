@@ -1,8 +1,9 @@
 import { FilterListParser, type ParserOptions } from '@adguard/agtree/parser';
 
 import { MaxScannedRulesError } from '../errors/limitation-errors';
-import { type Filter } from '../filter';
 import { NetworkRule } from '../network-rule';
+
+import { type Filter } from './types';
 
 /**
  * Interface that represents scanned rules with errors.

@@ -107,9 +107,9 @@ import {
 import { type Source } from '../source-map';
 import { isSafeRule } from '../utils/is-safe-rule';
 
-import { type ConverterOptions } from './converter-options';
 import { type ScannedFilter } from './network-rules-scanner';
 import { type GroupedRules, RulesGroup, RulesGrouper } from './rules-grouper';
+import { type ConverterOptions } from './types';
 
 /**
  * Array of tuples where the first element is a filter ID
