@@ -330,7 +330,7 @@ Example of usage: [adguard-api-mv3](../examples/adguard-api-mv3)
 
 ## Included filter lists
 
-### Ad Blocking
+### Ad blocking
 
 #### AdGuard Base filter
 
@@ -345,14 +345,6 @@ Filter for all known mobile ad networks. Useful for mobile devices.
 
 - Filter ID: **11**
 - Path: `<filters-directory>/declarative/ruleset_11/ruleset_11.json`
-
-#### AdGuard Quick Fixes filter
-
-**IMPORTANT:** This filter is not convertible (excluded from build), but it is still included in the metadata. It should be downloaded from the server on the client and applied dynamically.
-
-Filter to quickly resolve content filtering issues on popular websites without updating the extension.
-
-- Filter ID: **24**
 
 ### Privacy
 
@@ -370,7 +362,7 @@ Filter that enhances privacy by removing tracking parameters from URLs.
 - Filter ID: **17**
 - Path: `<filters-directory>/declarative/ruleset_17/ruleset_17.json`
 
-### Social Widgets
+### Social widgets
 
 #### AdGuard Social Media filter
 
@@ -445,6 +437,13 @@ Filter for risky sites, warning users of potential threats.
 
 - Filter ID: **257**
 - Path: `<filters-directory>/declarative/ruleset_257/ruleset_257.json`
+
+#### Dandelion Sprout's Anti-Malware List
+
+Blocks more malware than most other major anti-malware lists - domains and URL patterns used in malware redirection chains, IP addresses that are solely used by malware, PUP nags, and a few scammers. Already included in Dandelion Sprout's Annoyances List.
+
+- Filter ID: **259**
+- Path: `<filters-directory>/declarative/ruleset_259/ruleset_259.json`
 
 ### Other
 

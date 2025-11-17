@@ -83,8 +83,6 @@ requests to a local "resource" using the `$redirect` rule modifier. You can use
 If you are using `@adguard/dnr-rulesets` package, path to web accessible resources is
 built-in into converted rules with `$redirect` modifier and packed inside rulesets.
 
-**IMPORTANT**: AdGuard Quick Fixes filter with id 24 filter's source and converted
-ruleset **excluded** from the build of `@adguard/dnr-rulesets`, but left in metadata.
 <br>
 Because it should used via periodically updating from the remote in the runtime
 and passed as part of dynamic rules - `Configuration.rules`.

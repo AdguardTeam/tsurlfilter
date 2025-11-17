@@ -25,9 +25,9 @@ export const configurationValidator = zod.object({
     /**
      * An array of filter identifiers.
      *
-     * You can find possible filter identifiers in the filters metadata file.
+     * You can find possible filter identifiers in the @adguard/dnr-rulesets README file.
      *
-     * @see https://filters.adtidy.org/extension/chromium/filters.json
+     * @see https://www.npmjs.com/package/@adguard/dnr-rulesets#included-filter-lists
      */
     filters: zod.number().array(),
 
@@ -60,7 +60,7 @@ export const configurationValidator = zod.object({
      *
      * These custom rules might be created by a user via the AdGuard Assistant UI.
      *
-     * @see https://adguard.com/en/filterrules.html
+     * @see https://adguard.com/kb/general/ad-filtering/create-own-filters/
      */
     rules: zod.string().array().optional(),
 
