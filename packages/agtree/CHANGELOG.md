@@ -19,6 +19,10 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 - Modifier validator now accepts compatibility platforms mask instead of syntax.
 
+### Fixed
+
+- Type safety for `GenericPlatform` and `SpecificPlatform` by adding branded types.
+
 ## [3.2.5] - 2025-11-12
 
 ### Fixed

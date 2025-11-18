@@ -140,10 +140,7 @@ class ModifierValidator {
 
     /**
      * Checks whether the given `modifier` is valid for specified `platform`.
-     *
-     * For 0 (no platforms) it simply checks whether the modifier exists.
-     * For specific platforms the validation is more complex —
-     * deprecated, assignable, negatable and other requirements are checked.
+     * It checks whether the modifier is supported by the blocker, deprecated, assignable, negatable, etc.
      *
      * @param platform Platform to check the modifier for.
      * @param modifier Modifier AST node.
