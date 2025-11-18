@@ -2,6 +2,8 @@
  * @file Validator for modifiers.
  */
 
+import { sprintf } from 'sprintf-js';
+
 import { type Modifier } from '../nodes';
 import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
 import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
@@ -10,7 +12,6 @@ import { validateValue } from './value';
 import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
 import { getHumanReadablePlatformName, type SpecificPlatform } from '../compatibility-tables';
 import { isValidNoopModifier } from '../utils/noop-modifier';
-import { sprintf } from 'sprintf-js';
 
 /**
  * Fully checks whether the given `modifier` valid for given blocker `platforms`:
