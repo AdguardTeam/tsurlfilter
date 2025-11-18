@@ -12,7 +12,6 @@ import {
     isValidNoopModifier,
 } from './helpers';
 import { validateValue } from './value';
-import { clone } from '../utils/clone';
 import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
 
 /**
@@ -142,15 +141,13 @@ class ModifierValidator {
      * deprecated, assignable, negatable and other requirements are checked.
      *
      * @param platforms Platforms to check the modifier for.
-     * @param rawModifier Modifier AST node.
+     * @param modifier Modifier AST node.
      * @param isException Whether the modifier is used in exception rule, default to false.
      * Needed to check whether the modifier is allowed only in blocking or exception rules.
      *
      * @returns Result of modifier validation.
      */
-    public validate = (platforms: number, rawModifier: Modifier, isException = false): ValidationResult => {
-        const modifier = clone(rawModifier);
-
+    public validate = (platforms: number, modifier: Modifier, isException = false): ValidationResult => {
         // special case: handle noop modifier which may be used as multiple underscores (not just one)
         // https://adguard.com/kb/general/ad-filtering/create-own-filters/#noop-modifier
         if (modifier.name.value.startsWith(UNDERSCORE)) {
@@ -160,9 +157,6 @@ class ModifierValidator {
                     `${VALIDATION_ERROR_PREFIX.INVALID_NOOP}: '${modifier.name.value}'`,
                 );
             }
-            // otherwise, replace the modifier value with single underscore.
-            // it is needed to check whether the modifier is supported by specific adblocker due to the syntax
-            modifier.name.value = UNDERSCORE;
         }
 
         if (!this.exists(modifier)) {
