@@ -12,11 +12,12 @@ export type {
     RowByProduct,
     RowsByProduct,
 } from './base';
-export { parseRawPlatforms } from './schemas';
+export { parseRawPlatforms, stringifyPlatforms as serializePlatforms } from './schemas';
 export {
     isGenericPlatform,
     getPlatformId,
     getSpecificPlatformName,
+    getHumanReadablePlatformName,
 } from './utils/platform-helpers';
 export {
     ResourceType,

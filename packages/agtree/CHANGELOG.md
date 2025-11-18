@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [3.2.6] - 2025-11-18
+
+### Added
+
+- `stringifyPlatforms` for stringifying compatibility table platforms.
+- `getHumanReadablePlatformName` for getting a human-readable platform name.
+- `AnyPlatform` type for representing any platform.
+
 ## [3.2.5] - 2025-11-12
 
 ### Fixed
