@@ -191,7 +191,7 @@ export const VALIDATION_ERROR_PREFIX = {
     NOT_EXISTENT: 'Non-existent modifier',
     NOT_NEGATABLE_MODIFIER: 'Non-negatable modifier',
     NOT_NEGATABLE_VALUE: 'Values cannot be negated for the modifier',
-    NOT_SUPPORTED: 'The adblocker does not support the modifier',
+    NOT_SUPPORTED: '%s does not support the modifier',
     REMOVED: 'Removed and no longer supported modifier',
     VALUE_FORBIDDEN: 'Value is not allowed for the modifier',
     VALUE_INVALID: 'Value is invalid for the modifier',

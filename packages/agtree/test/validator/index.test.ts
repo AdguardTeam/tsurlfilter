@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest';
+import { sprintf } from 'sprintf-js';
 
 import { type Modifier } from '../../src/nodes';
 import { ModifierParser } from '../../src/parser/misc/modifier-parser';
@@ -6,7 +7,7 @@ import { modifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
 import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
 import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-items-parser';
-import { SpecificPlatform } from '../../src/compatibility-tables';
+import { getHumanReadablePlatformName, SpecificPlatform } from '../../src/compatibility-tables';
 
 /**
  * Returns modifier AST node for given rawModifier.
@@ -209,7 +210,8 @@ describe('ModifierValidator', () => {
                 },
                 {
                     actual: 'popunder',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows)),
                 },
                 {
                     actual: 'object-subrequest',
@@ -1057,19 +1059,23 @@ describe('ModifierValidator', () => {
                 },
                 {
                     actual: 'genericblock',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
                 },
                 {
                     actual: 'object-subrequest',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
                 },
                 {
                     actual: 'app=com.test.app',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
                 },
                 {
                     actual: 'jsinject',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
                 },
                 {
                     actual: '~popup',
@@ -1251,19 +1257,23 @@ describe('ModifierValidator', () => {
                 },
                 {
                     actual: 'object-subrequest',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
                 },
                 {
                     actual: 'app=com.test.app',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
                 },
                 {
                     actual: 'jsinject',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
                 },
                 {
                     actual: 'denyallow',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
                 },
                 {
                     actual: '~popup',
@@ -1283,7 +1293,8 @@ describe('ModifierValidator', () => {
                 },
                 {
                     actual: '___',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
                 },
                 {
                     actual: 'rewrite',

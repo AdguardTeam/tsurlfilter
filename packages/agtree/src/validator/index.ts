@@ -8,8 +8,9 @@ import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
 import { type ValidationResult, getInvalidValidationResult, getValueRequiredValidationResult } from './helpers';
 import { validateValue } from './value';
 import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
-import { type SpecificPlatform } from '../compatibility-tables';
+import { getHumanReadablePlatformName, type SpecificPlatform } from '../compatibility-tables';
 import { isValidNoopModifier } from '../utils/noop-modifier';
+import { sprintf } from 'sprintf-js';
 
 /**
  * Fully checks whether the given `modifier` valid for given blocker `platforms`:
@@ -38,7 +39,9 @@ const validateForSpecificPlatform = (
 
     // if no specific blocker data is found
     if (!specificBlockerData) {
-        return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.NOT_SUPPORTED}: '${modifierName}'`);
+        return getInvalidValidationResult(
+            sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(platform)),
+        );
     }
 
     // e.g. 'object-subrequest'
