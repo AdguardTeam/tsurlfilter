@@ -22,7 +22,7 @@ export class RegularConverter extends RuleConverter {
      *
      * @returns Converted {@link ConvertedRules}.
      */
-    public convert(
+    public async convert(
         filterListId: number,
         rules: NetworkRule[],
         usedIds: Set<number>,

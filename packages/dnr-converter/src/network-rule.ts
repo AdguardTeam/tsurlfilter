@@ -630,4 +630,19 @@ export class NetworkRule {
 
         return fastHash31(trialText);
     }
+
+    /**
+     * Returns `true` if this rule negates the `ruleToCheck`.
+     * Only makes sense when this rule has a `$badfilter` modifier.
+     *
+     * @param ruleToCheck Rule to check.
+     *
+     * @returns `true` if this rule negates the specified rule, `false` otherwise.
+     *
+     * FIXME: Replace with actual implementation (AG-47697).
+     */
+    // eslint-disable-next-line class-methods-use-this
+    public negatesBadfilter(ruleToCheck: NetworkRule): boolean {
+        return !!ruleToCheck;
+    }
 }

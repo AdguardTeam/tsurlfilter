@@ -132,6 +132,16 @@ interface CreateNetworkRuleMockOptions {
      * @returns The hash number.
      */
     getRuleTextHash?: (salt?: number) => number;
+
+    /**
+     * Returns `true` if this rule negates the `ruleToCheck`.
+     * Only makes sense when this rule has a `$badfilter` modifier.
+     *
+     * @param ruleToCheck Rule to check.
+     *
+     * @returns `true` if this rule negates the specified rule, `false` otherwise.
+     */
+    negatesBadfilter?: (rule: NetworkRule) => boolean;
 }
 
 /**
@@ -183,6 +193,7 @@ export function createNetworkRuleMock(options: CreateNetworkRuleMockOptions = {}
 
             return fastHash31(trialText);
         },
+        negatesBadfilter = () => false,
     } = options;
 
     const enabledOptionsSet = new Set(enabledOptions);
@@ -224,5 +235,6 @@ export function createNetworkRuleMock(options: CreateNetworkRuleMockOptions = {}
                 : responseHeaderNameToRemove
         ),
         getRuleTextHash,
+        negatesBadfilter,
     };
 }
