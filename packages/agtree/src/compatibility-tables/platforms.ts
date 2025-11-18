@@ -92,3 +92,5 @@ export const GenericPlatform = {
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type GenericPlatform = typeof GenericPlatform[keyof typeof GenericPlatform];
+
+export type AnyPlatform = SpecificPlatform | GenericPlatform;

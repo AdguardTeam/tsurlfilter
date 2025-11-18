@@ -15,6 +15,8 @@ Table of contents:
             - [Available compatibility table instances](#available-compatibility-table-instances)
             - [Platform flags](#platform-flags)
             - [Platform expressions parser](#platform-expressions-parser)
+            - [Stringify platforms bitmask to platform expression](#stringify-platforms-bitmask-to-platform-expression)
+            - [Human-readable platform name](#human-readable-platform-name)
         - [Specific API](#specific-api)
             - [Redirects compatibility table](#redirects-compatibility-table)
         - [Examples](#examples)
@@ -180,12 +182,32 @@ import { SpecificPlatform, GenericPlatform } from '@adguard/agtree';
 
 #### Platform expressions parser
 
-We also provide a parser for platform expressions. You can use it to parse a raw platform string into a platform flag.
+Parses a raw platform expression into a platform flag.
 
 ```ts
 import { parseRawPlatforms } from '@adguard/agtree';
 
 parseRawPlatforms('adg_os_windows|ubo_ext_chrome');
+```
+
+#### Stringify platforms bitmask to platform expression
+
+Stringifies a platform flag into a raw platform expression.
+
+```ts
+import { stringifyPlatforms } from '@adguard/agtree';
+
+stringifyPlatforms(SpecificPlatform.AdgOsWindows | GenericPlatform.UboExtChrome); // 'adg_os_windows|ubo_ext_chrome'
+```
+
+#### Human-readable platform name
+
+Converts a platform flag into a human-readable platform name.
+
+```ts
+import { getHumanReadablePlatformName } from '@adguard/agtree';
+
+getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows); // 'AdGuard for Windows'
 ```
 
 ### Specific API

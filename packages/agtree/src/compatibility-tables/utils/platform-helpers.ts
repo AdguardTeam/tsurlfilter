@@ -3,7 +3,7 @@
  * @file Provides platform mapping and helper functions.
  */
 
-import { GenericPlatform, SpecificPlatform } from '../platforms';
+import { type AnyPlatform, GenericPlatform, SpecificPlatform } from '../platforms';
 
 /**
  * Map of specific platforms string names to their corresponding enum values.
@@ -63,6 +63,47 @@ export const GENERIC_PLATFORM_MAP: Map<string, GenericPlatform> = new Map([
     ['any', GenericPlatform.Any],
 ]);
 
+const PLATFORM_HUMAN_READABLE_NAME_MAP: Map<AnyPlatform, string> = new Map([
+    [SpecificPlatform.AdgOsWindows, 'AdGuard for Windows'],
+    [SpecificPlatform.AdgOsMac, 'AdGuard for Mac'],
+    [SpecificPlatform.AdgOsAndroid, 'AdGuard for Android'],
+
+    [SpecificPlatform.AdgExtChrome, 'AdGuard for Chrome'],
+    [SpecificPlatform.AdgExtOpera, 'AdGuard for Opera'],
+    [SpecificPlatform.AdgExtEdge, 'AdGuard for Edge'],
+    [SpecificPlatform.AdgExtFirefox, 'AdGuard for Firefox'],
+
+    [SpecificPlatform.AdgCbAndroid, 'AdGuard Content Blocker for Android'],
+    [SpecificPlatform.AdgCbIos, 'AdGuard Content Blocker for iOS'],
+    [SpecificPlatform.AdgCbSafari, 'AdGuard Content Blocker for Safari'],
+
+    [SpecificPlatform.UboExtChrome, 'uBlock Origin for Chrome'],
+    [SpecificPlatform.UboExtOpera, 'uBlock Origin for Opera'],
+    [SpecificPlatform.UboExtEdge, 'uBlock Origin for Edge'],
+    [SpecificPlatform.UboExtFirefox, 'uBlock Origin for Firefox'],
+
+    [SpecificPlatform.AbpExtChrome, 'AdBlock Plus for Chrome'],
+    [SpecificPlatform.AbpExtOpera, 'AdBlock Plus for Opera'],
+    [SpecificPlatform.AbpExtEdge, 'AdBlock Plus for Edge'],
+    [SpecificPlatform.AbpExtFirefox, 'AdBlock Plus for Firefox'],
+
+    [GenericPlatform.AdgOsAny, 'AdGuard for any OS'],
+    [GenericPlatform.AdgSafariAny, 'AdGuard for any Safari'],
+    [GenericPlatform.AdgExtChromium, 'AdGuard for any Chromium-based extension'],
+    [GenericPlatform.AdgExtAny, 'AdGuard for any extension'],
+    [GenericPlatform.AdgAny, 'AdGuard for any platform'],
+
+    [GenericPlatform.UboExtChromium, 'uBlock Origin for any Chromium-based extension'],
+    [GenericPlatform.UboExtAny, 'uBlock Origin for any extension'],
+    [GenericPlatform.UboAny, 'uBlock Origin for any platform'],
+
+    [GenericPlatform.AbpExtChromium, 'AdBlock Plus for any Chromium-based extension'],
+    [GenericPlatform.AbpExtAny, 'AdBlock Plus for any extension'],
+    [GenericPlatform.AbpAny, 'AdBlock Plus for any platform'],
+
+    [GenericPlatform.Any, 'Any platform'],
+]);
+
 /**
  * Check if the platform is a generic platform.
  *
@@ -70,7 +111,7 @@ export const GENERIC_PLATFORM_MAP: Map<string, GenericPlatform> = new Map([
  *
  * @returns True if the platform is a generic platform, false otherwise.
  */
-export const isGenericPlatform = (platform: number): boolean => {
+export const isGenericPlatform = (platform: AnyPlatform): boolean => {
     // if more than one bit is set, it's a generic platform
     return !!(platform & (platform - 1));
 };
@@ -115,4 +156,23 @@ export const getSpecificPlatformName = (platform: SpecificPlatform): string => {
     }
 
     return specificPlatform;
+};
+
+/**
+ * Returns the human-readable platform name for the given platform enum value.
+ *
+ * @param platform Platform enum value.
+ *
+ * @returns Human-readable platform name, e.g., 'AdGuard for Windows'.
+ *
+ * @throws Error if the platform is unknown.
+ */
+export const getHumanReadablePlatformName = (platform: AnyPlatform): string => {
+    const humanReadablePlatform = PLATFORM_HUMAN_READABLE_NAME_MAP.get(platform);
+
+    if (!humanReadablePlatform) {
+        throw new Error(`Unknown platform: ${platform}`);
+    }
+
+    return humanReadablePlatform;
 };
