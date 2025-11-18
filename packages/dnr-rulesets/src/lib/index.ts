@@ -1,4 +1,8 @@
-export { AssetsLoader } from './assets/loader';
+export {
+    AssetsLoader,
+    LOCAL_SCRIPT_RULES_JS_FILENAME,
+    LOCAL_SCRIPT_RULES_JSON_FILENAME,
+} from './assets/loader';
 export { RulesetsInjector } from './manifest/injector';
 export {
     ManifestPatcher,

@@ -22,9 +22,18 @@ import {
     type MessageHandler,
     FilterListPreprocessor,
     LF,
+    type LocalScriptFunctionData,
 } from '@adguard/tswebextension/mv3';
 import { type Configuration, configurationValidator } from './configuration';
 import { RequestBlockingLogger } from './request-blocking-logger';
+
+export type AdguardApiParams = {
+    /**
+     * Local script rules data in JS format needed for validate unsafe script
+     * rules when UserScripts permission is not granted.
+     */
+    localScriptRulesJs?: LocalScriptFunctionData;
+};
 
 /**
  * AdGuard API is filtering library, provided following features:
@@ -53,12 +62,20 @@ export class AdguardApi {
     /**
      * Creates new AdguardApi instance.
      * @param tswebextension Instance of {@link TsWebExtension}.
+     * @param params AdguardApiParams.
      */
-    constructor(private readonly tswebextension: TsWebExtension) {
+    constructor(
+        private readonly tswebextension: TsWebExtension,
+        params: AdguardApiParams,
+    ) {
         this.onAssistantCreateRule = this.tswebextension.onAssistantCreateRule;
         this.onRequestBlocked = new RequestBlockingLogger();
 
         this.openAssistant = this.openAssistant.bind(this);
+
+        if (params.localScriptRulesJs) {
+            TsWebExtension.setLocalScriptRules(params.localScriptRulesJs);
+        }
     }
 
     /**
@@ -216,11 +233,16 @@ export class AdguardApi {
     /**
      * Creates new adguardApi instance.
      *
+     * @param params AdguardApiParams.
+     *
      * @returns AdguardApi instance.
      */
-    public static async create(): Promise<AdguardApi> {
+    public static async create(params: AdguardApiParams): Promise<AdguardApi> {
         const tswebextension = new TsWebExtension(AdguardApi.WEB_ACCESSIBLE_RESOURCES_PATH);
         await tswebextension.initStorage();
-        return new AdguardApi(tswebextension);
+        return new AdguardApi(
+            tswebextension,
+            params,
+        );
     }
 }

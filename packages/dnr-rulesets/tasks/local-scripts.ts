@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import { promises as fs } from 'node:fs';
 
 import type { AnyRule, CosmeticRule, FilterList } from '@adguard/agtree';
@@ -10,17 +9,14 @@ import * as acorn from 'acorn';
 import path from 'path';
 import { minify } from 'terser';
 
+import {
+    extractJsRules,
+    formatRules,
+    LOCAL_SCRIPT_RULES_JS_FILENAME,
+    LOCAL_SCRIPT_RULES_JSON_FILENAME,
+} from '../src/common/local-script-utils';
+
 const NEWLINE = '\n';
-
-/**
- * Local script rules for the Chrome MV3 extension.
- */
-const LOCAL_SCRIPT_RULES_JS_FILENAME = 'local_script_rules.js';
-
-/**
- * Local script rules for the Firefox extension.
- */
-const LOCAL_SCRIPT_RULES_JSON_FILENAME = 'local_script_rules.json';
 
 const FILTER_FILE_PREFIX = 'filter_';
 const FILTER_FILE_EXTENSION = '.txt';
@@ -149,113 +145,29 @@ const validateModule = (code: string): void => {
 };
 
 /**
- * Validates JavaScript code as a script (allows return statements outside functions).
+ * Serializes and validates the processed rules.
  *
- * @param code JavaScript code to validate.
+ * @param processedRules Array of processed rules.
  *
- * @throws Error if code is invalid JavaScript.
+ * @returns Serialized and validated rules as an ES6 module export.
  */
-const validateScript = (code: string): void => {
-    acorn.parse(code, {
-        ecmaVersion: 'latest',
-        sourceType: 'script',
-        allowReturnOutsideFunction: true,
-    });
-};
-
-/**
- * Calculates unique ID for the text.
- *
- * @param text Text to calculate unique ID for.
- *
- * @returns Unique ID.
- */
-export const calculateUniqueId = (text: string): string => {
-    return crypto.createHash('md5').update(text).digest('hex');
-};
-
-/**
- * Wraps the script code with a try-catch block and a check to avoid multiple executions of it.
- *
- * @param uniqueId Unique ID for the script.
- * @param code Script code.
- *
- * @returns Wrapped script code.
- */
-const wrapScriptCode = (uniqueId: string, code: string): string => {
-    return `
-try {
-    const flag = 'done';
-    if (Window.prototype.toString["${uniqueId}"] === flag) {
-        return;
-    }
-    ${code}
-    Object.defineProperty(Window.prototype.toString, "${uniqueId}", {
-        value: flag,
-        enumerable: false,
-        writable: false,
-        configurable: false
-    });
-} catch (error) {
-    console.error('Error executing AG js rule with uniqueId "${uniqueId}" due to: ' + error);
-}
-`.trim();
-};
-
-/**
- * Formats JS rules with double execution protection and error handling.
- *
- * @param scriptRules Set of script rules to process.
- *
- * @returns Formatted and beautified rules as an ES6 module export.
- */
-export const formatRules = async (scriptRules: Set<string>): Promise<string> => {
-    const processedRules: string[] = [];
-
-    // Process each rule
-    scriptRules.forEach((rule) => {
-        try {
-            // Escape single quotes in the key
-            const ruleKey = rule.replace(/'/g, '\\\'');
-
-            /**
-             * Unique ID is needed to prevent multiple execution of the same script.
-             *
-             * It may happen when script rules are being applied on WebRequest.onResponseStarted
-             * and WebNavigation.onCommitted events which are independent of each other,
-             * so we need to make sure that the script is executed only once.
-             */
-            const uniqueId = calculateUniqueId(rule);
-
-            // Wrap the code with a try-catch block with extra checking to avoid multiple executions
-            const processedCode = wrapScriptCode(uniqueId, rule);
-
-            // Validate the processed code (will be inside function body, so allow return)
-            validateScript(processedCode);
-
-            processedRules.push(`    '${ruleKey}': () => { ${processedCode} },`);
-        } catch (error) {
-            logger.error(
-                `Skipping invalid rule during production processing: ${rule}`,
-                error,
-            );
-        }
-    });
-
+export const serializedAndValidate = async (processedRules: string[]): Promise<string> => {
     const rawContent = `export const localScriptRules = {
         ${processedRules.join(NEWLINE)}
     };`;
 
-    // Beautify the output using terser
-    const beautifiedJsContent = (await minify(rawContent, {
-        mangle: false,
-        compress: false,
-        format: {
-            beautify: true,
-            comments: true,
-            indent_level: 4,
+    const { code: beautifiedJsContent } = await minify(
+        rawContent,
+        {
+            mangle: false,
+            compress: false,
+            format: {
+                beautify: true,
+                comments: true,
+                indent_level: 4,
+            },
         },
-    })).code;
+    );
 
     if (!beautifiedJsContent) {
         throw new Error('Failed to beautify JS content');
@@ -380,41 +292,6 @@ const isJsInjectionRule = (ruleNode: AnyRule) => {
 };
 
 /**
- * Extracts JS rules from a filter file.
- *
- * @param filterStr Filter file content.
- *
- * @returns Set of extracted JS rules.
- */
-export const extractJsRules = (filterStr: string) => {
-    const rules = new Set<string>();
-
-    // Need raw text for error reporting
-    const filterListNode = parseFilterList(filterStr, true);
-
-    // Extract only JS injection rules (excludes scriptlets)
-    filterListNode.children.forEach((ruleNode) => {
-        if (!isJsInjectionRule(ruleNode)) {
-            return;
-        }
-
-        try {
-            const rawBody = CosmeticRuleBodyGenerator.generate(ruleNode);
-
-            // Validate that rule is valid javascript
-            validateModule(rawBody);
-
-            rules.add(rawBody);
-        } catch (error) {
-            // Invalid rules are skipped, but we log the error
-            logger.error(`Error parsing script rule: ${ruleNode.raws?.text}`, error);
-        }
-    });
-
-    return rules;
-};
-
-/**
  * Reads filters from the directory, extracts JS rules from files starting with filter_ and ending with .txt,
  * and saves them to a JS file in the same directory.
  *
@@ -434,9 +311,11 @@ export const createLocalScriptRulesJs = async (dir: string): Promise<void> => {
         });
     }
 
-    const formattedRules = await formatRules(jsRules);
+    const formattedRules = formatRules(jsRules);
 
-    await fs.writeFile(path.join(dir, LOCAL_SCRIPT_RULES_JS_FILENAME), formattedRules);
+    const serializedRules = await serializedAndValidate(formattedRules);
+
+    await fs.writeFile(path.join(dir, LOCAL_SCRIPT_RULES_JS_FILENAME), serializedRules);
 
     logger.info(`Created ${LOCAL_SCRIPT_RULES_JS_FILENAME} with ${jsRules.size} unique rules`);
 };

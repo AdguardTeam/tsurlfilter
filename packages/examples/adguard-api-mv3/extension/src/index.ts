@@ -7,9 +7,16 @@ import {
     type RequestBlockingEvent,
 } from '@adguard/api-mv3';
 
+// Import pre-built local script rules (copied during build)
+// @ts-expect-error Importing local script rules from js file without declaration file
+import { localScriptRules as localScriptRulesJs } from '../filters/local_script_rules.js';
+import { extraScripts } from './extra-scripts';
+
 (async (): Promise<void> => {
-    // create new AdguardApi instance
-    const adguardApi = await AdguardApi.create();
+    // create new AdguardApi instance with local script rules
+    const adguardApi = await AdguardApi.create({
+        localScriptRulesJs,
+    });
 
     // console log event on request blocking
     const onRequestBlocked = (event: RequestBlockingEvent) => {
@@ -19,8 +26,6 @@ import {
     adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
     let configuration: Configuration = {
-        // Note: this list should not contain filter 24, because it has not
-        // included in dnr-rulesets, only in the metadata.
         filters: [
             2,
             3,
@@ -28,7 +33,20 @@ import {
         ],
         filteringEnabled: true,
         allowlist: ['www.example.com'],
-        rules: ['example.org##h1', 'example.net$document'],
+        rules: [
+            'example.org##h1',
+            // 'example.net$document',
+            'example.com##h2',
+            // These two scripts rules will be injected anytime
+            '#%#//scriptlet(\'log\', \'generic scriptlet injected\')',
+            'example.net#%#//scriptlet(\'log\', \'specific scriptlet injected\')',
+            // These two scripts rules will be injected only if UserScripts Permission is granted
+            '#%#console.log(\'generic script injected at: \', Date.now());',
+            'example.net#%#console.log(\'specific script injected at: \', Date.now());',
+            // These scripts are explicitly added to local_script_rules.js,
+            // so they will be injected as well anytime
+            ...extraScripts,
+        ],
         assetsPath: 'filters',
         documentBlockingPageUrl: browser.runtime.getURL('blocking-page.html'),
     };

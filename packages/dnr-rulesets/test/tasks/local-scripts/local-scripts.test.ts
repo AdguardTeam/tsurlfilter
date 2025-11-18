@@ -20,8 +20,9 @@ vi.mock('node:crypto', () => ({
     },
 }));
 
+import { extractJsRules, formatRules } from '../../../src/common/local-script-utils';
 import type { DomainConfig } from '../../../tasks/local-scripts';
-import { extractJsRules, extractJsRulesWithDomains, formatRules } from '../../../tasks/local-scripts';
+import { extractJsRulesWithDomains, serializedAndValidate } from '../../../tasks/local-scripts';
 
 // Mock the Logger class with a shared instance
 vi.mock('@adguard/logger', () => {
@@ -72,7 +73,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-single-expected.js',
             ), 'utf-8');
-            const jsRulesStr = await formatRules(extractJsRules(filterText));
+            const formattedRules = formatRules(extractJsRules(filterText));
+            const jsRulesStr = await serializedAndValidate(formattedRules);
 
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
@@ -85,7 +87,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-multiple-expected.js',
             ), 'utf-8');
-            const jsRulesStr = await formatRules(extractJsRules(filterText));
+            const formattedRules = formatRules(extractJsRules(filterText));
+            const jsRulesStr = await serializedAndValidate(formattedRules);
 
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
@@ -98,7 +101,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-invalid-expected.js',
             ), 'utf-8');
-            const jsRulesStr = await formatRules(extractJsRules(filterText));
+            const formattedRules = formatRules(extractJsRules(filterText));
+            const jsRulesStr = await serializedAndValidate(formattedRules);
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
             validateSyntax(jsRulesStr);
@@ -115,7 +119,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-scriptlet-expected.js',
             ), 'utf-8');
-            const jsRulesStr = await formatRules(extractJsRules(filterText));
+            const formattedRules = formatRules(extractJsRules(filterText));
+            const jsRulesStr = await serializedAndValidate(formattedRules);
 
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax

@@ -213,7 +213,24 @@ You can also integrate functions for downloading and updating the manifest into 
     await loader.load('<path-to-output>');
     ```
 
-2. Patch extension manifest.
+2. Extend local script rules with custom rules.
+
+    ```ts
+    import { AssetsLoader } from '@adguard/dnr-rulesets';
+
+    const loader = new AssetsLoader();
+    await loader.extendLocalScriptRules(
+        '<path-to-local-script-rules.js>',
+        [
+            'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
+            'example.org#%#console.log("Custom script");'
+        ]
+    );
+    ```
+
+    This method parses custom filtering rules, extracts JavaScript injection rules from them, and appends them to an existing `local_script_rules.js` file. It's useful for dynamically adding custom JS rules to your extension at build time.
+
+3. Patch extension manifest.
 
     ```ts
     import { ManifestPatcher } from '@adguard/dnr-rulesets';
