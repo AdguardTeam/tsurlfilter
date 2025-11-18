@@ -6,7 +6,7 @@ import { modifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
 import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
 import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-items-parser';
-import { SpecificPlatform } from '../../src';
+import { SpecificPlatform } from '../../src/compatibility-tables';
 
 /**
  * Returns modifier AST node for given rawModifier.
