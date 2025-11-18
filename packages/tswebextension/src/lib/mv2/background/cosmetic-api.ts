@@ -206,7 +206,15 @@ export class CosmeticApi extends CosmeticApiCommon {
             cosmeticResult = frameContext.cosmeticResult;
         }
 
-        data.extCssRules = CosmeticApi.getExtCssRules(cosmeticResult, areHitsStatsCollected);
+        const isNativeHasSupported = !!configuration?.isNativeHasPseudoClassSupported;
+
+        data.extCssRules = CosmeticApi.getExtCssRules(
+            cosmeticResult,
+            {
+                isNativeHasSupported,
+                areHitsStatsCollected,
+            },
+        );
 
         // FIXME: remove later
         console.log({ data });

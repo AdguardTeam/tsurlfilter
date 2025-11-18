@@ -65,7 +65,7 @@ export class CosmeticController {
      *
      * If {@link cosmeticData.isAppStarted} is false, retry
      * request after {@link GET_COSMETIC_DATA_RETRY_TIMEOUT_MS} milliseconds.
-     * Else apply extended css rules from {@link cosmeticData.extCssText}
+     * Else apply extended css rules from {@link cosmeticData.extCssRules}
      * and enable {@link CssHitsCounter} if {@link cosmeticData.areHitsStatsCollected} is true.
      *
      * @param cosmeticData Response cosmetic data from background.

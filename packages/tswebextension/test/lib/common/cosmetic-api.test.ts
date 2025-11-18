@@ -10,7 +10,6 @@ import { CosmeticResult } from '@adguard/tsurlfilter';
 
 import { createCosmeticRule } from '../../helpers/rule-creator';
 import { CosmeticApiCommon } from '../../../src/lib/common/cosmetic-api';
-import * as cssCapabilities from '../../../src/lib/common/utils/css-capabilities';
 
 /**
  * Creates cosmetic result for elemhide rules.
@@ -58,7 +57,6 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
         beforeEach(() => {
             // Reset cache and mock browser support for :has/:is/:not
             CosmeticApiCommon.resetNativeAndExtCssCache();
-            vi.spyOn(cssCapabilities, 'supportsNativeAndExtCssPseudoClasses').mockReturnValue(true);
         });
 
         describe('when browser supports :has/:is/:not natively', () => {
@@ -67,7 +65,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:has(> a)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 // Should return null because native rules stay native
                 expect(extCssRules).toBeNull();
@@ -78,7 +79,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:is(.class1, .class2)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 expect(extCssRules).toBeNull();
             });
@@ -88,7 +92,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:not(.excluded)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 expect(extCssRules).toBeNull();
             });
@@ -98,7 +105,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com#?#div:has(> a)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 expect(extCssRules).toEqual(['div:has(> a) { display: none !important; }']);
             });
@@ -110,7 +120,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                 // Explicitly extended rule
                 cosmeticResult.elementHiding.append(createCosmeticRule('example.com#?#span:contains(ad)', 0, 1));
 
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 // Only the explicitly extended rule should be returned
                 expect(extCssRules).toEqual(['span:contains(ad) { display: none !important; }']);
@@ -121,7 +134,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com#$#div:has(> a) { color: red !important; }',
                 ];
                 const cosmeticResult = getCssCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 expect(extCssRules).toBeNull();
             });
@@ -132,16 +148,19 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
         beforeEach(() => {
             // Reset cache and mock browser NOT supporting :has/:is/:not
             CosmeticApiCommon.resetNativeAndExtCssCache();
-            vi.spyOn(cssCapabilities, 'supportsNativeAndExtCssPseudoClasses').mockReturnValue(false);
         });
 
         describe('when browser does NOT support :has/:is/:not natively', () => {
+            // NOTE: default value for
+            // isNativeHasSupported — false
+            // areHitsStatsCollected — false
+
             test('native rules with :has SHOULD be reclassified to extended CSS', () => {
                 const rules = [
                     'example.com##div:has(> a)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult);
 
                 // Should be reclassified to extended CSS
                 expect(extCssRules).toEqual(['div:has(> a) { display: none !important; }']);
@@ -152,7 +171,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:is(.class1, .class2)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult);
 
                 expect(extCssRules).toEqual(['div:is(.class1, .class2) { display: none !important; }']);
             });
@@ -162,7 +181,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:not(.excluded)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult);
 
                 expect(extCssRules).toEqual(['div:not(.excluded) { display: none !important; }']);
             });
@@ -172,7 +191,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div.banner',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult);
 
                 // Should return null - rule stays native
                 expect(extCssRules).toBeNull();
@@ -184,7 +203,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                 cosmeticResult.elementHiding.append(createCosmeticRule('example.com##span:is(.ad, .ads)', 0, 1));
                 cosmeticResult.elementHiding.append(createCosmeticRule('example.com##p:not(.keep)', 0, 2));
 
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult);
 
                 expect(extCssRules).toEqual([
                     'div:has(> a) { display: none !important; }',
@@ -198,7 +217,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com#$#div:has(> a) { color: red !important; }',
                 ];
                 const cosmeticResult = getCssCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult);
 
                 expect(extCssRules).toEqual(['div:has(> a) { color: red !important; }']);
             });
@@ -210,7 +229,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                 // Native rule without :has/:is/:not - should stay native
                 cosmeticResult.elementHiding.append(createCosmeticRule('example.com##span.ad', 0, 1));
 
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, false);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult);
 
                 // Only the rule with :has should be in extended CSS
                 expect(extCssRules).toEqual(['div:has(> a) { display: none !important; }']);
@@ -223,7 +242,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:has(> a)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const extCssRules = CosmeticApiCommon.getExtCssRules(cosmeticResult, true);
+                const extCssRules = CosmeticApiCommon.getExtCssRules(
+                    cosmeticResult,
+                    { areHitsStatsCollected: true },
+                );
 
                 // eslint-disable-next-line max-len
                 expect(extCssRules).toEqual(['div:has(> a) { display: none !important; content: \'adguard0%3B0\' !important; }']);
@@ -235,7 +257,6 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
         beforeEach(() => {
             // Reset cache and mock browser support for :has/:is/:not
             CosmeticApiCommon.resetNativeAndExtCssCache();
-            vi.spyOn(cssCapabilities, 'supportsNativeAndExtCssPseudoClasses').mockReturnValue(true);
         });
 
         describe('when browser supports :has/:is/:not natively', () => {
@@ -244,7 +265,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:has(> a)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 expect(cssText).toBe('div:has(> a) { display: none !important; }');
             });
@@ -254,7 +278,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:is(.class1, .class2)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 expect(cssText).toBe('div:is(.class1, .class2) { display: none !important; }');
             });
@@ -264,7 +291,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:not(.excluded)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 expect(cssText).toBe('div:not(.excluded) { display: none !important; }');
             });
@@ -274,7 +304,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                 cosmeticResult.elementHiding.append(createCosmeticRule('example.com##div:has(> a)', 0, 0));
                 cosmeticResult.elementHiding.append(createCosmeticRule('example.com##span:is(.ad, .ads)', 0, 1));
 
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 expect(cssText).toBe('div:has(> a), span:is(.ad, .ads) { display: none !important; }');
             });
@@ -284,7 +317,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com#?#div:has(> a)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(
+                    cosmeticResult,
+                    { isNativeHasSupported: true },
+                );
 
                 // Extended CSS rules should not be in CSS text
                 expect(cssText).toBeUndefined();
@@ -296,7 +332,6 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
         beforeEach(() => {
             // Reset cache and mock browser NOT supporting :has/:is/:not
             CosmeticApiCommon.resetNativeAndExtCssCache();
-            vi.spyOn(cssCapabilities, 'supportsNativeAndExtCssPseudoClasses').mockReturnValue(false);
         });
 
         describe('when browser does NOT support :has/:is/:not natively', () => {
@@ -305,7 +340,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:has(> a)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(cosmeticResult);
 
                 // Should be reclassified to extended CSS, not in CSS text
                 expect(cssText).toBeUndefined();
@@ -316,7 +351,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:is(.class1, .class2)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(cosmeticResult);
 
                 expect(cssText).toBeUndefined();
             });
@@ -326,7 +361,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:not(.excluded)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(cosmeticResult);
 
                 expect(cssText).toBeUndefined();
             });
@@ -336,7 +371,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div.banner',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(cosmeticResult);
 
                 expect(cssText).toBe('div.banner { display: none !important; }');
             });
@@ -348,7 +383,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                 // Native rule without :has/:is/:not - should stay in CSS text
                 cosmeticResult.elementHiding.append(createCosmeticRule('example.com##span.ad', 0, 1));
 
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(cosmeticResult);
 
                 // Only the rule without :has should be in CSS text
                 expect(cssText).toBe('span.ad { display: none !important; }');
@@ -359,7 +394,7 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com#$#div:has(> a) { color: red !important; }',
                 ];
                 const cosmeticResult = getCssCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, false);
+                const cssText = CosmeticApiCommon.getCssText(cosmeticResult);
 
                 expect(cssText).toBeUndefined();
             });
@@ -371,7 +406,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div.banner',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, true);
+                const cssText = CosmeticApiCommon.getCssText(
+                    cosmeticResult,
+                    { areHitsStatsCollected: true },
+                );
 
                 // eslint-disable-next-line max-len
                 expect(cssText).toBe('div.banner { display: none !important; content: \'adguard0%3B0\' !important; }');
@@ -382,7 +420,10 @@ describe('CosmeticApiCommon - reclassification of native-and-ext CSS', () => {
                     'example.com##div:has(> a)',
                 ];
                 const cosmeticResult = getElemhideCosmeticResult(rules);
-                const cssText = CosmeticApiCommon.getCssText(cosmeticResult, true);
+                const cssText = CosmeticApiCommon.getCssText(
+                    cosmeticResult,
+                    { areHitsStatsCollected: true },
+                );
 
                 expect(cssText).toBeUndefined();
             });

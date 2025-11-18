@@ -218,7 +218,15 @@ export class CosmeticFrameProcessor {
         const { configuration } = appContext;
         const areHitsStatsCollected = configuration?.settings.collectStats || false;
 
-        const cssText = CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected);
+        const isNativeHasSupported = !!configuration?.isNativeHasPseudoClassSupported;
+
+        const cssText = CosmeticApi.getCssText(
+            cosmeticResult,
+            {
+                isNativeHasSupported,
+                areHitsStatsCollected,
+            },
+        );
 
         // FIXME: remove later
         console.log({ cosmeticResult });

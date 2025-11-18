@@ -112,8 +112,16 @@ export class CosmeticFrameProcessor {
 
         const areHitsStatsCollected = appContext.configuration?.settings.collectStats || false;
 
+        const isNativeHasSupported = !!appContext.configuration?.isNativeHasPseudoClassSupported;
+
         const preparedCosmeticResult = {
-            cssText: CosmeticApi.getCssText(cosmeticResult, areHitsStatsCollected),
+            cssText: CosmeticApi.getCssText(
+                cosmeticResult,
+                {
+                    isNativeHasSupported,
+                    areHitsStatsCollected,
+                },
+            ),
             // Local script rules should be processed separately
             // because they will be injected with two different calls
             // to scripting API.
