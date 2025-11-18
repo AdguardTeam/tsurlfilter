@@ -209,6 +209,15 @@ export const configurationValidator = zod.object({
      * since user clicked "Proceed anyway" button on the blocking page.
      */
     trustedDomains: zod.string().array(),
+
+    /**
+     * Flag indicating whether the browser natively supports :has pseudo-classes.
+     *
+     * Pseudo-classes :is() and :not() are supported
+     * by older browser versions than :has(),
+     * so it is enough to pass value only for :has().
+     */
+    isNativeHasPseudoClassSupported: zod.boolean().optional(),
 }).strict();
 
 /**

@@ -30,6 +30,7 @@ Table of content:
             - [declarativeLogEnabled (MV3 only)](#declarativelogenabled-mv3-only)
             - [allowlist](#allowlist)
             - [trustedDomains](#trusteddomains)
+            - [isNativeHasPseudoClassSupported](#isnativehaspseudoclasssupported)
             - [userrules (MV2)](#userrules-mv2)
                 - [content](#content-3)
                 - [sourceMap](#sourcemap-2)
@@ -326,6 +327,19 @@ List of hostnames or domains of sites, which should be excluded from blocking or
 type: `string[]`
 
 List of domain names of sites, which should be temporary excluded from document blocking.
+
+#### isNativeHasPseudoClassSupported
+
+Type: `boolean`
+
+Flag indicating whether the browser natively supports `:has()` pseudo-class.
+
+It is also used to ensure that `:is()` and `:not()` pseudo-classes are supported
+since they are supported by older browser versions than `:has()`.
+
+This flag is being used to determine the way of applying of cosmetic rules
+with `:has()`, `:is()` and `:not()` pseudo-classes; otherwise, if it is `false`,
+the rules are applied using ExtendedCss.
 
 #### userrules (MV2)
 
