@@ -63,7 +63,7 @@ export const GENERIC_PLATFORM_MAP: Map<string, GenericPlatform> = new Map([
     ['any', GenericPlatform.Any],
 ]);
 
-const PLATFORM_HUMAN_READABLE_NAME_MAP: Map<AnyPlatform, string> = new Map([
+const SPECIFIC_PLATFORM_HUMAN_READABLE_NAME_MAP: Map<SpecificPlatform, string> = new Map([
     [SpecificPlatform.AdgOsWindows, 'AdGuard for Windows'],
     [SpecificPlatform.AdgOsMac, 'AdGuard for Mac'],
     [SpecificPlatform.AdgOsAndroid, 'AdGuard for Android'],
@@ -86,7 +86,9 @@ const PLATFORM_HUMAN_READABLE_NAME_MAP: Map<AnyPlatform, string> = new Map([
     [SpecificPlatform.AbpExtOpera, 'AdBlock Plus for Opera'],
     [SpecificPlatform.AbpExtEdge, 'AdBlock Plus for Edge'],
     [SpecificPlatform.AbpExtFirefox, 'AdBlock Plus for Firefox'],
+]);
 
+const GENERIC_PLATFORM_HUMAN_READABLE_NAME_MAP: Map<GenericPlatform, string> = new Map([
     [GenericPlatform.AdgOsAny, 'AdGuard for any OS'],
     [GenericPlatform.AdgSafariAny, 'AdGuard for any Safari'],
     [GenericPlatform.AdgExtChromium, 'AdGuard for any Chromium-based extension'],
@@ -113,7 +115,9 @@ const PLATFORM_HUMAN_READABLE_NAME_MAP: Map<AnyPlatform, string> = new Map([
  */
 export const isGenericPlatform = (platform: AnyPlatform): boolean => {
     // if more than one bit is set, it's a generic platform
-    return !!(platform & (platform - 1));
+    // Cast to number for bitwise operations
+    const num = platform as unknown as number;
+    return !!(num & (num - 1));
 };
 
 /**
@@ -168,11 +172,19 @@ export const getSpecificPlatformName = (platform: SpecificPlatform): string => {
  * @throws Error if the platform is unknown.
  */
 export const getHumanReadablePlatformName = (platform: AnyPlatform): string => {
-    const humanReadablePlatform = PLATFORM_HUMAN_READABLE_NAME_MAP.get(platform);
+    // Try specific platform first
+    const specificPlatform = SPECIFIC_PLATFORM_HUMAN_READABLE_NAME_MAP.get(platform as SpecificPlatform);
 
-    if (!humanReadablePlatform) {
-        throw new Error(`Unknown platform: ${platform}`);
+    if (specificPlatform) {
+        return specificPlatform;
     }
 
-    return humanReadablePlatform;
+    // Then try generic platform
+    const genericPlatform = GENERIC_PLATFORM_HUMAN_READABLE_NAME_MAP.get(platform as GenericPlatform);
+
+    if (genericPlatform) {
+        return genericPlatform;
+    }
+
+    throw new Error(`Unknown platform: ${platform}`);
 };
