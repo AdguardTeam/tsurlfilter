@@ -3,9 +3,8 @@
  */
 
 import { type Modifier } from '../nodes';
-import { AdblockSyntax } from '../utils/adblockers';
 import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
-import { BLOCKER_PREFIX, SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
+import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
 import {
     type ValidationResult,
     getInvalidValidationResult,
@@ -15,54 +14,31 @@ import {
 import { validateValue } from './value';
 import { clone } from '../utils/clone';
 import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
-import { GenericPlatform } from '../compatibility-tables/platforms';
-
-const convertSyntaxToGenericPlatform = (syntax: AdblockSyntax): GenericPlatform => {
-    switch (syntax) {
-        case AdblockSyntax.Adg:
-            return GenericPlatform.AdgAny;
-        case AdblockSyntax.Ubo:
-            return GenericPlatform.UboAny;
-        case AdblockSyntax.Abp:
-            return GenericPlatform.AbpAny;
-        default:
-            throw new Error(`Unknown syntax: ${syntax}`);
-    }
-};
 
 /**
- * Fully checks whether the given `modifier` valid for given blocker `syntax`:
+ * Fully checks whether the given `modifier` valid for given blocker `platforms`:
  * is it supported by the blocker, deprecated, assignable, negatable, etc.
  *
- * @param syntax Adblock syntax to check the modifier for.
- * 'Common' is not supported, it should be specific — 'AdGuard', 'uBlockOrigin', or 'AdblockPlus'.
+ * @param platforms Platforms to check the modifier for.
  * @param modifier Parsed modifier AST node.
  * @param isException Whether the modifier is used in exception rule.
  * Needed to check whether the modifier is allowed only in blocking or exception rules.
  *
  * @returns Result of modifier validation.
  */
-const validateForSpecificSyntax = (
-    syntax: AdblockSyntax,
+const validateForSpecificPlatforms = (
+    platforms: number,
     modifier: Modifier,
     isException: boolean,
 ): ValidationResult => {
-    if (syntax === AdblockSyntax.Common) {
-        throw new Error(`Syntax should be specific, '${AdblockSyntax.Common}' is not supported`);
+    if (platforms === 0) {
+        throw new Error('No platforms specified');
     }
 
     const modifierName = modifier.name.value;
 
-    const blockerPrefix = BLOCKER_PREFIX[syntax];
-    if (!blockerPrefix) {
-        throw new Error(`Unknown syntax: ${syntax}`);
-    }
-
     // needed for validation of negation, assignment, etc.
-    const specificBlockerData = modifiersCompatibilityTable.getFirst(
-        modifierName,
-        convertSyntaxToGenericPlatform(syntax),
-    );
+    const specificBlockerData = modifiersCompatibilityTable.getFirst(modifierName, platforms);
 
     // if no specific blocker data is found
     if (!specificBlockerData) {
@@ -159,20 +135,20 @@ class ModifierValidator {
     };
 
     /**
-     * Checks whether the given `modifier` is valid for specified `syntax`.
+     * Checks whether the given `modifier` is valid for specified `platforms`.
      *
-     * For `Common` syntax it simply checks whether the modifier exists.
-     * For specific syntax the validation is more complex —
+     * For 0 (no platforms) it simply checks whether the modifier exists.
+     * For specific platforms the validation is more complex —
      * deprecated, assignable, negatable and other requirements are checked.
      *
-     * @param syntax Adblock syntax to check the modifier for.
+     * @param platforms Platforms to check the modifier for.
      * @param rawModifier Modifier AST node.
      * @param isException Whether the modifier is used in exception rule, default to false.
      * Needed to check whether the modifier is allowed only in blocking or exception rules.
      *
      * @returns Result of modifier validation.
      */
-    public validate = (syntax: AdblockSyntax, rawModifier: Modifier, isException = false): ValidationResult => {
+    public validate = (platforms: number, rawModifier: Modifier, isException = false): ValidationResult => {
         const modifier = clone(rawModifier);
 
         // special case: handle noop modifier which may be used as multiple underscores (not just one)
@@ -193,10 +169,10 @@ class ModifierValidator {
             return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.name.value}'`);
         }
         // for 'Common' syntax we cannot check something more
-        if (syntax === AdblockSyntax.Common) {
+        if (platforms === 0) {
             return { valid: true };
         }
-        return validateForSpecificSyntax(syntax, modifier, isException);
+        return validateForSpecificPlatforms(platforms, modifier, isException);
     };
 }
 

@@ -7,9 +7,10 @@ It is used by [AGLint] to validate filtering rules.
 > [!WARNING]
 > The validator is still in development, currently it only supports [basic rules][kb-basic-rules] validation.
 
-- [Modifier validator API](#modifier-validator-api)
-    - [`exists()`](#modifier-validator-api--exists)
-    - [`validate()`](#modifier-validator-api--validate)
+- [Adblock rule validator](#adblock-rule-validator)
+    - [ Modifier validator API](#-modifier-validator-api)
+        - [ `exists()`](#-exists)
+        - [ `validate()`](#-validate)
 
 ## <a name="modifier-validator-api"></a> Modifier validator API
 
@@ -56,34 +57,25 @@ modifierValidator.exists(ModifierParser.parse('non-existent-modifier=value'));
 
 ```ts
 /**
- * Checks whether the given `modifier` is valid for specified `syntax`.
+ * Checks whether the given `modifier` is valid for specified `platforms`.
  *
- * For `Common` syntax it simply checks whether the modifier exists.
- * For specific syntax the validation is more complex —
+ * For 0 (no platforms) it simply checks whether the modifier exists.
+ * For specific platforms the validation is more complex —
  * deprecated, assignable, negatable and other requirements are checked.
  *
- * @param syntax Adblock syntax to check the modifier for.
+ * @param platforms Platforms to check the modifier for.
  * @param rawModifier Modifier AST node.
  * @param isException Whether the modifier is used in exception rule, default to false.
  * Needed to check whether the modifier is allowed only in blocking or exception rules.
  *
  * @returns Result of modifier validation.
  */
-validate(syntax: AdblockSyntax, rawModifier: Modifier, isException = false): ValidationResult;
+validate(platforms: number, rawModifier: Modifier, isException = false): ValidationResult;
 ```
 
 where
 
-- `AdblockSyntax` is a string enum with the following values:
-
-    ```ts
-    enum AdblockSyntax {
-        Common = 'Common',
-        Abp = 'AdblockPlus',
-        Ubo = 'uBlockOrigin',
-        Adg = 'AdGuard',
-    }
-    ```
+- `platforms` is a number that represents a mask of platforms
 
 - `Modifier` is a [common parser type][parser-modifier-type]
 
@@ -109,7 +101,7 @@ where
 [**Examples of `validate()` usage:**](#modifier-validator-api--validate--examples)
 
 ```ts
-import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/agtree';
+import { GenericPlatform, ModifierParser, modifierValidator } from '@adguard/agtree';
 // ModifierParser.parse() converts a string modifier into the AGTree `Modifier` type
 ```
 
@@ -117,7 +109,7 @@ import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/
 
     ```ts
     modifierValidator.validate(
-        AdblockSyntax.Adg,
+        GenericPlatform.AdgAny,
         ModifierParser.parse('webrtc'),
     );
     ```
@@ -135,7 +127,7 @@ import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/
 
     ```ts
     modifierValidator.validate(
-        AdblockSyntax.Abp,
+        GenericPlatform.AbpAny,
         ModifierParser.parse('webrtc'),
     );
     ```
@@ -152,7 +144,7 @@ import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/
 
     ```ts
     modifierValidator.validate(
-        AdblockSyntax.Adg,
+        GenericPlatform.AdgAny,
         ModifierParser.parse('stealth=dpi'),
         false,
     );
@@ -171,7 +163,7 @@ import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/
 
     ```ts
     modifierValidator.validate(
-        AdblockSyntax.Adg,
+        GenericPlatform.AdgAny,
         ModifierParser.parse('mp4'),
     );
     ```

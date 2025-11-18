@@ -5,8 +5,8 @@ import { ModifierParser } from '../../src/parser/misc/modifier-parser';
 import { modifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
 import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
-import { AdblockSyntax } from '../../src/utils/adblockers';
 import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-items-parser';
+import { GenericPlatform } from '../../src';
 
 /**
  * Returns modifier AST node for given rawModifier.
@@ -178,7 +178,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -190,7 +190,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                 expect(validationResult.valid).toBeTruthy();
                 expect(validationResult.error).toBeUndefined();
                 expect(validationResult.warn?.includes('support shall be removed in the future')).toBeTruthy();
@@ -254,7 +254,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -276,7 +276,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, false);
+                const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier, false);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
@@ -291,7 +291,7 @@ describe('ModifierValidator', () => {
             test.each(validForBlockingModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, false);
+                const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier, false);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -306,7 +306,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForExceptionRuleModifiers)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier, true);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -319,7 +319,7 @@ describe('ModifierValidator', () => {
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier, true);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -338,7 +338,7 @@ describe('ModifierValidator', () => {
                 ];
                 test.each(validModifiers)('%s', (rawModifier) => {
                     const modifier = getModifier(rawModifier);
-                    const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                    const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                     expect(validationResult.valid).toBeTruthy();
                 });
             });
@@ -381,7 +381,7 @@ describe('ModifierValidator', () => {
                         'replace=/fourthColumnWrapper//',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -396,7 +396,7 @@ describe('ModifierValidator', () => {
                         'domain=example.com|example.org|test-example.*',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -442,7 +442,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
@@ -457,7 +457,7 @@ describe('ModifierValidator', () => {
                         'denyallow=example.com|example.org|test-example.com',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -520,7 +520,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
@@ -538,7 +538,7 @@ describe('ModifierValidator', () => {
                         'app=Example.exe|~com.example.app|com.example.osx',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -593,7 +593,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
@@ -609,7 +609,7 @@ describe('ModifierValidator', () => {
                         'method=get|post|put',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -664,7 +664,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
@@ -681,7 +681,7 @@ describe('ModifierValidator', () => {
                         'stealth=useragent|ip|xclientdata|dpi',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier, true);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -735,7 +735,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier, true);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error).toEqual(expected);
                     });
@@ -764,7 +764,7 @@ describe('ModifierValidator', () => {
                         "csp=trusted-types foo bar 'allow-duplicates'",
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier, true);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -808,7 +808,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error).toEqual(expected);
                     });
@@ -830,7 +830,7 @@ describe('ModifierValidator', () => {
                         'permissions=join-ad-interest-group=()\\, run-ad-auction=()\\, browsing-topics=()',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier, true);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -945,7 +945,7 @@ describe('ModifierValidator', () => {
                         // },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error).toEqual(expected);
                     });
@@ -967,7 +967,7 @@ describe('ModifierValidator', () => {
                         'referrerpolicy',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier, true);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -996,7 +996,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.AdgAny, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error).toEqual(expected);
                     });
@@ -1016,7 +1016,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
+                const validationResult = modifierValidator.validate(GenericPlatform.UboAny, modifier);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -1078,7 +1078,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
+                const validationResult = modifierValidator.validate(GenericPlatform.UboAny, modifier);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -1094,7 +1094,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, false);
+                const validationResult = modifierValidator.validate(GenericPlatform.UboAny, modifier, false);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
@@ -1106,7 +1106,7 @@ describe('ModifierValidator', () => {
             test.each(validForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, false);
+                const validationResult = modifierValidator.validate(GenericPlatform.UboAny, modifier, false);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -1121,7 +1121,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForExceptionRuleModifiers)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, true);
+                const validationResult = modifierValidator.validate(GenericPlatform.UboAny, modifier, true);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -1133,7 +1133,7 @@ describe('ModifierValidator', () => {
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, true);
+                const validationResult = modifierValidator.validate(GenericPlatform.UboAny, modifier, true);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -1148,7 +1148,7 @@ describe('ModifierValidator', () => {
                         'to=example.com|example.org|test-example.*',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.UboAny, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -1194,7 +1194,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
+                        const validationResult = modifierValidator.validate(GenericPlatform.UboAny, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
@@ -1214,7 +1214,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier);
+                const validationResult = modifierValidator.validate(GenericPlatform.AbpAny, modifier);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -1281,7 +1281,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier);
+                const validationResult = modifierValidator.validate(GenericPlatform.AbpAny, modifier);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -1297,7 +1297,7 @@ describe('ModifierValidator', () => {
                 const EXPECTED_ERROR = 'Only exception rules may contain the modifier';
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
+                const validationResult = modifierValidator.validate(GenericPlatform.AbpAny, modifier, false);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(EXPECTED_ERROR)).toBeTruthy();
             });
@@ -1309,7 +1309,7 @@ describe('ModifierValidator', () => {
             test.each(validForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
+                const validationResult = modifierValidator.validate(GenericPlatform.AbpAny, modifier, false);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
