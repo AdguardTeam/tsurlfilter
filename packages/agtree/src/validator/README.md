@@ -7,10 +7,9 @@ It is used by [AGLint] to validate filtering rules.
 > [!WARNING]
 > The validator is still in development, currently it only supports [basic rules][kb-basic-rules] validation.
 
-- [Adblock rule validator](#adblock-rule-validator)
-    - [ Modifier validator API](#-modifier-validator-api)
-        - [ `exists()`](#-exists)
-        - [ `validate()`](#-validate)
+- [Modifier validator API](#modifier-validator-api)
+    - [`exists()`](#modifier-validator-api--exists)
+    - [`validate()`](#modifier-validator-api--validate)
 
 ## <a name="modifier-validator-api"></a> Modifier validator API
 
