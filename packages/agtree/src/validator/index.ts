@@ -5,15 +5,11 @@
 import { type Modifier } from '../nodes';
 import { NEWLINE, SPACE, UNDERSCORE } from '../utils/constants';
 import { SOURCE_DATA_ERROR_PREFIX, VALIDATION_ERROR_PREFIX } from './constants';
-import {
-    type ValidationResult,
-    getInvalidValidationResult,
-    getValueRequiredValidationResult,
-    isValidNoopModifier,
-} from './helpers';
+import { type ValidationResult, getInvalidValidationResult, getValueRequiredValidationResult } from './helpers';
 import { validateValue } from './value';
 import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
 import { type SpecificPlatform } from '../compatibility-tables';
+import { isValidNoopModifier } from '../utils/noop-modifier';
 
 /**
  * Fully checks whether the given `modifier` valid for given blocker `platforms`:
@@ -38,11 +34,7 @@ const validateForSpecificPlatform = (
     const modifierName = modifier.name.value;
 
     // needed for validation of negation, assignment, etc.
-    // Cast because getSingle accepts SpecificPlatform but at runtime it works with any platform value
-    const specificBlockerData = modifiersCompatibilityTable.getSingle(
-        modifierName,
-        platform as unknown as SpecificPlatform,
-    );
+    const specificBlockerData = modifiersCompatibilityTable.getSingle(modifierName, platform);
 
     // if no specific blocker data is found
     if (!specificBlockerData) {
