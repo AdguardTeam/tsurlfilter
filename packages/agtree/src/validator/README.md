@@ -56,25 +56,25 @@ modifierValidator.exists(ModifierParser.parse('non-existent-modifier=value'));
 
 ```ts
 /**
- * Checks whether the given `modifier` is valid for specified `platforms`.
+ * Checks whether the given `modifier` is valid for specified `platform`.
  *
  * For 0 (no platforms) it simply checks whether the modifier exists.
  * For specific platforms the validation is more complex —
  * deprecated, assignable, negatable and other requirements are checked.
  *
- * @param platforms Platforms to check the modifier for.
- * @param rawModifier Modifier AST node.
+ * @param platform Platform to check the modifier for.
+ * @param modifier Modifier AST node.
  * @param isException Whether the modifier is used in exception rule, default to false.
  * Needed to check whether the modifier is allowed only in blocking or exception rules.
  *
  * @returns Result of modifier validation.
  */
-validate(platforms: number, rawModifier: Modifier, isException = false): ValidationResult;
+validate(platform: SpecificPlatform, rawModifier: Modifier, isException = false): ValidationResult;
 ```
 
 where
 
-- `platforms` is a number that represents a mask of platforms
+- `platform` is a specific compatibility table platform
 
 - `Modifier` is a [common parser type][parser-modifier-type]
 
@@ -100,7 +100,7 @@ where
 [**Examples of `validate()` usage:**](#modifier-validator-api--validate--examples)
 
 ```ts
-import { GenericPlatform, ModifierParser, modifierValidator } from '@adguard/agtree';
+import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/agtree';
 // ModifierParser.parse() converts a string modifier into the AGTree `Modifier` type
 ```
 
@@ -108,7 +108,7 @@ import { GenericPlatform, ModifierParser, modifierValidator } from '@adguard/agt
 
     ```ts
     modifierValidator.validate(
-        GenericPlatform.AdgAny,
+        SpecificPlatform.AdgOsWindows,
         ModifierParser.parse('webrtc'),
     );
     ```
@@ -126,7 +126,7 @@ import { GenericPlatform, ModifierParser, modifierValidator } from '@adguard/agt
 
     ```ts
     modifierValidator.validate(
-        GenericPlatform.AbpAny,
+        SpecificPlatform.UboExtFirefox,
         ModifierParser.parse('webrtc'),
     );
     ```
@@ -143,7 +143,7 @@ import { GenericPlatform, ModifierParser, modifierValidator } from '@adguard/agt
 
     ```ts
     modifierValidator.validate(
-        GenericPlatform.AdgAny,
+        SpecificPlatform.AdgOsWindows,
         ModifierParser.parse('stealth=dpi'),
         false,
     );
@@ -162,7 +162,7 @@ import { GenericPlatform, ModifierParser, modifierValidator } from '@adguard/agt
 
     ```ts
     modifierValidator.validate(
-        GenericPlatform.AdgAny,
+        SpecificPlatform.AdgOsWindows,
         ModifierParser.parse('mp4'),
     );
     ```

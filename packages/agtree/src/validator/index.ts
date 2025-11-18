@@ -13,31 +13,36 @@ import {
 } from './helpers';
 import { validateValue } from './value';
 import { modifiersCompatibilityTable } from '../compatibility-tables/modifiers';
+import { type SpecificPlatform } from '../compatibility-tables';
 
 /**
  * Fully checks whether the given `modifier` valid for given blocker `platforms`:
  * is it supported by the blocker, deprecated, assignable, negatable, etc.
  *
- * @param platforms Platforms to check the modifier for.
+ * @param platform Platform to check the modifier for.
  * @param modifier Parsed modifier AST node.
  * @param isException Whether the modifier is used in exception rule.
  * Needed to check whether the modifier is allowed only in blocking or exception rules.
  *
  * @returns Result of modifier validation.
  */
-const validateForSpecificPlatforms = (
-    platforms: number,
+const validateForSpecificPlatform = (
+    platform: SpecificPlatform,
     modifier: Modifier,
     isException: boolean,
 ): ValidationResult => {
-    if (platforms === 0) {
+    if (platform === 0) {
         throw new Error('No platforms specified');
     }
 
     const modifierName = modifier.name.value;
 
     // needed for validation of negation, assignment, etc.
-    const specificBlockerData = modifiersCompatibilityTable.getFirst(modifierName, platforms);
+    // Cast because getSingle accepts SpecificPlatform but at runtime it works with any platform value
+    const specificBlockerData = modifiersCompatibilityTable.getSingle(
+        modifierName,
+        platform as unknown as SpecificPlatform,
+    );
 
     // if no specific blocker data is found
     if (!specificBlockerData) {
@@ -134,20 +139,20 @@ class ModifierValidator {
     };
 
     /**
-     * Checks whether the given `modifier` is valid for specified `platforms`.
+     * Checks whether the given `modifier` is valid for specified `platform`.
      *
      * For 0 (no platforms) it simply checks whether the modifier exists.
      * For specific platforms the validation is more complex —
      * deprecated, assignable, negatable and other requirements are checked.
      *
-     * @param platforms Platforms to check the modifier for.
+     * @param platform Platform to check the modifier for.
      * @param modifier Modifier AST node.
      * @param isException Whether the modifier is used in exception rule, default to false.
      * Needed to check whether the modifier is allowed only in blocking or exception rules.
      *
      * @returns Result of modifier validation.
      */
-    public validate = (platforms: number, modifier: Modifier, isException = false): ValidationResult => {
+    public validate = (platform: SpecificPlatform, modifier: Modifier, isException = false): ValidationResult => {
         // special case: handle noop modifier which may be used as multiple underscores (not just one)
         // https://adguard.com/kb/general/ad-filtering/create-own-filters/#noop-modifier
         if (modifier.name.value.startsWith(UNDERSCORE)) {
@@ -162,11 +167,8 @@ class ModifierValidator {
         if (!this.exists(modifier)) {
             return getInvalidValidationResult(`${VALIDATION_ERROR_PREFIX.NOT_EXISTENT}: '${modifier.name.value}'`);
         }
-        // for 'Common' syntax we cannot check something more
-        if (platforms === 0) {
-            return { valid: true };
-        }
-        return validateForSpecificPlatforms(platforms, modifier, isException);
+
+        return validateForSpecificPlatform(platform, modifier, isException);
     };
 }
 
