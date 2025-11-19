@@ -502,6 +502,7 @@ export class TsWebExtension implements AppInterface<
             verbose,
             logLevel,
             settings,
+            isNativeHasPseudoClassSupported,
         } = configuration;
 
         return {
@@ -509,6 +510,7 @@ export class TsWebExtension implements AppInterface<
             verbose,
             logLevel,
             settings,
+            isNativeHasPseudoClassSupported,
         };
     }
 

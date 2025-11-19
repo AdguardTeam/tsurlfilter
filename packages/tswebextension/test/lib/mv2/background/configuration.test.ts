@@ -38,6 +38,7 @@ describe('configuration validator', () => {
                 selfDestructFirstPartyCookiesTime: 3600,
             },
         },
+        isNativeHasPseudoClassSupported: false,
     };
 
     it('passes valid configuration', () => {

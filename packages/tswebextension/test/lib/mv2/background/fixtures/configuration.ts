@@ -40,4 +40,5 @@ export const getConfigurationMv2Fixture = (): ConfigurationMV2 => ({
             selfDestructFirstPartyCookiesTime: 3600,
         },
     },
+    isNativeHasPseudoClassSupported: false,
 });

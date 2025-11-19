@@ -43,4 +43,5 @@ export const getConfigurationMv3Fixture = (): ConfigurationMV3 => ({
         },
     },
     trustedDomains: [],
+    isNativeHasPseudoClassSupported: false,
 });

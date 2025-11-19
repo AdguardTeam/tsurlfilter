@@ -679,6 +679,7 @@ export class TsWebExtension implements AppInterface<
             filtersPath,
             ruleSetsPath,
             declarativeLogEnabled,
+            isNativeHasPseudoClassSupported,
         } = configuration;
 
         return {
@@ -689,6 +690,7 @@ export class TsWebExtension implements AppInterface<
             declarativeLogEnabled,
             verbose,
             settings,
+            isNativeHasPseudoClassSupported,
         };
     }
 

@@ -206,7 +206,7 @@ export class CosmeticApi extends CosmeticApiCommon {
             cosmeticResult = frameContext.cosmeticResult;
         }
 
-        const isNativeHasSupported = !!configuration?.isNativeHasPseudoClassSupported;
+        const isNativeHasSupported = configuration?.isNativeHasPseudoClassSupported;
 
         data.extCssRules = CosmeticApi.getExtCssRules(
             cosmeticResult,

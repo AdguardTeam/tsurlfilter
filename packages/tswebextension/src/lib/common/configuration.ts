@@ -217,7 +217,7 @@ export const configurationValidator = zod.object({
      * by older browser versions than :has(),
      * so it is enough to pass value only for :has().
      */
-    isNativeHasPseudoClassSupported: zod.boolean().optional(),
+    isNativeHasPseudoClassSupported: zod.boolean().default(false),
 }).strict();
 
 /**
