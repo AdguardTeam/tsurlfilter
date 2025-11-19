@@ -1,7 +1,7 @@
 import type { IndexedNetworkRuleWithHash } from '..';
 import { type ConvertedRules } from '../converted-result';
 
-import { DeclarativeRuleConverter } from './abstract-rule-converter';
+import { AbstractRuleConverter } from './abstract-rule-converter';
 
 /**
  * @typedef {import('../rules-grouper').RulesGroup} RulesGroup
@@ -13,7 +13,7 @@ import { DeclarativeRuleConverter } from './abstract-rule-converter';
  *
  * @see {@link RulesGroup}
  */
-export class RegularRulesConverter extends DeclarativeRuleConverter {
+export class RegularRulesConverter extends AbstractRuleConverter {
     /**
      * Converts ungrouped, basic indexed rules into declarative rules.
      *

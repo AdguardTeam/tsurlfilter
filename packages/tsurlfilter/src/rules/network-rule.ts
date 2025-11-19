@@ -813,15 +813,15 @@ export class NetworkRule implements IRule {
     }
 
     /**
-     * Retrieves the header modifier value.
+     * Retrieves the header modifier matcher.
      *
-     * @returns The header modifier value or null if none.
+     * @returns The header modifier matcher or null if none.
      */
-    public getHeaderModifierValue(): HttpHeaderMatcher | null {
+    public getHeaderModifierMatcher(): HttpHeaderMatcher | null {
         if (!this.headerModifier) {
             return null;
         }
-        return this.headerModifier.getHeaderModifierValue();
+        return this.headerModifier.getHeaderModifierMatcher();
     }
 
     /**
@@ -1156,7 +1156,7 @@ export class NetworkRule implements IRule {
             return false;
         }
 
-        const ruleData = this.getHeaderModifierValue();
+        const ruleData = this.getHeaderModifierMatcher();
 
         if (!ruleData) {
             return false;

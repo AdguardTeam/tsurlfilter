@@ -3,12 +3,12 @@ import { type DeclarativeRule } from '../declarative-rule';
 import { type ConvertedRules } from '../converted-result';
 import { CSP_HEADER_NAME } from '../../../modifiers/csp-modifier';
 
-import { DeclarativeRuleConverter } from './abstract-rule-converter';
+import { AbstractRuleConverter } from './abstract-rule-converter';
 
 /**
  * Describes how to convert $csp rules.
  */
-export class CspRulesConverter extends DeclarativeRuleConverter {
+export class CspRulesConverter extends AbstractRuleConverter {
     /**
      * Converts indexed rules grouped by $csp into declarative rules:
      * for each rule looks for similar rules and groups them into a new rule.

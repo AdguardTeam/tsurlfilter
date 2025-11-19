@@ -19,7 +19,7 @@ import { createScannedFilter } from './helpers';
 const allResourcesTypes = Object.values(ResourceType);
 const documentResourceTypes = [ResourceType.MainFrame, ResourceType.SubFrame];
 
-describe('DeclarativeRuleConverter', () => {
+describe('DeclarativeRulesConverter', () => {
     beforeAll(() => {
         re2Validator.setValidator(regexValidatorNode);
     });
@@ -1226,6 +1226,80 @@ describe('DeclarativeRuleConverter', () => {
                     urlFilter: '||example.com',
 
                     resourceTypes: allResourcesTypes,
+                },
+            });
+        });
+    });
+
+    describe('$header modifier', () => {
+        it('converts $header rule with only a header name', async () => {
+            const filter = await createScannedFilter(
+                0,
+                ['||example.com$header=location'],
+            );
+
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules[0]).toEqual({
+                id: expect.any(Number),
+                priority: expect.any(Number),
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    urlFilter: '||example.com',
+                    responseHeaders: [{ header: 'location' }],
+                },
+            });
+        });
+
+        it('converts $header rule with a header name and value', async () => {
+            const filter = await createScannedFilter(
+                0,
+                ['||example.com$header=location:value123'],
+            );
+
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules[0]).toEqual({
+                id: expect.any(Number),
+                priority: expect.any(Number),
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    urlFilter: '||example.com',
+                    responseHeaders: [{ header: 'location', values: ['value123'] }],
+                },
+            });
+        });
+
+        it('throws an error for a $header rule if the value is a regex', async () => {
+            const filter = await createScannedFilter(
+                0,
+                ['||example.com$header=location:/value123/'],
+            );
+            const { declarativeRules, errors } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules).toHaveLength(0);
+            expect(errors[0].message).toEqual(
+                'Declarative network rules with $header modifier cannot contain regex values',
+            );
+        });
+
+        it('converts $header rules with specific request types', async () => {
+            const filter = await createScannedFilter(
+                0,
+                ['||example.com$script,header=location:value123'],
+            );
+            const { declarativeRules } = await DeclarativeRulesConverter.convert([filter]);
+            expect(declarativeRules[0]).toEqual({
+                id: expect.any(Number),
+                priority: expect.any(Number),
+                action: {
+                    type: 'block',
+                },
+                condition: {
+                    urlFilter: '||example.com',
+                    resourceTypes: ['script'],
+                    responseHeaders: [{ header: 'location', values: ['value123'] }],
                 },
             });
         });
