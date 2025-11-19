@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased <!-- release/browser-extension-v5.3 -->
 
+### Added
+
+- Support of `$header` modifier in declarative converter.
+
 ### Fixed
 
 - Apply $document blocking rule even if specific exception rule is present [AdguardBrowserExtension#3262].

@@ -3,14 +3,14 @@ import { type NetworkRule } from '../../../network-rule';
 /**
  * @typedef {import(
  *   '../../grouped-rules-converters/abstract-rule-converter'
- * ).DeclarativeRuleConverter} DeclarativeRuleConverter
+ * ).AbstractRuleConverter} AbstractRuleConverter
  */
 
 /**
  * Describes an error when a source network rule contains some of
  * the unsupported modifiers.
  *
- * @see {@link DeclarativeRuleConverter.checkNetworkRuleConvertible} for more details.
+ * @see {@link AbstractRuleConverter.checkNetworkRuleConvertible} for more details.
  */
 export class UnsupportedModifierError extends Error {
     networkRule: NetworkRule;

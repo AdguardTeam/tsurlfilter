@@ -262,6 +262,38 @@ export class NetworkRuleDeclarativeValidator {
     };
 
     /**
+     * Checks if the $header values in the provided network rule
+     * are supported for conversion to MV3.
+     * DNR does not support regex patterns in HeaderInfo.values field.
+     *
+     * @param ruleNode Network rule.
+     * @param name Modifier's name.
+     *
+     * @returns Error {@link UnsupportedModifierError} or null if rule is supported.
+     */
+    private static checkHeaderModifierFn = (
+        ruleNode: NetworkRuleWithNode,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        name: string,
+    ): UnsupportedModifierError | null => {
+        const headerMatcher = ruleNode.rule.getHeaderModifierMatcher();
+
+        if (!headerMatcher) {
+            return null;
+        }
+
+        // Check if value is a RegExp - not supported in DNR HeaderInfo
+        if (headerMatcher.value instanceof RegExp) {
+            return new UnsupportedModifierError(
+                'Declarative network rules with $header modifier cannot contain regex values',
+                ruleNode.rule,
+            );
+        }
+
+        return null;
+    };
+
+    /**
      * The $redirect-rule support will be possible to implement after browsers add this feature:
      * https://github.com/w3c/webextensions/issues/493.
      *
@@ -338,9 +370,8 @@ export class NetworkRuleDeclarativeValidator {
             ],
         },
         Method: { name: '$method', customChecks: [NetworkRuleDeclarativeValidator.checkMethodModifierFn] },
+        Header: { name: '$header', customChecks: [NetworkRuleDeclarativeValidator.checkHeaderModifierFn] },
 
-        // Not supported.
-        Header: { name: '$header', notSupported: true },
         // Not supported yet.
         Genericblock: { name: '$genericblock', notSupported: true },
         Stealth: { name: '$stealth', notSupported: true },

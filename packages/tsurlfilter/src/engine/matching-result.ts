@@ -397,8 +397,8 @@ export class MatchingResult {
         const rules = MatchingResult.filterAdvancedModifierRules(
             headerRules,
             (bRule) => ((aRule): boolean => {
-                const bHeaderData = bRule.getHeaderModifierValue();
-                const aHeaderData = aRule.getHeaderModifierValue();
+                const bHeaderData = bRule.getHeaderModifierMatcher();
+                const aHeaderData = aRule.getHeaderModifierMatcher();
                 return bHeaderData?.header === aHeaderData?.header
                     && bHeaderData?.value?.toString() === aHeaderData?.value?.toString();
             }),

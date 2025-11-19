@@ -177,6 +177,18 @@ export const DECLARATIVE_REQUEST_METHOD_MAP: Record<SupportedHttpMethod, Request
 };
 
 /**
+ * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-HeaderInfo
+ * Chrome 128+
+ */
+const HeaderInfoValidator = zod.strictObject({
+    excludedValues: zod.string().array().optional(),
+    header: zod.string(),
+    values: zod.string().array().optional(),
+});
+
+export type HeaderInfo = zod.infer<typeof HeaderInfoValidator>;
+
+/**
  * https://developer.chrome.com/docs/extensions/reference/declarativeNetRequest/#type-RuleCondition
  */
 
@@ -192,6 +204,11 @@ const RuleConditionValidator = zod.strictObject({
     regexFilter: zod.string().optional(),
     requestDomains: zod.string().array().optional(),
     requestMethods: zod.nativeEnum(RequestMethod).array().optional(),
+    /**
+     * Rule matches if the request matches any response header condition in this list (if specified).
+     * Chrome 128+
+     */
+    responseHeaders: HeaderInfoValidator.array().optional(),
     /**
      * If none of the `excludedResourceTypes` and `resourceTypes` are specified,
      * all resource types except "main_frame" will be matched.
