@@ -10,9 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Support of `$header` modifier in declarative converter.
-- Support of `:has()` pseudo-class as standard CSS conditionally: if there are
-  no other extended pseudo-classes in the selector or if the `#?#` separator
-  is explicitly used in the rule [AdguardBrowserExtension#2587].
+- Support of `:has()` pseudo-class as standard CSS conditionally:
+    - if there are no other extended pseudo-classes in the selector, or
+    - if the `#?#` separator is explicitly used in the rule [AdguardBrowserExtension#2587].
 
 ### Changed
 
