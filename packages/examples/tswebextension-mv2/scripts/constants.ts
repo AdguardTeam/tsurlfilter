@@ -56,4 +56,5 @@ export const DEFAULT_EXTENSION_CONFIG: ConfigurationMV2 = {
             selfDestructFirstPartyCookiesTime: 3600,
         },
     },
+    isNativeHasPseudoClassSupported: false,
 };

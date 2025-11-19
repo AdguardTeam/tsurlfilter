@@ -60,6 +60,7 @@ const defaultConfig: ConfigurationMV2 = {
             selfDestructFirstPartyCookiesTime: 3600,
         },
     },
+    isNativeHasPseudoClassSupported: false,
 };
 
 tsWebExtension.initStorage();
