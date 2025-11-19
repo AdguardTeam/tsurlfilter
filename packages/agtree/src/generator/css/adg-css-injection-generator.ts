@@ -15,6 +15,7 @@ import { BaseGenerator } from '../base-generator';
  * AdGuard CSS injection generator.
  */
 export class AdgCssInjectionGenerator extends BaseGenerator {
+    // 'remove: true' declaration
     private static removeDeclaration = `${REMOVE_PROPERTY}${COLON}${SPACE}${REMOVE_VALUE}${SEMICOLON}`;
 
     /**
