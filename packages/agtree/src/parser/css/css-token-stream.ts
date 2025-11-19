@@ -486,7 +486,7 @@ export class CssTokenStream {
      *
      * @returns `true` if the stream contains any Extended CSS elements, otherwise `false`.
      */
-    private hasAnySelectorExtendedCssNodeInternal(pseudos: Set<string>): boolean {
+    private hasAnySelectorExtendedCssNodeInternal(pseudos: ReadonlySet<string>): boolean {
         for (let i = 0; i < this.tokens.length; i += 1) {
             const token = this.tokens[i];
 

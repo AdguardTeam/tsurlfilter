@@ -2,12 +2,13 @@
  * @file Declaration list validator.
  */
 
-import { FORBIDDEN_CSS_FUNCTIONS, REMOVE_PROPERTY } from '@adguard/agtree';
+import { REMOVE_PROPERTY } from '@adguard/agtree';
 import { decodeIdent, tokenizeExtended, TokenType } from '@adguard/css-tokenizer';
 
 import { getErrorMessage } from '../../common/error';
 
 import { type CssValidationResult } from './css-validation-result';
+import { FORBIDDEN_CSS_FUNCTIONS } from './known-elements';
 
 /**
  * Check if function name is forbidden. If so, throws an error.

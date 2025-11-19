@@ -19,7 +19,7 @@
  *
  * Please keep this list sorted alphabetically.
  */
-export const SUPPORTED_EXT_CSS_PSEUDO_CLASSES = new Set([
+export const SUPPORTED_EXT_CSS_PSEUDO_CLASSES: ReadonlySet<string> = new Set([
     '-abp-contains', // alias for 'contains'
     '-abp-has', // alias for 'has' - always extended (ABP-specific syntax)
     'contains',
@@ -47,7 +47,7 @@ export const SUPPORTED_EXT_CSS_PSEUDO_CLASSES = new Set([
  *
  * Please keep this list sorted alphabetically.
  */
-export const SUPPORTED_CSS_PSEUDO_CLASSES = new Set([
+export const SUPPORTED_CSS_PSEUDO_CLASSES: ReadonlySet<string> = new Set([
     'active', // https://developer.mozilla.org/en-US/docs/Web/CSS/:active
     'checked', // https://developer.mozilla.org/en-US/docs/Web/CSS/:checked
     'disabled', // https://developer.mozilla.org/en-US/docs/Web/CSS/:disabled
@@ -100,11 +100,31 @@ export const EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX = '-ext-';
  *
  * Please keep this list sorted alphabetically.
  */
-export const SUPPORTED_EXT_CSS_ATTRIBUTE_SELECTORS = new Set([
+export const SUPPORTED_EXT_CSS_ATTRIBUTE_SELECTORS: ReadonlySet<string> = new Set([
     `${EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX}has`,
     `${EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX}contains`,
     `${EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX}has-text`,
     `${EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX}matches-css`,
     `${EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX}matches-css-before`,
     `${EXT_CSS_ATTRIBUTE_SELECTOR_PREFIX}matches-css-after`,
+]);
+
+/**
+ * Known CSS functions that aren't allowed in CSS injection rules, because they
+ * able to load external resources. Please, keep this list sorted.
+ */
+export const FORBIDDEN_CSS_FUNCTIONS: ReadonlySet<string> = new Set([
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/cross-fade
+    '-webkit-cross-fade',
+    'cross-fade',
+
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/image
+    'image',
+
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/image-set
+    '-webkit-image-set',
+    'image-set',
+
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/url
+    'url',
 ]);

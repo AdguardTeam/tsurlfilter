@@ -28,7 +28,7 @@ export const ABP_EXT_CSS_PREFIX = '-abp';
  * Known CSS pseudo-classes that are supported by all browsers natively,
  * but can also be applied as extended.
  */
-export const NATIVE_AND_EXT_CSS_PSEUDO_CLASSES = new Set([
+export const NATIVE_AND_EXT_CSS_PSEUDO_CLASSES: ReadonlySet<string> = new Set([
     /**
      * https://developer.mozilla.org/en-US/docs/Web/CSS/:has
      * https://github.com/AdguardTeam/ExtendedCss#extended-css-has
@@ -53,7 +53,7 @@ export const NATIVE_AND_EXT_CSS_PSEUDO_CLASSES = new Set([
  * Strict means that these pseudo-classes are not supported by any browser natively,
  * and they always require Extended CSS libraries to work.
  */
-export const EXT_CSS_PSEUDO_CLASSES_STRICT = new Set([
+export const EXT_CSS_PSEUDO_CLASSES_STRICT: ReadonlySet<string> = new Set([
     // AdGuard
     // https://github.com/AdguardTeam/ExtendedCss
     'contains',
@@ -87,7 +87,7 @@ export const EXT_CSS_PSEUDO_CLASSES_STRICT = new Set([
  * It includes strict pseudo-classes and additional pseudo-classes that may be
  * supported by some browsers natively.
  */
-export const EXT_CSS_PSEUDO_CLASSES = new Set([
+export const EXT_CSS_PSEUDO_CLASSES: ReadonlySet<string> = new Set([
     ...EXT_CSS_PSEUDO_CLASSES_STRICT,
     ...NATIVE_AND_EXT_CSS_PSEUDO_CLASSES,
 ]);
@@ -99,7 +99,7 @@ export const EXT_CSS_PSEUDO_CLASSES = new Set([
  *
  * Please, keep this list sorted.
  */
-export const EXT_CSS_LEGACY_ATTRIBUTES = new Set([
+export const EXT_CSS_LEGACY_ATTRIBUTES: ReadonlySet<string> = new Set([
     // AdGuard
     '-ext-contains',
     '-ext-has',
@@ -125,26 +125,6 @@ export const EXT_CSS_LEGACY_ATTRIBUTES = new Set([
     '-ext-abp-contains',
     '-ext-abp-has',
     '-ext-abp-properties',
-]);
-
-/**
- * Known CSS functions that aren't allowed in CSS injection rules, because they
- * able to load external resources. Please, keep this list sorted.
- */
-export const FORBIDDEN_CSS_FUNCTIONS = new Set([
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/cross-fade
-    '-webkit-cross-fade',
-    'cross-fade',
-
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/image
-    'image',
-
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/image-set
-    '-webkit-image-set',
-    'image-set',
-
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/url
-    'url',
 ]);
 
 /**
