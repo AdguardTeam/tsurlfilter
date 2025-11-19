@@ -138,7 +138,7 @@ export class CosmeticFrameProcessor {
         };
 
         // FIXME: remove later
-        console.log({ cosmeticResult });
+        console.log('test log:', { cosmeticResult });
 
         return preparedCosmeticResult;
     }

@@ -234,7 +234,7 @@ export class CosmeticApi extends CosmeticApiCommon {
         );
 
         // FIXME: remove later
-        console.log({ data });
+        console.log('test log:', { data });
 
         return data;
     }
