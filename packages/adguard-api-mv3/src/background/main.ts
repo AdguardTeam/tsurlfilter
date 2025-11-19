@@ -203,6 +203,7 @@ export class AdguardApi {
                     selfDestructFirstPartyCookiesTime: 3600,
                 },
             },
+            isNativeHasPseudoClassSupported: false,
         };
     }
 
