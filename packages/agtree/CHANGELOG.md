@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 
 ### Added
 
+<!-- FIXME: check if needed -->
 - Export of `CssTokenStream`.
 - `CssTokenStream.hasAnySelectorNativeAndExtCssNode()` for checking
   if there are any pseudo-classes that may be considered as extended
