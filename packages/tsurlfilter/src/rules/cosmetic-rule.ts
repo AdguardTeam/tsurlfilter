@@ -11,6 +11,7 @@ import {
     PIPE_MODIFIER_SEPARATOR,
     QuoteType,
     QuoteUtils,
+    RegExpUtils,
 } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 import { scriptlets, type Source } from '@adguard/scriptlets';
@@ -531,8 +532,12 @@ export class CosmeticRule implements IRule {
             if (ruleNode.domains?.children.length) {
                 // Iterate over the domain list and check every domain
                 for (const { value: domain } of ruleNode.domains.children) {
-                    if (!DomainUtils.isValidDomainOrHostname(domain)) {
-                        throw new Error(`'${domain}' is not a valid domain name`);
+                    // Skip validation for regex domain patterns
+                    if (
+                        !RegExpUtils.isRegexPattern(domain)
+                        && !DomainUtils.isValidDomainOrHostname(domain)
+                    ) {
+                        throw new Error(`'${domain}' is not a valid domain name or regexp pattern`);
                     }
                 }
             }

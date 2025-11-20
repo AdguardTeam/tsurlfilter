@@ -127,6 +127,128 @@ describe('CosmeticRuleParser', () => {
                     };
                 },
             },
+
+            // regex domain with comma in quantifier - should not be split at comma
+            {
+                actual: String.raw`/example\d{1,}\.com/##.ad`,
+                expected: (context: NodeExpectContext): ElementHidingRule => {
+                    return {
+                        category: RuleCategory.Cosmetic,
+                        type: CosmeticRuleType.ElementHidingRule,
+                        syntax: AdblockSyntax.Common,
+                        exception: false,
+                        modifiers: undefined,
+                        domains: DomainListParser.parse(String.raw`/example\d{1,}\.com/`),
+                        separator: {
+                            type: 'Value',
+                            value: '##',
+                            ...context.getRangeFor('##'),
+                        },
+                        body: {
+                            type: 'ElementHidingRuleBody',
+                            selectorList: {
+                                type: 'Value',
+                                value: '.ad',
+                                ...context.getRangeFor('.ad'),
+                            },
+                            ...context.getRangeFor('.ad'),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
+
+            // regex domain with commas in both quantifier and alternation
+            {
+                actual: String.raw`/example\d{1,}\.(com|org)/##.ad`,
+                expected: (context: NodeExpectContext): ElementHidingRule => {
+                    return {
+                        category: RuleCategory.Cosmetic,
+                        type: CosmeticRuleType.ElementHidingRule,
+                        syntax: AdblockSyntax.Common,
+                        exception: false,
+                        modifiers: undefined,
+                        domains: DomainListParser.parse(String.raw`/example\d{1,}\.(com|org)/`),
+                        separator: {
+                            type: 'Value',
+                            value: '##',
+                            ...context.getRangeFor('##'),
+                        },
+                        body: {
+                            type: 'ElementHidingRuleBody',
+                            selectorList: {
+                                type: 'Value',
+                                value: '.ad',
+                                ...context.getRangeFor('.ad'),
+                            },
+                            ...context.getRangeFor('.ad'),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
+
+            // complex regex domain with multiple commas and character classes
+            {
+                // eslint-disable-next-line max-len
+                actual: String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/##.ad`,
+                expected: (context: NodeExpectContext): ElementHidingRule => {
+                    return {
+                        category: RuleCategory.Cosmetic,
+                        type: CosmeticRuleType.ElementHidingRule,
+                        syntax: AdblockSyntax.Common,
+                        exception: false,
+                        modifiers: undefined,
+                        // eslint-disable-next-line max-len
+                        domains: DomainListParser.parse(String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/`),
+                        separator: {
+                            type: 'Value',
+                            value: '##',
+                            ...context.getRangeFor('##'),
+                        },
+                        body: {
+                            type: 'ElementHidingRuleBody',
+                            selectorList: {
+                                type: 'Value',
+                                value: '.ad',
+                                ...context.getRangeFor('.ad'),
+                            },
+                            ...context.getRangeFor('.ad'),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
+
+            // regex domain mixed with normal domain
+            {
+                actual: String.raw`/example\d{1,}\.com/,example.net##.ad`,
+                expected: (context: NodeExpectContext): ElementHidingRule => {
+                    return {
+                        category: RuleCategory.Cosmetic,
+                        type: CosmeticRuleType.ElementHidingRule,
+                        syntax: AdblockSyntax.Common,
+                        exception: false,
+                        modifiers: undefined,
+                        domains: DomainListParser.parse(String.raw`/example\d{1,}\.com/,example.net`),
+                        separator: {
+                            type: 'Value',
+                            value: '##',
+                            ...context.getRangeFor('##'),
+                        },
+                        body: {
+                            type: 'ElementHidingRuleBody',
+                            selectorList: {
+                                type: 'Value',
+                                value: '.ad',
+                                ...context.getRangeFor('.ad'),
+                            },
+                            ...context.getRangeFor('.ad'),
+                        },
+                        ...context.getFullRange(),
+                    };
+                },
+            },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             expect(CosmeticRuleParser.parse(actual)).toMatchObject(expectedFn(new NodeExpectContext(actual)));
         });
@@ -179,6 +301,30 @@ describe('CosmeticRuleParser', () => {
             {
                 actual: 'example.com##p > a',
                 expected: 'example.com##p > a',
+            },
+
+            // regexp domains
+            {
+                actual: String.raw`/example\d{1,}\.com/##.ad`,
+                expected: String.raw`/example\d{1,}\.com/##.ad`,
+            },
+            {
+                actual: String.raw`/example\d{1,}\.(com|org)/##.ad`,
+                expected: String.raw`/example\d{1,}\.(com|org)/##.ad`,
+            },
+            {
+                // eslint-disable-next-line max-len
+                actual: String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/##.ad`,
+                // eslint-disable-next-line max-len
+                expected: String.raw`/^[a-z0-9]{5,}\.(?=.*[a-z])(?=.*[0-9])[a-z0-9]{17,}\.(cfd|sbs|shop)$/##.ad`,
+            },
+            {
+                actual: String.raw`/example\d{1,}\.com/,example.net##.ad`,
+                expected: String.raw`/example\d{1,}\.com/,example.net##.ad`,
+            },
+            {
+                actual: String.raw`[$domain=/example\d{1,}\.com/,example.net]##.ad`,
+                expected: String.raw`[$domain=/example\d{1,}\.com/,example.net]##.ad`,
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = CosmeticRuleParser.parse(actual);
