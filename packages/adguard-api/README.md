@@ -16,7 +16,7 @@ AdGuard API is a filtering library that provides the following features:
 - [Installation](#installation)
 - [Required web accessible resources](#required-web-accessible-resources)
 - [Configuration](#configuration)
-- [Manifest V3 JS Rules Validation](#manifest-v3-js-rules-validation)
+- [Local Script Rules Validation](#local-script-rules-validation)
 - [Static methods](#static-methods)
     - [`AdguardApi.create`](#adguardapicreate)
 - [Methods](#methods)
@@ -111,10 +111,9 @@ type Configuration = {
   [article][filter-rules] describing filtering rules syntax. These custom rules
   might be created by a user via AdGuard Assistant UI.
 
-  > **Note for Manifest V3 extensions**: JS rules from `configuration.rules` will be checked against
-  > `local_script_rules.js` to prevent execution of custom JS rules (not from static filters)
-  > if the UserScripts permission is not granted. See [Manifest V3 JS Rules Validation](#manifest-v3-js-rules-validation)
-  > for more details.
+  > **Note for Manifest V2 extensions**: If `local_script_rules.json` is provided,
+  > JS rules from `configuration.rules` will be checked against it. See
+  > [Local Script Rules](#local-script-rules-validation) for more details.
 
 - `filtersMetadataUrl` (mandatory) - An absolute path to a file, containing
   filters metadata. Once started, AdGuard will periodically check filters
@@ -152,52 +151,51 @@ const configuration: Configuration = {
 > You can (and actually should) use `filters.adtidy.org` for periodically
 > updating files on your side.
 
-## Manifest V3 JS Rules Validation
+## Local Script Rules Validation
 
-In Manifest V3 extensions, JavaScript injection rules have security restrictions
-due to the new extension API limitations. To maintain security while allowing
-custom filtering rules, the API implements a validation mechanism for JS rules.
+In Manifest V2 extensions (particularly Firefox AMO), JavaScript injection rules require
+validation against pre-verified local script rules. The API implements an optional
+validation mechanism for JS rules to ensure compliance with store policies.
 
 ### How it works
 
-When UserScripts permission is **not** granted, JS rules from `configuration.rules`
-are validated against the `local_script_rules.js` file. This prevents execution
-of arbitrary custom JS rules that are not part of the static filter lists bundled
-with the extension.
+**When local_script_rules.json is NOT provided (Default):**
 
-Only JS rules that are explicitly listed in `local_script_rules.js` will be
-allowed to execute. This ensures that:
+- All script rules are treated as allowed by default.
+- Both static filter rules and custom user rules execute normally.
+- This provides maximum flexibility for script rule execution.
 
-- Static filter rules from official filter lists can execute normally
-- Custom user-created JS rules (e.g., from AdGuard Assistant) will only execute
-  if they match rules in `local_script_rules.js` or if UserScripts permission is granted
+**When local_script_rules.json IS provided (Optional):**
 
-### Extending local_script_rules.js
+- All JS script rules are validated against the `local_script_rules.json` file.
+- Only script rules that are explicitly listed in `local_script_rules.json` are allowed to execute.
+- This provides additional control and security assurance for store compliance.
+- Useful for Firefox AMO and similar environments with stricter policies.
 
-You can extend `local_script_rules.js` with additional allowed JS rules during
-your extension's build process. This is useful if you want to pre-approve
-specific custom scriptlets or JS injection rules.
+### Extending local_script_rules.json
+
+You can extend `local_script_rules.json` with additional allowed JS rules during
+your extension's build process. This is useful if you want to pre-approve specific
+custom scriptlets or JS injection rules for store compliance.
 
 **Example implementation:**
 
-See the MV3 example extension for a complete implementation:
-
-- **Extra scripts definition**: [`packages/examples/adguard-api-mv3/extension/src/extra-scripts.ts`](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/examples/adguard-api-mv3/extension/src/extra-scripts.ts)
-- **Build script usage**: [`packages/examples/adguard-api-mv3/scripts/build/build.ts`](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/examples/adguard-api-mv3/scripts/build/build.ts)
-
-The build script uses the `AssetsLoader.extendLocalScriptRulesJs()` method to add
-extra allowed rules to `local_script_rules.js`:
-
 ```typescript
-import { AssetsLoader, LOCAL_SCRIPT_RULES_JS_FILENAME } from '@adguard/dnr-rulesets';
-import { extraScripts } from './extra-scripts';
+import { AssetsLoader, LOCAL_SCRIPT_RULES_JSON_FILENAME } from '@adguard/dnr-rulesets';
 
 const loader = new AssetsLoader();
-await loader.extendLocalScriptRulesJs(
-    path.join('./extension/filters', LOCAL_SCRIPT_RULES_JS_FILENAME),
-    extraScripts
+// FIXME: Use loader.copyLocalScriptRulesJson()
+await loader.extendLocalScriptRulesJson(
+    path.join('./extension/filters', LOCAL_SCRIPT_RULES_JSON_FILENAME),
+    [
+        'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
+        'example.org,~sub.example.org#%#console.log("Custom script");'
+    ]
 );
 ```
+
+This method parses custom filtering rules, extracts JavaScript injection rules
+and merges them into the existing `local_script_rules.json` file.
 
 ## Static methods
 

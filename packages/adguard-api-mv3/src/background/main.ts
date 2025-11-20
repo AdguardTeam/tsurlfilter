@@ -62,18 +62,18 @@ export class AdguardApi {
     /**
      * Creates new AdguardApi instance.
      * @param tswebextension Instance of {@link TsWebExtension}.
-     * @param params AdguardApiParams.
+     * @param params Optional {@link AdguardApiParams} for AdguardApi.
      */
     constructor(
         private readonly tswebextension: TsWebExtension,
-        params: AdguardApiParams,
+        params?: AdguardApiParams,
     ) {
         this.onAssistantCreateRule = this.tswebextension.onAssistantCreateRule;
         this.onRequestBlocked = new RequestBlockingLogger();
 
         this.openAssistant = this.openAssistant.bind(this);
 
-        if (params.localScriptRulesJs) {
+        if (params?.localScriptRulesJs) {
             TsWebExtension.setLocalScriptRules(params.localScriptRulesJs);
         }
     }
@@ -233,11 +233,11 @@ export class AdguardApi {
     /**
      * Creates new adguardApi instance.
      *
-     * @param params AdguardApiParams.
+     * @param params Optional {@link AdguardApiParams} for AdguardApi.
      *
      * @returns AdguardApi instance.
      */
-    public static async create(params: AdguardApiParams): Promise<AdguardApi> {
+    public static async create(params?: AdguardApiParams): Promise<AdguardApi> {
         const tswebextension = new TsWebExtension(AdguardApi.WEB_ACCESSIBLE_RESOURCES_PATH);
         await tswebextension.initStorage();
         return new AdguardApi(

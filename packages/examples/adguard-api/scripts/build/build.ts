@@ -10,6 +10,7 @@ const build = async () => {
     try {
         await buildRunner(config);
         await copyWar(WEB_ACCESSIBLE_RESOURCES_PATH);
+        // FIXME: Call Loader.copyLocalScriptRulesJson() from @adguard/dnr-rulesets here
         await zipDirectory(BUILD_PATH, path.join(BUILD_PATH, '..', BUILD_ZIP_FILE_NAME));
     } catch (e) {
         console.error(e);

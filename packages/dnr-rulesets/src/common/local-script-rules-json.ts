@@ -35,9 +35,11 @@ type LocalScriptRulesJsonStructure = {
 };
 
 /**
- * Handles local script rules for Firefox AMO extensions.
+ * Handles local script rules in JSON format with domain configurations.
  *
- * Manages JS injection rules in JSON format with domain configurations.
+ * This format is used for Manifest V2 extensions. If not provided, all
+ * script rules are allowed.
+ * Should be provided in Firefox AMO according to their policies.
  *
  * The primary purpose is to enable runtime checking of JS rules to determine
  * whether a rule comes from built-in filters or is a custom rule.

@@ -14,6 +14,7 @@ AdGuard API is a filtering library that provides the following features:
 - [Required web accessible resources](#required-web-accessible-resources)
 - [Required declarativeNetRequest API assets](#required-declarativenetrequest-api-assets)
 - [Configuration](#configuration)
+- [Local Script Rules for MV3](#local-script-rules-for-mv3)
 - [Static methods](#static-methods)
     - [`AdguardApi.create`](#adguardapicreate)
 - [Methods](#methods)
@@ -156,6 +157,67 @@ const configuration: Configuration = {
 > testing purposes**. You have to use your own server for storing filter files.
 > You can (and actually should) use `filters.adtidy.org` for periodically
 > updating files on your side.
+
+## Local Script Rules for MV3
+
+In Manifest V3 extensions, JavaScript injection rules have strict security restrictions
+due to Chrome Web Store policies regarding remote code execution. The API enforces a
+required validation mechanism to ensure all script rules are pre-verified.
+
+### How it works
+
+**When local_script_rules.js IS provided (Recommended):**
+
+- All JS script rules are pre-verified and bundled into the extension during the build process.
+- At runtime, only script rules that match entries in `local_script_rules.js` are executed.
+- All other scripts are discarded to prevent remote code execution.
+- This ensures perfect compliance with Chrome Web Store policies.
+
+**When local_script_rules.js is NOT provided:**
+
+- All script rules (except scriptlets) will be **blocked** for security compliance.
+- The extension will not execute any custom JS rules to prevent potential remote code execution.
+- **It is highly recommended to always provide `local_script_rules.js`** during your build process.
+
+**With UserScripts API permission enabled:**
+
+- Custom JS rules can be executed directly via the browser's userScripts API, which provides secure sandboxing.
+- This requires explicit user activation via extension settings.
+
+### Why it's critical for MV3
+
+Providing `local_script_rules.js` is **essential** for MV3 extensions because:
+
+1. Chrome Web Store strictly forbids remote code execution in extensions.
+2. Pre-verification ensures only safe, approved scripts can execute.
+3. Failure to provide it results in all script rules being blocked.
+4. This prevents Chrome Web Store rejection due to potential policy violations.
+
+### Extending local_script_rules.js
+
+You can extend `local_script_rules.js` with custom rules during your extension's build process.
+This allows you to pre-approve specific custom scriptlets or JS injection rules before runtime.
+
+**Example implementation:**
+
+See the MV3 example extension for a complete implementation:
+
+- **Extra scripts definition**: [`packages/examples/adguard-api-mv3/extension/src/extra-scripts.ts`](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/examples/adguard-api-mv3/extension/src/extra-scripts.ts)
+- **Build script usage**: [`packages/examples/adguard-api-mv3/scripts/build/build.ts`](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/examples/adguard-api-mv3/scripts/build/build.ts)
+
+The build script uses the `AssetsLoader.extendLocalScriptRulesJs()` method to add
+extra pre-verified rules to `local_script_rules.js`:
+
+```typescript
+import { AssetsLoader, LOCAL_SCRIPT_RULES_JS_FILENAME } from '@adguard/dnr-rulesets';
+import { extraScripts } from './extra-scripts';
+
+const loader = new AssetsLoader();
+await loader.extendLocalScriptRulesJs(
+    path.join('./extension/filters', LOCAL_SCRIPT_RULES_JS_FILENAME),
+    extraScripts
+);
+```
 
 ## Static methods
 

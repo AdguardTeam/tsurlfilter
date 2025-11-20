@@ -16,8 +16,14 @@ import { minify } from 'terser';
 import { LocalScriptRulesBase } from './local-script-rules-base';
 
 /**
- * Handles local script rules for MV3 extensions.
- * Extracts and manages JS injection rules in JavaScript module format.
+ * Handles local script rules in JS module format.
+ *
+ * This format is primarily used for Manifest V3 where it is highly recommended
+ * to provide local script rules. If not provided during build, all
+ * script rules (except scriptlets) will not be injected to ensure compliance
+ * with Chrome Web Store policies.
+ *
+ * Extracts and manages JS injection rules in JS module format.
  *
  * The primary purpose is to enable runtime checking of JS rules to determine
  * whether a rule comes from built-in filters or is a custom rule.

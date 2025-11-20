@@ -24,6 +24,8 @@ export type AssetsLoaderOptions = {
 /**
  * Api for loading assets.
  *
+ * FIXME: Add method to copy only local script rules file neither in JSON nor
+ * in JS format.
  */
 export class AssetsLoader {
     /**
@@ -51,6 +53,42 @@ export class AssetsLoader {
         await copy(src, to);
 
         console.log(`Copying rulesets and local script rules from ${src} to ${to} done.`);
+    }
+
+    /**
+     * Copy only the local script rules JS file to the destination path.
+     *
+     * @param dest Path to copy the local script rules JS file to.
+     *
+     * @returns Promise that resolves when the file is copied.
+     */
+    public async copyLocalScriptRulesJs(dest: string): Promise<void> {
+        const to = path.resolve(process.cwd(), dest);
+        const src = path.resolve(__dirname, '../filters', LOCAL_SCRIPT_RULES_JS_FILENAME);
+
+        console.log(`Copying local script rules JS from ${src} to ${to}`);
+
+        await copy(src, to);
+
+        console.log(`Copying local script rules JS from ${src} to ${to} done.`);
+    }
+
+    /**
+     * Copy only the local script rules JSON file to the destination path.
+     *
+     * @param dest Path to copy the local script rules JSON file to.
+     *
+     * @returns Promise that resolves when the file is copied.
+     */
+    public async copyLocalScriptRulesJson(dest: string): Promise<void> {
+        const to = path.resolve(process.cwd(), dest);
+        const src = path.resolve(__dirname, '../filters', LOCAL_SCRIPT_RULES_JSON_FILENAME);
+
+        console.log(`Copying local script rules JSON from ${src} to ${to}`);
+
+        await copy(src, to);
+
+        console.log(`Copying local script rules JSON from ${src} to ${to} done.`);
     }
 
     /**
