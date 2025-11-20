@@ -8,7 +8,6 @@ import {
     BACKGROUND_PATH,
     CONTENT_SCRIPT,
     POPUP_PATH,
-    BLOCKING_PAGE_PATH,
     BUILD_PATH,
     ASSISTANT_INJECT,
 } from '../constants';
@@ -77,12 +76,6 @@ export const config: Configuration = {
             template: path.join(POPUP_PATH, 'index.html'),
             filename: 'popup.html',
             chunks: ['popup'],
-            cache: false,
-        }),
-        new HtmlWebpackPlugin({
-            template: path.join(BLOCKING_PAGE_PATH, 'index.html'),
-            filename: 'blocking-page.html',
-            chunks: ['blocking-page'],
             cache: false,
         }),
         new CopyWebpackPlugin({

@@ -206,6 +206,12 @@ You can also integrate functions for downloading and updating the manifest into 
 
 1. Load DNR rulesets.
 
+    This method copies prebuilt assets to the specified output directory, including:
+    - DNR rulesets in JSON format for all available filters
+    - `filters_i18n.json` - translations file with filter names and descriptions
+    - `local_script_rules.js` - local script rules file for Firefox AMO format
+    - `local_script_rules.json` - local script rules file for Chromium MV3 browsers
+
     ```ts
     import { AssetsLoader } from '@adguard/dnr-rulesets';
 
@@ -215,11 +221,13 @@ You can also integrate functions for downloading and updating the manifest into 
 
 2. Extend local script rules with custom rules.
 
+    **Option A: Using `extendLocalScriptRulesJs`**
+
     ```ts
     import { AssetsLoader } from '@adguard/dnr-rulesets';
 
     const loader = new AssetsLoader();
-    await loader.extendLocalScriptRules(
+    await loader.extendLocalScriptRulesJs(
         '<path-to-local-script-rules.js>',
         [
             'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
@@ -229,6 +237,25 @@ You can also integrate functions for downloading and updating the manifest into 
     ```
 
     This method parses custom filtering rules, extracts JavaScript injection rules from them, and appends them to an existing `local_script_rules.js` file. It's useful for dynamically adding custom JS rules to your extension at build time.
+
+    **Option B: Using `extendLocalScriptRulesJson`**
+
+    ```ts
+    import { AssetsLoader } from '@adguard/dnr-rulesets';
+
+    const loader = new AssetsLoader();
+    await loader.extendLocalScriptRulesJson(
+        '<path-to-local-script-rules.json>',
+        [
+            'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
+            'example.org,~sub.example.org#%#console.log("Custom script");'
+        ]
+    );
+    ```
+
+    This method parses custom filtering rules, extracts JavaScript injection rules with their domain configurations (both permitted and restricted domains), and merges them into an existing `local_script_rules.json` file. Use this method when you need to maintain domain-specific rule associations.
+
+    > **Note:** The `extendLocalScriptRulesJs` and `extendLocalScriptRulesJson` methods are only available in the programmatic API and not in the CLI. These methods require programmatic access to parse and manipulate existing local script rule files, which is more suitable for build scripts and custom automation workflows rather than command-line usage.
 
 3. Patch extension manifest.
 

@@ -1,3 +1,5 @@
+export { LocalScriptRulesJs } from '../common/localScriptRulesJs';
+export { type DomainConfig, LocalScriptRulesJson } from '../common/localScriptRulesJson';
 export {
     AssetsLoader,
     LOCAL_SCRIPT_RULES_JS_FILENAME,

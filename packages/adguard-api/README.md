@@ -185,7 +185,7 @@ See the MV3 example extension for a complete implementation:
 - **Extra scripts definition**: [`packages/examples/adguard-api-mv3/extension/src/extra-scripts.ts`](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/examples/adguard-api-mv3/extension/src/extra-scripts.ts)
 - **Build script usage**: [`packages/examples/adguard-api-mv3/scripts/build/build.ts`](https://github.com/AdguardTeam/tsurlfilter/blob/master/packages/examples/adguard-api-mv3/scripts/build/build.ts)
 
-The build script uses the `AssetsLoader.extendLocalScriptRules()` method to add
+The build script uses the `AssetsLoader.extendLocalScriptRulesJs()` method to add
 extra allowed rules to `local_script_rules.js`:
 
 ```typescript
@@ -193,7 +193,7 @@ import { AssetsLoader, LOCAL_SCRIPT_RULES_JS_FILENAME } from '@adguard/dnr-rules
 import { extraScripts } from './extra-scripts';
 
 const loader = new AssetsLoader();
-await loader.extendLocalScriptRules(
+await loader.extendLocalScriptRulesJs(
     path.join('./extension/filters', LOCAL_SCRIPT_RULES_JS_FILENAME),
     extraScripts
 );

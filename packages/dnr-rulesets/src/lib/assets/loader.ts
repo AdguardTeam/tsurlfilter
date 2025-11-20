@@ -5,18 +5,14 @@ import process from 'process';
 import { fileURLToPath } from 'url';
 
 import { startDownload } from '../../../common/filters-downloader';
-import { serializedAndValidate } from '../../../tasks/local-scripts';
-import {
-    extractJsRules,
-    formatRules,
-    LOCAL_SCRIPT_RULES_JS_FILENAME,
-    LOCAL_SCRIPT_RULES_JSON_FILENAME,
-} from '../../common/local-script-utils';
+import { LocalScriptRulesJs } from '../../common/localScriptRulesJs';
+import { LocalScriptRulesJson } from '../../common/localScriptRulesJson';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Re-export constants
-export { LOCAL_SCRIPT_RULES_JS_FILENAME, LOCAL_SCRIPT_RULES_JSON_FILENAME };
+export const LOCAL_SCRIPT_RULES_JS_FILENAME = LocalScriptRulesJs.FILENAME;
+export const LOCAL_SCRIPT_RULES_JSON_FILENAME = LocalScriptRulesJson.FILENAME;
 
 export type AssetsLoaderOptions = {
     /**
@@ -67,44 +63,75 @@ export class AssetsLoader {
      *
      * @returns Promise that resolves when the file is updated.
      */
-    public async extendLocalScriptRules(
+    public async extendLocalScriptRulesJs(
         localScriptRulesPath: string,
         customRules: string[],
     ): Promise<void> {
         const filePath = path.resolve(process.cwd(), localScriptRulesPath);
+        const localScriptsRulesJs = new LocalScriptRulesJs();
 
         // Parse custom rules to extract JS rules
-        const filterStr = customRules.join('\n');
-        const customJsRules = extractJsRules(filterStr);
+        const newRules = localScriptsRulesJs.parse(customRules);
 
-        if (customJsRules.size === 0) {
+        if (newRules.size === 0) {
             console.log('No valid JS rules found in custom rules');
             return;
         }
 
-        // Format the new rules to append
-        const formattedNewRules = formatRules(customJsRules);
+        // Read and deserialize existing rules
+        const existingContent = await fs.readFile(filePath, 'utf-8');
+        const existingRules = await localScriptsRulesJs.deserialize(existingContent);
 
-        // Extract existing rules
-        const { localScriptRules } = await import(filePath);
+        console.log(`Extracted ${existingRules.size} existing local script rules`);
 
-        console.log(`Extracted ${Object.keys(localScriptRules).length} existing local script rules`);
+        // Extend existing rules with new rules
+        const mergedRules = localScriptsRulesJs.extend(existingRules, newRules);
 
-        // Convert existing rules to formatted strings
-        const existingFormattedRules = Object.entries(localScriptRules).map(([key, func]) => {
-            // Use JSON.stringify to properly escape the key
-            const escapedKey = JSON.stringify(key);
-            const funcStr = (func as (() => void)).toString();
-            return `${escapedKey}: ${funcStr},`;
-        });
-
-        const updatedContent = await serializedAndValidate([
-            ...existingFormattedRules,
-            ...formattedNewRules,
-        ]);
-
+        // Serialize and write back
+        const updatedContent = await localScriptsRulesJs.serialize(mergedRules);
         await fs.writeFile(filePath, updatedContent);
 
-        console.log(`Extended ${localScriptRulesPath} with ${customJsRules.size} custom rules`);
+        console.log(`Extended ${localScriptRulesPath} with ${newRules.size} custom rules`);
+    }
+
+    /**
+     * Extends the local script rules JSON file with custom rules.
+     * Parses the custom rules, extracts JS rules with domain configurations,
+     * and merges them into the existing local_script_rules.json file.
+     *
+     * @param localScriptRulesJsonPath Path to the local_script_rules.json file to extend.
+     * @param customRules Array of custom rule strings to add.
+     *
+     * @returns Promise that resolves when the file is updated.
+     */
+    public async extendLocalScriptRulesJson(
+        localScriptRulesJsonPath: string,
+        customRules: string[],
+    ): Promise<void> {
+        const filePath = path.resolve(process.cwd(), localScriptRulesJsonPath);
+        const localScriptRulesJson = new LocalScriptRulesJson();
+
+        // Parse custom rules to extract JS rules with domains
+        const newRules = localScriptRulesJson.parse(customRules);
+
+        if (newRules.size === 0) {
+            console.log('No valid JS rules found in custom rules');
+            return;
+        }
+
+        // Read and deserialize existing rules
+        const existingContent = await fs.readFile(filePath, 'utf-8');
+        const existingRules = localScriptRulesJson.deserialize(existingContent);
+
+        console.log(`Extracted ${existingRules.size} existing local script rules`);
+
+        // Extend existing rules with new rules
+        const mergedRules = localScriptRulesJson.extend(existingRules, newRules);
+
+        // Serialize and write back
+        const updatedContent = localScriptRulesJson.serialize(mergedRules);
+        await fs.writeFile(filePath, updatedContent);
+
+        console.log(`Extended ${localScriptRulesJsonPath} with ${newRules.size} custom rules`);
     }
 }
