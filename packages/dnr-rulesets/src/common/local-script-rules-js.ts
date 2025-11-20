@@ -11,7 +11,7 @@ import {
 } from 'acorn';
 import { minify } from 'terser';
 
-import { LocalScriptRulesBase } from './localScriptRulesBase';
+import { LocalScriptRulesBase } from './local-script-rules-base';
 
 /**
  * Handles local script rules for MV3 extensions.

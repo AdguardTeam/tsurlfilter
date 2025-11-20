@@ -20,8 +20,8 @@ vi.mock('node:crypto', () => ({
     },
 }));
 
-import { LocalScriptRulesJs } from '../../../src/common/localScriptRulesJs';
-import { type DomainConfig, LocalScriptRulesJson } from '../../../src/common/localScriptRulesJson';
+import { LocalScriptRulesJs } from '../../../src/common/local-script-rules-js';
+import { type DomainConfig, LocalScriptRulesJson } from '../../../src/common/local-script-rules-json';
 
 // Mock the Logger class with a shared instance
 vi.mock('@adguard/logger', () => {

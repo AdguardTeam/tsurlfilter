@@ -13,8 +13,8 @@ import {
     vi,
 } from 'vitest';
 
-import { LocalScriptRulesJs } from '../../../src/common/localScriptRulesJs';
-import { LocalScriptRulesJson } from '../../../src/common/localScriptRulesJson';
+import { LocalScriptRulesJs } from '../../../src/common/local-script-rules-js';
+import { LocalScriptRulesJson } from '../../../src/common/local-script-rules-json';
 import { AssetsLoader } from '../../../src/lib/assets/loader';
 
 vi.mock('path', { spy: true });

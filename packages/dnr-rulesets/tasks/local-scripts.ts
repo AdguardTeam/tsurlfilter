@@ -3,8 +3,8 @@ import { promises as fs } from 'node:fs';
 import { Logger } from '@adguard/logger';
 import path from 'path';
 
-import { LocalScriptRulesJs } from '../src/common/localScriptRulesJs';
-import { LocalScriptRulesJson } from '../src/common/localScriptRulesJson';
+import { LocalScriptRulesJs } from '../src/common/local-script-rules-js';
+import { LocalScriptRulesJson } from '../src/common/local-script-rules-json';
 
 const FILTER_FILE_PREFIX = 'filter_';
 const FILTER_FILE_EXTENSION = '.txt';

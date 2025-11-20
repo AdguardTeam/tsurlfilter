@@ -5,8 +5,8 @@ import process from 'process';
 import { fileURLToPath } from 'url';
 
 import { startDownload } from '../../../common/filters-downloader';
-import { LocalScriptRulesJs } from '../../common/localScriptRulesJs';
-import { LocalScriptRulesJson } from '../../common/localScriptRulesJson';
+import { LocalScriptRulesJs } from '../../common/local-script-rules-js';
+import { LocalScriptRulesJson } from '../../common/local-script-rules-json';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

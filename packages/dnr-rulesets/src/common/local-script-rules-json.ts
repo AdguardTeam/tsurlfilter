@@ -1,7 +1,7 @@
 import type { CosmeticRule, JsInjectionRule } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 
-import { LocalScriptRulesBase } from './localScriptRulesBase';
+import { LocalScriptRulesBase } from './local-script-rules-base';
 
 /**
  * Domain configuration for a script rule.
