@@ -54,7 +54,10 @@ export const createLocalScriptRulesJson = async (dir: string): Promise<void> => 
         serializedContent,
     );
 
-    logger.info(`Created ${LocalScriptRulesJson.FILENAME} with ${allRules.size} unique rules`);
+    // Extract real count of serialized rules (without duplicates)
+    const deserialized = localScriptRulesJson.deserialize(serializedContent);
+
+    logger.info(`Created ${LocalScriptRulesJson.FILENAME} with ${deserialized.size} unique rules`);
 };
 
 /**
@@ -83,5 +86,8 @@ export const createLocalScriptRulesJs = async (dir: string): Promise<void> => {
     // Write to file
     await fs.writeFile(path.join(dir, LocalScriptRulesJs.FILENAME), serializedContent);
 
-    logger.info(`Created ${LocalScriptRulesJs.FILENAME} with ${allRules.size} unique rules`);
+    // Extract real count of serialized rules (without duplicates)
+    const deserialized = await localScriptRulesJs.deserialize(serializedContent);
+
+    logger.info(`Created ${LocalScriptRulesJs.FILENAME} with ${deserialized.size} unique rules`);
 };
