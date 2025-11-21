@@ -273,4 +273,69 @@ export class QuoteUtils {
             .map((s) => QuoteUtils.setStringQuoteType(s, quoteType))
             .join(separator);
     }
+
+    /**
+     * Convert `""` to `\"` within strings, because it does not compatible with the standard CSS syntax.
+     *
+     * @param selector CSS selector string.
+     *
+     * @returns Escaped CSS selector.
+     *
+     * @note In the legacy syntax, `""` is used to escape double quotes, but it cannot be used
+     * in the standard CSS syntax, so we use conversion functions to handle this.
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
+     */
+    public static escapeDoubleQuotes(selector: string): string {
+        let withinString = false;
+        const buffer: string[] = [];
+
+        for (let i = 0; i < selector.length; i += 1) {
+            if (!withinString && selector[i] === DOUBLE_QUOTE) {
+                withinString = true;
+                buffer.push(selector[i]);
+            } else if (withinString && selector[i] === DOUBLE_QUOTE && selector[i + 1] === DOUBLE_QUOTE) {
+                buffer.push(ESCAPE_CHARACTER);
+                buffer.push(DOUBLE_QUOTE);
+                i += 1;
+            } else if (withinString && selector[i] === DOUBLE_QUOTE && selector[i + 1] !== DOUBLE_QUOTE) {
+                buffer.push(DOUBLE_QUOTE);
+                withinString = false;
+            } else {
+                buffer.push(selector[i]);
+            }
+        }
+
+        return buffer.join(EMPTY);
+    }
+
+    /**
+     * Convert escaped double quotes `\"` to `""` within strings.
+     *
+     * @param selector CSS selector string.
+     *
+     * @returns Unescaped CSS selector.
+     *
+     * @note In the legacy syntax, `""` is used to escape double quotes, but it cannot be used
+     * in the standard CSS syntax, so we use conversion functions to handle this.
+     *
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
+     */
+    public static unescapeDoubleQuotes(selector: string): string {
+        let withinString = false;
+        const buffer: string[] = [];
+
+        for (let i = 0; i < selector.length; i += 1) {
+            if (selector[i] === DOUBLE_QUOTE && selector[i - 1] !== ESCAPE_CHARACTER) {
+                withinString = !withinString;
+                buffer.push(selector[i]);
+            } else if (withinString && selector[i] === ESCAPE_CHARACTER && selector[i + 1] === DOUBLE_QUOTE) {
+                buffer.push(DOUBLE_QUOTE);
+            } else {
+                buffer.push(selector[i]);
+            }
+        }
+
+        return buffer.join(EMPTY);
+    }
 }
