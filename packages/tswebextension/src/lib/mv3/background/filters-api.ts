@@ -47,15 +47,15 @@ export default class FiltersApi {
     /**
      * Enables or disables the provided rule set identifiers.
      *
-     * Note: if browser.declarativeNetRequest.updateEnabledRulesets fails, it
-     * will not throw an error and will not update the list of enabled rule
-     * sets since browser will not update full list of rulesets if any ruleset
-     * is not found.
-     *
      * @param disableFiltersIds Rule sets to disable.
      * @param enableFiltersIds Rule sets to enable.
      *
      * @returns Promise resolved with result of updating {@link UpdateStaticFiltersResult}.
+     *
+     * @note If browser.declarativeNetRequest.updateEnabledRulesets fails,
+     * the error will be caught and returned in the result rather than thrown.
+     * The browser does not update and even not enable any rulesets if any
+     * single ruleset in the request is not found.
      */
     static async updateFiltering(
         disableFiltersIds: number[],

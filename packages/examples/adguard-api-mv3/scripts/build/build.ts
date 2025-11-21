@@ -35,7 +35,11 @@ const build = async () => {
         await excludeUnsafeRules({
             dir: './extension/filters/declarative',
             prettifyJson: false,
-            limit: 4900, // limit for sessionRules is 5000
+            /**
+             * Limit for sessionRules in browser is 5000, so we set
+             * to 4900 to have some space for extra scripts.
+             */
+            limit: 4900,
         });
         await buildRunner(config);
         await copyWar(WEB_ACCESSIBLE_RESOURCES_PATH);

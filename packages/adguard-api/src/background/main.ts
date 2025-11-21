@@ -91,9 +91,7 @@ export class AdguardApi {
      * Creates new AdguardApi instance.
      * @param tswebextension Instance of {@link TsWebExtension}.
      */
-    constructor(
-        private readonly tswebextension: TsWebExtension,
-    ) {
+    constructor(private readonly tswebextension: TsWebExtension) {
         this.onAssistantCreateRule = this.tswebextension.onAssistantCreateRule;
 
         this.onFiltersDeletion = new EventChannel<number[]>();

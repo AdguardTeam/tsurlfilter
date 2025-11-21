@@ -11,6 +11,7 @@ export type DomainConfig = {
      * List of domains where the script should be applied.
      */
     permittedDomains: string[];
+
     /**
      * List of domains where the script should NOT be applied.
      */

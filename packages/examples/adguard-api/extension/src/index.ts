@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/quotes */
 /* eslint-disable no-console */
 import browser from 'webextension-polyfill';
 import {
@@ -19,6 +18,7 @@ import {
         ],
         filteringEnabled: true,
         allowlist: ['www.example.com'],
+        /* eslint-disable @typescript-eslint/quotes */
         rules: [
             'example.org##h1',
             `#%#console.log('generic script injected at: ', Date.now());`,
@@ -26,6 +26,7 @@ import {
             `example.net#%#console.log('specific script injected at: ', Date.now());`,
             `example.net#%#//scriptlet('log', 'specific scriptlet injected')`,
         ],
+        /* eslint-enable @typescript-eslint/quotes */
         filterRulesUrl: 'https://filters.adtidy.org/extension/chromium/filters/{filter_id}.txt',
         filtersMetadataUrl: 'https://filters.adtidy.org/extension/chromium/filters.json',
     };

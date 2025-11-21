@@ -30,20 +30,20 @@ import { ENABLED_FILTERS_IDS } from '../../constants';
         filters: ENABLED_FILTERS_IDS.map((id) => Number(id)),
         filteringEnabled: true,
         allowlist: ['www.example.com'],
+        /* eslint-disable @typescript-eslint/quotes */
         rules: [
             'example.org##h1',
-            // 'example.net$document',
-            'example.com##h2',
             // These two scripts rules will be injected anytime
-            '#%#//scriptlet(\'log\', \'generic scriptlet injected\')',
-            'example.net#%#//scriptlet(\'log\', \'specific scriptlet injected\')',
+            `#%#//scriptlet('log', 'generic scriptlet injected')`,
+            `example.net#%#//scriptlet('log', 'specific scriptlet injected')`,
             // These two scripts rules will be injected only if UserScripts Permission is granted
-            '#%#console.log(\'generic script injected at: \', Date.now());',
-            'example.net#%#console.log(\'specific script injected at: \', Date.now());',
+            `#%#console.log('generic script injected at: ', Date.now());`,
+            `example.net#%#console.log('specific script injected at: ', Date.now());`,
             // These scripts are explicitly added to local_script_rules.js,
             // so they will be injected as well anytime
             ...extraScripts,
         ],
+        /* eslint-enable @typescript-eslint/quotes */
         assetsPath: 'filters',
         documentBlockingPageUrl: browser.runtime.getURL('blocking-page.html'),
     };

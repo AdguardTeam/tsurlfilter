@@ -16,7 +16,6 @@ AdGuard API is a filtering library that provides the following features:
 - [Installation](#installation)
 - [Required web accessible resources](#required-web-accessible-resources)
 - [Configuration](#configuration)
-- [Local Script Rules Validation](#local-script-rules-validation)
 - [Static methods](#static-methods)
     - [`AdguardApi.create`](#adguardapicreate)
 - [Methods](#methods)
@@ -110,10 +109,6 @@ type Configuration = {
 - `rules` (optional) - An array of custom filtering rules. Here is an
   [article][filter-rules] describing filtering rules syntax. These custom rules
   might be created by a user via AdGuard Assistant UI.
-
-  > **Note for Manifest V2 extensions**: If `local_script_rules.json` is provided,
-  > JS rules from `configuration.rules` will be checked against it. See
-  > [Local Script Rules](#local-script-rules-validation) for more details.
 
 - `filtersMetadataUrl` (mandatory) - An absolute path to a file, containing
   filters metadata. Once started, AdGuard will periodically check filters
