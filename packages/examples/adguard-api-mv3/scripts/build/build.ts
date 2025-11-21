@@ -1,6 +1,11 @@
 import path from 'path';
 
-import { AssetsLoader, ManifestPatcher, LOCAL_SCRIPT_RULES_JS_FILENAME } from '@adguard/dnr-rulesets';
+import {
+    AssetsLoader,
+    ManifestPatcher,
+    LOCAL_SCRIPT_RULES_JS_FILENAME,
+    excludeUnsafeRules,
+} from '@adguard/dnr-rulesets';
 import { copyWar } from '@adguard/tswebextension/cli';
 
 import { BUILD_PATH, BUILD_ZIP_FILE_NAME, WEB_ACCESSIBLE_RESOURCES_PATH } from '../constants';
@@ -8,6 +13,7 @@ import { extraScripts } from '../../extension/src/extra-scripts';
 import { buildRunner } from './build-runner';
 import { config } from './webpack.config';
 import { zipDirectory } from './zip-directory';
+import { ENABLED_FILTERS_IDS } from '../../constants';
 
 const build = async () => {
     try {
@@ -23,9 +29,14 @@ const build = async () => {
             './extension/filters',
             {
                 forceUpdate: true,
-                ids: ['2', '3'],
+                ids: ENABLED_FILTERS_IDS,
             },
         );
+        await excludeUnsafeRules({
+            dir: './extension/filters/declarative',
+            prettifyJson: false,
+            limit: 4900, // limit for sessionRules is 5000
+        });
         await buildRunner(config);
         await copyWar(WEB_ACCESSIBLE_RESOURCES_PATH);
         await zipDirectory(BUILD_PATH, path.join(BUILD_PATH, '..', BUILD_ZIP_FILE_NAME));

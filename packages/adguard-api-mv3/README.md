@@ -15,6 +15,7 @@ AdGuard API is a filtering library that provides the following features:
 - [Required declarativeNetRequest API assets](#required-declarativenetrequest-api-assets)
 - [Configuration](#configuration)
 - [Local Script Rules for MV3](#local-script-rules-for-mv3)
+- [Excluding Unsafe Rules for Chrome Web Store "Skip Review"](#excluding-unsafe-rules-for-chrome-web-store-skip-review)
 - [Static methods](#static-methods)
     - [`AdguardApi.create`](#adguardapicreate)
 - [Methods](#methods)
@@ -218,6 +219,121 @@ await loader.extendLocalScriptRulesJs(
     extraScripts
 );
 ```
+
+## Excluding Unsafe Rules for Chrome Web Store "Skip Review"
+
+Chrome Web Store provides a ["skip review" option](https://developer.chrome.com/docs/webstore/skip-review) for extensions that only use "safe" declarativeNetRequest rules. This allows your extension updates to be published instantly without manual review, significantly reducing update deployment time.
+
+### What are safe rules?
+
+According to Chrome's policy, only declarative rules with the following action types are considered "safe":
+- `block` - blocks network requests
+- `allow` - allows network requests
+- `allowAllRequests` - allows all requests from a domain
+- `upgradeScheme` - upgrades HTTP to HTTPS
+
+Rules with other action types (such as `redirect`, `modifyHeaders`, `removeHeaders`) are considered "unsafe" and require manual review.
+
+### Why exclude unsafe rules?
+
+To qualify for the "skip review" option in Chrome Web Store:
+1. Your extension must only contain safe declarative rules
+2. Unsafe rules must be excluded from your rulesets during the build process
+3. This allows faster extension updates and reduces review queue time
+
+### How to exclude unsafe rules in your build process
+
+The `@adguard/dnr-rulesets` package provides the `excludeUnsafeRules` function that:
+- Scans all rulesets in your filters directory
+- Identifies and removes unsafe rules
+- Stores unsafe rules in metadata for reference
+- Updates ruleset checksums automatically
+- AdGuard API will extract unsafe rules automatically and apply them via `sessionRules`
+
+#### CLI Usage
+
+Add this command to your build process after loading DNR rulesets:
+
+```bash
+dnr-rulesets exclude-unsafe-rules ./extension/filters/declarative [options]
+```
+
+**Options:**
+- `--prettify-json` (default: `true`) - Prettify JSON output
+- `--limit <number>` - Maximum number of unsafe rules allowed. Build fails if exceeded.
+
+**Example in package.json:**
+
+```json
+{
+  "scripts": {
+    "load-dnr-rulesets": "dnr-rulesets load ./extension/filters",
+    "patch-manifest": "dnr-rulesets manifest ./extension/manifest.json ./extension/filters",
+    "exclude-unsafe-rules": "dnr-rulesets exclude-unsafe-rules ./extension/filters/declarative --limit 4900",
+    "build": "npm run load-dnr-rulesets && npm run patch-manifest && npm run exclude-unsafe-rules"
+  }
+}
+```
+
+`4900` is selected intentionally since limit for `sessionRules` is `5000`.
+
+#### Programmatic API Usage
+
+You can also integrate `excludeUnsafeRules` into your build scripts:
+
+```typescript
+import { excludeUnsafeRules } from '@adguard/dnr-rulesets';
+
+async function build() {
+    // Load DNR rulesets and patch manifest first
+    // ... your existing build code ...
+
+    // Exclude unsafe rules for CWS "skip review"
+    await excludeUnsafeRules({
+        dir: './extension/filters/declarative',
+        prettifyJson: false,  // optional: minimize JSON file size
+        limit: 4900,          // optional: fail build if too many unsafe rules
+    });
+
+    console.log('Unsafe rules excluded. Extension is ready for CWS skip review.');
+}
+```
+
+**Complete build script example:**
+
+```typescript
+import { AssetsLoader, ManifestPatcher, excludeUnsafeRules } from '@adguard/dnr-rulesets';
+
+async function build() {
+    // 1. Load DNR rulesets
+    const loader = new AssetsLoader();
+    await loader.load('./extension/filters');
+
+    // 2. Patch manifest with rulesets
+    const patcher = new ManifestPatcher();
+    patcher.patch('./extension/manifest.json', './extension/filters', {
+        forceUpdate: true,
+        ids: ['2', '3'], // your filter IDs
+    });
+
+    // 3. Exclude unsafe rules for CWS "skip review"
+    await excludeUnsafeRules({
+        dir: './extension/filters/declarative',
+        prettifyJson: false,
+        limit: 4900,
+    });
+
+    // 4. Continue with your webpack/build process...
+}
+```
+
+### Important Notes
+
+- **Call order matters**: Always run `excludeUnsafeRules` **after** loading rulesets and patching manifest. Prevent double call of `excludeUnsafeRules` in your build process since
+it will override unsafe rules from first call and all unsafe rules will be just
+deleted from rulesets.
+
+For a complete working example, see the [example extension build script](../examples/adguard-api-mv3/scripts/build/build.ts).
 
 ## Static methods
 

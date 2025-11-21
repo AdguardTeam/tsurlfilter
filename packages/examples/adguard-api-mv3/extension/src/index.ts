@@ -11,6 +11,7 @@ import {
 // @ts-expect-error Importing local script rules from js file without declaration file
 import { localScriptRules as localScriptRulesJs } from '../filters/local_script_rules.js';
 import { extraScripts } from './extra-scripts';
+import { ENABLED_FILTERS_IDS } from '../../constants';
 
 (async (): Promise<void> => {
     // create new AdguardApi instance with local script rules
@@ -26,11 +27,7 @@ import { extraScripts } from './extra-scripts';
     adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
     let configuration: Configuration = {
-        filters: [
-            2,
-            3,
-            4,
-        ],
+        filters: ENABLED_FILTERS_IDS.map((id) => Number(id)),
         filteringEnabled: true,
         allowlist: ['www.example.com'],
         rules: [
