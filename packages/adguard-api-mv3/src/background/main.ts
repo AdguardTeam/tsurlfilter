@@ -99,7 +99,26 @@ export class AdguardApi {
 
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
-        await this.tswebextension.start(tsWebExtensionConfiguration);
+        const result = await this.tswebextension.start(tsWebExtensionConfiguration);
+
+        // Throw error if static filters failed to enable
+        if (result.staticFiltersStatus.errors.length > 0) {
+            throw new Error(
+                `Failed to enable rulesets: ${result.staticFiltersStatus.errors.map((e) => e.message).join(', ')}`,
+            );
+        }
+
+        // Log dynamic rules errors and limitations
+        if (result.dynamicRules) {
+            if (result.dynamicRules.errors.length > 0) {
+                // eslint-disable-next-line no-console
+                console.debug('Dynamic rules conversion errors:', result.dynamicRules.errors);
+            }
+            if (result.dynamicRules.limitations.length > 0) {
+                // eslint-disable-next-line no-console
+                console.debug('Dynamic rules were truncated:', result.dynamicRules.limitations);
+            }
+        }
 
         return this.configuration;
     }
@@ -123,7 +142,26 @@ export class AdguardApi {
 
         const tsWebExtensionConfiguration = await this.createTsWebExtensionConfiguration();
 
-        await this.tswebextension.configure(tsWebExtensionConfiguration);
+        const result = await this.tswebextension.configure(tsWebExtensionConfiguration);
+
+        // Throw error if static filters failed to enable
+        if (result.staticFiltersStatus.errors.length > 0) {
+            throw new Error(
+                `Failed to enable rulesets: ${result.staticFiltersStatus.errors.map((e) => e.message).join(', ')}`,
+            );
+        }
+
+        // Log dynamic rules errors and limitations
+        if (result.dynamicRules) {
+            if (result.dynamicRules.errors.length > 0) {
+                // eslint-disable-next-line no-console
+                console.debug('Dynamic rules conversion errors:', result.dynamicRules.errors);
+            }
+            if (result.dynamicRules.limitations.length > 0) {
+                // eslint-disable-next-line no-console
+                console.debug('Dynamic rules were truncated:', result.dynamicRules.limitations);
+            }
+        }
 
         return this.configuration;
     }

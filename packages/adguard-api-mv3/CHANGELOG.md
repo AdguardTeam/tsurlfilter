@@ -109,5 +109,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `adguardApi.onRequestBlocking` API for tracking blocked requests.
 
 [0.1.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.1.0
+[@adguard/dnr-rulesets]: ../dnr-rulesets/CHANGELOG.md
 [@adguard/logger]: ../logger/CHANGELOG.md
 [@adguard/tswebextension]: ../tswebextension/CHANGELOG.md

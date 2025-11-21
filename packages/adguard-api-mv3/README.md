@@ -707,26 +707,37 @@ import { AdguardApi, type Configuration, MESSAGE_HANDLER_NAME } from '@adguard/a
         console.log('Total rules count:', adguardApi.getRulesCount());
     };
 
-    configuration = await adguardApi.start(configuration);
-
-    console.log('Finished Adguard API initialization.');
-    console.log('Applied configuration: ', JSON.stringify(configuration));
-    logTotalCount();
+    try {
+        configuration = await adguardApi.start(configuration);
+        console.log('Finished Adguard API initialization.');
+        console.log('Applied configuration: ', JSON.stringify(configuration));
+        logTotalCount();
+    } catch (error) {
+        console.error('Failed to start AdGuard API:', error);
+        return;
+    }
 
     configuration.allowlist!.push('www.google.com');
 
-    await adguardApi.configure(configuration);
-
-    console.log('Finished Adguard API re-configuration');
-    logTotalCount();
+    try {
+        await adguardApi.configure(configuration);
+        console.log('Finished Adguard API re-configuration');
+        logTotalCount();
+    } catch (error) {
+        console.error('Failed to configure AdGuard API:', error);
+    }
 
     const onAssistantCreateRule = async (rule: string) => {
         // update config on assistant rule apply
         console.log(`Rule ${rule} was created by Adguard Assistant`);
         configuration.rules!.push(rule);
-        await adguardApi.configure(configuration);
-        console.log('Finished Adguard API re-configuration');
-        logTotalCount();
+        try {
+            await adguardApi.configure(configuration);
+            console.log('Finished Adguard API re-configuration');
+            logTotalCount();
+        } catch (error) {
+            console.error('Failed to apply assistant rule:', error);
+        }
     };
 
     adguardApi.onAssistantCreateRule.subscribe(onAssistantCreateRule);
