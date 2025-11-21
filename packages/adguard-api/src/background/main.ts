@@ -24,7 +24,6 @@ import {
     createTsWebExtension,
     BasicFilterValidator,
     FilterListPreprocessor,
-    LocalScriptRules,
 } from '@adguard/tswebextension';
 
 import { Network } from './network';
@@ -43,14 +42,6 @@ import { Logger } from './logger';
 import { LF } from './constants';
 
 export const WEB_ACCESSIBLE_RESOURCES_PATH = 'adguard';
-
-export type AdguardApiParams = {
-    /**
-     * Local script rules data in JSON format needed for validate unsafe script
-     * in Firefox AMO environment.
-     */
-    localScriptRulesJson?: LocalScriptRules;
-};
 
 /**
  * AdGuard API is filtering library, provided following features:
@@ -99,26 +90,10 @@ export class AdguardApi {
     /**
      * Creates new AdguardApi instance.
      * @param tswebextension Instance of {@link TsWebExtension}.
-     * @param params AdguardApiParams.
      */
     constructor(
         private readonly tswebextension: TsWebExtension,
-        params?: AdguardApiParams,
     ) {
-        /**
-         * By the rules of Firefox AMO we cannot use remote scripts (and our JS rules can be counted as such).
-         * Because of that we use the following approach (that was accepted by AMO reviewers):
-         *
-         * 1. We pre-build JS rules from AdGuard filters into the JSON file.
-         * 2. At runtime we check every JS rule if it's included into JSON.
-         *    If it is included, we allow this rule to work since it's pre-built. Other rules are discarded.
-         * 3. We also allow "User rules" to work since those rules are added manually by the user.
-         *    This way filters maintainers can test new rules before including them in the filters.
-         */
-        if (params?.localScriptRulesJson) {
-            this.tswebextension.setLocalScriptRules(params.localScriptRulesJson);
-        }
-
         this.onAssistantCreateRule = this.tswebextension.onAssistantCreateRule;
 
         this.onFiltersDeletion = new EventChannel<number[]>();
@@ -363,13 +338,11 @@ export class AdguardApi {
     /**
      * Creates new adguardApi instance
      *
-     * @param params Optional {@link AdguardApiParams} for AdguardApi.
-     *
      * @returns AdguardApi instance
      */
-    public static async create(params?: AdguardApiParams): Promise<AdguardApi> {
+    public static async create(): Promise<AdguardApi> {
         const tswebextension = createTsWebExtension(WEB_ACCESSIBLE_RESOURCES_PATH);
         await tswebextension.initStorage();
-        return new AdguardApi(tswebextension, params);
+        return new AdguardApi(tswebextension);
     }
 }
