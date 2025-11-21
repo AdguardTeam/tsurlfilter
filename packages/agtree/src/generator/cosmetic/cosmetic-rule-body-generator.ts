@@ -12,6 +12,8 @@ import { AdgScriptletInjectionBodyGenerator } from './scriptlet-body/adg-scriptl
 import { AdgCssInjectionGenerator } from '../css/adg-css-injection-generator';
 import { AbpSnippetInjectionBodyGenerator } from './scriptlet-body/abp-snippet-injection-body-generator';
 import { UboScriptletInjectionBodyGenerator } from './scriptlet-body/ubo-scriptlet-injection-body-generator';
+import { AdgHtmlFilteringBodyGenerator } from './html-filtering-body/adg-html-filtering-body-generator';
+import { UboHtmlFilteringBodyGenerator } from './html-filtering-body/ubo-html-filtering-body-generator';
 import { UboPseudoName } from '../../common/ubo-selector-common';
 
 /**
@@ -69,6 +71,23 @@ export class CosmeticRuleBodyGenerator extends BaseGenerator {
                 break;
 
             case CosmeticRuleType.HtmlFilteringRule:
+                switch (node.syntax) {
+                    case AdblockSyntax.Adg:
+                        result = AdgHtmlFilteringBodyGenerator.generate(node.body);
+                        break;
+
+                    case AdblockSyntax.Ubo:
+                        result = UboHtmlFilteringBodyGenerator.generate(node.body);
+                        break;
+
+                    case AdblockSyntax.Abp:
+                        throw new Error('ABP does not support HTML filtering rules');
+
+                    default:
+                        throw new Error('HTML filtering rule should have an explicit syntax');
+                }
+                break;
+
             case CosmeticRuleType.JsInjectionRule:
                 result = node.body.value;
                 break;
