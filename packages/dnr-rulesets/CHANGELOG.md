@@ -11,11 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Ability to extend local script rules and build them from custom path.
 
+[3.3.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.3.1
+
 ## [3.3.0] - 2025-11-12
 
 ### Added
 
 - Local script rules support.
+
+[3.3.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/dnr-rulesets-v3.3.0
 
 ## [3.2.0] - 2025-07-09
 

@@ -11,26 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - UserScripts API support.
 - New logger in internal libraries with tags.
-
-### Changed
-
-- Updated [@adguard/dnr-rulesets] to `v3.3.1`.
-
-[1.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v1.0.0
-
-## [0.4.0] - 2025-10-17
-
-### Added
-
 - `documentBlockingPageUrl` configuration option to set a custom URL
   for the document blocking page.
 
 ### Changed
 
+- Updated [@adguard/dnr-rulesets] to `v3.3.1`.
 - Updated [@adguard/assistant] to `v4.3.75`.
 - Updated [@adguard/tswebextension] to `v3.2.13`.
 
-[0.4.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v0.4.0
+[1.0.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-mv3-v1.0.0
 
 ## [0.3.0] - 2025-05-27
 
