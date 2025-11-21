@@ -39,9 +39,9 @@ import { CommentParser } from '../comment/comment-parser';
 import { defaultParserOptions } from '../options';
 import { UboSelectorParser } from '../css/ubo-selector-parser';
 import { AdgCssInjectionParser } from '../css/adg-css-injection-parser';
-import { AbpSnippetInjectionBodyParser } from './body/abp-snippet-injection-body-parser';
-import { UboScriptletInjectionBodyParser } from './body/ubo-scriptlet-injection-body-parser';
-import { AdgScriptletInjectionBodyParser } from './body/adg-scriptlet-injection-body-parser';
+import { AbpSnippetInjectionBodyParser } from './scriptlet-body/abp-snippet-injection-body-parser';
+import { UboScriptletInjectionBodyParser } from './scriptlet-body/ubo-scriptlet-injection-body-parser';
+import { AdgScriptletInjectionBodyParser } from './scriptlet-body/adg-scriptlet-injection-body-parser';
 import { BaseParser } from '../base-parser';
 import { UboPseudoName } from '../../common/ubo-selector-common';
 

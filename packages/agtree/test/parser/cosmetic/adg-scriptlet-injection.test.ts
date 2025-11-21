@@ -2,7 +2,9 @@ import { describe, test, expect } from 'vitest';
 
 import { NodeExpectContext, type NodeExpectFn } from '../../helpers/node-utils';
 import { CosmeticRuleType, RuleCategory, type ScriptletInjectionRule } from '../../../src/nodes';
-import { AdgScriptletInjectionBodyParser } from '../../../src/parser/cosmetic/body/adg-scriptlet-injection-body-parser';
+import {
+    AdgScriptletInjectionBodyParser,
+} from '../../../src/parser/cosmetic/scriptlet-body/adg-scriptlet-injection-body-parser';
 import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-parser';
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';

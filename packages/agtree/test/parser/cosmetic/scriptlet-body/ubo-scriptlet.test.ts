@@ -9,14 +9,14 @@ import { NodeExpectContext, type NodeExpectFn } from '../../../helpers/node-util
 import { type ScriptletInjectionRuleBody } from '../../../../src/nodes';
 import {
     UboScriptletInjectionBodyParser,
-} from '../../../../src/parser/cosmetic/body/ubo-scriptlet-injection-body-parser';
+} from '../../../../src/parser/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-parser';
 import { AdblockSyntaxError } from '../../../../src/errors/adblock-syntax-error';
 import {
     UboScriptletInjectionBodyGenerator,
-} from '../../../../src/generator/cosmetic/body/ubo-scriptlet-injection-body-generator';
+} from '../../../../src/generator/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-generator';
 import {
     UboScriptletInjectionBodySerializer,
-} from '../../../../src/serializer/cosmetic/body/ubo-scriptlet-injection-body-serializer';
+} from '../../../../src/serializer/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-serializer';
 import {
     UboScriptletInjectionBodyDeserializer,
 } from '../../../../src/deserializer/cosmetic/scriptlet-body/ubo-scriptlet-injection-body-deserializer';

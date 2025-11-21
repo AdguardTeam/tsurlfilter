@@ -8,10 +8,10 @@ import {
     SPACE,
 } from '../../utils/constants';
 import { AdblockSyntax } from '../../utils/adblockers';
-import { AdgScriptletInjectionBodyGenerator } from './body/adg-scriptlet-injection-body-generator';
+import { AdgScriptletInjectionBodyGenerator } from './scriptlet-body/adg-scriptlet-injection-body-generator';
 import { AdgCssInjectionGenerator } from '../css/adg-css-injection-generator';
-import { AbpSnippetInjectionBodyGenerator } from './body/abp-snippet-injection-body-generator';
-import { UboScriptletInjectionBodyGenerator } from './body/ubo-scriptlet-injection-body-generator';
+import { AbpSnippetInjectionBodyGenerator } from './scriptlet-body/abp-snippet-injection-body-generator';
+import { UboScriptletInjectionBodyGenerator } from './scriptlet-body/ubo-scriptlet-injection-body-generator';
 import { UboPseudoName } from '../../common/ubo-selector-common';
 
 /**
