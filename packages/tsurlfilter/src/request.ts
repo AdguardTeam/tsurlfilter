@@ -142,7 +142,8 @@ export class Request {
         this.urlLowercase = Request.compactUrl(url)!.toLowerCase();
         this.sourceUrl = Request.compactUrl(sourceUrl);
 
-        const tldResult = parse(url);
+        const tldResult = Request.parse(url);
+
         // We suppose that request always has a hostname and a domain.
         this.hostname = tldResult.hostname!;
         this.domain = tldResult.domain!;
@@ -150,7 +151,8 @@ export class Request {
 
         let sourceTldResult;
         if (sourceUrl) {
-            sourceTldResult = parse(sourceUrl);
+            sourceTldResult = Request.parse(sourceUrl);
+
             this.sourceHostname = sourceTldResult.hostname!;
             this.sourceDomain = sourceTldResult.domain!;
             this.sourceSubdomains = Request.getSubdomains(sourceTldResult);
@@ -167,6 +169,34 @@ export class Request {
         } else {
             this.thirdParty = null;
         }
+    }
+
+    /**
+     * Parses URL using tldts and fallbacks to URL API if needed.
+     *
+     * @param url The URL to be parsed.
+     *
+     * @returns The parsed URL result.
+     */
+    private static parse(url: string): IResult {
+        const tldResult = parse(url);
+
+        /**
+         * Tldts may fail to parse certain IPv6 hostnames (e.g., [::]),
+         * so we fall back to the URL API as a workaround.
+         *
+         * @see https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3360
+         */
+        if (!tldResult.hostname) {
+            try {
+                const u = new URL(url);
+                tldResult.hostname = u.hostname;
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        return tldResult;
     }
 
     /**

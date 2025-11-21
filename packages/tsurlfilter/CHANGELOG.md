@@ -14,8 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Apply $document blocking rule even if specific exception rule is present [AdguardBrowserExtension#3262].
+- The extension got an unexpected error on [::]:8000 [AdguardBrowserExtension#3360].
 
 [AdguardBrowserExtension#3262]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3262
+[AdguardBrowserExtension#3360]: https://github.com/AdguardTeam/AdguardBrowserExtension/issues/3360
 
 ## [3.4.6] - 2025-09-11
 

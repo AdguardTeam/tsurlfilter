@@ -110,4 +110,62 @@ describe('Creating request', () => {
         expect(f).toThrow(TypeError);
         expect(f).toThrow(/Invalid request url:/);
     });
+
+    it('parses IPv6 addresses correctly using URL API fallback', () => {
+        // tldts fails to parse [::] (unspecified IPv6 address), but URL API handles it
+        const request1 = new Request('http://[::]:8000/', null, RequestType.Other);
+        expect(request1.hostname).toEqual('[::]');
+        expect(request1.url).toEqual('http://[::]:8000/');
+
+        // Without port
+        const request2 = new Request('http://[::]/', null, RequestType.Other);
+        expect(request2.hostname).toEqual('[::]');
+        expect(request2.url).toEqual('http://[::]/');
+
+        // IPv6 loopback - tldts handles this correctly
+        const request3 = new Request('http://[::1]:8000/', null, RequestType.Other);
+        expect(request3.hostname).toEqual('::1');
+        expect(request3.url).toEqual('http://[::1]:8000/');
+
+        // Full IPv6 address
+        const request4 = new Request('http://[2001:db8::1]:8080/', null, RequestType.Other);
+        expect(request4.hostname).toEqual('2001:db8::1');
+        expect(request4.url).toEqual('http://[2001:db8::1]:8080/');
+    });
+
+    it('parses IPv6 sourceUrl correctly using URL API fallback', () => {
+        // Test that sourceUrl fallback also works for IPv6
+        // Note: thirdParty detection may be null for edge-case IPv6 addresses
+        // that tldts doesn't recognize as IPs (like [::])
+        const request1 = new Request(
+            'http://example.org/',
+            'http://[::]:8000/',
+            RequestType.Other,
+        );
+        expect(request1.hostname).toEqual('example.org');
+        expect(request1.sourceHostname).toEqual('[::]');
+        expect(request1.sourceUrl).toEqual('http://[::]:8000/');
+        // thirdParty is null because tldts doesn't set isIp for [::]
+        expect(request1.thirdParty).toBeNull();
+
+        // IPv6 loopback is recognized by tldts as IP, so third-party detection works
+        const request2 = new Request(
+            'http://[::1]:8000/',
+            'http://[::1]:8000/',
+            RequestType.Other,
+        );
+        expect(request2.hostname).toEqual('::1');
+        expect(request2.sourceHostname).toEqual('::1');
+        expect(request2.thirdParty).toEqual(false);
+
+        // Different IPv6 addresses - both recognized as IPs
+        const request3 = new Request(
+            'http://[::1]:8000/',
+            'http://[2001:db8::1]:8000/',
+            RequestType.Other,
+        );
+        expect(request3.hostname).toEqual('::1');
+        expect(request3.sourceHostname).toEqual('2001:db8::1');
+        expect(request3.thirdParty).toEqual(true);
+    });
 });
