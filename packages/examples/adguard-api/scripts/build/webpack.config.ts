@@ -87,6 +87,11 @@ export const config: Configuration = {
                     from: 'manifest.json',
                     to: 'manifest.json',
                 },
+                {
+                    context: 'extension',
+                    from: 'filters',
+                    to: 'filters',
+                },
             ],
         }),
     ],

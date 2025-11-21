@@ -23,9 +23,6 @@ export type AssetsLoaderOptions = {
 
 /**
  * Api for loading assets.
- *
- * FIXME: Add method to copy only local script rules file neither in JSON nor
- * in JS format.
  */
 export class AssetsLoader {
     /**

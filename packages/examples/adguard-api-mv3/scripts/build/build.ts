@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { AssetsLoader, LOCAL_SCRIPT_RULES_JS_FILENAME, ManifestPatcher } from '@adguard/dnr-rulesets';
+import { AssetsLoader, ManifestPatcher, LOCAL_SCRIPT_RULES_JS_FILENAME } from '@adguard/dnr-rulesets';
 import { copyWar } from '@adguard/tswebextension/cli';
 
 import { BUILD_PATH, BUILD_ZIP_FILE_NAME, WEB_ACCESSIBLE_RESOURCES_PATH } from '../constants';

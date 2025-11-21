@@ -282,6 +282,9 @@ importers:
       '@adguard/assistant':
         specifier: 'catalog:'
         version: 4.3.75
+      '@adguard/dnr-rulesets':
+        specifier: workspace:^
+        version: link:../dnr-rulesets
       '@adguard/filters-downloader':
         specifier: ^2.4.2
         version: 2.4.2

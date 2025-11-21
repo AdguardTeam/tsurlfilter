@@ -36,6 +36,7 @@
     "license": "GPL-3.0-only",
     "dependencies": {
         "@adguard/assistant": "catalog:",
+        "@adguard/dnr-rulesets": "workspace:^",
         "@adguard/filters-downloader": "^2.4.2",
         "@adguard/tswebextension": "workspace:^",
         "webextension-polyfill": "catalog:",

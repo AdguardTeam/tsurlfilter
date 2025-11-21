@@ -172,30 +172,72 @@ validation mechanism for JS rules to ensure compliance with store policies.
 - This provides additional control and security assurance for store compliance.
 - Useful for Firefox AMO and similar environments with stricter policies.
 
-### Extending local_script_rules.json
+### Generating local_script_rules.json for MV2 Extensions
 
-You can extend `local_script_rules.json` with additional allowed JS rules during
-your extension's build process. This is useful if you want to pre-approve specific
-custom scriptlets or JS injection rules for store compliance.
+For MV2 extensions (e.g. for Firefox AMO compliance), you need to generate a
+`local_script_rules.json` file that lists all JS injection rules from your filters.
+This allows the extension to validate that injected scripts come from pre-built filters.
 
 **Example implementation:**
 
 ```typescript
-import { AssetsLoader, LOCAL_SCRIPT_RULES_JSON_FILENAME } from '@adguard/dnr-rulesets';
+import fs from 'fs/promises';
+import path from 'path';
+import { LocalScriptRulesJson } from '@adguard/api';
 
-const loader = new AssetsLoader();
-// FIXME: Use loader.copyLocalScriptRulesJson()
-await loader.extendLocalScriptRulesJson(
-    path.join('./extension/filters', LOCAL_SCRIPT_RULES_JSON_FILENAME),
-    [
-        'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
-        'example.org,~sub.example.org#%#console.log("Custom script");'
-    ]
+// Your filter rules (downloaded or loaded from files)
+const filterRules = [
+    'example.com#%#const ad = document.querySelector(".ad"); ad.remove();',
+    'example.org,~sub.example.org#%#console.log("Custom script");',
+    // ... more filter rules
+];
+
+// Create localScriptRulesJson instance
+const localScriptRulesJson = new LocalScriptRulesJson();
+
+// Parse and extract JS injection rules
+const scriptRules = localScriptRulesJson.parse(filterRules);
+
+// Serialize to JSON
+const jsonContent = localScriptRulesJson.serialize(scriptRules);
+
+// Write to file
+await fs.writeFile(
+    path.join('./extension/filters', LocalScriptRulesJson.fileName),
+    jsonContent
 );
 ```
 
-This method parses custom filtering rules, extracts JavaScript injection rules
-and merges them into the existing `local_script_rules.json` file.
+**Extending existing local_script_rules.json:**
+
+If you want to extend an existing file with additional custom rules:
+
+```typescript
+import fs from 'fs/promises';
+import path from 'path';
+import { LocalScriptRulesJson } from '@adguard/api';
+
+const localScriptRulesJson = new LocalScriptRulesJson();
+const filePath = path.join('./extension/filters', LocalScriptRulesJson.fileName);
+
+// Load and parse existing rules
+const existingContent = await fs.readFile(filePath, 'utf-8');
+const existingRules = localScriptRulesJson.deserialize(existingContent);
+
+// Parse new custom rules
+const newRules = localScriptRulesJson.parse([
+    'custom.com#%#console.log("My custom rule");'
+]);
+
+// Merge rules
+const mergedRules = localScriptRulesJson.extend(existingRules, newRules);
+
+// Write back
+const updatedContent = localScriptRulesJson.serialize(mergedRules);
+await fs.writeFile(filePath, updatedContent);
+```
+
+This approach gives you full control over local script rules generation for MV2 extensions.
 
 ## Static methods
 

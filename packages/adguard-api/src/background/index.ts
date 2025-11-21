@@ -20,6 +20,13 @@ export { MESSAGE_HANDLER_NAME } from '@adguard/tswebextension';
 
 // API entry point
 
+// Local script rules utilities for MV2 extensions (re-exported from @adguard/dnr-rulesets)
+export {
+    LocalScriptRulesJson,
+    LocalScriptRulesJs,
+    type DomainConfig,
+} from '@adguard/dnr-rulesets';
+
 // API Configuration type
 export type { Configuration } from './schemas';
 
