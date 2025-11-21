@@ -42,6 +42,8 @@ import { AdgCssInjectionParser } from '../css/adg-css-injection-parser';
 import { AbpSnippetInjectionBodyParser } from './scriptlet-body/abp-snippet-injection-body-parser';
 import { UboScriptletInjectionBodyParser } from './scriptlet-body/ubo-scriptlet-injection-body-parser';
 import { AdgScriptletInjectionBodyParser } from './scriptlet-body/adg-scriptlet-injection-body-parser';
+import { AdgHtmlFilteringBodyParser } from './html-filtering-body/adg-html-filtering-body-parser';
+import { UboHtmlFilteringBodyParser } from './html-filtering-body/ubo-html-filtering-body-parser';
 import { BaseParser } from '../base-parser';
 import { UboPseudoName } from '../../common/ubo-selector-common';
 
@@ -567,15 +569,7 @@ export class CosmeticRuleParser extends BaseParser {
 
             expectCommonOrSpecificSyntax(AdblockSyntax.Ubo);
 
-            const body: Value = {
-                type: 'Value',
-                value: rawBody,
-            };
-
-            if (options.isLocIncluded) {
-                body.start = baseOffset + bodyStart;
-                body.end = baseOffset + bodyEnd;
-            }
+            const body = UboHtmlFilteringBodyParser.parse(rawBody, options, baseOffset + bodyStart);
 
             return {
                 syntax: AdblockSyntax.Ubo,
@@ -587,15 +581,7 @@ export class CosmeticRuleParser extends BaseParser {
         const parseAdgHtmlFiltering = (): Pick<HtmlFilteringRule, RestProps> => {
             expectCommonOrSpecificSyntax(AdblockSyntax.Adg);
 
-            const body: Value = {
-                type: 'Value',
-                value: rawBody,
-            };
-
-            if (options.isLocIncluded) {
-                body.start = baseOffset + bodyStart;
-                body.end = baseOffset + bodyEnd;
-            }
+            const body = AdgHtmlFilteringBodyParser.parse(rawBody, options, baseOffset + bodyStart);
 
             return {
                 syntax: AdblockSyntax.Adg,
