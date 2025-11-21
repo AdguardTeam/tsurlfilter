@@ -6,6 +6,10 @@ import { CosmeticRuleParser } from '../../../src/parser/cosmetic/cosmetic-rule-p
 import { AdblockSyntax } from '../../../src/utils/adblockers';
 import { DomainListParser } from '../../../src/parser/misc/domain-list-parser';
 import { CosmeticRuleGenerator } from '../../../src/generator/cosmetic';
+import {
+    AdgHtmlFilteringBodyParser,
+} from '../../../src/parser/cosmetic/html-filtering-body/adg-html-filtering-body-parser';
+import { defaultParserOptions } from '../../../src/parser';
 
 describe('CosmeticRuleParser', () => {
     describe('CosmeticRuleParser.parse - valid AdGuard HTML filtering rules', () => {
@@ -26,11 +30,11 @@ describe('CosmeticRuleParser', () => {
                             value: '$$',
                             ...context.getRangeFor('$$'),
                         },
-                        body: {
-                            type: 'Value',
-                            value: 'script[tag-content="adblock"]',
-                            ...context.getRangeFor('script[tag-content="adblock"]'),
-                        },
+                        body: AdgHtmlFilteringBodyParser.parse(
+                            'script[tag-content="adblock"]',
+                            defaultParserOptions,
+                            '$$'.length,
+                        ),
                         ...context.getFullRange(),
                     };
                 },
@@ -50,11 +54,11 @@ describe('CosmeticRuleParser', () => {
                             value: '$$',
                             ...context.getRangeFor('$$'),
                         },
-                        body: {
-                            type: 'Value',
-                            value: 'div[custom_attr]',
-                            ...context.getRangeFor('div[custom_attr]'),
-                        },
+                        body: AdgHtmlFilteringBodyParser.parse(
+                            'div[custom_attr]',
+                            defaultParserOptions,
+                            '$$'.length,
+                        ),
                         ...context.getFullRange(),
                     };
                 },
@@ -74,11 +78,11 @@ describe('CosmeticRuleParser', () => {
                             value: '$@$',
                             ...context.getRangeFor('$@$'),
                         },
-                        body: {
-                            type: 'Value',
-                            value: 'script[tag-content="adblock"]',
-                            ...context.getRangeFor('script[tag-content="adblock"]'),
-                        },
+                        body: AdgHtmlFilteringBodyParser.parse(
+                            'script[tag-content="adblock"]',
+                            defaultParserOptions,
+                            '$@$'.length,
+                        ),
                         ...context.getFullRange(),
                     };
                 },
@@ -100,11 +104,11 @@ describe('CosmeticRuleParser', () => {
                             value: '$$',
                             ...context.getRangeFor('$$'),
                         },
-                        body: {
-                            type: 'Value',
-                            value: 'script[tag-content="adblock"]',
-                            ...context.getRangeFor('script[tag-content="adblock"]'),
-                        },
+                        body: AdgHtmlFilteringBodyParser.parse(
+                            'script[tag-content="adblock"]',
+                            defaultParserOptions,
+                            'example.com,~example.net$$'.length,
+                        ),
                         ...context.getFullRange(),
                     };
                 },
@@ -124,11 +128,11 @@ describe('CosmeticRuleParser', () => {
                             value: '$@$',
                             ...context.getRangeFor('$@$'),
                         },
-                        body: {
-                            type: 'Value',
-                            value: 'script[tag-content="adblock"]',
-                            ...context.getRangeFor('script[tag-content="adblock"]'),
-                        },
+                        body: AdgHtmlFilteringBodyParser.parse(
+                            'script[tag-content="adblock"]',
+                            defaultParserOptions,
+                            'example.com,~example.net$@$'.length,
+                        ),
                         ...context.getFullRange(),
                     };
                 },
