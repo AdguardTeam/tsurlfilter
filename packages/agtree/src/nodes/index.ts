@@ -1044,15 +1044,80 @@ export interface ScriptletInjectionRuleBody extends Node {
 }
 
 /**
+ * Represents an HTML filtering rule selector pseudo class.
+ */
+export interface HtmlFilteringRuleSelectorPseudoClass extends Node {
+    type: 'HtmlFilteringRuleSelectorPseudoClass';
+
+    /**
+     * Name of the HTML filtering rule selector pseudo class.
+     */
+    name: Value;
+
+    /**
+     * Content of the HTML filtering rule selector pseudo class.
+     */
+    content: Value;
+}
+
+/**
+ * Represents an HTML filtering rule selector attribute.
+ */
+export interface HtmlFilteringRuleSelectorAttribute extends Node {
+    type: 'HtmlFilteringRuleSelectorAttribute';
+
+    /**
+     * Name of the HTML filtering rule selector attribute.
+     */
+    name: Value;
+
+    /**
+     * Value of the HTML filtering rule selector attribute.
+     */
+    value?: Value;
+
+    /**
+     * Flags of the HTML filtering rule selector attribute.
+     * Supported only in uBlock-style HTML filtering rules.
+     */
+    flags?: Value;
+}
+
+/**
+ * Represents an HTML filtering rule selector.
+ */
+export interface HtmlFilteringRuleSelector extends Node {
+    type: 'HtmlFilteringRuleSelector';
+
+    /**
+     * Tag name of the HTML filtering rule.
+     */
+    tagName?: Value;
+
+    /**
+     * List of attributes of the HTML filtering rule selector.
+     */
+    attributes: HtmlFilteringRuleSelectorAttribute[];
+
+    /**
+     * List of pseudo classes of the HTML filtering rule selector.
+     * Supported only in uBlock-style HTML filtering rules.
+     */
+    pseudoClasses: HtmlFilteringRuleSelectorPseudoClass[];
+}
+
+/**
  * Represents an HTML filtering rule body.
  */
 export interface HtmlFilteringRuleBody extends Node {
     type: 'HtmlFilteringRuleBody';
 
     /**
-     * HTML rule selector(s).
+     * List of selectors of the HTML filtering rule.
+     * In AdGuard-style HTML filtering rules, there is always only one selector.
+     * In uBlock-style HTML filtering rules, there can be several selectors.
      */
-    body: Value;
+    selectors: HtmlFilteringRuleSelector[];
 }
 
 /**
@@ -1207,7 +1272,7 @@ export interface ScriptletInjectionRule extends CosmeticRule {
  */
 export interface HtmlFilteringRule extends CosmeticRule {
     type: typeof CosmeticRuleType.HtmlFilteringRule;
-    body: Value;
+    body: HtmlFilteringRuleBody;
 }
 
 /**
