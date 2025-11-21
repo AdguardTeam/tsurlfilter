@@ -12,10 +12,13 @@ import {
     type ScriptletInjectionRuleBody,
     type DomainList,
     type ModifierList,
+    type HtmlFilteringRuleBody,
 } from '../../nodes';
 import { AbpSnippetInjectionBodyDeserializer } from './scriptlet-body/abp-snippet-injection-body-deserializer';
 import { UboScriptletInjectionBodyDeserializer } from './scriptlet-body/ubo-scriptlet-injection-body-deserializer';
 import { AdgScriptletInjectionBodyDeserializer } from './scriptlet-body/adg-scriptlet-injection-body-deserializer';
+import { AdgHtmlFilteringBodyDeserializer } from './html-filtering-body/adg-html-filtering-body-deserializer';
+import { UboHtmlFilteringBodyDeserializer } from './html-filtering-body/ubo-html-filtering-body-deserializer';
 import { ValueDeserializer } from '../misc/value-deserializer';
 import { isUndefined } from '../../utils/type-guards';
 import { BaseDeserializer } from '../base-deserializer';
@@ -101,7 +104,27 @@ export class CosmeticRuleDeserializer extends BaseDeserializer {
                 break;
 
             case CosmeticRuleType.HtmlFilteringRule:
-                ValueDeserializer.deserialize(buffer, node.body = {} as Value);
+                switch (syntax) {
+                    case AdblockSyntax.Adg:
+                        AdgHtmlFilteringBodyDeserializer.deserialize(
+                            buffer,
+                            node.body = {} as HtmlFilteringRuleBody,
+                        );
+                        break;
+
+                    case AdblockSyntax.Ubo:
+                        UboHtmlFilteringBodyDeserializer.deserialize(
+                            buffer,
+                            node.body = {} as HtmlFilteringRuleBody,
+                        );
+                        break;
+
+                    case AdblockSyntax.Abp:
+                        throw new Error('ABP syntax does not support HTML filtering rules');
+
+                    default:
+                        throw new Error('HTML filtering rule should have an explicit syntax');
+                }
                 break;
 
             case CosmeticRuleType.ScriptletInjectionRule:
