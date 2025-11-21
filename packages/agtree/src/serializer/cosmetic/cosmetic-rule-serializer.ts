@@ -5,6 +5,8 @@ import { type AnyCosmeticRule, CosmeticRuleType } from '../../nodes';
 import { AbpSnippetInjectionBodySerializer } from './scriptlet-body/abp-snippet-injection-body-serializer';
 import { UboScriptletInjectionBodySerializer } from './scriptlet-body/ubo-scriptlet-injection-body-serializer';
 import { AdgScriptletInjectionBodySerializer } from './scriptlet-body/adg-scriptlet-injection-body-serializer';
+import { AdgHtmlFilteringBodySerializer } from './html-filtering-body/adg-html-filtering-body-serializer';
+import { UboHtmlFilteringBodySerializer } from './html-filtering-body/ubo-html-filtering-body-serializer';
 import { type OutputByteBuffer } from '../../utils/output-byte-buffer';
 import { ValueSerializer } from '../misc/value-serializer';
 import { isUndefined } from '../../utils/type-guards';
@@ -70,7 +72,21 @@ export class CosmeticRuleSerializer extends BaseSerializer {
                 // syntax
                 buffer.writeUint8(getSyntaxSerializationMap().get(node.syntax) ?? 0);
                 // rule body
-                ValueSerializer.serialize(node.body, buffer);
+                switch (node.syntax) {
+                    case AdblockSyntax.Adg:
+                        AdgHtmlFilteringBodySerializer.serialize(node.body, buffer);
+                        break;
+
+                    case AdblockSyntax.Ubo:
+                        UboHtmlFilteringBodySerializer.serialize(node.body, buffer);
+                        break;
+
+                    case AdblockSyntax.Abp:
+                        throw new Error('ABP does not support HTML filtering rules');
+
+                    default:
+                        throw new Error('HTML filtering rule should have an explicit syntax');
+                }
                 break;
 
             case CosmeticRuleType.ScriptletInjectionRule:
