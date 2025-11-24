@@ -90,7 +90,9 @@ export class AdguardApi {
     /**
      * Initializes AdGuard with specified {@link Configuration} and starts it immediately.
      *
-     * @param configuration - Api {@link Configuration}.
+     * @param configuration Api {@link Configuration}.
+     *
+     * @throws Error if Adguard is not started.
      *
      * @returns Applied {@link Configuration} promise.
      */
@@ -133,7 +135,9 @@ export class AdguardApi {
     /**
      * Modifies AdGuard {@link Configuration}. Please note, that Adguard must be already started.
      *
-     * @param configuration - Api {@link Configuration}.
+     * @param configuration Api {@link Configuration}.
+     *
+     * @throws Error if Adguard is not started.
      *
      * @returns Applied {@link Configuration} promise.
      */

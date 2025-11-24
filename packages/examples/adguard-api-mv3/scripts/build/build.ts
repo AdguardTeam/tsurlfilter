@@ -15,6 +15,12 @@ import { config } from './webpack.config';
 import { zipDirectory } from './zip-directory';
 import { ENABLED_FILTERS_IDS } from '../../constants';
 
+/**
+ * Limit for sessionRules in browser is 5000, so we set
+ * to 4900 to have some space for extra scripts.
+ */
+const SESSION_RULES_SAFE_LIMIT = 4900;
+
 const build = async () => {
     try {
         const loader = new AssetsLoader();
@@ -35,11 +41,7 @@ const build = async () => {
         await excludeUnsafeRules({
             dir: './extension/filters/declarative',
             prettifyJson: false,
-            /**
-             * Limit for sessionRules in browser is 5000, so we set
-             * to 4900 to have some space for extra scripts.
-             */
-            limit: 4900,
+            limit: SESSION_RULES_SAFE_LIMIT,
         });
         await buildRunner(config);
         await copyWar(WEB_ACCESSIBLE_RESOURCES_PATH);

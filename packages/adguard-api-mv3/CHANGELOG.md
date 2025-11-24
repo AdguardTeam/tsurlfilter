@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- [BREAKING CHANGE] `start()` and `configure()` methods now throw errors when critical
+  operations fail (e.g., static filters fail to enable). Previously, these methods would
+  silently continue on errors.
+- `start()` and `configure()` methods now log dynamic rules conversion errors and limitations
+  to `console.debug()`.
+- `AdguardApi.create()` now accepts optional `AdguardApiParams` parameter with
+  `localScriptRulesJs` property for MV3 local script rules validation.
 - Updated [@adguard/dnr-rulesets] to `v3.3.1`.
 - Updated [@adguard/assistant] to `v4.3.75`.
 - Updated [@adguard/tswebextension] to `v3.2.13`.

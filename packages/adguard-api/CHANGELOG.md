@@ -5,13 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.2.0] - 2025-10-17
+## [3.2.0] - ???
 
 ### Changed
 
 - Updated [@adguard/assistant] to `v4.3.75`.
-- Updated [@adguard/tswebextension] to `v3.2.13`.
+- Updated [@adguard/tswebextension] to `v3.2.16`.
 - Updated [@adguard/filters-downloader] to `v2.4.2`.
+
+### Removed
+
+- `local_script_rules.json` as an outdated file.
 
 [3.2.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/adguard-api-v3.2.0
 
