@@ -33,5 +33,5 @@ export const localScriptRules = {
             console.error('Error executing AG js rule with uniqueId "test-id" due to: ' + error);
         }
     },
-    /* #INSERT_NEW_RULES_HERE# */
+    __PLACEHOLDER__: () => {}
 };

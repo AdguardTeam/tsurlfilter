@@ -30,14 +30,16 @@ export class LocalScriptRulesJs {
     public static readonly FILENAME = 'local_script_rules.js';
 
     /**
-     * Placeholder marker for inserting new rules without AST parsing.
+     * Placeholder property marker for inserting new rules without AST parsing.
+     * Using a property instead of a comment ensures it survives beautification.
+     * Note: Terser removes quotes from valid identifier property names.
      */
-    private static readonly INSERT_PLACEHOLDER = '/* #INSERT_NEW_RULES_HERE# */';
+    private static readonly PLACEHOLDER_MARKER = '__PLACEHOLDER__: () => {}';
 
     /**
      * Indentation level for the local script rules JS file.
      */
-    private static readonly IDENT_LEVEL = 4;
+    private static readonly INDENT_LEVEL = 4;
 
     /**
      * Validates JavaScript code as an ES6 module.
@@ -96,13 +98,13 @@ export class LocalScriptRulesJs {
     }
 
     /**
-     * Wraps the content in an object.
+     * Wraps the content in an named export.
      *
      * @param content Content to wrap.
      *
-     * @returns Content wrapped in an object.
+     * @returns Content wrapped in named export.
      */
-    private static wrapInObject(content: string): string {
+    private static wrapInNamedExport(content: string): string {
         return `export const localScriptRules = {\n${content}\n};`;
     }
 
@@ -186,68 +188,28 @@ export class LocalScriptRulesJs {
     }
 
     /**
-     * Minifies JS content with Terser.
+     * Beautifies JS content with Terser.
      *
-     * @param content JS content to minify.
+     * @param content JS content to beautify.
      *
-     * @returns Minified JS content.
+     * @returns Beautified JS content.
      */
-    private static async minifyJsContent(content: string): Promise<string> {
+    private static async beautifyJsContent(content: string): Promise<string> {
         const { code } = await minify(content, {
             mangle: false,
             compress: false,
             format: {
                 beautify: true,
                 comments: true,
-                indent_level: LocalScriptRulesJs.IDENT_LEVEL,
+                indent_level: LocalScriptRulesJs.INDENT_LEVEL,
             },
         });
 
         if (!code) {
-            throw new Error('Failed to minify JS content');
+            throw new Error('Failed to beautify JS content');
         }
 
         return code;
-    }
-
-    /**
-     * Inserts the placeholder into the content.
-     *
-     * @param content JS content to insert placeholder into.
-     *
-     * @returns Content with placeholder inserted.
-     */
-    private static async insertPlaceholder(content: string): Promise<string> {
-        // Insert placeholder marker after minification, Terser strips standalone
-        // comments, so we must add it after beautification.
-        // Search for the closing bracket from the end of the file.
-        const lastBraceIndex = content.lastIndexOf('}');
-        if (lastBraceIndex === -1) {
-            throw new Error('Could not find closing brace in beautified content');
-        }
-
-        // Little hack to prevent inserting comma into zero-rules file
-        const emptyContent = await LocalScriptRulesJs.minifyJsContent(LocalScriptRulesJs.wrapInObject(''));
-
-        // Special case handling for empty content
-        const isEmptyContent = content === emptyContent;
-
-        // Insert placeholder before the closing brace
-        const beforeClosingBrace = content
-            .slice(0, lastBraceIndex)
-            .trimEnd();
-        const indentation = ' '.repeat(LocalScriptRulesJs.IDENT_LEVEL);
-
-        const contentWithPlaceholder = [
-            beforeClosingBrace,
-            // If content is empty we should not insert comma before the placeholder
-            isEmptyContent ? '\n' : ',\n',
-            `${indentation}${LocalScriptRulesJs.INSERT_PLACEHOLDER}`,
-            '\n',
-            content.slice(lastBraceIndex),
-        ].join('');
-
-        return contentWithPlaceholder;
     }
 
     /**
@@ -296,20 +258,20 @@ export class LocalScriptRulesJs {
     public static async serialize(rules: Set<string>): Promise<string> {
         const wrappedRules = LocalScriptRulesJs.wrapRules(rules);
 
-        // Placeholder cannot be inserted before minification because Terser
-        // strips standalone comments in all cases
-        // Note: No indentation in template literal - Terser will handle all formatting
-        const rawContent = LocalScriptRulesJs.wrapInObject(wrappedRules.join('\n'));
+        // Add placeholder marker at the end for future extensions
+        // Using a property (not a comment) ensures it survives beautification
+        const rulesWithMarker = [...wrappedRules, LocalScriptRulesJs.PLACEHOLDER_MARKER];
 
-        const beautifiedJsContent = await LocalScriptRulesJs.minifyJsContent(rawContent);
+        // Build raw content - Terser will handle all formatting
+        const rawContent = LocalScriptRulesJs.wrapInNamedExport(rulesWithMarker.join('\n'));
 
-        // Beautification will remove comment with placeholder, so we need to add it back
-        const contentWithPlaceholder = await LocalScriptRulesJs.insertPlaceholder(beautifiedJsContent);
+        // Beautify once at the end
+        const beautifiedContent = await LocalScriptRulesJs.beautifyJsContent(rawContent);
 
-        // Final validation of the complete file
-        LocalScriptRulesJs.validateModule(contentWithPlaceholder);
+        // Validate the complete file
+        LocalScriptRulesJs.validateModule(beautifiedContent);
 
-        return contentWithPlaceholder;
+        return beautifiedContent;
     }
 
     /**
@@ -322,41 +284,34 @@ export class LocalScriptRulesJs {
      * @returns Updated JS module content with new rules inserted.
      */
     public static async extend(existingContent: string, newRuleStrings: string[]): Promise<string> {
-        // Find the placeholder position
-        const placeholderIndex = existingContent.indexOf(LocalScriptRulesJs.INSERT_PLACEHOLDER);
-        if (placeholderIndex === -1) {
-            throw new Error(`Placeholder "${LocalScriptRulesJs.INSERT_PLACEHOLDER}" not found.`);
+        // Parse new rules
+        const newRules = LocalScriptRulesJs.parse(newRuleStrings);
+        if (newRules.size === 0) {
+            return existingContent;
         }
 
-        const newRules = LocalScriptRulesJs.parse(newRuleStrings);
+        // Find and replace the placeholder marker with new rules + placeholder
+        const placeholderIndex = existingContent.indexOf(LocalScriptRulesJs.PLACEHOLDER_MARKER);
+        if (placeholderIndex === -1) {
+            throw new Error(`Placeholder marker not found in existing content.`);
+        }
+
+        // Build replacement: new rules followed by the marker
         const wrappedNewRules = LocalScriptRulesJs.wrapRules(newRules);
+        const rulesWithMarker = [...wrappedNewRules, LocalScriptRulesJs.PLACEHOLDER_MARKER];
 
-        // Insert new rules before the placeholder (which is before the closing brace)
-        // Find the start of the line containing the placeholder to preserve indentation
-        const lineStart = existingContent.lastIndexOf('\n', placeholderIndex - 1) + 1;
+        // Replace the marker with new rules + marker
+        const updatedContent = existingContent.replace(
+            LocalScriptRulesJs.PLACEHOLDER_MARKER,
+            rulesWithMarker.join('\n'),
+        );
 
-        // Each rule should be indented to match the existing formatting
-        const newRulesContent = wrappedNewRules
-            .map((rule) => `${' '.repeat(LocalScriptRulesJs.IDENT_LEVEL)}${rule}`)
-            .join('\n');
-
-        // Insert new rules before the placeholder
-        const updatedContent = [
-            existingContent.slice(0, lineStart),
-            newRulesContent,
-            '\n',
-            existingContent.slice(lineStart),
-        ].join('');
-
-        // Beautify the updated content
-        const beautifiedJsContent = await LocalScriptRulesJs.minifyJsContent(updatedContent);
-
-        // Beautification will remove comment with placeholder, so we need to add it back
-        const contentWithPlaceholder = await LocalScriptRulesJs.insertPlaceholder(beautifiedJsContent);
+        // Beautify the updated content once at the end
+        const beautifiedContent = await LocalScriptRulesJs.beautifyJsContent(updatedContent);
 
         // Validate the updated content
-        LocalScriptRulesJs.validateModule(contentWithPlaceholder);
+        LocalScriptRulesJs.validateModule(beautifiedContent);
 
-        return contentWithPlaceholder;
+        return beautifiedContent;
     }
 }

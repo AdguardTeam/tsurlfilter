@@ -254,8 +254,8 @@ describe('extendLocalScriptRulesJs', () => {
         // Serialize with placeholder
         const initialContent = await LocalScriptRulesJs.serialize(initialRules);
 
-        // Verify placeholder exists in the file
-        expect(initialContent).toContain('/* #INSERT_NEW_RULES_HERE# */');
+        // Verify placeholder exists in the file (Terser removes quotes from valid identifiers)
+        expect(initialContent).toContain('__PLACEHOLDER__: () => {}');
 
         // Extend with new rules using the static method
         const customRules = ['example.com#%#console.log("new");'];
@@ -318,9 +318,10 @@ describe('extendLocalScriptRulesJs', () => {
         const exportDeclaration = ast.body[0] as any;
         const variableDeclarator = exportDeclaration.declaration.declarations[0];
         const localScriptRulesObject = variableDeclarator.init;
-        const ruleCount = localScriptRulesObject.properties.length;
+        const totalProperties = localScriptRulesObject.properties.length;
 
-        expect(ruleCount).toBe(4);
+        // Expect 4 rules + 1 placeholder marker
+        expect(totalProperties).toBe(5);
 
         // Verify that all variants with exact whitespace are present
         expect(updatedContent).toContain('function test(){}');
