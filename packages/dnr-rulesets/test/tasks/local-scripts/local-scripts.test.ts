@@ -72,9 +72,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-single-expected.js',
             ), 'utf-8');
-            const localScriptRulesJs = new LocalScriptRulesJs();
-            const rules = localScriptRulesJs.parse([filterText]);
-            const jsRulesStr = await localScriptRulesJs.serialize(rules);
+            const rules = LocalScriptRulesJs.parse([filterText]);
+            const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
 
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
@@ -87,9 +86,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-multiple-expected.js',
             ), 'utf-8');
-            const localScriptRulesJs = new LocalScriptRulesJs();
-            const rules = localScriptRulesJs.parse([filterText]);
-            const jsRulesStr = await localScriptRulesJs.serialize(rules);
+            const rules = LocalScriptRulesJs.parse([filterText]);
+            const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
 
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
@@ -102,9 +100,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-invalid-expected.js',
             ), 'utf-8');
-            const localScriptRulesJs = new LocalScriptRulesJs();
-            const rules = localScriptRulesJs.parse([filterText]);
-            const jsRulesStr = await localScriptRulesJs.serialize(rules);
+            const rules = LocalScriptRulesJs.parse([filterText]);
+            const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
             validateSyntax(jsRulesStr);
@@ -121,9 +118,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-scriptlet-expected.js',
             ), 'utf-8');
-            const localScriptRulesJs = new LocalScriptRulesJs();
-            const rules = localScriptRulesJs.parse([filterText]);
-            const jsRulesStr = await localScriptRulesJs.serialize(rules);
+            const rules = LocalScriptRulesJs.parse([filterText]);
+            const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
 
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
@@ -140,8 +136,7 @@ describe('local-scripts', () => {
             ), 'utf-8');
 
             // Extract rules with domains
-            const localScriptRulesJson = new LocalScriptRulesJson();
-            const rulesMap = localScriptRulesJson.parse([filterText]);
+            const rulesMap = LocalScriptRulesJson.parse([filterText]);
 
             // Convert Map to object structure for comparison
             const actualRules: Record<string, DomainConfig[]> = {};

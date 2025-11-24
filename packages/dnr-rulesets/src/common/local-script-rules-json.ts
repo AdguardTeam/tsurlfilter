@@ -1,7 +1,8 @@
 import type { CosmeticRule, JsInjectionRule } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
 
-import { LocalScriptRulesBase } from './local-script-rules-base';
+import { logger } from '../utils/logger';
+import { isJsInjectionRule, parseFilterList } from './local-script-rules-base';
 
 /**
  * Domain configuration for a script rule.
@@ -44,10 +45,8 @@ type LocalScriptRulesJsonStructure = {
  *
  * The primary purpose is to enable runtime checking of JS rules to determine
  * whether a rule comes from built-in filters or is a custom rule.
- *
- * FIXME: Remove serialize and deserialize methods.
  */
-export class LocalScriptRulesJson extends LocalScriptRulesBase {
+export class LocalScriptRulesJson {
     /**
      * Filename for the local script rules JSON file.
      */
@@ -73,7 +72,7 @@ export class LocalScriptRulesJson extends LocalScriptRulesBase {
      *
      * @returns Domain configuration with permitted and restricted domains.
      */
-    private extractDomainConfig(ruleNode: CosmeticRule): DomainConfig {
+    public static extractDomainConfig(ruleNode: CosmeticRule): DomainConfig {
         const permittedDomains: string[] = [];
         const restrictedDomains: string[] = [];
 
@@ -99,7 +98,7 @@ export class LocalScriptRulesJson extends LocalScriptRulesBase {
      *
      * @returns True if config already exists.
      */
-    private isDuplicateConfig(config: DomainConfig, existingConfigs: DomainConfig[]): boolean {
+    public static isDuplicateConfig(config: DomainConfig, existingConfigs: DomainConfig[]): boolean {
         const configStr = JSON.stringify(config);
         return existingConfigs.some((existing) => JSON.stringify(existing) === configStr);
     }
@@ -111,16 +110,16 @@ export class LocalScriptRulesJson extends LocalScriptRulesBase {
      *
      * @returns Map of script bodies to their domain configurations.
      */
-    public parse(filterRules: string[]): Map<string, DomainConfig[]> {
+    public static parse(filterRules: string[]): Map<string, DomainConfig[]> {
         const rulesMap: Map<string, DomainConfig[]> = new Map();
         const filterStr = filterRules.join('\n');
 
         // Parse the filter list using agtree parser
-        const filterListNode = this.parseFilterList(filterStr, false);
+        const filterListNode = parseFilterList(filterStr, false);
 
         // Extract only JS injection rules (excludes scriptlets)
         filterListNode.children.forEach((ruleNode) => {
-            if (!this.isJsInjectionRule(ruleNode)) {
+            if (!isJsInjectionRule(ruleNode)) {
                 return;
             }
 
@@ -128,17 +127,17 @@ export class LocalScriptRulesJson extends LocalScriptRulesBase {
                 // Re-generate raw body to make it consistent
                 const rawBody = CosmeticRuleBodyGenerator.generate(ruleNode as JsInjectionRule);
 
-                const domainConfig = this.extractDomainConfig(ruleNode as JsInjectionRule);
+                const domainConfig = LocalScriptRulesJson.extractDomainConfig(ruleNode as JsInjectionRule);
 
                 const existing = rulesMap.get(rawBody);
                 if (!existing) {
                     rulesMap.set(rawBody, [domainConfig]);
-                } else if (!this.isDuplicateConfig(domainConfig, existing)) {
+                } else if (!LocalScriptRulesJson.isDuplicateConfig(domainConfig, existing)) {
                     existing.push(domainConfig);
                 }
             } catch (error) {
                 const fullRule = ruleNode.raws?.text || 'unknown rule';
-                this.logger.error(`Error parsing script rule with domains: ${fullRule}`, error);
+                logger.error(`Error parsing script rule with domains: ${fullRule}`, error);
             }
         });
 
@@ -152,7 +151,7 @@ export class LocalScriptRulesJson extends LocalScriptRulesBase {
      *
      * @returns Serialized JSON string.
      */
-    public serialize(rules: Map<string, DomainConfig[]>): string {
+    public static serialize(rules: Map<string, DomainConfig[]>): string {
         // Convert Map to object for JSON
         const rulesObject: LocalScriptRulesJsonStructure['rules'] = {};
 
@@ -175,7 +174,7 @@ export class LocalScriptRulesJson extends LocalScriptRulesBase {
      *
      * @returns Map of script bodies to their domain configurations.
      */
-    public deserialize(content: string): Map<string, DomainConfig[]> {
+    public static deserialize(content: string): Map<string, DomainConfig[]> {
         const jsonData: LocalScriptRulesJsonStructure = JSON.parse(content);
         const rulesMap: Map<string, DomainConfig[]> = new Map();
 
@@ -194,7 +193,7 @@ export class LocalScriptRulesJson extends LocalScriptRulesBase {
      *
      * @returns Merged map of all rules with combined domain configurations.
      */
-    public extend(
+    public static extend(
         existing: Map<string, DomainConfig[]>,
         newRules: Map<string, DomainConfig[]>,
     ): Map<string, DomainConfig[]> {
@@ -211,7 +210,7 @@ export class LocalScriptRulesJson extends LocalScriptRulesBase {
 
             // If script already exists, merge domain configs
             configs.forEach((config) => {
-                if (!this.isDuplicateConfig(config, existingConfigs)) {
+                if (!LocalScriptRulesJson.isDuplicateConfig(config, existingConfigs)) {
                     existingConfigs.push(config);
                 }
             });

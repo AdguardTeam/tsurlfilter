@@ -95,8 +95,7 @@ describe('extendLocalScriptRulesJs', () => {
     it('should extend existing rules with new JS rules', async () => {
         // Create initial file with one rule
         const initialRules = new Set(['console.log("existing");']);
-        const handler = new LocalScriptRulesJs();
-        const initialContent = await handler.serialize(initialRules);
+        const initialContent = await LocalScriptRulesJs.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with new rule
@@ -114,8 +113,7 @@ describe('extendLocalScriptRulesJs', () => {
     it('should handle empty custom rules array', async () => {
         // Create initial file with one rule
         const initialRules = new Set(['console.log("existing");']);
-        const handler = new LocalScriptRulesJs();
-        const initialContent = await handler.serialize(initialRules);
+        const initialContent = await LocalScriptRulesJs.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with empty array
@@ -130,8 +128,7 @@ describe('extendLocalScriptRulesJs', () => {
     it('should handle custom rules with no JS injection rules', async () => {
         // Create initial file with one rule
         const initialRules = new Set(['console.log("existing");']);
-        const handler = new LocalScriptRulesJs();
-        const initialContent = await handler.serialize(initialRules);
+        const initialContent = await LocalScriptRulesJs.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with rules that are not JS injection rules
@@ -150,8 +147,7 @@ describe('extendLocalScriptRulesJs', () => {
     it('should skip invalid JS rules and keep valid ones', async () => {
         // Create initial file
         const initialRules = new Set(['console.log("existing");']);
-        const handler = new LocalScriptRulesJs();
-        const initialContent = await handler.serialize(initialRules);
+        const initialContent = await LocalScriptRulesJs.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with mix of valid and invalid rules
@@ -174,8 +170,7 @@ describe('extendLocalScriptRulesJs', () => {
     it('should handle multiple new rules', async () => {
         // Create initial file
         const initialRules = new Set(['console.log("existing");']);
-        const handler = new LocalScriptRulesJs();
-        const initialContent = await handler.serialize(initialRules);
+        const initialContent = await LocalScriptRulesJs.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with multiple rules
@@ -204,8 +199,7 @@ describe('extendLocalScriptRulesJs', () => {
             'console.log("backslash: \\\\");',
             'console.log("newline: \\n");',
         ]);
-        const handler = new LocalScriptRulesJs();
-        const initialContent = await handler.serialize(initialRules);
+        const initialContent = await LocalScriptRulesJs.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with new custom rules
@@ -238,8 +232,7 @@ describe('extendLocalScriptRulesJs', () => {
             'window.test = true;',
         ]);
 
-        const handler = new LocalScriptRulesJs();
-        const initialContent = await handler.serialize(initialRules);
+        const initialContent = await LocalScriptRulesJs.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with a new rule
@@ -257,10 +250,9 @@ describe('extendLocalScriptRulesJs', () => {
 
     it('should support placeholder-based extension', async () => {
         const initialRules = new Set(['console.log("existing");']);
-        const handler = new LocalScriptRulesJs();
 
         // Serialize with placeholder
-        const initialContent = await handler.serialize(initialRules);
+        const initialContent = await LocalScriptRulesJs.serialize(initialRules);
 
         // Verify placeholder exists in the file
         expect(initialContent).toContain('/* #INSERT_NEW_RULES_HERE# */');
@@ -280,10 +272,8 @@ describe('extendLocalScriptRulesJs', () => {
         // This test verifies that rules differing only by whitespace (e.g., '{}' vs '{ }')
         // are preserved as separate entries and NOT deduplicated.
 
-        const handler = new LocalScriptRulesJs();
-
         // Test parsing rules that differ only by whitespace
-        const rules1 = handler.parse([
+        const rules1 = LocalScriptRulesJs.parse([
             'example.com#%#function test(){}',
             'example.com#%#function test(){ }',
         ]);
@@ -293,7 +283,7 @@ describe('extendLocalScriptRulesJs', () => {
         expect(rules1.has('function test(){}')).toBe(true);
         expect(rules1.has('function test(){ }')).toBe(true);
 
-        const rules2 = handler.parse([
+        const rules2 = LocalScriptRulesJs.parse([
             'example.com#%#var x=1;',
             'example.com#%#var x = 1;',
         ]);
@@ -308,7 +298,7 @@ describe('extendLocalScriptRulesJs', () => {
             'function test(){}',
             'function test(){ }',
         ]);
-        const initialContent = await handler.serialize(initialRules);
+        const initialContent = await LocalScriptRulesJs.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with more rules that differ only by whitespace
@@ -365,8 +355,7 @@ describe('extendLocalScriptRulesJson', () => {
         const initialRules = new Map([
             ['console.log("existing");', [{ permittedDomains: ['example.com'], restrictedDomains: [] }]],
         ]);
-        const handler = new LocalScriptRulesJson();
-        const initialContent = handler.serialize(initialRules);
+        const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with new rule
@@ -375,7 +364,7 @@ describe('extendLocalScriptRulesJson', () => {
 
         // Verify the file contains both rules
         const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = handler.deserialize(updatedContent);
+        const updatedRules = LocalScriptRulesJson.deserialize(updatedContent);
 
         expect(updatedRules.size).toBe(2);
         expect(updatedRules.has('console.log("existing");')).toBe(true);
@@ -393,8 +382,7 @@ describe('extendLocalScriptRulesJson', () => {
             'console.log("test");',
             [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
         ]]);
-        const handler = new LocalScriptRulesJson();
-        const initialContent = handler.serialize(initialRules);
+        const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with the same script body but different domain
@@ -403,7 +391,7 @@ describe('extendLocalScriptRulesJson', () => {
 
         // Verify the file contains one rule with two domain configs
         const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = handler.deserialize(updatedContent);
+        const updatedRules = LocalScriptRulesJson.deserialize(updatedContent);
 
         expect(updatedRules.size).toBe(1);
         const configs = updatedRules.get('console.log("test");');
@@ -419,8 +407,7 @@ describe('extendLocalScriptRulesJson', () => {
             'console.log("test");',
             [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
         ]]);
-        const handler = new LocalScriptRulesJson();
-        const initialContent = handler.serialize(initialRules);
+        const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with the same rule and domain
@@ -429,7 +416,7 @@ describe('extendLocalScriptRulesJson', () => {
 
         // Verify the file still contains only one domain config
         const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = handler.deserialize(updatedContent);
+        const updatedRules = LocalScriptRulesJson.deserialize(updatedContent);
 
         expect(updatedRules.size).toBe(1);
         const configs = updatedRules.get('console.log("test");');
@@ -443,8 +430,7 @@ describe('extendLocalScriptRulesJson', () => {
             'console.log("existing");',
             [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
         ]]);
-        const handler = new LocalScriptRulesJson();
-        const initialContent = handler.serialize(initialRules);
+        const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with rule that has restricted domain
@@ -453,7 +439,7 @@ describe('extendLocalScriptRulesJson', () => {
 
         // Verify the domain config is correct
         const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = handler.deserialize(updatedContent);
+        const updatedRules = LocalScriptRulesJson.deserialize(updatedContent);
 
         const newRuleConfigs = updatedRules.get('console.log("new");');
         expect(newRuleConfigs).toBeDefined();
@@ -468,8 +454,7 @@ describe('extendLocalScriptRulesJson', () => {
             'console.log("existing");',
             [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
         ]]);
-        const handler = new LocalScriptRulesJson();
-        const initialContent = handler.serialize(initialRules);
+        const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with empty array
@@ -487,8 +472,7 @@ describe('extendLocalScriptRulesJson', () => {
             'console.log("existing");',
             [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
         ]]);
-        const handler = new LocalScriptRulesJson();
-        const initialContent = handler.serialize(initialRules);
+        const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with non-JS rules
@@ -510,8 +494,7 @@ describe('extendLocalScriptRulesJson', () => {
             'console.log("existing");',
             [{ permittedDomains: ['example.com'], restrictedDomains: [] }],
         ]]);
-        const handler = new LocalScriptRulesJson();
-        const initialContent = handler.serialize(initialRules);
+        const initialContent = LocalScriptRulesJson.serialize(initialRules);
         await fs.writeFile(testFilePath, initialContent);
 
         // Extend with multiple rules
@@ -524,7 +507,7 @@ describe('extendLocalScriptRulesJson', () => {
 
         // Verify all rules were added with correct domain configs
         const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = handler.deserialize(updatedContent);
+        const updatedRules = LocalScriptRulesJson.deserialize(updatedContent);
 
         expect(updatedRules.size).toBe(4);
 

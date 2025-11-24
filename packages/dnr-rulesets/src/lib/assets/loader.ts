@@ -134,10 +134,9 @@ export class AssetsLoader {
         customRules: string[],
     ): Promise<void> {
         const filePath = path.resolve(process.cwd(), localScriptRulesJsonPath);
-        const localScriptRulesJson = new LocalScriptRulesJson();
 
         // Parse custom rules to extract JS rules with domains
-        const newRules = localScriptRulesJson.parse(customRules);
+        const newRules = LocalScriptRulesJson.parse(customRules);
 
         if (newRules.size === 0) {
             console.log('No valid JS rules found in custom rules');
@@ -146,15 +145,15 @@ export class AssetsLoader {
 
         // Read and deserialize existing rules
         const existingContent = await fs.readFile(filePath, 'utf-8');
-        const existingRules = localScriptRulesJson.deserialize(existingContent);
+        const existingRules = LocalScriptRulesJson.deserialize(existingContent);
 
         console.log(`Extracted ${existingRules.size} existing local script rules`);
 
         // Extend existing rules with new rules
-        const mergedRules = localScriptRulesJson.extend(existingRules, newRules);
+        const mergedRules = LocalScriptRulesJson.extend(existingRules, newRules);
 
         // Serialize and write back
-        const updatedContent = localScriptRulesJson.serialize(mergedRules);
+        const updatedContent = LocalScriptRulesJson.serialize(mergedRules);
         await fs.writeFile(filePath, updatedContent);
 
         console.log(`Extended ${localScriptRulesJsonPath} with ${newRules.size} custom rules`);
