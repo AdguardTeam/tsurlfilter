@@ -93,6 +93,9 @@ export class AssetsLoader {
      * Parses the custom rules, extracts JS rules from them, and appends them
      * to the existing local_script_rules.js file.
      *
+     * Uses a placeholder-based approach to insert new rules without AST deserialization,
+     * which is much faster than previous approaches.
+     *
      * @param localScriptRulesPath Path to the local_script_rules.js file to extend.
      * @param customRules Array of custom rule strings to add.
      *
@@ -103,30 +106,17 @@ export class AssetsLoader {
         customRules: string[],
     ): Promise<void> {
         const filePath = path.resolve(process.cwd(), localScriptRulesPath);
-        const localScriptsRulesJs = new LocalScriptRulesJs();
 
-        // Parse custom rules to extract JS rules
-        const newRules = localScriptsRulesJs.parse(customRules);
-
-        if (newRules.size === 0) {
-            console.log('No valid JS rules found in custom rules');
-            return;
-        }
-
-        // Read and deserialize existing rules
+        // Read existing content
         const existingContent = await fs.readFile(filePath, 'utf-8');
-        const existingRules = await localScriptsRulesJs.deserialize(existingContent);
 
-        console.log(`Extracted ${existingRules.size} existing local script rules`);
+        // Extend using static method - it handles parsing and insertion
+        const updatedContent = await LocalScriptRulesJs.extend(existingContent, customRules);
 
-        // Extend existing rules with new rules
-        const mergedRules = localScriptsRulesJs.extend(existingRules, newRules);
-
-        // Serialize and write back
-        const updatedContent = await localScriptsRulesJs.serialize(mergedRules);
+        // Write back updated content
         await fs.writeFile(filePath, updatedContent);
 
-        console.log(`Extended ${localScriptRulesPath} with ${newRules.size} custom rules`);
+        console.log(`Custom rules added to ${localScriptRulesPath}: ${customRules.length}`);
     }
 
     /**

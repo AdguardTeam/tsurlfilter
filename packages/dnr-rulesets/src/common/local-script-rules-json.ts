@@ -44,6 +44,8 @@ type LocalScriptRulesJsonStructure = {
  *
  * The primary purpose is to enable runtime checking of JS rules to determine
  * whether a rule comes from built-in filters or is a custom rule.
+ *
+ * FIXME: Remove serialize and deserialize methods.
  */
 export class LocalScriptRulesJson extends LocalScriptRulesBase {
     /**

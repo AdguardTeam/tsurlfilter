@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import { parse } from 'acorn';
 import { copy } from 'fs-extra';
 import process from 'process';
 import {
@@ -104,30 +105,10 @@ describe('extendLocalScriptRulesJs', () => {
 
         // Verify the file contains both rules
         const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = await handler.deserialize(updatedContent);
 
-        expect(updatedRules.size).toBe(2);
-        expect(updatedRules.has('console.log("existing");')).toBe(true);
-        expect(updatedRules.has('console.log("new");')).toBe(true);
-    });
-
-    it('should not add duplicate rules', async () => {
-        // Create initial file with one rule
-        const initialRules = new Set(['console.log("test");']);
-        const handler = new LocalScriptRulesJs();
-        const initialContent = await handler.serialize(initialRules);
-        await fs.writeFile(testFilePath, initialContent);
-
-        // Try to extend with the same rule
-        const customRules = ['example.com#%#console.log("test");'];
-        await loader.extendLocalScriptRulesJs(testFilePath, customRules);
-
-        // Verify the file still contains only one rule
-        const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = await handler.deserialize(updatedContent);
-
-        expect(updatedRules.size).toBe(1);
-        expect(updatedRules.has('console.log("test");')).toBe(true);
+        // Check that both rules are present in the file
+        expect(updatedContent).toContain('console.log("existing");');
+        expect(updatedContent).toContain('console.log("new");');
     });
 
     it('should handle empty custom rules array', async () => {
@@ -183,12 +164,11 @@ describe('extendLocalScriptRulesJs', () => {
 
         // Verify only valid rules were added
         const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = await handler.deserialize(updatedContent);
 
-        expect(updatedRules.size).toBe(3);
-        expect(updatedRules.has('console.log("existing");')).toBe(true);
-        expect(updatedRules.has('console.log("valid");')).toBe(true);
-        expect(updatedRules.has('alert("another valid");')).toBe(true);
+        // Check all valid rules are present
+        expect(updatedContent).toContain('console.log("existing");');
+        expect(updatedContent).toContain('console.log("valid");');
+        expect(updatedContent).toContain('alert("another valid");');
     });
 
     it('should handle multiple new rules', async () => {
@@ -208,13 +188,12 @@ describe('extendLocalScriptRulesJs', () => {
 
         // Verify all rules were added
         const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = await handler.deserialize(updatedContent);
 
-        expect(updatedRules.size).toBe(4);
-        expect(updatedRules.has('console.log("existing");')).toBe(true);
-        expect(updatedRules.has('console.log("rule1");')).toBe(true);
-        expect(updatedRules.has('console.log("rule2");')).toBe(true);
-        expect(updatedRules.has('alert("rule3");')).toBe(true);
+        // Check all rules are present
+        expect(updatedContent).toContain('console.log("existing");');
+        expect(updatedContent).toContain('console.log("rule1");');
+        expect(updatedContent).toContain('console.log("rule2");');
+        expect(updatedContent).toContain('alert("rule3");');
     });
 
     it('should preserve existing rules with special characters when extending', async () => {
@@ -238,69 +217,21 @@ describe('extendLocalScriptRulesJs', () => {
 
         // Verify all rules are present
         const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = await handler.deserialize(updatedContent);
 
-        // The most important check: no rules were lost
-        expect(updatedRules.size).toBe(5);
+        // Check that all rules are present in the file (special characters are preserved)
+        expect(updatedContent).toContain('test with');
+        expect(updatedContent).toContain('quotes');
+        expect(updatedContent).toContain('backslash');
+        expect(updatedContent).toContain('newline');
+        expect(updatedContent).toContain('new custom rule');
+        expect(updatedContent).toContain('another custom rule');
 
-        // After deserialization, rules are extracted from terser-beautified function bodies,
-        // so formatting may differ (quotes, whitespace) but semantic meaning is preserved
-        const rulesArray = Array.from(updatedRules);
-
-        // Check that we have rules with the expected content (allowing for terser normalization)
-        expect(rulesArray.some((r) => r.includes('test with') && r.includes('quotes'))).toBe(true);
-        expect(rulesArray.some((r) => r.includes('backslash'))).toBe(true);
-        expect(rulesArray.some((r) => r.includes('newline'))).toBe(true);
-        expect(rulesArray.some((r) => r.includes('new custom rule'))).toBe(true);
-        expect(rulesArray.some((r) => r.includes('another custom rule'))).toBe(true);
-
-        // Verify the file is valid and can be re-parsed
-        expect(() => handler.deserialize(updatedContent)).not.toThrow();
+        // Verify the file is valid JavaScript
+        expect(() => parse(updatedContent, { ecmaVersion: 'latest', sourceType: 'module' })).not.toThrow();
     });
 
-    it('should handle deserialization when terser normalizes code differently in keys vs bodies', async () => {
-        // This test verifies that terser normalization doesn't cause rules to be lost.
-        // Terser beautifies code in function bodies (whitespace, quotes, etc.),
-        // so deserialized rules will have terser's formatting, not the original.
-
-        // Create rules that terser will normalize (using valid JavaScript)
-        const initialRules = new Set([
-            'var x = /test/;',
-            'window.testVar = 123;',
-        ]);
-
-        const handler = new LocalScriptRulesJs();
-        const initialContent = await handler.serialize(initialRules);
-        await fs.writeFile(testFilePath, initialContent);
-
-        // Deserialize and re-serialize (simulating extend with empty rules)
-        const existingContent = await fs.readFile(testFilePath, 'utf-8');
-        const existingRules = await handler.deserialize(existingContent);
-
-        // After deserialization, rules have terser-beautified formatting
-        expect(existingRules.size).toBe(2);
-
-        // Check semantic content (terser formatting may differ)
-        const rulesArray = Array.from(existingRules);
-        expect(rulesArray.some((r) => r.includes('var x') && r.includes('/test/'))).toBe(true);
-        expect(rulesArray.some((r) => r.includes('window.testVar') && r.includes('123'))).toBe(true);
-
-        // Re-serialize (this should not fail or lose rules)
-        const reserializedContent = await handler.serialize(existingRules);
-        await fs.writeFile(testFilePath, reserializedContent);
-
-        // Deserialize again and verify no rules were lost
-        const finalContent = await fs.readFile(testFilePath, 'utf-8');
-        const finalRules = await handler.deserialize(finalContent);
-
-        // After round-trip, we should still have both rules
-        expect(finalRules.size).toBe(2);
-    });
-
-    it('should not lose rules during extend when keys differ from normalized function bodies', async () => {
-        // This test simulates the actual production issue where extending local_script_rules.js
-        // causes many existing rules to be lost because the deserialized keys don't match
-        // the terser-normalized function bodies.
+    it('should not lose rules during extend', async () => {
+        // This test verifies that extending preserves all existing rules
 
         const initialRules = new Set([
             'var x = /[sS]+/;',
@@ -317,15 +248,98 @@ describe('extendLocalScriptRulesJs', () => {
 
         // Verify existing rules were preserved (not lost)
         const updatedContent = await fs.readFile(testFilePath, 'utf-8');
-        const updatedRules = await handler.deserialize(updatedContent);
 
-        // Should have 3 rules total (2 existing + 1 new)
-        expect(updatedRules.size).toBe(3);
-        expect(updatedRules.has('console.log("new");')).toBe(true);
+        // Check all rules are present
+        expect(updatedContent).toContain('var x');
+        expect(updatedContent).toContain('window.test');
+        expect(updatedContent).toContain('console.log("new");');
+    });
 
-        // The critical check: existing rules should still be present
-        // (even if terser normalized them during serialization)
-        expect(updatedRules.size).toBeGreaterThanOrEqual(2);
+    it('should support placeholder-based extension', async () => {
+        const initialRules = new Set(['console.log("existing");']);
+        const handler = new LocalScriptRulesJs();
+
+        // Serialize with placeholder
+        const initialContent = await handler.serialize(initialRules);
+
+        // Verify placeholder exists in the file
+        expect(initialContent).toContain('/* #INSERT_NEW_RULES_HERE# */');
+
+        // Extend with new rules using the static method
+        const customRules = ['example.com#%#console.log("new");'];
+        const extendedContent = await LocalScriptRulesJs.extend(initialContent, customRules);
+
+        // Verify the new rule was inserted
+        expect(extendedContent).toContain('console.log("new");');
+
+        // Verify the old rule was preserved
+        expect(extendedContent).toContain('console.log("existing");');
+    });
+
+    it('should NOT deduplicate rules with scripts differing only by whitespace', async () => {
+        // This test verifies that rules differing only by whitespace (e.g., '{}' vs '{ }')
+        // are preserved as separate entries and NOT deduplicated.
+
+        const handler = new LocalScriptRulesJs();
+
+        // Test parsing rules that differ only by whitespace
+        const rules1 = handler.parse([
+            'example.com#%#function test(){}',
+            'example.com#%#function test(){ }',
+        ]);
+
+        // Both rules should be kept separate (NOT deduplicated)
+        expect(rules1.size).toBe(2);
+        expect(rules1.has('function test(){}')).toBe(true);
+        expect(rules1.has('function test(){ }')).toBe(true);
+
+        const rules2 = handler.parse([
+            'example.com#%#var x=1;',
+            'example.com#%#var x = 1;',
+        ]);
+
+        // Similarly, these two should also be kept separate
+        expect(rules2.size).toBe(2);
+        expect(rules2.has('var x=1;')).toBe(true);
+        expect(rules2.has('var x = 1;')).toBe(true);
+
+        // Now test the full flow with serialization and extension
+        const initialRules = new Set([
+            'function test(){}',
+            'function test(){ }',
+        ]);
+        const initialContent = await handler.serialize(initialRules);
+        await fs.writeFile(testFilePath, initialContent);
+
+        // Extend with more rules that differ only by whitespace
+        const customRules = [
+            'example.com#%#var x=1;',
+            'example.com#%#var x = 1;',
+        ];
+        await loader.extendLocalScriptRulesJs(testFilePath, customRules);
+
+        // Verify the file contains all 4 rules (none were deduplicated)
+        const updatedContent = await fs.readFile(testFilePath, 'utf-8');
+
+        // Parse the output file and count properties in the localScriptRules object
+        // Using acorn to parse and navigate the AST to count rule entries
+        const ast = parse(updatedContent, { ecmaVersion: 'latest', sourceType: 'module' });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const exportDeclaration = ast.body[0] as any;
+        const variableDeclarator = exportDeclaration.declaration.declarations[0];
+        const localScriptRulesObject = variableDeclarator.init;
+        const ruleCount = localScriptRulesObject.properties.length;
+
+        expect(ruleCount).toBe(4);
+
+        // Verify that all variants with exact whitespace are present
+        expect(updatedContent).toContain('function test(){}');
+        expect(updatedContent).toContain('function test(){ }');
+        expect(updatedContent).toContain('var x=1;');
+        expect(updatedContent).toContain('var x = 1;');
+
+        // Verify the file is valid JavaScript
+        expect(() => parse(updatedContent, { ecmaVersion: 'latest', sourceType: 'module' })).not.toThrow();
     });
 });
 

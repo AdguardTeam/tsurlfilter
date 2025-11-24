@@ -71,23 +71,21 @@ export const createLocalScriptRulesJson = async (dir: string): Promise<void> => 
 export const createLocalScriptRulesJs = async (dir: string): Promise<void> => {
     const files = await getFilterFiles(dir);
     const localScriptRulesJs = new LocalScriptRulesJs();
-    let allRules = new Set<string>();
+    const allRules = new Set<string>();
+
+    // Initialize with empty content
+    let serializedContent = await localScriptRulesJs.serialize(new Set<string>());
 
     // Collect and merge rules from all filter files
     for (const file of files) {
         const filterStr = await fs.readFile(path.join(dir, file), 'utf-8');
         const rules = localScriptRulesJs.parse([filterStr]);
-        allRules = localScriptRulesJs.extend(allRules, rules);
+        rules.forEach((rule) => allRules.add(rule));
+        serializedContent = await LocalScriptRulesJs.extend(serializedContent, [filterStr]);
     }
-
-    // Serialize to JS module string
-    const serializedContent = await localScriptRulesJs.serialize(allRules);
 
     // Write to file
     await fs.writeFile(path.join(dir, LocalScriptRulesJs.FILENAME), serializedContent);
 
-    // Extract real count of serialized rules (without duplicates)
-    const deserialized = await localScriptRulesJs.deserialize(serializedContent);
-
-    logger.info(`Created ${LocalScriptRulesJs.FILENAME} with ${deserialized.size} unique rules`);
+    logger.info(`Created ${LocalScriptRulesJs.FILENAME} with ${allRules.size} unique rules`);
 };

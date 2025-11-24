@@ -2,15 +2,7 @@ import crypto from 'node:crypto';
 
 import type { JsInjectionRule } from '@adguard/agtree';
 import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
-import {
-    type ExportNamedDeclaration,
-    type FunctionExpression,
-    parse,
-    type Property,
-    type SpreadElement,
-    type TryStatement,
-    type VariableDeclaration,
-} from 'acorn';
+import { parse } from 'acorn';
 import { minify } from 'terser';
 
 import { LocalScriptRulesBase } from './local-script-rules-base';
@@ -23,16 +15,28 @@ import { LocalScriptRulesBase } from './local-script-rules-base';
  * script rules (except scriptlets) will not be injected to ensure compliance
  * with Chrome Web Store policies.
  *
- * Extracts and manages JS injection rules in JS module format.
- *
  * The primary purpose is to enable runtime checking of JS rules to determine
  * whether a rule comes from built-in filters or is a custom rule.
+ *
+ * NOTE: Script rules are NOT deduplicated. It is critical to keep script rules
+ * exactly as they were parsed from the filter rules because they will be
+ * checked in runtime as-is to verify their origin.
  */
 export class LocalScriptRulesJs extends LocalScriptRulesBase {
     /**
      * Filename for the local script rules JS file.
      */
     public static readonly FILENAME = 'local_script_rules.js';
+
+    /**
+     * Placeholder marker for inserting new rules without AST parsing.
+     */
+    private static readonly INSERT_PLACEHOLDER = '/* #INSERT_NEW_RULES_HERE# */';
+
+    /**
+     * Indentation level for the local script rules JS file.
+     */
+    private static readonly IDENT_LEVEL = 4;
 
     /**
      * Validates JavaScript code as an ES6 module.
@@ -84,24 +88,24 @@ export class LocalScriptRulesJs extends LocalScriptRulesBase {
      */
     private wrapScriptCode(uniqueId: string, code: string): string {
         const wrappedCode = `
-            try {
-                const flag = 'done';
-                if (Window.prototype.toString["${uniqueId}"] === flag) {
-                    return;
-                }
-                ${code}
-                Object.defineProperty(Window.prototype.toString, "${uniqueId}", {
-                    value: flag,
-                    enumerable: false,
-                    writable: false,
-                    configurable: false
-                });
-            } catch (error) {
-                console.error('Error executing AG js rule with uniqueId "${uniqueId}" due to: ' + error);
-            }
-        `;
+    try {
+        const flag = 'done';
+        if (Window.prototype.toString["${uniqueId}"] === flag) {
+            return;
+        }
+        ${code}
+        Object.defineProperty(Window.prototype.toString, "${uniqueId}", {
+            value: flag,
+            enumerable: false,
+            writable: false,
+            configurable: false
+        });
+    } catch (error) {
+        console.error('Error executing AG js rule with uniqueId "${uniqueId}" due to: ' + error);
+    }
+`;
 
-        return wrappedCode.trim();
+        return wrappedCode;
     }
 
     /**
@@ -143,269 +147,92 @@ export class LocalScriptRulesJs extends LocalScriptRulesBase {
     /**
      * Serializes JS rules into a formatted ES6 module string.
      *
+     * FIXME: Serialize can be removed?
+     *
      * @param rules Set of JS rule bodies.
      *
      * @returns Serialized and beautified rules as an ES6 module export string.
      */
     public async serialize(rules: Set<string>): Promise<string> {
-        // Deduplicate rules that differ only in whitespace
-        const deduplicatedRules = await this.deduplicateRules(rules);
+        const formattedRules = this.formatRules(rules);
 
-        const formattedRules = this.formatRules(deduplicatedRules);
+        // Placeholder cannot be inserted before minification because Terser
+        // strips standalone comments in all cases
+        // Note: No indentation in template literal - Terser will handle all formatting
+        const rawContent = this.wrapInObject(formattedRules.join('\n'));
 
-        const rawContent = `export const localScriptRules = {
-            ${formattedRules.join('\n')}
-        };`;
+        const beautifiedJsContent = await this.minifyJsContent(rawContent);
 
-        const { code: beautifiedJsContent } = await minify(
-            rawContent,
-            {
-                mangle: false,
-                compress: false,
-                format: {
-                    beautify: true,
-                    comments: true,
-                    indent_level: 4,
-                },
-            },
-        );
-
-        if (!beautifiedJsContent) {
-            throw new Error('Failed to beautify JS content');
-        }
+        // Beautification will remove the placeholder, so we need to add it back
+        const contentWithPlaceholder = await this.insertPlaceholder(beautifiedJsContent);
 
         // Final validation of the complete file
-        this.validateModule(beautifiedJsContent);
+        this.validateModule(contentWithPlaceholder);
 
-        return beautifiedJsContent;
+        return contentWithPlaceholder;
     }
 
     /**
-     * Deduplicates rules that differ only in whitespace/formatting.
-     * Uses terser normalization to identify duplicates, but keeps original formatting.
+     * Extends a JS file content with new rules by inserting them before the placeholder.
+     * This avoids the need for AST deserialization, making extension much faster.
      *
-     * @param rules Set of script bodies to deduplicate.
+     * @param existingContent Existing JS module content.
+     * @param newRuleStrings Array of new filter rule strings to parse and add.
      *
-     * @returns Set of deduplicated script bodies (in their original formatting).
+     * @returns Updated JS module content with new rules inserted.
      */
-    private async deduplicateRules(rules: Set<string>): Promise<Set<string>> {
-        const unique = new Map<string, string>(); // normalized -> original
-        let skippedCount = 0;
-
-        for (const rule of rules) {
-            try {
-                // Try to normalize for comparison
-                const result = await minify(rule, {
-                    mangle: false,
-                    compress: false,
-                    format: {
-                        beautify: true,
-                        comments: true,
-                    },
-                });
-
-                const normalized = result.code?.trim() || rule;
-
-                // If we haven't seen this normalized form, keep this rule
-                if (!unique.has(normalized)) {
-                    unique.set(normalized, rule);
-                } else {
-                    skippedCount++;
-                    this.logger.debug(
-                        `Skipping duplicate rule (differs only in whitespace): ${rule.substring(0, 50)}...`,
-                    );
-                }
-            } catch (error) {
-                // If normalization fails, treat the rule as unique (use original as key)
-                this.logger.warn(`Normalization failed for rule: ${rule.substring(0, 100)}`, { error });
-                if (!unique.has(rule)) {
-                    unique.set(rule, rule);
-                }
-            }
+    public static async extend(existingContent: string, newRuleStrings: string[]): Promise<string> {
+        // Find the placeholder position
+        const placeholderIndex = existingContent.indexOf(LocalScriptRulesJs.INSERT_PLACEHOLDER);
+        if (placeholderIndex === -1) {
+            throw new Error(`Placeholder "${LocalScriptRulesJs.INSERT_PLACEHOLDER}" not found.`);
         }
 
-        if (skippedCount > 0) {
-            this.logger.info(`Deduplicated ${skippedCount} rules that differed only in whitespace`);
-        }
+        const instance = new LocalScriptRulesJs();
 
-        // Return the original formatting of unique rules
-        return new Set(unique.values());
+        const newRules = instance.parse(newRuleStrings);
+        const formattedNewRules = instance.formatRules(newRules);
+
+        // Insert new rules before the placeholder (which is before the closing brace)
+        // Find the start of the line containing the placeholder to preserve indentation
+        const lineStart = existingContent.lastIndexOf('\n', placeholderIndex - 1) + 1;
+
+        // Each rule should be indented to match the existing formatting
+        // FIXME: Check this
+        const newRulesContent = formattedNewRules.map((rule) => `    ${rule}`).join('\n');
+        const updatedContent = [
+            existingContent.slice(0, lineStart),
+            newRulesContent,
+            '\n',
+            existingContent.slice(lineStart),
+        ].join('');
+
+        // Beautify the updated content
+        const beautifiedJsContent = await instance.minifyJsContent(updatedContent);
+
+        // Beautification will remove the placeholder, so we need to add it back
+        const contentWithPlaceholder = await instance.insertPlaceholder(beautifiedJsContent);
+
+        // Validate the updated content
+        instance.validateModule(contentWithPlaceholder);
+
+        return contentWithPlaceholder;
     }
 
     /**
-     * Deserializes local script rules from JS module content.
-     * Parses the ES6 module and extracts script bodies from the function bodies.
+     * Escapes a string for use as a JavaScript string literal.
      *
-     * NOTE: We extract from function bodies (not keys) because acorn interprets
-     * escape sequences in string literal keys, losing the original formatting.
-     * The function body contains the actual script that executes, which is the
-     * source of truth.
+     * @param str String to escape.
      *
-     * @param content JS module content string.
-     *
-     * @returns Set of JS rule bodies extracted from the module.
+     * @returns Escaped string.
      */
-    public async deserialize(content: string): Promise<Set<string>> {
-        const rules = new Set<string>();
-
-        const ast = parse(content, {
-            ecmaVersion: 'latest',
-            sourceType: 'module',
-        });
-
-        // List of functions defined in the exported object.
-        let properties: (Property | SpreadElement)[] = [];
-
-        // Since serialization is implemented in this class, we expect the
-        // module to have a specific structure, otherwise parsing will fail.
-        try {
-            const exportedNamedDeclarator = ast.body[0] as ExportNamedDeclaration;
-            const variableDeclaration = exportedNamedDeclarator.declaration as VariableDeclaration;
-            const declarator = variableDeclaration.declarations[0];
-            const init = declarator.init;
-            if (!init || init.type !== 'ObjectExpression') {
-                throw new Error('localScriptRules is not an object expression');
-            }
-            properties = init.properties;
-        } catch (e) {
-            throw new Error('Failed to parse local script rules', { cause: e });
-        }
-
-        // Extract script bodies from function bodies, not from keys.
-        // Keys may have escape sequences interpreted by acorn, losing original formatting.
-        for (const property of properties) {
-            if (property.type !== 'Property') {
-                this.logger.warn('Skipping non-property in local script rules', { property });
-                continue;
-            }
-
-            // Get the function value
-            const func = property.value;
-            if (func.type !== 'FunctionExpression' && func.type !== 'ArrowFunctionExpression') {
-                this.logger.warn('Skipping property with non-function value', { property });
-                continue;
-            }
-
-            try {
-                // Extract the script body from the wrapped function
-                const scriptBody = this.extractScriptFromWrappedFunction(func as FunctionExpression, content);
-                if (!scriptBody) {
-                    throw new Error(`Cannot extract script body from function expression: ${content.slice(0, 100)}`);
-                }
-
-                // Normalize the extracted script to ensure it can be re-serialized
-                // (beautified code with newlines can't be used as object keys)
-                const normalized = await this.normalizeScript(scriptBody);
-                rules.add(normalized);
-            } catch (error) {
-                this.logger.warn('Failed to extract script body from function', { error, property });
-            }
-        }
-
-        return rules;
-    }
-
-    /**
-     * Normalizes a script body to a single-line, minified form.
-     * This ensures extracted scripts can be re-serialized as object keys.
-     *
-     * @param scriptBody The script body to normalize.
-     *
-     * @returns Normalized script body.
-     */
-    private async normalizeScript(scriptBody: string): Promise<string> {
-        try {
-            // Use compact format (no beautify) to ensure single-line output
-            const result = await minify(scriptBody, {
-                mangle: false,
-                compress: false,
-                format: {
-                    beautify: false, // Keep compact for use as object keys
-                    comments: false, // Remove comments to keep compact
-                },
-            });
-
-            return result.code?.trim() || scriptBody;
-        } catch {
-            // If normalization fails, return original
-            return scriptBody;
-        }
-    }
-
-    /**
-     * Extracts the original script body from a wrapped function.
-     *
-     * The wrapped structure is an arrow function containing a try-catch block
-     * with the original script "sandwiched" between setup and cleanup code.
-     *
-     * @param func The function expression containing the wrapped script.
-     * @param source Original source code (for extracting text by position).
-     *
-     * @returns The extracted script body, or null if extraction fails.
-     */
-    private extractScriptFromWrappedFunction(
-        func: FunctionExpression,
-        source: string,
-    ): string | null {
-        // Navigate: function body -> first statement (try-catch) -> try block
-        const funcBody = func.body;
-        if (funcBody.type !== 'BlockStatement' || funcBody.body.length === 0) {
-            return null;
-        }
-
-        const firstStatement = funcBody.body[0];
-        if (firstStatement.type !== 'TryStatement') {
-            return null;
-        }
-
-        const tryStatement = firstStatement as TryStatement;
-        const tryBlock = tryStatement.block;
-        if (tryBlock.body.length < 4) {
-            // Need at least: flag declaration, if statement, script, Object.defineProperty
-            return null;
-        }
-
-        // The structure is:
-        // [0] const flag = "done";
-        // [1] if (Window.prototype.toString["<id>"] === flag) { return; }
-        // [2..n-1] <ORIGINAL_SCRIPT_BODY>
-        // [n] Object.defineProperty(...)
-
-        const statements = tryBlock.body;
-        const scriptStatements = statements.slice(2, -1);
-
-        if (scriptStatements.length === 0) {
-            return null;
-        }
-
-        // Extract source code from the first to last script statement
-        const firstScriptStmt = scriptStatements[0];
-        const lastScriptStmt = scriptStatements[scriptStatements.length - 1];
-
-        if (!firstScriptStmt.start || !lastScriptStmt.end) {
-            return null;
-        }
-
-        // Extract the raw source code for these statements
-        const scriptBody = source.substring(firstScriptStmt.start, lastScriptStmt.end).trim();
-
-        return scriptBody;
-    }
-
-    /**
-     * Extends existing rules with new rules.
-     *
-     * @param existing Set of existing JS rule bodies.
-     * @param newRules Set of new JS rule bodies to add.
-     *
-     * @returns Merged set of all rules.
-     */
-    public extend(existing: Set<string>, newRules: Set<string>): Set<string> {
-        const merged = new Set(existing);
-
-        newRules.forEach((rule) => merged.add(rule));
-
-        return merged;
+    private escapeJsString(str: string): string {
+        return str
+            .replace(/\\/g, '\\\\') // Backslash must be first
+            .replace(/'/g, '\\\'') // Single quote
+            .replace(/\n/g, '\\n') // Newline
+            .replace(/\r/g, '\\r') // Carriage return
+            .replace(/\t/g, '\\t'); // Tab
     }
 
     /**
@@ -417,8 +244,8 @@ export class LocalScriptRulesJs extends LocalScriptRulesBase {
      */
     private wrapRule(rule: string): string | null {
         try {
-            // Escape single quotes in the key
-            const ruleKey = rule.replace(/'/g, '\\\'');
+            // Escape all special characters for JavaScript string literal
+            const ruleKey = this.escapeJsString(rule);
 
             /**
              * Unique ID is needed to prevent multiple execution of the same script.
@@ -435,6 +262,7 @@ export class LocalScriptRulesJs extends LocalScriptRulesBase {
             // Validate the processed code (will be inside function body, so allow return)
             this.validateScript(processedCode);
 
+            // Always include trailing comma for valid syntax with placeholder
             return `'${ruleKey}': () => { ${processedCode} },`;
         } catch (error) {
             this.logger.error(`Skipping invalid rule during production processing: ${rule}`, error);
@@ -454,5 +282,81 @@ export class LocalScriptRulesJs extends LocalScriptRulesBase {
         return Array.from(scriptRules.values())
             .map((rule) => this.wrapRule(rule))
             .filter((rule): rule is string => rule !== null);
+    }
+
+    /**
+     * Minifies JS content with Terser.
+     *
+     * @param content JS content to minify.
+     *
+     * @returns Minified JS content.
+     */
+    private async minifyJsContent(content: string): Promise<string> {
+        const { code } = await minify(content, {
+            mangle: false,
+            compress: false,
+            format: {
+                beautify: true,
+                comments: true,
+                indent_level: LocalScriptRulesJs.IDENT_LEVEL,
+            },
+        });
+
+        if (!code) {
+            throw new Error('Failed to minify JS content');
+        }
+
+        return code;
+    }
+
+    /**
+     * Inserts the placeholder into the content.
+     *
+     * @param content JS content to insert placeholder into.
+     *
+     * @returns Content with placeholder inserted.
+     */
+    private async insertPlaceholder(content: string): Promise<string> {
+        // Insert placeholder marker after minification, Terser strips standalone
+        // comments, so we must add it after beautification.
+        // Search for the closing bracket from the end of the file.
+        const lastBraceIndex = content.lastIndexOf('}');
+        if (lastBraceIndex === -1) {
+            throw new Error('Could not find closing brace in beautified content');
+        }
+
+        // FIXME: Hack
+        const emptyContent = await this.minifyJsContent(this.wrapInObject(''));
+
+        // Special case handling for empty content
+        const isEmptyContent = content === emptyContent;
+
+        // Insert placeholder before the closing brace
+        const beforeClosingBrace = content
+            .slice(0, lastBraceIndex)
+            .trimEnd();
+        const indentation = ' '.repeat(LocalScriptRulesJs.IDENT_LEVEL);
+
+        const contentWithPlaceholder = [
+            beforeClosingBrace,
+            // If content is empty we should not insert comma before the placeholder
+            isEmptyContent ? '\n' : ',\n',
+            `${indentation}${LocalScriptRulesJs.INSERT_PLACEHOLDER}`,
+            '\n',
+            content.slice(lastBraceIndex),
+        ].join('');
+
+        return contentWithPlaceholder;
+    }
+
+    /**
+     * Wraps the content in an object.
+     *
+     * @param content Content to wrap.
+     *
+     * @returns Content wrapped in an object.
+     */
+    private wrapInObject(content: string): string {
+        return `export const localScriptRules = {\n${content}\n};`;
     }
 }
