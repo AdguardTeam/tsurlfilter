@@ -950,6 +950,43 @@ describe('UboHtmlFilteringBodyParser', () => {
                 )),
             },
 
+            // child combinator not supported
+            {
+                actual: '^div > span[attr="value"]',
+                expected: (context: NodeExpectContext) => (new AdblockSyntaxError(
+                    "Unexpected token '<delim-token>' with value '>'",
+                    ...context.toTuple(context.getRangeFor('>')),
+                )),
+            },
+
+            // sibling combinator not supported
+            {
+                actual: '^div + span[attr="value"]',
+                expected: (context: NodeExpectContext) => (new AdblockSyntaxError(
+                    "Unexpected token '<delim-token>' with value '+'",
+                    ...context.toTuple(context.getRangeFor('+')),
+                )),
+            },
+
+            // bad identifier in attr name
+            {
+                actual: '^div[1attr="value"]',
+                expected: (context: NodeExpectContext) => (new AdblockSyntaxError(
+                    "Attribute name should be an identifier, but got '<dimension-token>' with value '1attr'",
+                    ...context.toTuple(context.getRangeFor('1attr')),
+                )),
+            },
+
+            // bad identifier in attr name
+            {
+                actual: '^div[attr=1value]',
+                expected: (context: NodeExpectContext) => (new AdblockSyntaxError(
+                    // eslint-disable-next-line max-len
+                    "Expected '<ident-token>' or '<string-token>' as attribute value, but got '<dimension-token>' with value '1value'",
+                    ...context.toTuple(context.getRangeFor('1value')),
+                )),
+            },
+
             // illegal comma
             {
                 actual: '^,span[attr="value"]',

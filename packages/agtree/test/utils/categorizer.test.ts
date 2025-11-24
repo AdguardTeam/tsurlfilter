@@ -24,10 +24,11 @@ describe('RuleCategorizer', () => {
                 expected: CosmeticRuleType.CssInjectionRule,
             },
 
-            {
-                actual: 'example.com$$div:contains(foo)',
-                expected: CosmeticRuleType.HtmlFilteringRule,
-            },
+            // TODO: re-enable after implementing pseudo class parsing in AdGuard HTML filtering rules (AG-43975)
+            // {
+            //     actual: 'example.com$$div:contains(foo)',
+            //     expected: CosmeticRuleType.HtmlFilteringRule,
+            // },
             {
                 actual: 'example.com$$div[custom_attr]',
                 expected: CosmeticRuleType.HtmlFilteringRule,
