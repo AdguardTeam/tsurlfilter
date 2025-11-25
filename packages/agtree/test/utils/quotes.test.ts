@@ -503,4 +503,66 @@ describe('Quote utils', () => {
             expect(QuoteUtils.quoteAndJoinStrings(actual)).toBe(expected);
         });
     });
+
+    describe('escapeDoubleQuotes', () => {
+        test.each([
+            {
+                actual: '"test""test"',
+                expected: '"test\\"test"',
+            },
+            {
+                actual: '"""test"',
+                expected: '"\\"test"',
+            },
+            {
+                actual: '"test"""',
+                expected: '"test\\""',
+            },
+            {
+                actual: 'test""test',
+                expected: 'test""test',
+            },
+            {
+                actual: '""test',
+                expected: '""test',
+            },
+            {
+                actual: 'test""',
+                expected: 'test""',
+            },
+        ])('escapeDoubleQuotes should return $expected for $actual', ({ actual, expected }) => {
+            expect(QuoteUtils.escapeDoubleQuotes(actual)).toBe(expected);
+        });
+    });
+
+    describe('unescapeDoubleQuotes', () => {
+        test.each([
+            {
+                actual: '"test\\"test"',
+                expected: '"test""test"',
+            },
+            {
+                actual: '"\\"test"',
+                expected: '"""test"',
+            },
+            {
+                actual: '"test\\""',
+                expected: '"test"""',
+            },
+            {
+                actual: 'test\\"test',
+                expected: 'test\\"test',
+            },
+            {
+                actual: '\\"test',
+                expected: '\\"test',
+            },
+            {
+                actual: 'test\\"',
+                expected: 'test\\"',
+            },
+        ])('unescapeDoubleQuotes should return $expected for $actual', ({ actual, expected }) => {
+            expect(QuoteUtils.unescapeDoubleQuotes(actual)).toBe(expected);
+        });
+    });
 });

@@ -219,65 +219,6 @@ describe('UboHtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // escaped double quote in attribute value
-            {
-                actual: '^div[attr1="1""2""3"][attr2="4""5""6"][attr3="7""8""9"]',
-                expected: (context: NodeExpectContext) => ({
-                    type: 'HtmlFilteringRuleBody',
-                    selectors: [{
-                        type: 'HtmlFilteringRuleSelector',
-                        tagName: {
-                            type: 'Value',
-                            value: 'div',
-                            ...context.getRangeFor('div'),
-                        },
-                        attributes: [{
-                            type: 'HtmlFilteringRuleSelectorAttribute',
-                            name: {
-                                type: 'Value',
-                                value: 'attr1',
-                                ...context.getRangeFor('attr1'),
-                            },
-                            value: {
-                                type: 'Value',
-                                value: '1\\"2\\"3',
-                                ...context.getRangeFor('1""2""3'),
-                            },
-                            ...context.getRangeFor('[attr1="1""2""3"]'),
-                        }, {
-                            type: 'HtmlFilteringRuleSelectorAttribute',
-                            name: {
-                                type: 'Value',
-                                value: 'attr2',
-                                ...context.getRangeFor('attr2'),
-                            },
-                            value: {
-                                type: 'Value',
-                                value: '4\\"5\\"6',
-                                ...context.getRangeFor('4""5""6'),
-                            },
-                            ...context.getRangeFor('[attr2="4""5""6"]'),
-                        }, {
-                            type: 'HtmlFilteringRuleSelectorAttribute',
-                            name: {
-                                type: 'Value',
-                                value: 'attr3',
-                                ...context.getRangeFor('attr3'),
-                            },
-                            value: {
-                                type: 'Value',
-                                value: '7\\"8\\"9',
-                                ...context.getRangeFor('7""8""9'),
-                            },
-                            ...context.getRangeFor('[attr3="7""8""9"]'),
-                        }],
-                        pseudoClasses: [],
-                        ...context.getRangeFor('div[attr1="1""2""3"][attr2="4""5""6"][attr3="7""8""9"]'),
-                    }],
-                    ...context.getFullRange(),
-                }),
-            },
-
             // tag name and attribute name with hyphen
             {
                 actual: '^my-div[attr-name="value"]',
@@ -1087,10 +1028,6 @@ describe('UboHtmlFilteringBodyParser', () => {
                 expected: String.raw`^div[attr1="value1"][attr2="value2"][attr3]`,
             },
             {
-                actual: String.raw`^div[attr1="1""2""3"][attr2="4""5""6"][attr3="7""8""9"]`,
-                expected: String.raw`^div[attr1="1""2""3"][attr2="4""5""6"][attr3="7""8""9"]`,
-            },
-            {
                 actual: String.raw`^my-div[attr-name="value"]`,
                 expected: String.raw`^my-div[attr-name="value"]`,
             },
@@ -1145,7 +1082,6 @@ describe('UboHtmlFilteringBodyParser', () => {
             '^div[attr=value]',
             '^div[attr]',
             '^div[attr1="value1"][attr2=value2][attr3]',
-            '^div[attr1="1""2""3"][attr2="4""5""6"][attr3="7""8""9"]',
             '^my-div[attr-name="value"]',
             '^my_div[attr_name="value"]',
             ' ^ div [ attr1 = " value1 " ] [ attr2 = value2 ] [ attr3 ] :nth-child( 2 ) ',

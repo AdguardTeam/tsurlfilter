@@ -67,9 +67,6 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         options = defaultParserOptions,
         baseOffset = 0,
     ): HtmlFilteringRuleBody {
-        // Escape "" in the raw input to handle them correctly
-        const escapedRaw = QuoteUtils.escapeDoubleQuotes(raw);
-
         // Construct the body node
         const result: HtmlFilteringRuleBody = {
             type: 'HtmlFilteringRuleBody',
@@ -82,7 +79,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
             result.end = baseOffset + raw.length;
         }
 
-        const stream = new CssTokenStream(escapedRaw, baseOffset);
+        const stream = new CssTokenStream(raw, baseOffset);
 
         // Skip leading whitespace
         stream.skipWhitespace();
@@ -362,7 +359,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
                 token = stream.getOrFail();
 
                 // Get the pseudo class name without the opening parenthesis
-                const pseudoClassNameRaw = escapedRaw.slice(token.start, token.end - 1);
+                const pseudoClassNameRaw = raw.slice(token.start, token.end - 1);
 
                 // Construct the pseudo class node
                 const pseudoClassName = ValueParser.parse(
@@ -383,7 +380,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
 
                 // Get the pseudo class content and escape double quotes
                 const pseudoClassContentRaw = StringUtils.escapeCharacter(
-                    escapedRaw.slice(
+                    raw.slice(
                         pseudoClassContentStartOffset,
                         pseudoClassContentEndOffset,
                     ),

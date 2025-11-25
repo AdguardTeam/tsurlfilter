@@ -1,5 +1,4 @@
 import { type HtmlFilteringRuleBody } from '../../../nodes';
-import { QuoteUtils } from '../../../utils/quotes';
 import {
     CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,
@@ -118,6 +117,6 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
             }
         }
 
-        return QuoteUtils.unescapeDoubleQuotes(result.join(EMPTY));
+        return result.join(EMPTY);
     }
 }
