@@ -312,9 +312,15 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
                         );
                     }
 
+                    // Get the raw attribute value without quotes if any
+                    const attributeValueRaw = QuoteUtils.removeQuotes(stream.fragment());
+
+                    // Escape double quotes in the attribute value
+                    const attributeValueEscaped = StringUtils.escapeCharacter(attributeValueRaw, DOUBLE_QUOTE);
+
                     // Construct the attribute value node
                     attribute.value = ValueParser.parse(
-                        QuoteUtils.removeQuotes(stream.fragment()),
+                        attributeValueEscaped,
                         options,
                         token.start + baseOffset + (token.type === TokenType.String ? 1 : 0),
                     );
@@ -409,13 +415,12 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
                 const pseudoClassContentEndOffset = token.end - 1;
 
                 // Extract the pseudo class content
-                const pseudoClassContentValue = raw.slice(
-                    pseudoClassContentStartOffset,
-                    pseudoClassContentEndOffset,
-                ).trimEnd();
+                const pseudoClassContentRaw = raw
+                    .slice(pseudoClassContentStartOffset, pseudoClassContentEndOffset)
+                    .trimEnd();
 
                 // Get the pseudo class content and escape double quotes
-                const pseudoClassContentEscaped = StringUtils.escapeCharacter(pseudoClassContentValue, DOUBLE_QUOTE);
+                const pseudoClassContentEscaped = StringUtils.escapeCharacter(pseudoClassContentRaw, DOUBLE_QUOTE);
 
                 // Construct the pseudo class content node
                 const pseudoClassContent = ValueParser.parse(
