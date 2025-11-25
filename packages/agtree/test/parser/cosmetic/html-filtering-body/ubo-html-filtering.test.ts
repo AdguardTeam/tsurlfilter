@@ -341,8 +341,8 @@ describe('UboHtmlFilteringBodyParser', () => {
                             },
                             content: {
                                 type: 'Value',
-                                value: ' 2 ',
-                                ...context.getRangeFor(' 2 '),
+                                value: '2',
+                                ...context.getRangeFor('2', 3),
                             },
                             ...context.getRangeFor(':nth-child( 2 )'),
                         }],
@@ -655,6 +655,62 @@ describe('UboHtmlFilteringBodyParser', () => {
                         }],
                         pseudoClasses: [],
                         ...context.getRangeFor('div[attr1="value1" i][attr2=value2 s]'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // responheader - basic
+            {
+                actual: '^responseheader(header-name)',
+                expected: (context: NodeExpectContext) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectors: [{
+                        type: 'HtmlFilteringRuleSelector',
+                        pseudoClasses: [{
+                            type: 'HtmlFilteringRuleSelectorPseudoClass',
+                            name: {
+                                type: 'Value',
+                                value: 'responseheader',
+                                ...context.getRangeFor('responseheader'),
+                            },
+                            content: {
+                                type: 'Value',
+                                value: 'header-name',
+                                ...context.getRangeFor('header-name'),
+                            },
+                            ...context.getRangeFor('responseheader(header-name)'),
+                        }],
+                        attributes: [],
+                        ...context.getRangeFor('responseheader(header-name)'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // responheader - with extra whitespaces
+            {
+                actual: '^responseheader(   header-name   )',
+                expected: (context: NodeExpectContext) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectors: [{
+                        type: 'HtmlFilteringRuleSelector',
+                        pseudoClasses: [{
+                            type: 'HtmlFilteringRuleSelectorPseudoClass',
+                            name: {
+                                type: 'Value',
+                                value: 'responseheader',
+                                ...context.getRangeFor('responseheader'),
+                            },
+                            content: {
+                                type: 'Value',
+                                value: 'header-name',
+                                ...context.getRangeFor('header-name'),
+                            },
+                            ...context.getRangeFor('responseheader(   header-name   )'),
+                        }],
+                        attributes: [],
+                        ...context.getRangeFor('responseheader(   header-name   )'),
                     }],
                     ...context.getFullRange(),
                 }),
@@ -984,6 +1040,37 @@ describe('UboHtmlFilteringBodyParser', () => {
                     }),
                 )),
             },
+
+            // responseheader - unfinished
+            {
+                actual: '^responseheader(',
+                expected: (context: NodeExpectContext) => (new AdblockSyntaxError(
+                    "Expected '<)-token>', but got 'end of input'",
+                    ...context.toTuple({
+                        start: context.getFullRange().end - 1,
+                        end: context.getFullRange().end,
+                    }),
+                )),
+            },
+
+            // responseheader - empty content
+            {
+                actual: '^responseheader()',
+                expected: () => (new AdblockSyntaxError(
+                    "Empty parameter for 'responseheader' function",
+                    16,
+                    16,
+                )),
+            },
+
+            // responseheader - extra content after closing parenthesis
+            {
+                actual: '^responseheader(test-header)extra',
+                expected: (context: NodeExpectContext) => (new AdblockSyntaxError(
+                    "Expected end of rule, but got '<ident-token>'",
+                    ...context.toTuple(context.getRangeFor('extra')),
+                )),
+            },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
             const fn = vi.fn(() => UboHtmlFilteringBodyParser.parse(actual));
 
@@ -1037,7 +1124,7 @@ describe('UboHtmlFilteringBodyParser', () => {
             },
             {
                 actual: String.raw` ^ div [ attr1 = " value1 " ] [ attr2 = value2 ] [ attr3 ] :nth-child( 2 ) `,
-                expected: String.raw`^div[attr1=" value1 "][attr2="value2"][attr3]:nth-child( 2 )`,
+                expected: String.raw`^div[attr1=" value1 "][attr2="value2"][attr3]:nth-child(2)`,
             },
             {
                 actual: String.raw`^div:nth-child(2)`,
@@ -1062,6 +1149,14 @@ describe('UboHtmlFilteringBodyParser', () => {
             {
                 actual: String.raw`^div[attr1="value1" i][attr2=value2 s]`,
                 expected: String.raw`^div[attr1="value1" i][attr2="value2" s]`,
+            },
+            {
+                actual: '^responseheader(header-name)',
+                expected: '^responseheader(header-name)',
+            },
+            {
+                actual: '^responseheader(   header-name   )',
+                expected: '^responseheader(header-name)',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = UboHtmlFilteringBodyParser.parse(actual);
@@ -1091,6 +1186,8 @@ describe('UboHtmlFilteringBodyParser', () => {
             '^[attr="value"]:nth-of-type(4)',
             '^div[attr="value"], span[attr2="value2"], [attr3="value3"]:nth-child(5)',
             '^div[attr1="value1" i][attr2=value2 s]',
+            '^responseheader(header-name)',
+            '^responseheader(   header-name   )',
         ])("should serialize and deserialize '%p'", async (input) => {
             await expect(input).toBeSerializedAndDeserializedProperly(
                 UboHtmlFilteringBodyParser,

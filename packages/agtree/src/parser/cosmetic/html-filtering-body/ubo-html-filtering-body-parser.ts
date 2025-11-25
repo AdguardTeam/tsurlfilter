@@ -12,22 +12,31 @@ import { CssTokenStream } from '../../css/css-token-stream';
 import { defaultParserOptions } from '../../options';
 import { AdblockSyntaxError } from '../../../errors/adblock-syntax-error';
 import { ValueParser } from '../../misc/value-parser';
-import { DOUBLE_QUOTE, EQUALS, UBO_HTML_MASK } from '../../../utils/constants';
+import {
+    DOUBLE_QUOTE,
+    EQUALS,
+    UBO_HTML_MASK,
+    UBO_RESPONSEHEADER_FN,
+} from '../../../utils/constants';
 import { QuoteUtils } from '../../../utils/quotes';
 import { StringUtils } from '../../../utils/string';
 
 /**
- * `UboHtmlFilteringBodyParser` is responsible for parsing the body of an uBlock-style HTML filtering rule.
+ * `UboHtmlFilteringBodyParser` is responsible for parsing the body of an uBlock-style HTML filtering rule,
+ * and also uBlock-style response header removal rule.
  *
  * Please note that the parser will parse any HTML filtering rule if it is syntactically correct.
  * For example, it will parse this:
  * ```adblock
  * example.com##^script:pseudo(content)
+ * example.com##^responseheader(header-name)
  * ```
  *
- * but it didn't check if the pseudo selector `pseudo` actually supported by any adblocker.
+ * but it didn't check if the pseudo selector `pseudo` or if the header name `header-name`
+ * actually supported by any adblocker.
  *
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
+ * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#response-header-filtering}
  */
 export class UboHtmlFilteringBodyParser extends BaseParser {
     /**
@@ -44,10 +53,13 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         EMPTY_BEFORE_PSEUDO_CLASS: 'Pseudo class cannot be the first child of a selector',
         EMPTY_BODY: 'HTML filtering rule body cannot be empty',
         UNEXPECTED_EMPTY_SELECTOR: 'Unexpected empty selector',
+        EMPTY_RESPONSEHEADER_PARAMETER: `Empty parameter for '${UBO_RESPONSEHEADER_FN}' function`,
+        EXPECTED_END_OF_RULE: "Expected end of rule, but got '%s'",
     };
 
     /**
-     * Parses the body of an uBlock-style HTML filtering rule.
+     * Parses the body of an uBlock-style HTML filtering rule
+     * and also uBlock-style response header removal rule.
      *
      * @param raw Raw input to parse.
      * @param options Global parser options.
@@ -60,6 +72,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
      * @example
      * ```
      * ^div:has-text(Example)
+     * ^responseheader(header-name)
      * ```
      */
     public static parse(
@@ -67,6 +80,16 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
         options = defaultParserOptions,
         baseOffset = 0,
     ): HtmlFilteringRuleBody {
+        // First, check if it's a response header removal rule and return if so
+        const responseHeaderBody = UboHtmlFilteringBodyParser.parseResponseHeaderRule(
+            raw,
+            options,
+            baseOffset,
+        );
+        if (responseHeaderBody !== null) {
+            return responseHeaderBody;
+        }
+
         // Construct the body node
         const result: HtmlFilteringRuleBody = {
             type: 'HtmlFilteringRuleBody',
@@ -368,8 +391,15 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
                     token.start + baseOffset,
                 );
 
+                // Advance the function token
+                stream.advance();
+
+                // Skip optional whitespace
+                stream.skipWhitespace();
+                token = stream.getOrFail();
+
                 // Save the pseudo class content start offset (starts after opening parenthesis)
-                const pseudoClassContentStartOffset = token.end;
+                const pseudoClassContentStartOffset = token.start;
 
                 // Find the closing parenthesis
                 stream.skipUntilBalanced();
@@ -378,18 +408,18 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
                 // Save the pseudo class content end offset (ends before closing parenthesis)
                 const pseudoClassContentEndOffset = token.end - 1;
 
+                // Extract the pseudo class content
+                const pseudoClassContentValue = raw.slice(
+                    pseudoClassContentStartOffset,
+                    pseudoClassContentEndOffset,
+                ).trimEnd();
+
                 // Get the pseudo class content and escape double quotes
-                const pseudoClassContentRaw = StringUtils.escapeCharacter(
-                    raw.slice(
-                        pseudoClassContentStartOffset,
-                        pseudoClassContentEndOffset,
-                    ),
-                    DOUBLE_QUOTE,
-                );
+                const pseudoClassContentEscaped = StringUtils.escapeCharacter(pseudoClassContentValue, DOUBLE_QUOTE);
 
                 // Construct the pseudo class content node
                 const pseudoClassContent = ValueParser.parse(
-                    pseudoClassContentRaw,
+                    pseudoClassContentEscaped,
                     options,
                     pseudoClassContentStartOffset + baseOffset,
                 );
@@ -460,6 +490,164 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
 
         // Add the last selector to the body
         result.selectors.push(currentSelector);
+
+        return result;
+    }
+
+    /**
+     * Parses uBlock-style response header removal rule body.
+     *
+     * @param raw Raw input to parse.
+     * @param options Global parser options.
+     * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
+     *
+     * @returns Node of the parsed response header removal rule body
+     * or `null` if the body is not a response header removal rule.
+     *
+     * @throws If the body is syntactically incorrect.
+     *
+     * @example
+     * ```
+     * ^responseheader(header-name)
+     * ```
+     *
+     * @note This method returns `HtmlFilteringRuleBody` because,
+     * response header removal rule syntax is same as uBlock-style
+     * HTML filtering rule syntax.
+     */
+    private static parseResponseHeaderRule(
+        raw: string,
+        options = defaultParserOptions,
+        baseOffset = 0,
+    ): HtmlFilteringRuleBody | null {
+        const stream = new CssTokenStream(raw, baseOffset);
+
+        // Skip leading whitespace
+        stream.skipWhitespace();
+
+        // Traverse stream with this token
+        let token = stream.get();
+
+        // Next token should be the `^`
+        if (!token || token.type !== TokenType.Delim || raw[token.start] !== UBO_HTML_MASK) {
+            return null;
+        }
+
+        // Skip `^`
+        stream.advance();
+
+        // Get next token
+        token = stream.get();
+
+        // Next token should be a function
+        if (!token || token.type !== TokenType.Function) {
+            return null;
+        }
+
+        // Save the selector start offset
+        const selectorStartOffset = token.start;
+
+        // Get the function name without the opening parenthesis
+        const functionName = raw.slice(token.start, token.end - 1);
+
+        // Check if it's `responseheader` function
+        if (functionName !== UBO_RESPONSEHEADER_FN) {
+            return null;
+        }
+
+        // Skip the function
+        stream.advance();
+
+        // Construct the pseudo class name node
+        const pseudoClassName = ValueParser.parse(
+            functionName,
+            options,
+            token.start + baseOffset,
+        );
+
+        // Skip whitespace after function name
+        stream.skipWhitespace();
+        token = stream.getOrFail();
+
+        // Save the parameter start offset (starts after opening parenthesis)
+        const paramStart = token.start;
+
+        // Skip until balanced closing parenthesis
+        stream.skipUntilBalanced();
+
+        // Save the parameter end offset (ends before closing parenthesis)
+        const paramEnd = stream.getOrFail().end - 1;
+
+        // Extract the parameter
+        const param = raw.slice(paramStart, paramEnd).trimEnd();
+
+        // Do not allow empty parameter
+        if (param.length === 0) {
+            throw new AdblockSyntaxError(
+                UboHtmlFilteringBodyParser.ERROR_MESSAGES.EMPTY_RESPONSEHEADER_PARAMETER,
+                paramStart + baseOffset,
+                paramEnd + baseOffset,
+            );
+        }
+
+        // Construct the pseudo class content node
+        const pseudoClassContent = ValueParser.parse(
+            param,
+            options,
+            paramStart + baseOffset,
+        );
+
+        // Skip closing parenthesis
+        stream.expect(TokenType.CloseParenthesis);
+        stream.advance();
+
+        // Skip trailing whitespace after the function call
+        stream.skipWhitespace();
+
+        // Expect the end of the rule - so nothing should be left in the stream
+        if (!stream.isEof()) {
+            token = stream.getOrFail();
+            throw new AdblockSyntaxError(
+                sprintf(
+                    UboHtmlFilteringBodyParser.ERROR_MESSAGES.EXPECTED_END_OF_RULE,
+                    getFormattedTokenName(token.type),
+                ),
+                token.start + baseOffset,
+                token.end + baseOffset,
+            );
+        }
+
+        // Construct the pseudo class node
+        const pseudoClass: HtmlFilteringRuleSelectorPseudoClass = {
+            type: 'HtmlFilteringRuleSelectorPseudoClass',
+            name: pseudoClassName,
+            content: pseudoClassContent,
+        };
+
+        // Construct the selector node
+        const selector: HtmlFilteringRuleSelector = {
+            type: 'HtmlFilteringRuleSelector',
+            attributes: [],
+            pseudoClasses: [pseudoClass],
+        };
+
+        // Construct the body node
+        const result: HtmlFilteringRuleBody = {
+            type: 'HtmlFilteringRuleBody',
+            selectors: [selector],
+        };
+
+        // Include location info if needed
+        if (options.isLocIncluded) {
+            result.start = baseOffset;
+            result.end = raw.length + baseOffset;
+
+            selector.start = selectorStartOffset + baseOffset;
+            selector.end = raw.length + baseOffset;
+
+            pseudoClass.start = selector.start;
+            pseudoClass.end = selector.end;
+        }
 
         return result;
     }

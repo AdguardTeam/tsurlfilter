@@ -1,3 +1,4 @@
+import { isUboResponseHeaderRemovalRuleBody } from '../../../common/ubo-html-filtering-body-common';
 import { type HtmlFilteringRuleBody } from '../../../nodes';
 import {
     CLOSE_PARENTHESIS,
@@ -11,6 +12,7 @@ import {
     OPEN_SQUARE_BRACKET,
     SPACE,
     UBO_HTML_MASK,
+    UBO_RESPONSEHEADER_FN,
 } from '../../../utils/constants';
 import { BaseGenerator } from '../../base-generator';
 
@@ -29,7 +31,8 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
     };
 
     /**
-     * Generates a string representation of the uBlock HTML filtering rule body.
+     * Generates a string representation of the uBlock HTML filtering rule body
+     * and also uBlock-style response header removal rules.
      *
      * @param node HTML filtering rule body.
      *
@@ -38,6 +41,12 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
      * @throws Error if the rule body is invalid.
      */
     public static generate(node: HtmlFilteringRuleBody): string {
+        // First, check if it's a response header removal rule and return if so
+        const responseHeaderBody = UboHtmlFilteringBodyGenerator.generateResponseHeaderRule(node);
+        if (responseHeaderBody !== null) {
+            return responseHeaderBody;
+        }
+
         const result: string[] = [];
 
         if (node.selectors.length === 0) {
@@ -116,6 +125,35 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
                 result.push(CLOSE_PARENTHESIS);
             }
         }
+
+        return result.join(EMPTY);
+    }
+
+    /**
+     * Generates a string representation of the uBlock-style response header removal rule.
+     *
+     * @param node Potential response header removal rule node.
+     *
+     * @returns String representation of the response header removal rule,
+     * or `null` if the node is not a response header removal rule.
+     *
+     * @note This method accepts `HtmlFilteringRuleBody` as `node` because,
+     * response header removal rule syntax is same as uBlock-style HTML filtering rule syntax.
+     */
+    private static generateResponseHeaderRule(node: HtmlFilteringRuleBody): string | null {
+        if (!isUboResponseHeaderRemovalRuleBody(node)) {
+            return null;
+        }
+
+        // Generate response header removal rule
+        const result: string[] = [];
+
+        result.push(UBO_HTML_MASK);
+        result.push(UBO_RESPONSEHEADER_FN);
+        result.push(OPEN_PARENTHESIS);
+        // Indexes checked in `isUboResponseHeaderRemovalRuleBody`
+        result.push(node.selectors[0].pseudoClasses[0].content.value);
+        result.push(CLOSE_PARENTHESIS);
 
         return result.join(EMPTY);
     }
