@@ -88,8 +88,8 @@ describe('FilterListConverter', () => {
     test('Tolerant mode should work correctly', () => {
         const filterListContent = [
             '! Title: Foo',
-            // ADG HTML filtering doesn't support CSS combinator, so this rule will be invalid
-            '##^body > script:has-text(foo)',
+            // ADG HTML filtering doesn't support attribute value flags, so this rule will be invalid
+            '##^body[attr="value" i]',
             // Should be converted
             '||example.com^$3p',
         ].join(NEWLINE);
@@ -97,7 +97,7 @@ describe('FilterListConverter', () => {
         // Expected tolerantly converted filter list
         const expectedFilterListContent = [
             '! Title: Foo',
-            '##^body > script:has-text(foo)', // Left as is
+            '##^body[attr="value" i]', // Left as is
             '||example.com^$third-party', // Converted
         ].join(NEWLINE);
 

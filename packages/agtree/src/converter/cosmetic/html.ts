@@ -2,36 +2,22 @@
  * @file HTML filtering rule converter
  */
 
-import { TokenType, getFormattedTokenName } from '@adguard/css-tokenizer';
 import { sprintf } from 'sprintf-js';
 
 import {
     CosmeticRuleSeparator,
     CosmeticRuleType,
     type HtmlFilteringRule,
+    type HtmlFilteringRuleSelector,
     RuleCategory,
 } from '../../nodes';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { RuleConversionError } from '../../errors/rule-conversion-error';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { RegExpUtils } from '../../utils/regexp';
+import { QuoteUtils } from '../../utils/quotes';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { cloneDomainListNode } from '../../ast-utils/clone';
-import { CssTokenStream } from '../../parser/css/css-token-stream';
-import {
-    CLOSE_SQUARE_BRACKET,
-    CSS_PSEUDO_CLOSE,
-    CSS_PSEUDO_MARKER,
-    CSS_PSEUDO_OPEN,
-    EMPTY,
-    EQUALS,
-    ESCAPE_CHARACTER,
-    OPEN_SQUARE_BRACKET,
-    SPACE,
-    UBO_HTML_MASK,
-} from '../../utils/constants';
-import { DOUBLE_QUOTE_MARKER, StringUtils } from '../../utils/string';
-import { QuoteUtils } from '../../utils';
 
 /**
  * From the AdGuard docs:
@@ -45,8 +31,9 @@ import { QuoteUtils } from '../../utils';
 const ADG_HTML_DEFAULT_MAX_LENGTH = 8192;
 const ADG_HTML_CONVERSION_MAX_LENGTH = ADG_HTML_DEFAULT_MAX_LENGTH * 32;
 
-const NOT_SPECIFIED = -1;
-
+/**
+ * Supported special pseudo-classes from uBlock.
+ */
 const PseudoClasses = {
     Contains: 'contains',
     HasText: 'has-text',
@@ -54,19 +41,8 @@ const PseudoClasses = {
 } as const;
 
 /**
- * Constructs a pseudo-class string with a specified value for use in CSS selectors.
- *
- * @param pseudo - The pseudo-class name.
- * @param value - The value of the pseudo-class.
- * @returns pseudo-class string, including pseudo-class name, value and delimiters.
+ * Supported special attribute selectors from AdGuard.
  */
-const addPseudoClassWithValue = <K extends keyof typeof PseudoClasses>(
-    pseudo: typeof PseudoClasses[K],
-    value: string | number,
-): string => {
-    return `${CSS_PSEUDO_MARKER}${pseudo}${CSS_PSEUDO_OPEN}${value}${CSS_PSEUDO_CLOSE}`;
-};
-
 const AttributeSelectors = {
     MaxLength: 'max-length',
     MinLength: 'min-length',
@@ -74,164 +50,44 @@ const AttributeSelectors = {
     Wildcard: 'wildcard',
 } as const;
 
+/**
+ * Set of {@link PseudoClasses}.
+ */
 const SUPPORTED_UBO_PSEUDO_CLASSES = new Set<string>([
     PseudoClasses.Contains,
     PseudoClasses.HasText,
     PseudoClasses.MinTextLength,
 ]);
 
+/**
+ * Set of {@link AttributeSelectors}.
+ */
+const SUPPORTED_ADG_ATTRIBUTE_SELECTORS = new Set<string>([
+    AttributeSelectors.MaxLength,
+    AttributeSelectors.MinLength,
+    AttributeSelectors.TagContent,
+    AttributeSelectors.Wildcard,
+]);
+
+/**
+ * Error messages used in HTML filtering rule conversion.
+ */
 export const ERROR_MESSAGES = {
     ABP_NOT_SUPPORTED: 'Invalid rule, ABP does not support HTML filtering rules',
-    TAG_SHOULD_BE_FIRST_CHILD: "Unexpected token '%s' with value '%s', tag selector should be the first child",
-    EXPECTED_BUT_GOT_WITH_VALUE: "Expected '%s', but got '%s' with value '%s'",
-    INVALID_ATTRIBUTE_NAME: "Attribute name should be an identifier, but got '%s' with value '%s'",
-    // eslint-disable-next-line max-len
-    INVALID_ATTRIBUTE_VALUE: `Expected '${getFormattedTokenName(TokenType.Ident)}' or '${getFormattedTokenName(TokenType.String)}' as attribute value, but got '%s' with value '%s`,
-    INVALID_FLAG: "Unsupported attribute selector flag '%s'",
-    INVALID_OPERATOR_FOR_ATTR: "Unsupported operator '%s' for '%s' attribute",
-    VALUE_FOR_ATTR_SHOULD_BE_INT: "Value for '%s' attribute should be an integer, but got '%s'",
-    INVALID_PSEUDO_CLASS: "Unsupported pseudo class '%s'",
-    VALUE_FOR_PSEUDO_CLASS_SHOULD_BE_INT: "Value for '%s' pseudo class should be an integer, but got '%s'",
-    // eslint-disable-next-line max-len
-    REGEXP_NOT_SUPPORTED: "Cannot convert RegExp parameter '%s' from '%s' pseudo class, because converting RegExp patterns are not supported yet",
-    ATTRIBUTE_SELECTOR_REQUIRES_VALUE: "Attribute selector '%s' requires a value",
-    INVALID_ATTRIBUTE_SELECTOR_OPERATOR: "Unsupported attribute selector operator '%s'",
-    VALUE_SHOULD_BE_SPECIFIED: 'Value should be specified if operator is specified',
-    VALUE_SHOULD_BE_POSITIVE: 'Value should be positive',
-    OPERATOR_SHOULD_BE_SPECIFIED: 'Operator should be specified if value is specified',
-    UNEXPECTED_TOKEN_WITH_VALUE: "Unexpected token '%s' with value '%s'",
-    FLAGS_NOT_SUPPORTED: 'Flags are not supported for attribute selectors',
-};
-
-/**
- * Convert `""` to `\"` within strings, because it does not compatible with the standard CSS syntax.
- *
- * @param selector CSS selector string
- * @returns Escaped CSS selector
- * @note In the legacy syntax, `""` is used to escape double quotes, but it cannot be used in the standard CSS syntax,
- * so we use conversion functions to handle this.
- * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
- */
-function escapeDoubleQuotes(selector: string): string {
-    let withinString = false;
-    const buffer: string[] = [];
-
-    for (let i = 0; i < selector.length; i += 1) {
-        if (!withinString && selector[i] === DOUBLE_QUOTE_MARKER) {
-            withinString = true;
-            buffer.push(selector[i]);
-        } else if (withinString && selector[i] === DOUBLE_QUOTE_MARKER && selector[i + 1] === DOUBLE_QUOTE_MARKER) {
-            buffer.push(ESCAPE_CHARACTER);
-            buffer.push(DOUBLE_QUOTE_MARKER);
-            i += 1;
-        } else if (withinString && selector[i] === DOUBLE_QUOTE_MARKER && selector[i + 1] !== DOUBLE_QUOTE_MARKER) {
-            buffer.push(DOUBLE_QUOTE_MARKER);
-            withinString = false;
-        } else {
-            buffer.push(selector[i]);
-        }
-    }
-
-    return buffer.join(EMPTY);
-}
-
-/**
- * Safely parses length values from attribute selectors, like `"262144"` from `[max-length="262144"]`
- *
- * @param value The string value to parse
- * @param attrName The attribute name for error messages
- * @returns Parsed number
- * @throws A {@link RuleConversionError} if parsing fails
- */
-function parseLengthValue(value: string, attrName: string): number {
-    const cleanValue = QuoteUtils.removeQuotes(value);
-
-    const parsed = Number(cleanValue);
-
-    if (Number.isNaN(parsed)) {
-        throw new RuleConversionError(
-            sprintf(ERROR_MESSAGES.VALUE_FOR_ATTR_SHOULD_BE_INT, attrName, value),
-        );
-    }
-
-    if (parsed < 0) {
-        throw new RuleConversionError(
-            sprintf(ERROR_MESSAGES.VALUE_SHOULD_BE_POSITIVE, attrName, value),
-        );
-    }
-
-    return parsed;
-}
-
-/**
- * Convert escaped double quotes `\"` to `""` within strings.
- *
- * @param selector CSS selector string
- * @returns Unescaped CSS selector
- * @note In the legacy syntax, `""` is used to escape double quotes, but it cannot be used in the standard CSS syntax,
- * so we use conversion functions to handle this.
- * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
- */
-function unescapeDoubleQuotes(selector: string): string {
-    let withinString = false;
-    const buffer: string[] = [];
-
-    for (let i = 0; i < selector.length; i += 1) {
-        if (selector[i] === DOUBLE_QUOTE_MARKER && selector[i - 1] !== ESCAPE_CHARACTER) {
-            withinString = !withinString;
-            buffer.push(selector[i]);
-        } else if (withinString && selector[i] === ESCAPE_CHARACTER && selector[i + 1] === DOUBLE_QUOTE_MARKER) {
-            buffer.push(DOUBLE_QUOTE_MARKER);
-        } else {
-            buffer.push(selector[i]);
-        }
-    }
-
-    return buffer.join(EMPTY);
-}
-
-/**
- * Helper function to render an attribute selector
- *
- * @param attr Attribute name
- * @param op Operator (optional)
- * @param value Attribute value (optional)
- * @param flags Attribute flags (optional)
- * @returns Rendered attribute selector string
- */
-function renderAttrSelector(attr: string, op?: string, value?: string, flags?: string): string {
-    const result: string[] = [];
-
-    result.push(OPEN_SQUARE_BRACKET);
-    result.push(attr);
-
-    if (op !== undefined) {
-        if (value === undefined) {
-            throw new Error(ERROR_MESSAGES.VALUE_SHOULD_BE_SPECIFIED);
-        }
-
-        result.push(op);
-    }
-
-    if (value !== undefined) {
-        if (!op) {
-            throw new Error(ERROR_MESSAGES.OPERATOR_SHOULD_BE_SPECIFIED);
-        }
-
-        result.push(DOUBLE_QUOTE_MARKER);
-        result.push(value);
-        result.push(DOUBLE_QUOTE_MARKER);
-    }
-
-    if (flags !== undefined) {
-        result.push(SPACE);
-        result.push(flags);
-    }
-
-    result.push(CLOSE_SQUARE_BRACKET);
-
-    return result.join(EMPTY);
-}
+    INVALID_RULE: 'Invalid HTML filtering rule: %s',
+    EMPTY_SELECTORS: 'Rule must contain at least one selector',
+    ONLY_ONE_SELECTOR_ALLOWED: 'AdGuard HTML filtering rules support only one selector per rule, got %d selectors',
+    PSEUDO_CLASSES_NOT_SUPPORTED: 'AdGuard HTML filtering rules do not support pseudo classes',
+    ATTR_NOT_SUPPORTED: 'Attribute selector \'%s\' is not supported',
+    ATTR_VALUE_FLAGS_NOT_SUPPORTED: 'Attribute selector value with flags is not supported',
+    ATTR_VALUE_REQUIRED: 'Attribute selector \'%s\' requires a value',
+    ATTR_VALUE_INT: 'The value of attribute selector \'%s\' must be an integer, got \'%s\'',
+    ATTR_VALUE_POSITIVE: 'The value of attribute selector \'%s\' must be a positive integer, got \'%s\'',
+    PSEUDO_CLASS_NOT_SUPPORTED: 'Pseudo class \'%s\' is not supported',
+    PSEUDO_CLASS_INT: 'The content of pseudo class \'%s\' must be an integer, got \'%s\'',
+    PSEUDO_CLASS_POSITIVE: 'The content of pseudo class \'%s\' must be a positive integer, got \'%s\'',
+    PSEUDO_CLASS_REGEX_NOT_SUPPORTED: 'Regular expressions are not supported in the pseudo class content \'%s\'',
+} as const;
 
 /**
  * HTML filtering rule converter class
@@ -270,254 +126,199 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
-        const source = escapeDoubleQuotes(rule.body.value);
-        const stream = new CssTokenStream(source);
+        if (rule.body.selectors.length === 0) {
+            throw new RuleConversionError(
+                sprintf(
+                    ERROR_MESSAGES.INVALID_RULE,
+                    ERROR_MESSAGES.EMPTY_SELECTORS,
+                ),
+            );
+        }
 
-        const convertedSelector: string[] = [];
-        const convertedSelectorList: string[] = [];
+        const convertedSelectors: HtmlFilteringRuleSelector[] = [];
+        for (const { tagName, attributes, pseudoClasses } of rule.body.selectors) {
+            const adgSelector: HtmlFilteringRuleSelector = {
+                type: 'HtmlFilteringRuleSelector',
+                attributes: [],
+                pseudoClasses: [],
+            };
 
-        let minLen = NOT_SPECIFIED;
-        let maxLen = NOT_SPECIFIED;
+            // Add tag name if present
+            if (tagName) {
+                adgSelector.tagName = {
+                    type: 'Value',
+                    value: tagName.value,
+                };
+            }
 
-        // Skip leading whitespace
-        stream.skipWhitespace();
+            let minLength: number | undefined;
+            let maxLength: number | undefined;
+            let tagContent: string | undefined;
 
-        // Skip ^
-        stream.expect(TokenType.Delim, { value: UBO_HTML_MASK });
-        stream.advance();
-
-        while (!stream.isEof()) {
-            const token = stream.getOrFail();
-
-            if (token.type === TokenType.Ident) {
-                // Tag selector should be the first child, if present, but whitespace is allowed before it
-                if (convertedSelector.length !== 0 && stream.lookbehindForNonWs() !== undefined) {
-                    throw new RuleConversionError(
-                        sprintf(
-                            ERROR_MESSAGES.TAG_SHOULD_BE_FIRST_CHILD,
-                            getFormattedTokenName(token.type),
-                            source.slice(token.start, token.end),
-                        ),
-                    );
+            // Convert attributes
+            for (const { name, value, flags } of attributes) {
+                // throw if flags are present, as AdGuard doesn't support them
+                if (flags) {
+                    throw new RuleConversionError(ERROR_MESSAGES.ATTR_VALUE_FLAGS_NOT_SUPPORTED);
                 }
 
-                convertedSelector.push(source.slice(token.start, token.end));
-                stream.advance();
-            } else if (token.type === TokenType.OpenSquareBracket) {
-                // Attribute selectors: https://developer.mozilla.org/en-US/docs/Web/CSS/Attribute_selectors#syntax
-                const { start } = token;
-                let tempToken;
-
-                // Advance opening square bracket
-                stream.advance();
-
-                // Skip optional whitespace after the opening square bracket
-                stream.skipWhitespace();
-
-                // Parse attribute name
-                tempToken = stream.getOrFail();
-
-                if (tempToken.type !== TokenType.Ident) {
-                    throw new RuleConversionError(
-                        sprintf(
-                            ERROR_MESSAGES.INVALID_ATTRIBUTE_NAME,
-                            getFormattedTokenName(tempToken.type),
-                            source.slice(tempToken.start, tempToken.end),
-                        ),
-                    );
-                }
-
-                const attr = source.slice(tempToken.start, tempToken.end);
-                stream.advance();
-
-                // Skip optional whitespace after the attribute name
-                stream.skipWhitespace();
-
-                // Maybe attribute selector ends here, because value is not required, like in '[disabled]'
-                tempToken = stream.getOrFail();
-
-                // So check if the next non whitespace token is a closing square bracket
-                if (tempToken.type === TokenType.CloseSquareBracket) {
-                    const { end } = tempToken;
-                    stream.advance();
-
-                    // Special case for min-length and max-length attributes
-                    if (attr === AttributeSelectors.MinLength || attr === AttributeSelectors.MaxLength) {
-                        throw new RuleConversionError(sprintf(ERROR_MESSAGES.ATTRIBUTE_SELECTOR_REQUIRES_VALUE, attr));
-                    }
-
-                    convertedSelector.push(source.slice(start, end));
+                // If it's not a special attribute, copy as is
+                if (!SUPPORTED_ADG_ATTRIBUTE_SELECTORS.has(name.value)) {
+                    adgSelector.attributes.push({
+                        type: 'HtmlFilteringRuleSelectorAttribute',
+                        name: {
+                            type: 'Value',
+                            value: name.value,
+                        },
+                        value: value ? {
+                            type: 'Value',
+                            value: QuoteUtils.unescapeDoubleQuotes(value.value),
+                        } : undefined,
+                    });
                     continue;
                 }
 
-                // Next token should be a valid attribute selector operator
-                // Only '=' operator is supported
-                stream.expect(TokenType.Delim, { value: EQUALS });
-
-                // Advance the operator
-                stream.advance();
-
-                // Skip optional whitespace after the operator
-                stream.skipWhitespace();
-
-                // Parse attribute value
-                tempToken = stream.getOrFail();
-
-                // According to the spec, attribute value should be an identifier or a string
-                if (tempToken.type !== TokenType.Ident && tempToken.type !== TokenType.String) {
+                // Handle special attributes.
+                // This shouldn't happen at first place, but if it happens to contain
+                // ADG only special attributes in uBO rule, we need to handle them
+                // to avoid attribute duplication. But if convertible pseudo classes
+                // are present, they will take precedence over special attributes here.
+                if (!value) {
                     throw new RuleConversionError(
                         sprintf(
-                            ERROR_MESSAGES.INVALID_ATTRIBUTE_VALUE,
-                            getFormattedTokenName(tempToken.type),
-                            source.slice(tempToken.start, tempToken.end),
+                            ERROR_MESSAGES.ATTR_VALUE_REQUIRED,
+                            name.value,
                         ),
                     );
                 }
 
-                const value = source.slice(tempToken.start, tempToken.end);
-
-                // Advance the attribute value
-                stream.advance();
-
-                // Skip optional whitespace after the attribute value
-                stream.skipWhitespace();
-
-                // Attribute selector may have flags - but AdGuard HTML filtering does not support them
-                tempToken = stream.getOrFail();
-
-                if (tempToken.type === TokenType.Ident) {
-                    throw new RuleConversionError(sprintf(ERROR_MESSAGES.FLAGS_NOT_SUPPORTED));
-                }
-
-                // Next token should be a closing square bracket
-                stream.expect(TokenType.CloseSquareBracket);
-                const { end } = stream.getOrFail();
-                stream.advance();
-
-                if (attr === AttributeSelectors.MinLength) {
-                    // Min length attribute
-                    const parsed = parseInt(value, 10);
-
-                    if (Number.isNaN(parsed)) {
-                        throw new RuleConversionError(
-                            sprintf(ERROR_MESSAGES.VALUE_FOR_ATTR_SHOULD_BE_INT, attr, value),
-                        );
-                    }
-
-                    minLen = parsed;
-                } else if (attr === AttributeSelectors.MaxLength) {
-                    // Max length attribute
-                    const parsed = parseInt(value, 10);
-
-                    if (Number.isNaN(parsed)) {
-                        throw new RuleConversionError(
-                            sprintf(ERROR_MESSAGES.VALUE_FOR_ATTR_SHOULD_BE_INT, attr, value),
-                        );
-                    }
-
-                    maxLen = parsed;
+                let parsedValue: string | number = value.value;
+                if (
+                    name.value === AttributeSelectors.MinLength
+                    || name.value === AttributeSelectors.MaxLength
+                ) {
+                    parsedValue = HtmlRuleConverter.parseLengthValue(
+                        name.value,
+                        value.value,
+                        ERROR_MESSAGES.ATTR_VALUE_INT,
+                        ERROR_MESSAGES.ATTR_VALUE_POSITIVE,
+                    );
                 } else {
-                    convertedSelector.push(source.slice(start, end));
-                }
-            } else if (token.type === TokenType.Colon) {
-                let tempToken;
-
-                // Pseudo classes: https://developer.mozilla.org/en-US/docs/Web/CSS/Pseudo-classes#syntax
-                stream.advance();
-
-                // Next token should be a pseudo class name
-                stream.expect(TokenType.Function);
-                tempToken = stream.getOrFail();
-                const fn = source.slice(tempToken.start, tempToken.end - 1); // do not include '('
-
-                // Pseudo class should be supported
-                if (!SUPPORTED_UBO_PSEUDO_CLASSES.has(fn)) {
-                    throw new RuleConversionError(sprintf(ERROR_MESSAGES.INVALID_PSEUDO_CLASS, fn));
+                    parsedValue = QuoteUtils.unescapeDoubleQuotes(value.value);
                 }
 
-                const paramStart = tempToken.end;
+                if (name.value === AttributeSelectors.MinLength) {
+                    // [min-length] alternative in uBO is :min-text-length()
+                    minLength = parsedValue as number;
+                } else if (name.value === AttributeSelectors.MaxLength) {
+                    // [max-length] has no alternative in uBO, so we can just copy it
+                    maxLength = parsedValue as number;
+                } else if (name.value === AttributeSelectors.TagContent) {
+                    // [tag-content] alternative in uBO is :has-text() or :contains()
+                    tagContent = parsedValue as string;
+                } else {
+                    // Other special attributes can be copied as is
+                    // because they don't have equivalents in uBO
+                    adgSelector.attributes.push({
+                        type: 'HtmlFilteringRuleSelectorAttribute',
+                        name: {
+                            type: 'Value',
+                            value: name.value,
+                        },
+                        value: {
+                            type: 'Value',
+                            value: String(parsedValue),
+                        },
+                    });
+                }
+            }
 
-                // Find the closing paren
-                stream.skipUntilBalanced();
+            // Convert pseudo classes
+            for (const { name, content } of pseudoClasses) {
+                if (!SUPPORTED_UBO_PSEUDO_CLASSES.has(name.value)) {
+                    throw new RuleConversionError(
+                        sprintf(
+                            ERROR_MESSAGES.PSEUDO_CLASS_NOT_SUPPORTED,
+                            name.value,
+                        ),
+                    );
+                }
 
-                tempToken = stream.getOrFail();
-                const paramEnd = tempToken.end;
-
-                // Get the parameter
-                const param = source.slice(paramStart, paramEnd - 1);
-
-                if (fn === PseudoClasses.MinTextLength) {
-                    // Min text length pseudo class
-                    // Parameter should be parsed as an integer
-                    const parsed = parseInt(param, 10);
-
-                    if (Number.isNaN(parsed)) {
+                if (name.value === PseudoClasses.MinTextLength) {
+                    const parsedLength = HtmlRuleConverter.parseLengthValue(
+                        name.value,
+                        content.value,
+                        ERROR_MESSAGES.PSEUDO_CLASS_INT,
+                        ERROR_MESSAGES.PSEUDO_CLASS_POSITIVE,
+                    );
+                    minLength = parsedLength;
+                } else if (
+                    name.value === PseudoClasses.HasText
+                    || name.value === PseudoClasses.Contains
+                ) {
+                    if (RegExpUtils.isRegexPattern(content.value)) {
                         throw new RuleConversionError(
-                            sprintf(ERROR_MESSAGES.VALUE_FOR_PSEUDO_CLASS_SHOULD_BE_INT, fn, param),
+                            sprintf(
+                                ERROR_MESSAGES.PSEUDO_CLASS_REGEX_NOT_SUPPORTED,
+                                name.value,
+                            ),
                         );
                     }
-
-                    minLen = parsed;
-                } else if (fn === PseudoClasses.Contains || fn === PseudoClasses.HasText) {
-                    // Contains and has-text pseudo classes
-                    // Check if the argument is a RegExp
-                    if (RegExpUtils.isRegexPattern(param)) {
-                        // TODO: Add some support for RegExp patterns later
-                        // Need to find a way to convert some RegExp patterns to glob patterns
-                        throw new RuleConversionError(sprintf(ERROR_MESSAGES.REGEXP_NOT_SUPPORTED, param, fn));
-                    }
-
-                    // Escape unescaped double quotes in the parameter
-                    const paramEscaped = StringUtils.escapeCharacter(param, DOUBLE_QUOTE_MARKER);
-                    convertedSelector.push(renderAttrSelector(AttributeSelectors.TagContent, EQUALS, paramEscaped));
+                    tagContent = QuoteUtils.unescapeDoubleQuotes(content.value);
                 }
-
-                stream.advance();
-            } else if (token.type === TokenType.Comma && token.balance === 0) {
-                if (minLen !== NOT_SPECIFIED) {
-                    convertedSelector.push(renderAttrSelector(AttributeSelectors.MinLength, EQUALS, minLen.toString()));
-                }
-                convertedSelector.push(
-                    renderAttrSelector(
-                        AttributeSelectors.MaxLength,
-                        EQUALS,
-                        maxLen !== NOT_SPECIFIED ? maxLen.toString() : ADG_HTML_CONVERSION_MAX_LENGTH.toString(),
-                    ),
-                );
-                convertedSelectorList.push(convertedSelector.join(EMPTY));
-                convertedSelector.length = 0;
-                stream.advance();
-            } else if (token.type === TokenType.Whitespace) {
-                stream.advance();
-            } else {
-                throw new RuleConversionError(
-                    sprintf(
-                        ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
-                        getFormattedTokenName(token.type),
-                        source.slice(token.start, token.end),
-                    ),
-                );
             }
-        }
 
-        if (convertedSelector.length !== 0) {
-            if (minLen !== NOT_SPECIFIED) {
-                convertedSelector.push(renderAttrSelector(AttributeSelectors.MinLength, EQUALS, minLen.toString()));
+            if (tagContent !== undefined) {
+                adgSelector.attributes.push({
+                    type: 'HtmlFilteringRuleSelectorAttribute',
+                    name: {
+                        type: 'Value',
+                        value: AttributeSelectors.TagContent,
+                    },
+                    value: {
+                        type: 'Value',
+                        value: tagContent,
+                    },
+                });
             }
-            convertedSelector.push(
-                renderAttrSelector(
-                    AttributeSelectors.MaxLength,
-                    EQUALS,
-                    maxLen !== NOT_SPECIFIED ? maxLen.toString() : ADG_HTML_CONVERSION_MAX_LENGTH.toString(),
-                ),
-            );
-            convertedSelectorList.push(convertedSelector.join(EMPTY));
+
+            if (minLength !== undefined) {
+                adgSelector.attributes.push({
+                    type: 'HtmlFilteringRuleSelectorAttribute',
+                    name: {
+                        type: 'Value',
+                        value: AttributeSelectors.MinLength,
+                    },
+                    value: {
+                        type: 'Value',
+                        value: String(minLength),
+                    },
+                });
+            }
+
+            if (maxLength === undefined) {
+                maxLength = ADG_HTML_CONVERSION_MAX_LENGTH;
+            }
+
+            adgSelector.attributes.push({
+                type: 'HtmlFilteringRuleSelectorAttribute',
+                name: {
+                    type: 'Value',
+                    value: AttributeSelectors.MaxLength,
+                },
+                value: {
+                    type: 'Value',
+                    value: String(maxLength),
+                },
+            });
+
+            convertedSelectors.push(adgSelector);
         }
 
         return createNodeConversionResult(
             // Since AdGuard HTML filtering rules do not support multiple selectors, we need to split each selector
             // into a separate rule node.
-            convertedSelectorList.map((selector) => ({
+            convertedSelectors.map((selector) => ({
                 category: RuleCategory.Cosmetic,
                 type: CosmeticRuleType.HtmlFilteringRule,
                 syntax: AdblockSyntax.Adg,
@@ -534,8 +335,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 },
 
                 body: {
-                    type: 'Value',
-                    value: unescapeDoubleQuotes(selector),
+                    type: 'HtmlFilteringRuleBody',
+                    selectors: [selector],
                 },
             })),
             true,
@@ -565,127 +366,121 @@ export class HtmlRuleConverter extends RuleConverterBase {
             throw new RuleConversionError(ERROR_MESSAGES.ABP_NOT_SUPPORTED);
         }
 
-        const source = escapeDoubleQuotes(rule.body.value);
-        const stream = new CssTokenStream(source);
+        if (rule.body.selectors.length !== 1) {
+            throw new RuleConversionError(
+                sprintf(
+                    ERROR_MESSAGES.INVALID_RULE,
+                    sprintf(
+                        ERROR_MESSAGES.ONLY_ONE_SELECTOR_ALLOWED,
+                        rule.body.selectors.length,
+                    ),
+                ),
+            );
+        }
 
-        const convertedSelector: string[] = [];
-        let minTextLength: number | undefined;
+        const [adgSelector] = rule.body.selectors;
 
-        // Skip leading whitespace
-        stream.skipWhitespace();
+        if (adgSelector.pseudoClasses.length > 0) {
+            throw new RuleConversionError(
+                sprintf(
+                    ERROR_MESSAGES.INVALID_RULE,
+                    ERROR_MESSAGES.PSEUDO_CLASSES_NOT_SUPPORTED,
+                ),
+            );
+        }
 
-        while (!stream.isEof()) {
-            const token = stream.getOrFail();
+        const uboSelector: HtmlFilteringRuleSelector = {
+            type: 'HtmlFilteringRuleSelector',
+            attributes: [],
+            pseudoClasses: [],
+        };
 
-            if (token.type === TokenType.Ident) {
-                convertedSelector.push(source.slice(token.start, token.end));
-                stream.advance();
-            } else if (token.type === TokenType.OpenSquareBracket) {
-                // Attribute selectors
-                const { start } = token;
-                let tempToken;
+        // Convert tag name if present
+        if (adgSelector.tagName) {
+            uboSelector.tagName = {
+                type: 'Value',
+                value: adgSelector.tagName.value,
+            };
+        }
 
-                // Advance opening square bracket
-                stream.advance();
-
-                // Skip optional whitespace
-                stream.skipWhitespace();
-
-                // Parse attribute name
-                tempToken = stream.getOrFail();
-
-                if (tempToken.type !== TokenType.Ident) {
-                    throw new RuleConversionError(
-                        sprintf(
-                            ERROR_MESSAGES.INVALID_ATTRIBUTE_NAME,
-                            getFormattedTokenName(tempToken.type),
-                            source.slice(tempToken.start, tempToken.end),
-                        ),
-                    );
-                }
-
-                const attr = source.slice(tempToken.start, tempToken.end);
-                stream.advance();
-
-                // Skip optional whitespace
-                stream.skipWhitespace();
-
-                // Check if this is a standalone attribute (like [disabled])
-                tempToken = stream.getOrFail();
-                if (tempToken.type === TokenType.CloseSquareBracket) {
-                    const { end } = tempToken;
-                    stream.advance();
-                    convertedSelector.push(source.slice(start, end));
-                    continue;
-                }
-
-                // Expect equals operator
-                stream.expect(TokenType.Delim, { value: EQUALS });
-                stream.advance();
-
-                // Skip optional whitespace
-                stream.skipWhitespace();
-
-                // Parse attribute value
-                tempToken = stream.getOrFail();
-                if (tempToken.type !== TokenType.Ident && tempToken.type !== TokenType.String) {
-                    throw new RuleConversionError(
-                        sprintf(
-                            ERROR_MESSAGES.INVALID_ATTRIBUTE_VALUE,
-                            getFormattedTokenName(tempToken.type),
-                            source.slice(tempToken.start, tempToken.end),
-                        ),
-                    );
-                }
-
-                const value = source.slice(tempToken.start, tempToken.end);
-                stream.advance();
-
-                // Skip optional whitespace
-                stream.skipWhitespace();
-
-                // Check for closing bracket
-                tempToken = stream.getOrFail();
-
-                if (tempToken.type !== TokenType.CloseSquareBracket) {
-                    throw new RuleConversionError(sprintf(ERROR_MESSAGES.FLAGS_NOT_SUPPORTED));
-                }
-                const { end } = stream.getOrFail();
-                stream.advance();
-
-                // Handle special attributes with improved number parsing
-                if (attr === AttributeSelectors.MinLength || attr === AttributeSelectors.MaxLength) {
-                    const parsedValue = parseLengthValue(value, attr);
-                    if (attr === AttributeSelectors.MinLength) {
-                        minTextLength = parsedValue;
-                    }
-                } else if (attr === AttributeSelectors.TagContent) {
-                    const unescapedValue = unescapeDoubleQuotes(value);
-                    const valueWithoutQuotes = QuoteUtils.removeQuotes(unescapedValue);
-                    convertedSelector.push(addPseudoClassWithValue(PseudoClasses.HasText, valueWithoutQuotes));
-                } else {
-                    convertedSelector.push(source.slice(start, end));
-                }
-            } else if (token.type === TokenType.Whitespace) {
-                stream.advance();
-            } else {
+        // Convert attributes
+        for (const { name, value, flags } of adgSelector.attributes) {
+            if (flags) {
                 throw new RuleConversionError(
                     sprintf(
-                        ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
-                        getFormattedTokenName(token.type),
-                        source.slice(token.start, token.end),
+                        ERROR_MESSAGES.INVALID_RULE,
+                        ERROR_MESSAGES.ATTR_VALUE_FLAGS_NOT_SUPPORTED,
                     ),
                 );
             }
-        }
 
-        // Handle min length conversions
-        if (minTextLength !== undefined) {
-            convertedSelector.push(addPseudoClassWithValue(PseudoClasses.MinTextLength, minTextLength));
-        }
+            // If it's not a special attribute, copy as is
+            if (!SUPPORTED_ADG_ATTRIBUTE_SELECTORS.has(name.value)) {
+                uboSelector.attributes.push({
+                    type: 'HtmlFilteringRuleSelectorAttribute',
+                    name: {
+                        type: 'Value',
+                        value: name.value,
+                    },
+                    value: value ? {
+                        type: 'Value',
+                        value: value.value,
+                    } : undefined,
+                });
+                continue;
+            }
 
-        // Combine all selectors
-        const uboSelector = `${convertedSelector.join(EMPTY)}`;
+            // Handle special attributes
+            if (!value) {
+                throw new RuleConversionError(
+                    sprintf(
+                        ERROR_MESSAGES.ATTR_VALUE_REQUIRED,
+                        name.value,
+                    ),
+                );
+            }
+
+            let parsedValue: string | number = value.value;
+            if (
+                name.value === AttributeSelectors.MinLength
+                || name.value === AttributeSelectors.MaxLength
+            ) {
+                parsedValue = HtmlRuleConverter.parseLengthValue(
+                    name.value,
+                    value.value,
+                    ERROR_MESSAGES.ATTR_VALUE_INT,
+                    ERROR_MESSAGES.ATTR_VALUE_POSITIVE,
+                );
+            }
+
+            if (name.value === AttributeSelectors.MinLength) {
+                // Convert to :min-text-length() pseudo class
+                uboSelector.pseudoClasses.push({
+                    type: 'HtmlFilteringRuleSelectorPseudoClass',
+                    name: {
+                        type: 'Value',
+                        value: PseudoClasses.MinTextLength,
+                    },
+                    content: {
+                        type: 'Value',
+                        value: String(parsedValue),
+                    },
+                });
+            } else if (name.value === AttributeSelectors.TagContent) {
+                // Convert to :has-text() pseudo class
+                uboSelector.pseudoClasses.push({
+                    type: 'HtmlFilteringRuleSelectorPseudoClass',
+                    name: {
+                        type: 'Value',
+                        value: PseudoClasses.HasText,
+                    },
+                    content: {
+                        type: 'Value',
+                        value: parsedValue as string,
+                    },
+                });
+            }
+        }
 
         return createNodeConversionResult(
             [{
@@ -699,16 +494,59 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 separator: {
                     type: 'Value',
                     value: rule.exception
-                        ? `${CosmeticRuleSeparator.ElementHidingException}${UBO_HTML_MASK}`
-                        : `${CosmeticRuleSeparator.ElementHiding}${UBO_HTML_MASK}`,
+                        ? CosmeticRuleSeparator.ElementHidingException
+                        : CosmeticRuleSeparator.ElementHiding,
                 },
 
                 body: {
-                    type: 'Value',
-                    value: unescapeDoubleQuotes(uboSelector),
+                    type: 'HtmlFilteringRuleBody',
+                    selectors: [uboSelector],
                 },
             }],
             true,
         );
+    }
+
+    /**
+     * Parses special attribute / pseudo class length value.
+     *
+     * @param name Name of the attribute or pseudo-class.
+     * @param value Value to parse.
+     * @param notIntErrorMessage Error message when the value is not an integer.
+     * @param notPositiveErrorMessage Error message when the value is not positive.
+     *
+     * @returns Parsed length value.
+     *
+     * @throws If the value is not a valid number or not positive.
+     */
+    private static parseLengthValue(
+        name: string,
+        value: string,
+        notIntErrorMessage: string,
+        notPositiveErrorMessage: string,
+    ): number {
+        const parsed = Number(value);
+
+        if (Number.isNaN(parsed)) {
+            throw new RuleConversionError(
+                sprintf(
+                    notIntErrorMessage,
+                    name,
+                    value,
+                ),
+            );
+        }
+
+        if (parsed < 0) {
+            throw new RuleConversionError(
+                sprintf(
+                    notPositiveErrorMessage,
+                    name,
+                    value,
+                ),
+            );
+        }
+
+        return parsed;
     }
 }

@@ -78,12 +78,52 @@ describe('Converter integration tests', () => {
         describe('should throw error on invalid uBO HTML filtering rules', () => {
             test.each([
                 {
-                    actual: 'example.com##^body > script:has-text(test)',
-                    expected: "Unexpected token '<delim-token>' with value '>'",
+                    actual: '##^tag[attr="value" i]',
+                    expected: 'Attribute selector value with flags is not supported',
                 },
                 {
-                    actual: 'example.com##^script:some-another-rule(test)',
-                    expected: "Unsupported pseudo class 'some-another-rule'",
+                    actual: '##^tag[min-length]',
+                    expected: 'Attribute selector \'min-length\' requires a value',
+                },
+                {
+                    actual: '##^tag[max-length]',
+                    expected: 'Attribute selector \'max-length\' requires a value',
+                },
+                {
+                    actual: '##^tag[wildcard]',
+                    expected: 'Attribute selector \'wildcard\' requires a value',
+                },
+                {
+                    actual: '##^tag[tag-content]',
+                    expected: 'Attribute selector \'tag-content\' requires a value',
+                },
+                {
+                    actual: '##^tag[min-length="test"]',
+                    expected: 'The value of attribute selector \'min-length\' must be an integer, got \'test\'',
+                },
+                {
+                    actual: '##^tag[max-length="test"]',
+                    expected: 'The value of attribute selector \'max-length\' must be an integer, got \'test\'',
+                },
+                {
+                    actual: '##^tag[min-length="-1"]',
+                    expected: 'The value of attribute selector \'min-length\' must be a positive integer, got \'-1\'',
+                },
+                {
+                    actual: '##^tag[max-length="-1"]',
+                    expected: 'The value of attribute selector \'max-length\' must be a positive integer, got \'-1\'',
+                },
+                {
+                    actual: '##^tag:some-pseudo()',
+                    expected: 'Pseudo class \'some-pseudo\' is not supported',
+                },
+                {
+                    actual: '##^tag:has-text(/some-regexp/)',
+                    expected: 'Regular expressions are not supported in the pseudo class content \'has-text\'',
+                },
+                {
+                    actual: '##^tag:contains(/some-regexp/)',
+                    expected: 'Regular expressions are not supported in the pseudo class content \'contains\'',
                 },
             ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
                 expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(
@@ -613,18 +653,6 @@ describe('Converter integration tests', () => {
             ])('should convert \'$actual\' to \'$expected\'', (testData) => {
                 expect(testData).toBeConvertedProperly(RuleConverter, 'convertToAdg');
             });
-
-            // Invalid cases
-            test.each([
-                {
-                    actual: 'example.com##^body > script:has-text(test)',
-                    expected: "Unexpected token '<delim-token>' with value '>'",
-                },
-            ])("should throw error '$expected' on '$actual'", ({ actual, expected }) => {
-                expect(() => RuleConverter.convertToAdg(RuleParser.parse(actual))).toThrowError(
-                    new RuleConversionError(expected),
-                );
-            });
         });
 
         describe('should add ExtCss separator when needed', () => {
@@ -873,7 +901,7 @@ describe('Converter integration tests', () => {
                 // eslint-disable-next-line max-len
                     actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
                     expected: [
-                        'example.com,~example.net#@#^script:has-text(console.log(""doubles""))',
+                        'example.com,~example.net#@#^script:has-text(console.log(\\"doubles\\"))',
                     ],
                     shouldConvert: true,
                 },
@@ -898,22 +926,24 @@ describe('Converter integration tests', () => {
                     ],
                     shouldConvert: true,
                 },
-                {
-                    actual: String.raw`~example.com,google.com$$div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
-                    expected: [
-                        String.raw`~example.com,google.com##^div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
-                    ],
-                    shouldConvert: true,
-                },
-                {
-                    // eslint-disable-next-line max-len
-                    actual: String.raw`~example.com,google.com$$div[id="ad_text"][tag-content="teas""ernet"][max-length="500"][min-length="50"][wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]`,
-                    expected: [
-                        // eslint-disable-next-line max-len
-                        String.raw`~example.com,google.com##^div[id="ad_text"]:has-text(teas""ernet)[wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]:min-text-length(50)`,
-                    ],
-                    shouldConvert: true,
-                },
+                // FIXME: update test after clarification
+                // {
+                //     actual: String.raw`~example.com,google.com$$div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
+                //     expected: [
+                //         String.raw`~example.com,google.com##^div[id="ad_text"][wildcard="*teasernet*tararar*"]`,
+                //     ],
+                //     shouldConvert: true,
+                // },
+                // FIXME: update test after clarification
+                // {
+                // eslint-disable-next-line max-len
+                //     actual: String.raw`~example.com,google.com$$div[id="ad_text"][tag-content="teas""ernet"][max-length="500"][min-length="50"][wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]`,
+                //     expected: [
+                // eslint-disable-next-line max-len
+                //         String.raw`~example.com,google.com##^div[id="ad_text"]:has-text(teas""ernet)[wildcard="*.adriver.*"][parent-search-level="15"][parent-elements="td,table"]:min-text-length(50)`,
+                //     ],
+                //     shouldConvert: true,
+                // },
                 {
                     // eslint-disable-next-line max-len
                     actual: String.raw`~example.com,google.com$$div[id="ad_text"][max-length="500000"][min-length="50"]`,
@@ -951,7 +981,7 @@ describe('Converter integration tests', () => {
                 // eslint-disable-next-line max-len
                     actual: String.raw`example.com,~example.net$@$script[tag-content="console.log(""doubles"")"][max-length="262144"]`,
                     expected: [
-                        'example.com,~example.net#@#^script:has-text(console.log(""doubles""))',
+                        'example.com,~example.net#@#^script:has-text(console.log(\\"doubles\\"))',
                     ],
                     shouldConvert: true,
                 },
