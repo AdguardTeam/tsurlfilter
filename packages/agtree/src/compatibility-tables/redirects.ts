@@ -35,13 +35,17 @@ const redirectNameNormalizer = (name: string): string => {
         return name.slice(ABP_RESOURCE_PREFIX_LENGTH);
     }
 
-    // Remove :[integer] priority suffix from the name, if present
-    // See:
-    // - https://github.com/AdguardTeam/tsurlfilter/issues/59
-    // - https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
+    /**
+     * Remove :[integer] priority suffix from the name, if present.
+     *
+     * Note: negative values are also supported, see AG-48788.
+     *
+     * @see https://github.com/AdguardTeam/tsurlfilter/issues/59
+     * @see https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#redirect
+     */
     const colonIndex = name.lastIndexOf(COLON);
 
-    if (colonIndex !== -1 && /^\d+$/.test(name.slice(colonIndex + 1))) {
+    if (colonIndex !== -1 && /^-?\d+$/.test(name.slice(colonIndex + 1))) {
         return name.slice(0, colonIndex);
     }
 

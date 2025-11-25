@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Updated [@adguard/agtree] to `v3.3.0`.
-- Updated [@adguard/tsurlfilter] to `v3.5.0`.
+- Updated [@adguard/agtree] to `v3.3.1`.
+<!-- TODO: update version after release -->
+- Updated [@adguard/tsurlfilter] to `v3.5.x`.
 
 ## [3.2.15] - 2025-11-12
 

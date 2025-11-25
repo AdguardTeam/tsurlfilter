@@ -352,6 +352,10 @@ describe('NetworkRuleConverter', () => {
                 expected: ['||example.com^$script,redirect=noop.js'],
             },
             {
+                actual: '@@||example.com^$script,redirect=noopjs:-1',
+                expected: ['@@||example.com^$script,redirect=noop.js'],
+            },
+            {
                 actual: '||example.com^$xmlhttprequest,redirect=nooptext',
                 expected: ['||example.com^$xhr,redirect=noop.txt'],
             },
