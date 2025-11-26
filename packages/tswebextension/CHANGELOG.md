@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated [@adguard/agtree] to `v3.3.1`.
 <!-- TODO: update version after release -->
 - Updated [@adguard/tsurlfilter] to `v3.5.x`.
+- Updated [@adguard/assistant] to `v4.3.77`.
 
 ## [3.2.15] - 2025-11-12
 
