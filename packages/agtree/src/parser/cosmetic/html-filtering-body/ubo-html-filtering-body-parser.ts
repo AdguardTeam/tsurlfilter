@@ -22,8 +22,8 @@ import { QuoteUtils } from '../../../utils/quotes';
 import { StringUtils } from '../../../utils/string';
 
 /**
- * `UboHtmlFilteringBodyParser` is responsible for parsing the body of an uBlock-style HTML filtering rule,
- * and also uBlock-style response header removal rule.
+ * `UboHtmlFilteringBodyParser` is responsible for parsing the body of
+ * an uBlock-style HTML filtering rule, and also uBlock-style response header removal rule.
  *
  * Please note that the parser will parse any HTML filtering rule if it is syntactically correct.
  * For example, it will parse this:
@@ -32,8 +32,8 @@ import { StringUtils } from '../../../utils/string';
  * example.com##^responseheader(header-name)
  * ```
  *
- * but it didn't check if the pseudo selector `pseudo` or if the header name `header-name`
- * actually supported by any adblocker.
+ * but it didn't check if the pseudo selector `pseudo` or if
+ * the header name `header-name` actually supported by any adblocker.
  *
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
  * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#response-header-filtering}

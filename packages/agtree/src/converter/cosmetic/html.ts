@@ -84,6 +84,7 @@ export const ERROR_MESSAGES = {
     ATTR_VALUE_INT: 'The value of attribute selector \'%s\' must be an integer, got \'%s\'',
     ATTR_VALUE_POSITIVE: 'The value of attribute selector \'%s\' must be a positive integer, got \'%s\'',
     PSEUDO_CLASS_NOT_SUPPORTED: 'Pseudo class \'%s\' is not supported',
+    PSEUDO_CLASS_REQUIRED: 'Pseudo class \'%s\' requires a content value',
     PSEUDO_CLASS_INT: 'The content of pseudo class \'%s\' must be an integer, got \'%s\'',
     PSEUDO_CLASS_POSITIVE: 'The content of pseudo class \'%s\' must be a positive integer, got \'%s\'',
     PSEUDO_CLASS_REGEX_NOT_SUPPORTED: 'Regular expressions are not supported in the pseudo class content \'%s\'',
@@ -239,6 +240,15 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     throw new RuleConversionError(
                         sprintf(
                             ERROR_MESSAGES.PSEUDO_CLASS_NOT_SUPPORTED,
+                            name.value,
+                        ),
+                    );
+                }
+
+                if (content.value.length === 0) {
+                    throw new RuleConversionError(
+                        sprintf(
+                            ERROR_MESSAGES.PSEUDO_CLASS_REQUIRED,
                             name.value,
                         ),
                     );

@@ -180,6 +180,14 @@ describe('HtmlRuleConverter', () => {
                     input: '##^tag:contains(/some-regexp/)',
                     error: 'Regular expressions are not supported in the pseudo class content \'contains\'',
                 },
+                {
+                    input: '##^tag:min-text-length()',
+                    error: 'Pseudo class \'min-text-length\' requires a content value',
+                },
+                {
+                    input: '##^tag:min-text-length(   )',
+                    error: 'Pseudo class \'min-text-length\' requires a content value',
+                },
             ])('should not convert \'$input\'', ({ input, error }) => {
                 if (typeof input !== 'string') {
                     expect(() => {

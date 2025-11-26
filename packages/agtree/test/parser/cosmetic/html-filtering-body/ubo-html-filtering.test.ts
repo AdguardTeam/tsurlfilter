@@ -387,6 +387,40 @@ describe('UboHtmlFilteringBodyParser', () => {
                 }),
             },
 
+            // empty params of pseudo class
+            {
+                actual: '^div:first-child()',
+                expected: (context: NodeExpectContext) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    selectors: [{
+                        type: 'HtmlFilteringRuleSelector',
+                        tagName: {
+                            type: 'Value',
+                            value: 'div',
+                            ...context.getRangeFor('div'),
+                        },
+                        attributes: [],
+                        pseudoClasses: [{
+                            type: 'HtmlFilteringRuleSelectorPseudoClass',
+                            name: {
+                                type: 'Value',
+                                value: 'first-child',
+                                ...context.getRangeFor('first-child'),
+                            },
+                            content: {
+                                type: 'Value',
+                                value: '',
+                                start: 17,
+                                end: 17,
+                            },
+                            ...context.getRangeFor(':first-child()'),
+                        }],
+                        ...context.getRangeFor('div:first-child()'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
             // multiple pseudo classes
             {
                 actual: '^div:nth-child(3):has-text(example)',

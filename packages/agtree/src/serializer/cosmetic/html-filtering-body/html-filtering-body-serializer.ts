@@ -93,7 +93,7 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
         // Write tag name
         if (!isUndefined(node.tagName)) {
             buffer.writeUint8(HtmlFilteringBodyMarshallingMap.TagName);
-            ValueSerializer.serialize(node.tagName, buffer, undefined, true);
+            ValueSerializer.serialize(node.tagName, buffer);
         }
 
         // Write attributes length
@@ -169,13 +169,13 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
         // Write attribute value
         if (!isUndefined(node.value)) {
             buffer.writeUint8(HtmlFilteringBodyMarshallingMap.AttributeValue);
-            ValueSerializer.serialize(node.value, buffer, undefined, false);
+            ValueSerializer.serialize(node.value, buffer);
         }
 
         // Write attribute flags
         if (!isUndefined(node.flags)) {
             buffer.writeUint8(HtmlFilteringBodyMarshallingMap.AttributeFlags);
-            ValueSerializer.serialize(node.flags, buffer, undefined, false);
+            ValueSerializer.serialize(node.flags, buffer);
         }
 
         // Write attribute start position
@@ -216,7 +216,7 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
 
         // Write pseudo class content
         buffer.writeUint8(HtmlFilteringBodyMarshallingMap.PseudoClassContent);
-        ValueSerializer.serialize(node.content, buffer, undefined, false);
+        ValueSerializer.serialize(node.content, buffer);
 
         // Write pseudo class start position
         if (!isUndefined(node.start)) {

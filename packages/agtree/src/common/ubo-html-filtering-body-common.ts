@@ -7,6 +7,9 @@ import { UBO_RESPONSEHEADER_FN } from '../utils/constants';
  * @param node Potential response header removal rule node.
  *
  * @returns `true` if the node is a response header removal rule, `false` otherwise.
+ *
+ * @note This method checks `HtmlFilteringRuleBody` because, response header
+ * removal rule syntax is same as uBlock-style HTML filtering rule syntax.
  */
 export function isUboResponseHeaderRemovalRuleBody(node: HtmlFilteringRuleBody): boolean {
     return (
