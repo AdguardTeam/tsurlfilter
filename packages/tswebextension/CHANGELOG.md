@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   supports User Scripts API.
 - CSP report blocking service for Manifest V3.
 
+### Changed
+
+- Updated [@adguard/assistant] to `v4.3.77`.
+
 ### Removed
 
 - `quickFixesRules` property from MV3 configuration.
