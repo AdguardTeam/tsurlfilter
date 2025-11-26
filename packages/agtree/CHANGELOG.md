@@ -7,6 +7,13 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## Unreleased
+
+### Added
+
+- HTML filtering rules support in parser, generator, serializer,
+  deserializer and converter for `AdGuard` and `uBlock Origin` syntaxes.
+
 ## [3.2.3] - 2025-08-28
 
 ### Fixed
