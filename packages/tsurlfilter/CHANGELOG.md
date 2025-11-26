@@ -5,11 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [3.5.1] - 2025-11-26
 
 ### Changed
 
 - Updated [@adguard/agtree] to `v3.3.1`.
+- Updated [@adguard/scriptlets] to `v2.2.13`.
+
+[3.5.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/tsurlfilter-v3.5.1
 
 ## [3.5.0] - 2025-11-20
 
