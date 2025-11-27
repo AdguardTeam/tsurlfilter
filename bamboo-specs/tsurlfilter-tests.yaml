@@ -35,9 +35,6 @@ variables:
 # Stage 6:
 # - Example APIs and TSWebExtensions for MV2 and MV3.
 #
-# Stage 7:
-# - Update TSUrlFilter Docs MV3.
-#
 # Note: Cleanup is performed after each stage to prevent disk space issues
 # and ensure clean state for subsequent builds, as each stage runs in a separate
 # directory and accumulated build artifacts can consume significant disk space.
@@ -70,10 +67,6 @@ stages:
       <<: *stage
       jobs:
         - Test Examples - APIs and TSWebExtensions
-  - Stage 7:
-      <<: *stage
-      jobs:
-        - Update TSUrlFilter Docs MV3
 
 # NOTE: Each script is separate because, otherwise, Bamboo does not fail in the case of an error.
 
@@ -230,26 +223,6 @@ Test Examples - APIs and TSWebExtensions:
       pattern: extension.zip
       shared: false
       required: false
-  requirements: *requirements
-
-Update TSUrlFilter Docs MV3:
-  key: UPDTSURLFILTERDOCSMV3
-  docker: *docker
-  tasks:
-    - checkout:
-        force-clean-build: true
-    - script: *setup-script
-    - script:
-        interpreter: SHELL
-        scripts:
-          - "./bamboo-specs/scripts/timeout-wrapper.sh ${bamboo.testTimeout} ./bamboo-specs/scripts/tsurlfilter-update-docs-mv3.sh"
-    - any-task:
-        plugin-key: com.atlassian.bamboo.plugins.vcs:task.vcs.commit
-        configuration:
-          commitMessage: 'skipci: Automatic update tsurlfilter MV3 docs'
-          selectedRepository: defaultRepository
-  final-tasks:
-    - script: *cleanup-script
   requirements: *requirements
 
 branches:
