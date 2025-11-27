@@ -24,10 +24,10 @@ export class UboHtmlFilteringBodyGenerator extends BaseGenerator {
      * Error messages used by the generator.
      */
     public static readonly ERROR_MESSAGES = {
-        EMPTY_BODY: 'HTML filtering rule body cannot be empty.',
-        EMPTY_SELECTORS: 'HTML filtering rule body must have at least one selector.',
+        EMPTY_BODY: 'HTML filtering rule body cannot be empty',
+        EMPTY_SELECTORS: 'HTML filtering rule body must have at least one selector',
         EMPTY_BEFORE_PSEUDO_CLASS: 'Pseudo class cannot be the first child of a selector',
-        FLAGS_WITHOUT_VALUE: 'Attribute flags cannot be specified without an attribute value.',
+        FLAGS_WITHOUT_VALUE: 'Attribute flags cannot be specified without an attribute value',
     };
 
     /**

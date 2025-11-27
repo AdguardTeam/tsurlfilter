@@ -17,11 +17,11 @@ export class AdgHtmlFilteringBodyGenerator extends BaseGenerator {
      * Error messages used by the generator.
      */
     public static readonly ERROR_MESSAGES = {
-        EMPTY_BODY: 'HTML filtering rule body cannot be empty.',
-        EMPTY_SELECTORS: 'HTML filtering rule body must have at least one selector.',
-        MULTIPLE_SELECTORS: 'AdGuard HTML filtering rule body must have exactly one selector.',
-        PSEUDO_CLASSES_NOT_SUPPORTED: 'AdGuard HTML filtering rules do not support pseudo-classes in selectors.',
-        ATTRIBUTE_FLAGS_NOT_SUPPORTED: 'AdGuard HTML filtering rules do not support attribute flags.',
+        EMPTY_BODY: 'HTML filtering rule body cannot be empty',
+        EMPTY_SELECTORS: 'HTML filtering rule body must have at least one selector',
+        MULTIPLE_SELECTORS: 'AdGuard HTML filtering rule body must have exactly one selector',
+        PSEUDO_CLASSES_NOT_SUPPORTED: 'AdGuard HTML filtering rules do not support pseudo-classes in selectors',
+        ATTRIBUTE_FLAGS_NOT_SUPPORTED: 'AdGuard HTML filtering rules do not support attribute flags',
     };
 
     /**
