@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 ### Added
 
 - HTML filtering rules support in parser, generator, serializer,
-  deserializer and converter for `AdGuard` and `uBlock Origin` syntaxes.
+  deserializer and converter for `AdGuard` and `uBlock` syntaxes.
 
 ## [3.2.3] - 2025-08-28
 
