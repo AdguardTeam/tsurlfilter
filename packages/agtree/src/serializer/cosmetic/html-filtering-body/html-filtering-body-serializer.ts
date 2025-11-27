@@ -47,7 +47,7 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
 
         // Write selectors
         for (const selector of node.selectors) {
-            HtmlFilteringBodySerializer.deserializeSelector(
+            HtmlFilteringBodySerializer.serializeSelector(
                 selector,
                 buffer,
                 frequentAttributes,
@@ -81,7 +81,7 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
      * @param frequentPseudoClasses An optional map of frequently used pseudo-class names,
      * along with their corresponding serialization index.
      */
-    private static deserializeSelector(
+    private static serializeSelector(
         node: HtmlFilteringRuleSelector,
         buffer: OutputByteBuffer,
         frequentAttributes?: Map<string, number>,
@@ -106,7 +106,7 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
 
         // Write attributes
         for (const attribute of node.attributes) {
-            HtmlFilteringBodySerializer.deserializeAttribute(
+            HtmlFilteringBodySerializer.serializeAttribute(
                 attribute,
                 buffer,
                 frequentAttributes,
@@ -123,7 +123,7 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
 
         // Write pseudo classes
         for (const pseudoClass of node.pseudoClasses) {
-            HtmlFilteringBodySerializer.deserializePseudoClass(
+            HtmlFilteringBodySerializer.serializePseudoClass(
                 pseudoClass,
                 buffer,
                 frequentPseudoClasses,
@@ -154,7 +154,7 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
      * @param frequentAttributes An optional map of frequently used attribute names,
      * along with their corresponding serialization index.
      */
-    private static deserializeAttribute(
+    private static serializeAttribute(
         node: HtmlFilteringRuleSelectorAttribute,
         buffer: OutputByteBuffer,
         frequentAttributes?: Map<string, number>,
@@ -202,7 +202,7 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
      * @param frequentPseudoClasses An optional map of frequently used pseudo-class names,
      * along with their corresponding serialization index.
      */
-    private static deserializePseudoClass(
+    private static serializePseudoClass(
         node: HtmlFilteringRuleSelectorPseudoClass,
         buffer: OutputByteBuffer,
         frequentPseudoClasses?: Map<string, number>,
