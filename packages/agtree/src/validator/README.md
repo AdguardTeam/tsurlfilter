@@ -56,34 +56,31 @@ modifierValidator.exists(ModifierParser.parse('non-existent-modifier=value'));
 
 ```ts
 /**
- * Checks whether the given `modifier` is valid for specified `syntax`.
+ * Checks whether the given `modifier` is valid for specified `platforms`.
+ * It checks whether the modifier is supported by the product, deprecated, assignable, negatable, etc.
  *
- * For `Common` syntax it simply checks whether the modifier exists.
- * For specific syntax the validation is more complex —
- * deprecated, assignable, negatable and other requirements are checked.
- *
- * @param syntax Adblock syntax to check the modifier for.
- * @param rawModifier Modifier AST node.
+ * @param platforms Platforms to check the modifier for. Can be a specific platform (e.g., AdgExtChrome)
+ * or a generic platform (e.g., AdgAny, UboExtChromium, or combination of multiple products).
+ * @param modifier Modifier AST node.
  * @param isException Whether the modifier is used in exception rule, default to false.
  * Needed to check whether the modifier is allowed only in blocking or exception rules.
  *
+ * @note For single product: specific platforms use exact lookup, generic platforms use first match.
+ * If multiple products are specified (e.g., AdgAny | UboAny), validation is skipped and returns valid.
+ *
  * @returns Result of modifier validation.
  */
-validate(syntax: AdblockSyntax, rawModifier: Modifier, isException = false): ValidationResult;
+validate(platforms: AnyPlatform, modifier: Modifier, isException = false): ValidationResult;
 ```
 
 where
 
-- `AdblockSyntax` is a string enum with the following values:
-
-    ```ts
-    enum AdblockSyntax {
-        Common = 'Common',
-        Abp = 'AdblockPlus',
-        Ubo = 'uBlockOrigin',
-        Adg = 'AdGuard',
-    }
-    ```
+- `platforms` is any compatibility table platform - can be:
+    - A specific platform (e.g., `SpecificPlatform.AdgExtChrome`)
+    - A generic platform for a single product (e.g., `GenericPlatform.AdgAny`,
+      `GenericPlatform.UboExtChromium`)
+    - A combination of multiple products (e.g., `GenericPlatform.AdgAny | GenericPlatform.UboAny`) -
+      in this case validation is skipped and returns `{ valid: true }`
 
 - `Modifier` is a [common parser type][parser-modifier-type]
 
@@ -95,7 +92,7 @@ where
      * - `{ valid: true }` for valid and _fully supported_ modifier;
      * - `{ valid: true, warn: <deprecation notice> }` for valid
      *   and _still supported but deprecated_ modifier;
-     * - otherwise `{ valid: true, error: <invalidity reason> }`
+     * - otherwise `{ valid: false, error: <invalidity reason> }`
      */
     type ValidationResult = {
         valid: boolean,
@@ -109,7 +106,7 @@ where
 [**Examples of `validate()` usage:**](#modifier-validator-api--validate--examples)
 
 ```ts
-import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/agtree';
+import { SpecificPlatform, ModifierParser, modifierValidator } from '@adguard/agtree';
 // ModifierParser.parse() converts a string modifier into the AGTree `Modifier` type
 ```
 
@@ -117,7 +114,7 @@ import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/
 
     ```ts
     modifierValidator.validate(
-        AdblockSyntax.Adg,
+        SpecificPlatform.AdgOsWindows,
         ModifierParser.parse('webrtc'),
     );
     ```
@@ -135,7 +132,7 @@ import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/
 
     ```ts
     modifierValidator.validate(
-        AdblockSyntax.Abp,
+        SpecificPlatform.UboExtFirefox,
         ModifierParser.parse('webrtc'),
     );
     ```
@@ -152,7 +149,7 @@ import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/
 
     ```ts
     modifierValidator.validate(
-        AdblockSyntax.Adg,
+        SpecificPlatform.AdgOsWindows,
         ModifierParser.parse('stealth=dpi'),
         false,
     );
@@ -171,7 +168,7 @@ import { type AdblockSyntax, ModifierParser, modifierValidator } from '@adguard/
 
     ```ts
     modifierValidator.validate(
-        AdblockSyntax.Adg,
+        SpecificPlatform.AdgOsWindows,
         ModifierParser.parse('mp4'),
     );
     ```

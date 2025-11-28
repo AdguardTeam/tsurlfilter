@@ -7,6 +7,29 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [3.4.0] - 2025-11-28
+
+### Added
+
+- Export for `AdblockProduct`.
+- Export for `hasPlatformMultipleProducts`, `getProductGenericPlatforms`, `getProductSpecificPlatforms`,
+  `platformToAdblockProduct`, `getPlatformsByProduct`, `getHumanReadablePlatformName`, `stringifyPlatforms`,
+  `getAllPlatformNames` platform helpers.
+- Export for `PLATFORM_NEGATION`, `PLATFORM_SEPARATOR` constants.
+- Export for `PlatformsByProduct`, `AnyPlatform` types.
+
+### Changed
+
+- Modifier validator now accepts compatibility platforms mask instead of syntax.
+
+### Fixed
+
+- Type safety for `GenericPlatform` and `SpecificPlatform` by adding branded types.
+- Improved `AnyPlatform` type by adding support for numeric values.
+- Improved type safety for compatibility tables functions.
+
+[3.4.0]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.0
+
 ## [3.3.1] - 2025-11-25
 
 ### Fixed

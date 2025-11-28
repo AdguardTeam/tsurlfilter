@@ -10,7 +10,7 @@ export interface Storage<K = string, V = unknown> {
      * Writes the given data to the storage with the specified key.
      *
      * @param key The key to identify the data in the storage.
-     * @param chunks The data to write to the storage.
+     * @param data The data to write to the storage.
      * @returns A promise that resolves when the write operation is complete.
      */
     set(key: K, data: V): Promise<void>;

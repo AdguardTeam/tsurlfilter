@@ -12,13 +12,25 @@ export type {
     RowByProduct,
     RowsByProduct,
 } from './base';
-export { parseRawPlatforms, stringifyPlatforms as serializePlatforms } from './schemas';
+export {
+    parseRawPlatforms,
+    stringifyPlatforms,
+    PLATFORM_NEGATION,
+    PLATFORM_SEPARATOR,
+} from './schemas';
 export {
     isGenericPlatform,
+    hasPlatformMultipleProducts,
+    getProductGenericPlatforms,
+    getProductSpecificPlatforms,
+    platformToAdblockProduct,
+    getPlatformsByProduct,
     getPlatformId,
     getSpecificPlatformName,
     getHumanReadablePlatformName,
+    getAllPlatformNames,
 } from './utils/platform-helpers';
+export type { PlatformsByProduct } from './utils/platform-helpers';
 export {
     ResourceType,
 } from './schemas/resource-type';

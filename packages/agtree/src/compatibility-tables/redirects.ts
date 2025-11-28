@@ -8,7 +8,7 @@ import { redirectsCompatibilityTableData } from './compatibility-table-data';
 import { type CompatibilityTable } from './types';
 import { deepFreeze } from '../utils/deep-freeze';
 import { COLON } from '../utils/constants';
-import { type GenericPlatform, type SpecificPlatform } from './platforms';
+import { type AnyPlatform } from './platforms';
 import { getResourceTypeModifier } from './utils/resource-type-helpers';
 import { isNull, isString, isUndefined } from '../utils/type-guards';
 
@@ -70,13 +70,13 @@ class RedirectsCompatibilityTable extends CompatibilityTableBase<RedirectDataSch
      * based on the `resourceTypes` field.
      *
      * @param redirect Redirect name or redirect data.
-     * @param platform Platform to get the modifiers for.
+     * @param platform Platform to get the modifiers for (can be specific, generic, or combined platforms).
      *
      * @returns Set of resource type modifiers or an empty set if the redirect is not found or has no resource types.
      */
     public getResourceTypeModifiers(
         redirect: string | RedirectDataSchema,
-        platform: SpecificPlatform | GenericPlatform,
+        platform: AnyPlatform,
     ): Set<string> {
         let redirectData: RedirectDataSchema | null = null;
 

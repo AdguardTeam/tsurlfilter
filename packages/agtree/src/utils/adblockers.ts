@@ -3,6 +3,36 @@
  */
 
 /**
+ * Adblock products (specific adblockers, excludes 'Common').
+ */
+export const AdblockProduct = {
+    /**
+     * Adblock Plus.
+     *
+     * @see {@link https://adblockplus.org/}
+     */
+    Abp: 'AdblockPlus',
+
+    /**
+     * uBlock Origin.
+     *
+     * @see {@link https://github.com/gorhill/uBlock}
+     */
+    Ubo: 'UblockOrigin',
+
+    /**
+     * AdGuard.
+     *
+     * @see {@link https://adguard.com/}
+     */
+    Adg: 'AdGuard',
+} as const;
+
+// intentionally naming the variable the same as the type
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export type AdblockProduct = typeof AdblockProduct[keyof typeof AdblockProduct];
+
+/**
  * Possible adblock syntaxes (supported by this library)
  */
 export const AdblockSyntax = {
@@ -27,7 +57,7 @@ export const AdblockSyntax = {
      * adblockers directly (probably supported by some on-the-fly conversion, but this is not the native syntax).
      * @see {@link https://adblockplus.org/}
      */
-    Abp: 'AdblockPlus',
+    Abp: AdblockProduct.Abp,
 
     /**
      * uBlock Origin syntax.
@@ -37,7 +67,7 @@ export const AdblockSyntax = {
      * adblockers directly (probably supported by some on-the-fly conversion, but this is not the native syntax).
      * @see {@link https://github.com/gorhill/uBlock}
      */
-    Ubo: 'UblockOrigin',
+    Ubo: AdblockProduct.Ubo,
 
     /**
      * AdGuard syntax.
@@ -48,9 +78,14 @@ export const AdblockSyntax = {
      * syntax).
      * @see {@link https://adguard.com/}
      */
-    Adg: 'AdGuard',
+    Adg: AdblockProduct.Adg,
 } as const;
 
 // intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 export type AdblockSyntax = typeof AdblockSyntax[keyof typeof AdblockSyntax];
+
+/**
+ * @deprecated Use AdblockProduct instead.
+ */
+export type StrictAdblockSyntax = AdblockProduct;

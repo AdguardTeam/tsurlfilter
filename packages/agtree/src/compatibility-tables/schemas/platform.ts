@@ -7,27 +7,28 @@ import zod from 'zod';
 
 import { GENERIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP, SPECIFIC_PLATFORM_MAP_REVERSE } from '../utils/platform-helpers';
 import { isUndefined } from '../../utils/type-guards';
+import { type AnyPlatform } from '../platforms';
 
 /**
  * Platform separator, e.g. 'adg_os_any|adg_safari_any' means any AdGuard OS platform and
  * any AdGuard Safari content blocker platform.
  */
-const PLATFORM_SEPARATOR = '|';
+export const PLATFORM_SEPARATOR = '|';
 
 /**
  * Platform negation character, e.g. 'adg_any|~adg_safari_any' means any AdGuard product except
  * Safari content blockers.
  */
-const PLATFORM_NEGATION = '~';
+export const PLATFORM_NEGATION = '~';
 
 /**
  * Parses a raw platform string into a platform bitmask.
  *
  * @param rawPlatforms Raw platform string, e.g. 'adg_safari_any|adg_os_any'.
  *
- * @returns Platform bitmask.
+ * @returns Platform bitmask (can be specific, generic, or combined platforms).
  */
-export const parseRawPlatforms = (rawPlatforms: string): number => {
+export const parseRawPlatforms = (rawPlatforms: string): AnyPlatform => {
     // e.g. 'adg_safari_any|adg_os_any'
     const rawPlatformList = rawPlatforms
         .split(PLATFORM_SEPARATOR)
@@ -68,12 +69,12 @@ export const parseRawPlatforms = (rawPlatforms: string): number => {
  * Converts a platform bitmask back to a string representation.
  * Prefers generic platforms over specific platforms where possible.
  *
- * @param bitmask Platform bitmask.
+ * @param bitmask Platform bitmask (can be specific, generic, or combined platforms).
  *
  * @returns Platform string, e.g. 'adg_safari_any|adg_os_any' or 'adg_os_windows|adg_ext_chrome'.
  * @throws Error if the bitmask is 0 or contains unknown platforms.
  */
-export const stringifyPlatforms = (bitmask: number): string => {
+export const stringifyPlatforms = (bitmask: AnyPlatform): string => {
     if (bitmask === 0) {
         throw new Error('Invalid bitmask: 0');
     }

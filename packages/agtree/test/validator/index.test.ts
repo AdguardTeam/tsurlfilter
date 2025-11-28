@@ -1,12 +1,13 @@
 import { describe, expect, test } from 'vitest';
+import { sprintf } from 'sprintf-js';
 
 import { type Modifier } from '../../src/nodes';
 import { ModifierParser } from '../../src/parser/misc/modifier-parser';
 import { modifierValidator } from '../../src/validator';
 import { StringUtils } from '../../src/utils/string';
 import { VALIDATION_ERROR_PREFIX } from '../../src/validator/constants';
-import { AdblockSyntax } from '../../src/utils/adblockers';
 import { LIST_PARSE_ERROR_PREFIX } from '../../src/parser/misc/list-items-parser';
+import { GenericPlatform, getHumanReadablePlatformName, SpecificPlatform } from '../../src/compatibility-tables';
 
 /**
  * Returns modifier AST node for given rawModifier.
@@ -178,7 +179,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -190,7 +191,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                 expect(validationResult.valid).toBeTruthy();
                 expect(validationResult.error).toBeUndefined();
                 expect(validationResult.warn?.includes('support shall be removed in the future')).toBeTruthy();
@@ -209,7 +210,8 @@ describe('ModifierValidator', () => {
                 },
                 {
                     actual: 'popunder',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows)),
                 },
                 {
                     actual: 'object-subrequest',
@@ -254,7 +256,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -276,7 +278,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, false);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier, false);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
@@ -291,7 +293,7 @@ describe('ModifierValidator', () => {
             test.each(validForBlockingModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, false);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier, false);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -306,7 +308,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForExceptionRuleModifiers)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier, true);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -319,7 +321,7 @@ describe('ModifierValidator', () => {
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier, true);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -338,7 +340,7 @@ describe('ModifierValidator', () => {
                 ];
                 test.each(validModifiers)('%s', (rawModifier) => {
                     const modifier = getModifier(rawModifier);
-                    const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                    const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                     expect(validationResult.valid).toBeTruthy();
                 });
             });
@@ -381,7 +383,7 @@ describe('ModifierValidator', () => {
                         'replace=/fourthColumnWrapper//',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -396,7 +398,7 @@ describe('ModifierValidator', () => {
                         'domain=example.com|example.org|test-example.*',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -442,7 +444,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
@@ -457,7 +459,7 @@ describe('ModifierValidator', () => {
                         'denyallow=example.com|example.org|test-example.com',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -520,7 +522,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
@@ -538,7 +540,7 @@ describe('ModifierValidator', () => {
                         'app=Example.exe|~com.example.app|com.example.osx',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -593,7 +595,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
@@ -609,7 +611,7 @@ describe('ModifierValidator', () => {
                         'method=get|post|put',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -664,7 +666,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
@@ -681,7 +683,11 @@ describe('ModifierValidator', () => {
                         'stealth=useragent|ip|xclientdata|dpi',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        const validationResult = modifierValidator.validate(
+                            SpecificPlatform.AdgOsWindows,
+                            modifier,
+                            true,
+                        );
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -735,7 +741,11 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        const validationResult = modifierValidator.validate(
+                            SpecificPlatform.AdgOsWindows,
+                            modifier,
+                            true,
+                        );
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error).toEqual(expected);
                     });
@@ -764,7 +774,11 @@ describe('ModifierValidator', () => {
                         "csp=trusted-types foo bar 'allow-duplicates'",
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        const validationResult = modifierValidator.validate(
+                            SpecificPlatform.AdgOsWindows,
+                            modifier,
+                            true,
+                        );
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -808,7 +822,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error).toEqual(expected);
                     });
@@ -830,7 +844,11 @@ describe('ModifierValidator', () => {
                         'permissions=join-ad-interest-group=()\\, run-ad-auction=()\\, browsing-topics=()',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        const validationResult = modifierValidator.validate(
+                            SpecificPlatform.AdgOsWindows,
+                            modifier,
+                            true,
+                        );
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -945,7 +963,7 @@ describe('ModifierValidator', () => {
                         // },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error).toEqual(expected);
                     });
@@ -967,7 +985,11 @@ describe('ModifierValidator', () => {
                         'referrerpolicy',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier, true);
+                        const validationResult = modifierValidator.validate(
+                            SpecificPlatform.AdgOsWindows,
+                            modifier,
+                            true,
+                        );
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -996,7 +1018,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Adg, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.AdgOsWindows, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error).toEqual(expected);
                     });
@@ -1016,7 +1038,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
+                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -1037,19 +1059,23 @@ describe('ModifierValidator', () => {
                 },
                 {
                     actual: 'genericblock',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
                 },
                 {
                     actual: 'object-subrequest',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
                 },
                 {
                     actual: 'app=com.test.app',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
                 },
                 {
                     actual: 'jsinject',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)),
                 },
                 {
                     actual: '~popup',
@@ -1078,7 +1104,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
+                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -1094,7 +1120,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, false);
+                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier, false);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(VALIDATION_ERROR_PREFIX.EXCEPTION_ONLY)).toBeTruthy();
             });
@@ -1106,7 +1132,7 @@ describe('ModifierValidator', () => {
             test.each(validForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, false);
+                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier, false);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -1121,7 +1147,7 @@ describe('ModifierValidator', () => {
             test.each(invalidForExceptionRuleModifiers)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, true);
+                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier, true);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -1133,7 +1159,7 @@ describe('ModifierValidator', () => {
             test.each(validForExceptionRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'true' for exception rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier, true);
+                const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier, true);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -1148,7 +1174,7 @@ describe('ModifierValidator', () => {
                         'to=example.com|example.org|test-example.*',
                     ])('%s', (rawModifier) => {
                         const modifier = getModifier(rawModifier);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier);
                         expect(validationResult.valid).toBeTruthy();
                     });
                 });
@@ -1194,7 +1220,7 @@ describe('ModifierValidator', () => {
                         },
                     ])('$actual', ({ actual, expected }) => {
                         const modifier = getModifier(actual);
-                        const validationResult = modifierValidator.validate(AdblockSyntax.Ubo, modifier);
+                        const validationResult = modifierValidator.validate(SpecificPlatform.UboExtFirefox, modifier);
                         expect(validationResult.valid).toBeFalsy();
                         expect(validationResult.error?.startsWith(expected)).toBeTruthy();
                     });
@@ -1214,7 +1240,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(supportedModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AbpExtChrome, modifier);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
@@ -1231,19 +1257,23 @@ describe('ModifierValidator', () => {
                 },
                 {
                     actual: 'object-subrequest',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
                 },
                 {
                     actual: 'app=com.test.app',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
                 },
                 {
                     actual: 'jsinject',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
                 },
                 {
                     actual: 'denyallow',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
                 },
                 {
                     actual: '~popup',
@@ -1263,7 +1293,8 @@ describe('ModifierValidator', () => {
                 },
                 {
                     actual: '___',
-                    expected: VALIDATION_ERROR_PREFIX.NOT_SUPPORTED,
+                    // eslint-disable-next-line max-len
+                    expected: sprintf(VALIDATION_ERROR_PREFIX.NOT_SUPPORTED, getHumanReadablePlatformName(SpecificPlatform.AbpExtChrome)),
                 },
                 {
                     actual: 'rewrite',
@@ -1281,7 +1312,7 @@ describe('ModifierValidator', () => {
             ];
             test.each(unsupportedModifiersCases)('$actual', ({ actual, expected }) => {
                 const modifier = getModifier(actual);
-                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AbpExtChrome, modifier);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(expected)).toBeTruthy();
             });
@@ -1297,7 +1328,7 @@ describe('ModifierValidator', () => {
                 const EXPECTED_ERROR = 'Only exception rules may contain the modifier';
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AbpExtChrome, modifier, false);
                 expect(validationResult.valid).toBeFalsy();
                 expect(validationResult.error?.startsWith(EXPECTED_ERROR)).toBeTruthy();
             });
@@ -1309,9 +1340,160 @@ describe('ModifierValidator', () => {
             test.each(validForBlockingRuleModifiers)('%s', (rawModifier) => {
                 const modifier = getModifier(rawModifier);
                 // third argument is 'false' for blocking rules
-                const validationResult = modifierValidator.validate(AdblockSyntax.Abp, modifier, false);
+                const validationResult = modifierValidator.validate(SpecificPlatform.AbpExtChrome, modifier, false);
                 expect(validationResult.valid).toBeTruthy();
             });
         });
     });
+
+    /* eslint-disable no-bitwise */
+    describe('skip validation for multiple products', () => {
+        describe('valid - validation skipped', () => {
+            const modifiersToTest = [
+                // AdGuard-specific modifiers should pass with multiple products
+                'app=com.test.app',
+                'jsinject',
+                'stealth',
+                // uBlock-specific modifiers should pass with multiple products
+                'popunder',
+                // Removed modifiers should pass with multiple products
+                'webrtc',
+                'object-subrequest',
+            ];
+            test.each(modifiersToTest)('%s', (rawModifier) => {
+                const modifier = getModifier(rawModifier);
+                // Test AdgAny | UboAny combination
+                const validationResult1 = modifierValidator.validate(
+                    (GenericPlatform.AdgAny | GenericPlatform.UboAny) as GenericPlatform,
+                    modifier,
+                );
+                expect(validationResult1.valid).toBeTruthy();
+                expect(validationResult1.error).toBeUndefined();
+                expect(validationResult1.warn).toBeUndefined();
+
+                // Test AdgAny | AbpAny combination
+                const validationResult2 = modifierValidator.validate(
+                    (GenericPlatform.AdgAny | GenericPlatform.AbpAny) as GenericPlatform,
+                    modifier,
+                );
+                expect(validationResult2.valid).toBeTruthy();
+                expect(validationResult2.error).toBeUndefined();
+                expect(validationResult2.warn).toBeUndefined();
+
+                // Test UboAny | AbpAny combination
+                const validationResult3 = modifierValidator.validate(
+                    (GenericPlatform.UboAny | GenericPlatform.AbpAny) as GenericPlatform,
+                    modifier,
+                );
+                expect(validationResult3.valid).toBeTruthy();
+                expect(validationResult3.error).toBeUndefined();
+                expect(validationResult3.warn).toBeUndefined();
+
+                // Test all three products combined
+                const validationResult4 = modifierValidator.validate(
+                    (GenericPlatform.AdgAny | GenericPlatform.UboAny | GenericPlatform.AbpAny) as GenericPlatform,
+                    modifier,
+                );
+                expect(validationResult4.valid).toBeTruthy();
+                expect(validationResult4.error).toBeUndefined();
+                expect(validationResult4.warn).toBeUndefined();
+            });
+        });
+
+        describe('single product - validation not skipped', () => {
+            // These modifiers would normally fail for specific products
+            const adguardSpecificModifiers = [
+                {
+                    modifier: 'app=com.test.app',
+                    invalidFor: [SpecificPlatform.UboExtFirefox, SpecificPlatform.AbpExtChrome],
+                },
+                {
+                    modifier: 'jsinject',
+                    invalidFor: [SpecificPlatform.UboExtFirefox, SpecificPlatform.AbpExtChrome],
+                },
+            ];
+
+            test.each(adguardSpecificModifiers)(
+                '$modifier should fail for non-AdGuard products',
+                ({ modifier: rawModifier, invalidFor }) => {
+                    const modifier = getModifier(rawModifier);
+                    invalidFor.forEach((platform) => {
+                        const validationResult = modifierValidator.validate(platform, modifier);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toBeDefined();
+                    });
+                },
+            );
+
+            const uboSpecificModifiers = [
+                {
+                    modifier: 'popunder',
+                    invalidFor: [SpecificPlatform.AdgOsWindows],
+                },
+            ];
+
+            test.each(uboSpecificModifiers)(
+                '$modifier should fail for non-uBlock products',
+                ({ modifier: rawModifier, invalidFor }) => {
+                    const modifier = getModifier(rawModifier);
+                    invalidFor.forEach((platform) => {
+                        const validationResult = modifierValidator.validate(platform, modifier, false);
+                        expect(validationResult.valid).toBeFalsy();
+                        expect(validationResult.error).toBeDefined();
+                    });
+                },
+            );
+        });
+
+        describe('edge cases', () => {
+            test('deprecated modifiers should pass with multiple products', () => {
+                const modifier = getModifier('empty');
+                const validationResult = modifierValidator.validate(
+                    (GenericPlatform.AdgAny | GenericPlatform.UboAny) as GenericPlatform,
+                    modifier,
+                );
+                expect(validationResult.valid).toBeTruthy();
+                // When validation is skipped, no warnings should be present
+                expect(validationResult.warn).toBeUndefined();
+            });
+
+            test('value validation should be skipped with multiple products', () => {
+                // Invalid domain value that would normally fail
+                const modifier = getModifier('domain=~~example.com');
+                const validationResult = modifierValidator.validate(
+                    (GenericPlatform.AdgAny | GenericPlatform.UboAny) as GenericPlatform,
+                    modifier,
+                );
+                expect(validationResult.valid).toBeTruthy();
+                expect(validationResult.error).toBeUndefined();
+            });
+
+            test('exception-only modifiers should pass in blocking rules with multiple products', () => {
+                const modifier = getModifier('elemhide');
+                // Third argument is 'false' for blocking rules
+                // This would normally fail because elemhide is exception-only for AdGuard
+                const validationResult = modifierValidator.validate(
+                    (GenericPlatform.AdgAny | GenericPlatform.UboAny) as GenericPlatform,
+                    modifier,
+                    false,
+                );
+                expect(validationResult.valid).toBeTruthy();
+                expect(validationResult.error).toBeUndefined();
+            });
+
+            test('block-only modifiers should pass in exception rules with multiple products', () => {
+                const modifier = getModifier('all');
+                // Third argument is 'true' for exception rules
+                // This would normally fail because 'all' is block-only for AdGuard
+                const validationResult = modifierValidator.validate(
+                    (GenericPlatform.AdgAny | GenericPlatform.UboAny) as GenericPlatform,
+                    modifier,
+                    true,
+                );
+                expect(validationResult.valid).toBeTruthy();
+                expect(validationResult.error).toBeUndefined();
+            });
+        });
+    });
+    /* eslint-enable no-bitwise */
 });

@@ -8,36 +8,50 @@
  */
 
 /**
+ * Unique symbol to brand SpecificPlatform type.
+ */
+declare const SpecificPlatformBrand: unique symbol;
+
+/**
+ * Unique symbol to brand GenericPlatform type.
+ */
+declare const GenericPlatformBrand: unique symbol;
+
+/**
+ * Branded type for specific platform values.
+ */
+export type SpecificPlatform = number & {
+    readonly [SpecificPlatformBrand]: true;
+};
+
+/**
  * List of specific platforms.
  */
-export const SpecificPlatform = {
-    AdgOsWindows: 1,
-    AdgOsMac: 1 << 1,
-    AdgOsAndroid: 1 << 2,
-
-    AdgExtChrome: 1 << 3,
-    AdgExtOpera: 1 << 4,
-    AdgExtEdge: 1 << 5,
-    AdgExtFirefox: 1 << 6,
-
-    AdgCbAndroid: 1 << 7,
-    AdgCbIos: 1 << 8,
-    AdgCbSafari: 1 << 9,
-
-    UboExtChrome: 1 << 10,
-    UboExtOpera: 1 << 11,
-    UboExtEdge: 1 << 12,
-    UboExtFirefox: 1 << 13,
-
-    AbpExtChrome: 1 << 14,
-    AbpExtOpera: 1 << 15,
-    AbpExtEdge: 1 << 16,
-    AbpExtFirefox: 1 << 17,
-} as const;
-
-// intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type SpecificPlatform = typeof SpecificPlatform[keyof typeof SpecificPlatform];
+export const SpecificPlatform = {
+    AdgOsWindows: 1 as SpecificPlatform,
+    AdgOsMac: (1 << 1) as SpecificPlatform,
+    AdgOsAndroid: (1 << 2) as SpecificPlatform,
+
+    AdgExtChrome: (1 << 3) as SpecificPlatform,
+    AdgExtOpera: (1 << 4) as SpecificPlatform,
+    AdgExtEdge: (1 << 5) as SpecificPlatform,
+    AdgExtFirefox: (1 << 6) as SpecificPlatform,
+
+    AdgCbAndroid: (1 << 7) as SpecificPlatform,
+    AdgCbIos: (1 << 8) as SpecificPlatform,
+    AdgCbSafari: (1 << 9) as SpecificPlatform,
+
+    UboExtChrome: (1 << 10) as SpecificPlatform,
+    UboExtOpera: (1 << 11) as SpecificPlatform,
+    UboExtEdge: (1 << 12) as SpecificPlatform,
+    UboExtFirefox: (1 << 13) as SpecificPlatform,
+
+    AbpExtChrome: (1 << 14) as SpecificPlatform,
+    AbpExtOpera: (1 << 15) as SpecificPlatform,
+    AbpExtEdge: (1 << 16) as SpecificPlatform,
+    AbpExtFirefox: (1 << 17) as SpecificPlatform,
+};
 
 const AdgOsAny = SpecificPlatform.AdgOsWindows
     | SpecificPlatform.AdgOsMac
@@ -72,25 +86,44 @@ const AbpAny = AbpExtAny;
 const Any = AdgAny | UboAny | AbpAny;
 
 /**
+ * Branded type for generic platform values.
+ */
+export type GenericPlatform = number & {
+    readonly [GenericPlatformBrand]: true;
+};
+
+/**
  * List of generic platforms (combinations of specific platforms).
  */
-export const GenericPlatform = {
-    AdgOsAny,
-    AdgSafariAny,
-    AdgExtChromium,
-    AdgExtAny,
-    AdgAny,
-    UboExtChromium,
-    UboExtAny,
-    UboAny,
-    AbpExtChromium,
-    AbpExtAny,
-    AbpAny,
-    Any,
-} as const;
-
-// intentionally naming the variable the same as the type
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export type GenericPlatform = typeof GenericPlatform[keyof typeof GenericPlatform];
+export const GenericPlatform = {
+    AdgOsAny: AdgOsAny as GenericPlatform,
+    AdgSafariAny: AdgSafariAny as GenericPlatform,
+    AdgExtChromium: AdgExtChromium as GenericPlatform,
+    AdgExtAny: AdgExtAny as GenericPlatform,
+    AdgAny: AdgAny as GenericPlatform,
+    UboExtChromium: UboExtChromium as GenericPlatform,
+    UboExtAny: UboExtAny as GenericPlatform,
+    UboAny: UboAny as GenericPlatform,
+    AbpExtChromium: AbpExtChromium as GenericPlatform,
+    AbpExtAny: AbpExtAny as GenericPlatform,
+    AbpAny: AbpAny as GenericPlatform,
+    Any: Any as GenericPlatform,
+};
 
-export type AnyPlatform = SpecificPlatform | GenericPlatform;
+/**
+ * Represents any platform: specific, generic, or a combination of platforms.
+ *
+ * The `number` type is included to support combined platforms created via bitwise OR operations.
+ * For example: `GenericPlatform.AdgAny | GenericPlatform.UboAny` results in a `number` at the type level.
+ *
+ * @example
+ * ```typescript
+ * // Single platform
+ * const singlePlatform: AnyPlatform = SpecificPlatform.AdgOsWindows;
+ *
+ * // Combined platforms (result is number)
+ * const combinedPlatforms: AnyPlatform = GenericPlatform.AdgAny | GenericPlatform.UboAny;
+ * ```
+ */
+export type AnyPlatform = SpecificPlatform | GenericPlatform | number;
