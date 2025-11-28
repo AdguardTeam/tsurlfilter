@@ -112,7 +112,7 @@ export {
     UBO_SCRIPTLET_MASK,
 } from './utils/constants';
 export { BINARY_SCHEMA_VERSION } from './utils/binary-schema-version';
-export { AdblockSyntax, AdblockProduct } from './utils/adblockers';
+export { AdblockSyntax, AdblockProduct, getHumanReadableProductName } from './utils/adblockers';
 export { type CosmeticRuleSeparatorFinderResult, CosmeticRuleSeparatorUtils } from './utils/cosmetic-rule-separator';
 export { DomainUtils } from './utils/domain';
 export { type VariableTable, LogicalExpressionUtils } from './utils/logical-expression';

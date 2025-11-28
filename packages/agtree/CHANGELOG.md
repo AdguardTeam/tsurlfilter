@@ -7,6 +7,19 @@ The format is based on [Keep a Changelog], and this project adheres to [Semantic
 [Keep a Changelog]: https://keepachangelog.com/en/1.0.0/
 [Semantic Versioning]: https://semver.org/spec/v2.0.0.html
 
+## [3.4.1] - 2025-11-28
+
+### Added
+
+- Export for `getHumanReadableProductName`.
+
+### Fixed
+
+- Improved platform names.
+
+[3.4.1]: https://github.com/AdguardTeam/tsurlfilter/releases/tag/agtree-3.4.1
+
+
 ## [3.4.0] - 2025-11-28
 
 ### Added

@@ -504,20 +504,24 @@ describe('Platform Helpers', () => {
 
     describe('getHumanReadablePlatformName', () => {
         it('should return human-readable name for specific platforms', () => {
-            expect(getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows)).toBe('AdGuard for Windows');
-            expect(getHumanReadablePlatformName(SpecificPlatform.AdgExtChrome)).toBe('AdGuard for Chrome');
-            expect(getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox)).toBe('uBlock Origin for Firefox');
-            expect(getHumanReadablePlatformName(SpecificPlatform.AbpExtEdge)).toBe('AdBlock Plus for Edge');
+            expect(getHumanReadablePlatformName(SpecificPlatform.AdgOsWindows))
+                .toBe('AdGuard App for Windows');
+            expect(getHumanReadablePlatformName(SpecificPlatform.AdgExtChrome))
+                .toBe('AdGuard Browser Extension for Chrome');
+            expect(getHumanReadablePlatformName(SpecificPlatform.UboExtFirefox))
+                .toBe('uBlock Origin Browser Extension for Firefox');
+            expect(getHumanReadablePlatformName(SpecificPlatform.AbpExtEdge))
+                .toBe('AdBlock / Adblock Plus Browser Extension for Edge');
         });
 
         it('should return human-readable name for generic platforms', () => {
-            expect(getHumanReadablePlatformName(GenericPlatform.AdgOsAny)).toBe('AdGuard for any OS');
+            expect(getHumanReadablePlatformName(GenericPlatform.AdgOsAny)).toBe('Any System-level AdGuard App');
             expect(getHumanReadablePlatformName(GenericPlatform.AdgExtChromium))
-                .toBe('AdGuard for any Chromium-based extension');
-            expect(getHumanReadablePlatformName(GenericPlatform.AdgAny)).toBe('AdGuard for any platform');
-            expect(getHumanReadablePlatformName(GenericPlatform.UboAny)).toBe('uBlock Origin for any platform');
-            expect(getHumanReadablePlatformName(GenericPlatform.AbpAny)).toBe('AdBlock Plus for any platform');
-            expect(getHumanReadablePlatformName(GenericPlatform.Any)).toBe('Any platform');
+                .toBe('Any AdGuard Browser Extension for Chromium');
+            expect(getHumanReadablePlatformName(GenericPlatform.AdgAny)).toBe('Any AdGuard product');
+            expect(getHumanReadablePlatformName(GenericPlatform.UboAny)).toBe('Any uBlock Origin product');
+            expect(getHumanReadablePlatformName(GenericPlatform.AbpAny)).toBe('Any AdBlock / Adblock Plus product');
+            expect(getHumanReadablePlatformName(GenericPlatform.Any)).toBe('Any product');
         });
 
         it('should throw error for unknown platform', () => {

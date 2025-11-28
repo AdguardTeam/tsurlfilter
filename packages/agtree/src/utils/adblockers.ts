@@ -89,3 +89,38 @@ export type AdblockSyntax = typeof AdblockSyntax[keyof typeof AdblockSyntax];
  * @deprecated Use AdblockProduct instead.
  */
 export type StrictAdblockSyntax = AdblockProduct;
+
+/**
+ * Map of adblock products to their human-readable names.
+ */
+const PRODUCT_HUMAN_READABLE_NAME_MAP: ReadonlyMap<AdblockProduct, string> = new Map([
+    [AdblockProduct.Abp, 'AdBlock / Adblock Plus'],
+    [AdblockProduct.Ubo, 'uBlock Origin'],
+    [AdblockProduct.Adg, 'AdGuard'],
+]);
+
+/**
+ * Returns the human-readable name for the given adblock product.
+ *
+ * @param product Adblock product.
+ *
+ * @returns Human-readable product name, e.g., 'Adblock Plus', 'uBlock Origin', 'AdGuard'.
+ *
+ * @throws Error if the product is unknown.
+ *
+ * @example
+ * ```typescript
+ * getHumanReadableProductName(AdblockProduct.Abp); // 'Adblock Plus'
+ * getHumanReadableProductName(AdblockProduct.Ubo); // 'uBlock Origin'
+ * getHumanReadableProductName(AdblockProduct.Adg); // 'AdGuard'
+ * ```
+ */
+export const getHumanReadableProductName = (product: AdblockProduct): string => {
+    const name = PRODUCT_HUMAN_READABLE_NAME_MAP.get(product);
+
+    if (!name) {
+        throw new Error(`Unknown product: ${product}`);
+    }
+
+    return name;
+};

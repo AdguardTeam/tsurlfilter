@@ -77,46 +77,46 @@ const PRODUCT_PREFIX_MAP: Record<AdblockProduct, string> = {
 };
 
 const SPECIFIC_PLATFORM_HUMAN_READABLE_NAME_MAP: Map<SpecificPlatform, string> = new Map([
-    [SpecificPlatform.AdgOsWindows, 'AdGuard for Windows'],
-    [SpecificPlatform.AdgOsMac, 'AdGuard for Mac'],
-    [SpecificPlatform.AdgOsAndroid, 'AdGuard for Android'],
+    [SpecificPlatform.AdgOsWindows, 'AdGuard App for Windows'],
+    [SpecificPlatform.AdgOsMac, 'AdGuard App for Mac'],
+    [SpecificPlatform.AdgOsAndroid, 'AdGuard App for Android'],
 
-    [SpecificPlatform.AdgExtChrome, 'AdGuard for Chrome'],
-    [SpecificPlatform.AdgExtOpera, 'AdGuard for Opera'],
-    [SpecificPlatform.AdgExtEdge, 'AdGuard for Edge'],
-    [SpecificPlatform.AdgExtFirefox, 'AdGuard for Firefox'],
+    [SpecificPlatform.AdgExtChrome, 'AdGuard Browser Extension for Chrome'],
+    [SpecificPlatform.AdgExtOpera, 'AdGuard Browser Extension for Opera'],
+    [SpecificPlatform.AdgExtEdge, 'AdGuard Browser Extension for Edge'],
+    [SpecificPlatform.AdgExtFirefox, 'AdGuard Browser Extension for Firefox'],
 
     [SpecificPlatform.AdgCbAndroid, 'AdGuard Content Blocker for Android'],
     [SpecificPlatform.AdgCbIos, 'AdGuard Content Blocker for iOS'],
     [SpecificPlatform.AdgCbSafari, 'AdGuard Content Blocker for Safari'],
 
-    [SpecificPlatform.UboExtChrome, 'uBlock Origin for Chrome'],
-    [SpecificPlatform.UboExtOpera, 'uBlock Origin for Opera'],
-    [SpecificPlatform.UboExtEdge, 'uBlock Origin for Edge'],
-    [SpecificPlatform.UboExtFirefox, 'uBlock Origin for Firefox'],
+    [SpecificPlatform.UboExtChrome, 'uBlock Origin Browser Extension for Chrome'],
+    [SpecificPlatform.UboExtOpera, 'uBlock Origin Browser Extension for Opera'],
+    [SpecificPlatform.UboExtEdge, 'uBlock Origin Browser Extension for Edge'],
+    [SpecificPlatform.UboExtFirefox, 'uBlock Origin Browser Extension for Firefox'],
 
-    [SpecificPlatform.AbpExtChrome, 'AdBlock Plus for Chrome'],
-    [SpecificPlatform.AbpExtOpera, 'AdBlock Plus for Opera'],
-    [SpecificPlatform.AbpExtEdge, 'AdBlock Plus for Edge'],
-    [SpecificPlatform.AbpExtFirefox, 'AdBlock Plus for Firefox'],
+    [SpecificPlatform.AbpExtChrome, 'AdBlock / Adblock Plus Browser Extension for Chrome'],
+    [SpecificPlatform.AbpExtOpera, 'AdBlock / Adblock Plus Browser Extension for Opera'],
+    [SpecificPlatform.AbpExtEdge, 'AdBlock / Adblock Plus Browser Extension for Edge'],
+    [SpecificPlatform.AbpExtFirefox, 'AdBlock / Adblock Plus Browser Extension for Firefox'],
 ]);
 
 const GENERIC_PLATFORM_HUMAN_READABLE_NAME_MAP: Map<GenericPlatform, string> = new Map([
-    [GenericPlatform.AdgOsAny, 'AdGuard for any OS'],
-    [GenericPlatform.AdgSafariAny, 'AdGuard for any Safari'],
-    [GenericPlatform.AdgExtChromium, 'AdGuard for any Chromium-based extension'],
-    [GenericPlatform.AdgExtAny, 'AdGuard for any extension'],
-    [GenericPlatform.AdgAny, 'AdGuard for any platform'],
+    [GenericPlatform.AdgOsAny, 'Any System-level AdGuard App'],
+    [GenericPlatform.AdgSafariAny, 'Any AdGuard Content Blocker for Safari'],
+    [GenericPlatform.AdgExtChromium, 'Any AdGuard Browser Extension for Chromium'],
+    [GenericPlatform.AdgExtAny, 'Any AdGuard Browser Extension'],
+    [GenericPlatform.AdgAny, 'Any AdGuard product'],
 
-    [GenericPlatform.UboExtChromium, 'uBlock Origin for any Chromium-based extension'],
-    [GenericPlatform.UboExtAny, 'uBlock Origin for any extension'],
-    [GenericPlatform.UboAny, 'uBlock Origin for any platform'],
+    [GenericPlatform.UboExtChromium, 'Any uBlock Origin Browser Extension for Chromium'],
+    [GenericPlatform.UboExtAny, 'Any uBlock Origin Browser Extension'],
+    [GenericPlatform.UboAny, 'Any uBlock Origin product'],
 
-    [GenericPlatform.AbpExtChromium, 'AdBlock Plus for any Chromium-based extension'],
-    [GenericPlatform.AbpExtAny, 'AdBlock Plus for any extension'],
-    [GenericPlatform.AbpAny, 'AdBlock Plus for any platform'],
+    [GenericPlatform.AbpExtChromium, 'Any AdBlock / Adblock Plus Browser Extension for Chromium'],
+    [GenericPlatform.AbpExtAny, 'Any AdBlock / Adblock Plus Browser Extension'],
+    [GenericPlatform.AbpAny, 'Any AdBlock / Adblock Plus product'],
 
-    [GenericPlatform.Any, 'Any platform'],
+    [GenericPlatform.Any, 'Any product'],
 ]);
 
 /**
