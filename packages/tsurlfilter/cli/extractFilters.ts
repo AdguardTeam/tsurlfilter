@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 /* eslint-disable no-await-in-loop */
-import { promises as fs } from 'node:fs';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { FilterListPreprocessor } from '../src/filterlist/preprocessor/preprocessor';

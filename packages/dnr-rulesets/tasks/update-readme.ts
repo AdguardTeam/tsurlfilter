@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-import { QUICK_FIXES_FILTER_ID, README_PATH } from '../common/constants';
+import { README_PATH } from '../common/constants';
 import { downloadMetadata, type Metadata } from '../common/metadata';
 
 /**
@@ -28,16 +28,8 @@ async function updateReadme(metadata: Metadata): Promise<void> {
 
         for (const filter of groupFilters) {
             desc += `#### ${filter.name}\n\n`;
-            if (filter.filterId === QUICK_FIXES_FILTER_ID) {
-                // eslint-disable-next-line max-len
-                desc += `**IMPORTANT:** This filter is not convertible (excluded from build), but it is still included in the metadata. It should be downloaded from the server on the client and applied dynamically.\n\n`;
-            }
             desc += `${filter.description}\n\n`;
             desc += `- Filter ID: **${filter.filterId}**\n`;
-            if (filter.filterId === QUICK_FIXES_FILTER_ID) {
-                desc += `\n`;
-                continue;
-            }
             // eslint-disable-next-line max-len
             desc += `- Path: \`<filters-directory>/declarative/ruleset_${filter.filterId}/ruleset_${filter.filterId}.json\`\n\n`;
         }

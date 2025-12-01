@@ -7,9 +7,17 @@ import {
     type RequestBlockingEvent,
 } from '@adguard/api-mv3';
 
+// Import pre-built local script rules (copied during build)
+// @ts-expect-error Importing local script rules from js file without declaration file
+import { localScriptRules as localScriptRulesJs } from '../filters/local_script_rules';
+import { extraScripts } from './extra-scripts';
+import { ENABLED_FILTERS_IDS } from '../../constants';
+
 (async (): Promise<void> => {
-    // create new AdguardApi instance
-    const adguardApi = await AdguardApi.create();
+    // create new AdguardApi instance with local script rules
+    const adguardApi = await AdguardApi.create({
+        localScriptRulesJs,
+    });
 
     // console log event on request blocking
     const onRequestBlocked = (event: RequestBlockingEvent) => {
@@ -19,17 +27,25 @@ import {
     adguardApi.onRequestBlocked.addListener(onRequestBlocked);
 
     let configuration: Configuration = {
-        // Note: this list should not contain filter 24, because it has not
-        // included in dnr-rulesets, only in the metadata.
-        filters: [
-            2,
-            3,
-            4,
-        ],
+        filters: ENABLED_FILTERS_IDS.map((id) => Number(id)),
         filteringEnabled: true,
         allowlist: ['www.example.com'],
-        rules: ['example.org##h1'],
+        /* eslint-disable @typescript-eslint/quotes */
+        rules: [
+            'example.org##h1',
+            // These two scripts rules will be injected anytime
+            `#%#//scriptlet('log', 'generic scriptlet injected')`,
+            `example.net#%#//scriptlet('log', 'specific scriptlet injected')`,
+            // These two scripts rules will be injected only if UserScripts Permission is granted
+            `#%#console.log('generic script injected at: ', Date.now());`,
+            `example.net#%#console.log('specific script injected at: ', Date.now());`,
+            // These scripts are explicitly added to local_script_rules.js,
+            // so they will be injected as well anytime
+            ...extraScripts,
+        ],
+        /* eslint-enable @typescript-eslint/quotes */
         assetsPath: 'filters',
+        documentBlockingPageUrl: browser.runtime.getURL('blocking-page.html'),
     };
 
     // console log current rules count, loaded in engine
@@ -37,26 +53,37 @@ import {
         console.log('Total rules count:', adguardApi.getRulesCount());
     };
 
-    configuration = await adguardApi.start(configuration);
-
-    console.log('Finished Adguard API initialization.');
-    console.log('Applied configuration: ', JSON.stringify(configuration));
-    logTotalCount();
+    try {
+        configuration = await adguardApi.start(configuration);
+        console.log('Finished Adguard API initialization.');
+        console.log('Applied configuration: ', JSON.stringify(configuration));
+        logTotalCount();
+    } catch (error) {
+        console.error('Failed to start AdGuard API:', error);
+        return;
+    }
 
     configuration.allowlist!.push('www.google.com');
 
-    await adguardApi.configure(configuration);
-
-    console.log('Finished Adguard API re-configuration');
-    logTotalCount();
+    try {
+        await adguardApi.configure(configuration);
+        console.log('Finished Adguard API re-configuration');
+        logTotalCount();
+    } catch (error) {
+        console.error('Failed to configure AdGuard API:', error);
+    }
 
     const onAssistantCreateRule = async (rule: string) => {
         // update config on assistant rule apply
         console.log(`Rule ${rule} was created by Adguard Assistant`);
         configuration.rules!.push(rule);
-        await adguardApi.configure(configuration);
-        console.log('Finished Adguard API re-configuration');
-        logTotalCount();
+        try {
+            await adguardApi.configure(configuration);
+            console.log('Finished Adguard API re-configuration');
+            logTotalCount();
+        } catch (error) {
+            console.error('Failed to apply assistant rule:', error);
+        }
     };
 
     adguardApi.onAssistantCreateRule.subscribe(onAssistantCreateRule);

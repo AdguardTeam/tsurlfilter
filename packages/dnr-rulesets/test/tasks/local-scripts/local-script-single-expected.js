@@ -15,5 +15,6 @@ export const localScriptRules = {
         } catch (error) {
             console.error('Error executing AG js rule with uniqueId "test-id" due to: ' + error);
         }
-    }
+    },
+    __PLACEHOLDER__: () => {}
 };

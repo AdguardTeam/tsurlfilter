@@ -283,8 +283,8 @@ importers:
         specifier: 'catalog:'
         version: 4.3.77
       '@adguard/filters-downloader':
-        specifier: ^2.2.6
-        version: 2.4.0
+        specifier: ^2.4.2
+        version: 2.4.2
       '@adguard/tswebextension':
         specifier: workspace:^
         version: link:../tswebextension
@@ -1933,8 +1933,9 @@ packages:
   '@adguard/css-tokenizer@1.2.0':
     resolution: {integrity: sha512-cUj5j/AU5z/T4//5M6KnIJBpykAY4QbDsoiQ2DaWX/r2XkepMkTb8DhIbUHJD/QLGEyLeQLpi+nlxAgf4NTRRQ==}
 
-  '@adguard/diff-builder@1.1.0':
-    resolution: {integrity: sha512-2KGzA6vzbwrTX14gopkztdT/5t/pTyf6tn8VQE2EtWlW8n0/j+HG49+CZ/or0nR3IVQi0SNQgfuKIXfz0ReZxQ==}
+  '@adguard/diff-builder@1.1.2':
+    resolution: {integrity: sha512-ueNXW4UL6v6d9j+HzdUD9br3eCK48wewI6KprIiT84G8kCg/aqxGkUhbn/1KoY+rmQl19Hib4AXs6tLpXDUdmw==}
+    engines: {node: '>=18.13.0'}
     hasBin: true
 
   '@adguard/ecss-tree@1.1.0':
@@ -1947,9 +1948,9 @@ packages:
     resolution: {integrity: sha512-TsHZ20oUWhbtrzQ4w70B96oHkGBIUZg2FdMfkq4StGfLmXQb+kI7fQb6BtXP2D0bvraIHMq6/mtKExglDJ9vsg==}
     engines: {node: '>=16'}
 
-  '@adguard/filters-downloader@2.4.0':
-    resolution: {integrity: sha512-xe5C10VXIajq4sr66mb1r64UIlJ54qXZiFpQHe9E7j7LQqRG31b4KB+8TggIdT54Bm3WrKjqjfatKBNYAJcKGQ==}
-    engines: {node: '>=18'}
+  '@adguard/filters-downloader@2.4.2':
+    resolution: {integrity: sha512-efloe2ZGHaO4GK+4xQiI8B7FGIlDbMKT05X4g9XAXNfG7uWmXF0OnaaAN8312wYc1q1OXRS4SGwYwN+wocyGBw==}
+    engines: {node: '>=18.13.0'}
 
   '@adguard/re2-wasm@1.2.0':
     resolution: {integrity: sha512-yMtEJfThxN9rEYm2Zg3X8jUKaPYq5wByc90JbMspSWJo7MXw664gTvLD7/wijl6y79VSuAs77bXUIgBXutMp7A==}
@@ -9751,7 +9752,7 @@ snapshots:
 
   '@adguard/css-tokenizer@1.2.0': {}
 
-  '@adguard/diff-builder@1.1.0':
+  '@adguard/diff-builder@1.1.2':
     dependencies:
       commander: 11.1.0
       crypto-js: 4.2.0
@@ -9764,9 +9765,9 @@ snapshots:
 
   '@adguard/extended-css@2.1.1': {}
 
-  '@adguard/filters-downloader@2.4.0':
+  '@adguard/filters-downloader@2.4.2':
     dependencies:
-      '@adguard/diff-builder': 1.1.0
+      '@adguard/diff-builder': 1.1.2
       axios: 1.6.2
       crypto-js: 4.2.0
     transitivePeerDependencies:

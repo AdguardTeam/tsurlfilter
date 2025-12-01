@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs';
+import fs from 'node:fs/promises';
 
 import * as acorn from 'acorn';
 import path from 'path';
@@ -20,8 +20,8 @@ vi.mock('node:crypto', () => ({
     },
 }));
 
-import type { DomainConfig } from '../../../tasks/local-scripts';
-import { extractJsRules, extractJsRulesWithDomains, formatRules } from '../../../tasks/local-scripts';
+import { LocalScriptRulesJs } from '../../../src/common/local-script-rules-js';
+import { type DomainConfig, LocalScriptRulesJson } from '../../../src/common/local-script-rules-json';
 
 // Mock the Logger class with a shared instance
 vi.mock('@adguard/logger', () => {
@@ -65,14 +65,15 @@ const validateSyntax = (code: string): void => {
 };
 
 describe('local-scripts', () => {
-    describe('extractJsRules', () => {
+    describe('should handle js rules', () => {
         it('should extract js rule', async () => {
             const filterText = await fs.readFile(path.join(__dirname, 'filter-single-rule.txt'), 'utf-8');
             const expectedJsRulesStr = await fs.readFile(path.join(
                 __dirname,
                 'local-script-single-expected.js',
             ), 'utf-8');
-            const jsRulesStr = await formatRules(extractJsRules(filterText));
+            const rules = LocalScriptRulesJs.parse([filterText]);
+            const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
 
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
@@ -85,7 +86,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-multiple-expected.js',
             ), 'utf-8');
-            const jsRulesStr = await formatRules(extractJsRules(filterText));
+            const rules = LocalScriptRulesJs.parse([filterText]);
+            const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
 
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
@@ -98,7 +100,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-invalid-expected.js',
             ), 'utf-8');
-            const jsRulesStr = await formatRules(extractJsRules(filterText));
+            const rules = LocalScriptRulesJs.parse([filterText]);
+            const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
             validateSyntax(jsRulesStr);
@@ -115,7 +118,8 @@ describe('local-scripts', () => {
                 __dirname,
                 'local-script-scriptlet-expected.js',
             ), 'utf-8');
-            const jsRulesStr = await formatRules(extractJsRules(filterText));
+            const rules = LocalScriptRulesJs.parse([filterText]);
+            const jsRulesStr = await LocalScriptRulesJs.serialize(rules);
 
             expect(jsRulesStr).toBe(expectedJsRulesStr);
             // Verify the generated code is valid ES6 module syntax
@@ -123,7 +127,7 @@ describe('local-scripts', () => {
         });
     });
 
-    describe('extractJsRulesWithDomains', () => {
+    describe('should handle js rules with domains', () => {
         it('should extract js rules with domain information', async () => {
             const filterText = await fs.readFile(path.join(__dirname, 'filter-with-domains.txt'), 'utf-8');
             const expectedJsonStr = await fs.readFile(path.join(
@@ -132,7 +136,7 @@ describe('local-scripts', () => {
             ), 'utf-8');
 
             // Extract rules with domains
-            const rulesMap = extractJsRulesWithDomains(filterText);
+            const rulesMap = LocalScriptRulesJson.parse([filterText]);
 
             // Convert Map to object structure for comparison
             const actualRules: Record<string, DomainConfig[]> = {};
