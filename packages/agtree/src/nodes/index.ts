@@ -1055,9 +1055,14 @@ export interface HtmlFilteringRuleSelectorPseudoClass extends Node {
     name: Value;
 
     /**
-     * Content of the HTML filtering rule selector pseudo class.
+     * Indicates whether the pseudo class is functional (has callee brackets) or not.
      */
-    content: Value;
+    isFunction: boolean;
+
+    /**
+     * Argument of the HTML filtering rule selector pseudo class.
+     */
+    argument?: Value;
 }
 
 /**
@@ -1072,16 +1077,28 @@ export interface HtmlFilteringRuleSelectorAttribute extends Node {
     name: Value;
 
     /**
+     * Operator of the HTML filtering rule selector attribute.
+     */
+    operator?: Value;
+
+    /**
      * Value of the HTML filtering rule selector attribute.
      */
     value?: Value;
 
     /**
-     * Flags of the HTML filtering rule selector attribute.
-     * Supported only in uBlock-style HTML filtering rules.
+     * Flag of the HTML filtering rule selector attribute.
      */
-    flags?: Value;
+    flag?: Value;
 }
+
+/**
+ * Represents a part of an HTML filtering rule selector.
+ */
+export type HtmlFilteringRuleSelectorPart =
+    | Value
+    | HtmlFilteringRuleSelectorAttribute
+    | HtmlFilteringRuleSelectorPseudoClass;
 
 /**
  * Represents an HTML filtering rule selector.
@@ -1090,20 +1107,26 @@ export interface HtmlFilteringRuleSelector extends Node {
     type: 'HtmlFilteringRuleSelector';
 
     /**
-     * Tag name of the HTML filtering rule.
+     * Parts of the HTML filtering rule selector (tag name, id, class name, attribute, pseudo class).
      */
-    tagName?: Value;
+    children: HtmlFilteringRuleSelectorPart[];
 
     /**
-     * List of attributes of the HTML filtering rule selector.
+     * Combinator between this selector and the previous one (if any).
      */
-    attributes: HtmlFilteringRuleSelectorAttribute[];
+    combinator?: Value;
+}
+
+/**
+ * Represents a list of HTML filtering rule selectors.
+ */
+export interface HtmlFilteringRuleSelectorList extends Node {
+    type: 'HtmlFilteringRuleSelectorList';
 
     /**
-     * List of pseudo classes of the HTML filtering rule selector.
-     * Supported only in uBlock-style HTML filtering rules.
+     * List of HTML filtering rule selectors separated by combinators.
      */
-    pseudoClasses: HtmlFilteringRuleSelectorPseudoClass[];
+    children: HtmlFilteringRuleSelector[];
 }
 
 /**
@@ -1113,11 +1136,9 @@ export interface HtmlFilteringRuleBody extends Node {
     type: 'HtmlFilteringRuleBody';
 
     /**
-     * List of selectors of the HTML filtering rule.
-     * In AdGuard-style HTML filtering rules, there is always only one selector.
-     * In uBlock-style HTML filtering rules, there can be several selectors.
+     * List of selectors of the HTML filtering rule separated by commas.
      */
-    selectors: HtmlFilteringRuleSelector[];
+    children: HtmlFilteringRuleSelectorList[];
 }
 
 /**

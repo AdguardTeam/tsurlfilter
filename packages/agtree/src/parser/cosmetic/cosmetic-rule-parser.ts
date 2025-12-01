@@ -569,7 +569,8 @@ export class CosmeticRuleParser extends BaseParser {
 
             expectCommonOrSpecificSyntax(AdblockSyntax.Ubo);
 
-            const body = UboHtmlFilteringBodyParser.parse(rawBody, options, baseOffset + bodyStart);
+            const rawBodyWithoutMask = rawBody.slice(UBO_HTML_MASK.length);
+            const body = UboHtmlFilteringBodyParser.parse(rawBodyWithoutMask, options, baseOffset + bodyStart);
 
             return {
                 syntax: AdblockSyntax.Ubo,
