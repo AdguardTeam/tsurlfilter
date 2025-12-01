@@ -4,7 +4,7 @@
  * @file Describes how to convert one {@link NetworkRule} into one or many
  * {@link DeclarativeRule|declarative rules}.
  *
- *      Heir classes                                        DeclarativeRuleConverter
+ *      Heir classes                                        AbstractRuleConverter
  *
  *                            │                                         │
  *    *override layer*        │              *protected layer*          │              *private layer*
@@ -108,6 +108,7 @@ import {
     DECLARATIVE_RESOURCE_TYPES_MAP,
     type DeclarativeRule,
     DomainType,
+    type HeaderInfo,
     HeaderOperation,
     type ModifyHeaderInfo,
     type Redirect,
@@ -145,15 +146,15 @@ import { type NetworkRuleWithNodeAndText } from '../network-rule-with-node-and-t
  * Contains the generic logic for converting a {@link NetworkRule}
  * into a {@link DeclarativeRule}.
  *
- * Descendant classes must override the {@link DeclarativeRuleConverter.convert} method,
+ * Descendant classes must override the {@link AbstractRuleConverter.convert} method,
  * where some logic must be defined for each rule type.
  *
- * Also descendant classes can use {@link DeclarativeRuleConverter.convertRules},
- * {@link DeclarativeRuleConverter.convertRule}
- * and {@link DeclarativeRuleConverter.groupConvertedRules} methods, which contains
+ * Also descendant classes can use {@link AbstractRuleConverter.convertRules},
+ * {@link AbstractRuleConverter.convertRule}
+ * and {@link AbstractRuleConverter.groupConvertedRules} methods, which contains
  * the general logic of transformation and grouping of rules.
  */
-export abstract class DeclarativeRuleConverter {
+export abstract class AbstractRuleConverter {
     /**
      * String path to web accessible resources,
      * relative to the extension root dir.
@@ -162,7 +163,7 @@ export abstract class DeclarativeRuleConverter {
     protected webAccessibleResourcesPath?: string;
 
     /**
-     * Creates an instance of DeclarativeRuleConverter.
+     * Creates an instance of AbstractRuleConverter.
      *
      * @param webAccessibleResourcesPath Path to web accessible resources.
      */
@@ -226,13 +227,13 @@ export abstract class DeclarativeRuleConverter {
         let res = str;
 
         try {
-            if (!DeclarativeRuleConverter.isASCII(res)) {
+            if (!AbstractRuleConverter.isASCII(res)) {
                 // for cyrillic domains we need to convert them by isASCII()
                 res = punycode.toASCII(res);
             }
             // after toASCII() some characters can be still non-ASCII
             // e.g. `abc“@` with non-ASCII `“`
-            if (!DeclarativeRuleConverter.isASCII(res)) {
+            if (!AbstractRuleConverter.isASCII(res)) {
                 res = punycode.encode(res);
             }
         } catch (e: unknown) {
@@ -265,7 +266,7 @@ export abstract class DeclarativeRuleConverter {
      */
     private static toASCII(strings: string[]): string[] {
         return strings.map((s) => {
-            return DeclarativeRuleConverter.prepareASCII(s);
+            return AbstractRuleConverter.prepareASCII(s);
         });
     }
 
@@ -277,7 +278,7 @@ export abstract class DeclarativeRuleConverter {
      * @returns Is rule compatible with {@link RuleActionType.ALLOW_ALL_REQUESTS}.
      */
     private static isCompatibleWithAllowAllRequests(rule: NetworkRule): boolean {
-        const types = DeclarativeRuleConverter.getResourceTypes(rule.getPermittedRequestTypes());
+        const types = AbstractRuleConverter.getResourceTypes(rule.getPermittedRequestTypes());
 
         const allowedRequestTypes = [ResourceType.MainFrame, ResourceType.SubFrame];
 
@@ -480,7 +481,7 @@ export abstract class DeclarativeRuleConverter {
      */
     private getAction(rule: NetworkRule): RuleAction {
         if (rule.isAllowlist()) {
-            if (rule.isFilteringDisabled() && DeclarativeRuleConverter.isCompatibleWithAllowAllRequests(rule)) {
+            if (rule.isFilteringDisabled() && AbstractRuleConverter.isCompatibleWithAllowAllRequests(rule)) {
                 return { type: RuleActionType.ALLOW_ALL_REQUESTS };
             }
 
@@ -496,7 +497,7 @@ export abstract class DeclarativeRuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.RemoveHeader)) {
-            const modifyHeadersAction = DeclarativeRuleConverter.getModifyHeadersAction(rule);
+            const modifyHeadersAction = AbstractRuleConverter.getModifyHeadersAction(rule);
 
             if (modifyHeadersAction?.requestHeaders) {
                 return {
@@ -514,7 +515,7 @@ export abstract class DeclarativeRuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Csp)) {
-            const headersAction = DeclarativeRuleConverter.getAddingCspHeadersAction(rule);
+            const headersAction = AbstractRuleConverter.getAddingCspHeadersAction(rule);
             if (headersAction) {
                 return {
                     type: RuleActionType.MODIFY_HEADERS,
@@ -524,7 +525,7 @@ export abstract class DeclarativeRuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Permissions)) {
-            const headersAction = DeclarativeRuleConverter.getAddingPermissionsHeadersAction(rule);
+            const headersAction = AbstractRuleConverter.getAddingPermissionsHeadersAction(rule);
             if (headersAction) {
                 return {
                     type: RuleActionType.MODIFY_HEADERS,
@@ -534,7 +535,7 @@ export abstract class DeclarativeRuleConverter {
         }
 
         if (rule.isOptionEnabled(NetworkRuleOption.Cookie)) {
-            const removeCookieHeaders = DeclarativeRuleConverter.getRemovingCookieHeadersAction(rule);
+            const removeCookieHeaders = AbstractRuleConverter.getRemovingCookieHeadersAction(rule);
             if (removeCookieHeaders) {
                 const { responseHeaders, requestHeaders } = removeCookieHeaders;
 
@@ -564,14 +565,14 @@ export abstract class DeclarativeRuleConverter {
         if (pattern) {
             // set regexFilter
             if (rule.isRegexRule()) {
-                const regexFilter = DeclarativeRuleConverter.removeSlashes(pattern);
-                condition.regexFilter = DeclarativeRuleConverter.prepareASCII(regexFilter);
+                const regexFilter = AbstractRuleConverter.removeSlashes(pattern);
+                condition.regexFilter = AbstractRuleConverter.prepareASCII(regexFilter);
             } else {
                 // A pattern beginning with ||* is not allowed. Use * instead.
                 const patternWithoutVerticals = pattern.startsWith('||*')
                     ? pattern.substring(2)
                     : pattern;
-                condition.urlFilter = DeclarativeRuleConverter.prepareASCII(patternWithoutVerticals);
+                condition.urlFilter = AbstractRuleConverter.prepareASCII(patternWithoutVerticals);
             }
         }
 
@@ -705,6 +706,24 @@ export abstract class DeclarativeRuleConverter {
             }
         }
 
+        // set response headers
+        if (rule.isOptionEnabled(NetworkRuleOption.Header)) {
+            const headerModifierMatcher = rule.getHeaderModifierMatcher();
+            if (headerModifierMatcher) {
+                const headerInfo: HeaderInfo = { header: headerModifierMatcher.header };
+
+                // Add values array if a value pattern is specified and is not a regex
+                // DNR does not support regex in the header info values field
+                // as of 14 November 2025 https://developer.chrome.com/docs/extensions/reference/api/declarativeNetRequest#type-HeaderInfo
+                const { value } = headerModifierMatcher;
+                if (typeof value === 'string') {
+                    headerInfo.values = [value];
+                }
+
+                condition.responseHeaders = [headerInfo];
+            }
+        }
+
         return condition;
     }
 
@@ -743,15 +762,15 @@ export abstract class DeclarativeRuleConverter {
         const declarativeRule: DeclarativeRule = {
             id,
             action: this.getAction(rule.rule),
-            condition: DeclarativeRuleConverter.getCondition(rule.rule),
+            condition: AbstractRuleConverter.getCondition(rule.rule),
         };
 
-        const priority = DeclarativeRuleConverter.getPriority(rule.rule);
+        const priority = AbstractRuleConverter.getPriority(rule.rule);
         if (priority) {
             declarativeRule.priority = priority;
         }
 
-        const conversionErr = await DeclarativeRuleConverter.checkDeclarativeRuleApplicable(
+        const conversionErr = await AbstractRuleConverter.checkDeclarativeRuleApplicable(
             rule,
             declarativeRule,
         );
@@ -882,7 +901,7 @@ export abstract class DeclarativeRuleConverter {
         await Promise.all(rules.map(async (r: IndexedNetworkRuleWithHash) => {
             const { rule, index } = r;
 
-            const id = DeclarativeRuleConverter.generateUniqueId(r, usedIds);
+            const id = AbstractRuleConverter.generateUniqueId(r, usedIds);
 
             let converted: DeclarativeRule[] = [];
 
@@ -892,7 +911,7 @@ export abstract class DeclarativeRuleConverter {
                     rule,
                 );
             } catch (e) {
-                const err = DeclarativeRuleConverter.catchErrorDuringConversion(rule.rule, index, id, e);
+                const err = AbstractRuleConverter.catchErrorDuringConversion(rule.rule, index, id, e);
                 res.errors.push(err);
                 return;
             }

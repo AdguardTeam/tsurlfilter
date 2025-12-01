@@ -6,7 +6,7 @@
         "tasks",
         ".eslintrc.cjs",
         "src/lib/mv3/.eslintrc.js",
-        "vitest.workspace.ts",
+        "vitest.config.ts",
         "vitest.setup.ts",
         "tasks/constants.ts",
         "test",

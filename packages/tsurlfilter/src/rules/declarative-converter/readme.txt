@@ -194,11 +194,11 @@ page$domain=targetdomain.com
 page$domain=targetdomain.com|~example.org
 
 ! ## $header
-! <b>Status</b>: not supported
+! <b>Status</b>: supported
 ! <br/>
 ! <b>MV3 limitations:</b>
 ! <br/>
-! Cannot be converted to MV3 Declarative Rule
+! Rules with regex values cannot be converted to MV3 Declarative Rule (DNR does not support regex in the header info values field)
 ! <br/>
 ! <b>Examples:</b>
 ! <br/>

@@ -30,13 +30,6 @@ export type GetBlockingResponseParams = RequestParams & {
 };
 
 /**
- * Params for {@link RequestBlockingApi.getResponseOnHeadersReceived}.
- */
-export type GetHeadersResponseParams = RequestParams & {
-    rule: NetworkRule | null;
-};
-
-/**
  * Api for processing request filtering.
  *
  * Method {@link getBlockingResponse} processes rule applying for request and computes response
@@ -176,6 +169,32 @@ export class RequestBlockingApi {
 
         RequestBlockingApi.logRuleApplying(data, rule);
         return { cancel: true };
+    }
+
+    /**
+     * Logs header rule that would be blocked.
+     * In MV3, we don't actually block in web request API, but we log supposedly blocked requests.
+     *
+     * @param context Request context.
+     */
+    public static logHeaderRuleIfAny(context: RequestContext): void {
+        const {
+            matchingResult,
+            responseHeaders,
+            tabId,
+            referrerUrl,
+        } = context;
+
+        if (!matchingResult || !responseHeaders) {
+            return;
+        }
+
+        const rule = matchingResult.getResponseHeadersResult(responseHeaders);
+
+        if (rule) {
+            RequestBlockingApi.logRuleApplying(context, rule);
+            tabsApi.incrementTabBlockedRequestCount(tabId, referrerUrl);
+        }
     }
 
     /**

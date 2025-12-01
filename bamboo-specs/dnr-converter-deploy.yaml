@@ -1,0 +1,41 @@
+---
+version: 2
+deployment:
+  name: DNR Converter - deploy
+  source-plan: AJL-DNRCONVERTERBUILD
+release-naming: ${bamboo.inject.version}
+environments:
+  - npmjs
+
+npmjs: &npmjs
+  docker:
+    image: adguard/node-ssh:22.17--0
+    volumes:
+      ${system.PNPM_DIR}: "${bamboo.cachePnpm}"
+  triggers: [ ]
+  tasks:
+    - checkout:
+        force-clean-build: true
+    - script:
+        interpreter: SHELL
+        scripts:
+          - |-
+            set -e
+            set -x
+
+            # Fix mixed logs
+            exec 2>&1
+
+            ls -alt
+
+            # FIXME: Implement deploy
+  requirements:
+    - adg-docker: 'true'
+    - extension: 'true'
+  notifications:
+    - events:
+        - deployment-started-and-finished
+      recipients:
+        - webhook:
+            name: Deploy webhook
+            url: http://prod.jirahub.service.eu.consul/v1/webhook/bamboo

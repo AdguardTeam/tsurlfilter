@@ -38,6 +38,6 @@ describe('NetworkRule - ctag rules', () => {
 
         expect(() => {
             createNetworkRule('||example.org^$ctag=device_phone|invalid', 0);
-        }).toThrow(new SyntaxError('Invalid rule: Invalid ctag modifier'));
+        }).toThrow(new Error('Invalid rule: Invalid ctag modifier'));
     });
 });

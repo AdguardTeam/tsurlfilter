@@ -37,7 +37,8 @@
  * for the request.                      └──────────────┬──────────────┘ │
  * If this is a frame request,                          │                │
  * also matches the                                     │                │
- * {@link CosmeticResult}                               │                │
+ * {@link CosmeticResult}.                              │                │
+ * Also logs CSP report blocking events.                │                │
  *                                                      │                │
  *                                                      │                │
  *                                       ┌──────────────▼──────────────┐ │
@@ -331,6 +332,9 @@ export class WebRequestApi {
             },
         });
 
+        // Note: Must be called after SendRequest event to ensure proper event ordering in logs
+        CspService.onBeforeRequest(context);
+
         let frameRule;
 
         /**
@@ -491,9 +495,23 @@ export class WebRequestApi {
             },
         });
 
-        const { requestUrl, requestType } = context;
+        if (
+            !context?.matchingResult
+            || context.matchingResult.getBasicResult()?.isFilteringDisabled()
+        ) {
+            return;
+        }
 
-        if (requestUrl && (requestType === RequestType.Document || requestType === RequestType.SubDocument)) {
+        // Check for header rules and log them
+        // In MV3, we don't actually block in web request API (blocking is done via DNR),
+        // but we need to log supposedly blocked requests for statistics and filtering log
+        RequestBlockingApi.logHeaderRuleIfAny(context);
+
+        const { requestUrl, requestType } = context;
+        const isDocumentOrSubDocumentRequest = requestType === RequestType.Document
+            || requestType === RequestType.SubDocument;
+
+        if (requestUrl && isDocumentOrSubDocumentRequest) {
             CspService.onHeadersReceived(context);
 
             PermissionsPolicyService.onHeadersReceived(context);

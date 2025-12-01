@@ -1,0 +1,16 @@
+---
+version: 2
+deployment:
+  name: DNR Converter - deploy
+deployment-permissions:
+  - groups:
+      - extensions-developers
+    permissions:
+      - view
+environment-permissions:
+  - npmjs: &npmjs-permissions
+      - groups:
+          - extensions-developers
+        permissions:
+          - view
+          - deploy

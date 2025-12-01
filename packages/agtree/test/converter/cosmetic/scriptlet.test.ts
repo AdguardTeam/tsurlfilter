@@ -8,7 +8,6 @@ import {
 import { RuleParser } from '../../../src/parser/rule-parser';
 import { ScriptletRuleConverter } from '../../../src/converter/cosmetic/scriptlet';
 import { type ScriptletInjectionRule } from '../../../src/nodes';
-import { RuleConversionError } from '../../../src/errors/rule-conversion-error';
 
 describe('Scriptlet conversion', () => {
     describe('ABP to ADG', () => {
@@ -399,7 +398,7 @@ describe('Scriptlet conversion', () => {
         ])("should throw error on '$actual'", ({ actual, expected }) => {
             // eslint-disable-next-line max-len
             expect(() => ScriptletRuleConverter.convertToUbo(RuleParser.parse(actual) as ScriptletInjectionRule)).toThrowError(
-                new RuleConversionError(expected),
+                expected,
             );
         });
     });

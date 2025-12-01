@@ -1,4 +1,5 @@
 /* eslint-disable max-len */
+import { AdblockSyntaxError } from '@adguard/agtree';
 import {
     afterAll,
     afterEach,
@@ -141,7 +142,7 @@ describe('NetworkRule constructor', () => {
     it('works when it handles empty $domain modifier', () => {
         expect(() => {
             createNetworkRule('||example.org^$domain=', 0);
-        }).toThrow(new Error('Modifier value cannot be empty'));
+        }).toThrow(new AdblockSyntaxError('Modifier value cannot be empty', 15, 22));
     });
 
     it('works when it handles empty domain inside a $domain modifier', () => {
@@ -236,7 +237,7 @@ describe('NetworkRule constructor', () => {
 
         expect(() => {
             createNetworkRule('||baddomain.com^$method=', 0);
-        }).toThrow(new SyntaxError('Modifier value cannot be empty'));
+        }).toThrow(new AdblockSyntaxError('Modifier value cannot be empty', 17, 24));
 
         expect(() => {
             createNetworkRule('||baddomain.com^$method=invalid', 0);
@@ -258,7 +259,7 @@ describe('NetworkRule constructor', () => {
 
         expect(() => {
             createNetworkRule('||baddomain.com^$to=', 0);
-        }).toThrow(new SyntaxError('Modifier value cannot be empty'));
+        }).toThrow(new AdblockSyntaxError('Modifier value cannot be empty', 17, 20));
 
         expect(() => {
             createNetworkRule('||baddomain.com^$to=example.org|', 0);
@@ -305,7 +306,7 @@ describe('NetworkRule constructor', () => {
 
         expect(() => {
             createNetworkRule('|*/ads^$to=', 0);
-        }).toThrow(new SyntaxError('Modifier value cannot be empty'));
+        }).toThrow(new AdblockSyntaxError('Modifier value cannot be empty', 8, 11));
 
         expect(() => {
             createNetworkRule('|*/ads^$to=evil.com|', 0);
