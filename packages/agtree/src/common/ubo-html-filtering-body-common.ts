@@ -12,16 +12,35 @@ import { UBO_RESPONSEHEADER_FN } from '../utils/constants';
  * removal rule syntax is same as uBlock-style HTML filtering rule syntax.
  */
 export function isUboResponseHeaderRemovalRuleBody(node: HtmlFilteringRuleBody): boolean {
+    // Must have exactly one selector list
+    if (node.children.length !== 1) {
+        return false;
+    }
+
+    const selectorList = node.children[0];
+
+    // Must have exactly one selector
+    if (selectorList.children.length !== 1) {
+        return false;
+    }
+
+    const selector = selectorList.children[0];
+
+    // Must have exactly one part and should not have combinator
+    if (selector.children.length !== 1 || selector.combinator !== undefined) {
+        return false;
+    }
+
+    const part = selector.children[0];
+
     return (
-        // Must have exactly one selector list
-        node.children.length === 1
-        // Must have exactly one selector
-        && node.children[0].children.length === 1
-        // Must have exactly one part
-        && node.children[0].children[0].children.length === 1
         // Should be a pseudo class
-        && node.children[0].children[0].children[0].type === 'HtmlFilteringRuleSelectorPseudoClass'
+        part.type === 'HtmlFilteringRuleSelectorPseudoClass'
         // Pseudo class name should match `responseheader`
-        && node.children[0].children[0].children[0].name.value === UBO_RESPONSEHEADER_FN
+        && part.name.value === UBO_RESPONSEHEADER_FN
+        // Should be a functional pseudo class
+        && part.isFunction
+        // Should have argument
+        && part.argument !== undefined
     );
 }
