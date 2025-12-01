@@ -66,6 +66,8 @@ Build:
     - extension: 'true'
 
 # run docs update at 10:00 every day
+# NOTE: The script includes change detection to skip execution if no relevant files
+# have changed since the last documentation update, preventing unnecessary runs.
 triggers:
   - cron:
       expression: 0 0 10 ? * *
