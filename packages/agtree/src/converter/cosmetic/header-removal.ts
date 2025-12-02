@@ -3,17 +3,21 @@
  */
 
 import { RuleConversionError } from '../../errors/rule-conversion-error';
-import { CosmeticRuleType, RuleCategory, type AnyRule } from '../../nodes';
+import {
+    CosmeticRuleType,
+    type HtmlFilteringRuleSelectorPseudoClass,
+    RuleCategory,
+    type AnyRule,
+} from '../../nodes';
 import { RuleConverterBase } from '../base-interfaces/rule-converter-base';
 import { createModifierListNode, createModifierNode } from '../../ast-utils/modifiers';
-import { EMPTY } from '../../utils/constants';
+import { EMPTY, UBO_RESPONSEHEADER_FN } from '../../utils/constants';
 import { ADBLOCK_URL_SEPARATOR, ADBLOCK_URL_START } from '../../utils/regexp';
 import { createNetworkRuleNode } from '../../ast-utils/network-rules';
 import { AdblockSyntax } from '../../utils/adblockers';
 import { type NodeConversionResult, createNodeConversionResult } from '../base-interfaces/conversion-result';
 import { isUboResponseHeaderRemovalRuleBody } from '../../common/ubo-html-filtering-body-common';
 
-const UBO_RESPONSEHEADER_FN = 'responseheader';
 const ADG_REMOVEHEADER_MODIFIER = 'removeheader';
 
 export const ERROR_MESSAGES = {
@@ -59,8 +63,11 @@ export class HeaderRemovalRuleConverter extends RuleConverterBase {
             return createNodeConversionResult([rule], false);
         }
 
-        // Indexes checked in `isUboResponseHeaderRemovalRuleBody`
-        const headerName = body.selectors[0].pseudoClasses[0].content.value;
+        // Indexes and types checked in `isUboResponseHeaderRemovalRuleBody`
+        const selectorList = body.children[0];
+        const selector = selectorList.children[0];
+        const pseudoClass = selector.children[0] as HtmlFilteringRuleSelectorPseudoClass;
+        const headerName = pseudoClass.argument!.value;
 
         // Prepare network rule pattern
         const pattern: string[] = [];
