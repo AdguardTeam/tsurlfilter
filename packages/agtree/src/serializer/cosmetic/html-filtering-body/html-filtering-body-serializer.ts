@@ -3,6 +3,7 @@ import {
     type HtmlFilteringRuleBody,
     type HtmlFilteringRuleSelectorAttribute,
     type HtmlFilteringRuleSelectorPseudoClass,
+    type HtmlFilteringRuleSelectorList,
 } from '../../../nodes';
 import { type OutputByteBuffer } from '../../../utils/output-byte-buffer';
 import { NULL, UINT8_MAX } from '../../../utils/constants';
@@ -37,18 +38,18 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
         // Write node type
         buffer.writeUint8(BinaryTypeMarshallingMap.HtmlFilteringRuleBody);
 
-        // Write selectors length
+        // Write selector list length
         HtmlFilteringBodySerializer.writeArray(
             buffer,
-            HtmlFilteringBodyMarshallingMap.Selectors,
-            node.selectors,
-            'selectors',
+            HtmlFilteringBodyMarshallingMap.SelectorList,
+            node.children,
+            'selectorList',
         );
 
-        // Write selectors
-        for (const selector of node.selectors) {
-            HtmlFilteringBodySerializer.serializeSelector(
-                selector,
+        // Write selector list items
+        for (const selectorList of node.children) {
+            HtmlFilteringBodySerializer.serializeSelectorList(
+                selectorList,
                 buffer,
                 frequentAttributes,
                 frequentPseudoClasses,
@@ -62,6 +63,59 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
         }
 
         // Write body end position
+        if (!isUndefined(node.end)) {
+            buffer.writeUint8(HtmlFilteringBodyMarshallingMap.End);
+            buffer.writeUint32(node.end);
+        }
+
+        // Write null terminator
+        buffer.writeUint8(NULL);
+    }
+
+    /**
+     * Serializes a HTML filtering rule selector list node into a compact binary format.
+     *
+     * @param node The HtmlFilteringRuleSelectorList node to serialize.
+     * @param buffer The OutputByteBuffer used for writing the binary data.
+     * @param frequentAttributes An optional map of frequently used attribute names,
+     * along with their corresponding serialization index.
+     * @param frequentPseudoClasses An optional map of frequently used pseudo-class names,
+     * along with their corresponding serialization index.
+     */
+    private static serializeSelectorList(
+        node: HtmlFilteringRuleSelectorList,
+        buffer: OutputByteBuffer,
+        frequentAttributes?: Map<string, number>,
+        frequentPseudoClasses?: Map<string, number>,
+    ): void {
+        // Write node type
+        buffer.writeUint8(HtmlFilteringBodyMarshallingMap.SelectorListItem);
+
+        // Write selectors length
+        HtmlFilteringBodySerializer.writeArray(
+            buffer,
+            HtmlFilteringBodyMarshallingMap.Selectors,
+            node.children,
+            'selectors',
+        );
+
+        // Write selectors items
+        for (const selector of node.children) {
+            HtmlFilteringBodySerializer.serializeSelector(
+                selector,
+                buffer,
+                frequentAttributes,
+                frequentPseudoClasses,
+            );
+        }
+
+        // Write selector list start position
+        if (!isUndefined(node.start)) {
+            buffer.writeUint8(HtmlFilteringBodyMarshallingMap.Start);
+            buffer.writeUint32(node.start);
+        }
+
+        // Write selector list end position
         if (!isUndefined(node.end)) {
             buffer.writeUint8(HtmlFilteringBodyMarshallingMap.End);
             buffer.writeUint32(node.end);
@@ -87,47 +141,44 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
         frequentAttributes?: Map<string, number>,
         frequentPseudoClasses?: Map<string, number>,
     ): void {
-        // Write selector header
-        buffer.writeUint8(HtmlFilteringBodyMarshallingMap.Selector);
+        // Write node type
+        buffer.writeUint8(HtmlFilteringBodyMarshallingMap.SelectorsItem);
 
-        // Write tag name
-        if (!isUndefined(node.tagName)) {
-            buffer.writeUint8(HtmlFilteringBodyMarshallingMap.TagName);
-            ValueSerializer.serialize(node.tagName, buffer);
-        }
-
-        // Write attributes length
+        // Write parts length
         HtmlFilteringBodySerializer.writeArray(
             buffer,
-            HtmlFilteringBodyMarshallingMap.Attributes,
-            node.attributes,
-            'attributes',
+            HtmlFilteringBodyMarshallingMap.Parts,
+            node.children,
+            'parts',
         );
 
-        // Write attributes
-        for (const attribute of node.attributes) {
-            HtmlFilteringBodySerializer.serializeAttribute(
-                attribute,
-                buffer,
-                frequentAttributes,
-            );
+        // Write parts items
+        for (const part of node.children) {
+            const { type } = part;
+
+            switch (type) {
+                case 'Value':
+                    buffer.writeUint8(HtmlFilteringBodyMarshallingMap.Value);
+                    ValueSerializer.serialize(part, buffer);
+                    break;
+
+                case 'HtmlFilteringRuleSelectorAttribute':
+                    HtmlFilteringBodySerializer.serializeAttribute(part, buffer, frequentAttributes);
+                    break;
+
+                case 'HtmlFilteringRuleSelectorPseudoClass':
+                    HtmlFilteringBodySerializer.serializePseudoClass(part, buffer, frequentPseudoClasses);
+                    break;
+
+                default:
+                    throw new Error(`Unknown selector part type: ${type}`);
+            }
         }
 
-        // Write pseudo classes length
-        HtmlFilteringBodySerializer.writeArray(
-            buffer,
-            HtmlFilteringBodyMarshallingMap.PseudoClasses,
-            node.pseudoClasses,
-            'pseudo classes',
-        );
-
-        // Write pseudo classes
-        for (const pseudoClass of node.pseudoClasses) {
-            HtmlFilteringBodySerializer.serializePseudoClass(
-                pseudoClass,
-                buffer,
-                frequentPseudoClasses,
-            );
+        // Write combinator
+        if (!isUndefined(node.combinator)) {
+            buffer.writeUint8(HtmlFilteringBodyMarshallingMap.Combinator);
+            ValueSerializer.serialize(node.combinator, buffer);
         }
 
         // Write selector start position
@@ -159,12 +210,18 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
         buffer: OutputByteBuffer,
         frequentAttributes?: Map<string, number>,
     ): void {
-        // Write attribute header
+        // Write node type
         buffer.writeUint8(HtmlFilteringBodyMarshallingMap.Attribute);
 
         // Write attribute name
         buffer.writeUint8(HtmlFilteringBodyMarshallingMap.AttributeName);
-        ValueSerializer.serialize(node.name, buffer, frequentAttributes, true);
+        ValueSerializer.serialize(node.name, buffer, frequentAttributes);
+
+        // Write attribute operator
+        if (!isUndefined(node.operator)) {
+            buffer.writeUint8(HtmlFilteringBodyMarshallingMap.AttributeOperator);
+            ValueSerializer.serialize(node.operator, buffer);
+        }
 
         // Write attribute value
         if (!isUndefined(node.value)) {
@@ -172,10 +229,10 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
             ValueSerializer.serialize(node.value, buffer);
         }
 
-        // Write attribute flags
-        if (!isUndefined(node.flags)) {
-            buffer.writeUint8(HtmlFilteringBodyMarshallingMap.AttributeFlags);
-            ValueSerializer.serialize(node.flags, buffer);
+        // Write attribute flag
+        if (!isUndefined(node.flag)) {
+            buffer.writeUint8(HtmlFilteringBodyMarshallingMap.AttributeFlag);
+            ValueSerializer.serialize(node.flag, buffer);
         }
 
         // Write attribute start position
@@ -207,16 +264,22 @@ export class HtmlFilteringBodySerializer extends BaseSerializer {
         buffer: OutputByteBuffer,
         frequentPseudoClasses?: Map<string, number>,
     ): void {
-        // Write pseudo class header
+        // Write node type
         buffer.writeUint8(HtmlFilteringBodyMarshallingMap.PseudoClass);
 
         // Write pseudo class name
         buffer.writeUint8(HtmlFilteringBodyMarshallingMap.PseudoClassName);
-        ValueSerializer.serialize(node.name, buffer, frequentPseudoClasses, true);
+        ValueSerializer.serialize(node.name, buffer, frequentPseudoClasses);
 
-        // Write pseudo class content
-        buffer.writeUint8(HtmlFilteringBodyMarshallingMap.PseudoClassContent);
-        ValueSerializer.serialize(node.content, buffer);
+        // Write isFunction flag
+        buffer.writeUint8(HtmlFilteringBodyMarshallingMap.PseudoClassIsFunction);
+        buffer.writeUint8(node.isFunction ? 1 : 0);
+
+        // Write pseudo class argument
+        if (!isUndefined(node.argument)) {
+            buffer.writeUint8(HtmlFilteringBodyMarshallingMap.PseudoClassArgument);
+            ValueSerializer.serialize(node.argument, buffer);
+        }
 
         // Write pseudo class start position
         if (!isUndefined(node.start)) {

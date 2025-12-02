@@ -5,6 +5,7 @@ import {
     type HtmlFilteringRuleSelectorAttribute,
     type HtmlFilteringRuleSelectorPseudoClass,
     type Value,
+    type HtmlFilteringRuleSelectorList,
 } from '../../../nodes';
 import { type InputByteBuffer } from '../../../utils/input-byte-buffer';
 import { NULL } from '../../../utils/constants';
@@ -42,12 +43,12 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case HtmlFilteringBodyMarshallingMap.Selectors:
-                    node.selectors = new Array(buffer.readUint8());
-                    for (let i = 0; i < node.selectors.length; i += 1) {
-                        HtmlFilteringBodyDeserializer.deserializeSelector(
+                case HtmlFilteringBodyMarshallingMap.SelectorList:
+                    node.children = new Array(buffer.readUint8());
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        HtmlFilteringBodyDeserializer.deserializeSelectorList(
                             buffer,
-                            node.selectors[i] = {} as HtmlFilteringRuleSelector,
+                            node.children[i] = {} as HtmlFilteringRuleSelectorList,
                             frequentAttributes,
                             frequentPseudoClasses,
                         );
@@ -71,6 +72,56 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
     }
 
     /**
+     * Deserializes a HTML filtering rule selector list node from binary format.
+     *
+     * @param buffer ByteBuffer for reading binary data.
+     * @param node Destination node.
+     * @param frequentAttributes An optional map of frequently used attribute names,
+     * along with their corresponding serialization index.
+     * @param frequentPseudoClasses An optional map of frequently used pseudo-class names,
+     * along with their corresponding serialization index.
+     */
+    private static deserializeSelectorList(
+        buffer: InputByteBuffer,
+        node: Partial<HtmlFilteringRuleSelectorList>,
+        frequentAttributes?: Map<number, string>,
+        frequentPseudoClasses?: Map<number, string>,
+    ): void {
+        buffer.assertUint8(HtmlFilteringBodyMarshallingMap.SelectorListItem);
+        node.type = 'HtmlFilteringRuleSelectorList';
+
+        let prop = buffer.readUint8();
+        while (prop !== NULL) {
+            switch (prop) {
+                case HtmlFilteringBodyMarshallingMap.Selectors:
+                    node.children = new Array(buffer.readUint8());
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        HtmlFilteringBodyDeserializer.deserializeSelector(
+                            buffer,
+                            node.children[i] = {} as HtmlFilteringRuleSelector,
+                            frequentAttributes,
+                            frequentPseudoClasses,
+                        );
+                    }
+                    break;
+
+                case HtmlFilteringBodyMarshallingMap.Start:
+                    node.start = buffer.readUint32();
+                    break;
+
+                case HtmlFilteringBodyMarshallingMap.End:
+                    node.end = buffer.readUint32();
+                    break;
+
+                default:
+                    throw new Error(`Invalid selector list property: ${prop}`);
+            }
+
+            prop = buffer.readUint8();
+        }
+    }
+
+    /**
      * Deserializes a HTML filtering rule selector node from binary format.
      *
      * @param buffer ByteBuffer for reading binary data.
@@ -86,36 +137,47 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
         frequentAttributes?: Map<number, string>,
         frequentPseudoClasses?: Map<number, string>,
     ): void {
-        buffer.assertUint8(HtmlFilteringBodyMarshallingMap.Selector);
+        buffer.assertUint8(HtmlFilteringBodyMarshallingMap.SelectorsItem);
         node.type = 'HtmlFilteringRuleSelector';
 
         let prop = buffer.readUint8();
         while (prop !== NULL) {
             switch (prop) {
-                case HtmlFilteringBodyMarshallingMap.TagName:
-                    ValueDeserializer.deserialize(buffer, node.tagName = {} as Value);
-                    break;
+                case HtmlFilteringBodyMarshallingMap.Parts:
+                    node.children = new Array(buffer.readUint8());
+                    for (let i = 0; i < node.children.length; i += 1) {
+                        const partType = buffer.peekUint8();
 
-                case HtmlFilteringBodyMarshallingMap.Attributes:
-                    node.attributes = new Array(buffer.readUint8());
-                    for (let i = 0; i < node.attributes.length; i += 1) {
-                        HtmlFilteringBodyDeserializer.deserializeAttribute(
-                            buffer,
-                            node.attributes[i] = {} as HtmlFilteringRuleSelectorAttribute,
-                            frequentAttributes,
-                        );
+                        switch (partType) {
+                            case HtmlFilteringBodyMarshallingMap.Value:
+                                buffer.assertUint8(HtmlFilteringBodyMarshallingMap.Value);
+                                ValueDeserializer.deserialize(buffer, node.children[i] = {} as Value);
+                                break;
+
+                            case HtmlFilteringBodyMarshallingMap.Attribute:
+                                HtmlFilteringBodyDeserializer.deserializeAttribute(
+                                    buffer,
+                                    node.children[i] = {} as HtmlFilteringRuleSelectorAttribute,
+                                    frequentAttributes,
+                                );
+                                break;
+
+                            case HtmlFilteringBodyMarshallingMap.PseudoClass:
+                                HtmlFilteringBodyDeserializer.deserializePseudoClass(
+                                    buffer,
+                                    node.children[i] = {} as HtmlFilteringRuleSelectorPseudoClass,
+                                    frequentPseudoClasses,
+                                );
+                                break;
+
+                            default:
+                                throw new Error(`Unknown selector part type: ${partType}`);
+                        }
                     }
                     break;
 
-                case HtmlFilteringBodyMarshallingMap.PseudoClasses:
-                    node.pseudoClasses = new Array(buffer.readUint8());
-                    for (let i = 0; i < node.pseudoClasses.length; i += 1) {
-                        HtmlFilteringBodyDeserializer.deserializePseudoClass(
-                            buffer,
-                            node.pseudoClasses[i] = {} as HtmlFilteringRuleSelectorPseudoClass,
-                            frequentPseudoClasses,
-                        );
-                    }
+                case HtmlFilteringBodyMarshallingMap.Combinator:
+                    ValueDeserializer.deserialize(buffer, node.combinator = {} as Value);
                     break;
 
                 case HtmlFilteringBodyMarshallingMap.Start:
@@ -161,12 +223,16 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
                     );
                     break;
 
+                case HtmlFilteringBodyMarshallingMap.AttributeOperator:
+                    ValueDeserializer.deserialize(buffer, node.operator = {} as Value);
+                    break;
+
                 case HtmlFilteringBodyMarshallingMap.AttributeValue:
                     ValueDeserializer.deserialize(buffer, node.value = {} as Value);
                     break;
 
-                case HtmlFilteringBodyMarshallingMap.AttributeFlags:
-                    ValueDeserializer.deserialize(buffer, node.flags = {} as Value);
+                case HtmlFilteringBodyMarshallingMap.AttributeFlag:
+                    ValueDeserializer.deserialize(buffer, node.flag = {} as Value);
                     break;
 
                 case HtmlFilteringBodyMarshallingMap.Start:
@@ -212,8 +278,12 @@ export class HtmlFilteringBodyDeserializer extends BaseDeserializer {
                     );
                     break;
 
-                case HtmlFilteringBodyMarshallingMap.PseudoClassContent:
-                    ValueDeserializer.deserialize(buffer, node.content = {} as Value);
+                case HtmlFilteringBodyMarshallingMap.PseudoClassIsFunction:
+                    node.isFunction = buffer.readUint8() !== 0;
+                    break;
+
+                case HtmlFilteringBodyMarshallingMap.PseudoClassArgument:
+                    ValueDeserializer.deserialize(buffer, node.argument = {} as Value);
                     break;
 
                 case HtmlFilteringBodyMarshallingMap.Start:

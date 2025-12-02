@@ -9,27 +9,37 @@ import { BINARY_SCHEMA_VERSION } from '../../../utils/binary-schema-version';
  * @note Only 256 values can be represented this way.
  */
 export const HtmlFilteringBodyMarshallingMap = {
+    // Common
+    Start: 1,
+    End: 2,
+
     // `HtmlFilteringRuleBody` node
-    Selectors: 1,
-    Start: 2,
-    End: 3,
+    SelectorList: 3,
+
+    // `HtmlFilteringRuleSelectorList` node
+    SelectorListItem: 4,
+    Selectors: 5,
 
     // `HtmlFilteringRuleSelector` node
-    Selector: 4,
-    TagName: 5,
-    Attributes: 6,
-    PseudoClasses: 7,
+    SelectorsItem: 6,
+    Parts: 7,
+    Combinator: 8,
+
+    // `HtmlFilteringRuleSelectorPart` nodes
+    Value: 9,
+    Attribute: 10,
+    PseudoClass: 11,
 
     // `HtmlFilteringRuleSelectorAttribute` node
-    Attribute: 8,
-    AttributeName: 9,
-    AttributeValue: 10,
-    AttributeFlags: 11,
+    AttributeName: 12,
+    AttributeOperator: 13,
+    AttributeValue: 14,
+    AttributeFlag: 15,
 
     // `HtmlFilteringRuleSelectorPseudoClass` node
-    PseudoClass: 12,
-    PseudoClassName: 13,
-    PseudoClassContent: 14,
+    PseudoClassName: 16,
+    PseudoClassIsFunction: 17,
+    PseudoClassArgument: 18,
 } as const;
 
 // intentionally naming the variable the same as the type
