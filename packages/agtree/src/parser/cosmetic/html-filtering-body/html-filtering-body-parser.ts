@@ -9,7 +9,7 @@ import {
     type HtmlFilteringRuleSelectorPseudoClass,
 } from '../../../nodes';
 import { BaseParser } from '../../base-parser';
-import { CssTokenStream } from '../../css/css-token-stream';
+import { CssTokenStream, type TokenData } from '../../css/css-token-stream';
 import { defaultParserOptions, type ParserOptions } from '../../options';
 import {
     ASTERISK,
@@ -54,6 +54,7 @@ export class HtmlFilteringBodyParser extends BaseParser {
         TAG_NAME_MUST_BE_FIRST: 'Tag name must be the first part of the selector',
         // eslint-disable-next-line max-len
         INVALID_ATTRIBUTE_VALUE: `Expected '${getFormattedTokenName(TokenType.Ident)}' or '${getFormattedTokenName(TokenType.String)}' as attribute value, but got '%s' with value '%s'`,
+        INVALID_ATTRIBUTE_OPERATOR: "Invalid attribute operator '%s'",
         // eslint-disable-next-line max-len
         INVALID_PSEUDO_CLASS_NAME: `Expected '${getFormattedTokenName(TokenType.Ident)}' or '${getFormattedTokenName(TokenType.Function)}' as pseudo class name, but got '%s' with value '%s'`,
     };
@@ -163,27 +164,37 @@ export class HtmlFilteringBodyParser extends BaseParser {
          * Finishes the current selector by appending it to the current selector list,
          * then constructs a new selector node with an optional combinator.
          *
+         * @param currentToken Current token where we are at in the stream.
+         * @param previousEndToken End token of the previous selector.
+         * @param nextStartToken Start token of the next selector.
+         * @param combinatorToken Optional combinator token.
          * @param combinator Optional combinator string.
          *
          * @throws If the current selector has no parts.
          */
-        const finishCurrentSelector = (combinator?: string): void => {
+        const finishCurrentSelector = (
+            currentToken: TokenData,
+            previousEndToken: TokenData | undefined,
+            nextStartToken: TokenData,
+            combinatorToken?: TokenData,
+            combinator?: string,
+        ): void => {
             // Throw error if current selector has no parts
-            if (currentSelector.children.length === 0) {
+            if (!previousEndToken || currentSelector.children.length === 0) {
                 throw new AdblockSyntaxError(
                     sprintf(
                         HtmlFilteringBodyParser.ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
-                        getFormattedTokenName(token.type),
-                        combinator ?? stream.fragment(),
+                        getFormattedTokenName(currentToken.type),
+                        raw.slice(currentToken.start, currentToken.end),
                     ),
-                    baseOffset + token.start,
-                    baseOffset + token.end,
+                    baseOffset + currentToken.start,
+                    baseOffset + currentToken.end,
                 );
             }
 
             // Include selector end location if needed
             if (options.isLocIncluded) {
-                currentSelector.end = baseOffset + token.start - 1;
+                currentSelector.end = baseOffset + previousEndToken.end;
             }
 
             // Append current selector to current selector list
@@ -195,11 +206,16 @@ export class HtmlFilteringBodyParser extends BaseParser {
                 children: [],
             };
 
-            if (combinator) {
+            // Include selector start location if needed
+            if (options.isLocIncluded) {
+                currentSelector.start = baseOffset + nextStartToken.start;
+            }
+
+            if (combinatorToken && combinator) {
                 currentSelector.combinator = ValueParser.parse(
                     combinator,
                     options,
-                    baseOffset + token.start,
+                    baseOffset + combinatorToken.start,
                 );
             }
 
@@ -212,14 +228,36 @@ export class HtmlFilteringBodyParser extends BaseParser {
          * - Finishing current selector with `finishCurrentSelector()`,
          * - And appending current selector list to the body.
          *
+         * @param currentToken Current token where we are at in the stream.
+         * @param previousEndToken End token of the previous selector.
+         * @param nextStartToken Start token of the next selector.
+         *
          * @throws If the current selector has no parts.
          */
-        const finishCurrentSelectorList = (): void => {
-            finishCurrentSelector();
+        const finishCurrentSelectorList = (
+            currentToken: TokenData,
+            previousEndToken: TokenData | undefined,
+            nextStartToken: TokenData,
+        ): void => {
+            // Finish current selector
+            finishCurrentSelector(currentToken, previousEndToken, nextStartToken);
+
+            // Throw error if current selector list has no selectors
+            if (!previousEndToken || currentSelectorList.children.length === 0) {
+                throw new AdblockSyntaxError(
+                    sprintf(
+                        HtmlFilteringBodyParser.ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
+                        getFormattedTokenName(currentToken.type),
+                        raw.slice(currentToken.start, currentToken.end),
+                    ),
+                    baseOffset + currentToken.start,
+                    baseOffset + currentToken.end,
+                );
+            }
 
             // Include selector list end location if needed
             if (options.isLocIncluded) {
-                currentSelectorList.end = baseOffset + token.start - 1;
+                currentSelectorList.end = baseOffset + previousEndToken.end;
             }
 
             // Append current selector list to body
@@ -230,6 +268,10 @@ export class HtmlFilteringBodyParser extends BaseParser {
                 type: 'HtmlFilteringRuleSelectorList',
                 children: [],
             };
+
+            if (options.isLocIncluded) {
+                currentSelectorList.start = baseOffset + nextStartToken.start;
+            }
         };
 
         // Traverse the stream
@@ -326,14 +368,29 @@ export class HtmlFilteringBodyParser extends BaseParser {
                         case GREATER_THAN:
                         case PLUS:
                         case TILDE: {
-                            // Finish current selector with combinator
-                            finishCurrentSelector(delim);
+                            // Save previous selector end token
+                            const previousEndToken = stream.lookbehindForNonWs();
+
+                            // Save delimiter (combinator) token
+                            const delimToken = token;
 
                             // Advance combinator token
                             stream.advance();
 
                             // Skip whitespaces after combinator
                             stream.skipWhitespace();
+
+                            // Save next selector start token
+                            const nextStartToken = stream.getOrFail();
+
+                            // Finish current selector with combinator
+                            finishCurrentSelector(
+                                delimToken,
+                                previousEndToken,
+                                nextStartToken,
+                                delimToken,
+                                delim,
+                            );
 
                             break;
                         }
@@ -356,14 +413,20 @@ export class HtmlFilteringBodyParser extends BaseParser {
 
                 // End of current selector (whitespace combinator - descendant)
                 case TokenType.Whitespace: {
+                    // Save previous selector end token
+                    const previousEndToken = stream.lookbehindForNonWs();
+
+                    // Save space (combinator) token
+                    const spaceToken = token;
+
                     // Skip all whitespaces
                     stream.skipWhitespace();
 
                     // Get next token (it can be EOF, combinator or comma)
-                    const possibleToken = stream.get();
+                    const nextStartToken = stream.get();
 
                     // EOF - just exit
-                    if (!possibleToken) {
+                    if (!nextStartToken) {
                         break;
                     }
 
@@ -374,21 +437,36 @@ export class HtmlFilteringBodyParser extends BaseParser {
                     }
 
                     // Finish current selector with whitespace combinator
-                    finishCurrentSelector(SPACE);
+                    finishCurrentSelector(
+                        spaceToken,
+                        previousEndToken,
+                        nextStartToken,
+                        spaceToken,
+                        SPACE,
+                    );
 
                     break;
                 }
 
                 // End of current selector list
                 case TokenType.Comma: {
-                    // Finish current selector list
-                    finishCurrentSelectorList();
+                    // Save previous selector end token
+                    const previousEndToken = stream.lookbehindForNonWs();
+
+                    // Save comma token
+                    const commaToken = token;
 
                     // Advance comma token
                     stream.advance();
 
                     // Skip whitespaces after comma
                     stream.skipWhitespace();
+
+                    // Save next selector start token
+                    const nextStartToken = stream.getOrFail();
+
+                    // Finish current selector list
+                    finishCurrentSelectorList(commaToken, previousEndToken, nextStartToken);
 
                     break;
                 }
@@ -407,8 +485,25 @@ export class HtmlFilteringBodyParser extends BaseParser {
             }
         }
 
+        // Save last non-whitespace token
+        const lastNonWsToken = stream.lookbehindForNonWs();
+
+        // If last non-whitespace token is not found,
+        // throw error because it means that there are 0 tokens in the stream
+        if (!lastNonWsToken) {
+            throw new AdblockSyntaxError(
+                sprintf(
+                    HtmlFilteringBodyParser.ERROR_MESSAGES.UNEXPECTED_TOKEN_WITH_VALUE,
+                    getFormattedTokenName(TokenType.Eof),
+                    raw,
+                ),
+                baseOffset,
+                baseOffset + raw.length,
+            );
+        }
+
         // Finish last selector list
-        finishCurrentSelectorList();
+        finishCurrentSelectorList(lastNonWsToken, lastNonWsToken, lastNonWsToken);
 
         return result;
     }
@@ -464,7 +559,7 @@ export class HtmlFilteringBodyParser extends BaseParser {
         // Get token (ID)
         const token = stream.getOrFail();
 
-        // Extract ID raw value (without hashmark)
+        // Extract ID raw value with hashmark
         const idRaw = stream.fragment();
 
         // Construct ID node
@@ -603,6 +698,16 @@ export class HtmlFilteringBodyParser extends BaseParser {
 
                 // Append equal sign to operator raw value
                 operatorRaw += EQUALS;
+            } else if (operatorRaw !== EQUALS) {
+                // If it's not equal sign either, throw error
+                throw new AdblockSyntaxError(
+                    sprintf(
+                        HtmlFilteringBodyParser.ERROR_MESSAGES.INVALID_ATTRIBUTE_OPERATOR,
+                        operatorRaw,
+                    ),
+                    baseOffset + token.start,
+                    baseOffset + token.end,
+                );
             }
 
             // Construct operator node
@@ -805,13 +910,13 @@ export class HtmlFilteringBodyParser extends BaseParser {
             stream.expect(TokenType.CloseParenthesis);
         }
 
-        // Append pseudo class node to selector parts
-        selector.children.push(pseudoClassNode);
-
         // Include pseudo class end location if needed
         if (options.isLocIncluded) {
             pseudoClassNode.end = baseOffset + token.end;
         }
+
+        // Append pseudo class node to selector parts
+        selector.children.push(pseudoClassNode);
 
         // Advance pseudo class name token (if ident) or function closing parenthesis token (if function)
         stream.advance();
