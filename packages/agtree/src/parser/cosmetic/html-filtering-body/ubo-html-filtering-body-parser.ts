@@ -56,8 +56,8 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
      *
      * @example
      * ```
-     * ^div:has-text(Example)
-     * ^responseheader(header-name)
+     * div:has-text(Example)
+     * responseheader(header-name)
      * ```
      */
     public static parse(
@@ -88,7 +88,7 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
      *
      * @example
      * ```
-     * ^responseheader(header-name)
+     * responseheader(header-name)
      * ```
      *
      * @note This method returns `HtmlFilteringRuleBody` because,
@@ -226,8 +226,17 @@ export class UboHtmlFilteringBodyParser extends BaseParser {
             result.start = baseOffset;
             result.end = raw.length + baseOffset;
 
+            // Get last non-whitespace token
+            const lastNonWsToken = stream.lookbehindForNonWs();
+
+            // It should'nt be null here, but just to be safe if it is
+            // it means that raw is empty or contains only whitespaces
+            if (!lastNonWsToken) {
+                return null;
+            }
+
             selectorList.start = selectorStart + baseOffset;
-            selectorList.end = raw.length + baseOffset;
+            selectorList.end = lastNonWsToken.end + baseOffset;
 
             selector.start = selectorList.start;
             selector.end = selectorList.end;
