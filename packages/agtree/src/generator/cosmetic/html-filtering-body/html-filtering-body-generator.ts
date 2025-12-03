@@ -2,6 +2,7 @@ import { type HtmlFilteringRuleBody } from '../../../nodes';
 import {
     CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,
+    COLON,
     COMMA,
     EMPTY,
     OPEN_PARENTHESIS,
@@ -82,9 +83,19 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
 
                 // Add combinator between selectors
                 if (selector.combinator) {
-                    result.push(SPACE);
+                    const isSpaceCombinator = selector.combinator.value === SPACE;
+
+                    // For space combinator, ensure single spaces around it
+                    if (!isSpaceCombinator) {
+                        result.push(SPACE);
+                    }
+
                     result.push(selector.combinator.value);
-                    result.push(SPACE);
+
+                    // For space combinator, ensure single spaces around it
+                    if (!isSpaceCombinator) {
+                        result.push(SPACE);
+                    }
                 }
 
                 // Traverse parts within the selector
@@ -146,6 +157,7 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
                             );
                         }
 
+                        result.push(COLON);
                         result.push(part.name.value);
 
                         // Handle pseudo class functions
