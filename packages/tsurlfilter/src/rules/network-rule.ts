@@ -309,6 +309,11 @@ export class NetworkRule implements IRule {
     private readonly filterListId: number;
 
     /**
+     * Rule text.
+     */
+    private readonly ruleText: string;
+
+    /**
      * Allowlist flag.
      */
     private readonly allowlist: boolean;
@@ -562,6 +567,15 @@ export class NetworkRule implements IRule {
      */
     public getFilterListId(): number {
         return this.filterListId;
+    }
+
+    /**
+     * Returns the rule text.
+     *
+     * @returns Rule text.
+     */
+    public getText(): string {
+        return this.ruleText;
     }
 
     /**
@@ -1222,6 +1236,7 @@ export class NetworkRule implements IRule {
     constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
+        this.ruleText = RuleGenerator.generate(node);
         this.allowlist = node.exception;
 
         const pattern = node.pattern.value;

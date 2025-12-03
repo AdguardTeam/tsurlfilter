@@ -1,4 +1,5 @@
 import { type HostRule as HostRuleNode } from '@adguard/agtree';
+import { RuleGenerator } from '@adguard/agtree/generator';
 
 import { type IRule, RULE_INDEX_NONE } from './rule';
 
@@ -34,6 +35,11 @@ export class HostRule implements IRule {
     private readonly filterListId: number;
 
     /**
+     * Rule text.
+     */
+    private readonly ruleText: string;
+
+    /**
      * Hostnames.
      */
     private readonly hostnames: string[] = [];
@@ -62,6 +68,7 @@ export class HostRule implements IRule {
     constructor(node: HostRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
+        this.ruleText = RuleGenerator.generate(node);
 
         this.ip = node.ip.value;
 
@@ -100,6 +107,15 @@ export class HostRule implements IRule {
      */
     public getIndex(): number {
         return this.ruleIndex;
+    }
+
+    /**
+     * Returns the rule text.
+     *
+     * @returns Rule text.
+     */
+    public getText(): string {
+        return this.ruleText;
     }
 
     /**

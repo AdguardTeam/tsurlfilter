@@ -12,7 +12,7 @@ import {
     QuoteType,
     QuoteUtils,
 } from '@adguard/agtree';
-import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
+import { CosmeticRuleBodyGenerator, RuleGenerator } from '@adguard/agtree/generator';
 import { scriptlets, type Source } from '@adguard/scriptlets';
 import { isValidScriptletName } from '@adguard/scriptlets/validators';
 
@@ -222,6 +222,11 @@ export class CosmeticRule implements IRule {
     private readonly filterListId: number;
 
     /**
+     * Rule text.
+     */
+    private readonly ruleText: string;
+
+    /**
      * Rule content.
      */
     private readonly content: string;
@@ -304,6 +309,15 @@ export class CosmeticRule implements IRule {
      */
     public getFilterListId(): number {
         return this.filterListId;
+    }
+
+    /**
+     * Returns the rule text.
+     *
+     * @returns Rule text.
+     */
+    public getText(): string {
+        return this.ruleText;
     }
 
     /**
@@ -650,6 +664,7 @@ export class CosmeticRule implements IRule {
     constructor(node: AnyCosmeticRule, filterListId: number, ruleIndex: number = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
+        this.ruleText = RuleGenerator.generate(node);
 
         this.allowlist = CosmeticRuleSeparatorUtils.isException(node.separator.value as CosmeticRuleSeparator);
         this.type = node.type;

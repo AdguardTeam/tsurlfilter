@@ -35,4 +35,9 @@ export class NetworkRuleWithNodeAndText implements IRule {
     public getFilterListId(): number {
         return this.rule.getFilterListId();
     }
+
+    /** @inheritdoc */
+    public getText(): string {
+        return this.text;
+    }
 }

@@ -25,13 +25,12 @@ export interface IRule {
      */
     getFilterListId(): number;
 
-    // TODO (David): Consider adding it
-    // /**
-    //  * Returns rule text.
-    //  *
-    //  * @returns Rule text.
-    //  */
-    // getText(): string;
+    /**
+     * Returns rule text.
+     *
+     * @returns Rule text.
+     */
+    getText(): string;
 }
 
 /**
