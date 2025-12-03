@@ -1,17 +1,5 @@
-import {
-    type AnyCosmeticRule,
-    type AnyRule,
-    type NetworkRule as NetworkRuleNode,
-    NetworkRuleType,
-    RuleCategory,
-} from '@adguard/agtree';
-import {
-    CosmeticRuleParser,
-    defaultParserOptions,
-    NetworkRuleParser,
-    RuleParser,
-} from '@adguard/agtree/parser';
-import { isString } from 'lodash-es';
+import { NetworkRuleType, RuleCategory } from '@adguard/agtree';
+import { defaultParserOptions, NetworkRuleParser, RuleParser } from '@adguard/agtree/parser';
 
 import { CosmeticRule } from '../../src/rules/cosmetic-rule';
 import { NetworkRuleWithNodeAndText } from '../../src/rules/declarative-converter/network-rule-with-node-and-text';
@@ -20,11 +8,9 @@ import { type IRule, RULE_INDEX_NONE } from '../../src/rules/rule';
 import { RuleFactory } from '../../src/rules/rule-factory';
 
 /**
- * Helper function to create a network rule from a string or a parsed node.
- * This is needed because the default API for creating a network rule only accepts nodes,
- * but it's more convenient to create rules from strings.
+ * Helper function to create a network rule from a string.
  *
- * @param rule Rule string or parsed node.
+ * @param rule Rule string.
  * @param filterListId Filter list ID (optional, default is 0).
  * @param ruleIndex Rule index (optional, default is {@link RULE_INDEX_NONE}).
  *
@@ -33,25 +19,15 @@ import { RuleFactory } from '../../src/rules/rule-factory';
  * @throws Error if the rule is not a valid network rule.
  */
 export const createNetworkRule = (
-    rule: string | NetworkRuleNode,
+    rule: string,
     filterListId = 0,
     ruleIndex = RULE_INDEX_NONE,
 ): NetworkRule => {
-    let node: NetworkRuleNode;
-
-    if (isString(rule)) {
-        node = NetworkRuleParser.parse(rule.trim());
-    } else {
-        node = rule;
-    }
-
-    return new NetworkRule(node, filterListId, ruleIndex);
+    return new NetworkRule(rule.trim(), filterListId, ruleIndex);
 };
 
 /**
- * Helper function to create a network rule from a string or a parsed node.
- * This is needed because the default API for creating a network rule only accepts nodes,
- * but it's more convenient to create rules from strings.
+ * Helper function to create a network rule with node from a string.
  *
  * @param text Rule text.
  * @param filterListId Filter list ID (optional, default is 0).
@@ -66,27 +42,20 @@ export const createNetworkRuleWithNode = (
     filterListId = 0,
     ruleIndex = RULE_INDEX_NONE,
 ): NetworkRuleWithNodeAndText => {
-    let node: NetworkRuleNode;
-
-    if (isString(text)) {
-        node = NetworkRuleParser.parse(text.trim());
-    } else {
-        node = text;
-    }
+    const trimmedText = text.trim();
+    const node = NetworkRuleParser.parse(trimmedText);
 
     return new NetworkRuleWithNodeAndText(
-        new NetworkRule(node, filterListId, ruleIndex),
+        new NetworkRule(trimmedText, filterListId, ruleIndex),
         node,
-        text,
+        trimmedText,
     );
 };
 
 /**
- * Helper function to create a cosmetic rule from a string or a parsed node.
- * This is needed because the default API for creating a cosmetic rule only accepts nodes,
- * but it's more convenient to create rules from strings.
+ * Helper function to create a cosmetic rule from a string.
  *
- * @param rule Rule string or parsed node.
+ * @param rule Rule string.
  * @param filterListId Filter list ID (optional, default is 0).
  * @param ruleIndex Rule index (optional, default is {@link RULE_INDEX_NONE}).
  *
@@ -95,36 +64,17 @@ export const createNetworkRuleWithNode = (
  * @throws Error if the rule is not a valid cosmetic rule.
  */
 export const createCosmeticRule = (
-    rule: string | AnyCosmeticRule,
+    rule: string,
     filterListId = 0,
     ruleIndex = RULE_INDEX_NONE,
 ): CosmeticRule => {
-    let node: AnyCosmeticRule;
-
-    if (isString(rule)) {
-        const parsedNode = CosmeticRuleParser.parse(rule.trim(), {
-            parseAbpSpecificRules: false,
-            parseUboSpecificRules: false,
-        });
-
-        if (!parsedNode) {
-            throw new Error('Not a cosmetic rule');
-        }
-
-        node = parsedNode;
-    } else {
-        node = rule;
-    }
-
-    return new CosmeticRule(node, filterListId, ruleIndex);
+    return new CosmeticRule(rule.trim(), filterListId, ruleIndex);
 };
 
 /**
- * Helper function to create a rule from a string or a parsed node.
- * This is needed because the default API for creating a rule only accepts nodes,
- * but it's more convenient to create rules from strings.
+ * Helper function to create a rule from a string.
  *
- * @param rule Rule string or parsed node.
+ * @param rule Rule string.
  * @param filterListId Filter list ID (optional, default is 0).
  * @param ruleIndex Rule index (optional, default is {@link RULE_INDEX_NONE}).
  * @param ignoreNetwork Ignore network rules (optional, default is false).
@@ -136,23 +86,18 @@ export const createCosmeticRule = (
  * @throws Error if the rule is not a valid rule.
  */
 export const createRule = (
-    rule: string | AnyRule,
+    rule: string,
     filterListId = 0,
     ruleIndex = RULE_INDEX_NONE,
     ignoreNetwork = false,
     ignoreCosmetic = false,
     ignoreHost = true,
 ): IRule | null => {
-    let node: AnyRule;
-
-    if (isString(rule)) {
-        node = RuleParser.parse(rule.trim(), {
-            ...defaultParserOptions,
-            parseHostRules: !ignoreHost,
-        });
-    } else {
-        node = rule;
-    }
+    const trimmedRule = rule.trim();
+    const node = RuleParser.parse(trimmedRule, {
+        ...defaultParserOptions,
+        parseHostRules: !ignoreHost,
+    });
 
     if (ignoreNetwork && node.category === RuleCategory.Network) {
         return null;
@@ -167,8 +112,9 @@ export const createRule = (
     }
 
     return RuleFactory.createRule(
-        node,
+        trimmedRule,
         filterListId,
         ruleIndex,
+        !ignoreHost,
     );
 };

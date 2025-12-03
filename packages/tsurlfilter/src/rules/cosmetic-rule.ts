@@ -12,7 +12,8 @@ import {
     QuoteType,
     QuoteUtils,
 } from '@adguard/agtree';
-import { CosmeticRuleBodyGenerator, RuleGenerator } from '@adguard/agtree/generator';
+import { CosmeticRuleBodyGenerator } from '@adguard/agtree/generator';
+import { CosmeticRuleParser, defaultParserOptions } from '@adguard/agtree/parser';
 import { scriptlets, type Source } from '@adguard/scriptlets';
 import { isValidScriptletName } from '@adguard/scriptlets/validators';
 
@@ -653,18 +654,30 @@ export class CosmeticRule implements IRule {
      * Depending on the rule type, the content might be transformed in
      * one of the helper classes, or kept as string when it's appropriate.
      *
-     * @param node AST node of the cosmetic rule.
+     * @param ruleText Rule text to parse.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex Line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
      *
-     * @throws Error if it fails to parse the rule.
+     * @throws Error if it fails to parse the rule or if the rule is not a cosmetic rule.
      */
-    constructor(node: AnyCosmeticRule, filterListId: number, ruleIndex: number = RULE_INDEX_NONE) {
+    constructor(ruleText: string, filterListId: number, ruleIndex: number = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
-        this.ruleText = RuleGenerator.generate(node);
+        this.ruleText = ruleText;
+
+        // Parse the rule text using CosmeticRuleParser
+        const node = CosmeticRuleParser.parse(ruleText, {
+            ...defaultParserOptions,
+            parseAbpSpecificRules: false,
+            parseUboSpecificRules: false,
+        });
+
+        // CosmeticRuleParser returns null if the rule is not a valid cosmetic rule
+        if (!node) {
+            throw new SyntaxError(`Failed to parse as cosmetic rule: ${ruleText}`);
+        }
 
         this.allowlist = CosmeticRuleSeparatorUtils.isException(node.separator.value as CosmeticRuleSeparator);
         this.type = node.type;

@@ -1,5 +1,5 @@
-import { type HostRule as HostRuleNode } from '@adguard/agtree';
-import { RuleGenerator } from '@adguard/agtree/generator';
+import { type HostRule as HostRuleNode, NetworkRuleType, RuleCategory } from '@adguard/agtree';
+import { defaultParserOptions, RuleParser } from '@adguard/agtree/parser';
 
 import { type IRule, RULE_INDEX_NONE } from './rule';
 
@@ -59,16 +59,29 @@ export class HostRule implements IRule {
      *
      * Parses the rule and creates a new HostRule instance.
      *
-     * @param node Original rule text.
+     * @param ruleText Rule text to parse.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex Index of the rule.
      *
-     * @throws Error if it fails to parse the rule.
+     * @throws Error if it fails to parse the rule or if the rule is not a host rule.
      */
-    constructor(node: HostRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
+    constructor(ruleText: string, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
-        this.ruleText = RuleGenerator.generate(node);
+        this.ruleText = ruleText;
+
+        // Parse the rule text with host rules enabled
+        const parsedNode = RuleParser.parse(ruleText, {
+            ...defaultParserOptions,
+            parseHostRules: true,
+        });
+
+        // Validate that we got a valid host rule
+        if (parsedNode.category !== RuleCategory.Network || parsedNode.type !== NetworkRuleType.HostRule) {
+            throw new SyntaxError(`Expected host rule but got ${parsedNode.category}: ${ruleText}`);
+        }
+
+        const node = parsedNode as HostRuleNode;
 
         this.ip = node.ip.value;
 
@@ -77,7 +90,7 @@ export class HostRule implements IRule {
             return;
         }
 
-        this.hostnames = node.hostnames.children.map((hostname) => hostname.value);
+        this.hostnames = node.hostnames.children.map((hostname: { value: string }) => hostname.value);
     }
 
     /**

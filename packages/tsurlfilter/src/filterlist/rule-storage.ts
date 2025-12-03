@@ -1,10 +1,3 @@
-import {
-    NetworkRuleType,
-    RuleCategory,
-    RuleGenerator,
-    RuleParser,
-} from '@adguard/agtree';
-import { defaultParserOptions } from '@adguard/agtree/parser';
 import { getErrorMessage } from '@adguard/logger';
 
 import { CosmeticRule } from '../rules/cosmetic-rule';
@@ -155,30 +148,12 @@ export class RuleStorage {
             return null;
         }
 
-        // TODO: Consider improving API: currently we pass ignore host flag to the parser and then to the factory.
-        const node = RuleParser.parse(ruleText, {
-            ...defaultParserOptions,
-            parseHostRules: !ignoreHost,
-        });
-
-        if (ignoreHost && node.category === RuleCategory.Network && node.type === NetworkRuleType.HostRule) {
-            return null;
-        }
-
         let createdRule: IRule | null = null;
 
         try {
-            createdRule = RuleFactory.createRule(node, listId, ruleId);
+            createdRule = RuleFactory.createRule(ruleText, listId, ruleId, !ignoreHost);
         } catch (e) {
-            let msg = `"${getErrorMessage(e)}" in the rule: `;
-
-            try {
-                msg += `"${RuleGenerator.generate(node)}"`;
-            } catch (generateError) {
-                msg += `"${JSON.stringify(node)}" (generate error: ${getErrorMessage(generateError)})`;
-            }
-
-            logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: ${msg}`);
+            logger.debug(`[tsurl.RuleStorage.retrieveRule]: error: "${getErrorMessage(e)}" in the rule: "${ruleText}"`);
         }
 
         if (list.ignoreUnsafe) {

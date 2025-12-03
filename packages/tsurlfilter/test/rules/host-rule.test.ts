@@ -1,4 +1,5 @@
-import { type HostRule as HostRuleNode, HostRuleParser } from '@adguard/agtree';
+import { type HostRule as HostRuleNode } from '@adguard/agtree';
+import { RuleGenerator } from '@adguard/agtree/generator';
 import { isString } from 'lodash-es';
 import { describe, expect, it } from 'vitest';
 
@@ -11,20 +12,21 @@ class HostRule extends HostRuleOriginal {
     /**
      * HostRule constructor.
      *
-     * @param rule Rule.
+     * @param rule Rule (string or node).
      * @param filterListId Filter list id.
      * @param ruleIndex Rule index.
      */
     constructor(rule: string | HostRuleNode, filterListId: number, ruleIndex?: number) {
-        let node: HostRuleNode;
+        let ruleText: string;
 
         if (isString(rule)) {
-            node = HostRuleParser.parse(rule.trim());
+            ruleText = rule.trim();
         } else {
-            node = rule;
+            // Generate text from node
+            ruleText = RuleGenerator.generate(rule);
         }
 
-        super(node, filterListId, ruleIndex);
+        super(ruleText, filterListId, ruleIndex);
     }
 }
 

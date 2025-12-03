@@ -1,5 +1,6 @@
 import { type ModifierList, type NetworkRule as NetworkRuleNode } from '@adguard/agtree';
 import { RuleGenerator } from '@adguard/agtree/generator';
+import { NetworkRuleParser } from '@adguard/agtree/parser';
 
 import { EMPTY_STRING } from '../common/constants';
 import { CompatibilityTypes, isCompatibleWith } from '../configuration';
@@ -1225,18 +1226,21 @@ export class NetworkRule implements IRule {
      * It parses this rule and extracts the rule pattern (see {@link SimpleRegex}),
      * and rule modifiers.
      *
-     * @param node AST node of the network rule.
+     * @param ruleText Rule text to parse.
      * @param filterListId ID of the filter list this rule belongs to.
      * @param ruleIndex Line start index in the source filter list; it will be used to find the original rule text
      * in the filtering log when a rule is applied. Default value is {@link RULE_INDEX_NONE} which means that
      * the rule does not have source index.
      *
-     * @throws Error if it fails to parse the rule.
+     * @throws Error if it fails to parse the rule or if the rule is not a network rule.
      */
-    constructor(node: NetworkRuleNode, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
+    constructor(ruleText: string, filterListId: number, ruleIndex = RULE_INDEX_NONE) {
         this.ruleIndex = ruleIndex;
         this.filterListId = filterListId;
-        this.ruleText = RuleGenerator.generate(node);
+        this.ruleText = ruleText;
+
+        // Parse the rule text using NetworkRuleParser
+        const node = NetworkRuleParser.parse(ruleText);
         this.allowlist = node.exception;
 
         const pattern = node.pattern.value;

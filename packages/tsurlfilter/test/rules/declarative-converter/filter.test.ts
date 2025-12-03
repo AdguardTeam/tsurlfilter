@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { findNextLineBreakIndex } from 'tsurlfilter-v3';
 
 import { Filter } from '../../../src/rules/declarative-converter';
 import { ConvertedFilterList } from '../../../src/filterlist/converted-filter-list';
+import { findNextLineBreakIndex } from '../../../src/utils/string-utils';
 
 describe('Filter', () => {
     // NOTE: Testing filter SHOULD contain some of convertible while

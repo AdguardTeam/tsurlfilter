@@ -1,4 +1,5 @@
 import { type AnyRule } from '@adguard/agtree';
+import { RuleGenerator } from '@adguard/agtree/generator';
 import { getHostname } from 'tldts';
 
 import { DomainModifier } from '../modifiers/domain-modifier';
@@ -26,7 +27,9 @@ export class RuleSyntaxUtils {
      * @returns True if the rule can be matched by the domain, false otherwise.
      */
     public static isRuleForDomain(node: AnyRule, domain: string): boolean {
-        const rule = RuleFactory.createRule(node, this.DUMMY_FILTER_ID) as RulesUnion | null;
+        // Generate text from node to pass to RuleFactory
+        const ruleText = RuleGenerator.generate(node);
+        const rule = RuleFactory.createRule(ruleText, this.DUMMY_FILTER_ID) as RulesUnion | null;
         if (!rule) {
             return false;
         }
