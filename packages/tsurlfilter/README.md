@@ -388,20 +388,20 @@ This module is not used in the engine directly, but it can be used in other libr
 /**
  * Checks if rule can be matched by domain
  *
- * @param node Rule node
+ * @param ruleText Rule text
  * @param domain Domain to check
  */
-public static isRuleForDomain(node: AnyRule, domain: string): boolean
+public static isRuleForDomain(ruleText: string, domain: string): boolean
 ```
 
 ```ts
 /**
  * Checks if rule can be matched by URL
  *
- * @param node Rule node
+ * @param ruleText Rule text
  * @param url URL to check
  */
-public static isRuleForUrl(node: AnyRule, url: string): boolean;
+public static isRuleForUrl(ruleText: string, url: string): boolean;
 ```
 
 #### <a id="filter-list-preprocessor"></a>FilterListPreprocessor
