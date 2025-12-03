@@ -173,7 +173,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         },
                         value: value ? {
                             type: 'Value',
-                            value: QuoteUtils.unescapeDoubleQuotes(value.value),
+                            value: QuoteUtils.unescapeAttributeDoubleQuotes(value.value),
                         } : undefined,
                     });
                     continue;
@@ -205,7 +205,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                         ERROR_MESSAGES.ATTR_VALUE_POSITIVE,
                     );
                 } else {
-                    parsedValue = QuoteUtils.unescapeDoubleQuotes(value.value);
+                    parsedValue = QuoteUtils.unescapeAttributeDoubleQuotes(value.value);
                 }
 
                 if (name.value === AttributeSelectors.MinLength) {
@@ -274,7 +274,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                             ),
                         );
                     }
-                    tagContent = QuoteUtils.unescapeDoubleQuotes(content.value);
+                    tagContent = QuoteUtils.unescapeAttributeDoubleQuotes(content.value);
                 }
             }
 

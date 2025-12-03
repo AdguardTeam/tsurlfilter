@@ -504,65 +504,141 @@ describe('Quote utils', () => {
         });
     });
 
-    describe('escapeDoubleQuotes', () => {
+    describe('escapeAttributeDoubleQuotes', () => {
         test.each([
+            // should escape - inside of attribute and string quotes - in middle
             {
-                actual: '"test""test"',
-                expected: '"test\\"test"',
+                actual: '[attr="test""test"]',
+                expected: '[attr="test\\"test"]',
             },
+
+            // should escape - inside of attribute and string quotes - at beginning
             {
-                actual: '"""test"',
-                expected: '"\\"test"',
+                actual: '[attr="""test"]',
+                expected: '[attr="\\"test"]',
             },
+
+            // should escape - inside of attribute and string quotes - at end
             {
-                actual: '"test"""',
-                expected: '"test\\""',
+                actual: '[attr="test"""]',
+                expected: '[attr="test\\""]',
             },
+
+            // should not escape - inside of attribute but outside of string quotes - in middle
             {
-                actual: 'test""test',
-                expected: 'test""test',
+                actual: '[attr=test""test]',
+                expected: '[attr=test""test]',
             },
+
+            // should not escape - inside of attribute but outside of string quotes - at beginning
             {
-                actual: '""test',
-                expected: '""test',
+                actual: '[attr=""test]',
+                expected: '[attr=""test]',
             },
+
+            // should not escape - inside of attribute but outside of string quotes - at end
             {
-                actual: 'test""',
-                expected: 'test""',
+                actual: '[attr=test""]',
+                expected: '[attr=test""]',
             },
-        ])('escapeDoubleQuotes should return $expected for $actual', ({ actual, expected }) => {
-            expect(QuoteUtils.escapeDoubleQuotes(actual)).toBe(expected);
+
+            // should not escape - inside of attribute but with single quotes - in middle
+            {
+                actual: '[attr=\'test""test\']',
+                expected: '[attr=\'test""test\']',
+            },
+
+            // should not escape - inside of attribute but with single quotes - at beginning
+            {
+                actual: '[attr=\'""test\']',
+                expected: '[attr=\'""test\']',
+            },
+
+            // should not escape - inside of attribute but with single quotes - at end
+            {
+                actual: '[attr=\'test""\']',
+                expected: '[attr=\'test""\']',
+            },
+
+            // should not escape - outside of attribute - in middle
+            {
+                actual: ':pseudo("test""test")',
+                expected: ':pseudo("test""test")',
+            },
+
+            // should not escape - outside of attribute - at beginning
+            {
+                actual: ':pseudo("""test")',
+                expected: ':pseudo("""test")',
+            },
+
+            // should not escape - outside of attribute - at end
+            {
+                actual: ':pseudo("test""")',
+                expected: ':pseudo("test""")',
+            },
+        ])('escapeAttributeDoubleQuotes should return $expected for $actual', ({ actual, expected }) => {
+            expect(QuoteUtils.escapeAttributeDoubleQuotes(actual)).toBe(expected);
         });
     });
 
-    describe('unescapeDoubleQuotes', () => {
+    describe('unescapeAttributeDoubleQuotes', () => {
         test.each([
+            // should unescape - inside of string quotes - in middle
             {
                 actual: '"test\\"test"',
                 expected: '"test""test"',
             },
+
+            // should unescape - inside of string quotes - at beginning
             {
                 actual: '"\\"test"',
                 expected: '"""test"',
             },
+
+            // should unescape - inside of string quotes - at end
             {
                 actual: '"test\\""',
                 expected: '"test"""',
             },
+
+            // should not unescape - outside of string quotes - in middle
             {
                 actual: 'test\\"test',
                 expected: 'test\\"test',
             },
+
+            // should not unescape - outside of string quotes - at beginning
             {
                 actual: '\\"test',
                 expected: '\\"test',
             },
+
+            // should not unescape - outside of string quotes - at end
             {
                 actual: 'test\\"',
                 expected: 'test\\"',
             },
-        ])('unescapeDoubleQuotes should return $expected for $actual', ({ actual, expected }) => {
-            expect(QuoteUtils.unescapeDoubleQuotes(actual)).toBe(expected);
+
+            // should not unescape - with single quotes - in middle
+            {
+                actual: "'test\\\"test'",
+                expected: "'test\\\"test'",
+            },
+
+            // should not unescape - with single quotes - at beginning
+            {
+                actual: "'\\\"test'",
+                expected: "'\\\"test'",
+            },
+
+            // should not unescape - with single quotes - at end
+            {
+                actual: "'test\\\"'",
+                expected: "'test\\\"'",
+            },
+        ])('unescapeAttributeDoubleQuotes should return $expected for $actual', ({ actual, expected }) => {
+            expect(QuoteUtils.unescapeAttributeDoubleQuotes(actual)).toBe(expected);
         });
     });
 });

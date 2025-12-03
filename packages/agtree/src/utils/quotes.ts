@@ -4,10 +4,12 @@
 
 import {
     BACKTICK_QUOTE,
+    CLOSE_SQUARE_BRACKET,
     COMMA,
     DOUBLE_QUOTE,
     EMPTY,
     ESCAPE_CHARACTER,
+    OPEN_SQUARE_BRACKET,
     SINGLE_QUOTE,
     SPACE,
 } from './constants';
@@ -275,7 +277,8 @@ export class QuoteUtils {
     }
 
     /**
-     * Convert `""` to `\"` within strings, because it does not compatible with the standard CSS syntax.
+     * Convert `""` to `\"` within strings inside of attribute selectors,
+     * because it is not compatible with the standard CSS syntax.
      *
      * @param selector CSS selector string.
      *
@@ -283,24 +286,61 @@ export class QuoteUtils {
      *
      * @note In the legacy syntax, `""` is used to escape double quotes, but it cannot be used
      * in the standard CSS syntax, so we use conversion functions to handle this.
+     * @note This function is intended to be used on whole attribute selector or whole selector strings.
      *
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
+     * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#wildcard}
+     *
+     * @example
+     * ```ts
+     * QuoteUtils.escapeAttributeDoubleQuotes('[attr="value with "" quotes"]');
+     * QuoteUtils.escapeAttributeDoubleQuotes('div[attr="value with "" quotes"] > span');
+     * ```
      */
-    public static escapeDoubleQuotes(selector: string): string {
+    public static escapeAttributeDoubleQuotes(selector: string): string {
         let withinString = false;
+        let withinAttribute = false;
         const buffer: string[] = [];
 
         for (let i = 0; i < selector.length; i += 1) {
-            if (!withinString && selector[i] === DOUBLE_QUOTE) {
+            if (
+                !withinAttribute
+                && !withinString
+                && selector[i] === OPEN_SQUARE_BRACKET
+            ) {
+                withinAttribute = true;
+                buffer.push(selector[i]);
+            } else if (
+                withinAttribute
+                && !withinString
+                && selector[i] === DOUBLE_QUOTE
+            ) {
                 withinString = true;
                 buffer.push(selector[i]);
-            } else if (withinString && selector[i] === DOUBLE_QUOTE && selector[i + 1] === DOUBLE_QUOTE) {
+            } else if (
+                withinAttribute
+                && withinString
+                && selector[i] === DOUBLE_QUOTE
+                && selector[i + 1] === DOUBLE_QUOTE
+            ) {
                 buffer.push(ESCAPE_CHARACTER);
                 buffer.push(DOUBLE_QUOTE);
                 i += 1;
-            } else if (withinString && selector[i] === DOUBLE_QUOTE && selector[i + 1] !== DOUBLE_QUOTE) {
+            } else if (
+                withinAttribute
+                && withinString
+                && selector[i] === DOUBLE_QUOTE
+                && selector[i + 1] !== DOUBLE_QUOTE
+            ) {
                 buffer.push(DOUBLE_QUOTE);
                 withinString = false;
+            } else if (
+                withinAttribute
+                && !withinString
+                && selector[i] === CLOSE_SQUARE_BRACKET
+            ) {
+                withinAttribute = false;
+                buffer.push(selector[i]);
             } else {
                 buffer.push(selector[i]);
             }
@@ -318,10 +358,16 @@ export class QuoteUtils {
      *
      * @note In the legacy syntax, `""` is used to escape double quotes, but it cannot be used
      * in the standard CSS syntax, so we use conversion functions to handle this.
+     * @note This function is intended to be used directly on attribute value strings.
      *
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#tag-content}
+     *
+     * @example
+     * ```ts
+     * QuoteUtils.unescapeDoubleQuotes('"value with \\" quotes"');
+     * ```
      */
-    public static unescapeDoubleQuotes(selector: string): string {
+    public static unescapeAttributeDoubleQuotes(selector: string): string {
         let withinString = false;
         const buffer: string[] = [];
 

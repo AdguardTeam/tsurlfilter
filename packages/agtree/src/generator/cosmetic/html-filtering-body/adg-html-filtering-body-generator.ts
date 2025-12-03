@@ -17,6 +17,6 @@ export class AdgHtmlFilteringBodyGenerator extends BaseGenerator {
      * @throws Error if the rule body is invalid.
      */
     public static generate(node: HtmlFilteringRuleBody): string {
-        return HtmlFilteringBodyGenerator.generate(node, QuoteUtils.unescapeDoubleQuotes);
+        return HtmlFilteringBodyGenerator.generate(node, QuoteUtils.unescapeAttributeDoubleQuotes);
     }
 }

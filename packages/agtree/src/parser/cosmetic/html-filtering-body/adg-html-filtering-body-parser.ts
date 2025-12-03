@@ -40,7 +40,7 @@ export class AdgHtmlFilteringBodyParser extends BaseParser {
         options = defaultParserOptions,
         baseOffset = 0,
     ): HtmlFilteringRuleBody {
-        const escapedRaw = QuoteUtils.escapeDoubleQuotes(raw);
+        const escapedRaw = QuoteUtils.escapeAttributeDoubleQuotes(raw);
         return HtmlFilteringBodyParser.parse(escapedRaw, options, baseOffset);
     }
 }

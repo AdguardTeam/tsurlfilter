@@ -23,7 +23,7 @@ import {
 describe('AdgHtmlFilteringBodyParser', () => {
     describe('AdgHtmlFilteringBodyParser.parse - valid cases', () => {
         test.each<{ actual: string; expected: NodeExpectFn<HtmlFilteringRuleBody> }>([
-            // double quotes are escaped - in middle of value
+            // attribute - double quotes are escaped - in middle
             {
                 actual: '[attr="value with "" quotes"]',
                 expected: (context) => ({
@@ -59,7 +59,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // double quotes are escaped - at start
+            // attribute - double quotes are escaped - at beginning
             {
                 actual: '[attr=""" value with quotes"]',
                 expected: (context) => ({
@@ -95,7 +95,7 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 }),
             },
 
-            // double quotes are escaped - at end
+            // attribute - double quotes are escaped - at end
             {
                 actual: '[attr="value with quotes """]',
                 expected: (context) => ({
@@ -130,6 +130,210 @@ describe('AdgHtmlFilteringBodyParser', () => {
                     ...context.getFullRange(),
                 }),
             },
+
+            // attribute - double quotes are not escaped - single quotes - in middle
+            {
+                actual: '[attr=\'value with "" quotes\']',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    children: [{
+                        type: 'HtmlFilteringRuleSelectorList',
+                        children: [{
+                            type: 'HtmlFilteringRuleSelector',
+                            children: [{
+                                type: 'HtmlFilteringRuleSelectorAttribute',
+                                name: {
+                                    type: 'Value',
+                                    value: 'attr',
+                                    ...context.getRangeFor('attr'),
+                                },
+                                operator: {
+                                    type: 'Value',
+                                    value: '=',
+                                    ...context.getRangeFor('='),
+                                },
+                                value: {
+                                    type: 'Value',
+                                    value: '\'value with "" quotes\'',
+                                    ...context.getRangeFor('\'value with "" quotes\''),
+                                },
+                                ...context.getRangeFor('[attr=\'value with "" quotes\']'),
+                            }],
+                            ...context.getRangeFor('[attr=\'value with "" quotes\']'),
+                        }],
+                        ...context.getRangeFor('[attr=\'value with "" quotes\']'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // attribute - double quotes are escaped - at beginning
+            {
+                actual: '[attr=\'"" value with quotes\']',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    children: [{
+                        type: 'HtmlFilteringRuleSelectorList',
+                        children: [{
+                            type: 'HtmlFilteringRuleSelector',
+                            children: [{
+                                type: 'HtmlFilteringRuleSelectorAttribute',
+                                name: {
+                                    type: 'Value',
+                                    value: 'attr',
+                                    ...context.getRangeFor('attr'),
+                                },
+                                operator: {
+                                    type: 'Value',
+                                    value: '=',
+                                    ...context.getRangeFor('='),
+                                },
+                                value: {
+                                    type: 'Value',
+                                    value: '\'"" value with quotes\'',
+                                    ...context.getRangeFor('\'"" value with quotes\''),
+                                },
+                                ...context.getRangeFor('[attr=\'"" value with quotes\']'),
+                            }],
+                            ...context.getRangeFor('[attr=\'"" value with quotes\']'),
+                        }],
+                        ...context.getRangeFor('[attr=\'"" value with quotes\']'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // attribute - double quotes are escaped - at end
+            {
+                actual: '[attr=\'value with quotes ""\']',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    children: [{
+                        type: 'HtmlFilteringRuleSelectorList',
+                        children: [{
+                            type: 'HtmlFilteringRuleSelector',
+                            children: [{
+                                type: 'HtmlFilteringRuleSelectorAttribute',
+                                name: {
+                                    type: 'Value',
+                                    value: 'attr',
+                                    ...context.getRangeFor('attr'),
+                                },
+                                operator: {
+                                    type: 'Value',
+                                    value: '=',
+                                    ...context.getRangeFor('='),
+                                },
+                                value: {
+                                    type: 'Value',
+                                    value: '\'value with quotes ""\'',
+                                    ...context.getRangeFor('\'value with quotes ""\''),
+                                },
+                                ...context.getRangeFor('[attr=\'value with quotes ""\']'),
+                            }],
+                            ...context.getRangeFor('[attr=\'value with quotes ""\']'),
+                        }],
+                        ...context.getRangeFor('[attr=\'value with quotes ""\']'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // pseudo class - double quotes are not escaped - in middle
+            {
+                actual: ':pseudo("value with "" quotes")',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    children: [{
+                        type: 'HtmlFilteringRuleSelectorList',
+                        children: [{
+                            type: 'HtmlFilteringRuleSelector',
+                            children: [{
+                                type: 'HtmlFilteringRuleSelectorPseudoClass',
+                                name: {
+                                    type: 'Value',
+                                    value: 'pseudo',
+                                    ...context.getRangeFor('pseudo'),
+                                },
+                                isFunction: true,
+                                argument: {
+                                    type: 'Value',
+                                    value: '"value with "" quotes"',
+                                    ...context.getRangeFor('"value with "" quotes"'),
+                                },
+                                ...context.getRangeFor(':pseudo("value with "" quotes")'),
+                            }],
+                            ...context.getRangeFor(':pseudo("value with "" quotes")'),
+                        }],
+                        ...context.getRangeFor(':pseudo("value with "" quotes")'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // pseudo class - double quotes are not escaped - at beginning
+            {
+                actual: ':pseudo(""" value with quotes")',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    children: [{
+                        type: 'HtmlFilteringRuleSelectorList',
+                        children: [{
+                            type: 'HtmlFilteringRuleSelector',
+                            children: [{
+                                type: 'HtmlFilteringRuleSelectorPseudoClass',
+                                name: {
+                                    type: 'Value',
+                                    value: 'pseudo',
+                                    ...context.getRangeFor('pseudo'),
+                                },
+                                isFunction: true,
+                                argument: {
+                                    type: 'Value',
+                                    value: '""" value with quotes"',
+                                    ...context.getRangeFor('""" value with quotes"'),
+                                },
+                                ...context.getRangeFor(':pseudo(""" value with quotes")'),
+                            }],
+                            ...context.getRangeFor(':pseudo(""" value with quotes")'),
+                        }],
+                        ...context.getRangeFor(':pseudo(""" value with quotes")'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // pseudo class - double quotes are not escaped - at end
+            {
+                actual: ':pseudo("value with quotes """)',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    children: [{
+                        type: 'HtmlFilteringRuleSelectorList',
+                        children: [{
+                            type: 'HtmlFilteringRuleSelector',
+                            children: [{
+                                type: 'HtmlFilteringRuleSelectorPseudoClass',
+                                name: {
+                                    type: 'Value',
+                                    value: 'pseudo',
+                                    ...context.getRangeFor('pseudo'),
+                                },
+                                isFunction: true,
+                                argument: {
+                                    type: 'Value',
+                                    value: '"value with quotes """',
+                                    ...context.getRangeFor('"value with quotes """'),
+                                },
+                                ...context.getRangeFor(':pseudo("value with quotes """)'),
+                            }],
+                            ...context.getRangeFor(':pseudo("value with quotes """)'),
+                        }],
+                        ...context.getRangeFor(':pseudo("value with quotes """)'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
         ])("should parse '$actual'", ({ actual, expected: expectedFn }) => {
             expect(AdgHtmlFilteringBodyParser.parse(actual)).toEqual(
                 expectedFn(new NodeExpectContext(actual)),
@@ -151,6 +355,30 @@ describe('AdgHtmlFilteringBodyParser', () => {
                 actual: '[attr="value with quotes """]',
                 expected: '[attr="value with quotes """]',
             },
+            {
+                actual: '[attr=\'value with "" quotes\']',
+                expected: '[attr=\'value with "" quotes\']',
+            },
+            {
+                actual: '[attr=\'"" value with quotes\']',
+                expected: '[attr=\'"" value with quotes\']',
+            },
+            {
+                actual: '[attr=\'value with quotes ""\']',
+                expected: '[attr=\'value with quotes ""\']',
+            },
+            {
+                actual: ':pseudo("value with "" quotes")',
+                expected: ':pseudo("value with "" quotes")',
+            },
+            {
+                actual: ':pseudo(""" value with quotes")',
+                expected: ':pseudo(""" value with quotes")',
+            },
+            {
+                actual: ':pseudo("value with quotes """)',
+                expected: ':pseudo("value with quotes """)',
+            },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = AdgHtmlFilteringBodyParser.parse(actual);
 
@@ -167,6 +395,12 @@ describe('AdgHtmlFilteringBodyParser', () => {
             '[attr="value with "" quotes"]',
             '[attr=""" value with quotes"]',
             '[attr="value with quotes """]',
+            '[attr=\'value with "" quotes\']',
+            '[attr=\'"" value with quotes\']',
+            '[attr=\'value with quotes ""\']',
+            ':pseudo("value with "" quotes")',
+            ':pseudo(""" value with quotes")',
+            ':pseudo("value with quotes """)',
         ])("should serialize and deserialize '%p'", async (input) => {
             await expect(input).toBeSerializedAndDeserializedProperly(
                 AdgHtmlFilteringBodyParser,
