@@ -1,5 +1,5 @@
 import { type HtmlFilteringRuleBody } from '../../../nodes';
-import { QuoteUtils } from '../../../utils';
+import { QuoteUtils } from '../../../utils/quotes';
 import { BaseParser } from '../../base-parser';
 import { defaultParserOptions } from '../../options';
 import { HtmlFilteringBodyParser } from './html-filtering-body-parser';
