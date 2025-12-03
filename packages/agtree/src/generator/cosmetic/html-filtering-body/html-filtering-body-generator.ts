@@ -12,6 +12,11 @@ import {
 import { BaseGenerator } from '../../base-generator';
 
 /**
+ * HTML Filtering attribute value transformer.
+ */
+type AttributeValueTransformer = (value: string) => string;
+
+/**
  * HTML Filtering body generator.
  */
 export class HtmlFilteringBodyGenerator extends BaseGenerator {
@@ -30,16 +35,22 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
         NON_FUNCTION_PSEUDO_CLASS_WITH_ARGUMENT: 'Non-function pseudo class cannot have an argument',
     };
 
+    private static defaultAttributeValueTransformer: AttributeValueTransformer = (value: string): string => value;
+
     /**
      * Generates a string representation of the HTML filtering rule body.
      *
      * @param node HTML filtering rule body.
+     * @param attributeValueTransformer Optional transformer for attribute values.
      *
      * @returns String representation of the rule body.
      *
      * @throws Error if the rule body is invalid.
      */
-    public static generate(node: HtmlFilteringRuleBody): string {
+    public static generate(
+        node: HtmlFilteringRuleBody,
+        attributeValueTransformer = HtmlFilteringBodyGenerator.defaultAttributeValueTransformer,
+    ): string {
         const result: string[] = [];
 
         // Throw an error if the body is empty
@@ -137,7 +148,7 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
                             result.push(part.operator.value);
 
                             // It's safe to use non-null assertion here due to the earlier check
-                            result.push(part.value!.value);
+                            result.push(attributeValueTransformer(part.value!.value));
 
                             // If there is a flag, add it as well
                             if (part.flag) {

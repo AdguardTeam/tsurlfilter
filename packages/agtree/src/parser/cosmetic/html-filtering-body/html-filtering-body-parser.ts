@@ -623,8 +623,6 @@ export class HtmlFilteringBodyParser extends BaseParser {
      * @param selector Selector node to append the attribute node to.
      * @param options Global parser options.
      * @param baseOffset Starting offset of the input. Node locations are calculated relative to this offset.
-     *
-     * FIXME: Handle quote escaping in attribute values?
      */
     private static handleAttribute(
         stream: CssTokenStream,

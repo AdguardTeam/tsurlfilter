@@ -1,4 +1,5 @@
 import { type HtmlFilteringRuleBody } from '../../../nodes';
+import { QuoteUtils } from '../../../utils';
 import { BaseParser } from '../../base-parser';
 import { defaultParserOptions } from '../../options';
 import { HtmlFilteringBodyParser } from './html-filtering-body-parser';
@@ -39,6 +40,7 @@ export class AdgHtmlFilteringBodyParser extends BaseParser {
         options = defaultParserOptions,
         baseOffset = 0,
     ): HtmlFilteringRuleBody {
-        return HtmlFilteringBodyParser.parse(raw, options, baseOffset);
+        const escapedRaw = QuoteUtils.escapeDoubleQuotes(raw);
+        return HtmlFilteringBodyParser.parse(escapedRaw, options, baseOffset);
     }
 }
