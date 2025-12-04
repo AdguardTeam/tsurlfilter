@@ -288,8 +288,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"value"',
-                                    ...context.getRangeFor('"value"'),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 ...context.getRangeFor('[attr="value"]'),
                             }],
@@ -386,8 +386,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: "'value'",
-                                    ...context.getRangeFor("'value'"),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 ...context.getRangeFor("[attr='value']"),
                             }],
@@ -422,8 +422,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"value"',
-                                    ...context.getRangeFor('"value"'),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 flag: {
                                     type: 'Value',
@@ -463,8 +463,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"value"',
-                                    ...context.getRangeFor('"value"'),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 flag: {
                                     type: 'Value',
@@ -545,8 +545,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: "'value'",
-                                    ...context.getRangeFor("'value'"),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 flag: {
                                     type: 'Value',
@@ -586,8 +586,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"value"',
-                                    ...context.getRangeFor('"value"'),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 ...context.getRangeFor('[attr~="value"]'),
                             }],
@@ -622,8 +622,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"value"',
-                                    ...context.getRangeFor('"value"'),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 ...context.getRangeFor('[attr^="value"]'),
                             }],
@@ -658,8 +658,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"value"',
-                                    ...context.getRangeFor('"value"'),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 ...context.getRangeFor('[attr$="value"]'),
                             }],
@@ -694,8 +694,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"value"',
-                                    ...context.getRangeFor('"value"'),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 ...context.getRangeFor('[attr*="value"]'),
                             }],
@@ -730,8 +730,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"value"',
-                                    ...context.getRangeFor('"value"'),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 ...context.getRangeFor('[attr|="value"]'),
                             }],
@@ -766,8 +766,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"x"',
-                                    ...context.getRangeFor('"x"'),
+                                    value: 'x',
+                                    ...context.getRangeFor('x'),
                                 },
                                 ...context.getRangeFor('[data-test-value="x"]'),
                             }],
@@ -802,8 +802,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"x"',
-                                    ...context.getRangeFor('"x"'),
+                                    value: 'x',
+                                    ...context.getRangeFor('x'),
                                 },
                                 ...context.getRangeFor('[data_test_value="x"]'),
                             }],
@@ -838,8 +838,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"x"',
-                                    ...context.getRangeFor('"x"'),
+                                    value: 'x',
+                                    ...context.getRangeFor('x'),
                                 },
                                 ...context.getRangeFor('[-data="x"]'),
                             }],
@@ -874,8 +874,9 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '""',
-                                    ...context.getRangeFor('""'),
+                                    value: '',
+                                    start: 7,
+                                    end: 7,
                                 },
                                 ...context.getRangeFor('[attr=""]'),
                             }],
@@ -911,8 +912,8 @@ describe('HtmlFilteringBodyParser', () => {
                                     },
                                     value: {
                                         type: 'Value',
-                                        value: '"value1"',
-                                        ...context.getRangeFor('"value1"'),
+                                        value: 'value1',
+                                        ...context.getRangeFor('value1'),
                                     },
                                     ...context.getRangeFor('[attr1="value1"]'),
                                 },
@@ -930,8 +931,8 @@ describe('HtmlFilteringBodyParser', () => {
                                     },
                                     value: {
                                         type: 'Value',
-                                        value: '"value2"',
-                                        ...context.getRangeFor('"value2"'),
+                                        value: 'value2',
+                                        ...context.getRangeFor('value2'),
                                     },
                                     ...context.getRangeFor('[attr2^="value2"]'),
                                 },
@@ -1260,8 +1261,8 @@ describe('HtmlFilteringBodyParser', () => {
                                     },
                                     value: {
                                         type: 'Value',
-                                        value: '"value"',
-                                        ...context.getRangeFor('"value"'),
+                                        value: 'value',
+                                        ...context.getRangeFor('value'),
                                     },
                                     flag: {
                                         type: 'Value',
@@ -1555,8 +1556,8 @@ describe('HtmlFilteringBodyParser', () => {
                                         },
                                         value: {
                                             type: 'Value',
-                                            value: '"value"',
-                                            ...context.getRangeFor('"value"'),
+                                            value: 'value',
+                                            ...context.getRangeFor('value'),
                                         },
                                         ...context.getRangeFor('[attr="value"]'),
                                     },
@@ -1722,8 +1723,8 @@ describe('HtmlFilteringBodyParser', () => {
                                 },
                                 value: {
                                     type: 'Value',
-                                    value: '"value"',
-                                    ...context.getRangeFor('"value"'),
+                                    value: 'value',
+                                    ...context.getRangeFor('value'),
                                 },
                                 ...context.getRangeFor('[  attr   =   "value"  ]'),
                             }],
@@ -1798,6 +1799,146 @@ describe('HtmlFilteringBodyParser', () => {
                             ...context.getRangeFor(':pseudo(  arg with spaces  )'),
                         }],
                         ...context.getRangeFor(':pseudo(  arg with spaces  )'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // edge case - quote escape - double quotes
+            {
+                actual: '[attr="value with \\"escaped\\" quotes"]',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    children: [{
+                        type: 'HtmlFilteringRuleSelectorList',
+                        children: [{
+                            type: 'HtmlFilteringRuleSelector',
+                            children: [{
+                                type: 'HtmlFilteringRuleSelectorAttribute',
+                                name: {
+                                    type: 'Value',
+                                    value: 'attr',
+                                    ...context.getRangeFor('attr'),
+                                },
+                                operator: {
+                                    type: 'Value',
+                                    value: '=',
+                                    ...context.getRangeFor('='),
+                                },
+                                value: {
+                                    type: 'Value',
+                                    value: 'value with "escaped" quotes',
+                                    ...context.getRangeFor('value with \\"escaped\\" quotes'),
+                                },
+                            }],
+                            ...context.getRangeFor('[attr="value with \\"escaped\\" quotes"]'),
+                        }],
+                        ...context.getRangeFor('[attr="value with \\"escaped\\" quotes"]'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // edge case - quote escape - double quotes
+            {
+                actual: "[attr='value with \\'escaped\\' quotes']",
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    children: [{
+                        type: 'HtmlFilteringRuleSelectorList',
+                        children: [{
+                            type: 'HtmlFilteringRuleSelector',
+                            children: [{
+                                type: 'HtmlFilteringRuleSelectorAttribute',
+                                name: {
+                                    type: 'Value',
+                                    value: 'attr',
+                                    ...context.getRangeFor('attr'),
+                                },
+                                operator: {
+                                    type: 'Value',
+                                    value: '=',
+                                    ...context.getRangeFor('='),
+                                },
+                                value: {
+                                    type: 'Value',
+                                    value: "value with 'escaped' quotes",
+                                    ...context.getRangeFor("value with \\'escaped\\' quotes"),
+                                },
+                            }],
+                            ...context.getRangeFor("[attr='value with \\'escaped\\' quotes']"),
+                        }],
+                        ...context.getRangeFor("[attr='value with \\'escaped\\' quotes']"),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // edge case - quote escape - single quotes in double quotes (no escape needed)
+            {
+                actual: '[attr="value with \'escaped\' quotes"]',
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    children: [{
+                        type: 'HtmlFilteringRuleSelectorList',
+                        children: [{
+                            type: 'HtmlFilteringRuleSelector',
+                            children: [{
+                                type: 'HtmlFilteringRuleSelectorAttribute',
+                                name: {
+                                    type: 'Value',
+                                    value: 'attr',
+                                    ...context.getRangeFor('attr'),
+                                },
+                                operator: {
+                                    type: 'Value',
+                                    value: '=',
+                                    ...context.getRangeFor('='),
+                                },
+                                value: {
+                                    type: 'Value',
+                                    value: "value with 'escaped' quotes",
+                                    ...context.getRangeFor("value with 'escaped' quotes"),
+                                },
+                            }],
+                            ...context.getRangeFor('[attr="value with \'escaped\' quotes"]'),
+                        }],
+                        ...context.getRangeFor('[attr="value with \'escaped\' quotes"]'),
+                    }],
+                    ...context.getFullRange(),
+                }),
+            },
+
+            // edge case - quote escape - double quotes in single quotes (no escape needed)
+            {
+                actual: "[attr='value with \"escaped\" quotes']",
+                expected: (context) => ({
+                    type: 'HtmlFilteringRuleBody',
+                    children: [{
+                        type: 'HtmlFilteringRuleSelectorList',
+                        children: [{
+                            type: 'HtmlFilteringRuleSelector',
+                            children: [{
+                                type: 'HtmlFilteringRuleSelectorAttribute',
+                                name: {
+                                    type: 'Value',
+                                    value: 'attr',
+                                    ...context.getRangeFor('attr'),
+                                },
+                                operator: {
+                                    type: 'Value',
+                                    value: '=',
+                                    ...context.getRangeFor('='),
+                                },
+                                value: {
+                                    type: 'Value',
+                                    value: 'value with "escaped" quotes',
+                                    ...context.getRangeFor('value with "escaped" quotes'),
+                                },
+                            }],
+                            ...context.getRangeFor("[attr='value with \"escaped\" quotes']"),
+                        }],
+                        ...context.getRangeFor("[attr='value with \"escaped\" quotes']"),
                     }],
                     ...context.getFullRange(),
                 }),
@@ -2073,6 +2214,26 @@ describe('HtmlFilteringBodyParser', () => {
                     ...context.toTuple(context.getRangeFor('@media')),
                 )),
             },
+
+            // invalid attribute - unescaped double quote in attribute value (error thrown in tokenizer)
+            {
+                actual: '[attr="value with " quotes"]',
+                expected: (context) => (new AdblockSyntaxError(
+                    "Expected '<]-token>', but got 'end of input'",
+                    context.getFullRange().end - 1,
+                    context.getFullRange().end,
+                )),
+            },
+
+            // invalid attribute - unescaped single quote in attribute value (error thrown in tokenizer)
+            {
+                actual: "[attr='value with ' quotes']",
+                expected: (context) => (new AdblockSyntaxError(
+                    "Expected '<]-token>', but got 'end of input'",
+                    context.getFullRange().end - 1,
+                    context.getFullRange().end,
+                )),
+            },
         ])("should throw on input: '$actual'", ({ actual, expected: expectedFn }) => {
             const fn = vi.fn(() => HtmlFilteringBodyParser.parse(actual));
 
@@ -2146,11 +2307,11 @@ describe('HtmlFilteringBodyParser', () => {
             },
             {
                 actual: '[attr=value]',
-                expected: '[attr=value]',
+                expected: '[attr="value"]',
             },
             {
                 actual: "[attr='value']",
-                expected: "[attr='value']",
+                expected: '[attr="value"]',
             },
             {
                 actual: '[attr="value" i]',
@@ -2162,11 +2323,11 @@ describe('HtmlFilteringBodyParser', () => {
             },
             {
                 actual: '[attr=value i]',
-                expected: '[attr=value i]',
+                expected: '[attr="value" i]',
             },
             {
                 actual: "[attr='value' i]",
-                expected: "[attr='value' i]",
+                expected: '[attr="value" i]',
             },
             {
                 actual: '[attr~="value"]',
@@ -2286,11 +2447,27 @@ describe('HtmlFilteringBodyParser', () => {
             },
             {
                 actual: '[  attr   =   value  ]',
-                expected: '[attr=value]',
+                expected: '[attr="value"]',
             },
             {
                 actual: ':pseudo(  arg with spaces  )',
                 expected: ':pseudo(arg with spaces)',
+            },
+            {
+                actual: '[attr="value with \\"escaped\\" quotes"]',
+                expected: '[attr="value with \\"escaped\\" quotes"]',
+            },
+            {
+                actual: "[attr='value with \\'escaped\\' quotes']",
+                expected: '[attr="value with \'escaped\' quotes"]',
+            },
+            {
+                actual: '[attr="value with \'escaped\' quotes"]',
+                expected: '[attr="value with \'escaped\' quotes"]',
+            },
+            {
+                actual: "[attr='value with \"escaped\" quotes']",
+                expected: '[attr="value with \\"escaped\\" quotes"]',
             },
         ])("should generate '$expected' from '$actual'", ({ actual, expected }) => {
             const ruleNode = HtmlFilteringBodyParser.parse(actual);
@@ -2355,6 +2532,10 @@ describe('HtmlFilteringBodyParser', () => {
             '[  attr   =   "value"  ]',
             '[  attr   =   value  ]',
             ':pseudo(  arg with spaces  )',
+            '[attr="value with \\"escaped\\" quotes"]',
+            "[attr='value with \\'escaped\\' quotes']",
+            '[attr="value with \'escaped\' quotes"]',
+            "[attr='value with \"escaped\" quotes']",
         ])("should serialize and deserialize '%p'", async (input) => {
             await expect(input).toBeSerializedAndDeserializedProperly(
                 HtmlFilteringBodyParser,

@@ -1,4 +1,5 @@
 import { type HtmlFilteringRuleBody } from '../../../nodes';
+import { QuoteType, QuoteUtils } from '../../../utils/quotes';
 import {
     CLOSE_PARENTHESIS,
     CLOSE_SQUARE_BRACKET,
@@ -148,7 +149,15 @@ export class HtmlFilteringBodyGenerator extends BaseGenerator {
                             result.push(part.operator.value);
 
                             // It's safe to use non-null assertion here due to the earlier check
-                            result.push(attributeValueTransformer(part.value!.value));
+                            const { value } = part.value!;
+
+                            // Quote the attribute value using double quotes
+                            const quotedValue = QuoteUtils.setStringQuoteType(value, QuoteType.Double);
+
+                            // Transform the attribute value if a transformer is provided
+                            const transformedValue = attributeValueTransformer(quotedValue);
+
+                            result.push(transformedValue);
 
                             // If there is a flag, add it as well
                             if (part.flag) {
