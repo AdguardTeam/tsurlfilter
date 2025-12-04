@@ -12,7 +12,6 @@ import {
     CLOSE_SQUARE_BRACKET,
     DOLLAR_SIGN,
     OPEN_SQUARE_BRACKET,
-    UBO_HTML_MASK,
     UBO_SCRIPTLET_MASK,
     UBO_SCRIPTLET_MASK_LEGACY,
 } from '../../utils/constants';
@@ -554,11 +553,7 @@ export class CosmeticRuleParser extends BaseParser {
             };
         };
 
-        const parseUboHtmlFiltering = (): Pick<HtmlFilteringRule, RestProps> | null => {
-            if (!rawBody.startsWith(UBO_HTML_MASK)) {
-                return null;
-            }
-
+        const parseUboHtmlFiltering = (): Pick<HtmlFilteringRule, RestProps> => {
             if (!options.parseUboSpecificRules) {
                 throw new AdblockSyntaxError(
                     sprintf(ERROR_MESSAGES.SYNTAX_DISABLED, AdblockSyntax.Ubo),
@@ -569,8 +564,7 @@ export class CosmeticRuleParser extends BaseParser {
 
             expectCommonOrSpecificSyntax(AdblockSyntax.Ubo);
 
-            const rawBodyWithoutMask = rawBody.slice(UBO_HTML_MASK.length);
-            const body = UboHtmlFilteringBodyParser.parse(rawBodyWithoutMask, options, baseOffset + bodyStart);
+            const body = UboHtmlFilteringBodyParser.parse(rawBody, options, baseOffset + bodyStart);
 
             return {
                 syntax: AdblockSyntax.Ubo,
@@ -597,19 +591,19 @@ export class CosmeticRuleParser extends BaseParser {
         // If all functions return null, an error should be thrown.
         const separatorMap = {
             '##': [
-                parseUboHtmlFiltering,
                 parseUboScriptletInjection,
                 parseUboCssInjection,
                 parseAbpCssInjection,
                 parseElementHiding,
             ],
+            '##^': [parseUboHtmlFiltering],
             '#@#': [
-                parseUboHtmlFiltering,
                 parseUboScriptletInjection,
                 parseUboCssInjection,
                 parseAbpCssInjection,
                 parseElementHiding,
             ],
+            '#@#^': [parseUboHtmlFiltering],
 
             '#?#': [parseUboCssInjection, parseAbpCssInjection, parseElementHiding],
             '#@?#': [parseUboCssInjection, parseAbpCssInjection, parseElementHiding],

@@ -563,10 +563,9 @@ export class HtmlRuleConverter extends RuleConverterBase {
 
                 separator: {
                     type: 'Value',
-                    // FIXME: Replace with uBO-specific separator when supported
                     value: rule.exception
-                        ? CosmeticRuleSeparator.ElementHidingException
-                        : CosmeticRuleSeparator.ElementHiding,
+                        ? CosmeticRuleSeparator.UboHtmlFilteringException
+                        : CosmeticRuleSeparator.UboHtmlFiltering,
                 },
 
                 body: {

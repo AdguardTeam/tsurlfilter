@@ -145,7 +145,7 @@ describe('CosmeticRuleParser - general tests', () => {
             // HTML filtering (ADG)
             { rule: '$$script[tag-content="ads"]', expected: 'script[tag-content="ads"]' },
             // HTML filtering (uBO)
-            { rule: '##^script:has-text(ads)', expected: '^script:has-text(ads)' },
+            { rule: '##^script:has-text(ads)', expected: 'script:has-text(ads)' },
             // JS injection (ADG)
             { rule: '#%#const a = 2;', expected: 'const a = 2;' },
         ])("should generate body '$expected' from '$rule'", ({ rule, expected }) => {

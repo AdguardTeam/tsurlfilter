@@ -79,6 +79,11 @@ export class CosmeticRuleSeparatorUtils {
         for (let i = 0; i < rule.length; i += 1) {
             if (rule[i] === '#') {
                 if (rule[i + 1] === '#' && rule[i - 1] !== SPACE) {
+                    if (rule[i + 2] === '^') {
+                        // ##^
+                        return createResult(i, CosmeticRuleSeparator.UboHtmlFiltering);
+                    }
+
                     // ##
                     return createResult(i, CosmeticRuleSeparator.ElementHiding);
                 }
@@ -108,6 +113,11 @@ export class CosmeticRuleSeparatorUtils {
                 // Exceptions
                 if (rule[i + 1] === '@') {
                     if (rule[i + 2] === '#' && rule[i - 1] !== SPACE) {
+                        if (rule[i + 3] === '^') {
+                            // #@#^
+                            return createResult(i, CosmeticRuleSeparator.UboHtmlFilteringException);
+                        }
+
                         // #@#
                         return createResult(i, CosmeticRuleSeparator.ElementHidingException);
                     }

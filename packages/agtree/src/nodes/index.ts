@@ -255,6 +255,16 @@ export const CosmeticRuleSeparator = {
      * @see {@link https://kb.adguard.com/en/general/how-to-create-your-own-ad-filters#html-filtering-rules}
      */
     AdgHtmlFilteringException: '$@$',
+
+    /**
+     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
+     */
+    UboHtmlFiltering: '##^',
+
+    /**
+     * @see {@link https://github.com/gorhill/uBlock/wiki/Static-filter-syntax#html-filters}
+     */
+    UboHtmlFilteringException: '#@#^',
 } as const;
 
 // intentionally naming the variable the same as the type

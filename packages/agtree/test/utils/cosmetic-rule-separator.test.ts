@@ -190,6 +190,27 @@ describe('CosmeticRuleSeparator', () => {
             },
         );
 
+        // UBO HTML
+        expect(
+            CosmeticRuleSeparatorUtils.find('example.com,example.org##^script:has-test("advert")'),
+        ).toMatchObject(
+            <CosmeticRuleSeparatorFinderResult>{
+                separator: '##^',
+                start: 23,
+                end: 26,
+            },
+        );
+
+        expect(
+            CosmeticRuleSeparatorUtils.find('example.com,example.org#@#^script:has-test("advert")'),
+        ).toMatchObject(
+            <CosmeticRuleSeparatorFinderResult>{
+                separator: '#@#^',
+                start: 23,
+                end: 27,
+            },
+        );
+
         // ADG JS
         expect(
             CosmeticRuleSeparatorUtils.find('example.com,example.org#%#var a = 1;'),
