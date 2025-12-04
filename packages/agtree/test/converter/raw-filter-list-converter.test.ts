@@ -64,8 +64,8 @@ describe('RawFilterListConverter', () => {
     test('Tolerant mode should work correctly', () => {
         const filterListContent = [
             '! Title: Foo',
-            // ADG HTML filtering doesn't support CSS combinator, so this rule will be invalid
-            '##^body > script:has-text(foo)',
+            // ADG HTML filtering doesn't support regexp argument in `:has-text()` pseudo class
+            '##^body:has-text(/ad/)',
             // Should be converted
             '||example.com^$3p',
         ].join(NEWLINE);
@@ -73,7 +73,7 @@ describe('RawFilterListConverter', () => {
         // Expected tolerantly converted filter list
         const expectedFilterListContent = [
             '! Title: Foo',
-            '##^body > script:has-text(foo)', // Left as is
+            '##^body:has-text(/ad/)', // Left as is
             '||example.com^$third-party', // Converted
         ].join(NEWLINE);
 
