@@ -87,6 +87,7 @@ export const ERROR_MESSAGES = {
 
     FIRST_SELECTOR_WITH_COMBINATOR: 'First selector cannot start with a combinator',
     MISSING_COMBINATOR: 'Missing combinator between selectors',
+    SPECIALS_ONLY_SELECTOR: 'Selector cannot contain only special attribute selectors or pseudo classes',
 
     ATTRIBUTE_OPERATOR_WITHOUT_VALUE: 'Attribute selector operator specified without a value',
     ATTRIBUTE_FLAG_WITHOUT_VALUE: 'Attribute selector flag specified without a value',
@@ -96,14 +97,14 @@ export const ERROR_MESSAGES = {
     SPECIAL_ATTRIBUTE_VALUE_REQUIRED: 'Special attribute selector \'%s\' requires a value',
     SPECIAL_ATTRIBUTE_VALUE_INT: 'Value of special attribute selector \'%s\' must be an integer, got \'%s\'',
     SPECIAL_ATTRIBUTE_VALUE_POSITIVE: 'Value of special attribute selector \'%s\' must be a positive integer, got \'%s\'',
-    SPECIAL_ATTRIBUTE_NOT_SUPPORTED: 'Attribute selector \'%s\' is not supported in conversion',
+    SPECIAL_ATTRIBUTE_NOT_SUPPORTED: 'Special attribute selector \'%s\' is not supported in conversion',
 
     PSEUDO_CLASS_ARGUMENT_WITHOUT_FLAG: 'Non-function pseudo class cannot have an argument',
-    SPECIAL_PSEUDO_CLASS_ARGUMENT_REQUIRED: 'Pseudo class \'%s\' requires an argument',
-    SPECIAL_PSEUDO_CLASS_ARGUMENT_INT: 'Argument of pseudo class \'%s\' must be an integer, got \'%s\'',
-    SPECIAL_PSEUDO_CLASS_ARGUMENT_POSITIVE: 'Argument of pseudo class \'%s\' must be a positive integer, got \'%s\'',
-    SPECIAL_PSEUDO_CLASS_REGEXP_NOT_SUPPORTED: 'Argument of pseudo class \'%s\' is a regular expression, which is not supported',
-    SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED: 'Pseudo class \'%s\' is not supported in conversion',
+    SPECIAL_PSEUDO_CLASS_ARGUMENT_REQUIRED: 'Special pseudo class \'%s\' requires an argument',
+    SPECIAL_PSEUDO_CLASS_ARGUMENT_INT: 'Argument of special pseudo class \'%s\' must be an integer, got \'%s\'',
+    SPECIAL_PSEUDO_CLASS_ARGUMENT_POSITIVE: 'Argument of special pseudo class \'%s\' must be a positive integer, got \'%s\'',
+    SPECIAL_PSEUDO_CLASS_REGEXP_NOT_SUPPORTED: 'Argument of special pseudo class \'%s\' is a regular expression, which is not supported',
+    SPECIAL_PSEUDO_CLASS_NOT_SUPPORTED: 'Special pseudo class \'%s\' is not supported in conversion',
 } as const;
 /* eslint-enable max-len */
 
@@ -160,6 +161,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 let minLength: string | null = null;
                 let maxLength: string | null = null;
 
+                /**
+                 * Keep track of the number of special parts found in the selector.
+                 * If selector contains only special parts, it means it didn't have
+                 * any real selector parts, so we can throw an error in this case.
+                 */
+                let specialParts = 0;
+
                 // Convert each part
                 const convertedParts: HtmlFilteringRuleSelectorPart[] = [];
                 for (const part of parts) {
@@ -174,6 +182,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
                          * but we still handle them here for completeness and de-duplication.
                          */
                         if (HtmlRuleConverter.isSpecialAdgAttribute(part)) {
+                            specialParts += 1;
+
                             // Validate special attribute
                             HtmlRuleConverter.assertValidSpecialAttribute(part);
 
@@ -222,6 +232,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
                          * - `:min-text-length()` -> `[min-length]`
                          */
                         if (HtmlRuleConverter.isSpecialUboPseudoClass(part)) {
+                            specialParts += 1;
+
                             // Validate special pseudo class
                             HtmlRuleConverter.assertValidSpecialPseudoClass(part);
 
@@ -243,7 +255,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
                                 continue;
                             } else if (name === PseudoClasses.HasText) {
                                 // Throw an error if argument is a regex pattern
-                                // Because AdGuard doesn't support regexps in `tag-content` attribute
+                                // Because AdGuard doesn't support regexps in `has-text` attribute
                                 if (RegExpUtils.isRegexPattern(argument)) {
                                     throw new RuleConversionError(sprintf(
                                         ERROR_MESSAGES.SPECIAL_PSEUDO_CLASS_REGEXP_NOT_SUPPORTED,
@@ -266,6 +278,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     convertedParts.push(
                         HtmlRuleConverter.cloneHtmlFilteringRuleSelectorPart(part),
                     );
+                }
+
+                // Throw an error if selector contains only special parts
+                if (specialParts === parts.length) {
+                    throw new RuleConversionError(ERROR_MESSAGES.SPECIALS_ONLY_SELECTOR);
                 }
 
                 // Add last found `[tag-content]` or `:has-text()`
@@ -386,6 +403,13 @@ export class HtmlRuleConverter extends RuleConverterBase {
                 let hasText: string | null = null;
                 let minTextLength: string | null = null;
 
+                /**
+                 * Keep track of the number of special parts found in the selector.
+                 * If selector contains only special parts, it means it didn't have
+                 * any real selector parts, so we can throw an error in this case.
+                 */
+                let specialParts = 0;
+
                 // Convert each part
                 const convertedParts: HtmlFilteringRuleSelectorPart[] = [];
                 for (const part of parts) {
@@ -400,6 +424,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
                          * but we still handle them here for completeness and de-duplication.
                          */
                         if (HtmlRuleConverter.isSpecialUboPseudoClass(part)) {
+                            specialParts += 1;
+
                             // Validate special pseudo class
                             HtmlRuleConverter.assertValidSpecialPseudoClass(part);
 
@@ -442,6 +468,8 @@ export class HtmlRuleConverter extends RuleConverterBase {
                          * - `[max-length]` is special case, we just ignore it during conversion
                          */
                         if (HtmlRuleConverter.isSpecialAdgAttribute(part)) {
+                            specialParts += 1;
+
                             // Validate special attribute
                             HtmlRuleConverter.assertValidSpecialAttribute(part);
 
@@ -483,6 +511,11 @@ export class HtmlRuleConverter extends RuleConverterBase {
                     convertedParts.push(
                         HtmlRuleConverter.cloneHtmlFilteringRuleSelectorPart(part),
                     );
+                }
+
+                // Throw an error if selector contains only special parts
+                if (specialParts === parts.length) {
+                    throw new RuleConversionError(ERROR_MESSAGES.SPECIALS_ONLY_SELECTOR);
                 }
 
                 // Add last found `:has-text()` or `[tag-content]`
@@ -554,10 +587,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
     private static isSpecialAdgAttribute(
         attribute: HtmlFilteringRuleSelectorAttribute,
     ): boolean {
-        return (
-            attribute.type === 'HtmlFilteringRuleSelectorAttribute'
-            && SUPPORTED_ADG_ATTRIBUTE_SELECTORS.has(attribute.name.value)
-        );
+        return SUPPORTED_ADG_ATTRIBUTE_SELECTORS.has(attribute.name.value);
     }
 
     /**
@@ -570,10 +600,7 @@ export class HtmlRuleConverter extends RuleConverterBase {
     private static isSpecialUboPseudoClass(
         pseudoClass: HtmlFilteringRuleSelectorPseudoClass,
     ): boolean {
-        return (
-            pseudoClass.type === 'HtmlFilteringRuleSelectorPseudoClass'
-            && SUPPORTED_UBO_PSEUDO_CLASSES.has(pseudoClass.name.value)
-        );
+        return SUPPORTED_UBO_PSEUDO_CLASSES.has(pseudoClass.name.value);
     }
 
     /**
