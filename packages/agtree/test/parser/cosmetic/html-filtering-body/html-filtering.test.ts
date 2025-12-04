@@ -1952,7 +1952,7 @@ describe('HtmlFilteringBodyParser', () => {
 
     describe('HtmlFilteringBodyParser.parse - invalid cases', () => {
         test.each<{ actual: string; expected: NodeExpectFn<AdblockSyntaxError> }>([
-            // Empty input
+            // empty input
             {
                 actual: '',
                 expected: (context) => (new AdblockSyntaxError(
@@ -1962,13 +1962,22 @@ describe('HtmlFilteringBodyParser', () => {
                 )),
             },
 
-            // Empty input with whitespace
+            // empty input with whitespace
             {
                 actual: '   ',
                 expected: (context) => (new AdblockSyntaxError(
                     "Expected a token, but got 'end of input'",
                     context.getFullRange().end - 1,
                     context.getFullRange().end,
+                )),
+            },
+
+            // universal selector
+            {
+                actual: '*',
+                expected: (context) => (new AdblockSyntaxError(
+                    "Unexpected token '<delim-token>' with value '*'",
+                    ...context.toTuple(context.getRangeFor('*')),
                 )),
             },
 
